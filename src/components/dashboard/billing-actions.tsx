@@ -4,10 +4,18 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-async function go(endpoint: string, setBusy: (b: boolean) => void) {
+async function go(
+  endpoint: string,
+  setBusy: (b: boolean) => void,
+  body?: Record<string, unknown>,
+) {
   setBusy(true);
   try {
-    const res = await fetch(endpoint, { method: "POST" });
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
     const json = await res.json().catch(() => ({}));
     if (json.url) {
       window.location.href = json.url;
@@ -21,10 +29,23 @@ async function go(endpoint: string, setBusy: (b: boolean) => void) {
   }
 }
 
-export function ActivateButton({ label = "Activate Trade Pro" }: { label?: string }) {
+export function ActivateButton({
+  label = "Activate Trade Pro",
+  plan = "pro",
+  variant = "default",
+}: {
+  label?: string;
+  plan?: "pro" | "featured";
+  variant?: "default" | "outline" | "accent";
+}) {
   const [busy, setBusy] = useState(false);
   return (
-    <Button size="lg" disabled={busy} onClick={() => go("/api/stripe/checkout", setBusy)}>
+    <Button
+      size="lg"
+      variant={variant}
+      disabled={busy}
+      onClick={() => go("/api/stripe/checkout", setBusy, { plan })}
+    >
       {busy ? "Redirecting…" : label}
     </Button>
   );

@@ -36,6 +36,15 @@ const PRO_FEATURES = [
   "Priority placement",
 ];
 
+const FEATURED_FEATURES = [
+  "Everything in Trade Pro",
+  "Featured placement — top of your categories",
+  "Featured in your service regions",
+  "Featured badge on your profile",
+  "Priority in directory search results",
+  "Maximum visibility to buyers",
+];
+
 const FAQ = [
   {
     q: "Does PMRFP guarantee work?",
@@ -85,7 +94,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="grid items-start gap-6 md:grid-cols-2">
+        <div className="grid items-start gap-6 md:grid-cols-3">
           {/* Free */}
           <div className="flex h-full flex-col rounded-xl border border-border bg-card p-8">
             <h2 className="text-lg font-semibold text-foreground">Free</h2>
@@ -153,6 +162,39 @@ export default function PricingPage() {
             >
               Join {SITE.name}
             </Link>
+          </div>
+
+          {/* Featured */}
+          <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-indigo p-8 text-white shadow-xl">
+            <div className="pointer-events-none absolute -right-20 -top-24 size-64 rounded-full bg-teal-300/20 blur-2xl" />
+            <div className="relative flex flex-1 flex-col">
+              <h2 className="text-lg font-semibold text-white">Featured</h2>
+              <p className="mt-2 text-sm text-indigo-100/70">
+                Maximum visibility — rank at the top where buyers look first.
+              </p>
+              <div className="mt-6 flex items-baseline gap-1">
+                <span className="text-4xl font-semibold text-white">
+                  ${PRICING.featuredAnnual}
+                </span>
+                <span className="text-sm text-indigo-100/70">
+                  {PRICING.currency}/year
+                </span>
+              </div>
+              <ul className="mt-6 flex-1 space-y-3">
+                {FEATURED_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-indigo-100">
+                    <Check className="mt-0.5 size-4 shrink-0 text-teal-300" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/sign-up"
+                className={cn(buttonVariants({ size: "lg", variant: "accent" }), "mt-8 w-full")}
+              >
+                Get Featured
+              </Link>
+            </div>
           </div>
         </div>
       </Section>

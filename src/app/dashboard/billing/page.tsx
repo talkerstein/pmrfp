@@ -12,6 +12,7 @@ interface SubRow {
   current_period_end: string | null;
   amount: number | null;
   currency: string | null;
+  stripe_price_id: string | null;
 }
 
 function fmt(d: string) {
@@ -26,13 +27,17 @@ export default async function BillingPage() {
     const supabase = await createClient();
     const { data } = await supabase
       .from("subscriptions")
-      .select("status,current_period_end,amount,currency")
+      .select("status,current_period_end,amount,currency,stripe_price_id")
       .eq("organization_id", session.organization.id)
       .maybeSingle<SubRow>();
     sub = data ?? null;
   }
 
   const isActive = sub?.status === "active" || sub?.status === "comped";
+  const isFeatured =
+    !!sub?.stripe_price_id &&
+    sub.stripe_price_id === process.env.STRIPE_PRICE_FEATURED_ANNUAL;
+  const planName = isFeatured ? "Featured" : "Trade Pro";
 
   return (
     <div>
@@ -44,7 +49,7 @@ export default async function BillingPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="eyebrow text-muted-foreground">Current plan</div>
-                <div className="mt-1 text-xl font-semibold">Trade Pro</div>
+                <div className="mt-1 text-xl font-semibold">{planName}</div>
               </div>
               <StatusBadge status={sub.status} />
             </div>
@@ -59,9 +64,19 @@ export default async function BillingPage() {
                 ${(sub.amount / 100).toFixed(0)} {sub.currency?.toUpperCase() ?? "CAD"}/year
               </p>
             )}
-            <div className="mt-5">
+            <div className="mt-5 flex flex-wrap gap-3">
               <ManageBillingButton />
+              {sub.status === "active" && !isFeatured && (
+                <ActivateButton
+                  plan="featured"
+                  variant="accent"
+                  label={`Upgrade to Featured — $${PRICING.featuredAnnual}/yr`}
+                />
+              )}
             </div>
+            {sub.status === "active" && !isFeatured && (
+              <p className="mt-3 text-xs text-muted-foreground">{PRICING.featuredNote}</p>
+            )}
           </>
         ) : (
           <>

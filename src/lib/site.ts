@@ -19,8 +19,11 @@ export const SITE = {
 
 export const PRICING = {
   proAnnual: 249,
+  featuredAnnual: 599,
   currency: "CAD",
   earlyBirdNote: "Early-bird: lock in $249/yr — rises to $399 once we hit 100 subscribers.",
+  featuredNote:
+    "Featured includes everything in Trade Pro, plus priority placement at the top of your categories and regions.",
 } as const;
 
 /** Primary public navigation (§30 header) */
@@ -88,6 +91,7 @@ export const FOOTER_COLS = [
       { label: "For Property Managers", href: "/for-property-managers" },
       { label: "For Builders", href: "/for/builders" },
       { label: "For Investors", href: "/for/investors" },
+      { label: "For Real Estate", href: "/for/real-estate" },
     ],
   },
   {

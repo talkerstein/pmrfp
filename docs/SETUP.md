@@ -33,7 +33,7 @@ The migrations create three Storage buckets (`logos`, `rfp-documents`, `capabili
 
 ## 2. Stripe (subscriptions)
 
-1. In the [Stripe Dashboard](https://dashboard.stripe.com), create a **Product**: "PMRFP Trade Pro Annual", recurring **yearly**, **$249.00 CAD**. Copy the **price ID** (`price_…`) → `STRIPE_PRICE_TRADE_PRO_ANNUAL`.
+1. In the [Stripe Dashboard](https://dashboard.stripe.com), create a **Product**: "PMRFP Trade Pro Annual", recurring **yearly**, **$249.00 CAD**. Copy the **price ID** (`price_…`) → `STRIPE_PRICE_TRADE_PRO_ANNUAL`. *(Optional upsell:* create "PMRFP Featured Annual", yearly, **$599.00 CAD** → `STRIPE_PRICE_FEATURED_ANNUAL`. An active Featured subscription auto-sets the org's priority placement.)*
 2. **Developers → API keys** → `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 3. **Developers → Webhooks** → add endpoint `https://your-domain/api/stripe/webhook`, listening for:
    `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`.

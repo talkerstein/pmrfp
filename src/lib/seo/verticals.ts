@@ -146,6 +146,38 @@ export const VERTICALS: Vertical[] = [
       "Real-estate investors and owners: browse a credentialed directory of commercial trade contractors and run competitive RFPs for your portfolio. Free to post and browse.",
   },
   {
+    slug: "real-estate",
+    name: "Real Estate Professionals",
+    who: "Realtors, brokerages & real-estate investors",
+    headline: "Get properties ready, and keep them running — with vetted trades.",
+    positioning:
+      "PMRFP gives realtors, brokerages, and real-estate investors a credentialed directory of commercial and residential trades — plus a simple way to post the pre-listing repairs, turnovers, and portfolio maintenance that protect a deal and a return.",
+    pains: [
+      "Pre-listing repairs stall a sale while you chase a reliable contractor",
+      "The same overworked handyman bottlenecks every listing and turnover",
+      "No vetted bench when a deal needs work done before closing",
+      "Portfolio maintenance is reactive, scattered across personal contacts",
+      "No paper trail or credentials when a vendor relationship goes sideways",
+    ],
+    valueProps: [
+      { title: "A vetted bench, on demand", desc: "Search commercial & residential trades by category, region, and credential — free." },
+      { title: "Post the work once", desc: "Pre-listing repairs, unit turnovers, or capital projects — publish an RFP and qualified trades respond." },
+      { title: "Move deals faster", desc: "Stop letting a missing contractor delay a close or a re-list." },
+      { title: "See credentials up front", desc: "Profiles surface insurance, licensing, and past work to lower your risk." },
+      { title: "Free on the demand side", desc: "No cost for agents, brokerages, or investors to post or browse." },
+    ],
+    features: ["Directory search by trade + region", "Post RFPs", "Vendor shortlisting", "Credential visibility"],
+    faqs: [
+      { q: "Is this for buying or selling homes?", a: "No — PMRFP isn't a real-estate listing site. It connects you with the trades who do the work on properties: repairs, turnovers, renovations, and maintenance." },
+      { q: "I already have a handyman.", a: "Great — PMRFP is your backup bench for when they're booked, out of scope, or when a property is in a different city." },
+    ],
+    cta: { label: "Browse the directory", href: "/directory" },
+    secondaryCta: { label: "Post an RFP", href: "/sign-up" },
+    metaTitle: "PMRFP for Real Estate — Find Vetted Trades for Listings & Portfolios",
+    metaDescription:
+      "Realtors, brokerages, and investors: browse a credentialed directory of commercial & residential trades and post pre-listing repairs, turnovers, and maintenance. Free to post and browse.",
+  },
+  {
     slug: "suppliers",
     name: "Suppliers & Distributors",
     who: "Building product, material & equipment suppliers",

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/access/access";
 import { getStripe, isStripeConfigured, SITE_URL } from "@/lib/stripe/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Billing is not configured yet." }, { status: 400 });
   }
@@ -12,18 +12,32 @@ export async function POST() {
     return NextResponse.json({ error: "Complete your company profile first." }, { status: 400 });
   }
 
+  const body = await request.json().catch(() => ({}));
+  const plan = body?.plan === "featured" ? "featured" : "pro";
+  const price =
+    plan === "featured"
+      ? process.env.STRIPE_PRICE_FEATURED_ANNUAL
+      : process.env.STRIPE_PRICE_TRADE_PRO_ANNUAL;
+  if (!price) {
+    return NextResponse.json({ error: "That plan isn't available yet." }, { status: 400 });
+  }
+
+  const metadata = {
+    organization_id: session.organization.id,
+    user_id: session.userId,
+    plan,
+  };
+
   const stripe = getStripe();
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription",
-    line_items: [{ price: process.env.STRIPE_PRICE_TRADE_PRO_ANNUAL!, quantity: 1 }],
+    line_items: [{ price, quantity: 1 }],
     customer_email: session.profile.email,
     success_url: `${SITE_URL}/dashboard?welcome=1`,
     cancel_url: `${SITE_URL}/pricing`,
     allow_promotion_codes: true,
-    metadata: { organization_id: session.organization.id, user_id: session.userId },
-    subscription_data: {
-      metadata: { organization_id: session.organization.id, user_id: session.userId },
-    },
+    metadata,
+    subscription_data: { metadata },
   });
 
   return NextResponse.json({ url: checkout.url });

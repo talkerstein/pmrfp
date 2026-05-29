@@ -48,6 +48,8 @@ export const DEMO_CATEGORIES: DemoCategory[] = [
   { slug: "millwork", name: "Millwork", icon: "Hammer" },
   { slug: "demolition", name: "Demolition", icon: "Hammer" },
   { slug: "environmental-hazardous-materials", name: "Environmental / Hazardous Materials", icon: "Biohazard" },
+  { slug: "dumpster-bin-rental", name: "Dumpster & Bin Rental", icon: "Container" },
+  { slug: "mold-remediation", name: "Mold Remediation", icon: "Biohazard" },
 ];
 
 export const DEMO_REGIONS: DemoRegion[] = [

@@ -44,7 +44,9 @@ insert into public.trade_categories (name, slug, icon, sort_order) values
   ('Signage','signage','Signpost',360),
   ('Millwork','millwork','Hammer',370),
   ('Demolition','demolition','Hammer',380),
-  ('Environmental / Hazardous Materials','environmental-hazardous-materials','Biohazard',390)
+  ('Environmental / Hazardous Materials','environmental-hazardous-materials','Biohazard',390),
+  ('Dumpster & Bin Rental','dumpster-bin-rental','Container',400),
+  ('Mold Remediation','mold-remediation','Biohazard',410)
 on conflict (slug) do nothing;
 
 -- ── Regions (22) — hierarchical ─────────────────────────────────────

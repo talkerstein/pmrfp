@@ -26,6 +26,8 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
 
   const supabase = createServiceClient();
   const item = sub.items.data[0];
+  const priceId = item?.price.id ?? null;
+  const status = mapStatus(sub.status);
   await supabase
     .from("subscriptions")
     .upsert(
@@ -34,8 +36,8 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
         user_id: sub.metadata?.user_id ?? null,
         stripe_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
         stripe_subscription_id: sub.id,
-        stripe_price_id: item?.price.id ?? null,
-        status: mapStatus(sub.status),
+        stripe_price_id: priceId,
+        status,
         current_period_start: toIso(item?.current_period_start),
         current_period_end: toIso(item?.current_period_end),
         cancel_at_period_end: sub.cancel_at_period_end,
@@ -44,6 +46,20 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
       },
       { onConflict: "organization_id" },
     );
+
+  // Featured plan controls the org's `featured` placement. We only touch the
+  // flag for the Featured price, so admin-set editorial featuring on Pro/Free
+  // orgs is never clobbered: active Featured → true, canceled Featured → false.
+  if (isFeaturedPriceId(priceId)) {
+    const active = status === "active" || status === "trialing";
+    await supabase.from("organizations").update({ featured: active }).eq("id", orgId);
+  }
+}
+
+/** True when the price id is the paid Featured placement plan. */
+export function isFeaturedPriceId(priceId: string | null | undefined): boolean {
+  const featured = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
+  return Boolean(featured && priceId && priceId === featured);
 }
 
 function mapStatus(s: Stripe.Subscription.Status): string {
