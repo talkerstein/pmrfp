@@ -6,8 +6,16 @@ import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
-import { getVendor } from "@/lib/data/directory";
+import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
+import { getVendor, listVendors } from "@/lib/data/directory";
 import { SITE } from "@/lib/site";
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const vendors = await listVendors();
+  return vendors.map((v) => ({ slug: v.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -37,6 +45,12 @@ export default async function VendorProfilePage({
 
   return (
     <Container className="py-10">
+      <JsonLd data={localBusinessSchema({ name: v.name, slug: v.slug, city: v.city, province: v.province, shortDescription: v.shortDescription, categories: v.categories })} />
+      <JsonLd data={breadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "Directory", path: "/directory" },
+        { name: v.name, path: `/directory/${v.slug}` },
+      ])} />
       <Link href="/directory" className="text-sm text-muted-foreground hover:text-foreground">
         ← Back to directory
       </Link>

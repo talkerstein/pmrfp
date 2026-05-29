@@ -4,7 +4,14 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/container";
 import { Markdown } from "@/components/public/markdown";
 import { CTASection } from "@/components/public/section";
-import { getResource } from "@/lib/data/resources";
+import { getResource, listResources } from "@/lib/data/resources";
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const resources = await listResources();
+  return resources.map((r) => ({ slug: r.slug }));
+}
 
 export async function generateMetadata({
   params,
