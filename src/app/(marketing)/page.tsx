@@ -1,17 +1,12 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Building,
   Building2,
   Check,
-  Factory,
-  FileSearch,
-  Home,
   LayoutGrid,
   Lock,
   Search,
   Send,
-  Store,
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
@@ -36,11 +31,11 @@ const PROBLEMS = [
 ];
 
 const PROPERTY_TYPES = [
-  { icon: Building2, name: "Condominiums", sub: "High-rise & low-rise", grad: "from-indigo to-indigo-500" },
-  { icon: Building, name: "Commercial Office", sub: "Towers & business parks", grad: "from-indigo-500 to-periwinkle" },
-  { icon: Store, name: "Retail Plazas", sub: "Strip malls & centres", grad: "from-periwinkle to-indigo-400" },
-  { icon: Home, name: "Apartments", sub: "Multi-residential", grad: "from-indigo to-periwinkle" },
-  { icon: Factory, name: "Industrial", sub: "Warehouse & logistics", grad: "from-indigo-700 to-indigo-500" },
+  { name: "Condominiums", sub: "High-rise & low-rise", img: "/images/property-condominium.jpg", grad: "from-indigo to-indigo-500" },
+  { name: "Commercial Office", sub: "Towers & business parks", img: "/images/property-office.jpg", grad: "from-indigo-500 to-periwinkle" },
+  { name: "Retail Plazas", sub: "Strip malls & centres", img: "/images/property-retail.jpg", grad: "from-periwinkle to-indigo-400" },
+  { name: "Apartments", sub: "Multi-residential", img: "/images/property-apartment.jpg", grad: "from-indigo to-periwinkle" },
+  { name: "Industrial", sub: "Warehouse & logistics", img: "/images/property-industrial.jpg", grad: "from-indigo-700 to-indigo-500" },
 ];
 
 const STEPS = [
@@ -266,16 +261,23 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="mt-11 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {PROPERTY_TYPES.map(({ icon: Icon, name, sub, grad }) => (
+            {PROPERTY_TYPES.map(({ name, sub, img, grad }) => (
               <div
                 key={name}
                 className={cn(
-                  "relative flex aspect-[3/4] flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-white shadow-sm transition-transform hover:-translate-y-1.5",
+                  "group relative flex aspect-[3/4] flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br text-white shadow-sm transition-transform hover:-translate-y-1.5",
                   grad,
                 )}
               >
-                <Icon className="absolute right-4 top-4 size-9 text-white/20" strokeWidth={1.5} />
-                <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img}
+                  alt={`${name} — commercial property`}
+                  loading="lazy"
+                  className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-indigo/90 via-indigo/35 to-transparent" />
+                <div className="relative p-5">
                   <div className="font-semibold">{name}</div>
                   <div className="mt-1 font-mono text-[11px] text-teal-300">{sub}</div>
                 </div>
@@ -422,8 +424,15 @@ export default async function HomePage() {
         <Container className="grid gap-6 py-20 lg:grid-cols-2">
           {/* Trades */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            <div className="relative flex h-44 items-end overflow-hidden bg-gradient-to-br from-indigo to-indigo-500 p-6">
-              <Building2 className="absolute -right-4 -top-4 size-32 text-white/10" strokeWidth={1} />
+            <div className="relative flex h-44 items-end overflow-hidden bg-indigo p-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/audience-trades.jpg"
+                alt="Trade contractor on a commercial job site"
+                loading="lazy"
+                className="absolute inset-0 size-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/60 to-indigo/25" />
               <span className="relative font-mono text-[11px] uppercase tracking-wide text-teal-300">
                 For trade companies
               </span>
@@ -451,8 +460,15 @@ export default async function HomePage() {
 
           {/* PMs */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            <div className="relative flex h-44 items-end overflow-hidden bg-gradient-to-br from-periwinkle to-indigo-400 p-6">
-              <FileSearch className="absolute -right-4 -top-4 size-32 text-white/10" strokeWidth={1} />
+            <div className="relative flex h-44 items-end overflow-hidden bg-indigo p-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/audience-pm.jpg"
+                alt="Property manager reviewing a building portfolio"
+                loading="lazy"
+                className="absolute inset-0 size-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/60 to-indigo/25" />
               <span className="relative font-mono text-[11px] uppercase tracking-wide text-teal-300">
                 For property managers, builders &amp; owners
               </span>
