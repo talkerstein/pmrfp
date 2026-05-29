@@ -34,6 +34,7 @@ const PRO_FEATURES = [
   "Express interest",
   "Matching alerts",
   "Priority placement",
+  "Verified vendor badge for your website",
 ];
 
 const FEATURED_FEATURES = [

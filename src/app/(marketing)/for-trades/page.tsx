@@ -8,6 +8,8 @@ import {
   Send,
   IdCard,
   CheckCircle2,
+  BadgeCheck,
+  ArrowRight,
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import {
@@ -62,6 +64,11 @@ const INCLUDED = [
     icon: BellRing,
     title: "Matching alerts",
     body: "Get notified when new opportunities match your services so you never miss a fit.",
+  },
+  {
+    icon: BadgeCheck,
+    title: "Verified vendor badge",
+    body: "Embed a PMRFP badge on your own website that links back to your profile — instant third-party credibility and a quality backlink for your SEO.",
   },
 ];
 
@@ -173,6 +180,23 @@ export default function ForTradesPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Verified badge callout */}
+        <div className="mt-8 flex flex-col items-start gap-4 rounded-xl border border-teal-300 bg-teal-50 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <BadgeCheck className="mt-0.5 size-6 shrink-0 text-teal-600" />
+            <div>
+              <h3 className="font-semibold text-indigo">Show you&apos;re a verified {SITE.name} vendor</h3>
+              <p className="mt-1 text-sm leading-relaxed text-teal-700">
+                Grab a copy-paste badge for your website that links back to your profile —
+                credibility for visitors and a backlink for your search ranking.
+              </p>
+            </div>
+          </div>
+          <Link href="/badge" className={buttonVariants({ variant: "accent" })}>
+            Get your badge <ArrowRight className="size-4" />
+          </Link>
         </div>
       </Section>
 

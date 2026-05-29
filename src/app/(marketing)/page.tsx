@@ -63,6 +63,7 @@ const PRICE_FEATURES = [
   "Save opportunities",
   "Express interest in RFPs",
   "Matching opportunity alerts",
+  "Verified vendor badge for your website",
   `Lock in $${PRICING.proAnnual}/yr before it rises to $399`,
 ];
 
