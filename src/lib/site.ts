@@ -108,6 +108,7 @@ export const FOOTER_COLS = [
     heading: "Resources",
     links: [
       { label: "Resource Hub", href: "/resources" },
+      { label: "Grow Your Business", href: "/resources/grow" },
       { label: "Vendor Badge", href: "/badge" },
       { label: "Contact", href: "/contact" },
       { label: "Sign In", href: "/sign-in" },

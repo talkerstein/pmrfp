@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { EmptyState } from "@/components/public/empty-state";
+import { buttonVariants } from "@/components/ui/button";
 import { listResources } from "@/lib/data/resources";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Resources — Commercial Property RFP & Vendor Guides",
@@ -22,6 +24,28 @@ export default async function ResourcesPage() {
       <p className="mt-3 max-w-2xl text-muted-foreground">
         Practical guidance on winning and running commercial property work in Canada.
       </p>
+
+      {/* Done-for-you feature */}
+      <Link
+        href="/resources/grow"
+        className="group mt-8 flex flex-col items-start gap-4 overflow-hidden rounded-2xl bg-indigo p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8"
+      >
+        <div className="max-w-2xl">
+          <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
+            <Sparkles className="size-3.5" /> Done for you
+          </span>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">
+            Opening a business — or ready to look the part?
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-indigo-100/75">
+            Get your trade business online — branding, a website, your Google profile, and a
+            standout listing, handled for you.
+          </p>
+        </div>
+        <span className={cn(buttonVariants({ variant: "accent" }), "shrink-0")}>
+          Learn more <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </Link>
 
       {resources.length === 0 ? (
         <div className="mt-8">
