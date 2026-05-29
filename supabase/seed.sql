@@ -58,7 +58,26 @@ values
    'Commercial glass replacement, storefront, and window repair.',
    'Vista Glass provides commercial storefront glazing, emergency board-up, and window replacement for offices and retail.',
    7,'1-10','Fully insured','Active','true','false','false','true',
-   'approved',62,'request_intro','active')
+   'approved',62,'request_intro','active'),
+  -- ── Ported from the original pmrfp.com (legacy member companies) ──
+  ('Toronto Painters','toronto-painters','trade_company','Toronto','Ontario','Canada',
+   null,null,null,
+   'Commercial & residential painting — interiors, common areas, and exterior repaints.',
+   'Toronto Painters delivers interior and exterior painting for condominiums, apartments, offices, and retail spaces across the GTA, including common-area repaints and occupied-building scheduling.',
+   12,'11-50','Fully insured','Active','false','true','false','true',
+   'approved',70,'request_intro','active'),
+  ('Northview Windows and Doors','northview-windows-doors','trade_company','Toronto','Ontario','Canada',
+   null,null,null,
+   'Window and door supply, replacement, and repair for residential & commercial buildings.',
+   'Northview Windows and Doors handles window and door replacement, storefront glazing, and repairs for condominiums, apartments, and commercial properties across the Greater Toronto Area.',
+   15,'11-50','Fully insured','Active','false','true','false','true',
+   'approved',72,'request_intro','active'),
+  ('Maple Electric Supply','maple-electric-supply','supplier','Toronto','Ontario','Canada',
+   null,null,null,
+   'Electrical supply distributor for contractors — fixtures, panels, wire & lighting.',
+   'Maple Electric Supply distributes electrical materials, lighting, panels, and wire to contractors and property-maintenance teams across the GTA, with contractor accounts and job-site delivery.',
+   20,'11-50','Fully insured','Active','false','true','false','true',
+   'approved',75,'show_contact','active')
 on conflict (slug) do nothing;
 
 -- ── Link orgs → categories ──────────────────────────────────────────
@@ -72,7 +91,10 @@ where (o.slug,c.slug) in (
   ('gta-snowpro','snow-removal'),('gta-snowpro','landscaping'),
   ('apex-asphalt-concrete','concrete-and-asphalt'),('apex-asphalt-concrete','parking-lot-maintenance'),
   ('guardian-fire-safety','fire-safety'),('guardian-fire-safety','security-systems'),
-  ('vista-glass-windows','glass-and-windows')
+  ('vista-glass-windows','glass-and-windows'),
+  ('toronto-painters','painting'),('toronto-painters','drywall'),
+  ('northview-windows-doors','glass-and-windows'),('northview-windows-doors','garage-doors'),
+  ('maple-electric-supply','electrical'),('maple-electric-supply','lighting')
 ) on conflict do nothing;
 
 -- ── Link orgs → regions ─────────────────────────────────────────────
@@ -100,7 +122,10 @@ where (o.slug,p.slug) in (
   ('gta-snowpro','retail-plaza'),('gta-snowpro','condominium'),
   ('apex-asphalt-concrete','retail-plaza'),('apex-asphalt-concrete','industrial-building'),
   ('guardian-fire-safety','institutional'),('guardian-fire-safety','commercial-office'),
-  ('vista-glass-windows','commercial-office'),('vista-glass-windows','retail-plaza')
+  ('vista-glass-windows','commercial-office'),('vista-glass-windows','retail-plaza'),
+  ('toronto-painters','condominium'),('toronto-painters','apartment-building'),('toronto-painters','commercial-office'),
+  ('northview-windows-doors','condominium'),('northview-windows-doors','apartment-building'),('northview-windows-doors','commercial-office'),
+  ('maple-electric-supply','commercial-office'),('maple-electric-supply','apartment-building')
 ) on conflict do nothing;
 
 -- ── 5 sample RFPs (§21) — published, admin-seeded, demo ─────────────
@@ -143,7 +168,57 @@ values
    'Insured janitorial company, WSIB, supervised staff, references for multi-residential cleaning.',
    (select id from public.property_types where slug='rental-residential'),'Hamilton','Ontario',
    (select id from public.regions where slug='hamilton'),
-   null,null,false,'2026-08-20','pmrfp_mediated','admin_seeded','published',true, now())
+   null,null,false,'2026-08-20','pmrfp_mediated','admin_seeded','published',true, now()),
+  -- ── Ported from the original pmrfp.com (legacy opportunities, refreshed) ──
+  ('Exterior Wall Modification — Commercial Building','exterior-wall-modification-commercial',
+   'Structural exterior wall modification and re-cladding for a commercial building in Québec.',
+   'Modification of an existing exterior wall assembly including framing changes, cladding, weatherproofing, and restoration of the building envelope to current code.',
+   'Licensed contractor (RBQ), liability insurance, CNESST registration, and experience with commercial building-envelope work.',
+   (select id from public.property_types where slug='commercial-office'),'Montréal','Quebec',
+   (select id from public.regions where slug='montreal'),
+   null,null,false,'2026-08-10','pmrfp_mediated','admin_seeded','published',true, now()),
+  ('Emergency Exit Extension & RBQ Compliance','emergency-exit-extension-rbq-compliance',
+   'Emergency exit extension and code-compliance work to meet Québec RBQ standards.',
+   'Construction of an extended emergency egress including framing, fire-rated assemblies, signage, and full compliance documentation to RBQ standards.',
+   'RBQ licence, fire-code experience, liability insurance, CNESST, and references for life-safety compliance work.',
+   (select id from public.property_types where slug='commercial-office'),'Québec City','Quebec',
+   (select id from public.regions where slug='montreal'),
+   null,null,false,'2026-07-28','pmrfp_mediated','admin_seeded','published',true, now()),
+  ('Flooring, Paint & Ceiling Renovation','flooring-paint-ceiling-renovation',
+   'Interior finishing — flooring, painting, and ceiling renovation for a Toronto residential property.',
+   'Removal and replacement of flooring, a full repaint, and ceiling repair/replacement across a multi-unit interior renovation.',
+   'Insured interior-finishing contractor, WSIB, dust-control plan, and references for occupied-building renovations.',
+   (select id from public.property_types where slug='apartment-building'),'Toronto','Ontario',
+   (select id from public.regions where slug='toronto'),
+   null,null,false,'2026-08-05','pmrfp_mediated','admin_seeded','published',true, now()),
+  ('HVAC System Replacement','hvac-system-replacement-montreal',
+   'Full HVAC system replacement for a commercial property in Montréal.',
+   'Removal of end-of-life HVAC equipment and supply/installation of new rooftop units, ductwork modifications, controls, and commissioning.',
+   'Licensed HVAC contractor (RBQ/CMMTQ), liability insurance, CNESST, and references for commercial HVAC replacements.',
+   (select id from public.property_types where slug='commercial-office'),'Montréal','Quebec',
+   (select id from public.regions where slug='montreal'),
+   40000,90000,true,'2026-09-05','public_contact','admin_seeded','published',true, now()),
+  ('Kitchen & Bathroom Renovations','kitchen-bathroom-renovations',
+   'Kitchen and bathroom renovations across units in a Toronto residential property.',
+   'Multi-unit kitchen and bathroom renovations including cabinetry, plumbing fixtures, tiling, and finishing for a residential building.',
+   'Insured general contractor, WSIB, plumbing sub-trade coordination, and references for multi-unit residential renovations.',
+   (select id from public.property_types where slug='rental-residential'),'Toronto','Ontario',
+   (select id from public.regions where slug='toronto'),
+   null,null,false,'2026-08-18','pmrfp_mediated','admin_seeded','published',true, now()),
+  ('Mold Remediation Specialist','mold-remediation-specialist',
+   'Mold assessment and remediation for a residential building near Montréal (Boisbriand).',
+   'Inspection, containment, removal, and remediation of mold-affected areas, with air-quality testing and clearance documentation.',
+   'Certified mold-remediation specialist, environmental/hazmat protocols, liability insurance, CNESST, and clearance reporting.',
+   (select id from public.property_types where slug='apartment-building'),'Boisbriand','Quebec',
+   (select id from public.regions where slug='montreal'),
+   null,null,false,'2026-07-22','anonymous_until_interest_approved','admin_seeded','published',true, now()),
+  ('Electrical Service Contractor','electrical-service-contractor-gta',
+   'Licensed electrician needed for service and repair work across a GTA property portfolio.',
+   'On-call electrical service, repairs, fixture and panel work, and code corrections across a portfolio of commercial and residential properties.',
+   'ECRA/ESA licensed electrician, liability insurance, WSIB, and availability for scheduled and emergency calls.',
+   (select id from public.property_types where slug='multi-site-portfolio'),'Toronto','Ontario',
+   (select id from public.regions where slug='greater-toronto-area'),
+   null,null,false,'2026-07-20','pmrfp_mediated','admin_seeded','published',true, now())
 on conflict (slug) do nothing;
 
 -- ── Link RFPs → categories ──────────────────────────────────────────
@@ -154,7 +229,14 @@ where (r.slug,c.slug) in (
   ('commercial-plaza-snow-removal-services','snow-removal'),
   ('apartment-building-hvac-preventive-maintenance','hvac'),
   ('retail-property-parking-lot-asphalt-repair','concrete-and-asphalt'),
-  ('multi-residential-cleaning-services-contract','cleaning-janitorial')
+  ('multi-residential-cleaning-services-contract','cleaning-janitorial'),
+  ('exterior-wall-modification-commercial','masonry'),
+  ('emergency-exit-extension-rbq-compliance','general-contracting'),
+  ('flooring-paint-ceiling-renovation','flooring'),
+  ('hvac-system-replacement-montreal','hvac'),
+  ('kitchen-bathroom-renovations','general-contracting'),
+  ('mold-remediation-specialist','mold-remediation'),
+  ('electrical-service-contractor-gta','electrical')
 ) on conflict do nothing;
 
 -- ── Resources (published, demo) ─────────────────────────────────────
