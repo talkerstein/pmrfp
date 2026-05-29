@@ -34,8 +34,22 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Touch the user to refresh tokens. Route-protection redirects land here in Phase 3.
-  await supabase.auth.getUser();
+  // Refresh tokens + read the current user.
+  const { data } = await supabase.auth.getUser();
+
+  // Protect authenticated areas. Page-level requireRole() enforces the
+  // specific role; here we just bounce logged-out users to sign-in.
+  const path = request.nextUrl.pathname;
+  const isProtected =
+    path.startsWith("/dashboard") ||
+    path.startsWith("/pm-dashboard") ||
+    path.startsWith("/admin");
+  if (isProtected && !data.user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
 
   return response;
 }

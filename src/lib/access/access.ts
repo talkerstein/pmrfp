@@ -78,6 +78,7 @@ export async function hasActiveTradeAccess(): Promise<boolean> {
 
 /** Require a logged-in user; otherwise redirect to sign-in. */
 export async function requireUser(): Promise<SessionContext> {
+  if (!isSupabaseConfigured()) return demoSession("trade");
   const session = await getSession();
   if (!session) redirect("/sign-in");
   if (session.profile.status === "suspended") redirect("/suspended");
@@ -86,11 +87,58 @@ export async function requireUser(): Promise<SessionContext> {
 
 /** Require one of the given roles; otherwise redirect appropriately. */
 export async function requireRole(roles: UserRole[]): Promise<SessionContext> {
+  // Demo mode: no auth backend — return a synthetic session so the
+  // authenticated areas are previewable. Live mode enforces real roles.
+  if (!isSupabaseConfigured()) return demoSession(roles[0]);
   const session = await requireUser();
   if (!roles.includes(session.profile.primary_role)) {
     redirect(roleHome(session.profile.primary_role));
   }
   return session;
+}
+
+/** Are we running without a Supabase backend (demo preview)? */
+export function isDemoMode(): boolean {
+  return !isSupabaseConfigured();
+}
+
+/** Synthetic session for demo-mode previews of the authenticated areas. */
+function demoSession(role: UserRole): SessionContext {
+  const now = new Date().toISOString();
+  const isTrade = role === "trade";
+  return {
+    userId: "demo-user",
+    profile: {
+      id: "demo-user",
+      email: "demo@pmrfp.com",
+      full_name: "Demo User",
+      phone: null,
+      avatar_url: null,
+      primary_role: role,
+      onboarding_completed: true,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    organization: isTrade || role === "property_manager"
+      ? {
+          id: "demo-org",
+          name: isTrade ? "Northline Electrical Ltd." : "Demo Property Group",
+          slug: isTrade ? "northline-electrical" : "demo-property-group",
+          organization_type: isTrade ? "trade_company" : "property_manager",
+          website: null, phone: null, email: "demo@pmrfp.com",
+          logo_url: null, address_line_1: null, address_line_2: null,
+          city: "Toronto", province: "Ontario", postal_code: null, country: "Canada",
+          short_description: null, full_description: null, years_in_business: 18,
+          employee_count_range: "11-50", insurance_status: "Fully insured", wsib_status: "Active",
+          emergency_service: true, verified: true, featured: true, is_demo: true,
+          profile_status: "approved", profile_completion_score: 88,
+          public_contact_visibility: "request_intro", status: "active",
+          created_at: now, updated_at: now,
+        }
+      : null,
+    hasTradeAccess: isTrade,
+  };
 }
 
 export function isAdminRole(role: UserRole): boolean {
