@@ -202,3 +202,35 @@
   .text-balance { text-wrap: balance; }
   .text-pretty { text-wrap: pretty; }
 }
+
+@layer components {
+  /* Subtle engineering-grid texture for dark hero / CTA bands.
+     Masked toward the top-right so copy on the left stays clean. */
+  .grid-tex { position: relative; }
+  .grid-tex::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(var(--grid-color, rgba(255, 255, 255, 0.05)) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color, rgba(255, 255, 255, 0.05)) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(120% 92% at 78% 8%, #000 32%, transparent 80%);
+    mask-image: radial-gradient(120% 92% at 78% 8%, #000 32%, transparent 80%);
+    pointer-events: none;
+  }
+  .grid-tex-center::before {
+    -webkit-mask-image: radial-gradient(90% 90% at 50% 50%, #000 30%, transparent 78%);
+    mask-image: radial-gradient(90% 90% at 50% 50%, #000 30%, transparent 78%);
+  }
+
+  /* Hero product mock — angled browser card */
+  .browser-mock {
+    transform: perspective(1700px) rotateY(-8deg) rotateX(2deg);
+    transform-origin: left center;
+  }
+  @media (max-width: 1024px) {
+    .browser-mock { transform: none; }
+  }
+}

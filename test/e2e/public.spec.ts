@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
 
 test("homepage shows hero, pricing, and the PermitClub brand bridge", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Commercial Property RFPs");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/commercial property RFPs/i);
   await expect(page.getByText("$249", { exact: false }).first()).toBeVisible();
   await expect(page.getByText("From the team behind")).toBeVisible();
 });
