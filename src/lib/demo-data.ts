@@ -194,6 +194,25 @@ export const DEMO_VENDORS: DemoVendor[] = [
     website: "https://example.com", email: "contact@example.com", phone: "(905) 555-0177",
     categories: ["glass-and-windows"], regions: ["markham", "toronto"], propertyTypes: ["commercial-office", "retail-plaza"],
   },
+  // ── Ported from the original pmrfp.com (legacy member companies) ──
+  {
+    slug: "toronto-painters", name: "Toronto Painters", city: "Toronto", province: "Ontario",
+    shortDescription: "Commercial & residential painting — interiors, common areas, and exterior repaints.",
+    fullDescription: "Toronto Painters delivers interior and exterior painting for condominiums, apartments, offices, and retail spaces across the GTA, including common-area repaints and occupied-building scheduling.",
+    yearsInBusiness: 12, employeeCountRange: "11-50", insuranceStatus: "Fully insured", wsibStatus: "Active",
+    emergencyService: false, verified: true, featured: false, contactVisibility: "request_intro",
+    website: null, email: null, phone: null,
+    categories: ["painting", "drywall"], regions: ["toronto", "north-york", "greater-toronto-area"], propertyTypes: ["condominium", "apartment-building", "commercial-office"],
+  },
+  {
+    slug: "northview-windows-doors", name: "Northview Windows and Doors", city: "Toronto", province: "Ontario",
+    shortDescription: "Window and door supply, replacement, and repair for residential & commercial buildings.",
+    fullDescription: "Northview Windows and Doors handles window and door replacement, storefront glazing, and repairs for condominiums, apartments, and commercial properties across the Greater Toronto Area.",
+    yearsInBusiness: 15, employeeCountRange: "11-50", insuranceStatus: "Fully insured", wsibStatus: "Active",
+    emergencyService: false, verified: true, featured: false, contactVisibility: "request_intro",
+    website: null, email: null, phone: null,
+    categories: ["glass-and-windows", "garage-doors"], regions: ["toronto", "greater-toronto-area", "markham"], propertyTypes: ["condominium", "apartment-building", "commercial-office"],
+  },
 ];
 
 export const DEMO_SUPPLIERS: DemoVendor[] = [
@@ -232,6 +251,15 @@ export const DEMO_SUPPLIERS: DemoVendor[] = [
     emergencyService: false, verified: true, featured: false, contactVisibility: "show_contact",
     website: "https://example.com", email: "sales@example.com", phone: "(905) 555-0277",
     categories: ["cleaning-janitorial", "waste-removal"], regions: ["hamilton", "burlington"], propertyTypes: ["rental-residential", "commercial-office"],
+  },
+  {
+    slug: "maple-electric-supply", name: "Maple Electric Supply", city: "Toronto", province: "Ontario",
+    shortDescription: "Electrical supply distributor for contractors — fixtures, panels, wire & lighting.",
+    fullDescription: "Maple Electric Supply distributes electrical materials, lighting, panels, and wire to contractors and property-maintenance teams across the GTA, with contractor accounts and job-site delivery.",
+    yearsInBusiness: 20, employeeCountRange: "11-50", insuranceStatus: "Fully insured", wsibStatus: "Active",
+    emergencyService: false, verified: true, featured: false, contactVisibility: "show_contact",
+    website: null, email: null, phone: null,
+    categories: ["electrical", "lighting"], regions: ["toronto", "greater-toronto-area"], propertyTypes: ["commercial-office", "apartment-building"],
   },
 ];
 
@@ -293,6 +321,63 @@ export const DEMO_RFPS: DemoRfp[] = [
     requirements: "Insured janitorial company, WSIB, supervised staff, references for multi-residential cleaning.",
     category: "cleaning-janitorial", propertyType: "rental-residential", region: "hamilton", city: "Hamilton", province: "Ontario",
     deadline: "2026-08-20", budgetMin: null, budgetMax: null, budgetPublic: false, contactVisibility: "pmrfp_mediated",
+  },
+  // ── Ported from the original pmrfp.com (legacy opportunities, refreshed) ──
+  {
+    slug: "exterior-wall-modification-commercial", title: "Exterior Wall Modification — Commercial Building",
+    summary: "Structural exterior wall modification and re-cladding for a commercial building in Québec.",
+    scope: "Modification of an existing exterior wall assembly including framing changes, cladding, weatherproofing, and restoration of the building envelope to current code.",
+    requirements: "Licensed contractor (RBQ), liability insurance, CNESST registration, and experience with commercial building-envelope work.",
+    category: "masonry", propertyType: "commercial-office", region: "montreal", city: "Montréal", province: "Quebec",
+    deadline: "2026-08-10", budgetMin: null, budgetMax: null, budgetPublic: false, contactVisibility: "pmrfp_mediated",
+  },
+  {
+    slug: "emergency-exit-extension-rbq-compliance", title: "Emergency Exit Extension & RBQ Compliance",
+    summary: "Emergency exit extension and code-compliance work to meet Québec RBQ standards.",
+    scope: "Construction of an extended emergency egress including framing, fire-rated assemblies, signage, and full compliance documentation to RBQ standards.",
+    requirements: "RBQ licence, fire-code experience, liability insurance, CNESST, and references for life-safety compliance work.",
+    category: "general-contracting", propertyType: "commercial-office", region: "montreal", city: "Québec City", province: "Quebec",
+    deadline: "2026-07-28", budgetMin: null, budgetMax: null, budgetPublic: false, contactVisibility: "pmrfp_mediated",
+  },
+  {
+    slug: "flooring-paint-ceiling-renovation", title: "Flooring, Paint & Ceiling Renovation",
+    summary: "Interior finishing — flooring, painting, and ceiling renovation for a Toronto residential property.",
+    scope: "Removal and replacement of flooring, a full repaint, and ceiling repair/replacement across a multi-unit interior renovation.",
+    requirements: "Insured interior-finishing contractor, WSIB, dust-control plan, and references for occupied-building renovations.",
+    category: "flooring", propertyType: "apartment-building", region: "toronto", city: "Toronto", province: "Ontario",
+    deadline: "2026-08-05", budgetMin: null, budgetMax: null, budgetPublic: false, contactVisibility: "pmrfp_mediated",
+  },
+  {
+    slug: "hvac-system-replacement-montreal", title: "HVAC System Replacement",
+    summary: "Full HVAC system replacement for a commercial property in Montréal.",
+    scope: "Removal of end-of-life HVAC equipment and supply/installation of new rooftop units, ductwork modifications, controls, and commissioning.",
+    requirements: "Licensed HVAC contractor (RBQ/CMMTQ), liability insurance, CNESST, and references for commercial HVAC replacements.",
+    category: "hvac", propertyType: "commercial-office", region: "montreal", city: "Montréal", province: "Quebec",
+    deadline: "2026-09-05", budgetMin: 40000, budgetMax: 90000, budgetPublic: true, contactVisibility: "public_contact",
+  },
+  {
+    slug: "kitchen-bathroom-renovations", title: "Kitchen & Bathroom Renovations",
+    summary: "Kitchen and bathroom renovations across units in a Toronto residential property.",
+    scope: "Multi-unit kitchen and bathroom renovations including cabinetry, plumbing fixtures, tiling, and finishing for a residential building.",
+    requirements: "Insured general contractor, WSIB, plumbing sub-trade coordination, and references for multi-unit residential renovations.",
+    category: "general-contracting", propertyType: "rental-residential", region: "toronto", city: "Toronto", province: "Ontario",
+    deadline: "2026-08-18", budgetMin: null, budgetMax: null, budgetPublic: false, contactVisibility: "pmrfp_mediated",
+  },
+  {
+    slug: "mold-remediation-specialist", title: "Mold Remediation Specialist",
+    summary: "Mold assessment and remediation for a residential building near Montréal (Boisbriand).",
+    scope: "Inspection, containment, removal, and remediation of mold-affected areas, with air-quality testing and clearance documentation.",
+    requirements: "Certified mold-remediation specialist, environmental/hazmat protocols, liability insurance, CNESST, and clearance reporting.",
+    category: "restoration", propertyType: "apartment-building", region: "montreal", city: "Boisbriand", province: "Quebec",
+    deadline: "2026-07-22", budgetMin: null, budgetMax: null, budgetPublic: false, contactVisibility: "anonymous_until_interest_approved",
+  },
+  {
+    slug: "electrical-service-contractor-gta", title: "Electrical Service Contractor",
+    summary: "Licensed electrician needed for service and repair work across a GTA property portfolio.",
+    scope: "On-call electrical service, repairs, fixture and panel work, and code corrections across a portfolio of commercial and residential properties.",
+    requirements: "ECRA/ESA licensed electrician, liability insurance, WSIB, and availability for scheduled and emergency calls.",
+    category: "electrical", propertyType: "multi-site-portfolio", region: "greater-toronto-area", city: "Toronto", province: "Ontario",
+    deadline: "2026-07-20", budgetMin: null, budgetMax: null, budgetPublic: false, contactVisibility: "pmrfp_mediated",
   },
 ];
 

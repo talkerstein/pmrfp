@@ -243,3 +243,57 @@ describe("reference data loaded", () => {
     expect(p.length).toBe(21);
   });
 });
+
+describe("privilege-escalation hardening (0006)", () => {
+  it("blocks a non-admin from promoting their own role", async () => {
+    await expect(
+      asUser(db, ids.unpaidTrade, () =>
+        rows(`update users_profile set primary_role='super_admin' where id=$1`, [ids.unpaidTrade])),
+    ).rejects.toThrow();
+    const r = await rows<{ primary_role: string }>(
+      `select primary_role from users_profile where id=$1`,
+      [ids.unpaidTrade],
+    );
+    expect(r[0].primary_role).toBe("trade");
+  });
+
+  it("blocks a member from self-approving their org but allows submit-for-review", async () => {
+    const uid = randomUUID();
+    const oid = randomUUID();
+    await db.query(
+      `insert into auth.users (id, email, raw_user_meta_data) values ($1,$2,$3)`,
+      [uid, "selftest@example.com", JSON.stringify({ full_name: "Self", primary_role: "trade" })],
+    );
+    await db.query(
+      `insert into organizations (id, name, slug, organization_type, profile_status)
+       values ($1,'Self Co','self-co','trade_company','draft')`,
+      [oid],
+    );
+    await db.query(
+      `insert into organization_members (organization_id, user_id, role) values ($1,$2,'owner')`,
+      [oid, uid],
+    );
+
+    // Cannot jump straight to approved.
+    await expect(
+      asUser(db, uid, () =>
+        rows(`update organizations set profile_status='approved' where id=$1`, [oid])),
+    ).rejects.toThrow();
+
+    // Can submit for review.
+    await asUser(db, uid, () =>
+      rows(`update organizations set profile_status='pending_review' where id=$1`, [oid]));
+    const r = await rows<{ profile_status: string }>(
+      `select profile_status from organizations where id=$1`,
+      [oid],
+    );
+    expect(r[0].profile_status).toBe("pending_review");
+  });
+
+  it("blocks a member from self-verifying / featuring their org", async () => {
+    await expect(
+      asUser(db, ids.unpaidTrade, () =>
+        rows(`update organizations set verified=true where id=$1`, [ids.unpaidOrg])),
+    ).rejects.toThrow();
+  });
+});

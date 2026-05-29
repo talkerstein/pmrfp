@@ -49,7 +49,11 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/onboarding`,
     },
   });
-  if (error) return { error: error.message };
+  if (error) {
+    // Avoid leaking whether an email is already registered (account enumeration).
+    console.error("[signUp]", error.message);
+    return { error: "We couldn't complete your sign-up. Please try again." };
+  }
   await sendWelcomeEmail(parsed.data.email, parsed.data.fullName);
   redirect("/onboarding");
 }

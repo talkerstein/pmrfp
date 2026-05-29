@@ -20,6 +20,7 @@ const MIGRATIONS = [
   "20260529000002_rls.sql",
   "20260529000004_reference_data.sql",
   "20260529000005_suppliers.sql",
+  "20260529000006_security_hardening.sql",
 ];
 
 const SHIM = `
