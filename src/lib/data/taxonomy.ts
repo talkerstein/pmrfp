@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   DEMO_CATEGORIES,
@@ -14,7 +14,7 @@ export async function getCategories(): Promise<CategoryOption[]> {
   if (!isSupabaseConfigured()) {
     return DEMO_CATEGORIES.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }));
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const { data } = await supabase
     .from("trade_categories")
     .select("slug,name,icon")
@@ -27,7 +27,7 @@ export async function getRegions(): Promise<RegionOption[]> {
   if (!isSupabaseConfigured()) {
     return DEMO_REGIONS.map((r) => ({ slug: r.slug, name: r.name, province: r.province }));
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const { data } = await supabase
     .from("regions")
     .select("slug,name,province")
@@ -40,7 +40,7 @@ export async function getPropertyTypes(): Promise<PropertyTypeOption[]> {
   if (!isSupabaseConfigured()) {
     return DEMO_PROPERTY_TYPES.map((p) => ({ slug: p.slug, name: p.name }));
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const { data } = await supabase
     .from("property_types")
     .select("slug,name")

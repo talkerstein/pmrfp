@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DEMO_RESOURCES } from "@/lib/demo-data";
 import type { ResourceDetail, ResourceItem } from "@/lib/data/types";
@@ -12,7 +12,7 @@ export async function listResources(): Promise<ResourceItem[]> {
       publishedAt: r.publishedAt,
     }));
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const { data } = await supabase
     .from("resources")
     .select("slug,title,excerpt,published_at")
@@ -38,7 +38,7 @@ export async function getResource(slug: string): Promise<ResourceDetail | null> 
         }
       : null;
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const { data } = await supabase
     .from("resources")
     .select("slug,title,excerpt,body,seo_title,meta_description,published_at,status")

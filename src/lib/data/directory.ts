@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   DEMO_SUPPLIERS,
@@ -80,7 +80,7 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     const source = orgType === "supplier" ? DEMO_SUPPLIERS : DEMO_VENDORS;
     return applyDemoFilters(source, filters).map(demoToListItem);
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   let query = supabase
     .from("organizations")
     .select(ORG_SELECT)
@@ -135,7 +135,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
       phone: showContact ? v.phone : null,
     };
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const { data } = await supabase
     .from("organizations")
     .select(ORG_SELECT)

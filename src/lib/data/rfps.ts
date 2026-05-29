@@ -1,4 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   DEMO_RFPS,
@@ -58,7 +60,7 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     return out.map(demoToList);
   }
 
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const [{ data: rfps }, regionMap, propMap] = await Promise.all([
     supabase.from("rfp_public").select("*"),
     idNameMap(supabase, "regions"),
@@ -110,7 +112,7 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     const r = DEMO_RFPS.find((x) => x.slug === slug);
     return r ? demoToList(r) : null;
   }
-  const supabase = await createClient();
+  const supabase = createReadClient();
   const { data } = await supabase.from("rfp_public").select("*").eq("slug", slug).maybeSingle();
   const r = data as RfpPublicRow | null;
   if (!r) return null;
@@ -194,7 +196,7 @@ interface RfpFullRow extends RfpPublicRow {
 }
 
 async function idNameMap(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   table: "regions" | "property_types",
 ): Promise<Map<string, string>> {
   const { data } = await supabase.from(table).select("id,name");
@@ -204,7 +206,7 @@ async function idNameMap(
 }
 
 async function slugNameMap(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   table: "regions" | "property_types" | "trade_categories",
 ): Promise<Map<string, string>> {
   const { data } = await supabase.from(table).select("slug,name");
@@ -214,7 +216,7 @@ async function slugNameMap(
 }
 
 async function categoriesByRfp(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   rfpIds: string[],
 ): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();
