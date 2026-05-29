@@ -12,12 +12,12 @@ export function Section({
   children: React.ReactNode;
   className?: string;
   containerSize?: "default" | "narrow" | "wide";
-  tone?: "default" | "muted" | "navy";
+  tone?: "default" | "muted" | "indigo";
 }) {
   const tones = {
     default: "bg-background",
     muted: "bg-secondary/40",
-    navy: "bg-navy text-white",
+    indigo: "bg-indigo text-white",
   };
   return (
     <section className={cn(tones[tone], className)}>
@@ -66,14 +66,14 @@ export function CTASection({
   secondaryLabel?: string;
 }) {
   return (
-    <section className="border-t border-border bg-navy text-white">
+    <section className="border-t border-border bg-indigo text-white">
       <Container className="flex flex-col items-start gap-6 py-16 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white sm:text-3xl">{title}</h2>
-          {description && <p className="mt-2 max-w-xl text-slate-300">{description}</p>}
+          {description && <p className="mt-2 max-w-xl text-indigo-100/70">{description}</p>}
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link href={primaryHref} className={buttonVariants({ size: "lg", variant: "secondary" })}>
+          <Link href={primaryHref} className={buttonVariants({ size: "lg", variant: "accent" })}>
             {primaryLabel}
           </Link>
           {secondaryHref && secondaryLabel && (

@@ -51,8 +51,8 @@ export default async function HomePage() {
       <section className="border-b border-border bg-secondary/50">
         <Container className="flex flex-wrap items-center gap-x-8 gap-y-3 py-5">
           {STATS.map((s) => (
-            <span key={s} className="flex items-center gap-2 text-sm font-medium text-slate-ink">
-              <span className="size-1.5 rounded-full bg-gold-500" />
+            <span key={s} className="flex items-center gap-2 text-sm font-medium text-ink-2">
+              <span className="size-1.5 rounded-full bg-teal-500" />
               {s}
             </span>
           ))}
@@ -74,7 +74,7 @@ export default async function HomePage() {
             { icon: Send, t: "Missed follow-ups" },
           ].map(({ icon: Icon, t }) => (
             <div key={t} className="rounded-lg border border-border bg-card p-5">
-              <Icon className="size-5 text-gold-600" />
+              <Icon className="size-5 text-teal-600" />
               <p className="mt-3 text-sm font-medium">{t}</p>
             </div>
           ))}
@@ -91,7 +91,7 @@ export default async function HomePage() {
             { icon: Send, t: "Express Interest", d: "Signal interest on opportunities that match your services and track every submission." },
           ].map(({ icon: Icon, t, d }) => (
             <div key={t} className="rounded-lg border border-border bg-card p-6">
-              <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-gold-600">
+              <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-teal-600">
                 <Icon className="size-5" />
               </span>
               <h3 className="mt-4 text-lg font-semibold">{t}</h3>
@@ -144,7 +144,7 @@ export default async function HomePage() {
 
       {/* Pricing preview */}
       <Section tone="muted" containerSize="narrow">
-        <div className="rounded-2xl border border-gold-200 bg-card p-8 text-center">
+        <div className="rounded-2xl border border-teal-200 bg-card p-8 text-center">
           <Eyebrow>Early member pricing</Eyebrow>
           <p className="mt-4 text-4xl font-semibold">
             ${PRICING.proAnnual}

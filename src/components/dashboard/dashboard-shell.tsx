@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { Logo } from "@/components/logo";
 import { signOutAction } from "@/lib/auth/actions";
 import { SITE } from "@/lib/site";
 
 type NavItem = { href: string; label: string };
 
 /**
- * Shared authenticated shell: navy sidebar + content area.
+ * Shared authenticated shell: indigo sidebar + content area.
  * Used by the trade dashboard, PM dashboard, and admin (each passes its nav).
  */
 export function DashboardShell({
@@ -21,15 +22,10 @@ export function DashboardShell({
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar p-4 md:flex">
-        <Link href="/" className="mb-6 flex items-center gap-2 px-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-gold-500 text-[13px] font-bold tracking-tight text-navy">
-            PM
-          </span>
-          <span className="text-base font-semibold tracking-tight text-white">
-            {SITE.name}
-          </span>
+        <Link href="/" className="mb-6 flex items-center px-2" aria-label="PMRFP home">
+          <Logo className="text-teal-300" />
         </Link>
-        <div className="eyebrow mb-3 px-3 text-slate-500">{area}</div>
+        <div className="eyebrow mb-3 px-3 text-teal-300/60">{area}</div>
         <SidebarNav items={nav} />
       </aside>
 

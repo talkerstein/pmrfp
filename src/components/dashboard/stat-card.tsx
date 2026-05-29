@@ -12,7 +12,7 @@ export function StatCard({
   href?: string;
 }) {
   const inner = (
-    <div className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-gold-300">
+    <div className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-teal-300">
       <div className="eyebrow text-muted-foreground">{label}</div>
       <div className="mt-2 text-2xl font-semibold tracking-tight">{value}</div>
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
@@ -43,7 +43,7 @@ export function PageHeader({
 
 export function DemoBanner() {
   return (
-    <div className="mb-6 rounded-lg border border-dashed border-gold-300 bg-gold-50/60 p-3 text-sm text-muted-foreground">
+    <div className="mb-6 rounded-lg border border-dashed border-teal-300 bg-teal-50/60 p-3 text-sm text-muted-foreground">
       <strong className="text-foreground">Demo preview.</strong> Connect a Supabase project to see
       live data and enable saving, posting, and moderation.
     </div>

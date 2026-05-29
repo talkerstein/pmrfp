@@ -31,8 +31,8 @@ export function Eyebrow({
   className?: string;
 }) {
   return (
-    <span className={cn("eyebrow inline-flex items-center gap-2 text-gold-600", className)}>
-      <span className="size-1.5 rounded-full bg-gold-500" />
+    <span className={cn("eyebrow inline-flex items-center gap-2 text-teal-600", className)}>
+      <span className="h-px w-5 bg-teal-500" />
       {children}
     </span>
   );

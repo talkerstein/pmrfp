@@ -13,10 +13,10 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
   return (
     <Link
       href={`/directory/${vendor.slug}`}
-      className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-gold-400 hover:shadow-sm"
+      className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
     >
       <div className="flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-navy text-sm font-bold text-white">
+        <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-indigo text-sm font-bold text-white">
           {vendor.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={vendor.logoUrl} alt={vendor.name} className="size-full object-cover" />
@@ -25,7 +25,7 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
           )}
         </span>
         <div className="min-w-0">
-          <h3 className="flex items-center gap-1.5 truncate text-base font-semibold text-foreground group-hover:text-gold-700">
+          <h3 className="flex items-center gap-1.5 truncate text-base font-semibold text-foreground group-hover:text-teal-700">
             {vendor.name}
             {vendor.verified && <BadgeCheck className="size-4 shrink-0 text-success" />}
           </h3>
@@ -36,7 +36,7 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
           )}
         </div>
         {vendor.featured && (
-          <Badge className="ml-auto bg-gold-100 text-gold-700 hover:bg-gold-100">Featured</Badge>
+          <Badge className="ml-auto bg-teal-100 text-teal-700 hover:bg-teal-100">Featured</Badge>
         )}
       </div>
 

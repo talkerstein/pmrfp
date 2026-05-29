@@ -50,7 +50,7 @@ export default async function SavedRfpsPage() {
             <Link
               key={r.slug}
               href={`/rfps/${r.slug}`}
-              className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-gold-400"
+              className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-teal-400"
             >
               <h3 className="text-base font-semibold leading-snug">{r.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">View opportunity →</p>

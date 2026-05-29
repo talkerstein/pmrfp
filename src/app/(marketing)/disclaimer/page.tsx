@@ -42,8 +42,8 @@ export default function DisclaimerPage() {
           Last updated: {LAST_UPDATED}
         </p>
 
-        <div className="mt-8 flex gap-4 rounded-xl border border-gold-400/60 bg-gold-100/40 p-6">
-          <ShieldAlert className="size-6 shrink-0 text-gold-600" />
+        <div className="mt-8 flex gap-4 rounded-xl border border-teal-400/60 bg-teal-100/40 p-6">
+          <ShieldAlert className="size-6 shrink-0 text-teal-600" />
           <p className="text-base font-medium leading-relaxed text-foreground">
             {COPY.disclaimer}
           </p>
@@ -70,7 +70,7 @@ export default function DisclaimerPage() {
           Questions about this disclaimer? Reach us at{" "}
           <Link
             href={`mailto:${SITE.email}`}
-            className="font-medium text-gold-600 underline underline-offset-4"
+            className="font-medium text-teal-600 underline underline-offset-4"
           >
             {SITE.email}
           </Link>

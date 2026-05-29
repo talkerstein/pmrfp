@@ -36,13 +36,13 @@ export default async function TradesIndexPage() {
             <Link
               key={c.slug}
               href={`/trades/${c.slug}`}
-              className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-gold-400"
+              className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-teal-400"
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary text-gold-600 group-hover:bg-gold-100">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary text-teal-600 group-hover:bg-teal-100">
                 <DynamicIcon name={c.icon} className="size-5" />
               </span>
               <span>
-                <span className="block text-sm font-semibold text-foreground group-hover:text-gold-700">{c.name}</span>
+                <span className="block text-sm font-semibold text-foreground group-hover:text-teal-700">{c.name}</span>
                 <span className="block text-xs text-muted-foreground">Commercial {c.name.toLowerCase()} contractors & RFPs</span>
               </span>
             </Link>

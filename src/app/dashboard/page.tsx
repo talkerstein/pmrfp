@@ -51,7 +51,7 @@ export default async function TradeDashboardHome() {
       </div>
 
       {!session.hasTradeAccess && (
-        <div className="mt-6 rounded-lg border border-gold-300 bg-gold-50/60 p-6">
+        <div className="mt-6 rounded-lg border border-teal-300 bg-teal-50/60 p-6">
           <h2 className="text-base font-semibold">Unlock full RFP access with Trade Pro</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Activate your subscription to view full RFP details, express interest, and appear

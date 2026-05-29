@@ -55,8 +55,8 @@ export default async function RfpsPage({
 
       <Container className="py-8">
         {locked && (
-          <div className="mb-6 flex items-center gap-3 rounded-lg border border-gold-200 bg-gold-50/60 p-4 text-sm text-foreground">
-            <Lock className="size-4 shrink-0 text-gold-600" />
+          <div className="mb-6 flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50/60 p-4 text-sm text-foreground">
+            <Lock className="size-4 shrink-0 text-teal-600" />
             You&apos;re viewing opportunity previews. Join PMRFP Trade Pro to unlock full details and
             express interest.
           </div>

@@ -75,7 +75,7 @@ export default async function InterestsPage() {
                   <TableRow key={it.id}>
                     <TableCell className="font-medium">
                       {rfp ? (
-                        <Link href={`/rfps/${rfp.slug}`} className="hover:text-gold-700">
+                        <Link href={`/rfps/${rfp.slug}`} className="hover:text-teal-700">
                           {rfp.title}
                         </Link>
                       ) : (

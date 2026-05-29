@@ -6,8 +6,8 @@ import { PRICING } from "@/lib/site";
 /** Shown to visitors / unpaid trades in place of full RFP details (§9.2). */
 export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gold-200 bg-gold-50/60 p-8 text-center">
-      <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-gold-100 text-gold-700">
+    <div className="relative overflow-hidden rounded-xl border border-teal-200 bg-teal-50/60 p-8 text-center">
+      <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-teal-100 text-teal-700">
         <Lock className="size-6" />
       </span>
       <h3 className="mt-4 text-xl font-semibold text-foreground">

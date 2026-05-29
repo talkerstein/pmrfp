@@ -146,7 +146,7 @@ export default function TermsPage() {
             Questions about these terms? Reach us at{" "}
             <Link
               href={`mailto:${SITE.email}`}
-              className="font-medium text-gold-600 underline underline-offset-4"
+              className="font-medium text-teal-600 underline underline-offset-4"
             >
               {SITE.email}
             </Link>

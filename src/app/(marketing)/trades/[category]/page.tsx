@@ -120,7 +120,7 @@ export default async function TradeCategoryPage({
       <Container className="py-12">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">Open {cat.name} opportunities</h2>
-          <Link href={`/rfps?category=${cat.slug}`} className="text-sm text-gold-700 hover:underline">View all →</Link>
+          <Link href={`/rfps?category=${cat.slug}`} className="text-sm text-teal-700 hover:underline">View all →</Link>
         </div>
         {rfps.length === 0 ? (
           <div className="mt-4"><EmptyState title={`No open ${lower} RFPs right now`} description="New opportunities are added regularly — check back soon or get listed to be ready." /></div>
@@ -135,7 +135,7 @@ export default async function TradeCategoryPage({
         <Container className="py-12">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-2xl font-semibold tracking-tight">{cat.name} companies in the directory</h2>
-            <Link href={`/directory?category=${cat.slug}`} className="text-sm text-gold-700 hover:underline">Browse all →</Link>
+            <Link href={`/directory?category=${cat.slug}`} className="text-sm text-teal-700 hover:underline">Browse all →</Link>
           </div>
           {vendors.length === 0 ? (
             <div className="mt-4"><EmptyState title={`Be the first ${lower} company listed`} description="Create a profile and get discovered by property managers searching this category." /></div>
@@ -152,7 +152,7 @@ export default async function TradeCategoryPage({
         <p className="mt-2 text-sm text-muted-foreground">Explore {lower} demand and vendors across Canada.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {topRegions.map((r) => (
-            <Link key={r.slug} href={`/regions/${r.slug}`} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-gold-400">
+            <Link key={r.slug} href={`/regions/${r.slug}`} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-teal-400">
               {cat.name} in {r.name}
             </Link>
           ))}

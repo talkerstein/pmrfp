@@ -16,7 +16,7 @@ export default function SignInPage() {
       <DemoNotice />
       <p className="mt-6 text-center text-sm text-muted-foreground">
         New to PMRFP?{" "}
-        <Link href="/sign-up" className="font-medium text-gold-700 hover:underline">
+        <Link href="/sign-up" className="font-medium text-teal-700 hover:underline">
           Create an account
         </Link>
       </p>

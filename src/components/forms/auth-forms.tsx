@@ -37,7 +37,7 @@ export function SignInForm() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Password</Label>
-          <Link href="/forgot-password" className="text-xs text-gold-700 hover:underline">
+          <Link href="/forgot-password" className="text-xs text-teal-700 hover:underline">
             Forgot?
           </Link>
         </div>
@@ -74,10 +74,10 @@ export function SignUpForm() {
               onClick={() => setRole(r.value)}
               className={cn(
                 "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
-                role === r.value ? "border-gold-500 bg-gold-50" : "border-border hover:bg-secondary",
+                role === r.value ? "border-teal-500 bg-teal-50" : "border-border hover:bg-secondary",
               )}
             >
-              <r.icon className={cn("size-5", role === r.value ? "text-gold-600" : "text-muted-foreground")} />
+              <r.icon className={cn("size-5", role === r.value ? "text-teal-600" : "text-muted-foreground")} />
               <span>
                 <span className="block text-sm font-medium">{r.label}</span>
                 <span className="block text-xs text-muted-foreground">{r.hint}</span>

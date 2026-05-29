@@ -16,7 +16,7 @@ export default function ContactPage() {
       <p className="mt-3 text-muted-foreground">
         Questions about listing your trade company, posting an RFP, or sourcing vendors? Send us a
         note and we&apos;ll get back to you. You can also email{" "}
-        <a href={`mailto:${SITE.email}`} className="text-gold-700 hover:underline">
+        <a href={`mailto:${SITE.email}`} className="text-teal-700 hover:underline">
           {SITE.email}
         </a>
         .

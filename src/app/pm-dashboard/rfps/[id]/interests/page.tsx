@@ -79,7 +79,7 @@ export default async function RfpInterestsPage({
                   <TableRow key={it.id}>
                     <TableCell className="font-medium">
                       {org ? (
-                        <Link href={`/directory/${org.slug}`} className="hover:text-gold-700">
+                        <Link href={`/directory/${org.slug}`} className="hover:text-teal-700">
                           {org.name}
                           {org.city && (
                             <span className="block text-xs font-normal text-muted-foreground">

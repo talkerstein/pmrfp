@@ -61,7 +61,7 @@ export default async function VendorProfilePage({
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <div className="flex items-center gap-4">
-            <span className="flex size-16 items-center justify-center overflow-hidden rounded-lg bg-navy text-xl font-bold text-white">
+            <span className="flex size-16 items-center justify-center overflow-hidden rounded-lg bg-indigo text-xl font-bold text-white">
               {v.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={v.logoUrl} alt={v.name} className="size-full object-cover" />
@@ -78,7 +78,7 @@ export default async function VendorProfilePage({
                 {[v.city, v.province].filter(Boolean).join(", ")}
               </p>
             </div>
-            {v.featured && <Badge className="ml-auto bg-gold-100 text-gold-700">Featured</Badge>}
+            {v.featured && <Badge className="ml-auto bg-teal-100 text-teal-700">Featured</Badge>}
           </div>
 
           {v.fullDescription && (
@@ -128,17 +128,17 @@ export default async function VendorProfilePage({
                 <h2 className="text-base font-semibold">Contact {v.name}</h2>
                 <div className="mt-4 space-y-3 text-sm">
                   {v.website && (
-                    <a href={v.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-foreground hover:text-gold-700">
+                    <a href={v.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-foreground hover:text-teal-700">
                       <Globe className="size-4 text-muted-foreground" /> Website
                     </a>
                   )}
                   {v.email && (
-                    <a href={`mailto:${v.email}`} className="flex items-center gap-2 text-foreground hover:text-gold-700">
+                    <a href={`mailto:${v.email}`} className="flex items-center gap-2 text-foreground hover:text-teal-700">
                       <Mail className="size-4 text-muted-foreground" /> {v.email}
                     </a>
                   )}
                   {v.phone && (
-                    <a href={`tel:${v.phone}`} className="flex items-center gap-2 text-foreground hover:text-gold-700">
+                    <a href={`tel:${v.phone}`} className="flex items-center gap-2 text-foreground hover:text-teal-700">
                       <Phone className="size-4 text-muted-foreground" /> {v.phone}
                     </a>
                   )}

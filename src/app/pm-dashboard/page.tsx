@@ -52,9 +52,9 @@ export default async function PmDashboardHome() {
         <StatCard label="Saved vendors" value={0} href="/pm-dashboard/saved-vendors" />
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-gold-300 bg-gold-50/60 p-6">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-teal-300 bg-teal-50/60 p-6">
         <div className="flex items-start gap-3">
-          <span className="flex size-10 items-center justify-center rounded-md bg-gold-500 text-navy">
+          <span className="flex size-10 items-center justify-center rounded-md bg-teal-500 text-indigo">
             <FileText className="size-5" />
           </span>
           <div>

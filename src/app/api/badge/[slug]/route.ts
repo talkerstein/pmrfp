@@ -3,12 +3,13 @@ import { getBadgeInfo, type BadgeTier } from "@/lib/badge/data";
 export const revalidate = 86400;
 
 const C = {
-  navy: "#0B1220",
-  gold: "#B7791F",
-  border: "#E2E8F0",
+  indigo: "#282B59",
+  teal: "#91F2CF",
+  tealInk: "#0C7A5A",
+  border: "#E2E6F0",
   white: "#FFFFFF",
-  slate: "#64748B",
-  light: "#CBD5E1",
+  slate: "#6A6E80",
+  light: "#A9ADCE",
 };
 
 function escapeXml(s: string): string {
@@ -17,13 +18,14 @@ function escapeXml(s: string): string {
 
 function renderBadge(tier: BadgeTier, theme: "light" | "dark", variant: "standard" | "compact"): string {
   const dark = theme === "dark";
-  const bg = dark ? C.navy : C.white;
-  const stroke = dark ? "#1E293B" : C.border;
-  const primary = dark ? C.white : C.navy;
+  const bg = dark ? C.indigo : C.white;
+  const stroke = dark ? "#383C72" : C.border;
+  const primary = dark ? C.white : C.indigo;
   const sub = dark ? C.light : C.slate;
-  const tile = dark ? C.gold : C.navy;
-  const tileText = dark ? C.navy : C.gold;
-  const font = "Inter, -apple-system, Segoe UI, Arial, sans-serif";
+  const tile = dark ? C.teal : C.indigo;
+  const tileText = dark ? C.indigo : C.teal;
+  const accent = dark ? C.teal : C.tealInk;
+  const font = "system-ui, -apple-system, Segoe UI, Arial, sans-serif";
   const check = tier.verified ? "✓ " : "";
   const sublabel = `${check}${tier.label}${tier.insured ? " · Insured" : ""}`;
 
@@ -44,7 +46,7 @@ function renderBadge(tier: BadgeTier, theme: "light" | "dark", variant: "standar
 <rect x="11" y="11" width="32" height="32" rx="7" fill="${tile}"/>
 <text x="27" y="32" font-family="${font}" font-size="13" font-weight="700" fill="${tileText}" text-anchor="middle">PM</text>
 <text x="53" y="25" font-family="${font}" font-size="13.5" font-weight="700" fill="${primary}">PMRFP</text>
-<text x="53" y="41" font-family="${font}" font-size="10" font-weight="500" fill="${tier.verified ? C.gold : sub}">${escapeXml(sublabel)}</text>
+<text x="53" y="41" font-family="${font}" font-size="10" font-weight="500" fill="${tier.verified ? accent : sub}">${escapeXml(sublabel)}</text>
 </svg>`;
 }
 

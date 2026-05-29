@@ -28,7 +28,7 @@ export function BadgeEmbed({
         <div className="mt-3 flex flex-wrap items-center gap-6 rounded-lg border border-border bg-card p-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={img} alt="PMRFP badge (light)" width={214} height={54} />
-          <div className="rounded-lg bg-navy p-3">
+          <div className="rounded-lg bg-indigo p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={imgDark} alt="PMRFP badge (dark)" width={214} height={54} />
           </div>

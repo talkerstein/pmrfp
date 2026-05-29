@@ -56,14 +56,14 @@ export default async function RfpDetailPage({
       </Link>
 
       {!configured && (
-        <div className="mt-4 rounded-lg border border-dashed border-gold-300 bg-gold-50/50 p-3 text-sm text-muted-foreground">
+        <div className="mt-4 rounded-lg border border-dashed border-teal-300 bg-teal-50/50 p-3 text-sm text-muted-foreground">
           <strong className="text-foreground">Demo preview.</strong>{" "}
           {showFull ? (
             <>You&apos;re seeing the full Trade Pro member view.{" "}
-              <Link href={`/rfps/${slug}?view=locked`} className="text-gold-700 underline">See the visitor (locked) view</Link>.</>
+              <Link href={`/rfps/${slug}?view=locked`} className="text-teal-700 underline">See the visitor (locked) view</Link>.</>
           ) : (
             <>You&apos;re seeing the visitor (locked) view.{" "}
-              <Link href={`/rfps/${slug}`} className="text-gold-700 underline">See the full member view</Link>.</>
+              <Link href={`/rfps/${slug}`} className="text-teal-700 underline">See the full member view</Link>.</>
           )}
         </div>
       )}

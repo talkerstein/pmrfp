@@ -86,7 +86,7 @@ export default async function ForPropertyManagersPage() {
           {STEPS.map((s) => (
             <Card key={s.title}>
               <CardHeader>
-                <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-gold-600">
+                <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-teal-600">
                   <s.icon className="size-5" />
                 </span>
                 <CardTitle className="mt-3">{s.title}</CardTitle>
@@ -122,7 +122,7 @@ export default async function ForPropertyManagersPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-gold-600">
+              <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-teal-600">
                 <Lock className="size-5" />
               </span>
               <CardTitle className="mt-3">Keep details private if needed</CardTitle>
@@ -137,7 +137,7 @@ export default async function ForPropertyManagersPage() {
           </Card>
           <Card>
             <CardHeader>
-              <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-gold-600">
+              <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-teal-600">
                 <ShieldCheck className="size-5" />
               </span>
               <CardTitle className="mt-3">No obligation to hire</CardTitle>

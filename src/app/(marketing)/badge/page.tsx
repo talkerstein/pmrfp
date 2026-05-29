@@ -40,13 +40,13 @@ export default async function BadgePage() {
       </p>
 
       {!memberSlug && (
-        <div className="mt-6 rounded-lg border border-dashed border-gold-300 bg-gold-50/60 p-4 text-sm">
+        <div className="mt-6 rounded-lg border border-dashed border-teal-300 bg-teal-50/60 p-4 text-sm">
           {session ? (
             <>Complete your company profile to generate your own badge. </>
           ) : (
             <>You&apos;re viewing a sample badge. </>
           )}
-          <Link href="/sign-up" className="font-medium text-gold-700 hover:underline">
+          <Link href="/sign-up" className="font-medium text-teal-700 hover:underline">
             Join {SITE.name}
           </Link>{" "}
           to get yours.
@@ -87,7 +87,7 @@ export default async function BadgePage() {
 function Tier({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-gold-600">{icon}</span>
+      <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-teal-600">{icon}</span>
       <h3 className="mt-3 text-base font-semibold">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
     </div>

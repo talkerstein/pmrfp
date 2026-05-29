@@ -114,7 +114,7 @@ export default async function VersusPage({
               <h3 className="text-base font-semibold">Where {SITE.name} wins</h3>
               <ul className="mt-3 space-y-2 text-sm">
                 {c.weaknesses.map((w) => (
-                  <li key={w} className="flex gap-2"><X className="mt-0.5 size-4 shrink-0 text-gold-600" />{w}</li>
+                  <li key={w} className="flex gap-2"><X className="mt-0.5 size-4 shrink-0 text-teal-600" />{w}</li>
                 ))}
               </ul>
             </div>

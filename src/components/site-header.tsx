@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Container } from "@/components/container";
-import { MAIN_NAV, SITE } from "@/lib/site";
+import { Logo } from "@/components/logo";
+import { MAIN_NAV } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
@@ -33,7 +34,7 @@ export function SiteHeader() {
       )}
     >
       <Container className="flex h-[72px] items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" aria-label="PMRFP home">
           <Logo />
         </Link>
 
@@ -42,7 +43,7 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-ink/80 transition-colors hover:bg-secondary hover:text-foreground"
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-2/80 transition-colors hover:bg-secondary hover:text-foreground"
             >
               {item.label}
             </Link>
@@ -102,18 +103,5 @@ export function SiteHeader() {
         </div>
       )}
     </header>
-  );
-}
-
-function Logo() {
-  return (
-    <span className="flex items-center gap-2">
-      <span className="flex size-8 items-center justify-center rounded-md bg-navy text-[13px] font-bold tracking-tight text-background">
-        PM
-      </span>
-      <span className="text-lg font-semibold tracking-tight text-foreground">
-        {SITE.name}
-      </span>
-    </span>
   );
 }

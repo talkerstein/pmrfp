@@ -12,7 +12,7 @@ function inline(text: string, keyBase: string): React.ReactNode[] {
     if (m[2]) nodes.push(<strong key={`${keyBase}-b${i}`}>{m[2]}</strong>);
     else if (m[3] && m[4])
       nodes.push(
-        <a key={`${keyBase}-a${i}`} href={m[4]} className="text-gold-700 underline">
+        <a key={`${keyBase}-a${i}`} href={m[4]} className="text-teal-700 underline">
           {m[3]}
         </a>,
       );

@@ -12,7 +12,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
   return (
     <Link
       href={`/rfps/${rfp.slug}`}
-      className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-gold-400 hover:shadow-sm"
+      className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
@@ -28,7 +28,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
           )}
         </div>
         {locked ? (
-          <span className="flex items-center gap-1 text-xs font-medium text-gold-600">
+          <span className="flex items-center gap-1 text-xs font-medium text-teal-600">
             <Lock className="size-3.5" /> Locked
           </span>
         ) : (
@@ -36,7 +36,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
         )}
       </div>
 
-      <h3 className="mt-3 text-base font-semibold leading-snug text-foreground group-hover:text-gold-700">
+      <h3 className="mt-3 text-base font-semibold leading-snug text-foreground group-hover:text-teal-700">
         {rfp.title}
       </h3>
       {rfp.summary && (

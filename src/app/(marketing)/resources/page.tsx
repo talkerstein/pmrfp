@@ -33,11 +33,11 @@ export default async function ResourcesPage() {
             <Link
               key={r.slug}
               href={`/resources/${r.slug}`}
-              className="group flex flex-col rounded-lg border border-border bg-card p-6 transition-all hover:border-gold-400 hover:shadow-sm"
+              className="group flex flex-col rounded-lg border border-border bg-card p-6 transition-all hover:border-teal-400 hover:shadow-sm"
             >
-              <h2 className="text-lg font-semibold leading-snug group-hover:text-gold-700">{r.title}</h2>
+              <h2 className="text-lg font-semibold leading-snug group-hover:text-teal-700">{r.title}</h2>
               {r.excerpt && <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{r.excerpt}</p>}
-              <span className="mt-4 flex items-center gap-1 text-sm font-medium text-gold-700">
+              <span className="mt-4 flex items-center gap-1 text-sm font-medium text-teal-700">
                 Read <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
               </span>
             </Link>

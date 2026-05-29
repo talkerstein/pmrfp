@@ -106,7 +106,7 @@ export default async function RegionPage({
       <Container className="py-12">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">Open opportunities in {region.name}</h2>
-          <Link href={`/rfps?region=${region.slug}`} className="text-sm text-gold-700 hover:underline">View all →</Link>
+          <Link href={`/rfps?region=${region.slug}`} className="text-sm text-teal-700 hover:underline">View all →</Link>
         </div>
         {rfps.length === 0 ? (
           <div className="mt-4"><EmptyState title={`No open RFPs in ${region.name} right now`} description="New opportunities are added regularly." /></div>
@@ -121,7 +121,7 @@ export default async function RegionPage({
         <Container className="py-12">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-2xl font-semibold tracking-tight">Vendors serving {region.name}</h2>
-            <Link href={`/directory?region=${region.slug}`} className="text-sm text-gold-700 hover:underline">Browse all →</Link>
+            <Link href={`/directory?region=${region.slug}`} className="text-sm text-teal-700 hover:underline">Browse all →</Link>
           </div>
           {vendors.length === 0 ? (
             <div className="mt-4"><EmptyState title={`Be the first vendor listed in ${region.name}`} description="Create a profile and get discovered by property managers in your area." /></div>
@@ -137,7 +137,7 @@ export default async function RegionPage({
         <h2 className="text-2xl font-semibold tracking-tight">Trades in {region.name}</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {categories.slice(0, 18).map((c) => (
-            <Link key={c.slug} href={`/trades/${c.slug}`} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-gold-400">
+            <Link key={c.slug} href={`/trades/${c.slug}`} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-teal-400">
               {c.name}
             </Link>
           ))}

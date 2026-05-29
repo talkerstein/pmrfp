@@ -24,9 +24,9 @@ export default async function RfpFeedPage() {
       />
 
       {locked && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gold-300 bg-gold-50/60 p-4">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-teal-300 bg-teal-50/60 p-4">
           <div className="flex items-center gap-2 text-sm">
-            <Lock className="size-4 text-gold-600" />
+            <Lock className="size-4 text-teal-600" />
             <span className="text-muted-foreground">
               <strong className="text-foreground">RFP details are locked.</strong> Activate Trade Pro
               to view full scope and express interest.

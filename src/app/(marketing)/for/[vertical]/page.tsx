@@ -95,7 +95,7 @@ export default async function VerticalPage({
         </div>
         <div className="mt-8 flex flex-wrap gap-2">
           {v.features.map((f) => (
-            <span key={f} className="rounded-full border border-border bg-secondary/40 px-3 py-1 text-xs font-medium text-slate-ink">
+            <span key={f} className="rounded-full border border-border bg-secondary/40 px-3 py-1 text-xs font-medium text-ink-2">
               {f}
             </span>
           ))}

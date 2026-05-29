@@ -78,8 +78,8 @@ export default function PricingPage() {
       </section>
 
       <Section>
-        <div className="mb-10 flex items-center gap-3 rounded-lg border border-gold-400/60 bg-gold-100/40 px-5 py-4">
-          <Sparkles className="size-5 shrink-0 text-gold-600" />
+        <div className="mb-10 flex items-center gap-3 rounded-lg border border-teal-400/60 bg-teal-100/40 px-5 py-4">
+          <Sparkles className="size-5 shrink-0 text-teal-600" />
           <p className="text-sm font-medium text-foreground">
             {PRICING.earlyBirdNote}
           </p>
@@ -102,7 +102,7 @@ export default function PricingPage() {
                   key={f}
                   className="flex items-start gap-2 text-sm text-foreground"
                 >
-                  <Check className="mt-0.5 size-4 shrink-0 text-gold-600" />
+                  <Check className="mt-0.5 size-4 shrink-0 text-teal-600" />
                   {f}
                 </li>
               ))}
@@ -119,8 +119,8 @@ export default function PricingPage() {
           </div>
 
           {/* Trade Pro */}
-          <div className="relative flex h-full flex-col rounded-xl border border-gold-400 bg-card p-8 ring-2 ring-gold-400">
-            <span className="absolute -top-3 left-8 inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-3 py-1 text-xs font-semibold text-white">
+          <div className="relative flex h-full flex-col rounded-xl border border-teal-400 bg-card p-8 ring-2 ring-teal-400">
+            <span className="absolute -top-3 left-8 inline-flex items-center gap-1.5 rounded-full bg-teal-500 px-3 py-1 text-xs font-semibold text-white">
               <Sparkles className="size-3.5" />
               Most popular
             </span>
@@ -142,7 +142,7 @@ export default function PricingPage() {
                   key={f}
                   className="flex items-start gap-2 text-sm text-foreground"
                 >
-                  <Check className="mt-0.5 size-4 shrink-0 text-gold-600" />
+                  <Check className="mt-0.5 size-4 shrink-0 text-teal-600" />
                   {f}
                 </li>
               ))}

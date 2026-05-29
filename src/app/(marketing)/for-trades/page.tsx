@@ -163,7 +163,7 @@ export default function ForTradesPage() {
           {INCLUDED.map((f) => (
             <Card key={f.title}>
               <CardHeader>
-                <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-gold-600">
+                <span className="flex size-10 items-center justify-center rounded-md bg-secondary text-teal-600">
                   <f.icon className="size-5" />
                 </span>
                 <CardTitle className="mt-3">{f.title}</CardTitle>
@@ -187,7 +187,7 @@ export default function ForTradesPage() {
               key={t}
               className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground"
             >
-              <CheckCircle2 className="size-4 shrink-0 text-gold-600" />
+              <CheckCircle2 className="size-4 shrink-0 text-teal-600" />
               {t}
             </li>
           ))}
@@ -205,7 +205,7 @@ export default function ForTradesPage() {
               Start with a free directory listing, or go Pro for full RFP
               access, saved opportunities, express interest, and matching alerts.
             </p>
-            <p className="mt-4 text-sm font-medium text-gold-600">
+            <p className="mt-4 text-sm font-medium text-teal-600">
               {PRICING.earlyBirdNote}
             </p>
           </div>

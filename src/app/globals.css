@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-mono-jb);
-  --font-heading: var(--font-inter);
+  --font-sans: var(--font-lato);
+  --font-mono: var(--font-plex-mono);
+  --font-heading: var(--font-poppins);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -40,19 +40,46 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* PMRFP brand tokens — gold accent + status colors (§6) */
-  --color-gold-50: #fbf6ec;
-  --color-gold-100: #f5e8cd;
-  --color-gold-200: #ecd29b;
-  --color-gold-300: #e0b766;
-  --color-gold-400: #cf9b3c;
-  --color-gold-500: #b7791f;
-  --color-gold-600: #9a6516;
-  --color-gold-700: #7c5210;
-  --color-gold-800: #5f3f0e;
-  --color-navy: #0b1220;
-  --color-navy-700: #142136;
-  --color-slate-ink: #1e293b;
+  /* ============================================================
+     PMRFP brand tokens — Brand Book Kit 2025 (indigo + teal)
+     ============================================================ */
+
+  /* Indigo — primary brand color (replaces former "navy") */
+  --color-indigo: #282b59;
+  --color-indigo-700: #1e2147;
+  --color-indigo-600: #282b59;
+  --color-indigo-500: #383c72;
+  --color-indigo-400: #4a4f8c;
+
+  /* Periwinkle — secondary blue */
+  --color-periwinkle: #5d60a6;
+  --color-periwinkle-soft: #ecedf6;
+
+  /* Teal — brand accent.
+     Engineered ramp: 50–300 light (mint bg/borders), 400 mid,
+     500–800 readable greens (icons/text/links).
+     This preserves the lightness role of the former gold-N scale
+     so a 1:1 gold-N → teal-N rename never breaks contrast. */
+  --color-teal-50: #ecfdf6;
+  --color-teal-100: #d6f9ea;
+  --color-teal-200: #b6f7df;
+  --color-teal-300: #91f2cf; /* signature brand mint */
+  --color-teal-400: #34c892;
+  --color-teal-500: #14a37a;
+  --color-teal-600: #0c7a5a; /* teal-ink — readable on white */
+  --color-teal-700: #0a6249; /* teal-ink-2 — strong links/text */
+  --color-teal-800: #07472f;
+  /* Aliases matching the brand book naming */
+  --color-teal: #91f2cf;
+  --color-teal-ink: #0c7a5a;
+  --color-teal-ink-2: #0a6249;
+
+  /* Ink — neutral text scale */
+  --color-ink: #0d0d0d;
+  --color-ink-2: #3a3d4d;
+  --color-ink-3: #6a6e80;
+
+  /* Status */
   --color-success: #15803d;
   --color-warning: #d97706;
   --color-error: #b91c1c;
@@ -66,77 +93,77 @@
 
 /*
   PMRFP palette — serious / commercial / procurement-portal.
-  Deep navy primary, gold focus accent, soft-gray surfaces.
+  Deep indigo primary, mint-teal accent, cool soft-gray surfaces.
 */
 :root {
-  --background: #f8fafc;
-  --foreground: #0b1220;
+  --background: #f5f7fb;
+  --foreground: #1e2147;
   --card: #ffffff;
-  --card-foreground: #0b1220;
+  --card-foreground: #1e2147;
   --popover: #ffffff;
-  --popover-foreground: #0b1220;
-  --primary: #0b1220;
-  --primary-foreground: #f8fafc;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
+  --popover-foreground: #1e2147;
+  --primary: #282b59;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f7;
+  --secondary-foreground: #282b59;
+  --muted: #eef1f7;
+  --muted-foreground: #6a6e80;
+  --accent: #e4fbf2;
+  --accent-foreground: #0c7a5a;
   --destructive: #b91c1c;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #b7791f;
-  --chart-1: #b7791f;
-  --chart-2: #0b1220;
-  --chart-3: #1e293b;
-  --chart-4: #64748b;
+  --border: #e2e6f0;
+  --input: #e2e6f0;
+  --ring: #0c7a5a;
+  --chart-1: #0c7a5a;
+  --chart-2: #282b59;
+  --chart-3: #5d60a6;
+  --chart-4: #6a6e80;
   --chart-5: #15803d;
-  --radius: 0.5rem;
+  --radius: 0.875rem;
 
-  /* Dashboard / admin sidebar — navy with gold active state */
-  --sidebar: #0b1220;
-  --sidebar-foreground: #cbd5e1;
-  --sidebar-primary: #b7791f;
-  --sidebar-primary-foreground: #0b1220;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #1e293b;
-  --sidebar-ring: #b7791f;
+  /* Dashboard / admin sidebar — indigo with teal active state */
+  --sidebar: #1e2147;
+  --sidebar-foreground: #a9adce;
+  --sidebar-primary: #91f2cf;
+  --sidebar-primary-foreground: #1e2147;
+  --sidebar-accent: #282b59;
+  --sidebar-accent-foreground: #edeef6;
+  --sidebar-border: #383c72;
+  --sidebar-ring: #91f2cf;
 }
 
 .dark {
-  --background: #0b1220;
-  --foreground: #f8fafc;
-  --card: #142136;
-  --card-foreground: #f8fafc;
-  --popover: #142136;
-  --popover-foreground: #f8fafc;
-  --primary: #f8fafc;
-  --primary-foreground: #0b1220;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
+  --background: #161834;
+  --foreground: #edeef6;
+  --card: #1e2147;
+  --card-foreground: #edeef6;
+  --popover: #1e2147;
+  --popover-foreground: #edeef6;
+  --primary: #91f2cf;
+  --primary-foreground: #1e2147;
+  --secondary: #282b59;
+  --secondary-foreground: #edeef6;
+  --muted: #282b59;
+  --muted-foreground: #a9adce;
+  --accent: #282b59;
+  --accent-foreground: #91f2cf;
   --destructive: #ef4444;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #b7791f;
-  --chart-1: #b7791f;
-  --chart-2: #cbd5e1;
-  --chart-3: #94a3b8;
-  --chart-4: #64748b;
+  --border: #383c72;
+  --input: #383c72;
+  --ring: #91f2cf;
+  --chart-1: #91f2cf;
+  --chart-2: #a9adce;
+  --chart-3: #5d60a6;
+  --chart-4: #6a6e80;
   --chart-5: #22c55e;
-  --sidebar: #050b17;
-  --sidebar-foreground: #cbd5e1;
-  --sidebar-primary: #b7791f;
-  --sidebar-primary-foreground: #0b1220;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #1e293b;
-  --sidebar-ring: #b7791f;
+  --sidebar: #161834;
+  --sidebar-foreground: #a9adce;
+  --sidebar-primary: #91f2cf;
+  --sidebar-primary-foreground: #1e2147;
+  --sidebar-accent: #282b59;
+  --sidebar-accent-foreground: #edeef6;
+  --sidebar-border: #383c72;
+  --sidebar-ring: #91f2cf;
 }
 
 @layer base {
@@ -153,20 +180,22 @@
     @apply font-sans;
     scroll-behavior: smooth;
   }
-  h1, h2, h3, h4 {
-    font-family: var(--font-inter);
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-poppins);
     letter-spacing: -0.02em;
     text-wrap: balance;
+    /* color intentionally inherits: --foreground is brand indigo on light
+       surfaces; dark/indigo sections set text-white which cascades. */
   }
-  h1 { letter-spacing: -0.03em; }
+  h1 { letter-spacing: -0.03em; line-height: 1.05; }
 }
 
 @layer utilities {
   /* Uppercase mono eyebrow label used across marketing + dashboards */
   .eyebrow {
-    font-family: var(--font-mono-jb);
+    font-family: var(--font-plex-mono);
     font-size: 11px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     font-weight: 500;
   }

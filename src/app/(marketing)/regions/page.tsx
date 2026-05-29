@@ -44,8 +44,8 @@ export default async function RegionsIndexPage() {
               <h2 className="eyebrow text-muted-foreground">{province}</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {regs.map((r) => (
-                  <Link key={r.slug} href={`/regions/${r.slug}`} className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-gold-400">
-                    <MapPin className="size-3.5 text-gold-600" /> {r.name}
+                  <Link key={r.slug} href={`/regions/${r.slug}`} className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-teal-400">
+                    <MapPin className="size-3.5 text-teal-600" /> {r.name}
                   </Link>
                 ))}
               </div>

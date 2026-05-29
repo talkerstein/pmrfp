@@ -11,12 +11,12 @@ export default function SuspendedPage() {
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
         Access to this account is currently paused. If you believe this is a mistake, please contact
         us at{" "}
-        <a href={`mailto:${SITE.supportEmail}`} className="text-gold-700 hover:underline">
+        <a href={`mailto:${SITE.supportEmail}`} className="text-teal-700 hover:underline">
           {SITE.supportEmail}
         </a>
         .
       </p>
-      <Link href="/" className="mt-6 text-sm text-gold-700 hover:underline">
+      <Link href="/" className="mt-6 text-sm text-teal-700 hover:underline">
         ← Back to {SITE.name}
       </Link>
     </div>
