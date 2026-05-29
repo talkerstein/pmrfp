@@ -81,6 +81,7 @@ export const FOOTER_COLS = [
       { label: "Trade Categories", href: "/trades" },
       { label: "Browse by Region", href: "/regions" },
       { label: "Pricing", href: "/pricing" },
+      { label: "Mobile App — Coming Soon", href: "/#mobile-app" },
     ],
   },
   {
