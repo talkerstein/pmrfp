@@ -104,6 +104,7 @@ export const FOOTER_COLS = [
     heading: "Resources",
     links: [
       { label: "Resource Hub", href: "/resources" },
+      { label: "Vendor Badge", href: "/badge" },
       { label: "Contact", href: "/contact" },
       { label: "Sign In", href: "/sign-in" },
       { label: "Join PMRFP", href: "/sign-up" },
