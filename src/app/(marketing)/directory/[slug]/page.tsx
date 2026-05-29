@@ -13,8 +13,11 @@ import { SITE } from "@/lib/site";
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  const vendors = await listVendors();
-  return vendors.map((v) => ({ slug: v.slug }));
+  const [trades, suppliers] = await Promise.all([
+    listVendors(),
+    listVendors({ orgType: "supplier" }),
+  ]);
+  return [...trades, ...suppliers].map((v) => ({ slug: v.slug }));
 }
 
 export async function generateMetadata({

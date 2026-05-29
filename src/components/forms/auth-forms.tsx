@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Building2, HardHat, Search } from "lucide-react";
+import { Building2, HardHat, Package, Search } from "lucide-react";
 import {
   forgotPasswordAction,
   resetPasswordAction,
@@ -52,6 +52,7 @@ export function SignInForm() {
 
 const ROLES = [
   { value: "trade", label: "I'm a trade company", icon: HardHat, hint: "Get listed and see RFP opportunities" },
+  { value: "supplier", label: "I'm a supplier / distributor", icon: Package, hint: "Get listed and reach trades, builders & PMs" },
   { value: "property_manager", label: "I manage / own / build properties", icon: Building2, hint: "Post RFPs and browse vendors" },
   { value: "visitor", label: "I'm just browsing", icon: Search, hint: "Explore the directory" },
 ] as const;

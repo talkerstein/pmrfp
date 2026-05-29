@@ -4,9 +4,9 @@
  * Kept in sync with the SQL schema (Phase 2).
  */
 
-export type UserRole = "trade" | "property_manager" | "admin" | "super_admin" | "visitor";
+export type UserRole = "trade" | "property_manager" | "admin" | "super_admin" | "visitor" | "supplier";
 export type UserStatus = "active" | "suspended" | "deleted";
-export type OrgType = "trade_company" | "property_manager" | "builder" | "owner" | "admin";
+export type OrgType = "trade_company" | "property_manager" | "builder" | "owner" | "admin" | "supplier";
 export type ProfileStatus = "draft" | "pending_review" | "approved" | "rejected" | "suspended";
 export type ContactVisibility = "show_contact" | "request_intro" | "hide_contact";
 export type RfpStatus =

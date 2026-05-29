@@ -77,6 +77,8 @@ export interface VendorFilters {
   verified?: boolean;
   q?: string;
   sort?: "featured" | "recent" | "alpha";
+  /** Which listing type to return. Defaults to trade companies. */
+  orgType?: "trade_company" | "supplier";
 }
 
 export interface RfpFilters {

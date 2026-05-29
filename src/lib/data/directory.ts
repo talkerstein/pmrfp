@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
+  DEMO_SUPPLIERS,
   DEMO_VENDORS,
   categoryName,
   regionName,
@@ -74,14 +75,16 @@ const ORG_SELECT =
   "organization_property_types(property_types(name,slug))";
 
 export async function listVendors(filters: VendorFilters = {}): Promise<VendorListItem[]> {
+  const orgType = filters.orgType ?? "trade_company";
   if (!isSupabaseConfigured()) {
-    return applyDemoFilters(DEMO_VENDORS, filters).map(demoToListItem);
+    const source = orgType === "supplier" ? DEMO_SUPPLIERS : DEMO_VENDORS;
+    return applyDemoFilters(source, filters).map(demoToListItem);
   }
   const supabase = await createClient();
   let query = supabase
     .from("organizations")
     .select(ORG_SELECT)
-    .eq("organization_type", "trade_company")
+    .eq("organization_type", orgType)
     .eq("profile_status", "approved")
     .eq("status", "active");
   if (filters.verified) query = query.eq("verified", true);
@@ -114,7 +117,7 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
 
 export async function getVendor(slug: string): Promise<VendorDetail | null> {
   if (!isSupabaseConfigured()) {
-    const v = DEMO_VENDORS.find((x) => x.slug === slug);
+    const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);
     if (!v) return null;
     const showContact = v.contactVisibility === "show_contact";
     return {

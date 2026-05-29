@@ -145,6 +145,38 @@ export const VERTICALS: Vertical[] = [
     metaDescription:
       "Real-estate investors and owners: browse a credentialed directory of commercial trade contractors and run competitive RFPs for your portfolio. Free to post and browse.",
   },
+  {
+    slug: "suppliers",
+    name: "Suppliers & Distributors",
+    who: "Building product, material & equipment suppliers",
+    headline: "Get in front of the trades and builders who buy what you sell.",
+    positioning:
+      "PMRFP lists building product, material, and equipment suppliers in a searchable directory and surfaces commercial projects — so the trades, builders, and property managers sourcing your products can find you.",
+    pains: [
+      "Reaching new commercial trade and builder accounts is slow and rep-dependent",
+      "No central place where Canadian commercial buyers look for suppliers",
+      "Hard to surface your catalog and credentials to the right buyers",
+      "Project and RFP visibility lives with the GCs, not with suppliers",
+      "Marketing spend with little signal on who's actually buying",
+    ],
+    valueProps: [
+      { title: "Get discovered by buyers", desc: "Trades, builders, and property managers browse the directory by category and region — be there when they source." },
+      { title: "See live project demand", desc: "Monitor commercial RFPs to spot projects that will need your products." },
+      { title: "Flat annual pricing", desc: "Predictable cost — not pay-per-lead or per-impression ad spend." },
+      { title: "Showcase your catalog & terms", desc: "Your profile highlights product categories, service area, and contractor-account details." },
+      { title: "Build the supplier side of the network", desc: "Sit alongside the trades and builders you already serve, in one Canadian commercial marketplace." },
+    ],
+    features: ["Directory listing", "Category + region targeting", "RFP visibility", "Company profile", "Verified badge"],
+    faqs: [
+      { q: "Is PMRFP only for trades?", a: "No. Suppliers and distributors list alongside trades — the same directory and Pro membership, tuned so commercial buyers can find what you sell." },
+      { q: "How do suppliers use RFPs?", a: "RFP visibility helps you spot upcoming commercial projects that will need materials or equipment, so you can reach the right contractors early." },
+    ],
+    cta: { label: "List your company", href: "/sign-up" },
+    secondaryCta: { label: "Browse the supplier directory", href: "/suppliers" },
+    metaTitle: "PMRFP for Suppliers — Reach Canadian Commercial Trades & Builders",
+    metaDescription:
+      "Building product and material suppliers: get listed where Canadian commercial trades, builders, and property managers source products, and track project demand. Flat annual pricing.",
+  },
 ];
 
 export function getVertical(slug: string): Vertical | null {

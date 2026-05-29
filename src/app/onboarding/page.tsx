@@ -15,9 +15,11 @@ export default async function OnboardingPage() {
   const heading =
     role === "trade"
       ? "Set up your company profile"
-      : role === "property_manager"
-        ? "Tell us about your organization"
-        : "You're all set";
+      : role === "supplier"
+        ? "Set up your supplier profile"
+        : role === "property_manager"
+          ? "Tell us about your organization"
+          : "You're all set";
 
   return (
     <div className="min-h-screen bg-secondary/40">
@@ -32,8 +34,8 @@ export default async function OnboardingPage() {
       <main className="mx-auto max-w-3xl px-5 py-10">
         <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {role === "trade"
-            ? "This helps property decision-makers find you. You can edit everything later."
+          {role === "trade" || role === "supplier"
+            ? "This helps property decision-makers and trades find you. You can edit everything later."
             : "Just the basics — you can post an RFP right after."}
         </p>
         <div className="mt-8 rounded-xl border border-border bg-card p-6 sm:p-8">

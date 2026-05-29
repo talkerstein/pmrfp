@@ -103,7 +103,7 @@ export default async function HomePage() {
 
       {/* Audience split */}
       <Section tone="muted">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-8">
             <Eyebrow>For trade companies</Eyebrow>
             <h3 className="mt-3 text-xl font-semibold">Become easier to find. Monitor real opportunities.</h3>
@@ -116,6 +116,16 @@ export default async function HomePage() {
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{COPY.pmValue}</p>
             <Link href="/for-property-managers" className={buttonVariants({ variant: "outline", className: "mt-5" })}>
               Explore for property managers
+            </Link>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-8">
+            <Eyebrow>For suppliers</Eyebrow>
+            <h3 className="mt-3 text-xl font-semibold">Reach the trades and builders who buy what you sell.</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              List your products in a searchable directory and track commercial project demand across Canada.
+            </p>
+            <Link href="/for/suppliers" className={buttonVariants({ variant: "outline", className: "mt-5" })}>
+              Explore for suppliers
             </Link>
           </div>
         </div>

@@ -73,6 +73,7 @@ export const FOOTER_COLS = [
     heading: "Product",
     links: [
       { label: "Directory", href: "/directory" },
+      { label: "Supplier Directory", href: "/suppliers" },
       { label: "RFP Opportunities", href: "/rfps" },
       { label: "Trade Categories", href: "/trades" },
       { label: "Browse by Region", href: "/regions" },
@@ -83,9 +84,9 @@ export const FOOTER_COLS = [
     heading: "Solutions",
     links: [
       { label: "For Trades", href: "/for-trades" },
+      { label: "For Suppliers", href: "/for/suppliers" },
       { label: "For Property Managers", href: "/for-property-managers" },
       { label: "For Builders", href: "/for/builders" },
-      { label: "For Sales Teams", href: "/for/sales-teams" },
       { label: "For Investors", href: "/for/investors" },
     ],
   },

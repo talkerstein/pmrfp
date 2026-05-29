@@ -192,6 +192,45 @@ export const DEMO_VENDORS: DemoVendor[] = [
   },
 ];
 
+export const DEMO_SUPPLIERS: DemoVendor[] = [
+  {
+    slug: "maple-building-supply", name: "Maple Building Supply Co.", city: "Vaughan", province: "Ontario",
+    shortDescription: "Wholesale building products & materials for commercial trades and builders across the GTA.",
+    fullDescription: "Maple Building Supply distributes drywall, insulation, fasteners, and general building products to commercial trades, builders, and property maintenance teams across the Greater Toronto Area, with contractor pricing and job-site delivery.",
+    yearsInBusiness: 25, employeeCountRange: "51-200", insuranceStatus: "Fully insured", wsibStatus: "Active",
+    emergencyService: false, verified: true, featured: true, contactVisibility: "show_contact",
+    website: "https://example.com", email: "sales@example.com", phone: "(905) 555-0211",
+    categories: ["drywall", "general-contracting", "property-maintenance"], regions: ["vaughan", "toronto", "greater-toronto-area"], propertyTypes: ["commercial-office", "condominium"],
+  },
+  {
+    slug: "voltline-electrical-supply", name: "Voltline Electrical Supply", city: "Mississauga", province: "Ontario",
+    shortDescription: "Electrical distributor — panels, EV chargers, lighting & wire for commercial contractors.",
+    fullDescription: "Voltline supplies electrical contractors and property managers with panels, breakers, EV charging equipment, commercial lighting, and wire — with same-day pickup and contractor accounts.",
+    yearsInBusiness: 17, employeeCountRange: "11-50", insuranceStatus: "Fully insured", wsibStatus: "Active",
+    emergencyService: true, verified: true, featured: false, contactVisibility: "show_contact",
+    website: "https://example.com", email: "sales@example.com", phone: "(905) 555-0233",
+    categories: ["electrical", "lighting", "ev-charging"], regions: ["mississauga", "brampton", "greater-toronto-area"], propertyTypes: ["commercial-office", "industrial-building"],
+  },
+  {
+    slug: "thermair-hvac-distribution", name: "ThermAir HVAC Distribution", city: "North York", province: "Ontario",
+    shortDescription: "HVAC equipment & parts distributor for mechanical contractors.",
+    fullDescription: "ThermAir distributes rooftop units, furnaces, filters, and HVAC parts to mechanical contractors and building operators, with technical support and stocked Toronto warehouse.",
+    yearsInBusiness: 12, employeeCountRange: "11-50", insuranceStatus: "Fully insured", wsibStatus: "Active",
+    emergencyService: true, verified: false, featured: false, contactVisibility: "request_intro",
+    website: "https://example.com", email: "sales@example.com", phone: "(416) 555-0255",
+    categories: ["hvac", "building-automation"], regions: ["north-york", "toronto"], propertyTypes: ["apartment-building", "commercial-office"],
+  },
+  {
+    slug: "proclean-janitorial-supply", name: "ProClean Janitorial Supply", city: "Hamilton", province: "Ontario",
+    shortDescription: "Janitorial & cleaning supplies for facility and cleaning companies.",
+    fullDescription: "ProClean supplies cleaning chemicals, paper, equipment, and PPE to janitorial companies and property managers across the Golden Horseshoe, with bulk pricing and scheduled delivery.",
+    yearsInBusiness: 14, employeeCountRange: "11-50", insuranceStatus: "Fully insured", wsibStatus: "Active",
+    emergencyService: false, verified: true, featured: false, contactVisibility: "show_contact",
+    website: "https://example.com", email: "sales@example.com", phone: "(905) 555-0277",
+    categories: ["cleaning-janitorial", "waste-removal"], regions: ["hamilton", "burlington"], propertyTypes: ["rental-residential", "commercial-office"],
+  },
+];
+
 export interface DemoRfp {
   slug: string;
   title: string;

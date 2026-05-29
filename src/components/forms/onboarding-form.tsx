@@ -14,12 +14,12 @@ export function OnboardingForm({
   categories,
   regions,
 }: {
-  role: "trade" | "property_manager" | "visitor" | "admin" | "super_admin";
+  role: "trade" | "property_manager" | "visitor" | "admin" | "super_admin" | "supplier";
   categories: Option[];
   regions: Option[];
 }) {
   const [state, action, pending] = useActionState(completeOnboardingAction, {} as ActionState);
-  const isTrade = role === "trade";
+  const isListing = role === "trade" || role === "supplier";
 
   if (role === "visitor") {
     return (
@@ -50,7 +50,7 @@ export function OnboardingForm({
         <Textarea name="shortDescription" rows={2} maxLength={300} placeholder="One sentence about your company." />
       </Field>
 
-      {isTrade && (
+      {isListing && (
         <>
           <CheckboxGroup label="Service categories (select all that apply)" name="categories" options={categories} required />
           <CheckboxGroup label="Service regions" name="regions" options={regions} required />
@@ -69,7 +69,7 @@ export function OnboardingForm({
       )}
 
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Saving…" : isTrade ? "Finish & go to dashboard" : "Create organization"}
+        {pending ? "Saving…" : isListing ? "Finish & go to dashboard" : "Create organization"}
       </Button>
     </form>
   );

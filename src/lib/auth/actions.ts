@@ -124,7 +124,8 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   const categories = formData.getAll("categories").map(String);
   const regions = formData.getAll("regions").map(String);
-  const isTrade = role === "trade";
+  const isSupplier = role === "supplier";
+  const isListing = role === "trade" || isSupplier; // lists in a directory + needs categories/regions
 
   const parsed = companyProfileSchema.safeParse({
     name: formData.get("name"),
@@ -135,8 +136,8 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     province: formData.get("province") ?? "",
     shortDescription: formData.get("shortDescription") ?? "",
     publicContactVisibility: (formData.get("publicContactVisibility") as string) ?? "request_intro",
-    categories: isTrade ? categories : categories.length ? categories : ["__pm__"],
-    regions: isTrade ? regions : regions.length ? regions : ["__pm__"],
+    categories: isListing ? categories : categories.length ? categories : ["__pm__"],
+    regions: isListing ? regions : regions.length ? regions : ["__pm__"],
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please complete the required fields." };
@@ -152,7 +153,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     .insert({
       name: data.name,
       slug,
-      organization_type: isTrade ? "trade_company" : "property_manager",
+      organization_type: isSupplier ? "supplier" : isListing ? "trade_company" : "property_manager",
       website: data.website || null,
       phone: data.phone || null,
       email: data.email,
@@ -160,7 +161,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
       province: data.province || null,
       short_description: data.shortDescription || null,
       public_contact_visibility: data.publicContactVisibility,
-      profile_status: isTrade ? "pending_review" : "approved",
+      profile_status: isListing ? "pending_review" : "approved",
     })
     .select("id")
     .single<{ id: string }>();
@@ -172,7 +173,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     role: "owner",
   });
 
-  if (isTrade) {
+  if (isListing) {
     const { data: catRows } = await admin.from("trade_categories").select("id,slug").in("slug", categories);
     const { data: regRows } = await admin.from("regions").select("id,slug").in("slug", regions);
     if (catRows?.length) {
@@ -189,5 +190,5 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
 
-  redirect(isTrade ? "/dashboard" : "/pm-dashboard");
+  redirect(isListing ? "/dashboard" : "/pm-dashboard");
 }

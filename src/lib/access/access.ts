@@ -60,7 +60,8 @@ async function computeTradeAccess(
   supabase: Awaited<ReturnType<typeof createClient>>,
   organization: Organization | null,
 ): Promise<boolean> {
-  if (!organization || organization.organization_type !== "trade_company") return false;
+  if (!organization) return false;
+  if (organization.organization_type !== "trade_company" && organization.organization_type !== "supplier") return false;
   if (organization.status === "suspended") return false;
   const { data: sub } = await supabase
     .from("subscriptions")
@@ -106,6 +107,8 @@ export function isDemoMode(): boolean {
 function demoSession(role: UserRole): SessionContext {
   const now = new Date().toISOString();
   const isTrade = role === "trade";
+  const isSupplier = role === "supplier";
+  const isListing = isTrade || isSupplier;
   return {
     userId: "demo-user",
     profile: {
@@ -120,12 +123,12 @@ function demoSession(role: UserRole): SessionContext {
       created_at: now,
       updated_at: now,
     },
-    organization: isTrade || role === "property_manager"
+    organization: isListing || role === "property_manager"
       ? {
           id: "demo-org",
-          name: isTrade ? "Northline Electrical Ltd." : "Demo Property Group",
-          slug: isTrade ? "northline-electrical" : "demo-property-group",
-          organization_type: isTrade ? "trade_company" : "property_manager",
+          name: isSupplier ? "Maple Building Supply Co." : isTrade ? "Northline Electrical Ltd." : "Demo Property Group",
+          slug: isSupplier ? "maple-building-supply" : isTrade ? "northline-electrical" : "demo-property-group",
+          organization_type: isSupplier ? "supplier" : isTrade ? "trade_company" : "property_manager",
           website: null, phone: null, email: "demo@pmrfp.com",
           logo_url: null, address_line_1: null, address_line_2: null,
           city: "Toronto", province: "Ontario", postal_code: null, country: "Canada",
@@ -137,7 +140,7 @@ function demoSession(role: UserRole): SessionContext {
           created_at: now, updated_at: now,
         }
       : null,
-    hasTradeAccess: isTrade,
+    hasTradeAccess: isListing,
   };
 }
 
@@ -149,7 +152,7 @@ export function isAdminRole(role: UserRole): boolean {
 export function roleHome(role: UserRole): string {
   if (role === "admin" || role === "super_admin") return "/admin";
   if (role === "property_manager") return "/pm-dashboard";
-  if (role === "trade") return "/dashboard";
+  if (role === "trade" || role === "supplier") return "/dashboard";
   return "/directory";
 }
 
