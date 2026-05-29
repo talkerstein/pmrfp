@@ -72,11 +72,31 @@ export const FOOTER_COLS = [
   {
     heading: "Product",
     links: [
-      { label: "For Trades", href: "/for-trades" },
-      { label: "For Property Managers", href: "/for-property-managers" },
       { label: "Directory", href: "/directory" },
       { label: "RFP Opportunities", href: "/rfps" },
+      { label: "Trade Categories", href: "/trades" },
+      { label: "Browse by Region", href: "/regions" },
       { label: "Pricing", href: "/pricing" },
+    ],
+  },
+  {
+    heading: "Solutions",
+    links: [
+      { label: "For Trades", href: "/for-trades" },
+      { label: "For Property Managers", href: "/for-property-managers" },
+      { label: "For Builders", href: "/for/builders" },
+      { label: "For Sales Teams", href: "/for/sales-teams" },
+      { label: "For Investors", href: "/for/investors" },
+    ],
+  },
+  {
+    heading: "Compare",
+    links: [
+      { label: "All comparisons", href: "/vs" },
+      { label: "PMRFP vs MERX", href: "/vs/merx" },
+      { label: "PMRFP vs HomeStars", href: "/vs/homestars" },
+      { label: "PMRFP vs ConstructConnect", href: "/vs/constructconnect" },
+      { label: "PMRFP vs the status quo", href: "/vs/status-quo" },
     ],
   },
   {

@@ -3,6 +3,9 @@ import { SITE } from "@/lib/site";
 import { listRfps } from "@/lib/data/rfps";
 import { listVendors } from "@/lib/data/directory";
 import { listResources } from "@/lib/data/resources";
+import { getCategories, getRegions } from "@/lib/data/taxonomy";
+import { COMPETITORS } from "@/lib/seo/competitors";
+import { VERTICALS } from "@/lib/seo/verticals";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
@@ -16,16 +19,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/rfps", priority: 0.8, freq: "daily" },
     { path: "/pricing", priority: 0.9, freq: "monthly" },
     { path: "/resources", priority: 0.7, freq: "weekly" },
+    { path: "/trades", priority: 0.8, freq: "weekly" },
+    { path: "/regions", priority: 0.8, freq: "weekly" },
+    { path: "/vs", priority: 0.7, freq: "monthly" },
+    { path: "/for", priority: 0.7, freq: "monthly" },
     { path: "/contact", priority: 0.5, freq: "yearly" },
     { path: "/terms", priority: 0.3, freq: "yearly" },
     { path: "/privacy", priority: 0.3, freq: "yearly" },
     { path: "/disclaimer", priority: 0.3, freq: "yearly" },
   ];
 
-  const [rfps, vendors, resources] = await Promise.all([
+  const [rfps, vendors, resources, categories, regions] = await Promise.all([
     listRfps().catch(() => []),
     listVendors().catch(() => []),
     listResources().catch(() => []),
+    getCategories().catch(() => []),
+    getRegions().catch(() => []),
   ]);
 
   const entries: MetadataRoute.Sitemap = staticPaths.map((p) => ({
@@ -38,6 +47,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const r of rfps) entries.push({ url: `${base}/rfps/${r.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const v of vendors) entries.push({ url: `${base}/directory/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const a of resources) entries.push({ url: `${base}/resources/${a.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
+  for (const c of categories) entries.push({ url: `${base}/trades/${c.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  for (const rg of regions) entries.push({ url: `${base}/regions/${rg.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  for (const c of COMPETITORS) entries.push({ url: `${base}/vs/${c.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
+  for (const v of VERTICALS) entries.push({ url: `${base}/for/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
 
   return entries;
 }

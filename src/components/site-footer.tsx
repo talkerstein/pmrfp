@@ -6,8 +6,8 @@ export function SiteFooter() {
   return (
     <footer className="bg-navy text-slate-300">
       <Container className="py-16">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div>
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="sm:col-span-2 lg:col-span-1">
             <span className="flex items-center gap-2">
               <span className="flex size-8 items-center justify-center rounded-md bg-gold-500 text-[13px] font-bold tracking-tight text-navy">
                 PM
