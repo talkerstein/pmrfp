@@ -92,7 +92,7 @@ export default async function HomePage() {
           <div className="grid items-center gap-14 py-20 lg:grid-cols-[1.04fr_.96fr] lg:py-28">
             <div>
               <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
-                <span className="h-px w-5 bg-teal-300" /> Canada-First · Commercial Property
+                <span className="h-px w-5 bg-teal-300" /> Canada-First · Commercial &amp; Residential
               </span>
               <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
                 Find commercial property RFPs and get{" "}
@@ -100,8 +100,8 @@ export default async function HomePage() {
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/75">
                 {SITE.name} helps Canadian trades, contractors, and service companies get listed,
-                monitor commercial property opportunities, and connect with property managers,
-                builders, and building owners.
+                monitor commercial and residential property opportunities, and connect with property
+                managers, builders, and building owners.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/sign-up" className={buttonVariants({ size: "lg", variant: "accent" })}>
@@ -253,11 +253,11 @@ export default async function HomePage() {
           <div className="max-w-2xl">
             <Eyebrow>What we cover</Eyebrow>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Built for every kind of commercial property.
+              Built for every kind of commercial &amp; residential property.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-              From high-rise condos to retail plazas, {SITE.name} connects the buildings that need
-              work with the trades who do it.
+              From rental communities and high-rise condos to retail plazas and office towers,{" "}
+              {SITE.name} connects the buildings that need work with the trades who do it.
             </p>
           </div>
           <div className="mt-11 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">

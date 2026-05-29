@@ -12,10 +12,10 @@ const regionSlugs = new Set(DEMO_REGIONS.map((r) => r.slug));
 const propSlugs = new Set(DEMO_PROPERTY_TYPES.map((p) => p.slug));
 
 describe("taxonomy counts match the spec", () => {
-  it("39 categories, 21 regions, 17 property types", () => {
+  it("39 categories, 21 regions, 21 property types", () => {
     expect(DEMO_CATEGORIES).toHaveLength(39);
     expect(DEMO_REGIONS).toHaveLength(21);
-    expect(DEMO_PROPERTY_TYPES).toHaveLength(17);
+    expect(DEMO_PROPERTY_TYPES).toHaveLength(21);
   });
   it("has unique slugs", () => {
     expect(catSlugs.size).toBe(DEMO_CATEGORIES.length);

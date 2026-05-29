@@ -234,12 +234,12 @@ describe("contact_requests + resources", () => {
 });
 
 describe("reference data loaded", () => {
-  it("has 39 categories, 21 regions, 17 property types", async () => {
+  it("has 39 categories, 21 regions, 21 property types", async () => {
     const c = await rows(`select id from trade_categories`);
     const rg = await rows(`select id from regions`);
     const p = await rows(`select id from property_types`);
     expect(c.length).toBe(39);
     expect(rg.length).toBe(21);
-    expect(p.length).toBe(17);
+    expect(p.length).toBe(21);
   });
 });

@@ -6,9 +6,9 @@
 export const SITE = {
   name: "PMRFP",
   longName: "PMRFP — Property Management RFP",
-  tagline: "Commercial property RFPs & vendor discovery, built for Canadian trades.",
+  tagline: "Commercial & residential property RFPs and vendor discovery, built for Canadian trades.",
   description:
-    "PMRFP helps Canadian trades and service companies get listed, monitor commercial property RFPs, and connect with property managers, builders, and building owners.",
+    "PMRFP helps Canadian trades and service companies get listed, monitor commercial and residential property RFPs, and connect with property managers, builders, and building owners.",
   url: "https://pmrfp.com",
   email: "hello@pmrfp.com",
   supportEmail: "support@pmrfp.com",

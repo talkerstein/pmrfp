@@ -58,9 +58,9 @@ export default async function ForPropertyManagersPage() {
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
               {SITE.name} gives property managers, builders, and building owners
-              a simple way to post commercial property needs, discover relevant
-              trades, and compare interested companies — without committing to a
-              hiring decision upfront.
+              a simple way to post commercial and residential property needs,
+              discover relevant trades, and compare interested companies — without
+              committing to a hiring decision upfront.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/sign-up" className={buttonVariants({ size: "lg" })}>
