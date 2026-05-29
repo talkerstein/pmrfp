@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { signOutAction } from "@/lib/auth/actions";
 import { SITE } from "@/lib/site";
 
 type NavItem = { href: string; label: string };
@@ -37,10 +38,15 @@ export function DashboardShell({
           <div className="eyebrow text-muted-foreground md:hidden">
             {SITE.name} · {area}
           </div>
-          <div className="ml-auto text-sm text-muted-foreground">
+          <div className="ml-auto flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground">
               View site
             </Link>
+            <form action={signOutAction}>
+              <button type="submit" className="hover:text-foreground">
+                Sign out
+              </button>
+            </form>
           </div>
         </header>
         <main className="flex-1 p-5 sm:p-8">{children}</main>

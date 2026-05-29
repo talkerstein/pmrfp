@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PMRFP
 
-## Getting Started
+**Commercial property RFPs & vendor discovery, built for Canadian trades.**
 
-First, run the development server:
+PMRFP is a Canada-first, two-sided B2B SaaS marketplace:
+
+- **Trade companies** (electricians, HVAC, roofers, snow removal, cleaning, GCs…) get a directory listing and — with **Trade Pro ($249 CAD/year)** — view full RFP opportunities and express interest.
+- **Property managers / builders / owners** post RFPs for free and browse the vendor directory.
+- **Admins** seed and moderate the marketplace.
+
+> PMRFP is a vendor discovery and RFP visibility platform. It does **not** guarantee project availability, bid success, contract awards, or revenue.
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router), TypeScript (strict), React 19 |
+| Styling | Tailwind CSS v4 + shadcn/ui (Base UI), Inter |
+| Backend | Supabase — Auth, Postgres, Storage, **RLS** |
+| Payments | Stripe (annual subscription) + Billing Portal + webhooks |
+| Email | Resend (transactional) |
+| Validation | Zod (shared client + server) |
+| Tests | Vitest + PGlite (RLS), Playwright (e2e) |
+| Hosting | Vercel |
+
+## Demo mode (zero setup)
+
+The app runs **without any credentials**. When Supabase isn't configured it serves from seeded fixtures (`src/lib/demo-data.ts`) so the entire public site — homepage, directory, RFP board, resources — is fully browsable, and the authenticated dashboards/admin are previewable via a demo session.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+On the RFP detail page in demo mode, toggle between the full member view and the locked visitor view with `?view=locked`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev          # dev server
+npm run build        # production build
+npm run start        # serve the production build
+npm run typecheck    # tsc --noEmit
+npm run test         # Vitest (RLS in PGlite + unit tests)
+npm run test:e2e     # Playwright (requires browsers + a running app)
+```
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/
+    (marketing)/   public site: home, for-trades, for-property-managers,
+                   pricing, directory, rfps, resources, contact, legal
+    (auth)/        sign-in, sign-up, forgot/reset-password
+    onboarding/    role-aware org setup
+    dashboard/     trade dashboard (gated: role=trade)
+    pm-dashboard/  property-manager dashboard
+    admin/         admin back-office (role=admin/super_admin)
+    api/           stripe (checkout/portal/webhook), contact,
+                   rfp-interest, save-rfp, cron/rfp-alerts
+  components/      public/, dashboard/, admin/, forms/, ui/ (shadcn)
+  lib/
+    supabase/      browser/server/service clients + proxy session
+    access/        getSession, requireRole, hasActiveTradeAccess
+    data/          directory/rfps/taxonomy/resources (Supabase-or-demo)
+    stripe/        server client + subscription sync
+    email/         Resend senders (all 7 transactional emails)
+    validations.ts Zod schemas
+    demo-data.ts   fixtures for demo mode
+supabase/migrations/  schema, RLS, storage, reference data
+supabase/seed.sql     demo marketplace
+test/                 db (PGlite RLS), unit, e2e
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Security model
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+RFP gating — the core monetization wall — is enforced **at the database**:
 
-## Deploy on Vercel
+- Full `rfp_posts` rows are readable only by paid trades, the owning PM, or admins (RLS).
+- A postgres-owned `rfp_public` view exposes **teaser columns only** to everyone.
+- `has_active_trade_access()` (SQL + mirrored in `src/lib/access`) gates saves and interest submissions.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This is verified offline by `test/db/rls.test.ts` (15 assertions in PGlite with a Supabase auth shim).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Going live
+
+The product is complete in demo mode. To run it for real, connect Supabase, Stripe, and Resend — see **[docs/SETUP.md](docs/SETUP.md)**. In short: create the three accounts, paste the keys into `.env.local` (template in `.env.example`), apply the migrations + seed, and deploy to Vercel.
+
+---
+
+Built by the team behind [PermitClub](https://permitclub.com).
