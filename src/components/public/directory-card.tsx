@@ -1,8 +1,31 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BadgeCheck, MapPin } from "lucide-react";
+import { BadgeCheck, MapPin, Globe2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { VendorListItem } from "@/lib/data/types";
+
+/**
+ * Compress an org's service-region list into one short coverage label.
+ * Examples:
+ *   ["Canada", "United States"]   → "Canada + USA"
+ *   ["Canada"]                    → "Canada-wide"
+ *   ["Toronto", "GTA", "Markham"] → "Toronto + 2 more"
+ *   ["Toronto"]                   → "Toronto"
+ *   []                            → null (no coverage tag rendered)
+ */
+function coverageLabel(regions: string[]): string | null {
+  if (!regions.length) return null;
+  const hasCanada = regions.includes("Canada");
+  const hasUSA = regions.includes("United States");
+  if (hasCanada && hasUSA) return "Canada + USA";
+  if (hasCanada) return "Canada-wide";
+  // Drop province-level entries from the "+ N more" count so it reads cleaner
+  const PROVINCES = new Set(["Ontario", "Quebec", "Alberta", "British Columbia", "Manitoba"]);
+  const cities = regions.filter((r) => !PROVINCES.has(r));
+  if (!cities.length) return regions[0];
+  if (cities.length === 1) return cities[0];
+  return `${cities[0]} + ${cities.length - 1} more`;
+}
 
 export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
   const initials = vendor.name
@@ -11,6 +34,8 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+  const coverage = coverageLabel(vendor.regions);
+  const wideCoverage = coverage === "Canada-wide" || coverage === "Canada + USA";
   return (
     <Link
       href={`/directory/${vendor.slug}`}
@@ -54,6 +79,19 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
       )}
 
       <div className="mt-4 flex flex-wrap gap-1.5">
+        {coverage && (
+          <Badge
+            variant={wideCoverage ? "default" : "outline"}
+            className={
+              wideCoverage
+                ? "bg-teal-100 text-teal-ink hover:bg-teal-100 font-normal"
+                : "font-normal"
+            }
+          >
+            {wideCoverage && <Globe2 className="mr-1 size-3" />}
+            Serves {coverage}
+          </Badge>
+        )}
         {vendor.categories.slice(0, 3).map((c) => (
           <Badge key={c} variant="secondary" className="font-normal">
             {c}
