@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BadgeCheck, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { VendorListItem } from "@/lib/data/types";
@@ -16,10 +17,16 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
       className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
     >
       <div className="flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-indigo text-sm font-bold text-white">
+        <span className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-indigo text-sm font-bold text-white">
           {vendor.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={vendor.logoUrl} alt={vendor.name} className="size-full object-cover" />
+            <Image
+              src={vendor.logoUrl}
+              alt={vendor.name}
+              fill
+              sizes="44px"
+              className="object-contain p-1"
+              unoptimized={vendor.logoUrl.endsWith(".svg")}
+            />
           ) : (
             initials
           )}

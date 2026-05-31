@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { LogoUploader } from "@/components/forms/logo-uploader";
 
 type Option = { slug: string; name: string };
 
@@ -16,10 +17,12 @@ export interface CompanyDefaults {
   shortDescription?: string; fullDescription?: string; yearsInBusiness?: number | null;
   employeeCountRange?: string; insuranceStatus?: string; wsibStatus?: string;
   emergencyService?: boolean; publicContactVisibility?: string;
+  logoUrl?: string | null;
 }
 
 export function CompanyProfileForm({
   defaults,
+  organizationId,
   categories,
   regions,
   propertyTypes,
@@ -28,6 +31,7 @@ export function CompanyProfileForm({
   selectedPropertyTypes = [],
 }: {
   defaults: CompanyDefaults;
+  organizationId: string | null;
   categories: Option[];
   regions: Option[];
   propertyTypes: Option[];
@@ -41,6 +45,13 @@ export function CompanyProfileForm({
     <form action={action} className="space-y-6">
       {state.error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       {state.success && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{state.success}</p>}
+
+      <Section title="Logo">
+        <LogoUploader
+          organizationId={organizationId}
+          initialLogoUrl={defaults.logoUrl ?? null}
+        />
+      </Section>
 
       <Section title="Company basics">
         <div className="grid gap-4 sm:grid-cols-2">

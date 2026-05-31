@@ -38,6 +38,7 @@ export default async function CompanyProfilePage() {
       wsibStatus: org.wsib_status ?? undefined,
       emergencyService: org.emergency_service,
       publicContactVisibility: org.public_contact_visibility ?? undefined,
+      logoUrl: org.logo_url ?? null,
     };
   }
 
@@ -61,6 +62,7 @@ export default async function CompanyProfilePage() {
       />
       <CompanyProfileForm
         defaults={defaults}
+        organizationId={session.organization?.id ?? null}
         categories={categories}
         regions={regions}
         propertyTypes={propertyTypes}

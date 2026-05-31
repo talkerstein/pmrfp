@@ -67,6 +67,27 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   const orgId = session.organization.id;
   const score = completion(d, categories.length, regions.length);
 
+  // Validate the logoUrl points at our own Supabase storage logos bucket. If it
+  // doesn't (including empty/cleared), set logo_url to null. Prevents URL
+  // injection from a malicious client.
+  const rawLogoUrl = formData.get("logoUrl")?.toString().trim() ?? "";
+  let logoUrl: string | null = null;
+  if (rawLogoUrl) {
+    try {
+      const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
+      const parsed = new URL(rawLogoUrl);
+      if (
+        parsed.protocol === "https:" &&
+        parsed.host === supabaseHost &&
+        parsed.pathname.includes("/storage/v1/object/public/logos/")
+      ) {
+        logoUrl = rawLogoUrl;
+      }
+    } catch {
+      logoUrl = null;
+    }
+  }
+
   const { error } = await supabase
     .from("organizations")
     .update({
@@ -86,6 +107,7 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
       wsib_status: d.wsibStatus || null,
       emergency_service: d.emergencyService ?? false,
       public_contact_visibility: d.publicContactVisibility,
+      logo_url: logoUrl,
       profile_completion_score: score,
       profile_status: "pending_review",
     })
