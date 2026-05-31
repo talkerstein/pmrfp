@@ -52,12 +52,15 @@ export default async function ForPropertyManagersPage() {
       <section className="border-b border-border bg-background">
         <Container className="py-20 sm:py-28">
           <div className="max-w-3xl">
-            <Eyebrow>For property managers, builders &amp; owners</Eyebrow>
+            <Eyebrow>For property managers, builders, owners &amp; real estate professionals</Eyebrow>
             <h1 className="mt-5 text-4xl font-semibold leading-[1.08] text-foreground sm:text-5xl">
               Post a project. Find the right vendors. No pressure to hire.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              {SITE.name} gives property managers, builders, and building owners
+              {SITE.name} gives property managers, builders, building owners, and{" "}
+              <Link href="/for/real-estate" className="underline decoration-teal-400/60 decoration-2 underline-offset-4 hover:text-foreground">
+                real estate professionals
+              </Link>{" "}
               a simple way to post commercial and residential property needs,
               discover relevant trades, and compare interested companies — without
               committing to a hiring decision upfront.

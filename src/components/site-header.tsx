@@ -55,7 +55,7 @@ export function SiteHeader() {
             Sign In
           </Link>
           <Link href="/sign-up" className={buttonVariants({ size: "sm" })}>
-            Join as a Trade Company
+            Join PMRFP
           </Link>
         </div>
 
@@ -96,7 +96,7 @@ export function SiteHeader() {
                 onClick={() => setOpen(false)}
                 className={cn(buttonVariants(), "w-full")}
               >
-                Join as a Trade Company
+                Join PMRFP
               </Link>
             </div>
           </div>

@@ -7,7 +7,7 @@ import { safeNextPath } from "@/lib/auth/next";
 
 export const metadata: Metadata = { title: "Join PMRFP" };
 
-const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor"] as const;
+const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent"] as const;
 type ValidRole = (typeof VALID_ROLES)[number];
 
 export default async function SignUpPage({
@@ -26,9 +26,14 @@ export default async function SignUpPage({
 
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold tracking-tight">Join PMRFP</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Create your account in under a minute.
+      <p className="eyebrow text-teal-ink">
+        <span className="mr-2 inline-block h-px w-5 align-middle bg-teal-500" />
+        Membership
+      </p>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight">Join the PMRFP network</h1>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+        Canada&apos;s commercial property RFP network — trades, suppliers, property
+        managers, builders, and real estate professionals on one platform.
       </p>
       <div className="mt-6">
         <SignUpForm initialRole={initialRole} next={next} />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Building2, HardHat, Package, Search } from "lucide-react";
+import { Building2, HardHat, Package, Search, Home } from "lucide-react";
 import {
   forgotPasswordAction,
   resetPasswordAction,
@@ -51,18 +51,22 @@ export function SignInForm({ next }: { next?: string | null }) {
   );
 }
 
+// Prestige-tone role picker. Industry-native labels — these are how
+// people in each role describe themselves to peers, not how a SaaS sells
+// them. Order: most common to least.
 const ROLES = [
-  { value: "trade", label: "I'm a trade company", icon: HardHat, hint: "Get listed and see RFP opportunities" },
-  { value: "supplier", label: "I'm a supplier / distributor", icon: Package, hint: "Get listed and reach trades, builders & PMs" },
-  { value: "property_manager", label: "I manage / own / build properties", icon: Building2, hint: "Post RFPs and browse vendors" },
-  { value: "visitor", label: "I'm just browsing", icon: Search, hint: "Explore the directory" },
+  { value: "trade", label: "Trade or service company", icon: HardHat, hint: "Get listed in the directory and access live RFP opportunities" },
+  { value: "supplier", label: "Supplier or distributor", icon: Package, hint: "Reach the trades, builders, and property managers who buy what you sell" },
+  { value: "property_manager", label: "Property manager, owner, or builder", icon: Building2, hint: "Post RFPs for your properties; browse and shortlist trades" },
+  { value: "real_estate_agent", label: "Real estate professional", icon: Home, hint: "Post pre-listing repairs, turnovers, or portfolio work for your clients" },
+  { value: "visitor", label: "Browsing the directory", icon: Search, hint: "Look around — you can join later" },
 ] as const;
 
 export function SignUpForm({
   initialRole,
   next,
 }: {
-  initialRole?: "trade" | "supplier" | "property_manager" | "visitor";
+  initialRole?: "trade" | "supplier" | "property_manager" | "visitor" | "real_estate_agent";
   next?: string | null;
 }) {
   const [state, action, pending] = useActionState(signUpAction, initial);

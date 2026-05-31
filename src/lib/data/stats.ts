@@ -34,17 +34,21 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 
   // HEAD-count both queries in parallel. RLS on rfp_public + the trade-company
   // RLS already constrain to publicly visible rows, so anon-context counts are
-  // safe.
+  // safe. is_demo=false filter on the RFP counter keeps the public number
+  // honest — sample/seed RFPs don't count toward the "last 30 days" social
+  // proof number that visitors see on /rfps + /pricing.
   const [rfpCount, tradeCount] = await Promise.all([
     supabase
       .from("rfp_public")
       .select("*", { count: "exact", head: true })
+      .eq("is_demo", false)
       .gte("created_at", since),
     supabase
       .from("organizations")
       .select("*", { count: "exact", head: true })
       .eq("organization_type", "trade_company")
-      .eq("profile_status", "approved"),
+      .eq("profile_status", "approved")
+      .eq("is_demo", false),
   ]);
 
   return {

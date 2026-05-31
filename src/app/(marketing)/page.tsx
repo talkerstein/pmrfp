@@ -17,14 +17,6 @@ import { getCategories } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
 import { cn } from "@/lib/utils";
 
-const TRUST = [
-  "Canada-first",
-  "Commercial property focused",
-  "Vendor directory",
-  "RFP visibility",
-  "Annual trade membership",
-];
-
 const PROBLEMS = [
   { n: "01", t: "Fragmented opportunities", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
   { n: "02", t: "Hard-to-reach buyers", d: "Property managers keep private preferred-vendor lists that newcomers simply can't see." },
@@ -211,17 +203,6 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* ===================== TRUST BAR ===================== */}
-      <div className="bg-indigo-700 text-indigo-100/80">
-        <Container className="flex flex-wrap items-center gap-x-10 gap-y-3 py-5">
-          {TRUST.map((t) => (
-            <span key={t} className="flex items-center gap-2.5 text-sm font-medium">
-              <span className="size-1.5 rounded-full bg-teal-300" /> {t}
-            </span>
-          ))}
-        </Container>
-      </div>
-
       {/* ===================== PROBLEM ===================== */}
       <section className="bg-background">
         <Container className="py-20">
@@ -256,7 +237,7 @@ export default async function HomePage() {
           <div className="max-w-2xl">
             <Eyebrow>What we cover</Eyebrow>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Built for every kind of commercial &amp; residential property.
+              Commercial and residential property work, all in one place.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
               From rental communities and high-rise condos to retail plazas and office towers,{" "}

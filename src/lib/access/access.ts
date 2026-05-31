@@ -151,7 +151,8 @@ export function isAdminRole(role: UserRole): boolean {
 /** Where a given role lands by default. */
 export function roleHome(role: UserRole): string {
   if (role === "admin" || role === "super_admin") return "/admin";
-  if (role === "property_manager") return "/pm-dashboard";
+  // REAs share the PM-side surface (post RFPs for clients, browse trades).
+  if (role === "property_manager" || role === "real_estate_agent") return "/pm-dashboard";
   if (role === "trade" || role === "supplier") return "/dashboard";
   return "/directory";
 }

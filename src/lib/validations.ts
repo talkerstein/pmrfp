@@ -6,7 +6,7 @@ export const signUpSchema = z.object({
   fullName: z.string().min(1, "Your name is required"),
   email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["trade", "property_manager", "visitor", "supplier"]),
+  role: z.enum(["trade", "property_manager", "visitor", "supplier", "real_estate_agent"]),
   // Honeypot — must stay empty.
   company_website: z.string().max(0).optional(),
 });

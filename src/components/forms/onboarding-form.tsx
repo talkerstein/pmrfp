@@ -15,7 +15,7 @@ export function OnboardingForm({
   regions,
   next,
 }: {
-  role: "trade" | "property_manager" | "visitor" | "admin" | "super_admin" | "supplier";
+  role: "trade" | "property_manager" | "visitor" | "admin" | "super_admin" | "supplier" | "real_estate_agent";
   categories: Option[];
   regions: Option[];
   next?: string | null;
