@@ -25,11 +25,12 @@ function Alert({ state }: { state: ActionState }) {
   return null;
 }
 
-export function SignInForm() {
+export function SignInForm({ next }: { next?: string | null }) {
   const [state, action, pending] = useActionState(signInAction, initial);
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
+      {next && <input type="hidden" name="next" value={next} />}
       <div className="space-y-1.5">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" required autoComplete="email" />
@@ -57,13 +58,20 @@ const ROLES = [
   { value: "visitor", label: "I'm just browsing", icon: Search, hint: "Explore the directory" },
 ] as const;
 
-export function SignUpForm() {
+export function SignUpForm({
+  initialRole,
+  next,
+}: {
+  initialRole?: "trade" | "supplier" | "property_manager" | "visitor";
+  next?: string | null;
+}) {
   const [state, action, pending] = useActionState(signUpAction, initial);
-  const [role, setRole] = useState<string>("trade");
+  const [role, setRole] = useState<string>(initialRole ?? "trade");
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
       <input type="hidden" name="role" value={role} />
+      {next && <input type="hidden" name="next" value={next} />}
       <div className="space-y-2">
         <Label>I am…</Label>
         <div className="grid gap-2">

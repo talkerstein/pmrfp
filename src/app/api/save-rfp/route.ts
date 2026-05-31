@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/access/access";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const limited = await checkRateLimit(request, "save-rfp");
+  if (limited) return rateLimitResponse(limited);
+
   let body: { rfpId?: string; action?: "save" | "unsave" };
   try {
     body = await request.json();

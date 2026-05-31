@@ -3,8 +3,12 @@ import { contactRequestSchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendAdminContactEmail } from "@/lib/email/send";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const limited = await checkRateLimit(request, "contact");
+  if (limited) return rateLimitResponse(limited);
+
   let body: unknown;
   try {
     body = await request.json();

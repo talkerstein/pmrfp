@@ -4,12 +4,19 @@ import { OnboardingForm } from "@/components/forms/onboarding-form";
 import { requireUser } from "@/lib/access/access";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { SITE } from "@/lib/site";
+import { safeNextPath } from "@/lib/auth/next";
 
 export const metadata: Metadata = { title: "Set up your account" };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const session = await requireUser();
   const role = session.profile.primary_role;
+  const { next: rawNext } = await searchParams;
+  const next = safeNextPath(rawNext);
   const [categories, regions] = await Promise.all([getCategories(), getRegions()]);
 
   const heading =
@@ -39,7 +46,7 @@ export default async function OnboardingPage() {
             : "Just the basics — you can post an RFP right after."}
         </p>
         <div className="mt-8 rounded-xl border border-border bg-card p-6 sm:p-8">
-          <OnboardingForm role={role} categories={categories} regions={regions} />
+          <OnboardingForm role={role} categories={categories} regions={regions} next={next} />
         </div>
       </main>
     </div>

@@ -69,8 +69,12 @@ export default async function RfpTemplateDetailPage({
     (other) => other.slug !== t.slug && other.tradeSlug === t.tradeSlug,
   ).slice(0, 3);
 
-  const useTemplateHref = `/pm-dashboard/rfps/new?template=${t.slug}`;
-  const signUpHref = `/sign-up?role=property_manager&template=${t.slug}`;
+  // Single CTA that does the right thing regardless of auth state.
+  // /use-template/[slug] is a tiny server route that branches on session.
+  const useTemplateHref = `/use-template/${t.slug}`;
+  const signUpHref = `/sign-up?role=property_manager&next=${encodeURIComponent(
+    `/pm-dashboard/rfps/new?template=${t.slug}`,
+  )}`;
   const pdfHref = `/rfp-templates/${t.slug}/print`;
 
   // HowTo-style article schema (use Article — broadly understood) + FAQ + Breadcrumb.

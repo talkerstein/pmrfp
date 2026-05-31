@@ -13,10 +13,12 @@ export function OnboardingForm({
   role,
   categories,
   regions,
+  next,
 }: {
   role: "trade" | "property_manager" | "visitor" | "admin" | "super_admin" | "supplier";
   categories: Option[];
   regions: Option[];
+  next?: string | null;
 }) {
   const [state, action, pending] = useActionState(completeOnboardingAction, {} as ActionState);
   const isListing = role === "trade" || role === "supplier";
@@ -25,6 +27,7 @@ export function OnboardingForm({
     return (
       <form action={action} className="space-y-4">
         <input type="hidden" name="intent" value="browsing" />
+        {next && <input type="hidden" name="next" value={next} />}
         <p className="text-sm text-muted-foreground">
           You&apos;re all set to browse the vendor directory and RFP opportunities.
         </p>
@@ -36,6 +39,7 @@ export function OnboardingForm({
   return (
     <form action={action} className="space-y-6">
       {state.error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {next && <input type="hidden" name="next" value={next} />}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Company name" required><Input name="name" required /></Field>

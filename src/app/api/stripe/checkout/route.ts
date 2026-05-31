@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/access/access";
 import { getStripe, isStripeConfigured, SITE_URL } from "@/lib/stripe/server";
+import { EVENT, trackEvent } from "@/lib/analytics";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const limited = await checkRateLimit(request, "checkout");
+  if (limited) return rateLimitResponse(limited);
+
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Billing is not configured yet." }, { status: 400 });
   }
@@ -40,5 +45,6 @@ export async function POST(request: Request) {
     subscription_data: { metadata },
   });
 
+  await trackEvent(EVENT.CHECKOUT_STARTED, { plan });
   return NextResponse.json({ url: checkout.url });
 }

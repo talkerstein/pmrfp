@@ -1,10 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession, roleHome } from "@/lib/access/access";
+import { safeNextPath } from "@/lib/auth/next";
 import {
   companyProfileSchema,
   forgotPasswordSchema,
@@ -13,6 +15,20 @@ import {
   signUpSchema,
 } from "@/lib/validations";
 import { sendWelcomeEmail } from "@/lib/email/send";
+import { EVENT, trackEvent } from "@/lib/analytics";
+import { checkRateLimitByIp } from "@/lib/rate-limit";
+
+async function authIp(): Promise<string> {
+  const h = await headers();
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    h.get("cf-connecting-ip") ||
+    "unknown"
+  );
+}
+
+const RATE_LIMIT_MESSAGE = "Too many attempts. Please wait a minute and try again.";
 
 export interface ActionState {
   error?: string;
@@ -27,6 +43,9 @@ function slugify(s: string): string {
 }
 
 export async function signUpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (await checkRateLimitByIp(await authIp(), "auth")) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
   const parsed = signUpSchema.safeParse({
     fullName: formData.get("fullName"),
     email: formData.get("email"),
@@ -55,10 +74,15 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     return { error: "We couldn't complete your sign-up. Please try again." };
   }
   await sendWelcomeEmail(parsed.data.email, parsed.data.fullName);
-  redirect("/onboarding");
+  const next = safeNextPath(formData.get("next")?.toString());
+  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next });
+  redirect(next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding");
 }
 
 export async function signInAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (await checkRateLimitByIp(await authIp(), "auth")) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
   const parsed = signInSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -71,7 +95,12 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
   if (error) return { error: error.message };
 
   const session = await getSession();
-  if (session && !session.profile.onboarding_completed) redirect("/onboarding");
+  const next = safeNextPath(formData.get("next")?.toString());
+  await trackEvent(EVENT.SIGNIN_COMPLETED, { hasNext: !!next });
+  if (session && !session.profile.onboarding_completed) {
+    redirect(next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding");
+  }
+  if (next) redirect(next);
   redirect(session ? roleHome(session.profile.primary_role) : "/dashboard");
 }
 
@@ -84,6 +113,9 @@ export async function signOutAction(): Promise<void> {
 }
 
 export async function forgotPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (await checkRateLimitByIp(await authIp(), "auth")) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
   const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { error: "Enter a valid email." };
   if (!isSupabaseConfigured()) return { error: DEMO_NOTICE };
@@ -119,11 +151,13 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   const role = session.profile.primary_role;
   const intent = formData.get("intent");
 
+  const next = safeNextPath(formData.get("next")?.toString());
+
   // "Just browsing" users skip org creation.
   if (intent === "browsing" || role === "visitor") {
     const supabase = await createClient();
     await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
-    redirect("/directory");
+    redirect(next ?? "/directory");
   }
 
   const categories = formData.getAll("categories").map(String);
@@ -193,6 +227,8 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   }
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
+  await trackEvent(EVENT.ONBOARDING_COMPLETED, { role });
 
+  if (next) redirect(next);
   redirect(isListing ? "/dashboard" : "/pm-dashboard");
 }

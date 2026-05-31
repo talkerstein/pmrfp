@@ -4,8 +4,13 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/access/access";
 import { sendAdminNewInterest, sendInterestConfirmation } from "@/lib/email/send";
+import { EVENT, trackEvent } from "@/lib/analytics";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const limited = await checkRateLimit(request, "rfp-interest");
+  if (limited) return rateLimitResponse(limited);
+
   let body: unknown;
   try {
     body = await request.json();
@@ -61,6 +66,7 @@ export async function POST(request: Request) {
     sendInterestConfirmation(session.profile.email, rfp.title),
     sendAdminNewInterest({ vendor: session.organization.name, rfpTitle: rfp.title, message: data.message }),
   ]);
+  await trackEvent(EVENT.RFP_INTEREST_SUBMITTED, { rfpId: rfp.id });
 
   return NextResponse.json({ ok: true });
 }
