@@ -167,8 +167,13 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
   if (rfp.posted_by_user_id !== session.userId && session.profile.primary_role !== "admin" && session.profile.primary_role !== "super_admin") {
     return { error: "Only the posting PM can close this RFP." };
   }
-  if (rfp.status === "awarded" || rfp.status === "closed" || rfp.status === "archived") {
-    return { error: "This RFP is already closed." };
+  if (
+    rfp.status === "awarded" ||
+    rfp.status === "closed" ||
+    rfp.status === "expired" ||
+    rfp.status === "archived"
+  ) {
+    return { error: "This RFP is no longer active." };
   }
 
   const { error } = await supabase
