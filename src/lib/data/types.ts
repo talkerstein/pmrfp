@@ -39,6 +39,8 @@ export interface RfpListItem {
   province: string | null;
   deadline: string | null;
   isDemo: boolean;
+  /** Public photo URLs (from rfp-photos bucket via rfp_documents w/ visibility='public'). */
+  photoUrls: string[];
 }
 
 export interface RfpDetail extends RfpListItem {

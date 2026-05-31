@@ -83,6 +83,39 @@ export default async function RfpDetailPage({
 
           {teaser.summary && <p className="mt-6 text-lg leading-relaxed text-foreground/90">{teaser.summary}</p>}
 
+          {teaser.photoUrls.length > 0 && (
+            <div className="mt-6">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {teaser.photoUrls.slice(0, 6).map((u, i) => (
+                  <a
+                    key={u}
+                    href={u}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={
+                      i === 0
+                        ? "col-span-2 row-span-2 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-secondary/40 sm:col-span-2"
+                        : "aspect-square overflow-hidden rounded-lg border border-border bg-secondary/40"
+                    }
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={u}
+                      alt={`Property photo ${i + 1}`}
+                      loading={i === 0 ? "eager" : "lazy"}
+                      className="size-full object-cover transition-transform hover:scale-[1.02]"
+                    />
+                  </a>
+                ))}
+              </div>
+              {teaser.photoUrls.length > 6 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  + {teaser.photoUrls.length - 6} more photo{teaser.photoUrls.length - 6 === 1 ? "" : "s"}
+                </p>
+              )}
+            </div>
+          )}
+
           {showFull && full ? (
             <div className="mt-8 space-y-8">
               <Block title="Project scope" body={full.scope} />

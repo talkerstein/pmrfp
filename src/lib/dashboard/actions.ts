@@ -187,6 +187,51 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   if (catRows?.length)
     await supabase.from("rfp_categories").insert(catRows.map((c: { id: string }) => ({ rfp_id: rfp.id, category_id: c.id })));
 
+  // Persist photo URLs (uploaded client-side to rfp-photos public bucket) as
+  // rfp_documents rows with visibility='public'. Only accept HTTPS URLs that
+  // point at the project's own Supabase storage to avoid arbitrary-URL injection.
+  const photoUrls = formData
+    .getAll("photoUrls")
+    .map(String)
+    .filter((u) => u && typeof u === "string");
+  if (photoUrls.length) {
+    const supabaseHost = (() => {
+      try {
+        return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
+      } catch {
+        return "";
+      }
+    })();
+    const safePhotos = photoUrls
+      .slice(0, 12) // hard cap
+      .filter((u) => {
+        try {
+          const parsed = new URL(u);
+          return parsed.protocol === "https:" && parsed.host === supabaseHost && parsed.pathname.includes("/rfp-photos/");
+        } catch {
+          return false;
+        }
+      });
+    if (safePhotos.length) {
+      const rows = safePhotos.map((url) => {
+        // Storage path is everything after `/object/public/rfp-photos/` — used
+        // for later admin/owner deletion via the storage API.
+        const m = url.match(/\/object\/public\/rfp-photos\/(.+)$/);
+        const file_path = m ? m[1] : null;
+        const file_name = file_path ? file_path.split("/").pop() ?? null : null;
+        return {
+          rfp_id: rfp.id,
+          file_url: url,
+          file_path,
+          file_name,
+          file_type: "image/*",
+          visibility: "public" as const,
+        };
+      });
+      await supabase.from("rfp_documents").insert(rows);
+    }
+  }
+
   await sendAdminNewRfp({ title: d.title, postedBy: session.organization?.name, region: d.regionSlug });
 
   redirect("/pm-dashboard/rfps?posted=1");

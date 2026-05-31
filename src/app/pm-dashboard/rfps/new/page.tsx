@@ -11,7 +11,7 @@ export default async function NewRfpPage({
 }: {
   searchParams: Promise<{ template?: string }>;
 }) {
-  await requireRole(["property_manager"]);
+  const session = await requireRole(["property_manager"]);
   const [{ template: templateSlug }, categories, regions, propertyTypes] = await Promise.all([
     searchParams,
     getCategories(),
@@ -47,6 +47,7 @@ export default async function NewRfpPage({
         regions={regions}
         propertyTypes={propertyTypes}
         defaults={defaults}
+        organizationId={session.organization?.id ?? null}
       />
     </div>
   );

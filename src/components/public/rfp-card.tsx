@@ -9,11 +9,29 @@ function formatDeadline(d: string | null) {
 }
 
 export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) {
+  const heroPhoto = rfp.photoUrls[0];
   return (
     <Link
       href={`/rfps/${rfp.slug}`}
-      className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
+      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-teal-400 hover:shadow-sm"
     >
+      {heroPhoto && (
+        <div className="relative aspect-[5/3] overflow-hidden bg-secondary/40">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={heroPhoto}
+            alt=""
+            loading="lazy"
+            className="size-full object-cover transition-transform group-hover:scale-[1.02]"
+          />
+          {rfp.photoUrls.length > 1 && (
+            <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+              +{rfp.photoUrls.length - 1} more
+            </span>
+          )}
+        </div>
+      )}
+      <div className="flex flex-1 flex-col p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
           {rfp.categories.slice(0, 2).map((c) => (
@@ -57,6 +75,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
             Sample
           </Badge>
         )}
+      </div>
       </div>
     </Link>
   );

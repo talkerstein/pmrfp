@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { COPY } from "@/lib/site";
+import { RfpPhotoUploader } from "@/components/forms/rfp-photo-uploader";
 
 type Option = { slug: string; name: string };
 
@@ -26,11 +27,13 @@ export function RfpPostForm({
   regions,
   propertyTypes,
   defaults,
+  organizationId,
 }: {
   categories: Option[];
   regions: Option[];
   propertyTypes: Option[];
   defaults?: RfpPostDefaults;
+  organizationId: string | null;
 }) {
   const [state, action, pending] = useActionState(createRfpAction, {} as ActionState);
   const preselected = new Set(defaults?.categories ?? []);
@@ -78,6 +81,10 @@ export function RfpPostForm({
           <Field label="City"><Input name="city" /></Field>
           <Field label="Province"><Input name="province" defaultValue="Ontario" /></Field>
         </div>
+      </Section>
+
+      <Section title="Photos">
+        <RfpPhotoUploader organizationId={organizationId} />
       </Section>
 
       <Section title="Budget & timeline">

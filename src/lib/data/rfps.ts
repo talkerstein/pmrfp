@@ -23,6 +23,7 @@ function demoToList(r: DemoRfp): RfpListItem {
     province: r.province,
     deadline: r.deadline,
     isDemo: true,
+    photoUrls: [],
   };
 }
 
@@ -67,7 +68,11 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     idNameMap(supabase, "property_types"),
   ]);
   const list = (rfps as RfpPublicRow[] | null) ?? [];
-  const cats = await categoriesByRfp(supabase, list.map((r) => r.id));
+  const rfpIds = list.map((r) => r.id);
+  const [cats, photos] = await Promise.all([
+    categoriesByRfp(supabase, rfpIds),
+    publicPhotosByRfp(supabase, rfpIds),
+  ]);
   // Resolve filter slugs → display names for post-fetch filtering.
   const [regionSlugName, propSlugName, catSlugName] = await Promise.all([
     slugNameMap(supabase, "regions"),
@@ -85,6 +90,7 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     province: r.province,
     deadline: r.deadline,
     isDemo: r.is_demo,
+    photoUrls: photos.get(r.id) ?? [],
   }));
   if (filters.region) {
     const name = regionSlugName.get(filters.region);
@@ -116,10 +122,11 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
   const { data } = await supabase.from("rfp_public").select("*").eq("slug", slug).maybeSingle();
   const r = data as RfpPublicRow | null;
   if (!r) return null;
-  const [regionMap, propMap, cats] = await Promise.all([
+  const [regionMap, propMap, cats, photos] = await Promise.all([
     idNameMap(supabase, "regions"),
     idNameMap(supabase, "property_types"),
     categoriesByRfp(supabase, [r.id]),
+    publicPhotosByRfp(supabase, [r.id]),
   ]);
   return {
     slug: r.slug,
@@ -132,6 +139,7 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     province: r.province,
     deadline: r.deadline,
     isDemo: r.is_demo,
+    photoUrls: photos.get(r.id) ?? [],
   };
 }
 
@@ -148,10 +156,11 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
   const { data } = await supabase.from("rfp_posts").select("*").eq("slug", slug).maybeSingle();
   const r = data as RfpFullRow | null;
   if (!r) return null;
-  const [regionMap, propMap, cats] = await Promise.all([
+  const [regionMap, propMap, cats, photos] = await Promise.all([
     idNameMap(supabase, "regions"),
     idNameMap(supabase, "property_types"),
     categoriesByRfp(supabase, [r.id]),
+    publicPhotosByRfp(supabase, [r.id]),
   ]);
   return {
     id: r.id,
@@ -165,6 +174,7 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     province: r.province,
     deadline: r.deadline,
     isDemo: r.is_demo,
+    photoUrls: photos.get(r.id) ?? [],
     scope: r.scope,
     requirements: r.requirements,
     budgetMin: r.budget_min,
@@ -228,6 +238,29 @@ async function categoriesByRfp(
   for (const row of (data as unknown as { rfp_id: string; trade_categories: { name: string } | null }[] | null) ?? []) {
     const arr = map.get(row.rfp_id) ?? [];
     if (row.trade_categories?.name) arr.push(row.trade_categories.name);
+    map.set(row.rfp_id, arr);
+  }
+  return map;
+}
+
+/** Maps each rfp_id → list of public photo URLs (from rfp_documents). */
+async function publicPhotosByRfp(
+  supabase: SupabaseClient,
+  rfpIds: string[],
+): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  if (rfpIds.length === 0) return map;
+  const { data } = await supabase
+    .from("rfp_documents")
+    .select("rfp_id, file_url, created_at")
+    .in("rfp_id", rfpIds)
+    .eq("visibility", "public")
+    .like("file_type", "image/%")
+    .order("created_at", { ascending: true });
+  for (const row of (data as { rfp_id: string; file_url: string | null }[] | null) ?? []) {
+    if (!row.file_url) continue;
+    const arr = map.get(row.rfp_id) ?? [];
+    arr.push(row.file_url);
     map.set(row.rfp_id, arr);
   }
   return map;

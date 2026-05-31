@@ -7,7 +7,7 @@ import { getCategories, getRegions, getPropertyTypes } from "@/lib/data/taxonomy
 export const metadata: Metadata = { title: "Seed RFP · Admin · PMRFP" };
 
 export default async function AdminNewRfpPage() {
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
 
   const [categories, regions, propertyTypes] = await Promise.all([
     getCategories(),
@@ -28,6 +28,7 @@ export default async function AdminNewRfpPage() {
           categories={categories}
           regions={regions}
           propertyTypes={propertyTypes}
+          organizationId={session.organization?.id ?? null}
         />
       </div>
     </>
