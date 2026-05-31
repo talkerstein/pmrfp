@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { StatusBadge } from "@/components/status-badge";
+import { CloseRfpButton } from "@/components/dashboard/close-rfp-button";
 import {
   Table,
   TableBody,
@@ -39,15 +40,26 @@ export default async function RfpInterestsPage({
   const { id } = await params;
 
   let interests: InterestRow[] = [];
+  let rfpStatus: string | null = null;
   if (!isDemoMode()) {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("rfp_interests")
-      .select("id,status,message,created_at,contact_revealed, organizations(name,slug,city,province)")
-      .eq("rfp_id", id)
-      .order("created_at", { ascending: false });
-    interests = (data as InterestRow[] | null) ?? [];
+    const [{ data: ints }, { data: rfp }] = await Promise.all([
+      supabase
+        .from("rfp_interests")
+        .select("id,status,message,created_at,contact_revealed, organizations(name,slug,city,province)")
+        .eq("rfp_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("rfp_posts")
+        .select("status")
+        .eq("id", id)
+        .maybeSingle<{ status: string }>(),
+    ]);
+    interests = (ints as InterestRow[] | null) ?? [];
+    rfpStatus = rfp?.status ?? null;
   }
+
+  const closed = rfpStatus === "awarded" || rfpStatus === "closed" || rfpStatus === "archived";
 
   return (
     <div>
@@ -55,6 +67,12 @@ export default async function RfpInterestsPage({
         title="Interested vendors"
         description="Trades that have expressed interest in this RFP."
       />
+
+      {!isDemoMode() && (
+        <div className="mb-6">
+          <CloseRfpButton rfpId={id} alreadyClosed={closed} />
+        </div>
+      )}
 
       {interests.length === 0 ? (
         <EmptyState

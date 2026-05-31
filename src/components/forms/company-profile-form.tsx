@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LogoUploader } from "@/components/forms/logo-uploader";
+import { PortfolioUploader } from "@/components/forms/portfolio-uploader";
 
 type Option = { slug: string; name: string };
 
@@ -51,6 +52,10 @@ export function CompanyProfileForm({
           organizationId={organizationId}
           initialLogoUrl={defaults.logoUrl ?? null}
         />
+      </Section>
+
+      <Section title="Portfolio">
+        <PortfolioUploader organizationId={organizationId} />
       </Section>
 
       <Section title="Company basics">

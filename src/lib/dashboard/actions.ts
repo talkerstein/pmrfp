@@ -136,6 +136,61 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   return { success: "Profile saved. It will be reviewed before going live." };
 }
 
+/**
+ * Close an RFP — either as "awarded" (the PM picked a winner, finder's-fee
+ * eligible if the project was referred via /refer-a-project) or as "closed"
+ * (cancelled / no award). Public detail page shows the appropriate badge.
+ *
+ * Future v2: capture awarded-to org id, dollar amount, deadline-to-completion,
+ * and trigger automated finder's-fee payout. v1 = status flip + closed_at.
+ */
+export async function closeRfpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (!isSupabaseConfigured()) return { error: DEMO };
+  const session = await getSession();
+  if (!session) redirect("/sign-in");
+
+  const rfpId = formData.get("rfpId")?.toString();
+  const outcome = formData.get("outcome")?.toString();
+  if (!rfpId || (outcome !== "awarded" && outcome !== "closed")) {
+    return { error: "Missing or invalid outcome." };
+  }
+
+  const supabase = await createClient();
+  // RLS enforces that only the posting PM (or admin) can update — but we also
+  // double-check ownership to fail fast with a friendly error.
+  const { data: rfp } = await supabase
+    .from("rfp_posts")
+    .select("id,posted_by_user_id,status")
+    .eq("id", rfpId)
+    .maybeSingle<{ id: string; posted_by_user_id: string | null; status: string }>();
+  if (!rfp) return { error: "RFP not found." };
+  if (rfp.posted_by_user_id !== session.userId && session.profile.primary_role !== "admin" && session.profile.primary_role !== "super_admin") {
+    return { error: "Only the posting PM can close this RFP." };
+  }
+  if (rfp.status === "awarded" || rfp.status === "closed" || rfp.status === "archived") {
+    return { error: "This RFP is already closed." };
+  }
+
+  const { error } = await supabase
+    .from("rfp_posts")
+    .update({
+      status: outcome,
+      closed_at: new Date().toISOString(),
+    })
+    .eq("id", rfpId);
+  if (error) return { error: "Could not close the RFP." };
+
+  revalidatePath("/rfps");
+  revalidatePath(`/rfps`);
+  revalidatePath("/pm-dashboard/rfps");
+  return {
+    success:
+      outcome === "awarded"
+        ? "RFP marked as awarded. If this project came through the referral program, the finder's fee is now eligible."
+        : "RFP closed without award.",
+  };
+}
+
 export async function createRfpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   if (!isSupabaseConfigured()) return { error: DEMO };
   const session = await getSession();

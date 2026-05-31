@@ -14,6 +14,7 @@ export interface VendorListItem {
 }
 
 export interface VendorDetail extends VendorListItem {
+  id: string;
   fullDescription: string | null;
   yearsInBusiness: number | null;
   employeeCountRange: string | null;
@@ -26,6 +27,8 @@ export interface VendorDetail extends VendorListItem {
   website: string | null;
   email: string | null;
   phone: string | null;
+  /** Public portfolio photo URLs (listed by storage prefix). */
+  portfolioPhotos: string[];
 }
 
 export interface RfpListItem {
@@ -41,10 +44,14 @@ export interface RfpListItem {
   isDemo: boolean;
   /** Public photo URLs (from rfp-photos bucket via rfp_documents w/ visibility='public'). */
   photoUrls: string[];
+  /** Lifecycle status visible to the public — derived from rfp_posts.status. */
+  status: "open" | "awarded" | "closed";
 }
 
-export interface RfpDetail extends RfpListItem {
+// Override the optional/narrow status on the full detail with the real one.
+export interface RfpDetail extends Omit<RfpListItem, "status"> {
   id: string;
+  status: "open" | "awarded" | "closed";
   scope: string | null;
   requirements: string | null;
   budgetMin: number | null;

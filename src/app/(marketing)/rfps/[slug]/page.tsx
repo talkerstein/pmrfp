@@ -82,6 +82,18 @@ export default async function RfpDetailPage({
             <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> Closes {fmt(teaser.deadline)}</span>
           </div>
 
+          {full?.status === "awarded" && (
+            <div className="mt-6 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
+              <strong>This RFP has been awarded.</strong> Watch for similar opportunities on the
+              feed — or post your own RFP if you have a project.
+            </div>
+          )}
+          {full?.status === "closed" && (
+            <div className="mt-6 rounded-lg border border-border bg-secondary/40 p-4 text-sm text-muted-foreground">
+              <strong>This RFP is closed.</strong> No vendor was awarded the work through PMRFP.
+            </div>
+          )}
+
           {teaser.summary && <p className="mt-6 text-lg leading-relaxed text-foreground/90">{teaser.summary}</p>}
 
           {teaser.photoUrls.length > 0 && (

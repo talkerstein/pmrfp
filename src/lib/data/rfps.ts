@@ -24,6 +24,7 @@ function demoToList(r: DemoRfp): RfpListItem {
     deadline: r.deadline,
     isDemo: true,
     photoUrls: [],
+    status: "open",
   };
 }
 
@@ -91,6 +92,10 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     deadline: r.deadline,
     isDemo: r.is_demo,
     photoUrls: photos.get(r.id) ?? [],
+    // rfp_public view only exposes published RFPs; closed/awarded ones drop off
+    // the listing entirely. Always "open" here. Public "awarded-to-X" badge is
+    // a v2 nice-to-have (requires view migration to expose status column).
+    status: "open" as const,
   }));
   if (filters.region) {
     const name = regionSlugName.get(filters.region);
@@ -140,6 +145,7 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     deadline: r.deadline,
     isDemo: r.is_demo,
     photoUrls: photos.get(r.id) ?? [],
+    status: "open" as const,
   };
 }
 
@@ -187,6 +193,12 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     contactName: r.contact_name,
     contactEmail: r.contact_email,
     contactPhone: r.contact_phone,
+    status:
+      r.status === "awarded" || r.status === "closed" || r.status === "archived"
+        ? r.status === "awarded"
+          ? "awarded"
+          : "closed"
+        : "open",
   };
 }
 
@@ -203,6 +215,7 @@ interface RfpFullRow extends RfpPublicRow {
   submission_instructions: string | null;
   contact_visibility: RfpDetail["contactVisibility"];
   contact_name: string | null; contact_email: string | null; contact_phone: string | null;
+  status: string;
 }
 
 async function idNameMap(

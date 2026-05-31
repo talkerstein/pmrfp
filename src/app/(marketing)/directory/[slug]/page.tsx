@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Building2, Globe, Mail, Phone, ShieldCheck, Clock } from "lucide-react";
 import { Container } from "@/components/container";
@@ -61,10 +62,16 @@ export default async function VendorProfilePage({
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <div className="flex items-center gap-4">
-            <span className="flex size-16 items-center justify-center overflow-hidden rounded-lg bg-indigo text-xl font-bold text-white">
+            <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-lg bg-indigo text-xl font-bold text-white">
               {v.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={v.logoUrl} alt={v.name} className="size-full object-cover" />
+                <Image
+                  src={v.logoUrl}
+                  alt={v.name}
+                  fill
+                  sizes="64px"
+                  className="object-contain p-1.5"
+                  unoptimized={v.logoUrl.endsWith(".svg")}
+                />
               ) : (
                 initials
               )}
@@ -115,6 +122,34 @@ export default async function VendorProfilePage({
               <div className="mt-2 flex flex-wrap gap-2">
                 {v.propertyTypes.map((p) => (
                   <Badge key={p} variant="outline">{p}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {v.portfolioPhotos.length > 0 && (
+            <div className="mt-10">
+              <h2 className="eyebrow text-muted-foreground">Portfolio</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Past work from {v.name}.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {v.portfolioPhotos.map((url, i) => (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-secondary/40"
+                  >
+                    <Image
+                      src={url}
+                      alt={`${v.name} portfolio photo ${i + 1}`}
+                      fill
+                      sizes="(min-width: 1024px) 280px, 50vw"
+                      className="object-cover transition-transform hover:scale-[1.02]"
+                    />
+                  </a>
                 ))}
               </div>
             </div>

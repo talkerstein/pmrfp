@@ -45,6 +45,7 @@ function applyDemoFilters(list: DemoVendor[], f: VendorFilters): DemoVendor[] {
 }
 
 interface OrgRow {
+  id: string;
   slug: string;
   name: string;
   city: string | null;
@@ -69,10 +70,33 @@ interface OrgRow {
 }
 
 const ORG_SELECT =
-  "slug,name,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website,email,phone," +
+  "id,slug,name,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website,email,phone," +
   "organization_categories(trade_categories(name,slug))," +
   "organization_regions(regions(name,slug))," +
   "organization_property_types(property_types(name,slug))";
+
+/**
+ * List public portfolio photos for an org. Convention: any object in
+ * logos/{orgId}/portfolio-*.{ext} is a portfolio photo. We list by prefix
+ * via the anon client (`logos` bucket is public).
+ */
+async function getPortfolioPhotos(orgId: string): Promise<string[]> {
+  if (!isSupabaseConfigured()) return [];
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  try {
+    const supabase = createReadClient();
+    const { data } = await supabase.storage.from("logos").list(orgId, {
+      limit: 100,
+      search: "portfolio-",
+      sortBy: { column: "created_at", order: "asc" },
+    });
+    return (data ?? [])
+      .filter((o) => o.name.startsWith("portfolio-"))
+      .map((o) => `${SUPABASE_URL}/storage/v1/object/public/logos/${orgId}/${o.name}`);
+  } catch {
+    return [];
+  }
+}
 
 export async function listVendors(filters: VendorFilters = {}): Promise<VendorListItem[]> {
   const orgType = filters.orgType ?? "trade_company";
@@ -122,6 +146,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     const showContact = v.contactVisibility === "show_contact";
     return {
       ...demoToListItem(v),
+      id: v.slug,
       fullDescription: v.fullDescription,
       yearsInBusiness: v.yearsInBusiness,
       employeeCountRange: v.employeeCountRange,
@@ -133,6 +158,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
       website: showContact ? v.website : null,
       email: showContact ? v.email : null,
       phone: showContact ? v.phone : null,
+      portfolioPhotos: [],
     };
   }
   const supabase = createReadClient();
@@ -145,7 +171,9 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
   const r = data as unknown as OrgRow | null;
   if (!r) return null;
   const showContact = r.public_contact_visibility === "show_contact";
+  const portfolioPhotos = await getPortfolioPhotos(r.id);
   return {
+    id: r.id,
     slug: r.slug,
     name: r.name,
     city: r.city,
@@ -167,5 +195,6 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     website: showContact ? r.website : null,
     email: showContact ? r.email : null,
     phone: showContact ? r.phone : null,
+    portfolioPhotos,
   };
 }
