@@ -316,7 +316,7 @@ export async function sendTradeReferralConfirmation(to: string, tradeName: strin
        </ol>
        <p>You'll get a monthly summary of all your referred trades — no chasing required.</p>
        <p>Questions? Reply to this email.</p>`,
-      "Finder's fees are paid when the trade activates annual Trade Pro, or after 3 paid months on the monthly plan. PMRFP does not guarantee subscription or revenue outcomes.",
+      "Finder's fees are paid after the referred trade activates Trade Pro and remains active for 90 days. PMRFP does not guarantee subscription or revenue outcomes.",
     ),
   );
 }

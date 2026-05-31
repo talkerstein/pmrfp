@@ -55,19 +55,17 @@ export async function POST(request: Request) {
 
           if (cs.customer_details?.email) {
             await sendSubscriptionActivatedEmail(cs.customer_details.email);
-            // Referral fee gating:
-            //   Annual ($249)  → "fee-eligible-if-referred" — $75 payout justified
-            //                    by direct revenue.
-            //   Monthly ($29)  → "fee-hold-monthly-3mo-check" — DO NOT pay $75 now
-            //                    (would net −$46 and the trade could cancel in
-            //                    month 1). GHL workflow holds until trade has
-            //                    paid ≥ 3 months ($87) before releasing fee, or
-            //                    until they upgrade to annual.
+            // Referral fee gating — 90-day retention gate (audit rank-9).
+            // The $75 cash fee stays cash (best referrer conversion), but we
+            // NEVER pay it the day a trade activates — a refund or month-1
+            // cancel would make the payout a pure loss. Instead BOTH intervals
+            // start a 90-day hold; the GHL workflow releases the fee only if the
+            // referred trade is still active at day 90 (annual: still subscribed;
+            // monthly: ~3 paid months = revenue clears the $75). The interval is
+            // tagged so the GHL workflow can pick the right check.
             const interval = sub.items.data[0]?.price.recurring?.interval;
-            const feeTag =
-              interval === "year"
-                ? "fee-eligible-if-referred"
-                : "fee-hold-monthly-3mo-check";
+            const intervalTag =
+              interval === "year" ? "plan-annual" : "plan-monthly";
             await syncPmrfpUserToGhl(
               {
                 email: cs.customer_details.email,
@@ -76,7 +74,13 @@ export async function POST(request: Request) {
                 subscriptionStatus: "active",
                 profileCompletionPct: 100,
               },
-              { extraTags: ["pmrfp-pro-active", feeTag] },
+              {
+                extraTags: [
+                  "pmrfp-pro-active",
+                  "fee-hold-90day-retention",
+                  intervalTag,
+                ],
+              },
             );
           }
         }
