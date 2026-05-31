@@ -55,3 +55,11 @@ next-env.d.ts
 /.playwright
 
 .vercel
+
+# Claude scratch / scrape byproduct
+Claudepmrfp.tmp_*.html
+briefs/outreach/pm-list-work/
+.claude/
+briefs/outreach/pm-list-ontario.csv
+briefs/outreach/pm-list-ontario-tier-A.csv
+briefs/outreach/pm-list-ontario.xlsx

@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PMRFP — Roadmap to Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Lato:wght@400;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --indigo: #282B59;
+    --indigo-2: #1c1f44;
+    --indigo-soft: #3a3d75;
+    --teal: #91F2CF;
+    --teal-deep: #57d4ab;
+    --paper: #fafafb;
+    --ink: #14152f;
+    --muted: #6b6e8c;
+    --line: #e5e6ee;
+    --line-strong: #c9cbdb;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Lato', system-ui, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* HEADER */
+  header.hero {
+    background: linear-gradient(135deg, var(--indigo) 0%, var(--indigo-2) 100%);
+    color: #fff;
+    padding: 56px 24px 72px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute; inset: auto 0 0 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--teal) 50%, transparent);
+  }
+  .hero-inner { max-width: 920px; margin: 0 auto; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 48px);
+    line-height: 1.1;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .lede {
+    font-size: 17px;
+    color: rgba(255,255,255,0.82);
+    max-width: 620px;
+    margin: 0 0 28px;
+  }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .meta-row span {
+    padding: 6px 10px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 4px;
+  }
+  .belt-pill {
+    background: var(--teal);
+    color: var(--indigo);
+    font-weight: 700;
+    border: none !important;
+  }
+
+  /* PROGRESS */
+  .progress-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: -36px auto 40px;
+    max-width: 920px;
+    box-shadow: 0 8px 32px rgba(40,43,89,0.08);
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .progress-card .label {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .progress-card .count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .bar {
+    flex: 1 1 280px; height: 8px; background: var(--line); border-radius: 999px; overflow: hidden;
+  }
+  .bar > div {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--teal-deep), var(--teal));
+    transition: width 400ms ease;
+  }
+
+  /* PHASES */
+  .phase {
+    margin: 48px 0 0;
+    border-top: 1px solid var(--line);
+    padding-top: 36px;
+  }
+  .phase-head {
+    display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .phase-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal-deep);
+    background: rgba(145,242,207,0.18);
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+  .phase-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--indigo);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .phase-subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    margin: 0 0 24px;
+    max-width: 640px;
+  }
+  .gate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+    border: 1px dashed var(--amber);
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin-left: 4px;
+  }
+
+  /* TASKS */
+  ul.tasks { list-style: none; padding: 0; margin: 0; }
+  li.task {
+    display: flex; gap: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    transition: border-color 150ms, background 150ms;
+  }
+  li.task:hover { border-color: var(--line-strong); }
+  li.task.done {
+    background: #f6faf8;
+    border-color: #d2ecdd;
+  }
+  li.task.done .task-title { color: var(--muted); text-decoration: line-through; }
+  li.task.done .task-body { opacity: 0.65; }
+
+  .checkbox {
+    flex: 0 0 22px; height: 22px; margin-top: 2px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 150ms;
+    background: #fff;
+  }
+  .checkbox:hover { border-color: var(--indigo); }
+  .task.done .checkbox {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .task.done .checkbox::after {
+    content: ""; width: 5px; height: 10px;
+    border: solid #fff; border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .task-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    margin: 0;
+  }
+  .task-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+  .task-desc {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 4px 0 8px;
+  }
+  .task-desc code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--indigo);
+  }
+  .task-desc a {
+    color: var(--indigo);
+    text-decoration: underline;
+    text-decoration-color: var(--teal-deep);
+    text-underline-offset: 3px;
+  }
+  .task-meta {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .task-meta span {
+    border: 1px solid var(--line);
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+  .tag-blocker { color: var(--red); border-color: rgba(220,38,38,0.3); }
+  .tag-must { color: var(--amber); border-color: rgba(217,119,6,0.3); }
+  .tag-nice { color: var(--teal-deep); border-color: rgba(87,212,171,0.4); }
+
+  /* FOOTER CTA */
+  .verdict {
+    margin-top: 64px;
+    background: var(--indigo);
+    color: #fff;
+    border-radius: 14px;
+    padding: 32px 36px;
+    position: relative;
+  }
+  .verdict::before {
+    content: ""; position: absolute; top: 0; left: 36px; right: 36px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--teal), transparent);
+  }
+  .verdict h3 {
+    font-family: 'Poppins', sans-serif;
+    margin: 0 0 12px;
+    font-size: 20px;
+    color: var(--teal);
+    letter-spacing: 0.02em;
+  }
+  .verdict p { margin: 0 0 12px; color: rgba(255,255,255,0.85); font-size: 15px; }
+  .verdict strong { color: #fff; }
+
+  .reset-btn {
+    display: inline-block; margin-top: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    background: transparent;
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 150ms;
+  }
+  .reset-btn:hover { color: #fff; border-color: var(--teal); }
+
+  /* Print */
+  @media print {
+    body { background: #fff; }
+    header.hero { background: #fff; color: var(--indigo); }
+    .lede, .meta-row span, .eyebrow { color: var(--ink) !important; }
+    .progress-card, li.task, .verdict { box-shadow: none; border: 1px solid #ccc; }
+    .verdict { background: #fff; color: var(--ink); }
+    .verdict h3 { color: var(--indigo); }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">PMRFP · Roadmap to Live · 2026-05-31</p>
+    <h1>From soft-launch ready → advertising-on.</h1>
+    <p class="lede">You're past Green Belt. The product is real. What's between you and paid traffic is plumbing, supply seeding, and an ad stack. This is the sequence.</p>
+    <div class="meta-row">
+      <span class="belt-pill">💚 GREEN BELT</span>
+      <span>17 deploys today</span>
+      <span>7 real RFPs live</span>
+      <span>$0 MRR · 0 paying users</span>
+      <span>Stripe TEST mode</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="progress-card">
+    <span class="label">Overall progress</span>
+    <div class="bar"><div id="bar-fill"></div></div>
+    <span class="count" id="progress-count">0 / 0 complete</span>
+  </div>
+
+  <!-- PHASE 1 -->
+  <section class="phase">
+    <div class="phase-head">
+      <span class="phase-num">Phase 01</span>
+      <h2 class="phase-title">Unblock production</h2>
+      <span class="gate">Gate · must clear before ads</span>
+    </div>
+    <p class="phase-subtitle">~50 minutes of plumbing. Until these land, signups break, emails no-op, and pmrfp.com still points to the WordPress shell.</p>
+
+    <ul class="tasks" data-phase="1">
+
+      <li class="task">
+        <div class="checkbox" data-id="p1-sql"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Apply REA role SQL migration</h4>
+            <span class="task-time">30 sec</span>
+          </div>
+          <p class="task-desc">Open Supabase SQL editor, paste the <code>users_profile_primary_role_check</code> constraint update from the handoff. Without this, real-estate-agent signups 500.</p>
+          <div class="task-meta">
+            <span class="tag-blocker">BLOCKER</span>
+            <span>handoff §2A</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p1-resend"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Wire Resend + verify domain</h4>
+            <span class="task-time">10 min</span>
+          </div>
+          <p class="task-desc">Follow <code>briefs/resend-setup.md</code>. Verify <code>pmrfp.com</code> sending domain. Without it, PMs don't get the "new vendor interest" email — biggest conversion leak.</p>
+          <div class="task-meta">
+            <span class="tag-blocker">BLOCKER</span>
+            <span>9 templates dormant</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p1-ghl"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Stand up GHL sub-account + paste env vars</h4>
+            <span class="task-time">30 min</span>
+          </div>
+          <p class="task-desc">Follow <code>briefs/ghl-setup.md</code>. Custom fields are locked — don't rename keys. Integration code is shipped and dormant; switches on the moment <code>GHL_API_KEY</code> + <code>GHL_LOCATION_ID</code> land in Vercel.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+            <span>CRM dark without this</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p1-dns"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">DNS cutover: pmrfp.com → Vercel</h4>
+            <span class="task-time">15 min + propagation</span>
+          </div>
+          <p class="task-desc">Point apex + www at Vercel. Keep old WordPress as a downloadable archive for 30 days (just in case). After cutover, run a sitemap re-submit in Search Console.</p>
+          <div class="task-meta">
+            <span class="tag-blocker">BLOCKER</span>
+            <span>can't run ads to .vercel.app</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p1-stripe"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Flip Stripe to LIVE</h4>
+            <span class="task-time">15 min</span>
+          </div>
+          <p class="task-desc">Re-create Trade Pro $249 + Featured $599 in live mode. Swap <code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code>, both <code>STRIPE_PRICE_*</code> env vars in Vercel. Run a $1 test then refund.</p>
+          <div class="task-meta">
+            <span class="tag-blocker">BLOCKER</span>
+            <span>real revenue gate</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p1-smoke"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">End-to-end smoke test (4 lanes)</h4>
+            <span class="task-time">20 min</span>
+          </div>
+          <p class="task-desc">PM signup → post RFP → vendor expresses interest → email lands → PM closes & awards. Trade signup → Stripe LIVE checkout → directory listing goes live → GHL contact appears. Repeat for REA + referral lanes.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- PHASE 2 -->
+  <section class="phase">
+    <div class="phase-head">
+      <span class="phase-num">Phase 02</span>
+      <h2 class="phase-title">Measure everything</h2>
+      <span class="gate">Gate · ads burn cash without this</span>
+    </div>
+    <p class="phase-subtitle">If you can't see the funnel, you can't optimize spend. One afternoon of analytics setup pays back the first $200 in ads.</p>
+
+    <ul class="tasks" data-phase="2">
+
+      <li class="task">
+        <div class="checkbox" data-id="p2-analytics"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Install GA4 + PostHog</h4>
+            <span class="task-time">45 min</span>
+          </div>
+          <p class="task-desc">GA4 for ad attribution (Google requires it). PostHog for product analytics + funnel + session replay. Tag the 7 critical events: <code>signup_started</code>, <code>signup_completed</code>, <code>rfp_posted</code>, <code>interest_expressed</code>, <code>checkout_started</code>, <code>checkout_succeeded</code>, <code>referral_submitted</code>.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p2-pixels"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Drop Meta Pixel + LinkedIn Insight Tag</h4>
+            <span class="task-time">20 min</span>
+          </div>
+          <p class="task-desc">Meta Pixel for FB/IG retargeting trades. LinkedIn Insight Tag for PM + REA targeting (their actual buying surface). Fire <code>Lead</code> on signup, <code>Purchase</code> on Stripe checkout.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p2-gads"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Google Ads conversion tracking + linked GA4</h4>
+            <span class="task-time">20 min</span>
+          </div>
+          <p class="task-desc">Create conversion actions for signup + paid checkout. Import from GA4. Without this, Google Ads optimizes for clicks not customers.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p2-search-console"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Search Console verified + sitemap submitted</h4>
+            <span class="task-time">10 min</span>
+          </div>
+          <p class="task-desc">Verify pmrfp.com, submit <code>/sitemap.xml</code>, check <code>/robots.txt</code> isn't blocking templates or cost-guides. 207 routes deserve to be indexed.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p2-utm"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Lock a UTM convention</h4>
+            <span class="task-time">15 min</span>
+          </div>
+          <p class="task-desc">Write a 1-pager: <code>utm_source / utm_medium / utm_campaign / utm_content</code>. Apply it to every paid + organic + outreach link from day one. Document in <code>briefs/utm-convention.md</code>.</p>
+          <div class="task-meta">
+            <span class="tag-nice">NICE-TO-HAVE</span>
+            <span>pays back month 1</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- PHASE 3 -->
+  <section class="phase">
+    <div class="phase-head">
+      <span class="phase-num">Phase 03</span>
+      <h2 class="phase-title">Seed the supply side first</h2>
+      <span class="gate">Gate · marketplace law</span>
+    </div>
+    <p class="phase-subtitle">PMs arriving via ads to an empty directory is the most expensive way to burn budget. Get 25 real trades on before paid demand opens.</p>
+
+    <ul class="tasks" data-phase="3">
+
+      <li class="task">
+        <div class="checkbox" data-id="p3-electrician"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Electrician founder-led outreach: 25 by Friday</h4>
+            <span class="task-time">5/day evenings</span>
+          </div>
+          <p class="task-desc">Pack is in <code>briefs/outreach/</code>. 3 cold-email variants, LinkedIn DM, phone script, GTA target list, tracking CSV. <strong>Don't optimize — execute.</strong></p>
+          <div class="task-meta">
+            <span class="tag-blocker">PANEL VERDICT</span>
+            <span>per Sunday council</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p3-vertical-2"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Pick + open trade #2 (plumber or HVAC)</h4>
+            <span class="task-time">30 min planning</span>
+          </div>
+          <p class="task-desc">Once 10 electricians are in, clone the outreach pack for the next trade. Don't fan out before the first vertical is proven.</p>
+          <div class="task-meta">
+            <span class="tag-nice">SEQUENCED</span>
+            <span>after first 10 trades</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p3-refer-live"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Announce both referral lanes to existing trades</h4>
+            <span class="task-time">1 email blast</span>
+          </div>
+          <p class="task-desc">Trade lane = $75 cash. Project lane = recognition + leaderboard. One email when Resend is live. Send to the existing trade list + any electrician who signs up in Phase 3.1.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+            <span>after Phase 1</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p3-boma"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Send the 3 BOMA / ACMO / REIC partnership outreach intros</h4>
+            <span class="task-time">2 hrs (one sitting)</span>
+          </div>
+          <p class="task-desc">Wednesday's <code>pmrfp-bizdev</code> brief surfaces 3 each week. Pick the top 3 for May and send. Member-list access = 100x what ads cost.</p>
+          <div class="task-meta">
+            <span class="tag-nice">COMPOUND</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- PHASE 4 -->
+  <section class="phase">
+    <div class="phase-head">
+      <span class="phase-num">Phase 04</span>
+      <h2 class="phase-title">Trust polish before paid traffic</h2>
+    </div>
+    <p class="phase-subtitle">Two known credibility gaps. Closing them lifts conversion on every dollar that follows.</p>
+
+    <ul class="tasks" data-phase="4">
+
+      <li class="task">
+        <div class="checkbox" data-id="p4-insurance"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Insurance verification flow (Quest 2.4)</h4>
+            <span class="task-time">2-3 days</span>
+          </div>
+          <p class="task-desc">Trade uploads COI PDF → admin review → "Verified ✓" badge on directory card. The whole differentiation pitch ("commercially serious trades only") hinges on this.</p>
+          <div class="task-meta">
+            <span class="tag-must">MUST-DO</span>
+            <span>50 XP</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p4-monthly"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Monthly billing option (Quest 1.6)</h4>
+            <span class="task-time">2 hrs</span>
+          </div>
+          <p class="task-desc">New Stripe price ($29/mo or $39/mo — decide via CSO). Toggle on Trade Pro signup. Many trades want a try-before-commit cadence.</p>
+          <div class="task-meta">
+            <span class="tag-nice">CONVERSION</span>
+            <span>25 XP</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p4-legal"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Terms / Privacy / Refund pages reviewed</h4>
+            <span class="task-time">1 hr</span>
+          </div>
+          <p class="task-desc">Required for Stripe live + Google Ads policy compliance. Use existing Talkerstein template as base. Link from footer.</p>
+          <div class="task-meta">
+            <span class="tag-must">COMPLIANCE</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- PHASE 5 -->
+  <section class="phase">
+    <div class="phase-head">
+      <span class="phase-num">Phase 05</span>
+      <h2 class="phase-title">Turn on ads — small, surgical</h2>
+    </div>
+    <p class="phase-subtitle">Start with $50/day total. Two channels. Two messages. Don't scale until CAC is known.</p>
+
+    <ul class="tasks" data-phase="5">
+
+      <li class="task">
+        <div class="checkbox" data-id="p5-gads"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Google Ads: 2 search campaigns ($25/day cap)</h4>
+            <span class="task-time">3 hrs build</span>
+          </div>
+          <p class="task-desc"><strong>Campaign A — PM intent:</strong> "rfp software for property managers", "vendor management property", "commercial maintenance RFP" → <code>/for-property-managers</code>.<br/><strong>Campaign B — Trade intent:</strong> "commercial electrician leads Toronto", "property management vendors" → <code>/for-trades</code>. Single ad group each, 3 headlines, exact + phrase match, brand-defense added.</p>
+          <div class="task-meta">
+            <span class="tag-must">LAUNCH</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p5-linkedin"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">LinkedIn: 1 single-image ad to PM/REA titles ($25/day)</h4>
+            <span class="task-time">2 hrs build</span>
+          </div>
+          <p class="task-desc">Target: Property Manager + Real Estate Agent + Asset Manager in ON. Job seniority: Manager+. One creative, one message ("Stop chasing 5 quotes by email"). Send to <code>/for-property-managers</code>.</p>
+          <div class="task-meta">
+            <span class="tag-must">LAUNCH</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p5-retarget"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Meta retargeting pool</h4>
+            <span class="task-time">30 min</span>
+          </div>
+          <p class="task-desc">Quiet pixel audience: visited <code>/rfp-templates/*</code> or <code>/cost-guides/*</code>, didn't sign up. Wait until audience &gt; 500 then activate $10/day retargeting.</p>
+          <div class="task-meta">
+            <span class="tag-nice">DEFERRED</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p5-launch-post"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">R. Talkar launch post on LinkedIn</h4>
+            <span class="task-time">45 min</span>
+          </div>
+          <p class="task-desc">Build the narrative: "Built the property RFP tool I wanted when I ran our buildings." No product-launch hype tone. Quiet, confident, link in first comment.</p>
+          <div class="task-meta">
+            <span class="tag-nice">ORGANIC</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- PHASE 6 -->
+  <section class="phase">
+    <div class="phase-head">
+      <span class="phase-num">Phase 06</span>
+      <h2 class="phase-title">Read the data, double down or kill</h2>
+    </div>
+    <p class="phase-subtitle">Week 2 of ads. Set the rules now so you don't get sentimental later.</p>
+
+    <ul class="tasks" data-phase="6">
+
+      <li class="task">
+        <div class="checkbox" data-id="p6-weekly"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Weekly Friday review (Sales + MBA + CFO)</h4>
+            <span class="task-time">30 min</span>
+          </div>
+          <p class="task-desc">CAC per channel. Signup-to-paid conversion. Trade vs PM cohort. Kill any channel above $200 CAC by week 3. The agents already run on Fridays — let them work.</p>
+          <div class="task-meta">
+            <span class="tag-must">RHYTHM</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="task">
+        <div class="checkbox" data-id="p6-30trades"></div>
+        <div class="task-body">
+          <div class="task-head">
+            <h4 class="task-title">Hit 30 paid trades → unlock mobile app boss fight</h4>
+            <span class="task-time">target: 60 days</span>
+          </div>
+          <p class="task-desc">Per panel verdict — mobile app stays on the roadmap, not in the queue, until 30 paying trades exist. Use that as the green-light gate.</p>
+          <div class="task-meta">
+            <span class="tag-nice">MILESTONE</span>
+            <span>500 XP</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <div class="verdict">
+    <h3>The panel's standing call</h3>
+    <p><strong>Cleverpays this week</strong> — $3K/mo MRR is sitting on PR #1. Don't let PMRFP momentum bleed that.</p>
+    <p>PMRFP is well past soft-launch ready. <strong>Phase 1 + Phase 2 this week</strong> (≈ 4 hrs total), <strong>Phase 3 in parallel</strong> (evenings, 5 electricians/day), and you can credibly turn on ads in Phase 5 by next weekend.</p>
+    <p>Do not start Phase 4 work mid-Phase 1. Sequence matters. Plumbing → measurement → supply → trust → ads. One zone at a time.</p>
+    <button class="reset-btn" id="reset">↻ Reset checkboxes</button>
+  </div>
+
+</div>
+
+<script>
+  const KEY = 'pmrfp-roadmap-2026-05-31';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const boxes = document.querySelectorAll('.checkbox');
+
+  function render() {
+    let done = 0;
+    boxes.forEach(b => {
+      const id = b.dataset.id;
+      const li = b.closest('.task');
+      if (state[id]) { li.classList.add('done'); done++; }
+      else { li.classList.remove('done'); }
+    });
+    const total = boxes.length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    document.getElementById('bar-fill').style.width = pct + '%';
+    document.getElementById('progress-count').textContent =
+      done + ' / ' + total + ' complete · ' + pct + '%';
+  }
+
+  boxes.forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.dataset.id;
+      state[id] = !state[id];
+      localStorage.setItem(KEY, JSON.stringify(state));
+      render();
+    });
+  });
+
+  document.getElementById('reset').addEventListener('click', () => {
+    if (confirm('Reset all checkboxes?')) {
+      localStorage.removeItem(KEY);
+      for (const k in state) delete state[k];
+      render();
+    }
+  });
+
+  render();
+</script>
+
+</body>
+</html>
