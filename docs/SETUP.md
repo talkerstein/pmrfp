@@ -33,7 +33,7 @@ The migrations create three Storage buckets (`logos`, `rfp-documents`, `capabili
 
 ## 2. Stripe (subscriptions)
 
-1. In the [Stripe Dashboard](https://dashboard.stripe.com), create a **Product**: "PMRFP Trade Pro Annual", recurring **yearly**, **$249.00 CAD**. Copy the **price ID** (`price_…`) → `STRIPE_PRICE_TRADE_PRO_ANNUAL`. *(Optional upsell:* create "PMRFP Featured Annual", yearly, **$599.00 CAD** → `STRIPE_PRICE_FEATURED_ANNUAL`. An active Featured subscription auto-sets the org's priority placement.)*
+1. In the [Stripe Dashboard](https://dashboard.stripe.com), create a **Product**: "PMRFP Trade Pro", with a recurring **yearly** price of **$249.00 CAD**. Copy the **price ID** (`price_…`) → `STRIPE_PRICE_TRADE_PRO_ANNUAL`. *(Try-before-you-buy — recommended:* add a **monthly** price of **$29.00 CAD** to the same product → `STRIPE_PRICE_TRADE_PRO_MONTHLY`. Monthly nets $348/yr if held all year vs $249 annual — the gap nudges trades who like the platform toward annual. The monthly option only appears in the UI when this env var is set.) *(Optional upsell:* create "PMRFP Featured", yearly, **$599.00 CAD** → `STRIPE_PRICE_FEATURED_ANNUAL`. An active Featured subscription auto-sets the org's priority placement. Featured is annual-only.)*
 2. **Developers → API keys** → `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 3. **Developers → Webhooks** → add endpoint `https://your-domain/api/stripe/webhook`, listening for:
    `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`.
@@ -71,6 +71,8 @@ Without a key, emails are logged, not sent — nothing breaks.
 | `STRIPE_WEBHOOK_SECRET` | for billing | Verify webhooks |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | for billing | Client Stripe key |
 | `STRIPE_PRICE_TRADE_PRO_ANNUAL` | for billing | $249/yr price ID |
+| `STRIPE_PRICE_TRADE_PRO_MONTHLY` | optional | $29/mo price ID — enables try-before-you-buy. Without it, monthly UI hides and only annual is offered. |
+| `STRIPE_PRICE_FEATURED_ANNUAL` | optional | $599/yr Featured priority placement |
 | `RESEND_API_KEY` | for email | Resend API |
 | `RESEND_FROM_EMAIL` | for email | From address |
 | `NEXT_PUBLIC_SITE_URL` | recommended | Absolute URLs, OG, emails |

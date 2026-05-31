@@ -32,11 +32,15 @@ async function go(
 export function ActivateButton({
   label = "Activate Trade Pro",
   plan = "pro",
+  interval = "annual",
   variant = "default",
+  className,
 }: {
   label?: string;
   plan?: "pro" | "featured";
+  interval?: "monthly" | "annual";
   variant?: "default" | "outline" | "accent";
+  className?: string;
 }) {
   const [busy, setBusy] = useState(false);
   return (
@@ -44,7 +48,8 @@ export function ActivateButton({
       size="lg"
       variant={variant}
       disabled={busy}
-      onClick={() => go("/api/stripe/checkout", setBusy, { plan })}
+      className={className}
+      onClick={() => go("/api/stripe/checkout", setBusy, { plan, interval })}
     >
       {busy ? "Redirecting…" : label}
     </Button>

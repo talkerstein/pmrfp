@@ -19,11 +19,13 @@ export const SITE = {
 
 export const PRICING = {
   proAnnual: 249,
+  proMonthly: 29,
   featuredAnnual: 599,
   currency: "CAD",
   earlyBirdNote: "Early-bird: lock in $249/yr — rises to $399 once we hit 100 subscribers.",
   featuredNote:
     "Featured includes everything in Trade Pro, plus priority placement at the top of your categories and regions.",
+  monthlyNote: "Try us month-to-month at $29/mo. Switch to annual any time and save $99.",
 } as const;
 
 /**

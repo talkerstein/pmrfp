@@ -37,7 +37,16 @@ export default async function BillingPage() {
   const isFeatured =
     !!sub?.stripe_price_id &&
     sub.stripe_price_id === process.env.STRIPE_PRICE_FEATURED_ANNUAL;
-  const planName = isFeatured ? "Featured" : "Trade Pro";
+  const isMonthly =
+    !!sub?.stripe_price_id &&
+    !!process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY &&
+    sub.stripe_price_id === process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY;
+  const planName = isFeatured
+    ? "Featured"
+    : isMonthly
+      ? "Trade Pro · Monthly"
+      : "Trade Pro";
+  const monthlyEnabled = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);
 
   return (
     <div>
@@ -61,7 +70,14 @@ export default async function BillingPage() {
             )}
             {sub.amount != null && (
               <p className="mt-1 text-sm text-muted-foreground">
-                ${(sub.amount / 100).toFixed(0)} {sub.currency?.toUpperCase() ?? "CAD"}/year
+                ${sub.amount.toFixed(0)} {sub.currency?.toUpperCase() ?? "CAD"}/
+                {isMonthly ? "month" : "year"}
+              </p>
+            )}
+            {sub.status === "active" && isMonthly && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Switch to annual and save ${PRICING.proMonthly * 12 - PRICING.proAnnual} —
+                manage your subscription to update your plan.
               </p>
             )}
             <div className="mt-5 flex flex-wrap gap-3">
@@ -86,12 +102,58 @@ export default async function BillingPage() {
               Upgrade to Trade Pro to unlock full RFP details, express interest, and rank higher in
               the directory.
             </p>
-            <p className="mt-2 text-sm font-medium text-foreground">
-              ${PRICING.proAnnual} {PRICING.currency}/year
-            </p>
-            <div className="mt-5">
-              <ActivateButton />
-            </div>
+            {monthlyEnabled ? (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {/* Annual — primary */}
+                <div className="rounded-lg border border-teal-400 bg-teal-100/30 p-4 ring-2 ring-teal-400/40">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-semibold text-foreground">
+                      ${PRICING.proAnnual}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{PRICING.currency}/year</span>
+                  </div>
+                  <p className="mt-1 text-xs font-medium text-teal-ink">
+                    Best value · save ${PRICING.proMonthly * 12 - PRICING.proAnnual}/yr
+                  </p>
+                  <div className="mt-3">
+                    <ActivateButton
+                      label="Activate annual"
+                      interval="annual"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                {/* Monthly — try-before-you-buy */}
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-semibold text-foreground">
+                      ${PRICING.proMonthly}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{PRICING.currency}/month</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Cancel any time. Switch to annual later.
+                  </p>
+                  <div className="mt-3">
+                    <ActivateButton
+                      label="Start monthly"
+                      interval="monthly"
+                      variant="outline"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="mt-2 text-sm font-medium text-foreground">
+                  ${PRICING.proAnnual} {PRICING.currency}/year
+                </p>
+                <div className="mt-5">
+                  <ActivateButton />
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

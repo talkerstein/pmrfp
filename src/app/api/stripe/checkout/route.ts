@@ -19,10 +19,18 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const plan = body?.plan === "featured" ? "featured" : "pro";
-  const price =
-    plan === "featured"
-      ? process.env.STRIPE_PRICE_FEATURED_ANNUAL
-      : process.env.STRIPE_PRICE_TRADE_PRO_ANNUAL;
+  // Featured is annual-only — premium positioning. Pro supports both.
+  const interval: "monthly" | "annual" =
+    plan === "pro" && body?.interval === "monthly" ? "monthly" : "annual";
+
+  let price: string | undefined;
+  if (plan === "featured") {
+    price = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
+  } else if (interval === "monthly") {
+    price = process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY;
+  } else {
+    price = process.env.STRIPE_PRICE_TRADE_PRO_ANNUAL;
+  }
   if (!price) {
     return NextResponse.json({ error: "That plan isn't available yet." }, { status: 400 });
   }
@@ -31,6 +39,7 @@ export async function POST(request: Request) {
     organization_id: session.organization.id,
     user_id: session.userId,
     plan,
+    interval,
   };
 
   const stripe = getStripe();
@@ -45,6 +54,6 @@ export async function POST(request: Request) {
     subscription_data: { metadata },
   });
 
-  await trackEvent(EVENT.CHECKOUT_STARTED, { plan });
+  await trackEvent(EVENT.CHECKOUT_STARTED, { plan, interval });
   return NextResponse.json({ url: checkout.url });
 }

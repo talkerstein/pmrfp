@@ -15,6 +15,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRICING, SITE } from "@/lib/site";
+import { TradeProCard } from "@/components/public/trade-pro-card";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -26,17 +27,6 @@ const FREE_FEATURES = [
   "Directory listing",
   "Basic company profile",
   "Appear in vendor searches",
-];
-
-const PRO_FEATURES = [
-  "Full company profile",
-  "Directory listing",
-  "Full RFP access",
-  "Save opportunities",
-  "Express interest",
-  "Matching alerts",
-  "Priority placement",
-  "Verified vendor badge for your website",
 ];
 
 const FEATURED_FEATURES = [
@@ -132,42 +122,10 @@ export default async function PricingPage() {
             </Link>
           </div>
 
-          {/* Trade Pro */}
-          <div className="relative flex h-full flex-col rounded-xl border border-teal-400 bg-card p-8 ring-2 ring-teal-400">
-            <span className="absolute -top-3 left-8 inline-flex items-center gap-1.5 rounded-full bg-teal-500 px-3 py-1 text-xs font-semibold text-white">
-              <Sparkles className="size-3.5" />
-              Most popular
-            </span>
-            <h2 className="text-lg font-semibold text-foreground">Trade Pro</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Full RFP access and everything you need to win commercial work.
-            </p>
-            <div className="mt-6 flex items-baseline gap-1">
-              <span className="text-4xl font-semibold text-foreground">
-                ${PRICING.proAnnual}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {PRICING.currency}/year
-              </span>
-            </div>
-            <ul className="mt-6 flex-1 space-y-3">
-              {PRO_FEATURES.map((f) => (
-                <li
-                  key={f}
-                  className="flex items-start gap-2 text-sm text-foreground"
-                >
-                  <Check className="mt-0.5 size-4 shrink-0 text-teal-600" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/sign-up"
-              className={cn(buttonVariants({ size: "lg" }), "mt-8 w-full")}
-            >
-              Join {SITE.name}
-            </Link>
-          </div>
+          {/* Trade Pro — client component handles monthly/annual toggle.
+              Monthly toggle is suppressed when the Stripe monthly price isn't
+              configured yet, so we don't promise a plan we can't sell. */}
+          <TradeProCard monthlyEnabled={Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY)} />
 
           {/* Featured */}
           <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-indigo p-8 text-white shadow-xl">
