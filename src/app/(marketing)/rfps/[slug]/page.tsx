@@ -54,11 +54,15 @@ export default async function RfpDetailPage({
   // that real liquidity exists in their region BEFORE asking them to pay. Uses
   // only public board data (listRfps = rfp_public view) — no RLS-gated fields.
   let regionMatchCount = 0;
-  if (!showFull && teaser.regionName) {
+  let totalOpenCount = 0;
+  if (!showFull) {
     const openRfps = await listRfps();
-    regionMatchCount = openRfps.filter(
-      (r) => r.regionName === teaser.regionName && r.slug !== teaser.slug,
-    ).length;
+    totalOpenCount = openRfps.length;
+    if (teaser.regionName) {
+      regionMatchCount = openRfps.filter(
+        (r) => r.regionName === teaser.regionName && r.slug !== teaser.slug,
+      ).length;
+    }
   }
 
   return (
@@ -164,14 +168,16 @@ export default async function RfpDetailPage({
             </div>
           ) : (
             <div className="mt-8 space-y-6">
-              {regionMatchCount > 0 && teaser.regionName && (
+              {totalOpenCount > 0 && (
                 <div className="rounded-xl border border-teal-400/50 bg-teal-100/30 p-5">
                   <p className="text-sm font-semibold text-foreground">
-                    {regionMatchCount + 1} open commercial RFPs in {teaser.regionName} right now
+                    {regionMatchCount > 0 && teaser.regionName
+                      ? `${regionMatchCount + 1} open commercial RFPs in ${teaser.regionName} right now`
+                      : `${totalOpenCount} open commercial RFPs on PMRFP right now`}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Trade Pro members see full scope, documents, and can express interest on
-                    every one — this is just what&rsquo;s live in your region today.
+                    every one — and new opportunities post every week.
                   </p>
                 </div>
               )}
