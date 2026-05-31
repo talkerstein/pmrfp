@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PMRFP — Monetize Checklist</title>
+<style>
+  :root {
+    --indigo: #282B59;
+    --indigo-700: #1E2147;
+    --teal: #91F2CF;
+    --teal-100: #E4FBF2;
+    --teal-ink: #0C7A5A;
+    --ink: #0D0D0D;
+    --ink-2: #3A3D4D;
+    --ink-3: #6A6E80;
+    --paper: #FFFFFF;
+    --bg: #F5F7FB;
+    --border: #E2E6F0;
+    --border-strong: #CDD3E2;
+    --success: #15803D;
+    --warn: #D97706;
+    --error: #B91C1C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.55;
+    padding: 32px 16px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header {
+    background: var(--indigo); color: white;
+    padding: 32px; border-radius: 16px; margin-bottom: 24px;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", "SF Mono", Menlo, monospace;
+    font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--teal); margin: 0 0 8px;
+  }
+  h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.02em; font-weight: 600; }
+  header p { margin: 0; color: rgba(255,255,255,0.78); font-size: 14.5px; }
+  .progress-row {
+    margin-top: 20px; display: flex; align-items: center; gap: 12px;
+    font-size: 13px; color: rgba(255,255,255,0.85);
+  }
+  .progress-bar {
+    flex: 1; height: 6px; background: rgba(255,255,255,0.15); border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--teal);
+    transition: width 0.3s ease;
+  }
+  .group {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; margin-bottom: 16px;
+  }
+  .group h2 {
+    margin: 0 0 4px; font-size: 17px; font-weight: 600; color: var(--indigo);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pill {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px;
+  }
+  .pill-blocker { background: #FEE2E2; color: var(--error); }
+  .pill-enabler { background: var(--teal-100); color: var(--teal-ink); }
+  .group .group-meta { font-size: 13px; color: var(--ink-3); margin: 0 0 16px; }
+  .task {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px 0; border-top: 1px solid var(--border);
+  }
+  .task:first-of-type { border-top: 0; padding-top: 4px; }
+  .task input[type="checkbox"] {
+    width: 20px; height: 20px; margin: 2px 0 0; flex-shrink: 0;
+    accent-color: var(--indigo); cursor: pointer;
+  }
+  .task .body { flex: 1; }
+  .task .title { font-weight: 600; font-size: 15px; color: var(--ink); margin: 0 0 2px; }
+  .task.done .title { text-decoration: line-through; color: var(--ink-3); }
+  .task .desc { font-size: 13.5px; color: var(--ink-2); margin: 0 0 6px; }
+  .task .meta { font-size: 12px; color: var(--ink-3); display: flex; gap: 12px; flex-wrap: wrap; }
+  .task .meta a {
+    color: var(--indigo); text-decoration: none; font-weight: 500;
+    border-bottom: 1px dotted var(--border-strong);
+  }
+  .task .meta a:hover { color: var(--teal-ink); border-bottom-color: var(--teal-ink); }
+  .meta code {
+    background: var(--bg); padding: 1px 5px; border-radius: 3px;
+    font-family: "IBM Plex Mono", "SF Mono", monospace; font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .footer-note {
+    margin-top: 24px; padding: 16px 20px; background: var(--paper);
+    border: 1px dashed var(--border-strong); border-radius: 12px;
+    font-size: 13.5px; color: var(--ink-2);
+  }
+  .footer-note strong { color: var(--indigo); }
+  .clear-btn {
+    background: none; border: 1px solid var(--border-strong);
+    color: var(--ink-3); padding: 6px 12px; border-radius: 999px;
+    font-size: 12px; cursor: pointer; margin-top: 12px;
+  }
+  .clear-btn:hover { color: var(--error); border-color: var(--error); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Action checklist · 2026-05-31</p>
+  <h1>PMRFP → ready to take real money</h1>
+  <p>5 hard blockers (~50 min total) + 5 conversion accelerators (~1 day). Check state persists locally in this browser.</p>
+  <div class="progress-row">
+    <span id="progress-text">0 / 10 done</span>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+</header>
+
+<div class="group">
+  <h2>🔴 Hard blockers <span class="pill pill-blocker">Must do</span></h2>
+  <p class="group-meta">Real money can't flow until these are done. Total: ~50 minutes of your time.</p>
+
+  <label class="task" data-id="b1">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">1. Apply SQL migration (real-estate-agent role)</p>
+      <p class="desc">REA signups currently error on a CHECK constraint. Paste 2 lines, hit Run, done.</p>
+      <p class="meta">
+        <span>⏱ 30 sec</span>
+        <a href="https://supabase.com/dashboard/project/tumexryzbzmtijvbloch/sql/new" target="_blank" rel="noopener">→ Supabase SQL editor</a>
+        <span>SQL in <code>briefs/handoff-2026-05-31.md §2A</code></span>
+      </p>
+    </div>
+  </label>
+
+  <label class="task" data-id="b2">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">2. Point pmrfp.com DNS at Vercel</p>
+      <p class="desc">Domain still serves the old WordPress. Anyone googling "pmrfp" lands on a dead site. Add CNAME / A records per Vercel's domain panel.</p>
+      <p class="meta">
+        <span>⏱ 10 min + propagation</span>
+        <a href="https://vercel.com/talkersteins-projects/pmrfp/settings/domains" target="_blank" rel="noopener">→ Vercel domains</a>
+      </p>
+    </div>
+  </label>
+
+  <label class="task" data-id="b3">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">3. Set up email — rishon@pmrfp.com</p>
+      <p class="desc">Free option: Google Workspace secondary domain (if Workspace active at talkerstein.ca) OR Zoho Mail Free. Needed for outreach + Resend "from" address.</p>
+      <p class="meta">
+        <span>⏱ 10–15 min</span>
+        <a href="https://admin.google.com" target="_blank" rel="noopener">→ Workspace admin</a>
+        <a href="https://www.zoho.com/mail/zohomail-pricing.html" target="_blank" rel="noopener">→ Zoho Free</a>
+      </p>
+    </div>
+  </label>
+
+  <label class="task" data-id="b4">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">4. Wire Resend</p>
+      <p class="desc">Verify the pmrfp.com domain, paste <code>RESEND_API_KEY</code> + <code>RESEND_FROM_EMAIL</code> into Vercel env. Until done, every transactional email (signup verify, RFP alerts, billing) silently no-ops — kills activation rate.</p>
+      <p class="meta">
+        <span>⏱ 10 min</span>
+        <a href="https://resend.com/domains" target="_blank" rel="noopener">→ Resend domains</a>
+        <span>Playbook: <code>briefs/resend-setup.md</code></span>
+      </p>
+    </div>
+  </label>
+
+  <label class="task" data-id="b5">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">5. Flip Stripe to LIVE mode</p>
+      <p class="desc">Currently TEST. Cards won't actually charge. Create the 3 prices in LIVE (Trade Pro $249/yr, Trade Pro $29/mo, Featured $599/yr), swap secret/publishable/webhook env vars in Vercel.</p>
+      <p class="meta">
+        <span>⏱ 15 min (ping me if you want me to drive the API for the prices)</span>
+        <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener">→ Stripe API keys</a>
+      </p>
+    </div>
+  </label>
+</div>
+
+<div class="group">
+  <h2>🟡 Conversion accelerators <span class="pill pill-enabler">Higher $/hr</span></h2>
+  <p class="group-meta">Each one tightens the funnel meaningfully. Together: ~1 focused day of coding work. I can ship any/all when you say go.</p>
+
+  <label class="task" data-id="e1">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">6. Quest 1.3 — Preview RFP before publish</p>
+      <p class="desc">PMs submit blind right now. #1 reason for mid-form abandonment.</p>
+      <p class="meta"><span>⏱ 30 min</span> <span>+10 XP</span></p>
+    </div>
+  </label>
+
+  <label class="task" data-id="e2">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">7. Quest 3.10 — Free-tier limit + Pro CTA at the right friction point</p>
+      <p class="desc">Free trades currently see almost everything. The paywall trigger needs to land in the moment of intent (e.g. on first "express interest" attempt).</p>
+      <p class="meta"><span>⏱ 2 hrs</span> <span>+25 XP</span></p>
+    </div>
+  </label>
+
+  <label class="task" data-id="e3">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">8. Quest 4.6 — Invite specific vendors to an RFP via email link</p>
+      <p class="desc">PMs have preferred-vendor lists. This is the killer feature that gets them USING PMRFP instead of just emailing vendors directly.</p>
+      <p class="meta"><span>⏱ 2 hrs</span> <span>+25 XP</span></p>
+    </div>
+  </label>
+
+  <label class="task" data-id="e4">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">9. Quest 1.5 — Share RFP direct link</p>
+      <p class="desc">Same logic as #8 — PMs want to forward to people they trust. Make it one click.</p>
+      <p class="meta"><span>⏱ 30 min</span> <span>+10 XP</span></p>
+    </div>
+  </label>
+
+  <label class="task" data-id="e5">
+    <input type="checkbox" />
+    <div class="body">
+      <p class="title">10. Quest 1.2 — Save RFP as draft</p>
+      <p class="desc">~50% of PMs bounce mid-form. Drafts recover them. Pairs with #6 (preview before publish).</p>
+      <p class="meta"><span>⏱ 2 hrs</span> <span>+25 XP</span></p>
+    </div>
+  </label>
+</div>
+
+<div class="footer-note">
+  <strong>How this list was built:</strong> from the 50-quest launch list at <code>briefs/launch-quest.md</code>, filtered to <em>monetization gating</em> and <em>monetization accelerating</em> only. Everything else (boss fights, polish, French translation, mobile app) is deliberately excluded — it's not what's between you and the first paying customer.
+  <button class="clear-btn" onclick="if(confirm('Clear all checks?')){localStorage.removeItem('pmrfp-monetize-checklist');location.reload();}">Reset checklist</button>
+</div>
+
+</div>
+
+<script>
+  const KEY = 'pmrfp-monetize-checklist';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const tasks = document.querySelectorAll('.task');
+
+  function render() {
+    let done = 0;
+    tasks.forEach(t => {
+      const id = t.dataset.id;
+      const cb = t.querySelector('input');
+      cb.checked = !!state[id];
+      t.classList.toggle('done', !!state[id]);
+      if (state[id]) done++;
+    });
+    const total = tasks.length;
+    document.getElementById('progress-text').textContent = `${done} / ${total} done`;
+    document.getElementById('progress-fill').style.width = `${(done/total)*100}%`;
+  }
+
+  tasks.forEach(t => {
+    t.querySelector('input').addEventListener('change', e => {
+      state[t.dataset.id] = e.target.checked;
+      localStorage.setItem(KEY, JSON.stringify(state));
+      render();
+    });
+  });
+
+  render();
+</script>
+</body>
+</html>

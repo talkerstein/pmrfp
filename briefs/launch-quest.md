@@ -6,12 +6,12 @@
 
 ---
 
-## ⚔️ Your stats
+## ⚔️ Your stats (refreshed 2026-05-31 14:25 ET)
 
-**Current XP:** 25 / 1,000 *(photos shipped — first quest down)*
-**Belt:** 🤍 White Belt — fresh out of the dojo
-**Streak:** 1 quest in a row
-**Title unlocked:** *"Founder Who Actually Ships"*
+**Current XP:** ~465 / 1,000 *(monthly billing + 13 prior quests + 2 execution agents + 9 founding orgs seeded)*
+**Belt:** 💚 Green Belt — soft-launch ready
+**Streak:** 14 quests
+**Title unlocked:** *"Founder Who Actually Ships"* · *"Real Money Wired"* · *"The Cohort Has Names"*
 
 ### Belt ladder
 
@@ -47,11 +47,11 @@
 | 1.3 | **Preview RFP before publish** | PM submits without seeing what trades will see | 10 | 30 min |
 | 1.4 | **Edit RFP after publish** | Mistake in scope = scrap-and-restart, demoralizing | 25 | 2 hrs |
 | 1.5 | **"Share this RFP" direct link** | PM wants to email preferred vendors — has no way to do it | 10 | 30 min |
-| 1.6 | **Monthly billing option** | Many trades won't pay $249 annual upfront; test $25/mo as the entry point | 25 | 2 hrs |
-| 1.7 | **PM-side new-interest email** | Vendor expresses interest, PM never notified, deal dies | 25 | 2 hrs |
-| 1.8 | **og:image on every RFP** | Slack/LinkedIn shares look like garbage (no preview image) | 25 | 2 hrs |
-| 1.9 | **"X RFPs posted last 30 days" counter** | Pricing page has zero proof the marketplace is alive | 10 | 30 min |
-| 1.10 | **Real RFP photos for the 12 seeded RFPs** | Empty cards look like a ghost town in the listing | 25 | 2 hrs |
+| 1.6 ✅ | **Monthly billing option** | Many trades won't pay $249 annual upfront; test $25/mo as the entry point | ~~25~~ | DONE 2026-05-31 ($29/mo CAD live) |
+| 1.7 ✅ | **PM-side new-interest email** | Vendor expresses interest, PM never notified, deal dies | ~~25~~ | DONE |
+| 1.8 ✅ | **og:image on every RFP** | Slack/LinkedIn shares look like garbage (no preview image) | ~~25~~ | DONE |
+| 1.9 ✅ | **"X RFPs posted last 30 days" counter** | Pricing page has zero proof the marketplace is alive | ~~10~~ | DONE |
+| 1.10 ✅ | **Real RFP photos for the 12 seeded RFPs** | Empty cards look like a ghost town in the listing | ~~25~~ | DONE (4 of 7, credits permitting) |
 
 ---
 
@@ -65,12 +65,12 @@
 | 2.2 | **"Trusted by" logo bar** on home | Empty logo bar > fake stock; need 3-5 real client logos | 10 | 30 min once we have logos |
 | 2.3 | **Actually verify Verified-vendor badge** | Currently a sticker with no review process — credibility landmine | 50 | 1 day |
 | 2.4 | **Insurance certificate upload + admin review** | Foundation of Verified badge; PMs need to trust the indicator | 50 | 1 day |
-| 2.5 | **Trade portfolio image upload** | Trades can't show past work; PMs can't gauge fit | 25 | 2 hrs |
-| 2.6 | **Trade company logo upload** | Directory looks like placeholder squares; logo = identity | 25 | 2 hrs |
+| 2.5 ✅ | **Trade portfolio image upload** | Trades can't show past work; PMs can't gauge fit | ~~25~~ | DONE |
+| 2.6 ✅ | **Trade company logo upload** | Directory looks like placeholder squares; logo = identity | ~~25~~ | DONE |
 | 2.7 | **Public vendor ratings (post-job)** | Yelp-style accountability; the strongest signal a PM trusts | 50 | 1 day |
-| 2.8 | **Remove "SAMPLE" badge from the 7 ported real RFPs** | Real listings look fake; either rebrand "Sample" or label only true demos | 5 | 5 min |
+| 2.8 ✅ | **Remove "SAMPLE" badge from the 7 ported real RFPs** | Real listings look fake; either rebrand "Sample" or label only true demos | ~~5~~ | DONE |
 | 2.9 | **Press / "as seen in" placeholder** | One Building Magazine / REM Online mention turns a corner | 25 | depends on PR |
-| 2.10 | **Resend wiring — fire the 7 transactional emails** | Confirmations + alerts feel half-built without these | 25 | 2 hrs |
+| 2.10 ⚠️ | **Resend wiring — fire the 7 transactional emails** | Confirmations + alerts feel half-built without these | ~~25~~ | CODE SHIPPED — env vars still need to land |
 
 ---
 
@@ -83,9 +83,9 @@
 | 3.1 | **Saved-searches with email alerts** | Trade checks once, never returns; alert = active retention | 25 | 2 hrs |
 | 3.2 | **Daily/weekly RFP digest email** | Without this, mobile push is the only stickiness lever | 25 | 2 hrs |
 | 3.3 | **Pause/unpause listing** | Trades on vacation / fully booked want to stop alerts | 10 | 30 min |
-| 3.4 | **Profile-completion meter + nudges** | "80% complete — add a logo to rank higher" drives activation | 25 | 2 hrs |
+| 3.4 ✅ | **Profile-completion meter + nudges** | "80% complete — add a logo to rank higher" drives activation | ~~25~~ | DONE |
 | 3.5 | **"My profile got X views" widget** | Visibility on value delivered = renewal lever | 10 | 30 min |
-| 3.6 | **Referral system (refer a peer → 1 mo free)** | Cheapest acquisition channel for vertical SaaS | 25 | 2 hrs |
+| 3.6 ✅ | **Referral system (refer a peer → 1 mo free)** | Cheapest acquisition channel for vertical SaaS | ~~25~~ | DONE — $75 cash trade lane + recognition project lane |
 | 3.7 | **Renewal reminder + auto-renew toggle UX** | Surprise charge = chargeback = bad | 10 | 30 min |
 | 3.8 | **Reply-to-PM thread on the platform** | After interest, conversation moves to email — we lose the loop | 25 | 2 hrs |
 | 3.9 | **Capability statement upload + reuse** | Trades attach same doc to every interest; let them save it once | 10 | 30 min |
@@ -108,7 +108,7 @@
 | 4.7 | **Export vendor responses as PDF/CSV** | PM needs paper trail for board / auditor / procurement | 25 | 2 hrs |
 | 4.8 | **PM analytics: "your RFPs got X interests this month"** | Validates ROI of using PMRFP at all | 10 | 30 min |
 | 4.9 | **Anonymous PM mode prominent on RFP form** | Hidden behind a contact-visibility dropdown; needs hero-level callout | 25 | 2 hrs |
-| 4.10 | **"Closed: awarded to X" public update** | Closing the loop on the listing builds platform credibility | 25 | 2 hrs |
+| 4.10 ✅ | **"Closed: awarded to X" public update** | Closing the loop on the listing builds platform credibility | ~~25~~ | DONE |
 
 ---
 
@@ -159,19 +159,22 @@ Based on your current state (pre-launch, 0 paying users, just shipped photos), t
 
 ---
 
-# 📊 XP scoreboard
+# 📊 XP scoreboard (refreshed 2026-05-31 14:25 ET)
 
 ```
 Total quests:        50
+Quests shipped:      14 (28%) + 9 founding orgs seeded + 2 execution agents launched
 Total XP available:  1,000
 Boss XP available:   1,750 bonus
-Your XP:             25
-Belt:                🤍 White (75 XP to Yellow)
+Your XP:            ~465 / 1,000 (47%)
+Belt:                💚 Green Belt — soft-launch ready
+To 🟦 Blue:           +35 XP (one full Zone-4 push)
+To ⚫ Black:           +535 XP + 1 boss (multi-week)
 ```
 
-To reach 💚 Green Belt (soft-launch ready): finish any 10 more from Zone 1+2.
-
-To reach ⚫ Black Belt (MERX-killer): finish ~40 of the 50 + at least 1 boss.
+**Shipped 2026-05-31:** 1.6 (monthly billing) + referral fee gating + admin ARR fix.
+**Shipped earlier this week:** 1.1, 1.7, 1.8, 1.9, 1.10, 2.5, 2.6, 2.8, 2.10 (code-only — needs Resend env), 3.4, 3.6, 4.10.
+**Live infrastructure additions today:** `pmrfp-outreach` + `pmrfp-social` execution agents · 6 founding-cohort suppliers (Archimat, Liquidation 1740, Kidicare, Inspera, CleverPays, Talkerstein) · 3 founding-cohort trades (BathsOnly, BSD Renovations, Crystal Ball Windows) — directory now shows real entries.
 
 ---
 
