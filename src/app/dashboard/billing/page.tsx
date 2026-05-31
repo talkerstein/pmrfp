@@ -159,6 +159,7 @@ export default async function BillingPage() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">{PRICING.earlyBirdNote}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{PRICING.guaranteeNote}</p>
     </div>
   );
 }

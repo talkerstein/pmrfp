@@ -37,6 +37,22 @@ export async function POST(request: Request) {
             sub.metadata = { ...sub.metadata, ...cs.metadata };
           }
           await syncSubscriptionFromStripe(sub);
+
+          // Auto-approve on payment: a trade/supplier who pays should appear in
+          // the directory immediately — never sit invisible in 'pending_review'
+          // waiting for a manual admin flip (audit sev-5: "paid trades invisible").
+          // Only promotes pending_review/draft → approved; never touches an
+          // already-approved or suspended/rejected org.
+          const approveOrgId = sub.metadata?.organization_id;
+          if (approveOrgId && isServiceConfigured()) {
+            const svc = createServiceClient();
+            await svc
+              .from("organizations")
+              .update({ profile_status: "approved" })
+              .eq("id", approveOrgId)
+              .in("profile_status", ["pending_review", "draft"]);
+          }
+
           if (cs.customer_details?.email) {
             await sendSubscriptionActivatedEmail(cs.customer_details.email);
             // Referral fee gating:

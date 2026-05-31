@@ -26,6 +26,12 @@ export const PRICING = {
   featuredNote:
     "Featured includes everything in Trade Pro, plus priority placement at the top of your categories and regions.",
   monthlyNote: "Try us month-to-month at $29/mo. Switch to annual any time and save $99.",
+  // Risk-reversal (audit sev-4 CFO): de-risk the first payment. A 30-day
+  // money-back guarantee on a $249/yr B2B sub is standard and rarely claimed,
+  // but it removes the single biggest cold-trade objection.
+  guaranteeNote: "30-day money-back guarantee — if PMRFP isn't a fit, email us within 30 days for a full refund.",
+  // ROI anchor: one won commercial RFP dwarfs the annual fee.
+  roiNote: "One won commercial RFP typically covers years of Trade Pro.",
 } as const;
 
 /**

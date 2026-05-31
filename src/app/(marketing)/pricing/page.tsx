@@ -40,12 +40,16 @@ const FEATURED_FEATURES = [
 
 const FAQ = [
   {
+    q: "Is there a money-back guarantee?",
+    a: "Yes. If Trade Pro isn't a fit, email us within 30 days of your payment for a full refund — no hassle.",
+  },
+  {
     q: "Does PMRFP guarantee work?",
     a: "No. PMRFP is a vendor discovery and RFP visibility platform. We help you get found and monitor opportunities — we do not guarantee contracts, bid success, or revenue.",
   },
   {
     q: "Can I cancel?",
-    a: "Yes, your subscription stays active until the end of the billing period.",
+    a: "Yes, your subscription stays active until the end of the billing period. Monthly plans can be cancelled any time.",
   },
   {
     q: "Is this Canada-wide?",
@@ -88,6 +92,11 @@ export default async function PricingPage() {
             {PRICING.earlyBirdNote}
           </p>
         </div>
+
+        <p className="mb-8 text-center text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{PRICING.guaranteeNote}</span>{" "}
+          {PRICING.roiNote}
+        </p>
 
         <div className="grid items-start gap-6 md:grid-cols-3">
           {/* Free */}
