@@ -22,6 +22,7 @@ import {
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listVendors } from "@/lib/data/directory";
 import { listRfps } from "@/lib/data/rfps";
+import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -83,6 +84,7 @@ export default async function TradeCategoryPage({
   ];
 
   const topRegions = regions.filter((r) => !["canada"].includes(r.slug)).slice(0, 12);
+  const templates = getTemplatesForTrade(cat.slug);
 
   return (
     <>
@@ -146,6 +148,40 @@ export default async function TradeCategoryPage({
           )}
         </Container>
       </section>
+
+      {templates.length > 0 && (
+        <Container className="py-12">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Need to post a {lower} RFP? Start with a template
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                Ready-to-use scope, requirements, and evaluation criteria for the most common {lower}{" "}
+                jobs — customize and post in minutes.
+              </p>
+            </div>
+            <Link href="/rfp-templates" className="text-sm text-teal-ink hover:underline">
+              All templates →
+            </Link>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {templates.slice(0, 3).map((t) => (
+              <Link
+                key={t.slug}
+                href={`/rfp-templates/${t.slug}`}
+                className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
+              >
+                <h3 className="text-base font-semibold leading-snug group-hover:text-teal-ink">
+                  {t.name.replace(/ RFP Template$/, "")}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.pitch}</p>
+                <span className="mt-4 text-sm font-medium text-teal-ink">Use this template →</span>
+              </Link>
+            ))}
+          </div>
+        </Container>
+      )}
 
       <Container className="py-12">
         <h2 className="text-2xl font-semibold tracking-tight">{cat.name} by region</h2>

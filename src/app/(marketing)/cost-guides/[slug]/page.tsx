@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
 import { COST_GUIDES, getCostGuide } from "@/lib/seo/cost-guides";
+import { getTemplateForCostGuide } from "@/lib/seo/rfp-templates";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 86400;
@@ -45,6 +46,7 @@ export default async function CostGuidePage({
   const { slug } = await params;
   const g = getCostGuide(slug);
   if (!g) notFound();
+  const template = getTemplateForCostGuide(g.slug);
 
   return (
     <>
@@ -152,6 +154,31 @@ export default async function CostGuidePage({
             </Link>
           </div>
         </div>
+
+        {template && (
+          <div className="mt-6 rounded-2xl border border-teal-300 bg-teal-100/40 p-6 sm:p-8">
+            <Eyebrow>Skip the blank page</Eyebrow>
+            <h2 className="mt-3 text-xl font-semibold tracking-tight sm:text-2xl">
+              Use the {template.name.replace(/ RFP Template$/, "")} template
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              We&rsquo;ve already built the scope, requirements, and evaluation criteria for this kind of
+              project. Customize in seconds and post — go from cost guide to live RFP without writing
+              from scratch.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href={`/rfp-templates/${template.slug}`} className={buttonVariants()}>
+                See the template <ArrowRight className="size-4" />
+              </Link>
+              <Link
+                href={`/pm-dashboard/rfps/new?template=${template.slug}`}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                Use this template
+              </Link>
+            </div>
+          </div>
+        )}
       </Container>
 
       <section className="border-t border-border">

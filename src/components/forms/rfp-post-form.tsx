@@ -11,29 +11,57 @@ import { COPY } from "@/lib/site";
 
 type Option = { slug: string; name: string };
 
+export interface RfpPostDefaults {
+  title?: string;
+  summary?: string;
+  scope?: string;
+  requirements?: string;
+  categories?: string[];
+  templateSlug?: string;
+  templateName?: string;
+}
+
 export function RfpPostForm({
   categories,
   regions,
   propertyTypes,
+  defaults,
 }: {
   categories: Option[];
   regions: Option[];
   propertyTypes: Option[];
+  defaults?: RfpPostDefaults;
 }) {
   const [state, action, pending] = useActionState(createRfpAction, {} as ActionState);
+  const preselected = new Set(defaults?.categories ?? []);
   return (
     <form action={action} className="space-y-6">
       {state.error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
 
+      {defaults?.templateName && (
+        <div className="rounded-md border border-teal-300 bg-teal-100 px-4 py-3 text-sm text-teal-ink">
+          <span className="font-semibold">Pre-filled from template:</span> {defaults.templateName}.
+          Edit anything before submitting.
+        </div>
+      )}
+
       <Section title="Project">
-        <Field label="RFP title" req><Input name="title" required placeholder="e.g. Condominium Electrical Maintenance Contract" /></Field>
-        <Field label="Short summary" req><Textarea name="summary" rows={2} required /></Field>
-        <Field label="Full scope" req><Textarea name="scope" rows={5} required /></Field>
-        <Field label="Requirements"><Textarea name="requirements" rows={3} placeholder="Insurance, licensing, references, etc." /></Field>
+        <Field label="RFP title" req>
+          <Input name="title" required defaultValue={defaults?.title ?? ""} placeholder="e.g. Condominium Electrical Maintenance Contract" />
+        </Field>
+        <Field label="Short summary" req>
+          <Textarea name="summary" rows={2} required defaultValue={defaults?.summary ?? ""} />
+        </Field>
+        <Field label="Full scope" req>
+          <Textarea name="scope" rows={defaults?.scope ? 12 : 5} required defaultValue={defaults?.scope ?? ""} />
+        </Field>
+        <Field label="Requirements">
+          <Textarea name="requirements" rows={defaults?.requirements ? 8 : 3} defaultValue={defaults?.requirements ?? ""} placeholder="Insurance, licensing, references, etc." />
+        </Field>
       </Section>
 
       <Section title="Classification">
-        <CheckboxGroup label="Categories" name="categories" options={categories} req />
+        <CheckboxGroup label="Categories" name="categories" options={categories} req preselected={preselected} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Property type">
             <select name="propertyType" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
@@ -105,14 +133,32 @@ function Field({ label, req, children }: { label: string; req?: boolean; childre
     </label>
   );
 }
-function CheckboxGroup({ label, name, options, req }: { label: string; name: string; options: Option[]; req?: boolean }) {
+function CheckboxGroup({
+  label,
+  name,
+  options,
+  req,
+  preselected,
+}: {
+  label: string;
+  name: string;
+  options: Option[];
+  req?: boolean;
+  preselected?: Set<string>;
+}) {
   return (
     <div>
       <Label className="mb-2 block">{label}{req && <span className="text-red-600"> *</span>}</Label>
       <div className="grid max-h-48 grid-cols-2 gap-1.5 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-3">
         {options.map((o) => (
           <label key={o.slug} className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name={name} value={o.slug} className="size-4" />
+            <input
+              type="checkbox"
+              name={name}
+              value={o.slug}
+              defaultChecked={preselected?.has(o.slug) ?? false}
+              className="size-4"
+            />
             {o.name}
           </label>
         ))}

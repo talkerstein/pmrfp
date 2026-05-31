@@ -7,6 +7,7 @@ import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { COMPETITORS } from "@/lib/seo/competitors";
 import { VERTICALS } from "@/lib/seo/verticals";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
+import { RFP_TEMPLATES } from "@/lib/seo/rfp-templates";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
@@ -27,6 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/vs", priority: 0.7, freq: "monthly" },
     { path: "/for", priority: 0.7, freq: "monthly" },
     { path: "/cost-guides", priority: 0.7, freq: "monthly" },
+    { path: "/rfp-templates", priority: 0.8, freq: "monthly" },
     { path: "/contact", priority: 0.5, freq: "yearly" },
     { path: "/terms", priority: 0.3, freq: "yearly" },
     { path: "/privacy", priority: 0.3, freq: "yearly" },
@@ -56,6 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const c of COMPETITORS) entries.push({ url: `${base}/vs/${c.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const v of VERTICALS) entries.push({ url: `${base}/for/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
   for (const g of COST_GUIDES) entries.push({ url: `${base}/cost-guides/${g.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
+  for (const t of RFP_TEMPLATES) entries.push({ url: `${base}/rfp-templates/${t.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
 
   return entries;
 }
