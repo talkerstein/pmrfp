@@ -312,7 +312,7 @@ export async function sendTradeReferralConfirmation(to: string, tradeName: strin
          <li>Our team reviews the referral (usually within 1 business day).</li>
          <li>We reach out to the trade contact (if you provided one) or to you (so you can introduce us).</li>
          <li>We help them set up their company profile in the directory.</li>
-         <li>When they activate <strong>annual Trade Pro ($249/yr)</strong>, you earn a <strong>$75 CAD finder's fee</strong> (paid by e-transfer within 7 days of activation). Monthly plans at $29/mo qualify the same fee after 3 paid months.</li>
+         <li>When they activate <strong>Trade Pro</strong> and stay active for <strong>90 days</strong>, you earn a <strong>$75 CAD finder&apos;s fee</strong>, paid by e-transfer within 7 days. The 90-day window keeps the program sustainable on both sides.</li>
        </ol>
        <p>You'll get a monthly summary of all your referred trades — no chasing required.</p>
        <p>Questions? Reply to this email.</p>`,
