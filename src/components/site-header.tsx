@@ -52,12 +52,12 @@ export function SiteHeader() {
 
         <div className="hidden items-center gap-2 lg:flex">
           <Link
-            href="/refer-a-project"
+            href="/refer"
             className="hidden xl:inline-flex items-center gap-1 rounded-full border border-teal-300/70 bg-teal-100/40 px-3 py-1.5 text-xs font-semibold text-teal-ink transition-colors hover:bg-teal-100/70"
-            title={`${REFERRAL.shortCta} — earn $${REFERRAL.fee} when work is awarded`}
+            title={`${REFERRAL.shortCta} — earn up to $${REFERRAL.maxFee} when they list`}
           >
             <span className="size-1.5 rounded-full bg-teal-ink" />
-            {REFERRAL.shortCta} · ${REFERRAL.fee}
+            Refer · up to ${REFERRAL.maxFee}
           </Link>
           <Link href="/sign-in" className={buttonVariants({ variant: "ghost", size: "sm" })}>
             Sign In
@@ -93,12 +93,12 @@ export function SiteHeader() {
             ))}
             <div className="mt-4 grid gap-2 border-t border-border pt-4">
               <Link
-                href="/refer-a-project"
+                href="/refer"
                 onClick={() => setOpen(false)}
                 className="flex items-center justify-center gap-2 rounded-full border border-teal-300/70 bg-teal-100/40 px-4 py-2.5 text-sm font-semibold text-teal-ink"
               >
                 <span className="size-1.5 rounded-full bg-teal-ink" />
-                {REFERRAL.shortCta} · earn ${REFERRAL.fee}
+                Refer · earn up to ${REFERRAL.maxFee}
               </Link>
               <Link
                 href="/sign-in"

@@ -32,21 +32,21 @@ export function ReferBanner({
             </span>
             <div>
               <p className="font-mono text-[11px] uppercase tracking-widest text-teal-300">
-                Referral program
+                Referral program · two lanes
               </p>
               <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">
-                {REFERRAL.oneLiner}
+                Refer a trade and earn ${REFERRAL.tradeFee}, or refer a project and earn ${REFERRAL.projectFee}.
               </p>
               <p className="mt-1 text-sm text-indigo-100/75">
-                For REAs, mortgage brokers, RE lawyers, PMs, and anyone with a project.
+                Fee triggers when they list. No award-waiting. E-transfer in 7 days.
               </p>
             </div>
           </div>
           <Link
-            href="/refer-a-project"
+            href="/refer"
             className="inline-flex items-center gap-2 rounded-full bg-teal-300 px-5 py-2.5 text-sm font-semibold text-indigo transition-colors hover:bg-teal-300/90"
           >
-            {REFERRAL.shortCta} <ArrowRight className="size-4" />
+            See both lanes <ArrowRight className="size-4" />
           </Link>
         </Container>
       </section>
@@ -56,7 +56,7 @@ export function ReferBanner({
   // Subtle — fits inside a Container, no top/bottom borders, no full-bleed bg.
   return (
     <Link
-      href="/refer-a-project"
+      href="/refer"
       className={cn(
         "group flex flex-col items-start gap-3 rounded-xl border border-teal-300/60 bg-teal-100/35 p-5 transition-colors hover:bg-teal-100/55 sm:flex-row sm:items-center sm:justify-between",
         className,
@@ -68,13 +68,13 @@ export function ReferBanner({
         </span>
         <div>
           <p className="font-mono text-[11px] uppercase tracking-widest text-teal-ink">
-            Referral program
+            Referral program · up to ${REFERRAL.maxFee}
           </p>
           <p className="mt-0.5 text-sm font-semibold text-foreground">{REFERRAL.oneLiner}</p>
         </div>
       </div>
       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-teal-ink">
-        {REFERRAL.shortCta}
+        See lanes
         <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
       </span>
     </Link>

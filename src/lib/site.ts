@@ -27,15 +27,27 @@ export const PRICING = {
 } as const;
 
 /**
- * Referral program — anyone (REA, mortgage broker, RE lawyer, peer PM,
- * neighbour) can refer a project. When the resulting RFP is awarded to a
- * PMRFP-listed trade, the referrer earns a finder's fee. See /refer-a-project.
+ * Referral program — anyone can introduce either:
+ *   1. a TRADE (vendor) → fee paid when they activate Trade Pro ($249/yr).
+ *      Direct revenue: PMRFP nets ~$240, $75 to referrer = healthy CAC.
+ *   2. a PROJECT (RFP) → fee paid when the RFP is PUBLISHED live (admin-
+ *      approved). Indirect value: inventory that retains paying trades.
+ *
+ * Both triggers fire on LISTING — the actual revenue-aligned moment — not on
+ * downstream events like "work awarded" that don't generate revenue for PMRFP.
+ *
+ * See /refer-a-project (project lane) and /refer-a-trade (trade lane).
  */
 export const REFERRAL = {
-  fee: 50,
   currency: "CAD",
-  oneLiner: "Introduce a project. Earn a $50 finder's fee when work is awarded.",
-  shortCta: "Refer a project",
+  // Lane-specific economics
+  tradeFee: 75,
+  projectFee: 25,
+  // Headline numbers
+  maxFee: 75,
+  // Short copy (used in banner + nav)
+  oneLiner: "Refer a trade or a project. Earn up to $75 when they list.",
+  shortCta: "Refer to PMRFP",
 } as const;
 
 /** Primary public navigation (§30 header) */
@@ -50,7 +62,7 @@ export const MAIN_NAV = [
 
 /** Secondary nav slot — sits between primary nav and auth CTAs in the header. */
 export const SECONDARY_NAV = [
-  { href: "/refer-a-project", label: `${REFERRAL.shortCta} — earn $${REFERRAL.fee}` },
+  { href: "/refer", label: `${REFERRAL.shortCta} — earn up to $${REFERRAL.maxFee}` },
 ] as const;
 
 /** Trade dashboard sidebar (§10.3) */
@@ -128,7 +140,8 @@ export const FOOTER_COLS = [
       { label: "Resource Hub", href: "/resources" },
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
-      { label: `${REFERRAL.shortCta} — earn $${REFERRAL.fee}`, href: "/refer-a-project" },
+      { label: `Refer a trade — earn $${REFERRAL.tradeFee}`, href: "/refer-a-trade" },
+      { label: `Refer a project — earn $${REFERRAL.projectFee}`, href: "/refer-a-project" },
       { label: "Grow Your Business", href: "/resources/grow" },
       { label: "Vendor Badge", href: "/badge" },
       { label: "Contact", href: "/contact" },

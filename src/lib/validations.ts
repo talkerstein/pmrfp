@@ -102,10 +102,12 @@ export const interestSchema = z.object({
 export type InterestInput = z.infer<typeof interestSchema>;
 
 /**
- * Refer-a-project intake. No auth required — anyone can submit a referral on
- * behalf of a property owner / manager / client. Honeypot guards against bots.
+ * Refer-a-project intake. Fee paid when the RFP is PUBLISHED LIVE (admin-
+ * approved) — the LISTING moment that creates inventory value for PMRFP.
+ * Not "work awarded" (downstream + non-revenue).
  */
-export const referralSchema = z.object({
+export const projectReferralSchema = z.object({
+  type: z.literal("project").default("project"),
   // The project
   projectDescription: z.string().min(30, "Tell us a bit more (30+ characters)").max(2500),
   projectCity: z.string().min(1, "City is required"),
@@ -129,7 +131,42 @@ export const referralSchema = z.object({
   // Honeypot
   company_website: z.string().max(0).optional(),
 });
-export type ReferralInput = z.infer<typeof referralSchema>;
+export type ProjectReferralInput = z.infer<typeof projectReferralSchema>;
+
+// Backward-compat alias for callers that still import the old name.
+export const referralSchema = projectReferralSchema;
+
+/**
+ * Refer-a-trade intake. Fee paid when the referred trade activates their
+ * Trade Pro subscription ($249/yr) — the direct-revenue listing event. This
+ * is the highest-value referral lane because PMRFP gets paid the moment the
+ * trade lists.
+ */
+export const tradeReferralSchema = z.object({
+  type: z.literal("trade").default("trade"),
+  // The trade
+  tradeCompanyName: z.string().min(1, "Trade company name is required"),
+  tradeCategory: z.string().optional(),
+  tradeCity: z.string().min(1, "City is required"),
+  tradeProvince: z.string().min(1, "Province is required"),
+  tradeContactName: z.string().optional(),
+  tradeContactEmail: z.union([z.string().email(), z.literal("")]).optional(),
+  tradeContactPhone: z.string().optional(),
+  tradeWebsite: z.union([z.string().url(), z.literal("")]).optional(),
+  whyThemNote: z.string().max(1000).optional(),
+  // The referrer
+  referrerName: z.string().min(1, "Your name is required"),
+  referrerEmail: z.string().email("Enter a valid email"),
+  referrerPhone: z.string().optional(),
+  referrerAffiliation: z.string().max(200).optional(),
+  // Permission
+  permission: z
+    .literal(true, {
+      message: "Please confirm you have the trade contact's permission, or that you're introducing them to PMRFP yourself.",
+    }),
+  company_website: z.string().max(0).optional(),
+});
+export type TradeReferralInput = z.infer<typeof tradeReferralSchema>;
 
 export const contactRequestSchema = z.object({
   requestType: z

@@ -1,7 +1,12 @@
 "use client";
 
+/**
+ * Trade-referral form. Direct-revenue lane — fee triggers when the referred
+ * trade activates Trade Pro ($249/yr). Sister to the project-referral form,
+ * intentionally same structure for visual consistency.
+ */
 import { useActionState } from "react";
-import { submitReferralAction, type ReferralActionState } from "@/lib/refer/actions";
+import { submitTradeReferralAction, type ReferralActionState } from "@/lib/refer/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,9 +29,9 @@ const PROVINCES = [
   "Nunavut",
 ];
 
-export function ReferProjectForm() {
+export function ReferTradeForm() {
   const [state, action, pending] = useActionState(
-    submitReferralAction,
+    submitTradeReferralAction,
     {} as ReferralActionState,
   );
 
@@ -48,7 +53,6 @@ export function ReferProjectForm() {
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
       )}
 
-      {/* honeypot — must stay empty */}
       <input
         type="text"
         name="company_website"
@@ -59,24 +63,22 @@ export function ReferProjectForm() {
       />
 
       <Section
-        title="The project"
-        sub="Tell us what needs doing. The more specific, the faster we can structure the RFP."
+        title="The trade company"
+        sub="Tell us about the contractor or service company you're recommending."
       >
-        <Field label="What's the project?" required>
-          <Textarea
-            name="projectDescription"
-            rows={5}
-            required
-            placeholder="e.g. Pre-listing repairs at a 25-unit condo in midtown Toronto — roof patch, lobby paint, two failed HVAC units."
-          />
-        </Field>
         <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Company name" required>
+            <Input name="tradeCompanyName" required placeholder="e.g. Northline Electrical Ltd." />
+          </Field>
+          <Field label="Trade category">
+            <Input name="tradeCategory" placeholder="e.g. Electrical, HVAC, Roofing" />
+          </Field>
           <Field label="City" required>
-            <Input name="projectCity" required placeholder="Toronto" />
+            <Input name="tradeCity" required placeholder="Toronto" />
           </Field>
           <Field label="Province" required>
             <select
-              name="projectProvince"
+              name="tradeProvince"
               required
               defaultValue="Ontario"
               className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
@@ -88,41 +90,39 @@ export function ReferProjectForm() {
               ))}
             </select>
           </Field>
-          <Field label="Trade category (if known)">
-            <Input
-              name="projectCategory"
-              placeholder="e.g. Roofing, HVAC, General Contracting"
-            />
-          </Field>
-          <Field label="Property type (if known)">
-            <Input
-              name="projectPropertyType"
-              placeholder="e.g. Condo, Office, Retail, Multi-unit residential"
-            />
+          <Field label="Website">
+            <Input name="tradeWebsite" type="url" placeholder="https://" />
           </Field>
         </div>
+        <Field label="Why this trade? (optional)">
+          <Textarea
+            name="whyThemNote"
+            rows={3}
+            placeholder="A line or two about why they'd be a fit for PMRFP — commercial focus, reputation, capacity, etc."
+          />
+        </Field>
       </Section>
 
       <Section
-        title="The property contact"
+        title="Trade contact"
         sub="Optional — if you don't have their permission to share, leave blank and we'll work with you to introduce."
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Name">
-            <Input name="ownerName" />
+            <Input name="tradeContactName" />
           </Field>
           <Field label="Email">
-            <Input name="ownerEmail" type="email" />
+            <Input name="tradeContactEmail" type="email" />
           </Field>
           <Field label="Phone">
-            <Input name="ownerPhone" />
+            <Input name="tradeContactPhone" />
           </Field>
         </div>
       </Section>
 
       <Section
         title="You"
-        sub="So we can pay your finder's fee + send you monthly updates."
+        sub="So we can pay your $75 finder's fee + send you monthly updates."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Your name" required>
@@ -137,7 +137,7 @@ export function ReferProjectForm() {
           <Field label="Affiliation (optional)">
             <Input
               name="referrerAffiliation"
-              placeholder="e.g. Realtor at Royal LePage, Mortgage broker at TD"
+              placeholder="e.g. PM at FirstService Residential, REA at Royal LePage"
             />
           </Field>
         </div>
@@ -146,7 +146,7 @@ export function ReferProjectForm() {
       <label className="flex items-start gap-2 text-sm text-foreground/85">
         <input type="checkbox" name="permission" required className="mt-0.5 size-4 shrink-0" />
         <span>
-          I confirm I have the property contact&apos;s permission to share their information,
+          I confirm I have the trade contact&apos;s permission to share their information,
           OR I&apos;m introducing them to {`PMRFP`} myself.
         </span>
       </label>
@@ -156,9 +156,8 @@ export function ReferProjectForm() {
           {pending ? "Submitting…" : `Submit referral`}
         </Button>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Finder&apos;s fee: ${REFERRAL.projectFee} {REFERRAL.currency} when the RFP is published
-          live on PMRFP. Paid by e-transfer within 7 days. Know a trade instead?{" "}
-          Refer them for ${REFERRAL.tradeFee}.
+          Finder&apos;s fee: ${REFERRAL.tradeFee} {REFERRAL.currency} when the trade activates Trade Pro
+          ($249/yr). Paid by e-transfer within 7 days of activation.
         </p>
       </div>
     </form>

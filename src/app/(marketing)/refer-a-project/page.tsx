@@ -14,8 +14,8 @@ import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { REFERRAL, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `Refer a Project — Earn a $${REFERRAL.fee} Finder's Fee`,
-  description: `Know someone with a project — pre-listing repairs, portfolio maintenance, capital work? Refer it to ${SITE.name} and earn a $${REFERRAL.fee} ${REFERRAL.currency} finder's fee when work is awarded to a listed trade.`,
+  title: `Refer a Project — Earn $${REFERRAL.projectFee} When the RFP Goes Live`,
+  description: `Know someone with a property project? Refer it to ${SITE.name} and earn $${REFERRAL.projectFee} ${REFERRAL.currency} when the RFP is published live. For the direct-revenue lane, refer a trade and earn $${REFERRAL.tradeFee}.`,
   alternates: { canonical: "/refer-a-project" },
 };
 
@@ -32,8 +32,8 @@ const STEPS = [
   },
   {
     icon: HandCoins,
-    title: `$${REFERRAL.fee} when work is awarded`,
-    desc: `Paid by e-transfer when the property contact awards the work to a ${SITE.name}-listed trade. Monthly summary of all your referred projects, automatically.`,
+    title: `$${REFERRAL.projectFee} when the RFP goes live`,
+    desc: `Paid by e-transfer within 7 days of the RFP being published on ${SITE.name}. No need to wait for the work to be awarded — the fee fires on the listing itself.`,
   },
 ];
 
@@ -72,18 +72,18 @@ export default function ReferProjectPage() {
         <Container className="py-16 sm:py-20">
           <div className="grid gap-10 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
-              <Eyebrow className="text-teal">Referral program</Eyebrow>
+              <Eyebrow className="text-teal">Project referral · inventory lane</Eyebrow>
               <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
                 Introduce a project.
                 <br />
-                <span className="text-teal-300">Earn ${REFERRAL.fee}</span> when work is
-                awarded.
+                <span className="text-teal-300">Earn ${REFERRAL.projectFee}</span> when the RFP
+                goes live.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/80">
                 Know someone with a property project — pre-listing repairs,
                 portfolio maintenance, capital work? Refer it to {SITE.name}.
-                We&rsquo;ll structure the RFP, run the bidding process with qualified
-                Canadian trades, and pay you a finder&rsquo;s fee if the work is awarded.
+                We&rsquo;ll help structure the RFP and publish it live. The fee fires the
+                moment the listing is published — no waiting for the work to be awarded.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
@@ -93,10 +93,10 @@ export default function ReferProjectPage() {
                   Refer a project <ArrowRight className="size-4" />
                 </a>
                 <Link
-                  href="#how-it-works"
+                  href="/refer-a-trade"
                   className="inline-flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100/80 transition-colors hover:text-white"
                 >
-                  How it works ↓
+                  Know a trade instead? Refer them for $75 →
                 </Link>
               </div>
             </div>
@@ -111,16 +111,23 @@ export default function ReferProjectPage() {
                   <p className="text-xs font-mono uppercase tracking-widest text-teal-300">
                     Finder&rsquo;s fee
                   </p>
-                  <p className="text-2xl font-semibold text-white">${REFERRAL.fee} {REFERRAL.currency}</p>
+                  <p className="text-2xl font-semibold text-white">${REFERRAL.projectFee} {REFERRAL.currency}</p>
                 </div>
               </div>
               <ul className="mt-5 space-y-2.5 text-sm text-indigo-100/85">
-                <li>· per referred project where work is awarded</li>
-                <li>· paid by e-transfer within 7 days of award</li>
+                <li>· per referred project where the RFP goes live</li>
+                <li>· paid by e-transfer within 7 days of publication</li>
                 <li>· no cap on referrals · no signup required</li>
                 <li>· optional credit on the RFP listing</li>
                 <li>· monthly summary email of all your referrals</li>
               </ul>
+              <p className="mt-5 border-t border-white/15 pt-4 text-xs text-indigo-100/65">
+                Looking for the highest-paying lane?{" "}
+                <Link href="/refer-a-trade" className="font-semibold text-teal-300 hover:text-teal-300/80">
+                  Refer a trade → $75
+                </Link>
+                {" "}when they activate Trade Pro.
+              </p>
             </div>
           </div>
         </Container>
@@ -192,8 +199,9 @@ export default function ReferProjectPage() {
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
                   <strong className="text-foreground">Earn the finder&rsquo;s fee.</strong>{" "}
-                  ${REFERRAL.fee} {REFERRAL.currency} when work is awarded. Most professionals refer
-                  several projects a year; it adds up.
+                  ${REFERRAL.projectFee} {REFERRAL.currency} when the RFP goes live (not when the work is
+                  awarded downstream — paid faster). Most professionals refer several projects a year;
+                  it adds up.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -241,7 +249,7 @@ export default function ReferProjectPage() {
         <Container size="narrow" className="py-16">
           <Eyebrow>Refer a project</Eyebrow>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-            Two minutes. Earn ${REFERRAL.fee} when work is awarded.
+            Two minutes. Earn ${REFERRAL.projectFee} when the RFP goes live.
           </h2>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
             Tell us about the project. If you have the property contact&rsquo;s details and
@@ -253,7 +261,7 @@ export default function ReferProjectPage() {
           </div>
           <div className="mt-10">
             <TrustDisclaimer
-              text={`Finder's fees are paid only when work is awarded to a ${SITE.name}-listed trade and the property contact confirms the award. PMRFP does not guarantee work. Trades and property contacts make their own decisions.`}
+              text={`Finder's fees are paid when the RFP is published live on ${SITE.name} (after admin review). PMRFP does not guarantee work or vendor selection. Trades and property contacts make their own decisions.`}
             />
           </div>
         </Container>

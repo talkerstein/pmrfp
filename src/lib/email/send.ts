@@ -42,9 +42,9 @@ function layout(title: string, bodyHtml: string, footnote?: string): string {
     <div style="padding:16px 0;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b">
       ${footnote ? `<p style="margin:0 0 8px">${footnote}</p>` : ""}
       <p style="margin:0 0 8px">
-        <strong style="color:#0C7A5A">P.S.</strong> Know someone with a property project?
-        <a href="${BASE}/refer-a-project" style="color:#282B59;font-weight:600;text-decoration:underline">Refer it — earn $50</a>
-        when work is awarded.
+        <strong style="color:#0C7A5A">P.S.</strong> Know a trade or a project?
+        <a href="${BASE}/refer" style="color:#282B59;font-weight:600;text-decoration:underline">Refer them — earn up to $75</a>
+        when they list on PMRFP.
       </p>
       <p style="margin:0">${SITE.name} · ${SITE.country}-first commercial property RFP network · ${BASE}</p>
     </div>
@@ -226,9 +226,9 @@ export async function sendAdminReferral(params: {
 }
 
 /**
- * Confirmation to the referrer — sets expectations on next steps and the
- * finder's-fee policy. Reduces support volume by answering "what happens next?"
- * up front.
+ * Confirmation to a PROJECT referrer. Fee triggers on RFP-PUBLISHED — the
+ * LISTING moment that creates inventory value for PMRFP. NOT on downstream
+ * "work awarded" (which is non-revenue for the platform).
  */
 export async function sendReferralConfirmation(to: string, projectCity: string): Promise<void> {
   await send(
@@ -241,12 +241,83 @@ export async function sendReferralConfirmation(to: string, projectCity: string):
        <ol>
          <li>Our team reviews the referral (usually within 1 business day).</li>
          <li>We reach out to the property contact (if you provided one) or to you (so you can introduce us).</li>
-         <li>We help structure the RFP and publish it to qualified Canadian trades.</li>
-         <li>If the work is awarded to a ${SITE.name}-listed trade, you earn a <strong>$50 CAD finder's fee</strong> (paid by e-transfer when the award is confirmed).</li>
+         <li>We help structure the RFP and publish it live to qualified Canadian trades.</li>
+         <li>When the RFP goes live on ${SITE.name}, you earn a <strong>$25 CAD finder's fee</strong> (paid by e-transfer within 7 days).</li>
        </ol>
        <p>You'll get a monthly summary of all your referred projects — no chasing required.</p>
-       <p>Questions in the meantime? Reply to this email.</p>`,
-      "Finder's fees are paid on awarded RFPs only. PMRFP does not guarantee work; trades and property contacts make their own decisions.",
+       <p style="margin-top:16px;padding:12px;background:#E4FBF2;border-radius:8px;color:#0A6249">
+         <strong>Tip:</strong> Know a trade who'd benefit from being listed on ${SITE.name}?
+         <a href="${BASE}/refer-a-trade" style="color:#282B59;font-weight:600">Refer them and earn $75</a>
+         when they activate Trade Pro — the highest-paying lane.
+       </p>
+       <p>Questions? Reply to this email.</p>`,
+      "Finder's fees are paid when the RFP goes live on PMRFP. PMRFP does not guarantee work; trades and property contacts make their own decisions.",
+    ),
+  );
+}
+
+/**
+ * Notify admin that a trade-referral came in — the direct-revenue lane.
+ */
+export async function sendAdminTradeReferral(params: {
+  tradeCompanyName: string;
+  tradeCategory?: string;
+  tradeCity: string;
+  tradeProvince: string;
+  tradeContactName?: string;
+  tradeContactEmail?: string;
+  tradeContactPhone?: string;
+  tradeWebsite?: string;
+  whyThemNote?: string;
+  referrerName: string;
+  referrerEmail: string;
+  referrerPhone?: string;
+  referrerAffiliation?: string;
+}): Promise<void> {
+  const contactLine =
+    params.tradeContactName || params.tradeContactEmail || params.tradeContactPhone
+      ? `<li><strong>Trade contact:</strong> ${[params.tradeContactName, params.tradeContactEmail, params.tradeContactPhone].filter(Boolean).join(" · ")}</li>`
+      : `<li><em>Trade contact not provided — referrer will introduce.</em></li>`;
+  await send(
+    ADMIN,
+    `New TRADE referral · ${params.tradeCompanyName} · ${params.tradeCity}, ${params.tradeProvince}`,
+    layout(
+      "New trade referral (direct-revenue lane)",
+      `<ul>
+        <li><strong>Referrer:</strong> ${params.referrerName} (${params.referrerEmail}${params.referrerPhone ? ` · ${params.referrerPhone}` : ""})</li>
+        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${params.referrerAffiliation}</li>` : ""}
+        <li><strong>Trade company:</strong> ${params.tradeCompanyName}</li>
+        ${params.tradeCategory ? `<li><strong>Category:</strong> ${params.tradeCategory}</li>` : ""}
+        <li><strong>Location:</strong> ${params.tradeCity}, ${params.tradeProvince}</li>
+        ${params.tradeWebsite ? `<li><strong>Website:</strong> <a href="${params.tradeWebsite}">${params.tradeWebsite}</a></li>` : ""}
+        ${contactLine}
+       </ul>
+       ${params.whyThemNote ? `<p><strong>Why this trade:</strong><br/>${params.whyThemNote.replace(/\n/g, "<br/>")}</p>` : ""}
+       <p><strong>Fee:</strong> $75 CAD payable to referrer when this trade activates Trade Pro.</p>`,
+    ),
+  );
+}
+
+/**
+ * Confirmation to a TRADE referrer. Fee triggers on Trade-Pro-activated.
+ */
+export async function sendTradeReferralConfirmation(to: string, tradeName: string): Promise<void> {
+  await send(
+    to,
+    "Thanks for the trade referral",
+    layout(
+      "We received your referral",
+      `<p>Thanks for introducing <strong>${tradeName}</strong> to ${SITE.name}.</p>
+       <p><strong>What happens next:</strong></p>
+       <ol>
+         <li>Our team reviews the referral (usually within 1 business day).</li>
+         <li>We reach out to the trade contact (if you provided one) or to you (so you can introduce us).</li>
+         <li>We help them set up their company profile in the directory.</li>
+         <li>When they activate Trade Pro ($249/yr), you earn a <strong>$75 CAD finder's fee</strong> (paid by e-transfer within 7 days of activation).</li>
+       </ol>
+       <p>You'll get a monthly summary of all your referred trades — no chasing required.</p>
+       <p>Questions? Reply to this email.</p>`,
+      "Finder's fees are paid when the trade activates a paid Trade Pro subscription. PMRFP does not guarantee subscription or revenue outcomes.",
     ),
   );
 }
