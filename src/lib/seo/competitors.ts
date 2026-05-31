@@ -48,7 +48,7 @@ export const COMPETITORS: Competitor[] = [
     angle:
       "MERX is for government contracts. PMRFP is for private commercial property — a different buyer, a different opportunity type, and none of the bureaucratic procurement hoops.",
     rows: [
-      { feature: "Annual price", pmrfp: PRICE, them: "≈$360–$4,400/yr" },
+      { feature: "Annual price", pmrfp: PRICE, them: "≈$360–$960/yr (higher on national tier + per-doc fees)" },
       { feature: "Focus", pmrfp: "Private commercial property", them: "Government / public tenders" },
       { feature: "Vendor directory listing", pmrfp: "Yes — searchable", them: "No" },
       { feature: "Canada-native", pmrfp: "Yes", them: "Yes" },
@@ -149,7 +149,7 @@ export const COMPETITORS: Competitor[] = [
     whatItIs:
       "ConstructConnect (with Link2Build and the Daily Commercial News) tracks preconstruction projects, plans, and permits for GCs, sub-trades, and suppliers.",
     whoFor: "Trades and suppliers chasing new-construction project leads.",
-    pricing: "≈$275 CAD/mo and up (≈$2,400–$5,000+/yr)",
+    pricing: "Custom quote — reportedly ≈$1,500–$3,000+/yr (not publicly listed)",
     strengths: ["Deep preconstruction project data", "Editorial credibility (DCN)", "Large Canadian base"],
     weaknesses: [
       "Expensive — out of reach for many small trades",
@@ -159,7 +159,7 @@ export const COMPETITORS: Competitor[] = [
     angle:
       "ConstructConnect is for chasing new construction. PMRFP is for winning the recurring maintenance, renovation, and fit-out work from existing commercial property operators — a steadier, far more affordable market for most trades.",
     rows: [
-      { feature: "Annual price", pmrfp: PRICE, them: "≈$2,400–$5,000+/yr" },
+      { feature: "Annual price", pmrfp: PRICE, them: "Custom quote (reportedly ≈$1,500–$3,000+/yr)" },
       { feature: "Opportunity type", pmrfp: "Existing-property RFPs", them: "New-build preconstruction" },
       { feature: "Vendor directory", pmrfp: "Yes", them: "No" },
       { feature: "Entry-level cost", pmrfp: "Low, flat", them: "High" },
