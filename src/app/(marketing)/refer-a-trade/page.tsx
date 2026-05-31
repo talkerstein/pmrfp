@@ -26,7 +26,7 @@ const STEPS = [
   {
     icon: HandCoins,
     title: `$${REFERRAL.tradeFee} when they list`,
-    desc: `Paid by e-transfer within 7 days of the trade activating Trade Pro ($${PRICING.proAnnual}/yr). Direct revenue → highest-paying referral lane.`,
+    desc: `Paid by e-transfer within 7 days of the trade activating ANNUAL Trade Pro ($${PRICING.proAnnual}/yr). Monthly plans qualify after 3 paid months. Direct revenue → highest-paying referral lane.`,
   },
 ];
 
@@ -73,7 +73,7 @@ export default function ReferTradePage() {
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/80">
                 Know a Canadian commercial trade or service company that should be listed on{" "}
-                {SITE.name}? Refer them. When they activate Trade Pro ($
+                {SITE.name}? Refer them. When they activate annual Trade Pro ($
                 {PRICING.proAnnual}/yr), you earn a $
                 {REFERRAL.tradeFee} {REFERRAL.currency} finder&rsquo;s fee by e-transfer.
               </p>
@@ -109,11 +109,11 @@ export default function ReferTradePage() {
                 </div>
               </div>
               <ul className="mt-5 space-y-2.5 text-sm text-indigo-100/85">
-                <li>· paid when the trade activates Trade Pro</li>
+                <li>· paid when the trade activates annual Trade Pro</li>
                 <li>· $249/yr subscription → $75 to you</li>
+                <li>· monthly plans qualify after 3 paid months</li>
                 <li>· paid by e-transfer within 7 days</li>
                 <li>· no cap on referrals · no signup required</li>
-                <li>· monthly summary of all your referrals</li>
               </ul>
             </div>
           </div>
@@ -176,8 +176,8 @@ export default function ReferTradePage() {
               <li className="flex gap-3">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
-                  <strong className="text-foreground">A new Trade Pro subscription is ${PRICING.proAnnual}/yr</strong> in direct revenue to {SITE.name}. Paying $
-                  {REFERRAL.tradeFee} to the referrer beats almost any paid acquisition channel.
+                  <strong className="text-foreground">A new annual Trade Pro subscription is ${PRICING.proAnnual}/yr</strong> in direct revenue to {SITE.name}. Paying $
+                  {REFERRAL.tradeFee} to the referrer beats almost any paid acquisition channel. (Monthly plans at ${PRICING.proMonthly}/mo qualify the same fee after 3 paid months — that&rsquo;s when the revenue clears the payout.)
                 </span>
               </li>
               <li className="flex gap-3">
@@ -235,7 +235,7 @@ export default function ReferTradePage() {
           </div>
           <div className="mt-10">
             <TrustDisclaimer
-              text={`Finder's fees are paid only when the referred trade activates a paid Trade Pro subscription ($${PRICING.proAnnual}/yr). PMRFP does not guarantee that any referred trade will subscribe.`}
+              text={`Finder's fees are paid when the referred trade activates annual Trade Pro ($${PRICING.proAnnual}/yr), or after the referred trade has paid 3 consecutive months on the monthly plan ($${PRICING.proMonthly}/mo). PMRFP does not guarantee that any referred trade will subscribe.`}
             />
           </div>
         </Container>

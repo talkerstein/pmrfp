@@ -72,14 +72,30 @@ export default function TermsPage() {
         </LegalSection>
 
         <LegalSection title="4. Subscriptions & Billing">
-          <p>
-            Trade Pro is offered at ${PRICING.proAnnual} {PRICING.currency} per
-            year and renews automatically at the end of each annual term unless
-            cancelled. You may cancel at any time; cancellation takes effect at
-            the end of your current billing period, and you retain access until
-            then. Fees are non-refundable except where required by law. We may
-            change pricing on a prospective basis with reasonable notice.
-          </p>
+          {process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY ? (
+            <p>
+              Trade Pro is offered on two billing intervals: ${PRICING.proAnnual}{" "}
+              {PRICING.currency} per year (annual), or ${PRICING.proMonthly}{" "}
+              {PRICING.currency} per month (monthly). Each renews automatically
+              at the end of the current term unless cancelled. You may cancel at
+              any time; cancellation takes effect at the end of your current
+              billing period, and you retain access until then. Fees are
+              non-refundable except where required by law. We may change pricing
+              on a prospective basis with reasonable notice. You may switch
+              between annual and monthly via your billing portal; switching
+              takes effect at the end of your current billing period.
+            </p>
+          ) : (
+            <p>
+              Trade Pro is offered at ${PRICING.proAnnual} {PRICING.currency}{" "}
+              per year and renews automatically at the end of each annual term
+              unless cancelled. You may cancel at any time; cancellation takes
+              effect at the end of your current billing period, and you retain
+              access until then. Fees are non-refundable except where required
+              by law. We may change pricing on a prospective basis with
+              reasonable notice.
+            </p>
+          )}
           <p>
             Property managers, builders, and owners may post RFPs at no cost.
             Free directory listings are available to trade companies without a

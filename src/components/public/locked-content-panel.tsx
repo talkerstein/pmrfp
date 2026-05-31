@@ -5,6 +5,9 @@ import { PRICING } from "@/lib/site";
 
 /** Shown to visitors / unpaid trades in place of full RFP details (§9.2). */
 export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
+  // Only mention the monthly option when Stripe has it configured — otherwise
+  // we'd promise a price the checkout API will refuse.
+  const monthlyEnabled = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);
   return (
     <div className="relative overflow-hidden rounded-xl border border-teal-200 bg-teal-50/60 p-8 text-center">
       <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-teal-100 text-teal-700">
@@ -19,13 +22,18 @@ export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link href={signedIn ? "/dashboard/billing" : "/sign-up"} className={buttonVariants({ size: "lg" })}>
-          {signedIn ? `Activate Trade Pro — $${PRICING.proAnnual}/yr` : "Join as a Trade Company"}
+          {signedIn ? "Activate Trade Pro" : "Join as a Trade Company"}
         </Link>
         <Link href="/pricing" className={buttonVariants({ size: "lg", variant: "outline" })}>
           See pricing
         </Link>
       </div>
-      <p className="mt-4 text-xs text-muted-foreground">{PRICING.earlyBirdNote}</p>
+      <p className="mt-4 text-xs text-muted-foreground">
+        {monthlyEnabled
+          ? `From $${PRICING.proMonthly}/mo or $${PRICING.proAnnual}/yr · cancel any time`
+          : `$${PRICING.proAnnual}/yr · cancel any time`}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{PRICING.earlyBirdNote}</p>
     </div>
   );
 }

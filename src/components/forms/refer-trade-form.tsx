@@ -156,8 +156,9 @@ export function ReferTradeForm() {
           {pending ? "Submitting…" : `Submit referral`}
         </Button>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Finder&apos;s fee: ${REFERRAL.tradeFee} {REFERRAL.currency} when the trade activates Trade Pro
-          ($249/yr). Paid by e-transfer within 7 days of activation.
+          Finder&apos;s fee: ${REFERRAL.tradeFee} {REFERRAL.currency} when the trade activates
+          annual Trade Pro ($249/yr). Monthly plans qualify after 3 paid months. Paid by
+          e-transfer within 7 days of qualifying activation.
         </p>
       </div>
     </form>

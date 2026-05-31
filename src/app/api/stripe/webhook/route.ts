@@ -39,9 +39,19 @@ export async function POST(request: Request) {
           await syncSubscriptionFromStripe(sub);
           if (cs.customer_details?.email) {
             await sendSubscriptionActivatedEmail(cs.customer_details.email);
-            // GHL: flip the contact's sub_status → active and move them to
-            // Trade Pro Active stage. This is the moment we owe a $75 referrer
-            // fee if the trade came in via /refer-a-trade.
+            // Referral fee gating:
+            //   Annual ($249)  → "fee-eligible-if-referred" — $75 payout justified
+            //                    by direct revenue.
+            //   Monthly ($29)  → "fee-hold-monthly-3mo-check" — DO NOT pay $75 now
+            //                    (would net −$46 and the trade could cancel in
+            //                    month 1). GHL workflow holds until trade has
+            //                    paid ≥ 3 months ($87) before releasing fee, or
+            //                    until they upgrade to annual.
+            const interval = sub.items.data[0]?.price.recurring?.interval;
+            const feeTag =
+              interval === "year"
+                ? "fee-eligible-if-referred"
+                : "fee-hold-monthly-3mo-check";
             await syncPmrfpUserToGhl(
               {
                 email: cs.customer_details.email,
@@ -50,7 +60,7 @@ export async function POST(request: Request) {
                 subscriptionStatus: "active",
                 profileCompletionPct: 100,
               },
-              { extraTags: ["pmrfp-pro-active", "fee-eligible-if-referred"] },
+              { extraTags: ["pmrfp-pro-active", feeTag] },
             );
           }
         }
