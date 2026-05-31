@@ -27,7 +27,7 @@ export function CloseRfpButton({
   alreadyClosed: boolean;
 }) {
   const [state, action, pending] = useActionState(closeRfpAction, {} as ActionState);
-  const [confirming, setConfirming] = useState<null | "awarded" | "closed">(null);
+  const [confirming, setConfirming] = useState<null | "awarded" | "closed" | "expired">(null);
 
   if (alreadyClosed || state.success) {
     return (
@@ -61,7 +61,9 @@ export function CloseRfpButton({
           <p className="rounded-md border border-teal-300/60 bg-teal-100/40 px-3 py-2 text-xs text-foreground">
             {confirming === "awarded"
               ? "Confirm: you've awarded this RFP to a vendor (on-platform or off)."
-              : "Confirm: close this RFP without awarding it."}
+              : confirming === "expired"
+                ? "Confirm: mark this RFP expired — it drops off the public board. You can re-post any time."
+                : "Confirm: close this RFP without awarding it."}
           </p>
           <div className="flex gap-2">
             <button
@@ -102,6 +104,13 @@ export function CloseRfpButton({
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
             <X className="size-3.5" /> Close without award
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming("expired")}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3.5" /> Mark expired
           </button>
         </div>
       )}

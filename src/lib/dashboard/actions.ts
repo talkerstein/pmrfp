@@ -151,7 +151,7 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
 
   const rfpId = formData.get("rfpId")?.toString();
   const outcome = formData.get("outcome")?.toString();
-  if (!rfpId || (outcome !== "awarded" && outcome !== "closed")) {
+  if (!rfpId || (outcome !== "awarded" && outcome !== "closed" && outcome !== "expired")) {
     return { error: "Missing or invalid outcome." };
   }
 
@@ -192,7 +192,9 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
     success:
       outcome === "awarded"
         ? "RFP marked as awarded. If this project came through the referral program, the finder's fee is now eligible."
-        : "RFP closed without award.",
+        : outcome === "expired"
+          ? "RFP marked as expired. It's off the public board — re-post any time."
+          : "RFP closed without award.",
   };
 }
 
