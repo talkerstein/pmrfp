@@ -3,7 +3,7 @@ import { interestSchema } from "@/lib/validations";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/access/access";
-import { sendAdminNewInterest, sendInterestConfirmation } from "@/lib/email/send";
+import { sendAdminNewInterest, sendInterestConfirmation, sendPmNewInterest } from "@/lib/email/send";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -62,9 +62,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not submit interest" }, { status: 500 });
   }
 
+  // Look up the PM's email so we can notify them directly (Quest 1.7).
+  // Falls back gracefully if the RFP was admin-seeded with no posted_by_user_id.
+  let pmEmail: string | null = null;
+  if (rfp.posted_by_user_id) {
+    const { data: pmProfile } = await supabase
+      .from("users_profile")
+      .select("email")
+      .eq("id", rfp.posted_by_user_id)
+      .maybeSingle<{ email: string | null }>();
+    pmEmail = pmProfile?.email ?? null;
+  }
+
   await Promise.all([
     sendInterestConfirmation(session.profile.email, rfp.title),
     sendAdminNewInterest({ vendor: session.organization.name, rfpTitle: rfp.title, message: data.message }),
+    pmEmail
+      ? sendPmNewInterest(pmEmail, {
+          vendorName: session.organization.name,
+          rfpTitle: rfp.title,
+          rfpId: rfp.id,
+        })
+      : Promise.resolve(),
   ]);
   await trackEvent(EVENT.RFP_INTEREST_SUBMITTED, { rfpId: rfp.id });
 

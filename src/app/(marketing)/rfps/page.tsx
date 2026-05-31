@@ -4,7 +4,9 @@ import { Container, Eyebrow } from "@/components/container";
 import { FilterBar } from "@/components/public/filter-bar";
 import { RfpCard } from "@/components/public/rfp-card";
 import { EmptyState } from "@/components/public/empty-state";
+import { StatsStrip } from "@/components/public/stats-strip";
 import { listRfps } from "@/lib/data/rfps";
+import { getPlatformStats } from "@/lib/data/stats";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -21,7 +23,7 @@ export default async function RfpsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const [rfps, categories, regions, propertyTypes, access] = await Promise.all([
+  const [rfps, categories, regions, propertyTypes, access, stats] = await Promise.all([
     listRfps({
       category: sp.category,
       region: sp.region,
@@ -33,6 +35,7 @@ export default async function RfpsPage({
     getRegions(),
     getPropertyTypes(),
     hasActiveTradeAccess(),
+    getPlatformStats(),
   ]);
 
   // Demo mode (no Supabase): show as full-access so the experience is browsable.
@@ -50,6 +53,7 @@ export default async function RfpsPage({
             Monitor property-related opportunities across Canada. Trade Pro members see full scope,
             requirements, and contact details, and can express interest.
           </p>
+          <StatsStrip stats={stats} className="mt-6" />
         </Container>
       </section>
 

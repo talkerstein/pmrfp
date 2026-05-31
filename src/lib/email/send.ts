@@ -31,9 +31,9 @@ async function send(to: string, subject: string, html: string): Promise<void> {
 
 function layout(title: string, bodyHtml: string, footnote?: string): string {
   return `
-  <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;color:#0b1220">
+  <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;color:#282B59">
     <div style="padding:20px 0;border-bottom:1px solid #e2e8f0">
-      <span style="font-weight:700;font-size:18px;color:#0b1220">PMRFP</span>
+      <span style="font-weight:700;font-size:18px;color:#282B59">PMRFP</span>
     </div>
     <div style="padding:24px 0">
       <h1 style="font-size:20px;margin:0 0 12px">${title}</h1>
@@ -47,7 +47,7 @@ function layout(title: string, bodyHtml: string, footnote?: string): string {
 }
 
 const btn = (href: string, label: string) =>
-  `<a href="${href}" style="display:inline-block;background:#0b1220;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">${label}</a>`;
+  `<a href="${href}" style="display:inline-block;background:#282B59;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">${label}</a>`;
 
 export async function sendWelcomeEmail(to: string, name?: string): Promise<void> {
   await send(
@@ -123,6 +123,30 @@ export async function sendAdminNewRfp(rfp: { title: string; postedBy?: string; r
         ${rfp.region ? `<li><strong>Region:</strong> ${rfp.region}</li>` : ""}
        </ul>
        <p>${btn(`${BASE}/admin/rfps`, "Review in admin")}</p>`,
+    ),
+  );
+}
+
+/**
+ * Notify the PM who posted the RFP that a new vendor expressed interest.
+ * (Quest 1.7) Without this, vendors express interest and the PM never knows —
+ * deal dies in silence. This is the single highest-leverage notification on
+ * the platform.
+ */
+export async function sendPmNewInterest(
+  to: string,
+  params: { vendorName: string; rfpTitle: string; rfpId: string },
+): Promise<void> {
+  await send(
+    to,
+    `New vendor interested: ${params.rfpTitle}`,
+    layout(
+      "A vendor expressed interest",
+      `<p><strong>${params.vendorName}</strong> is interested in your RFP:</p>
+       <p style="font-weight:600;font-size:16px;margin:8px 0 16px">${params.rfpTitle}</p>
+       <p>Review their full message + capability statement, and contact them directly if it's a fit.</p>
+       <p>${btn(`${BASE}/pm-dashboard/rfps/${params.rfpId}/interests`, "View vendor interest")}</p>`,
+      COPY.interestDisclaimer,
     ),
   );
 }

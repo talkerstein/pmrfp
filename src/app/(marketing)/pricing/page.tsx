@@ -4,6 +4,8 @@ import { Check, Sparkles } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { Section, SectionHeading } from "@/components/public/section";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
+import { StatsStrip } from "@/components/public/stats-strip";
+import { getPlatformStats } from "@/lib/data/stats";
 import {
   Accordion,
   AccordionItem,
@@ -69,7 +71,8 @@ const FAQ = [
   },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const stats = await getPlatformStats();
   return (
     <>
       <section className="border-b border-border bg-background">
@@ -83,6 +86,7 @@ export default function PricingPage() {
               Get found for free, or unlock full RFP visibility with Trade Pro.
               Property managers, builders, and owners post projects at no cost.
             </p>
+            <StatsStrip stats={stats} className="mt-8" />
           </div>
         </Container>
       </section>
