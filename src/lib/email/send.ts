@@ -226,9 +226,8 @@ export async function sendAdminReferral(params: {
 }
 
 /**
- * Confirmation to a PROJECT referrer. Fee triggers on RFP-PUBLISHED — the
- * LISTING moment that creates inventory value for PMRFP. NOT on downstream
- * "work awarded" (which is non-revenue for the platform).
+ * Confirmation to a PROJECT referrer. No cash payout — recognition lane.
+ * Public credit on the RFP + top-connectors leaderboard placement.
  */
 export async function sendReferralConfirmation(to: string, projectCity: string): Promise<void> {
   await send(
@@ -242,16 +241,16 @@ export async function sendReferralConfirmation(to: string, projectCity: string):
          <li>Our team reviews the referral (usually within 1 business day).</li>
          <li>We reach out to the property contact (if you provided one) or to you (so you can introduce us).</li>
          <li>We help structure the RFP and publish it live to qualified Canadian trades.</li>
-         <li>When the RFP goes live on ${SITE.name}, you earn a <strong>$25 CAD finder's fee</strong> (paid by e-transfer within 7 days).</li>
+         <li>When the RFP goes live, you get <strong>public credit on the listing</strong> ("Introduced by [you]") and your name moves up the <strong>Top Connectors leaderboard</strong> on ${SITE.name}.</li>
        </ol>
        <p>You'll get a monthly summary of all your referred projects — no chasing required.</p>
        <p style="margin-top:16px;padding:12px;background:#E4FBF2;border-radius:8px;color:#0A6249">
-         <strong>Tip:</strong> Know a trade who'd benefit from being listed on ${SITE.name}?
-         <a href="${BASE}/refer-a-trade" style="color:#282B59;font-weight:600">Refer them and earn $75</a>
-         when they activate Trade Pro — the highest-paying lane.
+         <strong>Want cash too?</strong> Refer a <strong>trade company</strong> instead and earn
+         <strong>$75 ${`CAD`}</strong> when they activate Trade Pro.
+         <a href="${BASE}/refer-a-trade" style="color:#282B59;font-weight:600">See the trade lane →</a>
        </p>
        <p>Questions? Reply to this email.</p>`,
-      "Finder's fees are paid when the RFP goes live on PMRFP. PMRFP does not guarantee work; trades and property contacts make their own decisions.",
+      "Project referrals earn recognition (public credit + leaderboard placement) — not cash. The cash-paying lane is /refer-a-trade. PMRFP does not guarantee work; trades and property contacts make their own decisions.",
     ),
   );
 }

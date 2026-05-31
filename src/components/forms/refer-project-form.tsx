@@ -156,9 +156,8 @@ export function ReferProjectForm() {
           {pending ? "Submitting…" : `Submit referral`}
         </Button>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Finder&apos;s fee: ${REFERRAL.projectFee} {REFERRAL.currency} when the RFP is published
-          live on PMRFP. Paid by e-transfer within 7 days. Know a trade instead?{" "}
-          Refer them for ${REFERRAL.tradeFee}.
+          What you get: public credit on the live RFP + a spot on the Top Connectors leaderboard.
+          Know a trade instead? Refer them for ${REFERRAL.tradeFee} cash.
         </p>
       </div>
     </form>

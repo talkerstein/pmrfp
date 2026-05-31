@@ -28,25 +28,27 @@ export const PRICING = {
 
 /**
  * Referral program — anyone can introduce either:
- *   1. a TRADE (vendor) → fee paid when they activate Trade Pro ($249/yr).
- *      Direct revenue: PMRFP nets ~$240, $75 to referrer = healthy CAC.
- *   2. a PROJECT (RFP) → fee paid when the RFP is PUBLISHED live (admin-
- *      approved). Indirect value: inventory that retains paying trades.
+ *   1. a TRADE (vendor) → CASH fee paid when they activate Trade Pro
+ *      ($249/yr). Direct revenue justifies the cash payout.
+ *   2. a PROJECT (RFP) → NO cash. Public credit on the RFP + top-connectors
+ *      leaderboard. Avoids open accounts-payable liability while still
+ *      incentivizing the relationship-building professionals (REAs, mortgage
+ *      brokers, RE lawyers) who naturally know about projects. If their
+ *      referred project later converts a trade to Pro, that trade-side fee
+ *      becomes payable under the trade lane.
  *
- * Both triggers fire on LISTING — the actual revenue-aligned moment — not on
- * downstream events like "work awarded" that don't generate revenue for PMRFP.
- *
- * See /refer-a-project (project lane) and /refer-a-trade (trade lane).
+ * See /refer (hub), /refer-a-trade (cash lane), /refer-a-project (recognition).
  */
 export const REFERRAL = {
   currency: "CAD",
-  // Lane-specific economics
+  // Cash lane (trade) — direct revenue justifies aggressive CAC.
   tradeFee: 75,
-  projectFee: 25,
-  // Headline numbers
+  // Recognition lane (project) — no cash. Public credit + leaderboard.
+  projectIncentive: "Public credit on the RFP + top-connectors leaderboard",
+  // Headline number (for the cash lane only).
   maxFee: 75,
-  // Short copy (used in banner + nav)
-  oneLiner: "Refer a trade or a project. Earn up to $75 when they list.",
+  // Short copy (used in banner + nav).
+  oneLiner: "Refer a trade and earn $75. Refer a project and get public credit.",
   shortCta: "Refer to PMRFP",
 } as const;
 
@@ -141,7 +143,7 @@ export const FOOTER_COLS = [
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
       { label: `Refer a trade — earn $${REFERRAL.tradeFee}`, href: "/refer-a-trade" },
-      { label: `Refer a project — earn $${REFERRAL.projectFee}`, href: "/refer-a-project" },
+      { label: `Refer a project — get credit`, href: "/refer-a-project" },
       { label: "Grow Your Business", href: "/resources/grow" },
       { label: "Vendor Badge", href: "/badge" },
       { label: "Contact", href: "/contact" },

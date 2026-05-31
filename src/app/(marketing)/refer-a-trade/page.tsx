@@ -168,9 +168,9 @@ export default function ReferTradePage() {
       <Container className="py-16">
         <div className="grid gap-10 lg:grid-cols-2">
           <div>
-            <Eyebrow>Why ${REFERRAL.tradeFee} for a trade vs ${REFERRAL.projectFee} for a project</Eyebrow>
+            <Eyebrow>Why this lane pays cash and the project lane doesn&rsquo;t</Eyebrow>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              Honest math. Direct revenue justifies a higher payout.
+              Honest math. Cash where revenue flows, recognition where it doesn&rsquo;t.
             </h2>
             <ul className="mt-6 space-y-4 text-base leading-relaxed text-foreground/85">
               <li className="flex gap-3">
@@ -183,9 +183,9 @@ export default function ReferTradePage() {
               <li className="flex gap-3">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
-                  <strong className="text-foreground">A project referral is indirect.</strong>{" "}
-                  Posted RFPs create inventory that retains paying trades — valuable, but a step removed from
-                  revenue. The {`$${REFERRAL.projectFee}`} fee reflects that.
+                  <strong className="text-foreground">Project referrals create inventory but not direct revenue,</strong>{" "}
+                  so we reward those with public credit on the RFP + a Top Connectors leaderboard
+                  spot — real visibility, not cash.
                 </span>
               </li>
               <li className="flex gap-3">

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  Banknote,
+  Award,
   Mail,
-  HandCoins,
+  Trophy,
   Eye,
   Quote,
 } from "lucide-react";
@@ -14,8 +14,8 @@ import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { REFERRAL, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `Refer a Project — Earn $${REFERRAL.projectFee} When the RFP Goes Live`,
-  description: `Know someone with a property project? Refer it to ${SITE.name} and earn $${REFERRAL.projectFee} ${REFERRAL.currency} when the RFP is published live. For the direct-revenue lane, refer a trade and earn $${REFERRAL.tradeFee}.`,
+  title: `Refer a Project — Public Credit + Top Connectors Leaderboard`,
+  description: `Know someone with a property project? Refer it to ${SITE.name}. When the RFP goes live, you get public credit ("Introduced by [you]") and a spot on the Top Connectors leaderboard. For cash, refer a trade and earn $${REFERRAL.tradeFee}.`,
   alternates: { canonical: "/refer-a-project" },
 };
 
@@ -31,9 +31,9 @@ const STEPS = [
     desc: `${SITE.name} drafts a clear scope and publishes the RFP to qualified Canadian trades.`,
   },
   {
-    icon: HandCoins,
-    title: `$${REFERRAL.projectFee} when the RFP goes live`,
-    desc: `Paid by e-transfer within 7 days of the RFP being published on ${SITE.name}. No need to wait for the work to be awarded — the fee fires on the listing itself.`,
+    icon: Award,
+    title: "Public credit + leaderboard placement",
+    desc: `When the RFP goes live, "Introduced by [you]" appears on the listing and your name moves up the Top Connectors leaderboard. Recognition where the people you'd want to know are watching.`,
   },
 ];
 
@@ -72,18 +72,19 @@ export default function ReferProjectPage() {
         <Container className="py-16 sm:py-20">
           <div className="grid gap-10 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
-              <Eyebrow className="text-teal">Project referral · inventory lane</Eyebrow>
+              <Eyebrow className="text-teal">Project referral · recognition lane</Eyebrow>
               <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
                 Introduce a project.
                 <br />
-                <span className="text-teal-300">Earn ${REFERRAL.projectFee}</span> when the RFP
+                <span className="text-teal-300">Get credit</span> when the RFP
                 goes live.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/80">
                 Know someone with a property project — pre-listing repairs,
                 portfolio maintenance, capital work? Refer it to {SITE.name}.
-                We&rsquo;ll help structure the RFP and publish it live. The fee fires the
-                moment the listing is published — no waiting for the work to be awarded.
+                We&rsquo;ll help structure the RFP and publish it live. Your name appears on
+                the listing as the connector who brought it, and you climb the Top Connectors
+                leaderboard. Real visibility in the network you care about.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
@@ -96,37 +97,37 @@ export default function ReferProjectPage() {
                   href="/refer-a-trade"
                   className="inline-flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100/80 transition-colors hover:text-white"
                 >
-                  Know a trade instead? Refer them for $75 →
+                  Want cash? Refer a trade for $75 →
                 </Link>
               </div>
             </div>
 
-            {/* "the offer" card */}
+            {/* "the offer" card — recognition, not cash */}
             <div className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur">
               <div className="flex items-center gap-3">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-teal-300 text-indigo">
-                  <Banknote className="size-5" />
+                  <Trophy className="size-5" />
                 </span>
                 <div>
                   <p className="text-xs font-mono uppercase tracking-widest text-teal-300">
-                    Finder&rsquo;s fee
+                    What you get
                   </p>
-                  <p className="text-2xl font-semibold text-white">${REFERRAL.projectFee} {REFERRAL.currency}</p>
+                  <p className="text-xl font-semibold text-white">Public credit + leaderboard</p>
                 </div>
               </div>
               <ul className="mt-5 space-y-2.5 text-sm text-indigo-100/85">
-                <li>· per referred project where the RFP goes live</li>
-                <li>· paid by e-transfer within 7 days of publication</li>
+                <li>· &ldquo;Introduced by [you]&rdquo; on every live RFP you bring</li>
+                <li>· climb the Top Connectors leaderboard at /refer/leaderboard</li>
+                <li>· optional firm/affiliation shown alongside your name</li>
+                <li>· monthly summary email of all your referred RFPs</li>
                 <li>· no cap on referrals · no signup required</li>
-                <li>· optional credit on the RFP listing</li>
-                <li>· monthly summary email of all your referrals</li>
               </ul>
               <p className="mt-5 border-t border-white/15 pt-4 text-xs text-indigo-100/65">
-                Looking for the highest-paying lane?{" "}
+                Want cash? The{" "}
                 <Link href="/refer-a-trade" className="font-semibold text-teal-300 hover:text-teal-300/80">
-                  Refer a trade → $75
+                  Refer a Trade lane pays $75
                 </Link>
-                {" "}when they activate Trade Pro.
+                {" "}per activated Pro subscription.
               </p>
             </div>
           </div>
@@ -198,10 +199,9 @@ export default function ReferProjectPage() {
               <li className="flex gap-3">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
-                  <strong className="text-foreground">Earn the finder&rsquo;s fee.</strong>{" "}
-                  ${REFERRAL.projectFee} {REFERRAL.currency} when the RFP goes live (not when the work is
-                  awarded downstream — paid faster). Most professionals refer several projects a year;
-                  it adds up.
+                  <strong className="text-foreground">Get publicly credited.</strong>{" "}
+                  &ldquo;Introduced by [you]&rdquo; shows on the live RFP — the connector tag
+                  most professionals would pay for. Your name climbs the Top Connectors leaderboard.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -249,7 +249,7 @@ export default function ReferProjectPage() {
         <Container size="narrow" className="py-16">
           <Eyebrow>Refer a project</Eyebrow>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-            Two minutes. Earn ${REFERRAL.projectFee} when the RFP goes live.
+            Two minutes. Get credit when the RFP goes live.
           </h2>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
             Tell us about the project. If you have the property contact&rsquo;s details and
@@ -261,7 +261,7 @@ export default function ReferProjectPage() {
           </div>
           <div className="mt-10">
             <TrustDisclaimer
-              text={`Finder's fees are paid when the RFP is published live on ${SITE.name} (after admin review). PMRFP does not guarantee work or vendor selection. Trades and property contacts make their own decisions.`}
+              text={`Project referrals earn public credit on the RFP + a spot on the Top Connectors leaderboard — not cash. The cash-paying lane is /refer-a-trade ($75 per activated Trade Pro subscription). PMRFP does not guarantee work or vendor selection. Trades and property contacts make their own decisions.`}
             />
           </div>
         </Container>

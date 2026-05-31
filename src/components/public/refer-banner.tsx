@@ -35,10 +35,10 @@ export function ReferBanner({
                 Referral program · two lanes
               </p>
               <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">
-                Refer a trade and earn ${REFERRAL.tradeFee}, or refer a project and earn ${REFERRAL.projectFee}.
+                Refer a trade → earn ${REFERRAL.tradeFee} cash. Refer a project → get public credit.
               </p>
               <p className="mt-1 text-sm text-indigo-100/75">
-                Fee triggers when they list. No award-waiting. E-transfer in 7 days.
+                Both trigger when they list on PMRFP. No award-waiting.
               </p>
             </div>
           </div>
