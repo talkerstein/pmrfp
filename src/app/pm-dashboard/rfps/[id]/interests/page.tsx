@@ -59,7 +59,11 @@ export default async function RfpInterestsPage({
     rfpStatus = rfp?.status ?? null;
   }
 
-  const closed = rfpStatus === "awarded" || rfpStatus === "closed" || rfpStatus === "archived";
+  const closed =
+    rfpStatus === "awarded" ||
+    rfpStatus === "closed" ||
+    rfpStatus === "expired" ||
+    rfpStatus === "archived";
 
   return (
     <div>
