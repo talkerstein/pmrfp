@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CalendarClock, MapPin, FileText, Building2, DollarSign } from "lucide-react";
 import { Container } from "@/components/container";
@@ -94,16 +95,17 @@ export default async function RfpDetailPage({
                     rel="noopener noreferrer"
                     className={
                       i === 0
-                        ? "col-span-2 row-span-2 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-secondary/40 sm:col-span-2"
-                        : "aspect-square overflow-hidden rounded-lg border border-border bg-secondary/40"
+                        ? "relative col-span-2 row-span-2 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-secondary/40 sm:col-span-2"
+                        : "relative aspect-square overflow-hidden rounded-lg border border-border bg-secondary/40"
                     }
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={u}
                       alt={`Property photo ${i + 1}`}
-                      loading={i === 0 ? "eager" : "lazy"}
-                      className="size-full object-cover transition-transform hover:scale-[1.02]"
+                      fill
+                      sizes={i === 0 ? "(min-width: 1024px) 800px, 100vw" : "(min-width: 1024px) 280px, 33vw"}
+                      priority={i === 0}
+                      className="object-cover transition-transform hover:scale-[1.02]"
                     />
                   </a>
                 ))}

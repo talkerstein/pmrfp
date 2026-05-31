@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json.schemastore.org/object",
+  "description": "Image cache. Key = SHA-256 of the brand-prompt. Value = persistent Supabase Storage URL + metadata. See briefs/image-workflow.md.",
+  "generated_with": {
+    "default": "chatgpt_image_2_browser",
+    "fallback_with_approval": "gpt_image_2_api"
+  },
+  "entries": {
+    "095ae8088f422a90a616503021a01386fa5bf350e8bfc37f9b366d4f3decbcc5": {
+      "supabase_url": "https://tumexryzbzmtijvbloch.supabase.co/storage/v1/object/public/rfp-photos/pmrfp-system/condominium-electrical-maintenance-contract/57d5d7ee-e76a-49a9-85df-27ce1e5f6065.png",
+      "supabase_path": "pmrfp-system/condominium-electrical-maintenance-contract/57d5d7ee-e76a-49a9-85df-27ce1e5f6065.png",
+      "rfp_slug": "condominium-electrical-maintenance-contract",
+      "prompt": "Documentary commercial real-estate photograph of a mid-rise condominium tower in downtown Toronto, approximately 25 stories tall, mixed brick and glass facade. Mid-distance street view from across an empty cross-street, photographed at early-morning golden hour with slight overcast. Architectural composition emphasizing the building's clean modern lines, ground-floor entrance canopy, and overall street presence. Cool color grading with subtle indigo undertones; slightly muted, professional property-listing photography aesthetic. Clean street, minimal or absent pedestrians, no visible signage or logos, no license plates, no people in frame. Crisp focus, 35mm-equivalent focal length, daylight balanced. Realistic — no glowing windows, no fake reflections, no AI symmetry artifacts.",
+      "aspect_ratio": "16:9",
+      "resolution": "2k",
+      "quality": "medium",
+      "model": "gpt_image_2_api",
+      "generated_at": "2026-05-31T14:21:00Z"
+    },
+    "7eb83764a01bea76e4d69193cc4e9531f196b7af409ce76368da4561795445cb": {
+      "supabase_url": "https://tumexryzbzmtijvbloch.supabase.co/storage/v1/object/public/rfp-photos/pmrfp-system/exterior-wall-modification-commercial/f9ee55d6-4122-4749-87b4-2d0bff82378f.png",
+      "supabase_path": "pmrfp-system/exterior-wall-modification-commercial/f9ee55d6-4122-4749-87b4-2d0bff82378f.png",
+      "rfp_slug": "exterior-wall-modification-commercial",
+      "prompt": "Documentary commercial real-estate photograph of a mid-rise commercial building in Toronto with one section of exterior wall under modification, scaffolding visible on a portion of the brick and concrete facade. Mid-distance street view at overcast midday, slightly muted cool color grading with subtle indigo undertones, professional property-listing photography aesthetic. No visible signage or logos, no license plates, no people in frame. Crisp focus, 35mm-equivalent focal length, daylight balanced. Realistic — no glowing windows, no fake reflections, no AI symmetry artifacts.",
+      "aspect_ratio": "16:9",
+      "resolution": "2k",
+      "quality": "medium",
+      "model": "gpt_image_2_api",
+      "generated_at": "2026-05-31T14:21:00Z"
+    },
+    "1f690bbeb08a38e1e5a70fc7c53052ddb5eb146445728c56bf1000417591d136": {
+      "supabase_url": "https://tumexryzbzmtijvbloch.supabase.co/storage/v1/object/public/rfp-photos/pmrfp-system/emergency-exit-extension-rbq-compliance/70ba3c65-ebad-4c31-be94-9d0339423c16.png",
+      "supabase_path": "pmrfp-system/emergency-exit-extension-rbq-compliance/70ba3c65-ebad-4c31-be94-9d0339423c16.png",
+      "rfp_slug": "emergency-exit-extension-rbq-compliance",
+      "prompt": "Documentary commercial real-estate photograph of the side of a low-rise commercial building in Montréal, focused on an exterior emergency stairwell extension currently being upgraded for Quebec building-code compliance. Concrete and grey-painted steel structure, mid-distance angled street view, slightly overcast morning. Cool color grading with subtle indigo undertones, slightly muted, professional property-listing photography aesthetic. No visible signage or logos, no license plates, no people in frame. Crisp focus, 35mm-equivalent focal length, daylight balanced. Realistic — no glowing windows, no fake reflections, no AI symmetry artifacts.",
+      "aspect_ratio": "16:9",
+      "resolution": "2k",
+      "quality": "medium",
+      "model": "gpt_image_2_api",
+      "generated_at": "2026-05-31T14:21:00Z"
+    },
+    "4285f5d0a320dd012c277faceee6a9465b4ccd000ee6c49bbcc031e81c794399": {
+      "supabase_url": "https://tumexryzbzmtijvbloch.supabase.co/storage/v1/object/public/rfp-photos/pmrfp-system/flooring-paint-ceiling-renovation/49d6545e-c6ab-442c-bba4-93778909824b.png",
+      "supabase_path": "pmrfp-system/flooring-paint-ceiling-renovation/49d6545e-c6ab-442c-bba4-93778909824b.png",
+      "rfp_slug": "flooring-paint-ceiling-renovation",
+      "prompt": "Documentary interior real-estate photograph of an empty mid-renovation commercial space in Toronto — bare polished concrete floor, partially painted walls, ceiling tiles partially installed. Natural daylight from large windows. Mid-distance view down the length of the room. Cool color grading with subtle indigo undertones, slightly muted, professional property-listing photography aesthetic. No visible signage or logos, no people in frame. Crisp focus, 35mm-equivalent focal length, daylight balanced. Realistic — no glowing windows, no fake reflections, no AI symmetry artifacts.",
+      "aspect_ratio": "16:9",
+      "resolution": "2k",
+      "quality": "medium",
+      "model": "gpt_image_2_api",
+      "generated_at": "2026-05-31T14:21:00Z"
+    }
+  }
+}

@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { lookup as cacheLookup, record as cacheRecord } from "./lib/image-cache.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 function loadEnv(p) {
@@ -105,6 +106,9 @@ async function uploadToStorage(slug, sourceUrl) {
       apikey: SERVICE_KEY,
       Authorization: `Bearer ${SERVICE_KEY}`,
       "Content-Type": contentType,
+      // Immutable URL (uuid in path means content can't change under this URL),
+      // so cache aggressively at every layer.
+      "Cache-Control": "public, max-age=31536000, immutable",
       "x-upsert": "false",
     },
     body: buf,
@@ -126,7 +130,7 @@ async function insertDocument(rfpId, publicUrl, objectPath, contentType) {
 }
 
 async function main() {
-  for (const { slug, sourceUrl } of MAPPING) {
+  for (const { slug, sourceUrl, prompt, model } of MAPPING) {
     const rfpId = await findRfpId(slug);
     if (!rfpId) {
       console.warn(`[${slug}] RFP not found — skipping`);
@@ -136,8 +140,36 @@ async function main() {
       console.log(`[${slug}] already has a public photo — skipping`);
       continue;
     }
+
+    // Cache short-circuit: if this prompt was already uploaded, reuse the
+    // existing Supabase URL — don't burn another upload round-trip.
+    let publicUrl;
+    let objectPath;
+    let contentType = "image/png";
+    if (prompt) {
+      const cached = cacheLookup(prompt);
+      if (cached) {
+        publicUrl = cached.supabase_url;
+        objectPath = cached.supabase_path;
+        console.log(`[${slug}] cache hit (prompt already in manifest) → reusing ${publicUrl}`);
+      }
+    }
+
     try {
-      const { publicUrl, objectPath, contentType } = await uploadToStorage(slug, sourceUrl);
+      if (!publicUrl) {
+        const uploaded = await uploadToStorage(slug, sourceUrl);
+        publicUrl = uploaded.publicUrl;
+        objectPath = uploaded.objectPath;
+        contentType = uploaded.contentType;
+        if (prompt) {
+          cacheRecord(prompt, {
+            supabase_url: publicUrl,
+            supabase_path: objectPath,
+            rfp_slug: slug,
+            model: model ?? "unknown",
+          });
+        }
+      }
       const ins = await insertDocument(rfpId, publicUrl, objectPath, contentType);
       if (ins.status >= 300) {
         console.error(`[${slug}] insert failed (${ins.status}):`, ins.json);

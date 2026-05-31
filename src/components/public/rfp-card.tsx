@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { CalendarClock, Lock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { RfpListItem } from "@/lib/data/types";
@@ -17,12 +18,12 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
     >
       {heroPhoto && (
         <div className="relative aspect-[5/3] overflow-hidden bg-secondary/40">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={heroPhoto}
             alt=""
-            loading="lazy"
-            className="size-full object-cover transition-transform group-hover:scale-[1.02]"
+            fill
+            sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform group-hover:scale-[1.02]"
           />
           {rfp.photoUrls.length > 1 && (
             <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">

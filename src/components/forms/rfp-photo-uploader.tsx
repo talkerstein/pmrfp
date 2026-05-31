@@ -84,6 +84,8 @@ export function RfpPhotoUploader({
         const { error: upErr } = await supabase.storage.from("rfp-photos").upload(path, f, {
           contentType: f.type,
           upsert: false,
+          // URL is content-addressed via uuid — safe to cache aggressively.
+          cacheControl: "31536000",
         });
         if (upErr) {
           setError(`Upload failed for "${f.name}": ${upErr.message}`);
