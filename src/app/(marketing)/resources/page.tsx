@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Calculator, Sparkles } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { EmptyState } from "@/components/public/empty-state";
 import { buttonVariants } from "@/components/ui/button";
@@ -44,6 +44,28 @@ export default async function ResourcesPage() {
         </div>
         <span className={cn(buttonVariants({ variant: "accent" }), "shrink-0")}>
           Learn more <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </Link>
+
+      {/* Cost guides feature */}
+      <Link
+        href="/cost-guides"
+        className="group mt-4 flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-6 transition-all hover:border-teal-400 hover:shadow-sm"
+      >
+        <div className="max-w-2xl">
+          <span className="eyebrow inline-flex items-center gap-2 text-teal-600">
+            <Calculator className="size-3.5" /> Cost guides
+          </span>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight group-hover:text-teal-700">
+            What does commercial property work cost in Canada?
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Honest planning ranges for roofing, HVAC, renovations, paving, snow, cleaning, and more
+            — so you walk into an RFP knowing what to expect.
+          </p>
+        </div>
+        <span className="hidden shrink-0 items-center gap-1 text-sm font-medium text-teal-700 sm:flex">
+          See guides <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </span>
       </Link>
 
