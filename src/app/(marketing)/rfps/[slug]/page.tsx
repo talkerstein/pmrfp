@@ -9,7 +9,7 @@ import { LockedContentPanel } from "@/components/public/locked-content-panel";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { SaveButton } from "@/components/dashboard/save-button";
 import { ExpressInterestDialog } from "@/components/forms/express-interest-dialog";
-import { getFullRfp, getRfpTeaser } from "@/lib/data/rfps";
+import { getFullRfp, getRfpTeaser, listRfps } from "@/lib/data/rfps";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -49,6 +49,17 @@ export default async function RfpDetailPage({
   const forceLocked = sp.view === "locked";
   const showFull = configured ? access : !forceLocked;
   const full = showFull ? await getFullRfp(slug) : null;
+
+  // Match-proof before the paywall (audit #2/#4/#10): show a locked-out trade
+  // that real liquidity exists in their region BEFORE asking them to pay. Uses
+  // only public board data (listRfps = rfp_public view) — no RLS-gated fields.
+  let regionMatchCount = 0;
+  if (!showFull && teaser.regionName) {
+    const openRfps = await listRfps();
+    regionMatchCount = openRfps.filter(
+      (r) => r.regionName === teaser.regionName && r.slug !== teaser.slug,
+    ).length;
+  }
 
   return (
     <Container className="py-10">
@@ -152,7 +163,18 @@ export default async function RfpDetailPage({
               <TrustDisclaimer />
             </div>
           ) : (
-            <div className="mt-8">
+            <div className="mt-8 space-y-6">
+              {regionMatchCount > 0 && teaser.regionName && (
+                <div className="rounded-xl border border-teal-400/50 bg-teal-100/30 p-5">
+                  <p className="text-sm font-semibold text-foreground">
+                    {regionMatchCount + 1} open commercial RFPs in {teaser.regionName} right now
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Trade Pro members see full scope, documents, and can express interest on
+                    every one — this is just what&rsquo;s live in your region today.
+                  </p>
+                </div>
+              )}
               <LockedContentPanel signedIn={Boolean(session)} />
             </div>
           )}
