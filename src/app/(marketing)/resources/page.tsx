@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Calculator, Sparkles } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { EmptyState } from "@/components/public/empty-state";
+import { ReferBanner } from "@/components/public/refer-banner";
 import { buttonVariants } from "@/components/ui/button";
 import { listResources } from "@/lib/data/resources";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,8 @@ export default async function ResourcesPage() {
       <p className="mt-3 max-w-2xl text-muted-foreground">
         Practical guidance on winning and running commercial property work in Canada.
       </p>
+
+      <ReferBanner variant="subtle" className="mt-8" />
 
       {/* Done-for-you feature */}
       <Link

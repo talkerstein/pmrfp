@@ -16,6 +16,7 @@ import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
 import { cn } from "@/lib/utils";
+import { ReferBanner } from "@/components/public/refer-banner";
 
 const PROBLEMS = [
   { n: "01", t: "Fragmented opportunities", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
@@ -230,6 +231,9 @@ export default async function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* ===================== REFERRAL BANNER (prominent) ===================== */}
+      <ReferBanner variant="prominent" />
 
       {/* ===================== PROPERTY TYPES ===================== */}
       <section className="bg-secondary/40">

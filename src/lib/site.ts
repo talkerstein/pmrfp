@@ -26,6 +26,18 @@ export const PRICING = {
     "Featured includes everything in Trade Pro, plus priority placement at the top of your categories and regions.",
 } as const;
 
+/**
+ * Referral program — anyone (REA, mortgage broker, RE lawyer, peer PM,
+ * neighbour) can refer a project. When the resulting RFP is awarded to a
+ * PMRFP-listed trade, the referrer earns a finder's fee. See /refer-a-project.
+ */
+export const REFERRAL = {
+  fee: 50,
+  currency: "CAD",
+  oneLiner: "Introduce a project. Earn a $50 finder's fee when work is awarded.",
+  shortCta: "Refer a project",
+} as const;
+
 /** Primary public navigation (§30 header) */
 export const MAIN_NAV = [
   { href: "/for-trades", label: "For Trades" },
@@ -34,6 +46,11 @@ export const MAIN_NAV = [
   { href: "/rfps", label: "RFPs" },
   { href: "/pricing", label: "Pricing" },
   { href: "/resources", label: "Resources" },
+] as const;
+
+/** Secondary nav slot — sits between primary nav and auth CTAs in the header. */
+export const SECONDARY_NAV = [
+  { href: "/refer-a-project", label: `${REFERRAL.shortCta} — earn $${REFERRAL.fee}` },
 ] as const;
 
 /** Trade dashboard sidebar (§10.3) */
@@ -111,6 +128,7 @@ export const FOOTER_COLS = [
       { label: "Resource Hub", href: "/resources" },
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
+      { label: `${REFERRAL.shortCta} — earn $${REFERRAL.fee}`, href: "/refer-a-project" },
       { label: "Grow Your Business", href: "/resources/grow" },
       { label: "Vendor Badge", href: "/badge" },
       { label: "Contact", href: "/contact" },

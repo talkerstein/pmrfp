@@ -5,6 +5,7 @@ import { FilterBar } from "@/components/public/filter-bar";
 import { RfpCard } from "@/components/public/rfp-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { StatsStrip } from "@/components/public/stats-strip";
+import { ReferBanner } from "@/components/public/refer-banner";
 import { listRfps } from "@/lib/data/rfps";
 import { getPlatformStats } from "@/lib/data/stats";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
@@ -58,6 +59,8 @@ export default async function RfpsPage({
       </section>
 
       <Container className="py-8">
+        <ReferBanner variant="subtle" className="mb-6" />
+
         {locked && (
           <div className="mb-6 flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50/60 p-4 text-sm text-foreground">
             <Lock className="size-4 shrink-0 text-teal-600" />

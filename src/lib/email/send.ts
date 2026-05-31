@@ -41,6 +41,11 @@ function layout(title: string, bodyHtml: string, footnote?: string): string {
     </div>
     <div style="padding:16px 0;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b">
       ${footnote ? `<p style="margin:0 0 8px">${footnote}</p>` : ""}
+      <p style="margin:0 0 8px">
+        <strong style="color:#0C7A5A">P.S.</strong> Know someone with a property project?
+        <a href="${BASE}/refer-a-project" style="color:#282B59;font-weight:600;text-decoration:underline">Refer it — earn $50</a>
+        when work is awarded.
+      </p>
       <p style="margin:0">${SITE.name} · ${SITE.country}-first commercial property RFP network · ${BASE}</p>
     </div>
   </div>`;
@@ -176,6 +181,72 @@ export async function sendPmRfpPublished(to: string, rfp: { title: string; slug:
       `<p>Your RFP <strong>${rfp.title}</strong> is now live on PMRFP. Interested vendors can express interest, and you'll be able to review them.</p>
        <p>${btn(`${BASE}/rfps/${rfp.slug}`, "View your listing")}</p>`,
       COPY.disclaimer,
+    ),
+  );
+}
+
+/**
+ * Notify admin that someone submitted a project referral via /refer-a-project.
+ * Admin manually contacts the owner (with referrer permission), drafts the RFP,
+ * and tracks the referral for finder's-fee payout if awarded.
+ */
+export async function sendAdminReferral(params: {
+  projectDescription: string;
+  projectCity: string;
+  projectProvince: string;
+  projectCategory?: string;
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerPhone?: string;
+  referrerName: string;
+  referrerEmail: string;
+  referrerPhone?: string;
+  referrerAffiliation?: string;
+}): Promise<void> {
+  const ownerLine =
+    params.ownerName || params.ownerEmail || params.ownerPhone
+      ? `<li><strong>Owner / contact:</strong> ${[params.ownerName, params.ownerEmail, params.ownerPhone].filter(Boolean).join(" · ")}</li>`
+      : `<li><em>Owner contact not provided — referrer will introduce.</em></li>`;
+  await send(
+    ADMIN,
+    `New project referral · ${params.projectCity}, ${params.projectProvince}`,
+    layout(
+      "New project referral",
+      `<ul>
+        <li><strong>Referrer:</strong> ${params.referrerName} (${params.referrerEmail}${params.referrerPhone ? ` · ${params.referrerPhone}` : ""})</li>
+        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${params.referrerAffiliation}</li>` : ""}
+        <li><strong>Location:</strong> ${params.projectCity}, ${params.projectProvince}</li>
+        ${params.projectCategory ? `<li><strong>Category:</strong> ${params.projectCategory}</li>` : ""}
+        ${ownerLine}
+       </ul>
+       <p><strong>Project:</strong><br/>${params.projectDescription.replace(/\n/g, "<br/>")}</p>
+       <p>${btn(`${BASE}/admin/contact-requests`, "View in admin")}</p>`,
+    ),
+  );
+}
+
+/**
+ * Confirmation to the referrer — sets expectations on next steps and the
+ * finder's-fee policy. Reduces support volume by answering "what happens next?"
+ * up front.
+ */
+export async function sendReferralConfirmation(to: string, projectCity: string): Promise<void> {
+  await send(
+    to,
+    "Thanks for the project referral",
+    layout(
+      "We received your referral",
+      `<p>Thanks for introducing this project in <strong>${projectCity}</strong> to ${SITE.name}.</p>
+       <p><strong>What happens next:</strong></p>
+       <ol>
+         <li>Our team reviews the referral (usually within 1 business day).</li>
+         <li>We reach out to the property contact (if you provided one) or to you (so you can introduce us).</li>
+         <li>We help structure the RFP and publish it to qualified Canadian trades.</li>
+         <li>If the work is awarded to a ${SITE.name}-listed trade, you earn a <strong>$50 CAD finder's fee</strong> (paid by e-transfer when the award is confirmed).</li>
+       </ol>
+       <p>You'll get a monthly summary of all your referred projects — no chasing required.</p>
+       <p>Questions in the meantime? Reply to this email.</p>`,
+      "Finder's fees are paid on awarded RFPs only. PMRFP does not guarantee work; trades and property contacts make their own decisions.",
     ),
   );
 }

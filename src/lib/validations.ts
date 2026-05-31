@@ -101,6 +101,36 @@ export const interestSchema = z.object({
 });
 export type InterestInput = z.infer<typeof interestSchema>;
 
+/**
+ * Refer-a-project intake. No auth required — anyone can submit a referral on
+ * behalf of a property owner / manager / client. Honeypot guards against bots.
+ */
+export const referralSchema = z.object({
+  // The project
+  projectDescription: z.string().min(30, "Tell us a bit more (30+ characters)").max(2500),
+  projectCity: z.string().min(1, "City is required"),
+  projectProvince: z.string().min(1, "Province is required"),
+  projectCategory: z.string().optional(),
+  projectPropertyType: z.string().optional(),
+  // Owner / property contact (optional — referrer might not yet have permission to share)
+  ownerName: z.string().optional(),
+  ownerEmail: z.union([z.string().email(), z.literal("")]).optional(),
+  ownerPhone: z.string().optional(),
+  // The referrer (required — we need to pay the finder's fee + send updates)
+  referrerName: z.string().min(1, "Your name is required"),
+  referrerEmail: z.string().email("Enter a valid email"),
+  referrerPhone: z.string().optional(),
+  referrerAffiliation: z.string().max(200).optional(),
+  // Permission / disclosure
+  permission: z
+    .literal(true, {
+      message: "Please confirm you have the property contact's permission, or that you're introducing them to PMRFP yourself.",
+    }),
+  // Honeypot
+  company_website: z.string().max(0).optional(),
+});
+export type ReferralInput = z.infer<typeof referralSchema>;
+
 export const contactRequestSchema = z.object({
   requestType: z
     .enum(["directory_intro", "property_manager_help", "general_contact", "vendor_question"])

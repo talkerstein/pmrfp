@@ -14,6 +14,7 @@ import {
   CTASection,
 } from "@/components/public/section";
 import { CategoryGrid } from "@/components/public/category-grid";
+import { ReferBanner } from "@/components/public/refer-banner";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,6 +77,7 @@ export default async function ForPropertyManagersPage() {
                 Browse the directory
               </Link>
             </div>
+            <ReferBanner variant="subtle" className="mt-10 max-w-3xl" />
           </div>
         </Container>
       </section>

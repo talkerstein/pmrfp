@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
 import { VERTICALS, getVertical } from "@/lib/seo/verticals";
+import { ReferBanner } from "@/components/public/refer-banner";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 86400;
@@ -70,6 +71,10 @@ export default async function VerticalPage({
           </div>
         </Container>
       </section>
+
+      <Container className="pt-2">
+        <ReferBanner variant="subtle" />
+      </Container>
 
       <section className="bg-secondary/30">
         <Container className="py-14">
