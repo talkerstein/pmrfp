@@ -17,6 +17,7 @@ import {
 import { sendWelcomeEmail } from "@/lib/email/send";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
+import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 
 async function authIp(): Promise<string> {
   const h = await headers();
@@ -76,6 +77,13 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   await sendWelcomeEmail(parsed.data.email, parsed.data.fullName);
   const next = safeNextPath(formData.get("next")?.toString());
   await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next });
+  // Fire-and-forget GHL sync; no-ops if GHL_API_KEY unset.
+  await syncPmrfpUserToGhl({
+    email: parsed.data.email,
+    fullName: parsed.data.fullName,
+    role: parsed.data.role,
+    subscriptionStatus: "none",
+  }, { extraTags: ["pmrfp-signup"] });
   redirect(next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding");
 }
 
@@ -228,6 +236,21 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role });
+
+  // Sync the freshly-onboarded user to GHL with the org fields filled in.
+  await syncPmrfpUserToGhl({
+    email: session.profile.email,
+    fullName: session.profile.full_name,
+    role,
+    orgId: org?.id ?? null,
+    orgSlug: slug,
+    orgName: data.name,
+    city: data.city,
+    province: data.province,
+    tradeCategory: isListing && categories.length > 0 ? categories[0] : null,
+    subscriptionStatus: "none",
+    profileCompletionPct: 50, // baseline after onboarding; will rise as they add logo/portfolio
+  }, { extraTags: ["pmrfp-onboarded"] });
 
   if (next) redirect(next);
   redirect(isListing ? "/dashboard" : "/pm-dashboard");

@@ -23,6 +23,7 @@ import {
 } from "@/lib/email/send";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { trackEvent } from "@/lib/analytics";
+import { syncProjectReferralToGhl, syncTradeReferralToGhl } from "@/lib/ghl/sync";
 
 export interface ReferralActionState {
   error?: string;
@@ -103,9 +104,18 @@ export async function submitReferralAction(
     hasAffiliation: !!d.referrerAffiliation,
   });
 
+  await syncProjectReferralToGhl({
+    referrerEmail: d.referrerEmail,
+    referrerName: d.referrerName,
+    referrerPhone: d.referrerPhone || undefined,
+    referrerAffiliation: d.referrerAffiliation || undefined,
+    projectCity: d.projectCity,
+    projectProvince: d.projectProvince,
+  });
+
   return {
     success:
-      "Thanks for the referral. We'll review within one business day and reach out to you or the property contact next. The $25 finder's fee triggers when the RFP goes live.",
+      "Thanks for the referral. We'll review within one business day and reach out to you or the property contact next. When the RFP goes live, you'll get public credit on the listing + a spot on the Top Connectors leaderboard.",
   };
 }
 
@@ -174,6 +184,20 @@ export async function submitTradeReferralAction(
     province: d.tradeProvince,
     hasTradeContact: !!(d.tradeContactEmail || d.tradeContactPhone),
     hasAffiliation: !!d.referrerAffiliation,
+  });
+
+  await syncTradeReferralToGhl({
+    referrerEmail: d.referrerEmail,
+    referrerName: d.referrerName,
+    referrerPhone: d.referrerPhone || undefined,
+    referrerAffiliation: d.referrerAffiliation || undefined,
+    tradeCompanyName: d.tradeCompanyName,
+    tradeCategory: d.tradeCategory || undefined,
+    tradeCity: d.tradeCity,
+    tradeProvince: d.tradeProvince,
+    tradeContactName: d.tradeContactName || undefined,
+    tradeContactEmail: d.tradeContactEmail || undefined,
+    tradeContactPhone: d.tradeContactPhone || undefined,
   });
 
   return {
