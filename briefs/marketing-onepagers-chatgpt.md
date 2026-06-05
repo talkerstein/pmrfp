@@ -30,7 +30,7 @@
   3. **Express interest** — submit and track every opportunity. No chasing.
   4. **Matching alerts** — get pinged the moment a fitting RFP is posted.
 - **How it works (3 steps):** 1 · Get listed → 2 · Find RFPs → 3 · Express interest
-- **Price strip:** $249/yr or $29/mo · 30-day money-back guarantee · one won RFP covers years
+- **Price strip:** $249/yr or $29/mo · cancel anytime · one won RFP covers years
 - **CTA pill:** Get listed → pmrfp.com
 - **Footer label:** Commercial & residential property · by region
 
@@ -48,7 +48,7 @@ Then a 2x2 grid of four rounded cards, each with a simple teal line icon, a bold
 
 Below the grid, a slim horizontal "How it works" strip with three numbered steps connected by a teal line: "1 Get listed", "2 Find RFPs", "3 Express interest".
 
-Near the bottom, an indigo price strip in white text: "$249/yr or $29/mo · 30-day money-back guarantee · one won RFP covers years". Below it a teal pill button with indigo text: "Get listed → pmrfp.com". Footer in small grey: "Commercial & residential property · by region". Keep all text crisp and correctly spelled.
+Near the bottom, an indigo price strip in white text: "$249/yr or $29/mo · cancel anytime · one won RFP covers years". Below it a teal pill button with indigo text: "Get listed → pmrfp.com". Footer in small grey: "Commercial & residential property · by region". Keep all text crisp and correctly spelled.
 ```
 
 ---
@@ -97,21 +97,21 @@ A real, honest early-bird (no fake scarcity — the price genuinely rises at 100
 - **Lock in $249/yr — forever.** (Rises to $399 once we hit 100 members.)
 - **Founding Member badge** on your profile.
 - **Priority directory placement** while we grow.
-- **30-day money-back guarantee.**
+- **Cancel anytime** — subscriptions are non-refundable.
 - Know another trade? **Refer them, earn $75** when they join.
 
 ### PROMO GRAPHIC — COPY
 - **Eyebrow:** FOUNDING MEMBERS · EARLY ACCESS
 - **Headline:** Lock in $249/yr — for good.
 - **Subhead:** Be one of the first trades on PMRFP. Founding price rises to $399 at 100 members.
-- **3 bullets:** Founding Member badge · Priority placement · 30-day money-back
+- **3 bullets:** Founding Member badge · Priority placement · Cancel anytime
 - **CTA pill:** Claim your founding spot → pmrfp.com
 
 ### PROMO GRAPHIC — PROMPT (paste into ChatGPT Image)
 ```
 Create a premium B2B promotional graphic (square, 1080x1080). Brand "PMRFP". Deep indigo #282B59 background, mint teal #91F2CF accents, white and teal text. Bold geometric sans headline, tiny uppercase teal monospace label. Clean, confident, lots of whitespace, no photos of people. Top-left wordmark "PMRFP.com".
 
-Centerpiece: a circular teal "FOUNDING MEMBER" seal/badge with a small lock icon. Teal uppercase eyebrow: "FOUNDING MEMBERS · EARLY ACCESS". Large white headline: "Lock in $249/yr — for good." Smaller line under it: "Be one of the first trades on PMRFP. Founding price rises to $399 at 100 members." Three short ticked items in a row: "Founding Member badge", "Priority placement", "30-day money-back". A teal pill button with indigo text at the bottom: "Claim your founding spot → pmrfp.com". All text crisp and correctly spelled.
+Centerpiece: a circular teal "FOUNDING MEMBER" seal/badge with a small lock icon. Teal uppercase eyebrow: "FOUNDING MEMBERS · EARLY ACCESS". Large white headline: "Lock in $249/yr — for good." Smaller line under it: "Be one of the first trades on PMRFP. Founding price rises to $399 at 100 members." Three short ticked items in a row: "Founding Member badge", "Priority placement", "Cancel anytime". A teal pill button with indigo text at the bottom: "Claim your founding spot → pmrfp.com". All text crisp and correctly spelled.
 ```
 
 ### LINKEDIN POST (R. Talkar voice — quiet, confident, link in first comment)
@@ -125,9 +125,9 @@ PMRFP fixes that for trades:
 • Watch RFPs matched to your trade and region, on one board
 • Express interest in a click — and track every one
 
-I'm opening founding-member spots now. The first trades lock in $249/yr for good (it rises to $399 at 100 members), with a 30-day money-back guarantee.
+I'm opening founding-member spots — starting in the Greater Toronto Area. The first trades lock in $249/yr for good (it rises to $399 at 100 members).
 
-If you do commercial property work, this is for you. Link in the comments.
+If you do commercial property work in the GTA, this is for you. Your region is next. Link in the comments.
 ```
 
 ### COLD DM / EMAIL TO A TRADE (short)
@@ -136,12 +136,15 @@ Subject: Founding spot on PMRFP — lock $249/yr
 
 Hi [first name] — quick one.
 
-I'm opening PMRFP to its first founding trades. It gets your company listed where
-commercial property managers search for vendors, and lets you watch RFPs matched to
-your trade and region — so you hear about the work instead of missing it.
+I'm opening PMRFP to its first founding trades in the GTA. It gets your company listed
+where commercial property managers search for vendors, and lets you watch RFPs matched
+to your trade and region — so you hear about the work instead of missing it.
 
-Founding members lock in $249/yr for good (rises to $399 at 100 members) + a 30-day
-money-back guarantee. Want me to get your listing set up?
+[If a live RFP fits them, name it: "There's an open commercial {trade} RFP in {GTA area}
+right now — want in before it closes?"]
+
+Founding members lock in $249/yr for good (rises to $399 at 100 members). Want me to
+get your listing set up?
 
 — R. Talkar, PMRFP · pmrfp.com
 ```

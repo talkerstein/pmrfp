@@ -119,7 +119,7 @@ This maps 1:1 to `briefs/roadmap-to-live.html`. Marketing owns the **bold** item
 - **No fake scarcity / fake testimonials / fake counts.** Social-proof counters pull only real (non-demo) data. Keep it that way.
 - **"Verified ✓" badge** may only be used once the insurance-verification flow ships. Don't market "verified trades" before then.
 - **Pricing:** $249/yr or $29/mo CAD. Early-bird line ("lock in $249, rises to $399 at 100 subs") is approved. Featured tier $599/yr.
-- **30-day money-back guarantee** is live copy — fine to use.
+- **No refunds.** Subscriptions are non-refundable; members cancel anytime and keep access to the end of the paid period. (Founder decision 2026-06-05 — do NOT use "money-back guarantee" anywhere.)
 
 > When in doubt on any external claim, route it past Rishon. For anything touching law/regulation, accuracy beats punch.
 
