@@ -7,7 +7,7 @@ import {
 } from "@/lib/demo-data";
 
 export interface CategoryOption { slug: string; name: string; icon: string | null }
-export interface RegionOption { slug: string; name: string; province: string | null }
+export interface RegionOption { slug: string; name: string; province: string | null; country: string }
 export interface PropertyTypeOption { slug: string; name: string }
 
 export async function getCategories(): Promise<CategoryOption[]> {
@@ -25,12 +25,12 @@ export async function getCategories(): Promise<CategoryOption[]> {
 
 export async function getRegions(): Promise<RegionOption[]> {
   if (!isSupabaseConfigured()) {
-    return DEMO_REGIONS.map((r) => ({ slug: r.slug, name: r.name, province: r.province }));
+    return DEMO_REGIONS.map((r) => ({ slug: r.slug, name: r.name, province: r.province, country: "Canada" }));
   }
   const supabase = createReadClient();
   const { data } = await supabase
     .from("regions")
-    .select("slug,name,province")
+    .select("slug,name,province,country")
     .eq("active", true)
     .order("sort_order");
   return (data as RegionOption[] | null) ?? [];
