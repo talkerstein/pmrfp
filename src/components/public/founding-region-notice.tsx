@@ -174,14 +174,17 @@ export function RegionalWaitlistForm({
           name="email"
           type="email"
           required
+          aria-label="Email address"
           placeholder="you@company.com"
           className="sm:max-w-xs"
         />
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? "Adding…" : buttonLabel}
         </Button>
       </div>
-      {state.error && <p className="text-sm text-red-700">{state.error}</p>}
+      {state.error && (
+        <p role="alert" className="text-sm text-red-700">{state.error}</p>
+      )}
     </form>
   );
 }

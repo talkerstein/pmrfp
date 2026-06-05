@@ -6,7 +6,7 @@ import { Menu, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Container } from "@/components/container";
 import { Logo } from "@/components/logo";
-import { MAIN_NAV, REFERRAL } from "@/lib/site";
+import { MAIN_NAV } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
@@ -51,14 +51,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link
-            href="/refer"
-            className="hidden xl:inline-flex items-center gap-1 rounded-full border border-teal-300/70 bg-teal-100/40 px-3 py-1.5 text-xs font-semibold text-teal-ink transition-colors hover:bg-teal-100/70"
-            title={`${REFERRAL.shortCta} — earn up to $${REFERRAL.maxFee} when they list`}
-          >
-            <span className="size-1.5 rounded-full bg-teal-ink" />
-            Refer · up to ${REFERRAL.maxFee}
-          </Link>
           <Link href="/sign-in" className={buttonVariants({ variant: "ghost", size: "sm" })}>
             Sign In
           </Link>
@@ -92,14 +84,6 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="mt-4 grid gap-2 border-t border-border pt-4">
-              <Link
-                href="/refer"
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-full border border-teal-300/70 bg-teal-100/40 px-4 py-2.5 text-sm font-semibold text-teal-ink"
-              >
-                <span className="size-1.5 rounded-full bg-teal-ink" />
-                Refer · earn up to ${REFERRAL.maxFee}
-              </Link>
               <Link
                 href="/sign-in"
                 onClick={() => setOpen(false)}

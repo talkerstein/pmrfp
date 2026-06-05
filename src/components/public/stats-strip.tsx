@@ -16,7 +16,7 @@ export function StatsStrip({ stats, className = "" }: { stats: PlatformStats; cl
     <div className={`flex flex-wrap items-baseline gap-x-8 gap-y-3 ${className}`.trim()}>
       <Stat value={stats.rfpsPostedLast30Days} label="RFPs posted · last 30 days" />
       <Stat value={stats.tradesListed} label="trade companies listed" />
-      <Stat value="Canada-first" label="commercial focus" />
+      <Stat value="By region" label="commercial & residential" />
     </div>
   );
 }
