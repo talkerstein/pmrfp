@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/accordion";
 import { JsonLd, breadcrumbSchema, faqSchema, itemListSchema } from "@/lib/seo/jsonld";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
+import { getRegionLiquidityBySlug } from "@/lib/data/liquidity";
+import { FoundingRegionNotice } from "@/components/public/founding-region-notice";
 import { listVendors } from "@/lib/data/directory";
 import { listRfps } from "@/lib/data/rfps";
 import { SITE } from "@/lib/site";
@@ -61,10 +63,13 @@ export default async function RegionPage({
     getCategories(),
   ]);
 
+  const regionLiq = await getRegionLiquidityBySlug(region.slug);
+  const showFounding = regionLiq ? regionLiq.tier !== "active" : false;
+
   const faqs = [
     {
       q: `How do I find commercial property RFPs in ${region.name}?`,
-      a: `${SITE.name} aggregates commercial property RFPs from property managers, builders, and owners in ${region.name} and across Canada. Browse opportunities and, with Trade Pro, view full details and express interest.`,
+      a: `${SITE.name} aggregates commercial property RFPs from property managers, builders, and owners in ${region.name}. Browse opportunities and, with Trade Pro, view full details and express interest.`,
     },
     {
       q: `How do I find vendors in ${region.name}?`,
@@ -87,7 +92,7 @@ export default async function RegionPage({
           <nav className="mb-3 text-xs text-muted-foreground">
             <Link href="/regions" className="hover:text-foreground">Regions</Link> / {region.name}
           </nav>
-          <Eyebrow>{region.province ?? "Canada"}</Eyebrow>
+          <Eyebrow>{region.province ?? region.country}</Eyebrow>
           <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
             Commercial Property Vendors & RFP Opportunities in {region.name}
           </h1>
@@ -102,6 +107,19 @@ export default async function RegionPage({
           </div>
         </Container>
       </section>
+
+      {showFounding && (
+        <Container className="pt-8">
+          <FoundingRegionNotice
+            regionName={region.name}
+            regionSlug={region.slug}
+            reason="no_supply_directory"
+            role="property_manager"
+            province={region.province ?? undefined}
+            country={region.country}
+          />
+        </Container>
+      )}
 
       <Container className="py-12">
         <div className="flex items-end justify-between gap-4">

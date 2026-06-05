@@ -13,9 +13,9 @@ import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata: Metadata = {
-  title: "Commercial Property RFP Opportunities in Canada",
+  title: "Commercial Property RFP Opportunities",
   description:
-    "Monitor commercial property RFPs across Canada — electrical, HVAC, roofing, snow removal, cleaning, and more. Subscribe to view full opportunities and express interest.",
+    "Monitor commercial property RFPs by region — electrical, HVAC, roofing, snow removal, cleaning, and more. Subscribe to view full opportunities and express interest.",
 };
 
 export default async function RfpsPage({
@@ -51,7 +51,7 @@ export default async function RfpsPage({
             Commercial property RFP opportunities
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
-            Monitor property-related opportunities across Canada. Trade Pro members see full scope,
+            Monitor property-related opportunities by region. Trade Pro members see full scope,
             requirements, and contact details, and can express interest.
           </p>
           <StatsStrip stats={stats} className="mt-6" />

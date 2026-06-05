@@ -3,13 +3,15 @@ import { Container, Eyebrow } from "@/components/container";
 import { FilterBar } from "@/components/public/filter-bar";
 import { DirectoryCard } from "@/components/public/directory-card";
 import { EmptyState } from "@/components/public/empty-state";
+import { FoundingRegionNotice } from "@/components/public/founding-region-notice";
 import { listVendors } from "@/lib/data/directory";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
+import { getRegionLiquidityBySlug } from "@/lib/data/liquidity";
 
 export const metadata: Metadata = {
-  title: "Vendor Directory — Commercial Property Trades in Canada",
+  title: "Vendor Directory — Commercial Property Trades",
   description:
-    "Browse qualified Canadian trade and service companies for commercial property work. Filter by category, region, and property type.",
+    "Browse qualified trade and service companies for commercial property work. Filter by category, region, and property type.",
 };
 
 export default async function DirectoryPage({
@@ -32,6 +34,10 @@ export default async function DirectoryPage({
     getPropertyTypes(),
   ]);
 
+  const activeRegion = sp.region ? regions.find((r) => r.slug === sp.region) ?? null : null;
+  const regionLiq = activeRegion ? await getRegionLiquidityBySlug(activeRegion.slug) : null;
+  const showFounding = !!activeRegion && !!regionLiq && regionLiq.tier !== "active";
+
   return (
     <>
       <section className="border-b border-border bg-secondary/30">
@@ -41,7 +47,7 @@ export default async function DirectoryPage({
             Find qualified trades for commercial property work
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
-            Discover Canadian trade and service companies by category, region, and the property
+            Discover trade and service companies by category, region, and the property
             types they serve.
           </p>
         </Container>
@@ -58,6 +64,18 @@ export default async function DirectoryPage({
             { value: "alpha", label: "A–Z" },
           ]}
         />
+
+        {showFounding && activeRegion && (
+          <FoundingRegionNotice
+            regionName={activeRegion.name}
+            regionSlug={activeRegion.slug}
+            reason="no_supply_directory"
+            role="property_manager"
+            province={activeRegion.province ?? undefined}
+            country={activeRegion.country}
+            className="mt-6"
+          />
+        )}
 
         <p className="mt-6 text-sm text-muted-foreground">
           {vendors.length} {vendors.length === 1 ? "vendor" : "vendors"}
