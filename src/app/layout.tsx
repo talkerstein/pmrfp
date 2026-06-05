@@ -40,7 +40,7 @@ const metadataBaseUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(metadataBaseUrl),
   title: {
-    default: `${SITE.name} — Commercial Property RFPs & Trade Directory Canada`,
+    default: `${SITE.name} — Commercial Property RFPs & Trade Directory`,
     template: `%s — ${SITE.name}`,
   },
   description: SITE.description,
@@ -49,12 +49,12 @@ export const metadata: Metadata = {
     type: "website",
     siteName: SITE.name,
     url: metadataBaseUrl,
-    title: `${SITE.name} — Commercial Property RFPs & Trade Directory Canada`,
+    title: `${SITE.name} — Commercial Property RFPs & Trade Directory`,
     description: SITE.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — Commercial Property RFPs & Trade Directory Canada`,
+    title: `${SITE.name} — Commercial Property RFPs & Trade Directory`,
     description: SITE.description,
   },
   robots: { index: true, follow: true },

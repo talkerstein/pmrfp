@@ -32,7 +32,7 @@ export default async function SignUpPage({
       </p>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">Join the PMRFP network</h1>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-        Canada&apos;s commercial property RFP network — trades, suppliers, property
+        The commercial property RFP network — trades, suppliers, property
         managers, builders, and real estate professionals on one platform.
       </p>
       <div className="mt-6">

@@ -65,7 +65,7 @@ const PRICE_FEATURES = [
 const FAQS = [
   { q: "Does PMRFP guarantee work?", a: "No. PMRFP provides vendor discovery, directory exposure, and RFP visibility — not guaranteed contracts, bid success, or property-manager responses." },
   { q: "Can I cancel anytime?", a: "Yes. You can cancel from the Stripe billing portal at any time — your membership stays active until the end of your billing period." },
-  { q: "Is this Canada-wide?", a: "Yes — PMRFP launches Canada-wide with an initial strong focus on Ontario and the Greater Toronto Area." },
+  { q: "Which regions does PMRFP cover?", a: "Wherever there's demand. We're live in major metros and expanding — pick your regions when you join, and if yours is still being built out you can get on the founding list and we'll alert you as trades come online." },
   { q: "Can property managers post for free?", a: "Yes. Posting RFPs and browsing the vendor directory is free for property managers, builders, and owners." },
   { q: "What if I only serve one region?", a: "That's fine. Choose the exact regions and categories you cover and you'll only be matched to relevant work." },
 ];
@@ -88,14 +88,14 @@ export default async function HomePage() {
           <div className="grid items-center gap-14 py-20 lg:grid-cols-[1.04fr_.96fr] lg:py-28">
             <div>
               <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
-                <span className="h-px w-5 bg-teal-300" /> Canada-First · Commercial &amp; Residential
+                <span className="h-px w-5 bg-teal-300" /> Commercial &amp; Residential · By Region
               </span>
               <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
                 Find commercial property RFPs and get{" "}
                 <span className="text-teal-300">discovered</span> by the people who award them.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/75">
-                {SITE.name} helps Canadian trades, contractors, and service companies get listed,
+                {SITE.name} helps trades, contractors, and service companies get listed,
                 monitor commercial and residential property opportunities, and connect with property
                 managers, builders, and building owners.
               </p>
@@ -136,7 +136,7 @@ export default async function HomePage() {
                 <div className="bg-secondary/60 p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h4 className="font-semibold text-foreground">Opportunity Board</h4>
-                    <span className="font-mono text-[11px] text-muted-foreground">6 open · GTA</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">Live now</span>
                   </div>
                   {[
                     { cat: "Electrical", title: "Condominium Electrical Maintenance Contract", meta: ["Toronto · Condo", "Closes Jun 18"], status: "open" as const },
@@ -190,7 +190,7 @@ export default async function HomePage() {
           {/* ticker */}
           <div className="grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4">
             {[
-              ["Coverage", "Canada-first · GTA focus"],
+              ["Coverage", "By region — expanding"],
               ["Focus", "Commercial property"],
               ["For trades", "Directory + RFP access"],
               ["Membership", `$${PRICING.proAnnual} / year`],
@@ -322,7 +322,7 @@ export default async function HomePage() {
                 Live commercial property RFPs.
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Filter by trade to see what&apos;s open across Canada. Full scope, documents, and
+                Filter by trade to see what&apos;s open in your region. Full scope, documents, and
                 contacts unlock with membership.
               </p>
             </div>
@@ -375,7 +375,7 @@ export default async function HomePage() {
                 <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4 font-mono text-[11px]">
                   <div>
                     <div className="text-muted-foreground">Region</div>
-                    <div className="mt-0.5 font-semibold text-foreground">{r.regionName ?? "Canada"}</div>
+                    <div className="mt-0.5 font-semibold text-foreground">{r.regionName ?? "—"}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Property</div>
@@ -658,7 +658,7 @@ export default async function HomePage() {
             Get listed before your <span className="text-teal-300">competitors</span> do.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-indigo-100/70">
-            Join the early trade members building visibility on Canada&apos;s commercial property
+            Join the early trade members building visibility on the commercial property
             opportunity network.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">

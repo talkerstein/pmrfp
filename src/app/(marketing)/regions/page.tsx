@@ -9,7 +9,7 @@ import { SITE } from "@/lib/site";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Regions — Commercial Property Vendors & RFPs Across Canada",
+  title: "Regions — Commercial Property Vendors & RFPs by Region",
   description: `Explore commercial property trades and RFP opportunities by region on ${SITE.name} — from the Greater Toronto Area to Vancouver, Calgary, Montreal, and beyond.`,
   alternates: { canonical: "/regions" },
 };
@@ -18,7 +18,7 @@ export default async function RegionsIndexPage() {
   const regions = await getRegions();
   const byProvince = new Map<string, typeof regions>();
   for (const r of regions) {
-    const key = r.province ?? "Canada";
+    const key = r.province ?? r.country;
     if (!byProvince.has(key)) byProvince.set(key, []);
     byProvince.get(key)!.push(r);
   }
@@ -32,8 +32,9 @@ export default async function RegionsIndexPage() {
             Commercial property vendors & RFPs by region
           </h1>
           <p className="mt-4 max-w-2xl text-muted-foreground">
-            {SITE.name} is Canada-first with deep coverage in Ontario and the GTA. Pick a region to
-            find local trades and property RFP opportunities.
+            Pick a region to find local trades and property RFP opportunities. New regions open as
+            demand grows — if yours is still building out, join the founding list and we&apos;ll
+            alert you as trades come online.
           </p>
         </Container>
       </section>

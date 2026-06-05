@@ -31,7 +31,7 @@ import { COPY, PRICING, SITE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "For Trade Companies",
   description:
-    "Get discovered for commercial property work. PMRFP helps Canadian trades and contractors get listed, monitor RFP opportunities, and express interest in one focused place.",
+    "Get discovered for commercial property work. PMRFP helps trades and contractors get listed, monitor RFP opportunities, and express interest in one focused place.",
 };
 
 const INCLUDED = [
@@ -97,8 +97,8 @@ const FAQ = [
     a: "Yes. You can cancel anytime. Your subscription stays active until the end of your current billing period.",
   },
   {
-    q: "Is this Canada-wide?",
-    a: "Yes. We operate Canada-wide with a strong Ontario and GTA focus as we grow.",
+    q: "Which regions do you cover?",
+    a: "Pick the exact regions and categories you serve and you'll only be matched to relevant work. We're live in major metros and adding more — if your area is still building out, join the founding list and we'll alert you as opportunities come online.",
   },
   {
     q: "Can I join if I only serve one region?",
@@ -117,7 +117,7 @@ export default function ForTradesPage() {
               Get discovered for commercial property work.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              {SITE.name} helps Canadian trades, contractors, and service
+              {SITE.name} helps trades, contractors, and service
               companies get listed, monitor commercial property opportunities,
               and connect with the property managers, builders, and owners who
               award the work.
