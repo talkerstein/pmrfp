@@ -49,8 +49,8 @@ export default function ReferHubPage() {
                   ${REFERRAL.tradeFee} {REFERRAL.currency}
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-indigo-100/85">
-                  Refer a Canadian trade or service company. Fee paid when they activate Trade
-                  Pro (${PRICING.proAnnual}/yr). E-transfer within 7 days.
+                  Refer a trade or service company. Fee paid ~30 days after their Trade Pro
+                  payment clears, by e-transfer.
                 </p>
                 <p className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-300">
                   Refer a trade <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />

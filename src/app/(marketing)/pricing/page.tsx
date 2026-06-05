@@ -40,8 +40,8 @@ const FEATURED_FEATURES = [
 
 const FAQ = [
   {
-    q: "Is there a money-back guarantee?",
-    a: "Yes. If Trade Pro isn't a fit, email us within 30 days of your payment for a full refund — no hassle.",
+    q: "Do you offer refunds?",
+    a: "Subscriptions are non-refundable, but you can cancel anytime from the billing portal — your access continues to the end of your paid period and you won't be charged again.",
   },
   {
     q: "Does PMRFP guarantee work?",

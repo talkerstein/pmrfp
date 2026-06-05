@@ -312,11 +312,11 @@ export async function sendTradeReferralConfirmation(to: string, tradeName: strin
          <li>Our team reviews the referral (usually within 1 business day).</li>
          <li>We reach out to the trade contact (if you provided one) or to you (so you can introduce us).</li>
          <li>We help them set up their company profile in the directory.</li>
-         <li>When they activate <strong>Trade Pro</strong> and stay active for <strong>90 days</strong>, you earn a <strong>$75 CAD finder&apos;s fee</strong>, paid by e-transfer within 7 days. The 90-day window keeps the program sustainable on both sides.</li>
+         <li>About <strong>30 days</strong> after their <strong>Trade Pro</strong> payment clears (settled, with no refund or dispute), you earn a <strong>$75 CAD finder&apos;s fee</strong>, paid by e-transfer.</li>
        </ol>
        <p>You'll get a monthly summary of all your referred trades — no chasing required.</p>
        <p>Questions? Reply to this email.</p>`,
-      "Finder's fees are paid after the referred trade activates Trade Pro and remains active for 90 days. PMRFP does not guarantee subscription or revenue outcomes.",
+      "Finder's fees are paid ~30 days after the referred trade's Trade Pro payment clears (settled, no refund or dispute). PMRFP does not guarantee subscription or revenue outcomes.",
     ),
   );
 }

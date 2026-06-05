@@ -8,7 +8,7 @@ import { PRICING, REFERRAL, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: `Refer a Trade — Earn $${REFERRAL.tradeFee} When They List`,
-  description: `Know a Canadian commercial trade who'd benefit from being listed on ${SITE.name}? Refer them and earn $${REFERRAL.tradeFee} ${REFERRAL.currency} once they activate Trade Pro and stay active 90 days.`,
+  description: `Know a commercial trade who'd benefit from being listed on ${SITE.name}? Refer them and earn $${REFERRAL.tradeFee} ${REFERRAL.currency} ~30 days after their Trade Pro payment clears.`,
   alternates: { canonical: "/refer-a-trade" },
 };
 
@@ -26,7 +26,7 @@ const STEPS = [
   {
     icon: HandCoins,
     title: `$${REFERRAL.tradeFee} when it sticks`,
-    desc: `Once the referred trade activates Trade Pro and stays active 90 days, your $${REFERRAL.tradeFee} ${REFERRAL.currency} is paid by e-transfer within 7 days. The 90-day window keeps the lane honest on both sides.`,
+    desc: `Once the referred trade activates Trade Pro and their payment clears, your $${REFERRAL.tradeFee} ${REFERRAL.currency} is paid by e-transfer about 30 days later — once it's settled with no refund or dispute.`,
   },
 ];
 
@@ -72,8 +72,8 @@ export default function ReferTradePage() {
                 <span className="text-teal-300">Earn ${REFERRAL.tradeFee}</span> when they list.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/80">
-                Know a Canadian commercial trade or service company that should be listed on{" "}
-                {SITE.name}? Refer them. Once they activate Trade Pro and stay on for 90 days,
+                Know a commercial trade or service company that should be listed on{" "}
+                {SITE.name}? Refer them. About 30 days after their Trade Pro payment clears,
                 you earn a ${REFERRAL.tradeFee} {REFERRAL.currency} finder&rsquo;s fee by e-transfer.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -109,8 +109,8 @@ export default function ReferTradePage() {
               </div>
               <ul className="mt-5 space-y-2.5 text-sm text-indigo-100/85">
                 <li>· $75 cash per referred Trade Pro sub</li>
-                <li>· paid once they&rsquo;ve stayed active 90 days</li>
-                <li>· then by e-transfer within 7 days</li>
+                <li>· paid ~30 days after their payment clears</li>
+                <li>· by e-transfer, once settled (no dispute)</li>
                 <li>· no cap on referrals · no signup required</li>
               </ul>
             </div>
@@ -175,7 +175,7 @@ export default function ReferTradePage() {
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
                   <strong className="text-foreground">A new Trade Pro subscription is ${PRICING.proAnnual}/yr (or ${PRICING.proMonthly}/mo)</strong> in direct revenue to {SITE.name}. Paying $
-                  {REFERRAL.tradeFee} to the referrer beats almost any paid acquisition channel — and the 90-day hold means the revenue has cleared before the fee goes out.
+                  {REFERRAL.tradeFee} to the referrer beats almost any paid acquisition channel — and the ~30-day hold means the payment has cleared before the fee goes out.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -198,7 +198,7 @@ export default function ReferTradePage() {
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
                   <strong className="text-foreground">Paid clean.</strong>{" "}
-                  Once the referred trade hits 90 days active, your e-transfer goes out within 7 days. No quarterly-payout runaround.
+                  Once the referred trade&rsquo;s payment clears (~30 days), your e-transfer goes out. No quarterly-payout runaround.
                 </span>
               </li>
             </ul>
@@ -233,7 +233,7 @@ export default function ReferTradePage() {
           </div>
           <div className="mt-10">
             <TrustDisclaimer
-              text={`Finder's fees are paid after the referred trade activates Trade Pro and remains active for 90 days (annual at $${PRICING.proAnnual}/yr or monthly at $${PRICING.proMonthly}/mo). PMRFP does not guarantee that any referred trade will subscribe or remain subscribed.`}
+              text={`Finder's fees are paid ~30 days after the referred trade's Trade Pro payment clears (settled, with no refund or dispute). PMRFP does not guarantee that any referred trade will subscribe or remain subscribed.`}
             />
           </div>
         </Container>

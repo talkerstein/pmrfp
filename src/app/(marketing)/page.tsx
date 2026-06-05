@@ -88,7 +88,7 @@ export default async function HomePage() {
           <div className="grid items-center gap-14 py-20 lg:grid-cols-[1.04fr_.96fr] lg:py-28">
             <div>
               <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
-                <span className="h-px w-5 bg-teal-300" /> Commercial &amp; Residential · By Region
+                <span className="h-px w-5 bg-teal-300" /> Now live in the GTA · Your region next
               </span>
               <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
                 Find commercial property RFPs and get{" "}
@@ -190,7 +190,7 @@ export default async function HomePage() {
           {/* ticker */}
           <div className="grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4">
             {[
-              ["Coverage", "By region — expanding"],
+              ["Now live", "Greater Toronto Area"],
               ["Focus", "Commercial property"],
               ["For trades", "Directory + RFP access"],
               ["Membership", `$${PRICING.proAnnual} / year`],
