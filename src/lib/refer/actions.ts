@@ -202,6 +202,6 @@ export async function submitTradeReferralAction(
 
   return {
     success:
-      "Thanks for the referral. We'll review within one business day and reach out to you or the trade contact next. The $75 finder's fee triggers when they activate Trade Pro.",
+      "Thanks for the referral. We'll review within one business day and reach out to you or the trade contact next. The $75 finder's fee is paid about 30 days after their Trade Pro payment clears (so we're protected from chargebacks), by e-transfer.",
   };
 }

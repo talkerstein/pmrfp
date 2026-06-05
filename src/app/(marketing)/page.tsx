@@ -16,7 +16,6 @@ import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
 import { cn } from "@/lib/utils";
-import { ReferBanner } from "@/components/public/refer-banner";
 
 const PROBLEMS = [
   { n: "01", t: "Fragmented opportunities", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
@@ -72,7 +71,8 @@ const FAQS = [
 
 function formatDeadline(d: string | null) {
   if (!d) return "Open";
-  return new Date(d).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+  // timeZone: "UTC" pins server + client to the same day → no hydration mismatch.
+  return new Date(d).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
 export default async function HomePage() {
@@ -231,9 +231,6 @@ export default async function HomePage() {
           </div>
         </Container>
       </section>
-
-      {/* ===================== REFERRAL BANNER (prominent) ===================== */}
-      <ReferBanner variant="prominent" />
 
       {/* ===================== PROPERTY TYPES ===================== */}
       <section className="bg-secondary/40">

@@ -6,7 +6,8 @@ import type { RfpListItem } from "@/lib/data/types";
 
 function formatDeadline(d: string | null) {
   if (!d) return "Open";
-  return new Date(d).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+  // timeZone: "UTC" pins server + client to the same day → no hydration mismatch.
+  return new Date(d).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
 export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) {

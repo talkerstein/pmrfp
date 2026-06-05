@@ -70,10 +70,10 @@ export const MAIN_NAV = [
   { href: "/resources", label: "Resources" },
 ] as const;
 
-/** Secondary nav slot — sits between primary nav and auth CTAs in the header. */
-export const SECONDARY_NAV = [
-  { href: "/refer", label: `${REFERRAL.shortCta} — earn up to $${REFERRAL.maxFee}` },
-] as const;
+/** Secondary nav slot — sits between primary nav and auth CTAs in the header.
+ * Referral is intentionally OUT of the primary nav for now — the link is shared
+ * strategically. Still reachable via the footer (Resources) + direct /refer links. */
+export const SECONDARY_NAV: readonly { href: string; label: string }[] = [];
 
 /** Trade dashboard sidebar (§10.3) */
 export const TRADE_NAV = [
