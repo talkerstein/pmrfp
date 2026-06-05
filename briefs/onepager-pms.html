@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PMRFP — For Property Managers (One-Pager)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Lato:wght@400;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --indigo:#282B59; --indigo-2:#1c1f44; --indigo-soft:#3a3d75;
+    --teal:#91F2CF; --teal-deep:#57d4ab; --teal-ink:#0C7A5A; --teal-100:#E4FBF2;
+    --ink:#14152f; --ink-2:#3A3D4D; --muted:#6b6e8c;
+    --paper:#ffffff; --bg:#eceef5; --line:#E2E6F0; --line-strong:#CDD3E2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Lato',system-ui,-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    display:flex; justify-content:center; padding:32px 16px;
+  }
+  .sheet{
+    width:816px; min-height:1056px; background:var(--paper);
+    box-shadow:0 12px 48px rgba(40,43,89,.18); overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .head{
+    position:relative; background:linear-gradient(135deg,var(--indigo) 0%,var(--indigo-2) 100%);
+    color:#fff; padding:42px 56px 46px;
+  }
+  .head::after{content:"";position:absolute;left:56px;right:56px;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--teal) 50%,transparent);}
+  .brandrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;}
+  .wordmark{display:flex;align-items:center;gap:10px;font-family:'Poppins',sans-serif;font-weight:700;font-size:19px;letter-spacing:-.01em;color:#fff;}
+  .wordmark .dot{color:var(--teal);}
+  .mark{width:30px;height:30px;border-radius:9px;background:var(--teal);display:flex;align-items:center;justify-content:center;
+    font-family:'Poppins',sans-serif;font-weight:800;font-size:18px;color:var(--indigo);}
+  .head-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);
+    border:1px solid rgba(145,242,207,.35);border-radius:999px;padding:5px 12px;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);
+    display:flex;align-items:center;gap:10px;margin:0 0 14px;}
+  .eyebrow .rule{height:1px;width:22px;background:var(--teal);display:inline-block;}
+  h1{font-family:'Poppins',sans-serif;font-weight:800;font-size:42px;line-height:1.04;letter-spacing:-.02em;margin:0 0 16px;max-width:15ch;}
+  h1 .hl{color:var(--teal);}
+  .lede{font-size:16px;line-height:1.55;color:rgba(255,255,255,.82);max-width:56ch;margin:0;}
+
+  .body{flex:1;padding:38px 56px 30px;display:flex;flex-direction:column;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .card{border:1px solid var(--line);border-radius:16px;padding:20px 20px 18px;background:#fff;}
+  .icon{width:40px;height:40px;border-radius:11px;background:var(--teal-100);color:var(--teal-ink);
+    display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .icon svg{width:21px;height:21px;}
+  .card h3{font-family:'Poppins',sans-serif;font-weight:600;font-size:17px;color:var(--indigo);margin:0 0 5px;}
+  .card p{font-size:13.5px;line-height:1.5;color:var(--muted);margin:0;}
+
+  .how{margin-top:26px;border-top:1px solid var(--line);padding-top:22px;}
+  .how-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal-ink);margin:0 0 14px;}
+  .steps{display:flex;align-items:center;gap:0;}
+  .step{display:flex;align-items:center;gap:11px;}
+  .step .num{width:30px;height:30px;border-radius:50%;background:var(--indigo);color:#fff;font-family:'Poppins',sans-serif;font-weight:700;
+    font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .step .txt{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;color:var(--ink-2);}
+  .step .arrow{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--teal-deep) 0 7px,transparent 7px 13px);margin:0 11px;}
+
+  /* free strip (teal — PM emphasis) */
+  .free{margin-top:26px;background:var(--teal);border-radius:14px;padding:16px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .free .big{font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;color:var(--indigo);}
+  .free .sep{width:1px;height:22px;background:rgba(40,43,89,.22);}
+  .free .note{font-size:13.5px;font-weight:700;color:var(--indigo);}
+
+  .cta{margin-top:auto;padding-top:26px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;}
+  .pill{display:inline-flex;align-items:center;gap:9px;background:var(--indigo);color:#fff;
+    font-family:'Poppins',sans-serif;font-weight:700;font-size:16px;border-radius:999px;padding:13px 26px;text-decoration:none;}
+  .pill svg{width:17px;height:17px;}
+  .foot{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.06em;color:var(--muted);text-align:right;}
+  .foot b{color:var(--indigo);}
+
+  .hint{position:fixed;top:10px;left:10px;font:12px/1.4 'IBM Plex Mono',monospace;color:#8a8ea8;}
+  @media print{
+    .hint{display:none;}
+    html,body{background:#fff;padding:0;}
+    .sheet{box-shadow:none;width:100%;min-height:auto;}
+    @page{size:Letter portrait;margin:0;}
+    body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div class="hint">Print → Save as PDF (Letter, no margins, background graphics ON)</div>
+<div class="sheet">
+  <header class="head">
+    <div class="brandrow">
+      <div class="wordmark"><span class="mark">p</span> PMRFP<span class="dot">.com</span></div>
+      <span class="head-tag">For Property Managers &amp; Owners</span>
+    </div>
+    <p class="eyebrow"><span class="rule"></span> Post once</p>
+    <h1>Stop chasing five quotes by <span class="hl">email</span>.</h1>
+    <p class="lede">Post one RFP. Reach relevant trades and shortlist who's interested — without the runaround, and without committing to a hire upfront.</p>
+  </header>
+
+  <div class="body">
+    <div class="grid">
+      <div class="card">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg></span>
+        <h3>Post in one form</h3>
+        <p>Describe the work once. Free, takes a few minutes — no account games, no sales call.</p>
+      </div>
+      <div class="card">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg></span>
+        <h3>Reach the right trades</h3>
+        <p>Your RFP is matched to trades by the categories and regions they actually serve.</p>
+      </div>
+      <div class="card">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg></span>
+        <h3>Compare in one place</h3>
+        <p>See interested companies side by side — profiles, categories, coverage — and shortlist.</p>
+      </div>
+      <div class="card">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        <h3>Stay private</h3>
+        <p>Your name and building stay hidden until you decide to reveal them. No spam, no exposure.</p>
+      </div>
+    </div>
+
+    <div class="how">
+      <p class="how-label">How it works</p>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><span class="txt">Post your RFP</span></div>
+        <span class="arrow"></span>
+        <div class="step"><span class="num">2</span><span class="txt">Trades express interest</span></div>
+        <span class="arrow"></span>
+        <div class="step"><span class="num">3</span><span class="txt">Shortlist &amp; connect</span></div>
+      </div>
+    </div>
+
+    <div class="free">
+      <span class="big">Free to post</span>
+      <span class="sep"></span>
+      <span class="note">No commitment</span>
+      <span class="sep"></span>
+      <span class="note">Browse the vendor directory free</span>
+    </div>
+
+    <div class="cta">
+      <a class="pill" href="https://pmrfp.com/for-property-managers">Post an RFP free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+      <div class="foot"><b>pmrfp.com</b><br/>Commercial &amp; residential property · by region</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
