@@ -168,6 +168,31 @@ export const tradeReferralSchema = z.object({
 });
 export type TradeReferralInput = z.infer<typeof tradeReferralSchema>;
 
+/**
+ * Regional waitlist intake — the founding-region / no-supply capture. Used when
+ * a PM/trade/supplier lands in a region without enough liquidity yet, or asks
+ * for a region we don't list. region_id is resolved server-side from regionSlug;
+ * requestedRegionText covers "not in the list" requests.
+ */
+export const regionalWaitlistSchema = z.object({
+  email: z.string().email("Enter a valid email"),
+  fullName: z.string().max(120).optional(),
+  role: z
+    .enum(["trade", "supplier", "property_manager", "real_estate_agent", "visitor"])
+    .optional(),
+  regionSlug: z.string().optional(),
+  requestedRegionText: z.string().max(160).optional(),
+  province: z.string().max(120).optional(),
+  country: z.string().max(120).optional(),
+  categorySlug: z.string().optional(),
+  reason: z
+    .enum(["early_access", "founding_region_rfp", "no_supply_directory", "region_request"])
+    .default("early_access"),
+  // Honeypot — must stay empty.
+  company_website: z.string().max(0).optional(),
+});
+export type RegionalWaitlistInput = z.infer<typeof regionalWaitlistSchema>;
+
 export const contactRequestSchema = z.object({
   requestType: z
     .enum(["directory_intro", "property_manager_help", "general_contact", "vendor_question"])

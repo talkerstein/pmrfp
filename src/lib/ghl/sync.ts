@@ -190,6 +190,45 @@ export async function syncProjectReferralToGhl(params: {
 }
 
 /**
+ * Someone joined a regional waitlist (founding region / no-supply / region
+ * request). Upserts them in GHL, tagged by region + role + country so US/Quebec
+ * segment cleanly. Fire-and-forget: no-ops entirely until GHL env vars are set,
+ * so it's safe to call now and lights up later with zero rework.
+ */
+export async function syncRegionalWaitlistToGhl(params: {
+  email: string;
+  fullName?: string | null;
+  role?: string | null;
+  regionName?: string | null;
+  regionSlug?: string | null;
+  province?: string | null;
+  country?: string | null;
+  reason: string;
+}): Promise<void> {
+  const { firstName, lastName } = nameParts(params.fullName);
+  const regionTag = params.regionSlug
+    ? `waitlist-${params.regionSlug}`
+    : "waitlist-region-request";
+  await upsertGhlContact({
+    email: params.email,
+    firstName,
+    lastName,
+    tags: [
+      "pmrfp-waitlist",
+      regionTag,
+      `pmrfp-${params.role ?? "visitor"}`,
+      `waitlist-reason-${params.reason}`,
+    ],
+    customFields: {
+      pmrfp_role: params.role ?? "visitor",
+      pmrfp_province: params.province ?? "",
+      pmrfp_country: params.country ?? "Canada",
+      pmrfp_org_name: params.regionName ?? params.regionSlug ?? "",
+    },
+  });
+}
+
+/**
  * A trade referral was submitted. Creates the referrer + the referred trade
  * (if email known) as separate contacts.
  */
