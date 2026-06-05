@@ -15,8 +15,8 @@ type SettingsView = Pick<
 const DEFAULTS: SettingsView = {
   site_name: "PMRFP",
   pricing_amount: 249,
-  support_email: "support@pmrfp.com",
-  admin_notification_email: "admin@pmrfp.com",
+  support_email: "info@pmrfp.com",
+  admin_notification_email: "info@pmrfp.com",
 };
 
 export default async function AdminSettingsPage() {

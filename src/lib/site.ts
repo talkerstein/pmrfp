@@ -10,8 +10,8 @@ export const SITE = {
   description:
     "PMRFP helps trades and service companies get listed, monitor commercial and residential property RFPs, and connect with property managers, builders, and building owners.",
   url: "https://pmrfp.com",
-  email: "hello@pmrfp.com",
-  supportEmail: "support@pmrfp.com",
+  email: "info@pmrfp.com",
+  supportEmail: "info@pmrfp.com",
   country: "Canada",
   // Light sister-company tie to PermitClub (brand bridge only)
   sisterBrand: { name: "PermitClub", url: "https://permitclub.com" },

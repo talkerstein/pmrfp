@@ -7,8 +7,8 @@ import { COPY, SITE } from "@/lib/site";
  * the no-guarantee disclaimer where relevant (§14, §18).
  */
 
-const FROM = process.env.RESEND_FROM_EMAIL || "PMRFP <hello@pmrfp.com>";
-const ADMIN = process.env.ADMIN_NOTIFICATION_EMAIL || "admin@pmrfp.com";
+const FROM = process.env.RESEND_FROM_EMAIL || "PMRFP <info@pmrfp.com>";
+const ADMIN = process.env.ADMIN_NOTIFICATION_EMAIL || "info@pmrfp.com";
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
 
 function client(): Resend | null {
