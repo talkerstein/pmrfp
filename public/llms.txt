@@ -1,0 +1,34 @@
+# PMRFP — Property Management RFP
+
+> PMRFP is a two-sided B2B platform for commercial and residential property work. Property managers, owners, and builders post RFPs (requests for proposals) for their buildings — free. Trade and supplier companies pay an annual or monthly membership to get listed in the vendor directory and to see and express interest in property RFP opportunities, matched by category and region. Now live in the Greater Toronto Area and expanding region by region. PMRFP is a vendor-discovery and RFP-visibility platform — it does not guarantee contracts, bid success, payment, or property-manager response.
+
+## For trades & suppliers
+- [For Trades](https://pmrfp.com/for-trades): Get listed where commercial buyers search, monitor RFPs matched to your trade and region, and express interest. Trade Pro is $249/yr or $29/mo (CAD).
+- [For Suppliers](https://pmrfp.com/for/suppliers): Distributors and material suppliers reach the trades, builders, and property managers who buy what they sell.
+- [Vendor Directory](https://pmrfp.com/directory): Browse trade and service companies by category, region, and property type.
+- [Supplier Directory](https://pmrfp.com/suppliers): Browse suppliers and distributors.
+- [Pricing](https://pmrfp.com/pricing): Membership plans. Subscriptions are non-refundable; cancel anytime — access runs to the end of the paid period.
+- [Vendor Badge](https://pmrfp.com/badge): An embeddable badge that links back to a company's PMRFP profile.
+
+## For property managers, owners & builders
+- [For Property Managers](https://pmrfp.com/for-property-managers): Post one RFP, reach relevant trades by category and region, and shortlist interested companies — free, with no commitment.
+- [RFP Opportunities](https://pmrfp.com/rfps): Browse open commercial property RFPs.
+- [RFP Templates](https://pmrfp.com/rfp-templates): Ready-to-use templates for common commercial property projects.
+
+## Browse & research
+- [Trade Categories](https://pmrfp.com/trades): All trade and service categories.
+- [Regions](https://pmrfp.com/regions): Commercial property vendors and RFPs by region.
+- [Cost Guides](https://pmrfp.com/cost-guides): General planning ranges for common commercial property work — not quotes.
+- [Solutions](https://pmrfp.com/for): Value propositions by audience (builders, investors, real estate, suppliers, tradesmen).
+- [Comparisons](https://pmrfp.com/vs): How PMRFP compares to other vendor and RFP options.
+- [Resource Hub](https://pmrfp.com/resources): Guides and articles.
+
+## Programs & legal
+- [Refer a Project](https://pmrfp.com/refer-a-project): Introduce a property project.
+- [Contact](https://pmrfp.com/contact): info@pmrfp.com
+- [Terms of Service](https://pmrfp.com/terms)
+- [Privacy Policy](https://pmrfp.com/privacy)
+- [Disclaimer](https://pmrfp.com/disclaimer)
+
+## Sitemaps
+- [XML Sitemap](https://pmrfp.com/sitemap.xml)
