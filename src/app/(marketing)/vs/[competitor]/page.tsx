@@ -140,7 +140,7 @@ export default async function VersusPage({
       </Container>
 
       <CTASection
-        title={`Ready to try the Canada-first commercial property network?`}
+        title={`Ready to try the commercial & residential property network?`}
         description={`Free directory listing, or go Pro for $${PRICING.proAnnual} CAD/year.`}
         primaryHref="/sign-up"
         primaryLabel="Join as a Trade Company"

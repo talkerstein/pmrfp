@@ -48,7 +48,7 @@ export default function SolutionsIndexPage() {
       </Container>
       <CTASection
         title="Find your place in the network"
-        description="Canada-first commercial property RFPs and vendor discovery."
+        description="Commercial & residential property RFPs and vendor discovery, by region."
         primaryHref="/sign-up"
         primaryLabel={`Join ${SITE.name}`}
         secondaryHref="/vs"

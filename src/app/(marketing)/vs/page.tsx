@@ -49,7 +49,7 @@ export default function VsIndexPage() {
       </Container>
       <CTASection
         title="See why trades choose PMRFP"
-        description="Canada-first, commercial-property-focused, $249 CAD/year flat."
+        description="Commercial & residential property focused, $249 CAD/year flat."
         primaryHref="/sign-up"
         primaryLabel="Join as a Trade Company"
         secondaryHref="/pricing"

@@ -108,7 +108,7 @@ export default async function TradeCategoryPage({
           <p className="mt-4 max-w-2xl text-muted-foreground">
             Whether you run a {lower} company looking for commercial property work, or you manage
             properties and need a qualified {lower} contractor, {SITE.name} connects both sides —
-            a Canada-first directory plus a focused feed of {lower} RFP opportunities.
+            a focused directory plus a feed of {lower} RFP opportunities, matched by region.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/sign-up" className={buttonVariants()}>List your {lower} company</Link>
