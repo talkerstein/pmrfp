@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PMRFP — Go Live in 3 Steps</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Lato:wght@400;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--indigo:#282B59;--indigo-2:#1c1f44;--teal:#91F2CF;--teal-deep:#57d4ab;--paper:#fafafb;--ink:#14152f;--muted:#6b6e8c;--line:#e5e6ee;--line-strong:#c9cbdb;--green:#16a34a;--amber:#d97706;--red:#dc2626;}
+  *{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{font-family:'Lato',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px 90px;}
+  header.hero{background:linear-gradient(135deg,var(--indigo),var(--indigo-2));color:#fff;padding:48px 22px 64px;position:relative;overflow:hidden;}
+  header.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:1px;background:linear-gradient(90deg,transparent,var(--teal) 50%,transparent);}
+  .hero-inner{max-width:880px;margin:0 auto;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin:0 0 12px;}
+  h1{font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(28px,5vw,42px);line-height:1.1;margin:0 0 10px;letter-spacing:-.02em;}
+  .lede{font-size:16px;color:rgba(255,255,255,.82);max-width:600px;margin:0 0 22px;}
+  .order{display:flex;gap:8px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .order span{padding:6px 11px;border:1px solid rgba(255,255,255,.2);border-radius:5px;color:rgba(255,255,255,.85);}
+  .order .now{background:var(--teal);color:var(--indigo);border:none;font-weight:700;}
+  .progress-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 22px;margin:-32px auto 36px;max-width:880px;box-shadow:0 8px 32px rgba(40,43,89,.08);display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .progress-card .label{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;}
+  .progress-card .count{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--muted);}
+  .bar{flex:1 1 240px;height:8px;background:var(--line);border-radius:999px;overflow:hidden;}
+  .bar>div{height:100%;width:0;background:linear-gradient(90deg,var(--teal-deep),var(--teal));transition:width .4s ease;}
+  .note{background:#fff;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:8px;padding:14px 16px;margin:0 0 32px;font-size:14px;color:var(--ink);}
+  .note b{color:var(--amber);}
+  .phase{margin:44px 0 0;border-top:1px solid var(--line);padding-top:30px;}
+  .phase-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px;}
+  .phase-num{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);background:rgba(145,242,207,.18);padding:4px 10px;border-radius:3px;}
+  .phase-title{font-family:'Poppins',sans-serif;font-size:24px;font-weight:700;color:var(--indigo);margin:0;letter-spacing:-.01em;}
+  .phase-sub{color:var(--muted);font-size:14.5px;margin:0 0 22px;max-width:620px;}
+  ul.tasks{list-style:none;padding:0;margin:0;}
+  li.task{display:flex;gap:13px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 17px;margin-bottom:9px;}
+  li.task.done{background:#f6faf8;border-color:#d2ecdd;}
+  li.task.done .task-title{color:var(--muted);text-decoration:line-through;}
+  li.task.done .task-body{opacity:.65;}
+  .checkbox{flex:0 0 22px;height:22px;margin-top:2px;border:1.5px solid var(--line-strong);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fff;}
+  .checkbox:hover{border-color:var(--indigo);}
+  .task.done .checkbox{background:var(--green);border-color:var(--green);}
+  .task.done .checkbox::after{content:"";width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px);}
+  .task-body{flex:1;min-width:0;}
+  .task-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:3px;}
+  .task-title{font-family:'Poppins',sans-serif;font-weight:600;font-size:15.5px;color:var(--ink);margin:0;}
+  .task-time{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);background:var(--paper);border:1px solid var(--line);padding:2px 7px;border-radius:3px;}
+  .task-desc{font-size:13.5px;color:var(--muted);margin:3px 0 0;}
+  .task-desc code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--paper);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--indigo);word-break:break-all;}
+  .task-desc a{color:var(--indigo);text-decoration:underline;text-decoration-color:var(--teal-deep);text-underline-offset:3px;}
+  .tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;margin-top:7px;}
+  .tag-block{color:var(--red);border:1px solid rgba(220,38,38,.3);}
+  .tag-do{color:var(--amber);border:1px solid rgba(217,119,6,.3);}
+  .verdict{margin-top:56px;background:var(--indigo);color:#fff;border-radius:14px;padding:28px 32px;position:relative;}
+  .verdict::before{content:"";position:absolute;top:0;left:32px;right:32px;height:1px;background:linear-gradient(90deg,transparent,var(--teal),transparent);}
+  .verdict h3{font-family:'Poppins',sans-serif;margin:0 0 10px;font-size:18px;color:var(--teal);}
+  .verdict p{margin:0 0 8px;color:rgba(255,255,255,.85);font-size:14.5px;}
+  .verdict code{background:rgba(255,255,255,.12);padding:1px 6px;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .reset-btn{margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.2);padding:8px 14px;border-radius:4px;cursor:pointer;}
+  .reset-btn:hover{color:#fff;border-color:var(--teal);}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">PMRFP · Go-Live · 2026-05-31</p>
+    <h1>Three steps to a real, paid, live pmrfp.com.</h1>
+    <p class="lede">Do them in this order. Email and Domain both touch DNS — knock out their records in one sitting so you only open the DNS panel once.</p>
+    <div class="order">
+      <span class="now">1 · EMAIL</span>
+      <span>2 · STRIPE LIVE</span>
+      <span>3 · DOMAIN LIVE</span>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <div class="progress-card">
+    <span class="label">Progress</span>
+    <div class="bar"><div id="bar-fill"></div></div>
+    <span class="count" id="progress-count">0 / 0</span>
+  </div>
+
+  <div class="note"><b>⚠ The one rule that breaks everything:</b> when you point the domain at Vercel (Step 3), <b>do NOT delete the MX records</b> you add in Step 1. A/CNAME records send the <i>website</i> to Vercel; MX records send the <i>email</i> to Google. They live side by side. Kill the MX and your new inbox goes dark.</div>
+
+  <!-- STEP 1 — EMAIL -->
+  <section class="phase">
+    <div class="phase-head"><span class="phase-num">Step 01</span><h2 class="phase-title">Free email — hi@pmrfp.com</h2></div>
+    <p class="phase-sub">Two jobs: a real inbox you can read/reply from (Google Workspace alias), and an app sending domain (Resend). Both free.</p>
+    <ul class="tasks" data-phase="1">
+      <li class="task"><div class="checkbox" data-id="e1"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Add pmrfp.com as a Workspace alias domain</h4><span class="task-time">10 min</span></div><p class="task-desc">Google <a href="https://admin.google.com">Admin console</a> → Account → <b>Domains → Manage domains → Add a domain</b> → choose <b>"User alias domain"</b> → enter <code>pmrfp.com</code>. This makes <code>hi@pmrfp.com</code> arrive in your existing <code>hi@talkerstein.ca</code> inbox — free, no extra seat.</p><span class="tag tag-do">DECIDED PATH</span></div></li>
+      <li class="task"><div class="checkbox" data-id="e2"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Verify ownership (TXT) + add Google MX records</h4><span class="task-time">5 min in DNS</span></div><p class="task-desc">Google gives you 1 verification <code>TXT</code> record and a set of <code>MX</code> records. Add them at your DNS host. <b>Write these MX values down — you must keep them after the Step-3 cutover.</b></p><span class="tag tag-block">DNS — do alongside Step 3</span></div></li>
+      <li class="task"><div class="checkbox" data-id="e3"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Turn on "Send mail as" hi@pmrfp.com in Gmail</h4><span class="task-time">3 min</span></div><p class="task-desc">Gmail → Settings → Accounts → <b>"Send mail as" → Add another email</b> → <code>hi@pmrfp.com</code>. Now you can reply to PMs/trades from the PMRFP address out of your normal inbox.</p></div></li>
+      <li class="task"><div class="checkbox" data-id="e4"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Verify pmrfp.com in Resend + add its DNS records</h4><span class="task-time">10 min</span></div><p class="task-desc"><a href="https://resend.com">resend.com</a> → Domains → Add <code>pmrfp.com</code> → add the <code>SPF/DKIM</code> (TXT + CNAME) records it shows. This is what lets the <b>app</b> send the 9 transactional emails. Follow <code>briefs/resend-setup.md</code>.</p><span class="tag tag-do">UNBLOCKS APP EMAIL</span></div></li>
+      <li class="task"><div class="checkbox" data-id="e5"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Paste Resend env vars into Vercel</h4><span class="task-time">3 min</span></div><p class="task-desc">Vercel → pmrfp project → Settings → Environment Variables (Production): <code>RESEND_API_KEY=re_…</code> and <code>RESEND_FROM="PMRFP &lt;hi@pmrfp.com&gt;"</code>. Redeploy. Then tell me — I'll fire the handoff email that's queued.</p></div></li>
+    </ul>
+  </section>
+
+  <!-- STEP 2 — STRIPE -->
+  <section class="phase">
+    <div class="phase-head"><span class="phase-num">Step 02</span><h2 class="phase-title">Flip Stripe to LIVE</h2></div>
+    <p class="phase-sub">Independent of DNS — you can do this right now. You're recreating the 3 prices in live mode and swapping the keys in Vercel.</p>
+    <ul class="tasks" data-phase="2">
+      <li class="task"><div class="checkbox" data-id="s1"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Activate the PMRFP Stripe account</h4><span class="task-time">15 min</span></div><p class="task-desc">In the <b>PMRFP</b> Stripe account (the separate one, not TCG): toggle to <b>Live mode</b> → complete activation: business details, <b>bank account</b> for payouts, statement descriptor. Stripe also asks for your <b>Terms / Privacy / Refund URLs</b> — have those pages live first.</p><span class="tag tag-block">REVENUE GATE</span></div></li>
+      <li class="task"><div class="checkbox" data-id="s2"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Recreate the 3 prices in Live mode</h4><span class="task-time">10 min</span></div><p class="task-desc">Live-mode product IDs differ from test. Create: <b>Trade Pro $249/yr</b>, <b>Trade Pro $29/mo</b>, <b>Featured $599/yr</b> (all CAD). Copy each new <code>price_…</code> ID.</p></div></li>
+      <li class="task"><div class="checkbox" data-id="s3"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Create the Live webhook endpoint</h4><span class="task-time">5 min</span></div><p class="task-desc">Stripe → Developers → Webhooks → Add endpoint → <code>https://pmrfp.com/api/stripe/webhook</code> (use <code>pmrfp.vercel.app</code> if the domain isn't cut over yet, then update after Step 3). Select exactly these 5 events: <code>checkout.session.completed</code>, <code>customer.subscription.created</code>, <code>customer.subscription.updated</code>, <code>customer.subscription.deleted</code>, <code>invoice.payment_failed</code>. Copy the <code>whsec_…</code> signing secret.</p></div></li>
+      <li class="task"><div class="checkbox" data-id="s4"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Swap the Live keys + price IDs in Vercel</h4><span class="task-time">5 min</span></div><p class="task-desc">Vercel Production env — these EXACT names (verified against the code): <code>STRIPE_SECRET_KEY=sk_live_…</code>, <code>STRIPE_WEBHOOK_SECRET=whsec_…</code>, <code>STRIPE_PRICE_TRADE_PRO_ANNUAL=price_…</code>, <code>STRIPE_PRICE_TRADE_PRO_MONTHLY=price_…</code>, <code>STRIPE_PRICE_FEATURED_ANNUAL=price_…</code>. <b>No publishable key needed</b> (checkout is server-side redirect). Redeploy.</p></div></li>
+      <li class="task"><div class="checkbox" data-id="s5"></div><div class="task-body"><div class="task-head"><h4 class="task-title">$1 live smoke test → refund</h4><span class="task-time">5 min</span></div><p class="task-desc">Real card, sign up as a trade, pay, confirm: directory listing goes live + webhook promotes the org to <b>approved</b> + GHL contact appears. Then refund the charge in Stripe.</p><span class="tag tag-do">PROVE IT</span></div></li>
+    </ul>
+  </section>
+
+  <!-- STEP 3 — DOMAIN -->
+  <section class="phase">
+    <div class="phase-head"><span class="phase-num">Step 03</span><h2 class="phase-title">Make pmrfp.com live</h2></div>
+    <p class="phase-sub">The last, public, semi-irreversible move. Repoint DNS to Vercel — don't delete anything, archive the old WordPress first.</p>
+    <ul class="tasks" data-phase="3">
+      <li class="task"><div class="checkbox" data-id="d1"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Export + archive the old WordPress site</h4><span class="task-time">10 min</span></div><p class="task-desc">Download a full export/backup of the current pmrfp.com WordPress. Keep it 30 days. This is your undo button — you're repointing DNS, not deleting the old host.</p><span class="tag tag-do">SAFETY NET</span></div></li>
+      <li class="task"><div class="checkbox" data-id="d2"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Add pmrfp.com + www in the Vercel project</h4><span class="task-time">5 min</span></div><p class="task-desc">Vercel → pmrfp project → Settings → Domains → Add <code>pmrfp.com</code> and <code>www.pmrfp.com</code>. Vercel shows you the <b>exact</b> A record (apex) and CNAME (www) to set — use those, not values from memory.</p></div></li>
+      <li class="task"><div class="checkbox" data-id="d3"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Set the A/CNAME at your DNS host — keep MX intact</h4><span class="task-time">10 min + propagation</span></div><p class="task-desc">Point apex <code>@</code> (A) and <code>www</code> (CNAME) at Vercel. <b>Leave the Google MX + Resend TXT/CNAME records from Step 1 untouched.</b> Propagation: minutes to a couple hours.</p><span class="tag tag-block">THE BIG SWITCH</span></div></li>
+      <li class="task"><div class="checkbox" data-id="d4"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Set NEXT_PUBLIC_SITE_URL + Supabase Auth URLs to pmrfp.com</h4><span class="task-time">5 min</span></div><p class="task-desc">Vercel env: <code>NEXT_PUBLIC_SITE_URL=https://pmrfp.com</code> (redeploy). Supabase → Auth → URL Configuration → Site URL <code>https://pmrfp.com</code> + redirect <code>https://pmrfp.com/**</code>. Otherwise signup confirmation links point at the old URL.</p></div></li>
+      <li class="task"><div class="checkbox" data-id="d5"></div><div class="task-body"><div class="task-head"><h4 class="task-title">Point Stripe webhook + Resend FROM at the real domain</h4><span class="task-time">5 min</span></div><p class="task-desc">Update the Stripe Live webhook URL to <code>https://pmrfp.com/api/stripe/webhook</code> (if you used vercel.app in Step 2). Confirm Resend FROM is <code>hi@pmrfp.com</code>.</p></div></li>
+      <li class="task"><div class="checkbox" data-id="d6"></div><div class="task-body"><div class="task-head"><h4 class="task-title">301 redirects + resubmit sitemap</h4><span class="task-time">15 min</span></div><p class="task-desc">Map any old WP URLs → new pages (the 7 RFPs, /about, /contact). Verify pmrfp.com in <b>Search Console</b> and submit <code>/sitemap.xml</code>. Protects rankings + kills 404s.</p></div></li>
+    </ul>
+  </section>
+
+  <div class="verdict">
+    <h3>The sequence, one breath</h3>
+    <p><b>Step 1 (Email)</b> and <b>Step 3 (Domain)</b> share one DNS sitting — add Google MX + Resend records <i>and</i> the Vercel A/CNAME at the same time. <b>Step 2 (Stripe)</b> you can do right now, in parallel, no DNS needed.</p>
+    <p>The only way to break it: deleting MX records during the domain switch. Don't. <code>A/CNAME = website</code>, <code>MX = email</code>. They coexist.</p>
+    <p>When Resend env vars land in Vercel (task e5), ping me — the handoff email is queued and fires instantly.</p>
+    <button class="reset-btn" id="reset">↻ Reset checkboxes</button>
+  </div>
+</div>
+<script>
+  const KEY='pmrfp-golive-3steps';
+  const state=JSON.parse(localStorage.getItem(KEY)||'{}');
+  const boxes=document.querySelectorAll('.checkbox');
+  function render(){let d=0;boxes.forEach(b=>{const i=b.dataset.id,li=b.closest('.task');if(state[i]){li.classList.add('done');d++}else li.classList.remove('done')});const t=boxes.length,p=t?Math.round(d/t*100):0;document.getElementById('bar-fill').style.width=p+'%';document.getElementById('progress-count').textContent=d+' / '+t+' · '+p+'%';}
+  boxes.forEach(b=>b.addEventListener('click',()=>{const i=b.dataset.id;state[i]=!state[i];localStorage.setItem(KEY,JSON.stringify(state));render();}));
+  document.getElementById('reset').addEventListener('click',()=>{if(confirm('Reset all?')){localStorage.removeItem(KEY);for(const k in state)delete state[k];render();}});
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PMRFP — Hostinger DNS Checklist (email + go-live)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Lato:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--indigo:#282B59;--indigo-2:#1c1f44;--teal:#91F2CF;--teal-deep:#57d4ab;--teal-ink:#0C7A5A;
+    --paper:#fafafb;--ink:#14152f;--muted:#6b6e8c;--line:#e5e6ee;--amber:#d97706;--red:#dc2626;--green:#16a34a;}
+  *{box-sizing:border-box;}html,body{margin:0;}
+  body{font-family:'Lato',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;}
+  .wrap{max-width:860px;margin:0 auto;padding:0 22px 80px;}
+  header{background:linear-gradient(135deg,var(--indigo),var(--indigo-2));color:#fff;padding:38px 22px 44px;position:relative;}
+  header::after{content:"";position:absolute;inset:auto 0 0 0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent);}
+  .hin{max-width:860px;margin:0 auto;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin:0 0 10px;}
+  h1{font-family:'Poppins',sans-serif;font-weight:700;font-size:clamp(24px,5vw,34px);line-height:1.12;margin:0 0 8px;}
+  .sub{color:rgba(255,255,255,.82);font-size:15.5px;margin:0;max-width:64ch;}
+  h2{font-family:'Poppins',sans-serif;font-size:20px;color:var(--indigo);margin:38px 0 4px;display:flex;align-items:center;gap:10px;}
+  .num{width:28px;height:28px;border-radius:8px;background:var(--teal);color:var(--indigo);font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;}
+  .lead{color:var(--muted);margin:4px 0 14px;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:#f3f4f9;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--teal-ink);}
+  tr:last-child td{border-bottom:none;}
+  code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:#fff;border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--indigo);word-break:break-all;}
+  .copy{display:block;font-family:'IBM Plex Mono',monospace;font-size:13px;background:#0f1020;color:#d7f7ec;border-radius:8px;padding:12px 14px;margin:8px 0;word-break:break-all;}
+  .box{border-radius:12px;padding:14px 16px;margin:16px 0;font-size:14.5px;}
+  .box.warn{background:#fff6f6;border:1px solid #f3c9c9;}.box.warn b{color:var(--red);}
+  .box.ok{background:#f2fbf6;border:1px solid #cfe9da;}.box.ok b{color:var(--green);}
+  .box.info{background:#fff;border:1px solid var(--line);}.box b{color:var(--indigo);}
+  .fill{color:var(--amber);font-style:italic;}
+  small{color:var(--muted);}
+</style>
+</head>
+<body>
+<header><div class="hin">
+  <p class="eyebrow">PMRFP · DNS lives at Hostinger</p>
+  <h1>Hostinger DNS — email setup checklist</h1>
+  <p class="sub">All records go in Hostinger → hPanel → Domains → <b>DNS / Nameservers → DNS Zone</b>. (Not GoDaddy — your nameservers point to Hostinger.) Do these in one sitting.</p>
+</div></header>
+
+<div class="wrap">
+
+  <h2><span class="num">1</span> Generate Resend's records</h2>
+  <p class="lead">In <b>Resend → Domains → Add Domain → <code>pmrfp.com</code></b>. Resend then shows you ~4–6 records with values unique to your domain. Keep that page open — you'll copy each into Hostinger in step 2.</p>
+  <div class="box info">Resend usually puts these on a <code>send.pmrfp.com</code> subdomain — which means <b>they won't clash with your Hostinger inbox.</b> Just copy them exactly as shown.</div>
+
+  <h2><span class="num">2</span> Paste Resend's records into Hostinger</h2>
+  <p class="lead">For each row Resend shows you, click <b>"Add Record"</b> in Hostinger's DNS Zone and map it like this:</p>
+  <table>
+    <tr><th>Resend shows</th><th>Hostinger: Type</th><th>Hostinger: Name/Host</th><th>Hostinger: Value</th></tr>
+    <tr><td>SPF (TXT)</td><td>TXT</td><td><code>send</code> <small>(the part before pmrfp.com)</small></td><td><span class="fill">paste Resend's value</span> <small>e.g. v=spf1 include:amazonses.com ~all</small></td></tr>
+    <tr><td>DKIM (×1–3)</td><td>CNAME <small>(or TXT — match what Resend says)</small></td><td><span class="fill">the host Resend gives</span> <small>e.g. resend._domainkey</small></td><td><span class="fill">paste Resend's value</span></td></tr>
+    <tr><td>MX (for bounces)</td><td>MX</td><td><code>send</code></td><td><span class="fill">feedback-smtp…amazonses.com</span> · priority <code>10</code></td></tr>
+  </table>
+  <div class="box warn"><b>Copy the values verbatim from YOUR Resend page</b> — DKIM keys are unique per domain, so I can't pre-fill them. Don't add a trailing dot, and leave TTL on Auto.</div>
+
+  <h2><span class="num">3</span> Add DMARC (this is the anti-spam / anti-spoof record)</h2>
+  <p class="lead">This one I can give you verbatim. Add it once:</p>
+  <table>
+    <tr><th>Type</th><th>Name/Host</th><th>Value</th></tr>
+    <tr><td>TXT</td><td><code>_dmarc</code></td><td><code>v=DMARC1; p=none; rua=mailto:info@pmrfp.com; fo=1</code></td></tr>
+  </table>
+  <div class="copy">v=DMARC1; p=none; rua=mailto:info@pmrfp.com; fo=1</div>
+  <div class="box ok"><b>Start with <code>p=none</code></b> (monitor mode — safe, won't block anything). Once Resend is verified and passing for ~1 week, change <code>p=none</code> → <code>p=quarantine</code>, then later → <code>p=reject</code>. That's what keeps spammers from forging @pmrfp.com.</div>
+
+  <h2><span class="num">4</span> Do NOT touch these</h2>
+  <table>
+    <tr><th>Record</th><th>Current value</th><th>Why keep it</th></tr>
+    <tr><td>MX (root)</td><td><code>mx1.hostinger.com</code> · <code>mx2.hostinger.com</code></td><td>This is your <b>info@pmrfp.com inbox.</b> Deleting it = no email received.</td></tr>
+    <tr><td>Existing root SPF</td><td><code>…include:_spf.mail.hostinger.com…</code></td><td>Hostinger's inbox SPF. Resend's SPF is on the <code>send.</code> subdomain, so leave this one alone.</td></tr>
+  </table>
+  <div class="box warn"><b>One SPF rule:</b> you can only have ONE root TXT starting with <code>v=spf1</code>. Resend's goes on <code>send.</code> (separate), so there's no conflict. If Resend ever asks you to edit the <i>root</i> SPF, merge — don't add a second one.</div>
+
+  <h2><span class="num">5</span> Later — the website cutover (separate step)</h2>
+  <p class="lead">This is the <b>go-live</b> move, do it after the app is deployed + smoke-tested on Vercel. Same Hostinger DNS Zone:</p>
+  <table>
+    <tr><th>Record</th><th>Name/Host</th><th>Value (Vercel gives you the exact one)</th></tr>
+    <tr><td>A</td><td><code>@</code> <small>(root)</small></td><td><span class="fill">Vercel's IP</span> <small>(remove the old Hostinger A/AAAA)</small></td></tr>
+    <tr><td>CNAME</td><td><code>www</code></td><td><span class="fill">cname.vercel-dns.com</span></td></tr>
+  </table>
+  <div class="box info"><b>Keep email + website separate in your head:</b> A/CNAME = website (→ Vercel). MX = email (→ Hostinger). TXT = auth (SPF/DKIM/DMARC). They all live together peacefully.</div>
+
+  <div class="box ok"><b>When you're done with steps 1–4:</b> wait for Resend to show <b>Verified</b> (green), then add <code>RESEND_API_KEY</code> + <code>RESEND_FROM_EMAIL=PMRFP &lt;info@pmrfp.com&gt;</code> in Vercel, push the commits, and I'll fire a real test email to confirm it lands in <code>info@</code>.</div>
+
+</div>
+</body>
+</html>
