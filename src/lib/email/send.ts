@@ -46,7 +46,7 @@ function layout(title: string, bodyHtml: string, footnote?: string): string {
         <a href="${BASE}/refer" style="color:#282B59;font-weight:600;text-decoration:underline">Refer them — earn up to $75</a>
         when they list on PMRFP.
       </p>
-      <p style="margin:0">${SITE.name} · ${SITE.country}-first commercial property RFP network · ${BASE}</p>
+      <p style="margin:0">${SITE.name} · Commercial &amp; residential property RFPs, by region · ${BASE}</p>
     </div>
   </div>`;
 }
@@ -78,6 +78,36 @@ export async function sendSubscriptionActivatedEmail(to: string): Promise<void> 
       `<p>Your annual Trade Pro membership is now active. You can view full RFP opportunities, save them, and express interest.</p>
        <p>${btn(`${BASE}/dashboard/rfps`, "View RFP opportunities")}</p>`,
       COPY.disclaimer,
+    ),
+  );
+}
+
+/**
+ * Notify the admin (you) the instant a paid membership activates — the
+ * "you made a sale" email. Fires from the Stripe checkout.session.completed
+ * webhook. amountFormatted is the actual amount charged (after any coupon),
+ * so a $1 RISHON founding-code sale shows $1 — you can spot promo usage.
+ */
+export async function sendAdminNewSale(params: {
+  company?: string | null;
+  email: string;
+  plan: string;
+  interval: string;
+  amountFormatted: string;
+  couponNote?: string;
+}): Promise<void> {
+  await send(
+    ADMIN,
+    `💰 New PMRFP sale — ${params.plan} · ${params.amountFormatted}`,
+    layout(
+      "You made a sale 🎉",
+      `<ul>
+        ${params.company ? `<li><strong>Company:</strong> ${params.company}</li>` : ""}
+        <li><strong>Customer:</strong> ${params.email}</li>
+        <li><strong>Plan:</strong> ${params.plan} · ${params.interval}</li>
+        <li><strong>Amount paid:</strong> ${params.amountFormatted}${params.couponNote ? ` <span style="color:#0C7A5A">(${params.couponNote})</span>` : ""}</li>
+       </ul>
+       <p>${btn(`${BASE}/admin/subscriptions`, "View in admin")}</p>`,
     ),
   );
 }

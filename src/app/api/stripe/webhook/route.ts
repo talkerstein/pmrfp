@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe, syncSubscriptionFromStripe } from "@/lib/stripe/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
-import { sendSubscriptionActivatedEmail } from "@/lib/email/send";
+import { sendSubscriptionActivatedEmail, sendAdminNewSale } from "@/lib/email/send";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 
 export async function POST(request: Request) {
@@ -51,6 +51,28 @@ export async function POST(request: Request) {
               .update({ profile_status: "approved" })
               .eq("id", approveOrgId)
               .in("profile_status", ["pending_review", "draft"]);
+          }
+
+          // Notify the admin (you) the instant a sale lands — fires even if
+          // the customer-facing email is missing an address.
+          {
+            const planLabel = sub.metadata?.plan === "featured" ? "Featured" : "Trade Pro";
+            const intervalLabel =
+              sub.items.data[0]?.price.recurring?.interval === "year" ? "annual" : "monthly";
+            const cents = cs.amount_total;
+            const currency = (cs.currency || "cad").toUpperCase();
+            const amountFormatted =
+              typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—";
+            const discount = cs.total_details?.amount_discount ?? 0;
+            const couponNote = discount > 0 ? "promo/coupon applied" : undefined;
+            await sendAdminNewSale({
+              company: cs.customer_details?.name ?? null,
+              email: cs.customer_details?.email ?? "(no email on file)",
+              plan: planLabel,
+              interval: intervalLabel,
+              amountFormatted,
+              couponNote,
+            });
           }
 
           if (cs.customer_details?.email) {
