@@ -63,3 +63,10 @@ briefs/outreach/pm-list-work/
 briefs/outreach/pm-list-ontario.csv
 briefs/outreach/pm-list-ontario-tier-A.csv
 briefs/outreach/pm-list-ontario.xlsx
+
+# outreach runtime + prospect PII — LOCAL ONLY, never commit
+briefs/outreach/*.csv
+briefs/HANDOFF-*.md
+briefs/outbound-queue/*
+!briefs/outbound-queue/EXAMPLE.json
+briefs/replies/

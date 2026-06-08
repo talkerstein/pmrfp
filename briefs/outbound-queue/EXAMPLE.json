@@ -1,0 +1,22 @@
+[
+  {
+    "to": "test@example.com",
+    "subject": "Bid CityTowers' projects for free",
+    "body": "Hi George,\n\n40 condo corporations. 5,450 units. That is a serious pipeline of work going out to bid.\n\nI'm Rishon, founder of PMRFP (pmrfp.com). Post your building project RFPs for free, and licensed, vetted trades come to you. No cost to property managers, ever.\n\nWant in? Reply here, or post your next project at pmrfp.com.",
+    "status": "queued",
+    "sendAfter": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "to": "killed@example.com",
+    "subject": "This one is killed",
+    "body": "Should NOT send.",
+    "status": "killed"
+  },
+  {
+    "to": "future@example.com",
+    "subject": "Held by 24h window",
+    "body": "Should NOT send yet.",
+    "status": "queued",
+    "sendAfter": "2099-01-01T00:00:00.000Z"
+  }
+]
