@@ -70,9 +70,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Google Analytics 4 — dormant until NEXT_PUBLIC_GA_ID (G-XXXXXXX) is set in
-  // Vercel env. Runs alongside Vercel Analytics (which we keep for custom events).
-  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  // Google Analytics 4. The measurement ID is public (rendered in page HTML),
+  // so it's baked in as the production default; an env override still wins.
+  // Only fires in production so preview/dev traffic never pollutes GA data.
+  // Runs alongside Vercel Analytics (kept for server-side custom events).
+  const gaId =
+    process.env.NEXT_PUBLIC_GA_ID ??
+    (process.env.VERCEL_ENV === "production" ? "G-FEC0QRSEFE" : undefined);
   return (
     <html
       lang="en"
