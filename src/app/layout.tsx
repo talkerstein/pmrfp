@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Lato, IBM_Plex_Mono } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "@/components/ui/sonner";
@@ -58,11 +59,20 @@ export const metadata: Metadata = {
     description: SITE.description,
   },
   robots: { index: true, follow: true },
+  // Google Search Console (URL-prefix property) verification — renders
+  // <meta name="google-site-verification"> only when the token env is set.
+  // (Domain-property verification via DNS TXT is the alternative and needs no code.)
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Google Analytics 4 — dormant until NEXT_PUBLIC_GA_ID (G-XXXXXXX) is set in
+  // Vercel env. Runs alongside Vercel Analytics (which we keep for custom events).
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
   return (
     <html
       lang="en"
@@ -75,6 +85,17 @@ export default function RootLayout({
         <Toaster />
         <Analytics />
         <SpeedInsights />
+        {gaId ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
+            </Script>
+          </>
+        ) : null}
       </body>
     </html>
   );
