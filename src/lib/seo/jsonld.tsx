@@ -45,6 +45,7 @@ export function localBusinessSchema(v: {
   province: string | null;
   shortDescription: string | null;
   categories: string[];
+  logoUrl?: string | null;
 }) {
   return {
     "@context": "https://schema.org",
@@ -52,6 +53,8 @@ export function localBusinessSchema(v: {
     name: v.name,
     url: `${BASE}/directory/${v.slug}`,
     description: v.shortDescription ?? undefined,
+    image: v.logoUrl ?? undefined,
+    logo: v.logoUrl ?? undefined,
     address: {
       "@type": "PostalAddress",
       addressLocality: v.city ?? undefined,

@@ -9,6 +9,11 @@ export interface VendorListItem {
   logoUrl: string | null;
   verified: boolean;
   featured: boolean;
+  /** Trust signals surfaced on cards. Optional on the base type so other
+   *  constructors need not set them; the directory data layer always does. */
+  yearsInBusiness?: number | null;
+  insuranceStatus?: string | null;
+  wsibStatus?: string | null;
   categories: string[]; // display names
   regions: string[]; // display names
 }

@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
 import { getVendor, listVendors } from "@/lib/data/directory";
+import { cn } from "@/lib/utils";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -29,9 +30,17 @@ export async function generateMetadata({
   const { slug } = await params;
   const v = await getVendor(slug);
   if (!v) return { title: "Vendor not found" };
+  const title = `${v.name} — ${[v.city, v.province].filter(Boolean).join(", ")}`;
+  const description =
+    v.shortDescription ?? `${v.name} on the ${SITE.name} commercial property vendor directory.`;
+  const url = `${SITE.url.replace(/\/$/, "")}/directory/${v.slug}`;
   return {
-    title: `${v.name} — ${[v.city, v.province].filter(Boolean).join(", ")}`,
-    description: v.shortDescription ?? `${v.name} on the ${SITE.name} commercial property vendor directory.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    // The colocated opengraph-image.tsx supplies the og:image / twitter:image.
+    openGraph: { type: "profile", title, description, url },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -49,7 +58,7 @@ export default async function VendorProfilePage({
 
   return (
     <Container className="py-10">
-      <JsonLd data={localBusinessSchema({ name: v.name, slug: v.slug, city: v.city, province: v.province, shortDescription: v.shortDescription, categories: v.categories })} />
+      <JsonLd data={localBusinessSchema({ name: v.name, slug: v.slug, city: v.city, province: v.province, shortDescription: v.shortDescription, categories: v.categories, logoUrl: v.logoUrl })} />
       <JsonLd data={breadcrumbSchema([
         { name: "Home", path: "/" },
         { name: "Directory", path: "/directory" },
@@ -62,7 +71,12 @@ export default async function VendorProfilePage({
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <div className="flex items-center gap-4">
-            <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-lg bg-indigo text-xl font-bold text-white">
+            <span
+              className={cn(
+                "relative flex size-16 items-center justify-center overflow-hidden rounded-lg text-xl font-bold",
+                v.logoUrl ? "border border-border bg-white" : "bg-indigo text-white",
+              )}
+            >
               {v.logoUrl ? (
                 <Image
                   src={v.logoUrl}
@@ -79,7 +93,14 @@ export default async function VendorProfilePage({
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 {v.name}
-                {v.verified && <BadgeCheck className="size-5 text-success" />}
+                {v.verified && (
+                  <span
+                    title="Verified by PMRFP. We confirm licensing, insurance, and a real business presence before listing."
+                    className="inline-flex"
+                  >
+                    <BadgeCheck className="size-5 text-success" aria-label="Verified by PMRFP" />
+                  </span>
+                )}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {[v.city, v.province].filter(Boolean).join(", ")}
@@ -157,6 +178,15 @@ export default async function VendorProfilePage({
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
+          <Link
+            href={`/pm-dashboard/rfps/new?invite=${v.slug}`}
+            className={buttonVariants({ className: "mb-2 w-full" })}
+          >
+            Invite to bid
+          </Link>
+          <p className="mb-4 text-center text-xs text-muted-foreground">
+            Post a project and {v.name} comes to you with a bid. Free for property managers.
+          </p>
           <div className="rounded-xl border border-border bg-card p-6">
             {showContact ? (
               <>

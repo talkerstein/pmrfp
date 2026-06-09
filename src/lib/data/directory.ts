@@ -19,6 +19,9 @@ function demoToListItem(v: DemoVendor): VendorListItem {
     logoUrl: null,
     verified: v.verified,
     featured: v.featured,
+    yearsInBusiness: v.yearsInBusiness,
+    insuranceStatus: v.insuranceStatus,
+    wsibStatus: v.wsibStatus,
     categories: v.categories.map(categoryName),
     regions: v.regions.map(regionName),
   };
@@ -134,6 +137,9 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     logoUrl: r.logo_url,
     verified: r.verified,
     featured: r.featured,
+    yearsInBusiness: r.years_in_business,
+    insuranceStatus: r.insurance_status,
+    wsibStatus: r.wsib_status,
     categories: r.organization_categories.map((c) => c.trade_categories?.name).filter(Boolean) as string[],
     regions: r.organization_regions.map((c) => c.regions?.name).filter(Boolean) as string[],
   }));

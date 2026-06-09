@@ -21,12 +21,57 @@ import { cn } from "@/lib/utils";
 
 const MAX_SIZE_BYTES = 2 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
+const TARGET = 250; // every stored raster logo is normalized to TARGET×TARGET
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Could not read that image file."));
+    img.src = src;
+  });
+}
+
+/**
+ * Fit any raster logo onto a transparent 250×250 canvas (contain, centered) and
+ * export WebP, so every stored logo renders uniformly in the directory grid.
+ * SVGs are vector and pass through untouched.
+ */
+async function normalizeLogo(
+  file: File,
+): Promise<{ blob: Blob; ext: string; contentType: string }> {
+  if (file.type === "image/svg+xml") {
+    return { blob: file, ext: "svg", contentType: "image/svg+xml" };
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(url);
+    const canvas = document.createElement("canvas");
+    canvas.width = TARGET;
+    canvas.height = TARGET;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return { blob: file, ext: "png", contentType: file.type || "image/png" };
+    const scale = Math.min(TARGET / img.width, TARGET / img.height);
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    ctx.clearRect(0, 0, TARGET, TARGET);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, Math.round((TARGET - w) / 2), Math.round((TARGET - h) / 2), w, h);
+    const blob = await new Promise<Blob | null>((res) =>
+      canvas.toBlob((b) => res(b), "image/webp", 0.92),
+    );
+    if (!blob) return { blob: file, ext: "png", contentType: file.type || "image/png" };
+    return { blob, ext: "webp", contentType: "image/webp" };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export function LogoUploader({
   organizationId,
   initialLogoUrl,
   label = "Company logo",
-  helpText = "Square works best (e.g. 512×512). JPEG, PNG, WebP, or SVG. Max 2 MB. Replaces the existing logo.",
+  helpText = "Upload any size, we fit it to a clean 250×250 tile. JPEG, PNG, WebP, or SVG. Replaces the existing logo.",
 }: {
   organizationId: string | null;
   initialLogoUrl?: string | null;
@@ -60,21 +105,25 @@ export function LogoUploader({
     }
 
     startTransition(async () => {
-      const supabase = createBrowserClient();
-      const ext = (f.name.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
-      const id = crypto.randomUUID();
-      const path = `${organizationId}/logo-${id}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("logos").upload(path, f, {
-        contentType: f.type,
-        upsert: false,
-        cacheControl: "31536000",
-      });
-      if (upErr) {
-        setError(`Upload failed: ${upErr.message}`);
-        return;
+      try {
+        const { blob, ext, contentType } = await normalizeLogo(f);
+        const supabase = createBrowserClient();
+        const id = crypto.randomUUID();
+        const path = `${organizationId}/logo-${id}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("logos").upload(path, blob, {
+          contentType,
+          upsert: false,
+          cacheControl: "31536000",
+        });
+        if (upErr) {
+          setError(`Upload failed: ${upErr.message}`);
+          return;
+        }
+        const { data: pub } = supabase.storage.from("logos").getPublicUrl(path);
+        setLogoUrl(pub.publicUrl);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not process that image.");
       }
-      const { data: pub } = supabase.storage.from("logos").getPublicUrl(path);
-      setLogoUrl(pub.publicUrl);
     });
   }
 
@@ -107,7 +156,7 @@ export function LogoUploader({
       )}
 
       <div className="flex items-start gap-4">
-        <div className="relative size-32 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary/40">
+        <div className="relative size-32 shrink-0 overflow-hidden rounded-lg border border-border bg-white">
           {logoUrl ? (
             <Image
               src={logoUrl}
