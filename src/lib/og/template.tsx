@@ -13,9 +13,27 @@
  */
 
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = "image/png" as const;
+
+/** Real brand wordmark (public/brand/logo-wordmark.svg), recolored white for
+ *  the indigo card and inlined as a data URI (Satori supports <img> SVGs).
+ *  Lazy + cached so cold starts stay fast; falls back to text if unreadable. */
+let wordmarkUri: string | null | undefined;
+function getWordmark(): string | null {
+  if (wordmarkUri !== undefined) return wordmarkUri;
+  try {
+    const svg = readFileSync(join(process.cwd(), "public/brand/logo-wordmark.svg"), "utf8")
+      .replace(/#282b59/gi, "#FFFFFF");
+    wordmarkUri = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  } catch {
+    wordmarkUri = null;
+  }
+  return wordmarkUri;
+}
 
 const COLORS = {
   indigo: "#282B59",
@@ -114,23 +132,10 @@ export function renderOgImage({ eyebrow, title, subline, caption }: OGTemplatePr
             fontWeight: 600,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                background: COLORS.teal,
-                color: COLORS.indigo,
-                fontWeight: 800,
-                fontSize: 28,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 12,
-              }}
-            >
-              P
-            </div>
+          {getWordmark() ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={getWordmark()!} height={42} alt="PMRFP" />
+          ) : (
             <div
               style={{
                 color: COLORS.paper,
@@ -141,7 +146,7 @@ export function renderOgImage({ eyebrow, title, subline, caption }: OGTemplatePr
             >
               PMRFP.com
             </div>
-          </div>
+          )}
           {caption && (
             <div
               style={{
