@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LayoutGrid } from "lucide-react";
-import { Container, Eyebrow } from "@/components/container";
+import { LayoutGrid, ArrowRight } from "lucide-react";
+import { Container } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { FilterBar } from "@/components/public/filter-bar";
-import { DirectoryCard } from "@/components/public/directory-card";
+import { FeaturedVendorCard, FeaturedUpsellSlot } from "@/components/public/featured-vendor-card";
+import { VendorRow, VendorRowHeader } from "@/components/public/vendor-row";
 import { EmptyState } from "@/components/public/empty-state";
 import { FoundingRegionNotice } from "@/components/public/founding-region-notice";
 import { JsonLd, itemListSchema } from "@/lib/seo/jsonld";
@@ -12,7 +13,6 @@ import { listVendors } from "@/lib/data/directory";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { getRegionLiquidityBySlug } from "@/lib/data/liquidity";
 import { cn } from "@/lib/utils";
-import type { VendorListItem } from "@/lib/data/types";
 
 export const metadata: Metadata = {
   title: "Vendor Directory — Commercial Property Trades",
@@ -40,7 +40,8 @@ export default async function DirectoryPage({
       q: sp.q,
       sort,
     }),
-    // Unfiltered pool — powers the category chip counts even while filtered.
+    // Unfiltered pool — hero stats, the featured marquee, and chip counts stay
+    // stable while the ledger filters.
     hasFilters ? listVendors({}) : Promise.resolve(null),
     getCategories(),
     getRegions(),
@@ -52,32 +53,19 @@ export default async function DirectoryPage({
   const regionLiq = activeRegion ? await getRegionLiquidityBySlug(activeRegion.slug) : null;
   const showFounding = !!activeRegion && !!regionLiq && regionLiq.tier !== "active";
 
-  const verifiedCount = vendors.filter((v) => v.verified).length;
+  // Featured marquee always shows the full featured set — "featured partners
+  // appear above every search on this page" is the product promise being sold.
+  const featured = pool.filter((v) => v.featured).slice(0, 3);
+  const featuredSlugs = new Set(featured.map((v) => v.slug));
+  const rows = vendors.filter((v) => !featuredSlugs.has(v.slug));
 
-  // Categories that actually have vendors, with counts (chips + honest stat).
+  // Categories that actually have vendors, with counts (chips).
   const countByName = new Map<string, number>();
   for (const v of pool) for (const c of v.categories) countByName.set(c, (countByName.get(c) ?? 0) + 1);
   const activeCats = categories
     .map((c) => ({ ...c, count: countByName.get(c.name) ?? 0 }))
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count);
-
-  // Default (unfiltered) view groups vendors under their primary category so a
-  // young directory reads as organized coverage, not a random pile of cards.
-  const grouped: { name: string; slug: string | null; vendors: VendorListItem[] }[] = [];
-  if (!hasFilters) {
-    const byPrimary = new Map<string, VendorListItem[]>();
-    for (const v of vendors) {
-      const key = v.categories[0] ?? "Other services";
-      byPrimary.set(key, [...(byPrimary.get(key) ?? []), v]);
-    }
-    for (const [name, vs] of byPrimary) {
-      grouped.push({ name, slug: categories.find((c) => c.name === name)?.slug ?? null, vendors: vs });
-    }
-    grouped.sort((a, b) =>
-      a.name === "Other services" ? 1 : b.name === "Other services" ? -1 : b.vendors.length - a.vendors.length,
-    );
-  }
 
   return (
     <>
@@ -88,50 +76,80 @@ export default async function DirectoryPage({
         )}
       />
 
-      <section className="border-b border-border bg-secondary/30">
-        <Container className="py-12">
-          <Eyebrow>Vendor directory</Eyebrow>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Find qualified trades for commercial property work
-          </h1>
-          <p className="mt-3 max-w-2xl text-muted-foreground">
-            Discover vetted trade and service companies by category, region, and the property
-            types they serve.
-          </p>
-
-          {/* Demand bridge: turn directory browsing into a posted project. */}
-          <div className="mt-6 flex flex-col gap-3 rounded-xl border border-teal-200 bg-teal-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-medium text-foreground">Need work done on your property?</p>
-              <p className="text-sm text-muted-foreground">
-                Post your project once and these trades come to you with their bids. Free for property managers.
-              </p>
+      {/* ===== Indigo hero with stat block (Direction A) ===== */}
+      <section className="grid-tex relative overflow-hidden bg-indigo text-white [--grid-color:rgba(255,255,255,0.045)]">
+        <div
+          className="pointer-events-none absolute -right-28 -top-44 size-[520px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(145,242,207,.16), transparent 62%)" }}
+        />
+        <Container className="relative z-10 grid items-end gap-10 pb-20 pt-12 lg:grid-cols-[1fr_auto]">
+          <div>
+            <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
+              <span className="h-px w-5 bg-teal-300" /> Trade directory
+            </span>
+            <h1 className="mt-4 max-w-xl text-balance text-4xl font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl">
+              Trades worth shortlisting.
+            </h1>
+            <p className="mt-4 max-w-lg text-[16.5px] leading-relaxed text-indigo-100/75">
+              Commercial property trades across Canada — browsable by category, region, and
+              property type. Property managers browse and post free.
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-4 pb-1 lg:items-end">
+            <div className="flex gap-7">
+              <div className="lg:text-right">
+                <div className="text-[26px] font-extrabold leading-none text-teal-300">{pool.length}</div>
+                <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-indigo-100/60">Companies</div>
+              </div>
+              <div className="lg:text-right">
+                <div className="text-[26px] font-extrabold leading-none text-teal-300">{activeCats.length}</div>
+                <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-indigo-100/60">Categories</div>
+              </div>
+              <div className="lg:text-right">
+                <div className="text-[26px] font-extrabold leading-none text-teal-300">ON</div>
+                <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-indigo-100/60">First region</div>
+              </div>
             </div>
-            <Link
-              href="/sign-up?role=property_manager"
-              className={buttonVariants({ className: "shrink-0" })}
-            >
-              Post your project free
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/sign-up?role=property_manager"
+                className={buttonVariants({ size: "sm", variant: "accent" })}
+              >
+                Post a project — free
+              </Link>
+              <Link
+                href="/sign-up"
+                className={cn(
+                  buttonVariants({ size: "sm", variant: "outline" }),
+                  "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white",
+                )}
+              >
+                Get listed <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
           </div>
         </Container>
       </section>
 
-      <Container className="py-8">
-        <FilterBar
-          categories={categories}
-          regions={regions}
-          propertyTypes={propertyTypes}
-          showVerified
-          sortOptions={[
-            { value: "featured", label: "Featured first" },
-            { value: "alpha", label: "A–Z" },
-          ]}
-        />
+      {/* ===== Command bar — overlaps the hero ===== */}
+      <Container className="relative z-20 -mt-10">
+        <div className="rounded-2xl border border-border bg-white p-2.5 shadow-lg">
+          <FilterBar
+            categories={categories}
+            regions={regions}
+            propertyTypes={propertyTypes}
+            showVerified
+            sticky={false}
+            sortOptions={[
+              { value: "featured", label: "Featured first" },
+              { value: "alpha", label: "A–Z" },
+            ]}
+          />
+        </div>
 
-        {/* One-tap category browse — same chip pattern as the homepage board. */}
+        {/* One-tap category chips with counts */}
         {activeCats.length > 0 && (
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2">
             <Link
               href="/directory"
               className={cn(
@@ -174,75 +192,103 @@ export default async function DirectoryPage({
             className="mt-6"
           />
         )}
+      </Container>
 
-        <p className="mt-6 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{vendors.length}</span>{" "}
-          {vendors.length === 1 ? "trade" : "trades"}
-          {verifiedCount > 0 && (
-            <>
-              {" · "}
-              <span className="font-medium text-foreground">{verifiedCount}</span> verified
-            </>
-          )}
-          {activeCats.length > 0 && (
-            <>
-              {" · "}
-              <span className="font-medium text-foreground">{activeCats.length}</span>{" "}
-              {activeCats.length === 1 ? "category" : "categories"} covered
-            </>
-          )}
-        </p>
+      {/* ===== Featured marquee ===== */}
+      {featured.length > 0 && (
+        <Container className="pt-9">
+          <div className="mb-4 flex items-baseline justify-between gap-4">
+            <span className="inline-flex items-center gap-2 font-mono text-[11.5px] uppercase tracking-[0.16em] text-teal-700">
+              <span className="h-0.5 w-5 rounded bg-teal-700" /> Featured partners
+            </span>
+            <Link href="/pricing" className="text-[13px] font-semibold text-periwinkle hover:underline">
+              What is a featured listing? →
+            </Link>
+          </div>
+          <div
+            className={cn(
+              "grid items-stretch gap-3.5",
+              featured.length === 1 && "md:grid-cols-2 xl:grid-cols-[1fr_232px]",
+              featured.length === 2 && "md:grid-cols-2 xl:grid-cols-[1fr_1fr_232px]",
+              featured.length >= 3 && "md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_232px]",
+            )}
+          >
+            {featured.map((v) => (
+              <FeaturedVendorCard key={v.slug} vendor={v} />
+            ))}
+            <FeaturedUpsellSlot />
+          </div>
+        </Container>
+      )}
 
-        {vendors.length === 0 ? (
-          <div className="mt-4 flex flex-col items-center gap-4">
+      {/* ===== Ledger — all companies ===== */}
+      <Container className="pb-4 pt-8">
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <span className="inline-flex items-center gap-2 font-mono text-[11.5px] uppercase tracking-[0.16em] text-teal-700">
+            <span className="h-0.5 w-5 rounded bg-teal-700" />
+            {hasFilters ? `Results — ${rows.length}` : `All companies — ${vendors.length}`}
+          </span>
+          <Link href="/regions" className="text-[13px] font-semibold text-periwinkle hover:underline">
+            Browse by region →
+          </Link>
+        </div>
+
+        {rows.length === 0 ? (
+          <div className="flex flex-col items-center gap-4">
             <EmptyState
               title="No trades match your filters"
               description="Try clearing a filter or broadening your search."
             />
             {hasFilters && (
-              <Link
-                href="/directory"
-                className={buttonVariants({ variant: "outline", className: "shrink-0" })}
-              >
+              <Link href="/directory" className={buttonVariants({ variant: "outline" })}>
                 Clear all filters
               </Link>
             )}
           </div>
-        ) : !hasFilters && grouped.length > 0 ? (
-          <div className="mt-2">
-            {grouped.map((g) => (
-              <section key={g.name} className="mt-8">
-                <div className="flex items-baseline justify-between gap-4">
-                  <h2 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight">
-                    {g.name}
-                    <span className="font-mono text-xs font-normal text-muted-foreground">
-                      {g.vendors.length}
-                    </span>
-                  </h2>
-                  {g.slug && (
-                    <Link
-                      href={`/directory?category=${g.slug}`}
-                      className="text-sm font-medium text-teal-700 hover:underline"
-                    >
-                      View all
-                    </Link>
-                  )}
-                </div>
-                <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {g.vendors.map((v) => (
-                    <DirectoryCard key={v.slug} vendor={v} />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
         ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {vendors.map((v) => (
-              <DirectoryCard key={v.slug} vendor={v} />
+          <div className="overflow-hidden rounded-2xl border border-border bg-white">
+            <VendorRowHeader />
+            {rows.map((v) => (
+              <VendorRow key={v.slug} vendor={v} />
             ))}
           </div>
         )}
+
+        <div className="flex items-center justify-center gap-2.5 pt-4 font-mono text-xs text-muted-foreground">
+          Profiles are free to view · Posting a project is free for property managers
+        </div>
+      </Container>
+
+      {/* ===== Bottom CTA band ===== */}
+      <Container className="pb-16 pt-10">
+        <div className="relative grid items-center gap-8 overflow-hidden rounded-[20px] bg-indigo p-10 text-white sm:p-12 lg:grid-cols-[1fr_auto]">
+          <div
+            className="pointer-events-none absolute -right-20 -top-32 size-[340px] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(145,242,207,.2), transparent 64%)" }}
+          />
+          <div className="relative">
+            <h2 className="max-w-lg text-3xl font-extrabold leading-tight tracking-tight text-white">
+              Property managers browse this page before they post.
+            </h2>
+            <p className="mt-3 max-w-md text-[15px] text-indigo-100/70">
+              Get your company listed — or take a featured slot and be the first name they see.
+            </p>
+          </div>
+          <div className="relative flex flex-wrap gap-3">
+            <Link href="/pricing" className={buttonVariants({ size: "lg", variant: "accent" })}>
+              Get featured <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href="/sign-up"
+              className={cn(
+                buttonVariants({ size: "lg", variant: "outline" }),
+                "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white",
+              )}
+            >
+              Join free
+            </Link>
+          </div>
+        </div>
       </Container>
     </>
   );
