@@ -1,8 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BadgeCheck, MapPin, Globe2 } from "lucide-react";
+import { BadgeCheck, MapPin, Globe2, ShieldCheck, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { VendorListItem } from "@/lib/data/types";
+
+const VERIFIED_TOOLTIP =
+  "Verified by PMRFP. We confirm licensing, insurance, and a real business presence before listing.";
+
+// Only surface a trust chip when the status clearly reads as positive coverage,
+// so we never mislabel an "expired" / "none" status as covered.
+const POSITIVE = /(active|valid|current|yes|insured|compliant|verified|covered|good)/i;
+function positive(status?: string | null): boolean {
+  return !!status && POSITIVE.test(status);
+}
 
 /**
  * Compress an org's service-region list into one short coverage label.
@@ -36,13 +47,30 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
     .toUpperCase();
   const coverage = coverageLabel(vendor.regions);
   const wideCoverage = coverage === "Canada-wide" || coverage === "Canada + USA";
+
+  const trust: { icon: React.ReactNode; label: string }[] = [];
+  if (positive(vendor.insuranceStatus))
+    trust.push({ icon: <ShieldCheck className="size-3.5 text-success" />, label: "Insured" });
+  if (positive(vendor.wsibStatus))
+    trust.push({ icon: <ShieldCheck className="size-3.5 text-success" />, label: "WSIB" });
+  if (vendor.yearsInBusiness && vendor.yearsInBusiness > 0)
+    trust.push({ icon: <Clock className="size-3.5" />, label: `${vendor.yearsInBusiness} yrs` });
+
   return (
     <Link
       href={`/directory/${vendor.slug}`}
-      className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
+      className={cn(
+        "group flex flex-col rounded-lg border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm",
+        vendor.featured ? "border-teal-200 ring-1 ring-teal-100" : "border-border",
+      )}
     >
       <div className="flex items-center gap-3">
-        <span className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-indigo text-sm font-bold text-white">
+        <span
+          className={cn(
+            "relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md text-sm font-bold",
+            vendor.logoUrl ? "border border-border bg-white" : "bg-indigo text-white",
+          )}
+        >
           {vendor.logoUrl ? (
             <Image
               src={vendor.logoUrl}
@@ -59,7 +87,11 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
         <div className="min-w-0">
           <h3 className="flex items-center gap-1.5 truncate text-base font-semibold text-foreground group-hover:text-teal-700">
             {vendor.name}
-            {vendor.verified && <BadgeCheck className="size-4 shrink-0 text-success" />}
+            {vendor.verified && (
+              <span title={VERIFIED_TOOLTIP} className="inline-flex shrink-0">
+                <BadgeCheck className="size-4 text-success" aria-label="Verified by PMRFP" />
+              </span>
+            )}
           </h3>
           {(vendor.city || vendor.province) && (
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -71,6 +103,17 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
           <Badge className="ml-auto bg-teal-100 text-teal-700 hover:bg-teal-100">Featured</Badge>
         )}
       </div>
+
+      {trust.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {trust.map((t) => (
+            <span key={t.label} className="inline-flex items-center gap-1">
+              {t.icon}
+              {t.label}
+            </span>
+          ))}
+        </div>
+      )}
 
       {vendor.shortDescription && (
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
