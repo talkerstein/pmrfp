@@ -53,7 +53,7 @@ export default function TermsPage() {
 
         <LegalSection title="2. Description of Service">
           <p>
-            {SITE.name} is a vendor discovery and RFP visibility platform serving
+            {SITE.name} is a platform for posting RFPs and finding trades, serving
             the Canadian commercial property market. The Service allows trade
             companies to publish profiles and monitor opportunities, and allows
             property managers, builders, and owners to post requests for

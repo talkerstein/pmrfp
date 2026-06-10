@@ -16,15 +16,16 @@ import {
 import { CategoryGrid } from "@/components/public/category-grid";
 import { ReferBanner } from "@/components/public/refer-banner";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategories } from "@/lib/data/taxonomy";
-import { COPY, SITE } from "@/lib/site";
+import { COPY } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "For Property Managers, Builders & Owners",
   description:
-    "Post your project, find vendors by category and region, and compare interested companies — without committing to a hiring decision upfront.",
+    "Post your building project free, and compare the trades that bid — by category and region. No obligation to hire.",
 };
 
 const STEPS = [
@@ -54,21 +55,24 @@ export default async function ForPropertyManagersPage() {
         <Container className="py-20 sm:py-28">
           <div className="max-w-3xl">
             <Eyebrow>For property managers, builders, owners &amp; real estate professionals</Eyebrow>
-            <h1 className="mt-5 text-4xl font-semibold leading-[1.08] text-foreground sm:text-5xl">
+            <Badge className="mt-5 bg-teal-100 text-teal-700 hover:bg-teal-100">
+              Free for property managers
+            </Badge>
+            <h1 className="mt-4 text-4xl font-semibold leading-[1.08] text-foreground sm:text-5xl">
               Post a project. Find the right vendors. No pressure to hire.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              {SITE.name} gives property managers, builders, building owners, and{" "}
+              Post your building project free. Trades that match your category and region see it
+              and bid. Compare them in one place — no obligation to hire. Built for property
+              managers, builders, owners, and{" "}
               <Link href="/for/real-estate" className="underline decoration-teal-400/60 decoration-2 underline-offset-4 hover:text-foreground">
                 real estate professionals
-              </Link>{" "}
-              a simple way to post commercial and residential property needs,
-              discover relevant trades, and compare interested companies — without
-              committing to a hiring decision upfront.
+              </Link>
+              .
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/sign-up" className={buttonVariants({ size: "lg" })}>
-                Post an RFP
+              <Link href="/sign-up?role=property_manager" className={buttonVariants({ size: "lg" })}>
+                Post an RFP — free
               </Link>
               <Link
                 href="/directory"
@@ -161,9 +165,9 @@ export default async function ForPropertyManagersPage() {
 
       <CTASection
         title="Find the right vendors for your next commercial project."
-        description="Post an RFP for free, or browse the directory to see who serves your region."
-        primaryHref="/sign-up"
-        primaryLabel="Post an RFP"
+        description="Post your project free. Trades come to you with their interest."
+        primaryHref="/sign-up?role=property_manager"
+        primaryLabel="Post an RFP — free"
         secondaryHref="/directory"
         secondaryLabel="Browse the directory"
       />

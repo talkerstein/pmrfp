@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PRICING, SITE } from "@/lib/site";
+import { PRICING } from "@/lib/site";
 import { TradeProCard } from "@/components/public/trade-pro-card";
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ const FAQ = [
   },
   {
     q: "Does PMRFP guarantee work?",
-    a: "No. PMRFP is a vendor discovery and RFP visibility platform. We help you get found and monitor opportunities — we do not guarantee contracts, bid success, or revenue.",
+    a: "No. PMRFP is where property managers post RFPs and trades get found. We don't guarantee contracts, bid success, or revenue.",
   },
   {
     q: "Can I cancel?",
@@ -77,7 +77,7 @@ export default async function PricingPage() {
               Simple pricing, built for trades.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              Get found for free, or unlock full RFP visibility with Trade Pro.
+              Get found for free, or unlock full RFP access with Trade Pro.
               Property managers, builders, and owners post projects at no cost.
             </p>
             <StatsStrip stats={stats} className="mt-8" />

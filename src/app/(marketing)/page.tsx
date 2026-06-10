@@ -11,6 +11,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
+import { VideoLoop } from "@/components/public/video-loop";
 import { buttonVariants } from "@/components/ui/button";
 import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -18,7 +19,7 @@ import { listRfps } from "@/lib/data/rfps";
 import { cn } from "@/lib/utils";
 
 const PROBLEMS = [
-  { n: "01", t: "Fragmented opportunities", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
+  { n: "01", t: "Scattered RFPs", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
   { n: "02", t: "Hard-to-reach buyers", d: "Property managers keep private preferred-vendor lists that newcomers simply can't see." },
   { n: "03", t: "Manual vendor hunts", d: "Owners and managers lose hours chasing down qualified, insured, available trades." },
   { n: "04", t: "Missed follow-ups", d: "Good leads die in inboxes — with no structured way to track interest and outcomes." },
@@ -33,16 +34,16 @@ const PROPERTY_TYPES = [
 ];
 
 const STEPS = [
-  { step: "STEP 01", icon: Building2, t: "Get listed", d: "Build a credible company profile with your categories, service regions, certifications, and insurance — then appear in the vendor directory commercial buyers actually search.", more: "Build your profile", href: "/sign-up" },
-  { step: "STEP 02", icon: Search, t: "Find RFPs", d: "Monitor a single, filterable board of commercial property opportunities matched to your trade and region. Save the ones that fit and get alerts when new ones land.", more: "Browse opportunities", href: "/rfps" },
-  { step: "STEP 03", icon: Send, t: "Express interest", d: "Submit a short, structured interest with your relevant experience and availability. Track every submission and where it stands — no chasing, no guesswork.", more: "See how it works", href: "/for-trades" },
+  { step: "STEP 01", icon: Building2, t: "Get listed", d: "Build your company profile — categories, regions, insurance — and show up in the trade directory property managers search.", more: "Build your profile", href: "/sign-up" },
+  { step: "STEP 02", icon: Search, t: "Browse RFPs", d: "One board of building projects, filtered to your trade and region. Save the fits and get alerts when new ones land.", more: "Browse RFPs", href: "/rfps" },
+  { step: "STEP 03", icon: Send, t: "Bid on the fit", d: "Put your name on the RFPs that match — experience, availability, done. Track every submission in one place.", more: "See how it works", href: "/for-trades" },
 ];
 
 const TRADE_POINTS = [
   "Build a credible, searchable company profile",
   "Get listed in the commercial vendor directory",
   "Monitor RFPs matched to your trade & region",
-  "Express interest and track every submission",
+  "Bid and track every submission",
 ];
 const PM_POINTS = [
   "Post a project in one short form — free",
@@ -53,16 +54,16 @@ const PM_POINTS = [
 
 const PRICE_FEATURES = [
   "Company profile & directory listing",
-  "Full RFP opportunity access",
-  "Save opportunities",
-  "Express interest in RFPs",
-  "Matching opportunity alerts",
+  "Full RFP access",
+  "Save RFPs",
+  "Bid on RFPs",
+  "Alerts for matching RFPs",
   "Verified vendor badge for your website",
   `Lock in $${PRICING.proAnnual}/yr before it rises to $399`,
 ];
 
 const FAQS = [
-  { q: "Does PMRFP guarantee work?", a: "No. PMRFP provides vendor discovery, directory exposure, and RFP visibility — not guaranteed contracts, bid success, or property-manager responses." },
+  { q: "Does PMRFP guarantee work?", a: "No. PMRFP lists projects and trades. We don't guarantee contracts, bid success, or responses." },
   { q: "Can I cancel anytime?", a: "Yes. You can cancel from the Stripe billing portal at any time — your membership stays active until the end of your billing period." },
   { q: "Which regions does PMRFP cover?", a: "Wherever there's demand. We're live in major metros and expanding — pick your regions when you join, and if yours is still being built out you can get on the founding list and we'll alert you as trades come online." },
   { q: "Can property managers post for free?", a: "Yes. Posting RFPs and browsing the vendor directory is free for property managers, builders, and owners." },
@@ -91,32 +92,34 @@ export default async function HomePage() {
                 <span className="h-px w-5 bg-teal-300" /> Now live in the GTA · Your region next
               </span>
               <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
-                Find commercial property RFPs and get{" "}
-                <span className="text-teal-300">discovered</span> by the people who award them.
+                Post commercial property RFPs <span className="text-teal-300">free</span>. Vetted
+                trades bid to win them.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/75">
-                {SITE.name} helps trades, contractors, and service companies get listed,
-                monitor commercial and residential property opportunities, and connect with property
-                managers, builders, and building owners.
+                {SITE.name} is the RFP board for commercial and residential buildings. Post a
+                project, or get listed and bid.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/sign-up" className={buttonVariants({ size: "lg", variant: "accent" })}>
-                  Join as a Trade Company <ArrowRight className="size-4" />
+                <Link
+                  href="/sign-up?role=property_manager"
+                  className={buttonVariants({ size: "lg", variant: "accent" })}
+                >
+                  Post a project — free <ArrowRight className="size-4" />
                 </Link>
                 <Link
-                  href="/for-property-managers"
+                  href="/sign-up"
                   className={cn(
                     buttonVariants({ size: "lg", variant: "outline" }),
                     "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white",
                   )}
                 >
-                  Post an RFP
+                  Join as a Trade Company
                 </Link>
               </div>
               <p className="mt-6 flex max-w-md items-start gap-2 text-[13px] leading-relaxed text-indigo-100/55">
                 <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-teal-400" />
-                {SITE.name} provides vendor discovery, directory exposure, and RFP visibility — not
-                guaranteed contracts or bid success.
+                {SITE.name} lists projects and trades — we don&apos;t guarantee contracts,
+                responses, or revenue.
               </p>
             </div>
 
@@ -135,7 +138,7 @@ export default async function HomePage() {
                 </div>
                 <div className="bg-secondary/60 p-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <h4 className="font-semibold text-foreground">Opportunity Board</h4>
+                    <h4 className="font-semibold text-foreground">RFP Board</h4>
                     <span className="font-mono text-[11px] text-muted-foreground">Live now</span>
                   </div>
                   {[
@@ -283,8 +286,8 @@ export default async function HomePage() {
               A focused place to get found and follow the work.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-indigo/70">
-              Three things, done well — directory exposure, an opportunity board, and a clean way to
-              express interest.
+              Property managers post projects free. Trades get listed, browse the board, and bid.
+              The PM picks who to hire.
             </p>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -314,17 +317,17 @@ export default async function HomePage() {
         <Container className="py-20">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-xl">
-              <Eyebrow>Opportunity board</Eyebrow>
+              <Eyebrow>Live RFP board</Eyebrow>
               <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                 Live commercial property RFPs.
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Filter by trade to see what&apos;s open in your region. Full scope, documents, and
-                contacts unlock with membership.
+                Posted by property managers, builders, and owners. Filter by trade to see
+                what&apos;s open in your region — full scope and contacts unlock with membership.
               </p>
             </div>
             <Link href="/rfps" className={buttonVariants({ variant: "outline" })}>
-              View all opportunities <ArrowRight className="size-4" />
+              View all RFPs <ArrowRight className="size-4" />
             </Link>
           </div>
 
@@ -398,7 +401,7 @@ export default async function HomePage() {
               Teaser view — sample opportunities
             </span>
             <Link href="/pricing" className={buttonVariants()}>
-              Subscribe to view full opportunities <ArrowRight className="size-4" />
+              Subscribe to see full RFPs <ArrowRight className="size-4" />
             </Link>
           </div>
         </Container>
@@ -410,12 +413,10 @@ export default async function HomePage() {
           {/* Trades */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="relative flex h-44 items-end overflow-hidden bg-indigo p-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/audience-trades.jpg"
+              <VideoLoop
+                src="/video/audience-trades.mp4"
+                poster="/images/audience-trades.jpg"
                 alt="Trade contractor on a commercial job site"
-                loading="lazy"
-                className="absolute inset-0 size-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/60 to-indigo/25" />
               <span className="relative font-mono text-[11px] uppercase tracking-wide text-teal-300">
@@ -446,12 +447,10 @@ export default async function HomePage() {
           {/* PMs */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="relative flex h-44 items-end overflow-hidden bg-indigo p-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/audience-pm.jpg"
+              <VideoLoop
+                src="/video/audience-pm.mp4"
+                poster="/images/audience-pm.jpg"
                 alt="Property manager reviewing a building portfolio"
-                loading="lazy"
-                className="absolute inset-0 size-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/60 to-indigo/25" />
               <span className="relative font-mono text-[11px] uppercase tracking-wide text-teal-300">
@@ -503,8 +502,8 @@ export default async function HomePage() {
               <ul className="mt-6 space-y-3">
                 {[
                   "Push alerts when a matching RFP is posted",
-                  "Browse, save & filter opportunities on the go",
-                  "Express interest in a couple of taps",
+                  "Browse, save & filter RFPs on the go",
+                  "Bid in a couple of taps",
                 ].map((b) => (
                   <li key={b} className="flex items-start gap-3 text-sm text-indigo-100">
                     <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-teal-300/20 text-teal-300">
@@ -577,9 +576,9 @@ export default async function HomePage() {
             <div>
               <p className="text-lg leading-relaxed text-muted-foreground">
                 Early Trade Pro membership is{" "}
-                <b className="text-foreground">${PRICING.proAnnual} CAD per year</b> — directory
-                visibility, access to published opportunities, and the ability to express interest in
-                RFPs that match your services.
+                <b className="text-foreground">${PRICING.proAnnual} CAD per year</b> — your listing
+                in the trade directory, full access to posted RFPs, and the ability to bid on the
+                ones that match.
               </p>
               <div className="mt-7 divide-y divide-border border-y border-border">
                 {FAQS.map((f, i) => (
@@ -663,13 +662,13 @@ export default async function HomePage() {
               Join as a Trade Company <ArrowRight className="size-4" />
             </Link>
             <Link
-              href="/for-property-managers"
+              href="/sign-up?role=property_manager"
               className={cn(
                 buttonVariants({ size: "lg", variant: "outline" }),
                 "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white",
               )}
             >
-              Post an RFP
+              Post a project — free
             </Link>
           </div>
         </Container>
