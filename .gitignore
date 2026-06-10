@@ -70,3 +70,14 @@ briefs/HANDOFF-*.md
 briefs/outbound-queue/*
 !briefs/outbound-queue/EXAMPLE.json
 briefs/replies/
+
+# PM outreach artifacts contain PII (names/emails/phones) — never commit (per briefs/outreach/pm-list-README.md)
+briefs/outreach/pm-*.csv
+briefs/outreach/pm-*.xlsx
+briefs/outreach/build_day1.py
+
+# concierge onboarding + warm-ask drafts + sent batches carry contact PII — LOCAL ONLY
+briefs/concierge-signups.json
+briefs/outbound-*.json
+briefs/warm-asks-*.md
+briefs/trade-blast-*.md
