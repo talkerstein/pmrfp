@@ -75,7 +75,7 @@ export default async function DirectoryPage({
               </p>
             </div>
             <Link
-              href="/pm-dashboard/rfps/new"
+              href="/sign-up?role=property_manager"
               className={buttonVariants({ className: "shrink-0" })}
             >
               Post your project free
