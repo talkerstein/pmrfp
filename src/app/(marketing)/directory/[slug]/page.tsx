@@ -178,8 +178,12 @@ export default async function VendorProfilePage({
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
+          {/* Route through sign-up (PM role preselected) so cold visitors get
+              registration, not a password wall; `next` carries them back to
+              post-an-RFP-with-this-vendor after account creation. Signed-in
+              PMs use the "Sign in" link on that page (also carries next). */}
           <Link
-            href={`/pm-dashboard/rfps/new?invite=${v.slug}`}
+            href={`/sign-up?role=property_manager&next=${encodeURIComponent(`/pm-dashboard/rfps/new?invite=${v.slug}`)}`}
             className={buttonVariants({ className: "mb-2 w-full" })}
           >
             Invite to bid
