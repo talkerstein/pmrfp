@@ -133,6 +133,29 @@ export async function sendMatchingRfpAlert(
   );
 }
 
+/**
+ * RFP deadline passed — ask the posting PM whether it's still live. The
+ * one-click "keep it live" link (token-authed, no login) pushes the deadline
+ * out 30 days; if there's no action within 7 days, the rfp-expiry cron flips
+ * the listing to 'expired' and it drops off the public board.
+ */
+export async function sendRfpExpiryNotice(
+  to: string,
+  params: { title: string; slug: string; keepUrl: string },
+): Promise<void> {
+  await send(
+    to,
+    "Is your PMRFP listing still active?",
+    layout(
+      "Still looking for vendors?",
+      `<p>Your RFP <strong>${params.title}</strong> has passed its deadline.</p>
+       <p>If it's still live, keep it on the board with one click — we'll extend it 30 days:</p>
+       <p>${btn(params.keepUrl, "Yes, keep it live")}</p>
+       <p style="color:#64748b;font-size:13px">If we don't hear back, this listing automatically comes off the public board in <strong>7 days</strong>. You can re-post any time from your dashboard.</p>`,
+    ),
+  );
+}
+
 export async function sendInterestConfirmation(to: string, rfpTitle: string): Promise<void> {
   await send(
     to,
