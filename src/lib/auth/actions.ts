@@ -61,7 +61,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   if (!isSupabaseConfigured()) return { error: DEMO_NOTICE };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -84,6 +84,12 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     role: parsed.data.role,
     subscriptionStatus: "none",
   }, { extraTags: ["pmrfp-signup"] });
+  // Email confirmation required → no session yet. Land on an explanation page
+  // instead of silently bouncing /onboarding → /sign-in (a dead end for
+  // invited trades). The confirmation link itself carries them to /onboarding.
+  if (!data.session) {
+    redirect(`/check-email?email=${encodeURIComponent(parsed.data.email)}`);
+  }
   redirect(next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding");
 }
 
