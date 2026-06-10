@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CalendarClock, Lock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { RfpListItem } from "@/lib/data/types";
 
 function formatDeadline(d: string | null) {
@@ -12,10 +13,15 @@ function formatDeadline(d: string | null) {
 
 export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) {
   const heroPhoto = rfp.photoUrls[0];
+  const closed = rfp.status !== "open";
+  const statusLabel = rfp.status === "awarded" ? "Filled" : "Closed";
   return (
     <Link
       href={`/rfps/${rfp.slug}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-teal-400 hover:shadow-sm"
+      className={cn(
+        "group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all",
+        closed ? "opacity-60 saturate-[.35]" : "hover:border-teal-400 hover:shadow-sm",
+      )}
     >
       {heroPhoto && (
         <div className="relative aspect-[5/3] overflow-hidden bg-secondary/40">
@@ -47,7 +53,11 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
             </Badge>
           )}
         </div>
-        {locked ? (
+        {closed ? (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {statusLabel}
+          </span>
+        ) : locked ? (
           <span className="flex items-center gap-1 text-xs font-medium text-teal-600">
             <Lock className="size-3.5" /> Locked
           </span>
@@ -70,7 +80,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
           </span>
         )}
         <span className="flex items-center gap-1">
-          <CalendarClock className="size-3.5" /> Closes {formatDeadline(rfp.deadline)}
+          <CalendarClock className="size-3.5" /> {closed ? "Closed" : "Closes"} {formatDeadline(rfp.deadline)}
         </span>
         {rfp.isDemo && (
           <Badge variant="outline" className="ml-auto border-dashed text-[10px] uppercase tracking-wide">

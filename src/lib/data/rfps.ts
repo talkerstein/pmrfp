@@ -12,6 +12,7 @@ import {
 import type { RfpDetail, RfpFilters, RfpListItem } from "@/lib/data/types";
 
 function demoToList(r: DemoRfp): RfpListItem {
+  const today = new Date().toISOString().slice(0, 10);
   return {
     slug: r.slug,
     title: r.title,
@@ -24,7 +25,7 @@ function demoToList(r: DemoRfp): RfpListItem {
     deadline: r.deadline,
     isDemo: true,
     photoUrls: [],
-    status: "open",
+    status: r.deadline && r.deadline < today ? "closed" : "open",
   };
 }
 
@@ -63,6 +64,10 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
   }
 
   const supabase = createReadClient();
+  // Past-deadline RFPs STAY on the board but render grayed-out as "Closed"
+  // (proof that real work flows through here) — until the expiry cron archives
+  // them after the PM grace window. Active listings sort first (see sort below).
+  const today = new Date().toISOString().slice(0, 10);
   const [{ data: rfps }, regionMap, propMap] = await Promise.all([
     supabase.from("rfp_public").select("*"),
     idNameMap(supabase, "regions"),
@@ -92,10 +97,9 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     deadline: r.deadline,
     isDemo: r.is_demo,
     photoUrls: photos.get(r.id) ?? [],
-    // rfp_public view only exposes published RFPs; closed/awarded ones drop off
-    // the listing entirely. Always "open" here. Public "awarded-to-X" badge is
-    // a v2 nice-to-have (requires view migration to expose status column).
-    status: "open" as const,
+    // The view exposes only published RFPs. Past-deadline ones still show, but
+    // as "closed" → the card grays them out as social proof of real activity.
+    status: r.deadline && r.deadline < today ? ("closed" as const) : ("open" as const),
   }));
   if (filters.region) {
     const name = regionSlugName.get(filters.region);
@@ -113,8 +117,16 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     const q = filters.q.toLowerCase();
     mapped = mapped.filter((r) => r.title.toLowerCase().includes(q) || (r.summary ?? "").toLowerCase().includes(q));
   }
-  if (filters.sort === "newest") mapped.sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? ""));
-  else mapped.sort((a, b) => (a.deadline ?? "").localeCompare(b.deadline ?? ""));
+  // Active (open) listings always lead; grayed "closed" proof sits below them.
+  mapped.sort((a, b) => {
+    const ra = a.status === "open" ? 0 : 1;
+    const rb = b.status === "open" ? 0 : 1;
+    if (ra !== rb) return ra - rb;
+    if (ra === 1) return (b.deadline ?? "").localeCompare(a.deadline ?? ""); // closed: most recent first
+    return filters.sort === "newest"
+      ? (b.deadline ?? "").localeCompare(a.deadline ?? "")
+      : (a.deadline ?? "").localeCompare(b.deadline ?? "");
+  });
   return mapped;
 }
 

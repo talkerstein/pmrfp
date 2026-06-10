@@ -6,6 +6,7 @@ import { RfpCard } from "@/components/public/rfp-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { StatsStrip } from "@/components/public/stats-strip";
 import { ReferBanner } from "@/components/public/refer-banner";
+import { FoundingBanner } from "@/components/public/founding-banner";
 import { listRfps } from "@/lib/data/rfps";
 import { getPlatformStats } from "@/lib/data/stats";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
@@ -41,6 +42,8 @@ export default async function RfpsPage({
 
   // Demo mode (no Supabase): show as full-access so the experience is browsable.
   const locked = isSupabaseConfigured() ? !access : false;
+  const openCount = rfps.filter((r) => r.status === "open").length;
+  const closedCount = rfps.length - openCount;
 
   return (
     <>
@@ -57,6 +60,8 @@ export default async function RfpsPage({
           <StatsStrip stats={stats} className="mt-6" />
         </Container>
       </section>
+
+      <FoundingBanner />
 
       <Container className="py-8">
         <ReferBanner variant="subtle" className="mb-6" />
@@ -80,7 +85,7 @@ export default async function RfpsPage({
         />
 
         <p className="mt-6 text-sm text-muted-foreground">
-          {rfps.length} {rfps.length === 1 ? "opportunity" : "opportunities"}
+          {openCount} open{closedCount > 0 ? ` · ${closedCount} recently closed` : ""}
         </p>
 
         {rfps.length === 0 ? (

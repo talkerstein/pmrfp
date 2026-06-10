@@ -13,27 +13,10 @@
  */
 
 import { ImageResponse } from "next/og";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { WORDMARK_WHITE_URI } from "./wordmark";
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = "image/png" as const;
-
-/** Real brand wordmark (public/brand/logo-wordmark.svg), recolored white for
- *  the indigo card and inlined as a data URI (Satori supports <img> SVGs).
- *  Lazy + cached so cold starts stay fast; falls back to text if unreadable. */
-let wordmarkUri: string | null | undefined;
-function getWordmark(): string | null {
-  if (wordmarkUri !== undefined) return wordmarkUri;
-  try {
-    const svg = readFileSync(join(process.cwd(), "public/brand/logo-wordmark.svg"), "utf8")
-      .replace(/#282b59/gi, "#FFFFFF");
-    wordmarkUri = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
-  } catch {
-    wordmarkUri = null;
-  }
-  return wordmarkUri;
-}
 
 const COLORS = {
   indigo: "#282B59",
@@ -132,21 +115,8 @@ export function renderOgImage({ eyebrow, title, subline, caption }: OGTemplatePr
             fontWeight: 600,
           }}
         >
-          {getWordmark() ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={getWordmark()!} height={42} alt="PMRFP" />
-          ) : (
-            <div
-              style={{
-                color: COLORS.paper,
-                fontSize: 28,
-                fontWeight: 700,
-                letterSpacing: -0.4,
-              }}
-            >
-              PMRFP.com
-            </div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={WORDMARK_WHITE_URI} height={42} alt="PMRFP" />
           {caption && (
             <div
               style={{

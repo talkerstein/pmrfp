@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/rfp-alerts",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/rfp-expiry",
+      "schedule": "0 14 * * *"
     }
   ]
 }
