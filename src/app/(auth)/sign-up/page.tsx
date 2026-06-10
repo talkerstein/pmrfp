@@ -5,10 +5,36 @@ import { DemoNotice } from "@/components/forms/demo-notice";
 import { COPY } from "@/lib/site";
 import { safeNextPath } from "@/lib/auth/next";
 
-export const metadata: Metadata = { title: "Join PMRFP" };
-
 const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent"] as const;
 type ValidRole = (typeof VALID_ROLES)[number];
+
+/** Role-aware share card — link previews (WhatsApp/iMessage/LinkedIn) fetch the
+ *  full URL including ?role=, so invites speak to the right audience. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string }>;
+}): Promise<Metadata> {
+  const { role } = await searchParams;
+  const trade = role === "trade" || role === "supplier";
+  const pm = role === "property_manager" || role === "real_estate_agent";
+  const title = trade
+    ? "Join PMRFP as a founding trade — free"
+    : pm
+      ? "Post your building project free — PMRFP"
+      : "Join PMRFP — free";
+  const description = trade
+    ? "Property managers post building jobs. Vetted trades get found and bid. Free to join, no credit card."
+    : pm
+      ? "Post your project once and vetted trades come to you with bids. Free for property managers, always."
+      : "Property managers post building RFPs free. Vetted trades bid on the work.";
+  return {
+    title,
+    description,
+    openGraph: { title, description, url: "https://pmrfp.com/sign-up" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function SignUpPage({
   searchParams,
