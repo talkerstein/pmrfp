@@ -11,6 +11,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
+import { VideoLoop } from "@/components/public/video-loop";
 import { buttonVariants } from "@/components/ui/button";
 import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -412,12 +413,10 @@ export default async function HomePage() {
           {/* Trades */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="relative flex h-44 items-end overflow-hidden bg-indigo p-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/audience-trades.jpg"
+              <VideoLoop
+                src="/video/audience-trades.mp4"
+                poster="/images/audience-trades.jpg"
                 alt="Trade contractor on a commercial job site"
-                loading="lazy"
-                className="absolute inset-0 size-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/60 to-indigo/25" />
               <span className="relative font-mono text-[11px] uppercase tracking-wide text-teal-300">
@@ -448,12 +447,10 @@ export default async function HomePage() {
           {/* PMs */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="relative flex h-44 items-end overflow-hidden bg-indigo p-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/audience-pm.jpg"
+              <VideoLoop
+                src="/video/audience-pm.mp4"
+                poster="/images/audience-pm.jpg"
                 alt="Property manager reviewing a building portfolio"
-                loading="lazy"
-                className="absolute inset-0 size-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/60 to-indigo/25" />
               <span className="relative font-mono text-[11px] uppercase tracking-wide text-teal-300">
