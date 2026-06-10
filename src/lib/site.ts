@@ -6,9 +6,9 @@
 export const SITE = {
   name: "PMRFP",
   longName: "PMRFP — Property Management RFP",
-  tagline: "Commercial & residential property RFPs and vendor discovery, by region — built for serious commercial trades.",
+  tagline: "Property managers post building RFPs free. Vetted trades bid on the work. Region by region across Canada.",
   description:
-    "PMRFP helps trades and service companies get listed, monitor commercial and residential property RFPs, and connect with property managers, builders, and building owners.",
+    "PMRFP is where property managers post commercial and residential building RFPs free, and vetted trades get listed and bid on the work — by region across Canada.",
   url: "https://pmrfp.com",
   email: "info@pmrfp.com",
   supportEmail: "info@pmrfp.com",
@@ -62,12 +62,12 @@ export const REFERRAL = {
 
 /** Primary public navigation (§30 header) */
 export const MAIN_NAV = [
-  { href: "/for-trades", label: "For Trades" },
   { href: "/for-property-managers", label: "For Property Managers" },
-  { href: "/directory", label: "Directory" },
+  { href: "/for-trades", label: "For Trades" },
+  { href: "/directory", label: "Trade Directory" },
   { href: "/rfps", label: "RFPs" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/resources", label: "Resources" },
+  { href: "/resources", label: "Guides" },
 ] as const;
 
 /** Secondary nav slot — sits between primary nav and auth CTAs in the header.
@@ -114,9 +114,9 @@ export const FOOTER_COLS = [
   {
     heading: "Product",
     links: [
-      { label: "Directory", href: "/directory" },
+      { label: "Trade Directory", href: "/directory" },
       { label: "Supplier Directory", href: "/suppliers" },
-      { label: "RFP Opportunities", href: "/rfps" },
+      { label: "Browse RFPs", href: "/rfps" },
       { label: "Trade Categories", href: "/trades" },
       { label: "Browse by Region", href: "/regions" },
       { label: "Pricing", href: "/pricing" },
@@ -169,16 +169,19 @@ export const FOOTER_COLS = [
   },
 ] as const;
 
-/** Canonical copy blocks (§29) — reuse everywhere, never reword the disclaimer. */
+/** Canonical copy blocks (§29) — reuse everywhere. Disclaimer legal substance is
+ * verbatim from spec; the jargon opener was reworded with founder approval
+ * (2026-06-09 clarity pass). The first sentence must contain no internal
+ * periods — the homepage strip bolds the text before the first ".". */
 export const COPY = {
   disclaimer:
-    "PMRFP is a vendor discovery and RFP visibility platform. We do not guarantee project availability, bid success, contract awards, property manager response, or revenue. Members are responsible for their own due diligence, qualifications, insurance, licensing, pricing, and agreements.",
+    "PMRFP is a platform for posting RFPs and finding trades. We do not guarantee project availability, bid success, contract awards, property manager response, or revenue. Members are responsible for their own due diligence, qualifications, insurance, licensing, pricing, and agreements.",
   signupDisclaimer:
-    "PMRFP is a vendor discovery and RFP visibility platform. PMRFP does not guarantee project availability, contract awards, bid acceptance, payment, property manager response, or commercial success. Users are responsible for their own due diligence, licensing, insurance, pricing, and contractual arrangements.",
+    "PMRFP is a platform for posting RFPs and finding trades. PMRFP does not guarantee project availability, contract awards, bid acceptance, payment, property manager response, or commercial success. Users are responsible for their own due diligence, licensing, insurance, pricing, and contractual arrangements.",
   tradeValue:
-    "Commercial property work often moves through relationships, preferred vendor lists, referrals, and fragmented RFP channels. PMRFP helps your company become easier to find and gives you a focused place to monitor property-related opportunities.",
+    "Most building work goes to trades the property manager already knows. PMRFP gets you on the list: a searchable company profile, plus the RFPs they post — matched to your trade and region.",
   pmValue:
-    "Finding the right vendor can be time-consuming. PMRFP gives property managers, builders, and owners a simple way to post project needs, discover relevant trades, and compare interested companies without committing to a hiring decision upfront.",
+    "Post your project once, free. Trades that match your category and region see it and respond. Compare them in one place — no obligation to hire.",
   pmPostingDisclaimer:
     "By submitting this RFP, you confirm that you have authority to post this opportunity or are submitting it for review. PMRFP may edit, reject, or remove listings that are incomplete, misleading, spam, or inappropriate.",
   interestDisclaimer:

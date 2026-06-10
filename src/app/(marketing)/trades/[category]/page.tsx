@@ -79,7 +79,7 @@ export default async function TradeCategoryPage({
     },
     {
       q: `Does ${SITE.name} guarantee ${lower} contracts?`,
-      a: `No. ${SITE.name} is a vendor discovery and RFP visibility platform. We help your company get found and monitor opportunities — we do not guarantee awards, responses, or revenue.`,
+      a: `No. ${SITE.name} is where property managers post RFPs and trades get found. We don't guarantee awards, responses, or revenue.`,
     },
   ];
 

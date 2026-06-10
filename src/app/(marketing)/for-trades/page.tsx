@@ -48,22 +48,22 @@ const INCLUDED = [
   {
     icon: Search,
     title: "RFP feed",
-    body: "Monitor commercial property opportunities across the categories and regions you serve.",
+    body: "See the RFPs property managers post in your categories and regions.",
   },
   {
     icon: Bookmark,
-    title: "Save opportunities",
+    title: "Save RFPs",
     body: "Bookmark RFPs you want to revisit and keep your shortlist organized.",
   },
   {
     icon: Send,
-    title: "Express interest",
-    body: "Signal interest on opportunities that fit and track every submission you make.",
+    title: "Bid on RFPs",
+    body: "Show interest on RFPs that fit and track every submission you make.",
   },
   {
     icon: BellRing,
     title: "Matching alerts",
-    body: "Get notified when new opportunities match your services so you never miss a fit.",
+    body: "Get notified when new RFPs match your services so you never miss a fit.",
   },
   {
     icon: BadgeCheck,
@@ -90,7 +90,7 @@ const TRADES = [
 const FAQ = [
   {
     q: "Does PMRFP guarantee work?",
-    a: "No. PMRFP is a vendor discovery and RFP visibility platform. We help you get found and monitor opportunities — we do not guarantee contracts, bid success, or revenue.",
+    a: "No. PMRFP is where property managers post RFPs and trades get found. We don't guarantee contracts, bid success, or revenue.",
   },
   {
     q: "Can I cancel?",
@@ -117,10 +117,9 @@ export default function ForTradesPage() {
               Get discovered for commercial property work.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              {SITE.name} helps trades, contractors, and service
-              companies get listed, monitor commercial property opportunities,
-              and connect with the property managers, builders, and owners who
-              award the work.
+              Most building work goes to whoever the property manager already knows.{" "}
+              {SITE.name} is where they post RFPs — get listed, watch your trade and region,
+              and bid.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/sign-up" className={buttonVariants({ size: "lg" })}>
@@ -156,15 +155,15 @@ export default function ForTradesPage() {
           description={COPY.tradeValue}
         />
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-          PMRFP helps you become easier to find and gives you a structured place
-          to monitor opportunities.
+          PMRFP makes you easier to find and gives you one place to watch the
+          RFPs that match.
         </p>
       </Section>
 
       <Section>
         <SectionHeading
           eyebrow="What's included"
-          title="Everything you need to be found and stay on top of opportunities"
+          title="Everything you need to get found and win building work"
         />
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {INCLUDED.map((f) => (
@@ -227,7 +226,7 @@ export default function ForTradesPage() {
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
               Start with a free directory listing, or go Pro for full RFP
-              access, saved opportunities, express interest, and matching alerts.
+              access, saved RFPs, bidding, and matching alerts.
             </p>
             <p className="mt-4 text-sm font-medium text-teal-600">
               {PRICING.earlyBirdNote}
