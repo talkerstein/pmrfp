@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LayoutGrid } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { FilterBar } from "@/components/public/filter-bar";
@@ -10,6 +11,8 @@ import { JsonLd, itemListSchema } from "@/lib/seo/jsonld";
 import { listVendors } from "@/lib/data/directory";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { getRegionLiquidityBySlug } from "@/lib/data/liquidity";
+import { cn } from "@/lib/utils";
+import type { VendorListItem } from "@/lib/data/types";
 
 export const metadata: Metadata = {
   title: "Vendor Directory — Commercial Property Trades",
@@ -23,28 +26,58 @@ export default async function DirectoryPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const [vendors, categories, regions, propertyTypes] = await Promise.all([
+  const hasFilters = Boolean(
+    sp.category || sp.region || sp.propertyType || sp.verified || sp.q,
+  );
+  const sort = (sp.sort as "featured" | "recent" | "alpha") ?? "featured";
+
+  const [vendors, allVendors, categories, regions, propertyTypes] = await Promise.all([
     listVendors({
       category: sp.category,
       region: sp.region,
       propertyType: sp.propertyType,
       verified: Boolean(sp.verified),
       q: sp.q,
-      sort: (sp.sort as "featured" | "recent" | "alpha") ?? "featured",
+      sort,
     }),
+    // Unfiltered pool — powers the category chip counts even while filtered.
+    hasFilters ? listVendors({}) : Promise.resolve(null),
     getCategories(),
     getRegions(),
     getPropertyTypes(),
   ]);
+  const pool = allVendors ?? vendors;
 
   const activeRegion = sp.region ? regions.find((r) => r.slug === sp.region) ?? null : null;
   const regionLiq = activeRegion ? await getRegionLiquidityBySlug(activeRegion.slug) : null;
   const showFounding = !!activeRegion && !!regionLiq && regionLiq.tier !== "active";
 
   const verifiedCount = vendors.filter((v) => v.verified).length;
-  const hasFilters = Boolean(
-    sp.category || sp.region || sp.propertyType || sp.verified || sp.q,
-  );
+
+  // Categories that actually have vendors, with counts (chips + honest stat).
+  const countByName = new Map<string, number>();
+  for (const v of pool) for (const c of v.categories) countByName.set(c, (countByName.get(c) ?? 0) + 1);
+  const activeCats = categories
+    .map((c) => ({ ...c, count: countByName.get(c.name) ?? 0 }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  // Default (unfiltered) view groups vendors under their primary category so a
+  // young directory reads as organized coverage, not a random pile of cards.
+  const grouped: { name: string; slug: string | null; vendors: VendorListItem[] }[] = [];
+  if (!hasFilters) {
+    const byPrimary = new Map<string, VendorListItem[]>();
+    for (const v of vendors) {
+      const key = v.categories[0] ?? "Other services";
+      byPrimary.set(key, [...(byPrimary.get(key) ?? []), v]);
+    }
+    for (const [name, vs] of byPrimary) {
+      grouped.push({ name, slug: categories.find((c) => c.name === name)?.slug ?? null, vendors: vs });
+    }
+    grouped.sort((a, b) =>
+      a.name === "Other services" ? 1 : b.name === "Other services" ? -1 : b.vendors.length - a.vendors.length,
+    );
+  }
 
   return (
     <>
@@ -96,6 +129,40 @@ export default async function DirectoryPage({
           ]}
         />
 
+        {/* One-tap category browse — same chip pattern as the homepage board. */}
+        {activeCats.length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link
+              href="/directory"
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                !sp.category
+                  ? "border-indigo bg-indigo text-white"
+                  : "border-border bg-card text-foreground hover:border-teal-300 hover:bg-teal-50",
+              )}
+            >
+              <LayoutGrid className="size-3.5" /> All trades
+            </Link>
+            {activeCats.map((c) => (
+              <Link
+                key={c.slug}
+                href={`/directory?category=${c.slug}`}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                  sp.category === c.slug
+                    ? "border-indigo bg-indigo text-white"
+                    : "border-border bg-card text-foreground hover:border-teal-300 hover:bg-teal-50",
+                )}
+              >
+                {c.name}
+                <span className={cn("font-mono text-[11px]", sp.category === c.slug ? "text-teal-300" : "text-muted-foreground")}>
+                  {c.count}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+
         {showFounding && activeRegion && (
           <FoundingRegionNotice
             regionName={activeRegion.name}
@@ -117,10 +184,11 @@ export default async function DirectoryPage({
               <span className="font-medium text-foreground">{verifiedCount}</span> verified
             </>
           )}
-          {categories.length > 0 && (
+          {activeCats.length > 0 && (
             <>
               {" · "}
-              <span className="font-medium text-foreground">{categories.length}</span> categories
+              <span className="font-medium text-foreground">{activeCats.length}</span>{" "}
+              {activeCats.length === 1 ? "category" : "categories"} covered
             </>
           )}
         </p>
@@ -139,6 +207,34 @@ export default async function DirectoryPage({
                 Clear all filters
               </Link>
             )}
+          </div>
+        ) : !hasFilters && grouped.length > 0 ? (
+          <div className="mt-2">
+            {grouped.map((g) => (
+              <section key={g.name} className="mt-8">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h2 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight">
+                    {g.name}
+                    <span className="font-mono text-xs font-normal text-muted-foreground">
+                      {g.vendors.length}
+                    </span>
+                  </h2>
+                  {g.slug && (
+                    <Link
+                      href={`/directory?category=${g.slug}`}
+                      className="text-sm font-medium text-teal-700 hover:underline"
+                    >
+                      View all
+                    </Link>
+                  )}
+                </div>
+                <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {g.vendors.map((v) => (
+                    <DirectoryCard key={v.slug} vendor={v} />
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

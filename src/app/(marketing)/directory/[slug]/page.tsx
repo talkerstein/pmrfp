@@ -119,12 +119,23 @@ export default async function VendorProfilePage({
             ))}
           </div>
 
-          <dl className="mt-8 grid gap-4 sm:grid-cols-2">
-            <Fact icon={<Clock className="size-4" />} label="Years in business" value={v.yearsInBusiness ? `${v.yearsInBusiness} years` : "—"} />
-            <Fact icon={<Building2 className="size-4" />} label="Team size" value={v.employeeCountRange ?? "—"} />
-            <Fact icon={<ShieldCheck className="size-4" />} label="Insurance" value={v.insuranceStatus ?? "—"} />
-            <Fact icon={<ShieldCheck className="size-4" />} label="WSIB" value={v.wsibStatus ?? "—"} />
-          </dl>
+          {/* Only show facts the vendor actually has — a grid of em-dash
+              placeholders reads as a broken/abandoned profile. */}
+          {(() => {
+            const facts: { icon: React.ReactNode; label: string; value: string }[] = [];
+            if (v.yearsInBusiness) facts.push({ icon: <Clock className="size-4" />, label: "Years in business", value: `${v.yearsInBusiness} years` });
+            if (v.employeeCountRange) facts.push({ icon: <Building2 className="size-4" />, label: "Team size", value: v.employeeCountRange });
+            if (v.insuranceStatus) facts.push({ icon: <ShieldCheck className="size-4" />, label: "Insurance", value: v.insuranceStatus });
+            if (v.wsibStatus) facts.push({ icon: <ShieldCheck className="size-4" />, label: "WSIB", value: v.wsibStatus });
+            if (facts.length === 0) return null;
+            return (
+              <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+                {facts.map((f) => (
+                  <Fact key={f.label} icon={f.icon} label={f.label} value={f.value} />
+                ))}
+              </dl>
+            );
+          })()}
 
           {v.regions.length > 0 && (
             <div className="mt-8">
