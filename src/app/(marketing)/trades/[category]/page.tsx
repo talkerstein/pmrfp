@@ -23,6 +23,7 @@ import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listVendors } from "@/lib/data/directory";
 import { listRfps } from "@/lib/data/rfps";
 import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
+import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -85,6 +86,7 @@ export default async function TradeCategoryPage({
 
   const topRegions = regions.filter((r) => !["canada"].includes(r.slug)).slice(0, 12);
   const templates = getTemplatesForTrade(cat.slug);
+  const costGuide = COST_GUIDES.find((g) => g.tradeSlug === cat.slug);
 
   return (
     <>
@@ -110,6 +112,13 @@ export default async function TradeCategoryPage({
             properties and need a qualified {lower} contractor, {SITE.name} connects both sides —
             a focused directory plus a feed of {lower} RFP opportunities, matched by region.
           </p>
+          {costGuide && (
+            <p className="mt-3 text-sm">
+              <Link href={`/cost-guides/${costGuide.slug}`} className="text-teal-700 hover:underline">
+                Planning a {lower} project? See typical {lower} costs →
+              </Link>
+            </p>
+          )}
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/sign-up" className={buttonVariants()}>List your {lower} company</Link>
             <Link href={`/rfps?category=${cat.slug}`} className={buttonVariants({ variant: "outline" })}>
