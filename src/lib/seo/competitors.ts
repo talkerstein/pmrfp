@@ -88,6 +88,7 @@ export const COMPETITORS: Competitor[] = [
     ],
     faqs: [
       { q: "How is PMRFP different from VendorPM?", a: "VendorPM is primarily a compliance and vendor-management tool for large property managers. PMRFP is discovery-first: a public directory and open RFP board priced flat at $249/yr so trades can be found and win new work." },
+      { q: "I'm already on VendorPM — why add PMRFP?", a: "They do different jobs. VendorPM keeps you compliant on the buildings that already use you; PMRFP gets you discovered by the ones that don't, through a public directory and open RFP board. Many trades run both — VendorPM for existing accounts, PMRFP to win new ones." },
     ],
   },
   {
