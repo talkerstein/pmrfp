@@ -120,7 +120,6 @@ export const FOOTER_COLS = [
       { label: "Trade Categories", href: "/trades" },
       { label: "Browse by Region", href: "/regions" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Mobile App — Coming Soon", href: "/#mobile-app" },
     ],
   },
   {
@@ -129,6 +128,7 @@ export const FOOTER_COLS = [
       { label: "For Trades", href: "/for-trades" },
       { label: "For Suppliers", href: "/for/suppliers" },
       { label: "For Property Managers", href: "/for-property-managers" },
+      { label: "For Condo Boards", href: "/for/condo-boards" },
       { label: "For Builders", href: "/for/builders" },
       { label: "For Investors", href: "/for/investors" },
       { label: "For Real Estate", href: "/for/real-estate" },
