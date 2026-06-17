@@ -1,14 +1,12 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BellRing,
   Building2,
   Check,
   LayoutGrid,
   Lock,
   Search,
   Send,
-  Smartphone,
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { VideoLoop } from "@/components/public/video-loop";
@@ -59,7 +57,7 @@ const PRICE_FEATURES = [
   "Bid on RFPs",
   "Alerts for matching RFPs",
   "Verified vendor badge for your website",
-  `Lock in $${PRICING.proAnnual}/yr before it rises to $399`,
+  "Early-bird annual rate, locked in when you join",
 ];
 
 const FAQS = [
@@ -207,6 +205,26 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* ===================== TRUST BAND ===================== */}
+      <section className="border-b border-border bg-background">
+        <Container className="py-12">
+          <div className="mx-auto grid max-w-4xl grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{rfps.length}</div>
+              <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Live RFPs</div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{categories.length}</div>
+              <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Trade categories</div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">GTA</div>
+              <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Primary market</div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* ===================== PROBLEM ===================== */}
       <section className="bg-background">
         <Container className="py-20">
@@ -224,7 +242,7 @@ export default async function HomePage() {
             {PROBLEMS.map((p) => (
               <div
                 key={p.n}
-                className="rounded-xl border border-border bg-card p-6 transition-all hover:-translate-y-1 hover:shadow-md"
+                className="rounded-xl border border-border bg-card p-6"
               >
                 <div className="font-mono text-xs font-medium text-periwinkle">{p.n}</div>
                 <h3 className="mt-4 text-lg font-semibold">{p.t}</h3>
@@ -398,7 +416,7 @@ export default async function HomePage() {
 
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-secondary/40 px-6 py-5">
             <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-              Teaser view — sample opportunities
+              Full scope, contacts &amp; documents unlock with membership
             </span>
             <Link href="/pricing" className={buttonVariants()}>
               Subscribe to see full RFPs <ArrowRight className="size-4" />
@@ -425,7 +443,7 @@ export default async function HomePage() {
             </div>
             <div className="p-8">
               <h3 className="text-2xl font-bold tracking-tight">
-                Become easier to find — and never miss the work.
+                Get found by the buildings that need your trade.
               </h3>
               <p className="mt-3 leading-relaxed text-muted-foreground">{COPY.tradeValue}</p>
               <ul className="mt-6 space-y-3">
@@ -483,93 +501,13 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* ===================== MOBILE APP (coming soon) ===================== */}
-      <section id="mobile-app" className="bg-background">
-        <Container className="py-20">
-          <div className="grid items-center gap-10 overflow-hidden rounded-2xl bg-indigo p-8 text-white sm:p-12 lg:grid-cols-2">
-            <div>
-              <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
-                <span className="h-px w-5 bg-teal-300" /> Coming soon
-              </span>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                PMRFP in your pocket.
-              </h2>
-              <p className="mt-4 max-w-xl text-lg leading-relaxed text-indigo-100/75">
-                Browse live RFPs from the job site and get a push notification the moment a new
-                opportunity matches your trade and region — so you&apos;re first to respond, not last
-                to hear about it.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  "Push alerts when a matching RFP is posted",
-                  "Browse, save & filter RFPs on the go",
-                  "Bid in a couple of taps",
-                ].map((b) => (
-                  <li key={b} className="flex items-start gap-3 text-sm text-indigo-100">
-                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-teal-300/20 text-teal-300">
-                      <Check className="size-3.5" strokeWidth={3} />
-                    </span>
-                    {b}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-8 flex flex-wrap gap-3">
-                {["App Store", "Google Play"].map((store) => (
-                  <span
-                    key={store}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-indigo-100/80"
-                  >
-                    <Smartphone className="size-4 text-teal-300" />
-                    {store}
-                    <span className="ml-1 rounded-full bg-teal-300/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-teal-300">
-                      Soon
-                    </span>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Phone mock — push notification */}
-            <div className="flex justify-center lg:justify-end">
-              <div className="w-[230px] rounded-[2rem] border-[6px] border-white/15 bg-indigo-700 p-3 shadow-2xl">
-                <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-white/20" />
-                <div className="rounded-2xl bg-white p-3">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <span className="flex size-7 items-center justify-center rounded-lg bg-indigo text-teal-300">
-                      <BellRing className="size-3.5" />
-                    </span>
-                    <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                      PMRFP · now
-                    </div>
-                  </div>
-                  <div className="pt-2.5">
-                    <div className="font-mono text-[10px] uppercase tracking-wide text-teal-600">
-                      New match · HVAC
-                    </div>
-                    <div className="mt-1 text-sm font-semibold leading-snug text-foreground">
-                      HVAC System Replacement — Montréal
-                    </div>
-                    <div className="mt-1 text-[11px] text-muted-foreground">
-                      Matches your trade & region · Closes Sep 5
-                    </div>
-                    <div className="mt-3 rounded-lg bg-teal-300 py-1.5 text-center text-[11px] font-semibold text-indigo">
-                      View opportunity
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
-
       {/* ===================== PRICING ===================== */}
       <section className="bg-background">
         <Container className="py-20">
           <div className="max-w-2xl">
             <Eyebrow>Pricing</Eyebrow>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              One plan. Built for early trade members.
+              One plan. One flat price.
             </h2>
           </div>
           <div className="mt-10 grid gap-10 lg:grid-cols-2">
