@@ -178,6 +178,39 @@ export const VERTICALS: Vertical[] = [
       "Realtors, brokerages, and investors: browse a credentialed directory of commercial & residential trades and post pre-listing repairs, turnovers, and maintenance. Free to post and browse.",
   },
   {
+    slug: "condo-boards",
+    name: "Condo Boards",
+    who: "Condo boards & self-managed corporations",
+    headline: "Show your owners you ran a fair process — not just a phone call.",
+    positioning:
+      "PMRFP lets a condo board run an open, documented RFP and show owners exactly how a vendor was chosen — competitive bids, on the record. Transparent procurement, the way good boards are expected to operate.",
+    pains: [
+      "Owners question vendor picks at the AGM — and there's no paper trail to point to",
+      "The same contractor wins every year with no competitive quote",
+      "Sourcing trades for a project falls on volunteer directors with day jobs",
+      "No documented process to back a fiduciary decision or a records request",
+      "Capital and maintenance work awarded without owners seeing the alternatives",
+    ],
+    valueProps: [
+      { title: "A documented competitive process", desc: "Post a project, collect bids, and keep a clean record of who bid and why you chose them." },
+      { title: "Transparency owners can see", desc: "Show the corporation you ran an open process — not a handshake with one vendor." },
+      { title: "Vetted trades on demand", desc: "Reach commercial trades by category and region, with credentials up front." },
+      { title: "Free to post", desc: "Posting a project and collecting bids costs the corporation nothing." },
+      { title: "Built for self-managed boards too", desc: "No property manager required — a board can run the whole process itself." },
+    ],
+    features: ["Post RFPs", "Documented bid trail", "Directory by trade + region", "Credential visibility"],
+    faqs: [
+      { q: "Our property manager handles vendors.", a: "Good — PMRFP is the tool your manager (or your board) uses to run a competitive process you can put in front of owners. It strengthens the manager's recommendation, it doesn't replace it." },
+      { q: "Is competitive bidding required by law?", a: "No. Running documented competitive bids is a governance best practice boards are increasingly expected to follow — not a legal requirement. PMRFP just makes it simple." },
+      { q: "We're self-managed.", a: "PMRFP is built for that — a volunteer board can post a project, collect bids from vetted trades, and keep the record, without hiring anyone." },
+    ],
+    cta: { label: "Post a project — free", href: "/sign-up?role=property_manager" },
+    secondaryCta: { label: "Browse vetted trades", href: "/directory" },
+    metaTitle: "PMRFP for Condo Boards — Transparent Competitive Bids You Can Show Owners",
+    metaDescription:
+      "Condo boards and self-managed corporations: run an open, documented RFP, collect competitive bids from vetted trades, and show owners a fair process. Free to post.",
+  },
+  {
     slug: "suppliers",
     name: "Suppliers & Distributors",
     who: "Building product, material & equipment suppliers",
