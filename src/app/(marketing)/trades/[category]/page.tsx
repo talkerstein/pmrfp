@@ -46,10 +46,20 @@ export async function generateMetadata({
   const { category } = await params;
   const cat = await getCategory(category);
   if (!cat) return { title: "Trade not found" };
+  // Thin-content guard: a category with no vendors AND no RFPs is an empty-state
+  // page. Keep it out of the index (links still flow) until it has real content,
+  // so the long tail of empty categories doesn't drag the domain down. Auto-flips
+  // back to indexable once real listings exist.
+  const [vendors, rfps] = await Promise.all([
+    listVendors({ category: cat.slug }),
+    listRfps({ category: cat.slug }),
+  ]);
+  const isThin = vendors.length === 0 && rfps.length === 0;
   return {
     title: `Commercial ${cat.name} Contractors in Canada | Directory & RFPs`,
     description: `Find commercial ${cat.name.toLowerCase()} contractors across Canada and monitor ${cat.name.toLowerCase()} RFP opportunities. Get your ${cat.name.toLowerCase()} company listed on ${SITE.name}.`,
     alternates: { canonical: `/trades/${cat.slug}` },
+    ...(isThin ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
