@@ -41,10 +41,20 @@ export async function generateMetadata({
   const { slug } = await params;
   const region = await getRegion(slug);
   if (!region) return { title: "Region not found" };
+  // Thin-content guard: a region with no vendors AND no RFPs is an empty-state
+  // page with no unique value. Keep it out of the index (links still flow) until
+  // it has real content, so empty pages don't drag the domain's quality signal
+  // down. Auto-flips back to indexable once real listings exist.
+  const [vendors, rfps] = await Promise.all([
+    listVendors({ region: region.slug }),
+    listRfps({ region: region.slug }),
+  ]);
+  const isThin = vendors.length === 0 && rfps.length === 0;
   return {
     title: `Commercial Property Vendors & RFPs in ${region.name} | ${SITE.name}`,
     description: `Find commercial property trades and service companies in ${region.name}, and monitor local property RFP opportunities on ${SITE.name}.`,
     alternates: { canonical: `/regions/${region.slug}` },
+    ...(isThin ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
