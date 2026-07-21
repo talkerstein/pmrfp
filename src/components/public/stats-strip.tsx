@@ -8,15 +8,22 @@
 import type { PlatformStats } from "@/lib/data/stats";
 
 export function StatsStrip({ stats, className = "" }: { stats: PlatformStats; className?: string }) {
-  // Hide the strip entirely if we have nothing real to show — pretending zero is
-  // a "stat" hurts more than helps.
-  if (stats.rfpsPostedLast30Days === 0 && stats.tradesListed === 0) return null;
+  // Only show a stat when its real number is > 0. A "0 posted · last 30 days"
+  // sitting above the paywall reads as a dead marketplace and pre-refutes the
+  // sale — omit any individual zero, hide the strip only when nothing is real.
+  const items: { value: number | string; label: string }[] = [];
+  if (stats.rfpsPostedLast30Days > 0)
+    items.push({ value: stats.rfpsPostedLast30Days, label: "RFPs posted · last 30 days" });
+  if (stats.tradesListed > 0)
+    items.push({ value: stats.tradesListed, label: "trade companies listed" });
+  if (items.length === 0) return null;
+  items.push({ value: "By region", label: "commercial & residential" });
 
   return (
     <div className={`flex flex-wrap items-baseline gap-x-8 gap-y-3 ${className}`.trim()}>
-      <Stat value={stats.rfpsPostedLast30Days} label="RFPs posted · last 30 days" />
-      <Stat value={stats.tradesListed} label="trade companies listed" />
-      <Stat value="By region" label="commercial & residential" />
+      {items.map((it) => (
+        <Stat key={it.label} value={it.value} label={it.label} />
+      ))}
     </div>
   );
 }
