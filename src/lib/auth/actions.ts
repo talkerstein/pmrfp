@@ -93,6 +93,38 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   redirect(next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding");
 }
 
+/**
+ * Resend the signup confirmation email — for the /check-email dead-end where a
+ * new signup's link expired or never arrived. Returns a generic success either
+ * way (never reveals whether the address is registered / already confirmed).
+ */
+export async function resendConfirmationAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  if (await checkRateLimitByIp(await authIp(), "auth")) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
+  const email = formData.get("email")?.toString().trim();
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { error: "Enter the email you signed up with." };
+  }
+  const GENERIC =
+    "If that email needs confirming, we've sent a fresh link. Check your inbox (and spam).";
+  if (!isSupabaseConfigured()) return { success: GENERIC };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/onboarding` },
+  });
+  // Swallow errors (already-confirmed / unknown email) — same generic response,
+  // no account enumeration.
+  if (error) console.error("[resendConfirmation]", error.message);
+  return { success: GENERIC };
+}
+
 export async function signInAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   if (await checkRateLimitByIp(await authIp(), "auth")) {
     return { error: RATE_LIMIT_MESSAGE };
