@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Container, Eyebrow } from "@/components/container";
 import { DirectoryCard } from "@/components/public/directory-card";
 import { RfpCard } from "@/components/public/rfp-card";
+import { EmailCapture } from "@/components/public/email-capture";
 import { CTASection } from "@/components/public/section";
 import { EmptyState } from "@/components/public/empty-state";
 import { buttonVariants } from "@/components/ui/button";
@@ -150,6 +151,15 @@ export default async function TradeCategoryPage({
             {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked={false} />)}
           </div>
         )}
+        <div className="mt-8">
+          <EmailCapture
+            role="trade"
+            categorySlug={cat.slug}
+            heading={`Get ${cat.name} RFP alerts`}
+            sub={`Be first to know when commercial ${lower} RFPs are posted in your regions. We'll email you as opportunities go live — no account required.`}
+            buttonLabel="Email me RFPs"
+          />
+        </div>
       </Container>
 
       <section className="bg-secondary/30">

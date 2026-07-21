@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, Search } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { CTASection } from "@/components/public/section";
+import { EmailCapture } from "@/components/public/email-capture";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -153,6 +154,16 @@ export default async function CostGuidePage({
               How PMRFP works
             </Link>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <EmailCapture
+            role="property_manager"
+            categorySlug={g.tradeSlug}
+            heading={`Planning ${g.tradeName.toLowerCase()} work?`}
+            sub={`Get notified as more commercial ${g.tradeName.toLowerCase()} companies join your region, so your RFP lands in front of a full bench of bidders when you're ready to post.`}
+            buttonLabel="Notify me"
+          />
         </div>
 
         {template && (

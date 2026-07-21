@@ -124,6 +124,7 @@ export interface RegionalWaitlistFormProps {
   requestedRegionText?: string;
   province?: string;
   country?: string;
+  categorySlug?: string;
   buttonLabel?: string;
 }
 
@@ -134,6 +135,7 @@ export function RegionalWaitlistForm({
   requestedRegionText,
   province,
   country,
+  categorySlug,
   buttonLabel = "Join the list",
 }: RegionalWaitlistFormProps) {
   const [state, action, pending] = useActionState(
@@ -162,6 +164,7 @@ export function RegionalWaitlistForm({
       />
       {regionSlug && <input type="hidden" name="regionSlug" value={regionSlug} />}
       {role && <input type="hidden" name="role" value={role} />}
+      {categorySlug && <input type="hidden" name="categorySlug" value={categorySlug} />}
       <input type="hidden" name="reason" value={reason} />
       {requestedRegionText && (
         <input type="hidden" name="requestedRegionText" value={requestedRegionText} />

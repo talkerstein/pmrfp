@@ -14,6 +14,7 @@ import {
   CTASection,
 } from "@/components/public/section";
 import { CategoryGrid } from "@/components/public/category-grid";
+import { EmailCapture } from "@/components/public/email-capture";
 import { ReferBanner } from "@/components/public/refer-banner";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { Badge } from "@/components/ui/badge";
@@ -168,6 +169,16 @@ export default async function ForPropertyManagersPage() {
         <div className="mt-10 max-w-3xl">
           <TrustDisclaimer />
         </div>
+      </Section>
+
+      <Section>
+        <EmailCapture
+          role="property_manager"
+          heading="Not ready to post an RFP yet?"
+          sub="Leave your email and we'll keep you posted as more vetted trades join your regions — so when you're ready, a full bench of bidders is waiting. No spam, unsubscribe anytime."
+          buttonLabel="Keep me posted"
+          className="max-w-3xl"
+        />
       </Section>
 
       <CTASection
