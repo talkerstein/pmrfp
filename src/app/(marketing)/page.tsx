@@ -99,7 +99,7 @@ export default async function HomePage() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/sign-up?role=property_manager"
+                  href="/sign-up?role=property_manager&next=/pm-dashboard/rfps/new"
                   className={buttonVariants({ size: "lg", variant: "accent" })}
                 >
                   Post a project — free <ArrowRight className="size-4" />
@@ -600,7 +600,7 @@ export default async function HomePage() {
               Join as a Trade Company <ArrowRight className="size-4" />
             </Link>
             <Link
-              href="/sign-up?role=property_manager"
+              href="/sign-up?role=property_manager&next=/pm-dashboard/rfps/new"
               className={cn(
                 buttonVariants({ size: "lg", variant: "outline" }),
                 "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white",

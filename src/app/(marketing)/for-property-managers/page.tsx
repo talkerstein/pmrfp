@@ -71,7 +71,7 @@ export default async function ForPropertyManagersPage() {
               .
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/sign-up?role=property_manager" className={buttonVariants({ size: "lg" })}>
+              <Link href="/sign-up?role=property_manager&next=/pm-dashboard/rfps/new" className={buttonVariants({ size: "lg" })}>
                 Post an RFP — free
               </Link>
               <Link
@@ -166,7 +166,7 @@ export default async function ForPropertyManagersPage() {
       <CTASection
         title="Find the right vendors for your next commercial project."
         description="Post your project free. Trades come to you with their interest."
-        primaryHref="/sign-up?role=property_manager"
+        primaryHref="/sign-up?role=property_manager&next=/pm-dashboard/rfps/new"
         primaryLabel="Post an RFP — free"
         secondaryHref="/directory"
         secondaryLabel="Browse the directory"

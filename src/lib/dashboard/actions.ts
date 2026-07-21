@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession } from "@/lib/access/access";
 import { companyProfileSchema, rfpPostSchema } from "@/lib/validations";
 import { sendAdminNewRfp } from "@/lib/email/send";
+import { trackEvent, EVENT } from "@/lib/analytics";
 import type { ActionState } from "@/lib/auth/actions";
 
 const DEMO = "Demo mode: connect a Supabase project to save changes.";
@@ -317,6 +318,20 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   }
 
   await sendAdminNewRfp({ title: d.title, postedBy: session.organization?.name, region: d.regionSlug });
+
+  // Fire the core marketplace-liquidity event. Primitive props only (Vercel's
+  // tracker rejects nested objects). Must run BEFORE redirect() — redirect throws
+  // internally, so anything after it never executes.
+  await trackEvent(EVENT.RFP_POSTED, {
+    region: d.regionSlug,
+    categories: categories.length,
+    property_type: d.propertyType ?? null,
+    budget_public: d.budgetPublic ?? false,
+    source_type:
+      session.profile.primary_role === "admin" || session.profile.primary_role === "super_admin"
+        ? "admin_seeded"
+        : "property_manager_direct",
+  });
 
   redirect("/pm-dashboard/rfps?posted=1");
 }
