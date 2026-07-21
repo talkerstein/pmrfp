@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { CTASection } from "@/components/public/section";
+import { EmailCapture } from "@/components/public/email-capture";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -364,6 +365,16 @@ export default async function RfpTemplateDetailPage({
           </div>
         </Container>
       )}
+
+      <Container className="pb-4">
+        <EmailCapture
+          role="property_manager"
+          categorySlug={t.tradeSlug}
+          heading={`Not posting your ${t.tradeName.toLowerCase()} RFP today?`}
+          sub={`Save your spot and we'll notify you as more ${t.tradeName.toLowerCase()} companies join your region — so your RFP meets a full bench of bidders when you're ready to post.`}
+          buttonLabel="Notify me"
+        />
+      </Container>
 
       <CTASection
         title={`Ready to post your ${t.tradeName.toLowerCase()} RFP?`}
