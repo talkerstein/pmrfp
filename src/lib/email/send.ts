@@ -388,3 +388,54 @@ export async function sendAdminContactEmail(params: { name: string; email: strin
     ),
   );
 }
+
+/**
+ * Concierge "Post it for me" intake — a property manager / owner hands us a
+ * loosely-described project and we draft + post the RFP for them. Distinct from
+ * the referral lane: the submitter IS the property contact, there's no finder's
+ * fee, and the admin subject is tagged so these leads are easy to triage.
+ */
+export async function sendAdminConciergeRfp(params: {
+  projectDescription: string;
+  city: string;
+  province: string;
+  category?: string;
+  propertyType?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+}): Promise<void> {
+  await send(
+    ADMIN,
+    "New concierge RFP request (post-for-me)",
+    layout(
+      "Someone wants us to post their RFP",
+      `<ul>
+        <li><strong>Contact:</strong> ${[params.contactName, params.contactEmail, params.contactPhone].filter(Boolean).join(" · ")}</li>
+        <li><strong>Location:</strong> ${params.city}, ${params.province}</li>
+        ${params.category ? `<li><strong>Category:</strong> ${params.category}</li>` : ""}
+        ${params.propertyType ? `<li><strong>Property type:</strong> ${params.propertyType}</li>` : ""}
+       </ul>
+       <p><strong>Project:</strong><br/>${params.projectDescription}</p>
+       <p>${btn(`${BASE}/admin/rfps`, "Draft & post in admin")}</p>`,
+    ),
+  );
+}
+
+export async function sendConciergeConfirmation(to: string, city: string): Promise<void> {
+  await send(
+    to,
+    "We'll get your RFP posted",
+    layout(
+      "Thanks — we've got your project",
+      `<p>Thanks for sending us your project in <strong>${city}</strong>. Here's what happens next:</p>
+       <ol>
+         <li>Our team reviews the details (usually within 1 business day).</li>
+         <li>We draft a clear, structured RFP and send it to you to confirm.</li>
+         <li>Once you approve, it goes live to qualified Canadian trades in your region — free.</li>
+       </ol>
+       <p>No account needed to start. If you'd rather post it yourself in a few minutes, you can ${`<a href="${BASE}/sign-up?role=property_manager&next=/pm-dashboard/rfps/new" style="color:#282B59;font-weight:600">do that here</a>`}.</p>`,
+      "PMRFP lists projects and trades — we don't guarantee contracts, responses, or revenue.",
+    ),
+  );
+}

@@ -81,6 +81,13 @@ export default async function ForPropertyManagersPage() {
                 Browse the directory
               </Link>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Short on time?{" "}
+              <Link href="/post-for-me" className="font-medium text-teal-700 hover:underline">
+                Describe your project and we&apos;ll post the RFP for you
+              </Link>{" "}
+              — free.
+            </p>
             <ReferBanner variant="subtle" className="mt-10 max-w-3xl" />
           </div>
         </Container>

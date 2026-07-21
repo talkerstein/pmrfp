@@ -128,6 +128,7 @@ export const FOOTER_COLS = [
       { label: "For Trades", href: "/for-trades" },
       { label: "For Suppliers", href: "/for/suppliers" },
       { label: "For Property Managers", href: "/for-property-managers" },
+      { label: "Post an RFP for me", href: "/post-for-me" },
       { label: "For Condo Boards", href: "/for/condo-boards" },
       { label: "For Builders", href: "/for/builders" },
       { label: "For Investors", href: "/for/investors" },

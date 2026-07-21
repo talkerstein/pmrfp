@@ -137,6 +137,25 @@ export type ProjectReferralInput = z.infer<typeof projectReferralSchema>;
 export const referralSchema = projectReferralSchema;
 
 /**
+ * Concierge "Post it for me" intake. A property manager / owner describes a
+ * project loosely and PMRFP drafts + posts the RFP for them. The submitter IS
+ * the property contact — no referrer/fee fields, contact is required.
+ */
+export const postForMeSchema = z.object({
+  projectDescription: z.string().min(30, "Tell us a bit more (30+ characters)").max(2500),
+  city: z.string().min(1, "City is required"),
+  province: z.string().min(1, "Province is required"),
+  category: z.string().optional(),
+  propertyType: z.string().optional(),
+  contactName: z.string().min(1, "Your name is required"),
+  contactEmail: z.string().email("Enter a valid email"),
+  contactPhone: z.string().optional(),
+  // Honeypot
+  company_website: z.string().max(0).optional(),
+});
+export type PostForMeInput = z.infer<typeof postForMeSchema>;
+
+/**
  * Refer-a-trade intake. Fee paid when the referred trade activates their
  * Trade Pro subscription ($249/yr) — the direct-revenue listing event. This
  * is the highest-value referral lane because PMRFP gets paid the moment the
