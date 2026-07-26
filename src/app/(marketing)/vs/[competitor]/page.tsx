@@ -29,10 +29,16 @@ export async function generateMetadata({
   const { competitor } = await params;
   const c = getCompetitor(competitor);
   if (!c) return { title: "Comparison not found" };
-  const title = `${SITE.name} vs ${c.name}: Which is Right for Canadian Trades?`;
+  // Lead with the competitor's name, not ours. Search Console shows these pages
+  // earn their impressions on "<competitor>", "<competitor> pricing" and
+  // "<competitor> alternative" queries — searchers who have never heard of us.
+  // Putting our brand first buried the term they actually typed, and the layout
+  // already appends "— PMRFP", so the old title spent its budget saying our name
+  // twice. "Pricing" is in the title because it's the top comparison query.
+  const title = `${c.name} vs ${SITE.name}: Pricing & Which Fits Canadian Trades`;
   return {
     title,
-    description: `${SITE.name} vs ${c.name} — ${c.angle}`,
+    description: `Compare ${c.name} and ${SITE.name} on price, focus, and what each is actually built for. ${SITE.name} is $${PRICING.proAnnual} CAD/yr flat.`,
     alternates: { canonical: `/vs/${c.slug}` },
   };
 }
