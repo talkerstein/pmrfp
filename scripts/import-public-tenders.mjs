@@ -202,7 +202,7 @@ const env = Object.fromEntries(
 const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 const { data: regions } = await sb.from("regions").select("id,slug");
-const { data: cats } = await sb.from("categories").select("id,slug");
+const { data: cats } = await sb.from("trade_categories").select("id,slug");
 const regionId = Object.fromEntries((regions ?? []).map((r) => [r.slug, r.id]));
 const catId = Object.fromEntries((cats ?? []).map((c) => [c.slug, c.id]));
 
