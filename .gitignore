@@ -81,3 +81,9 @@ briefs/concierge-signups.json
 briefs/outbound-*.json
 briefs/warm-asks-*.md
 briefs/trade-blast-*.md
+
+# Expo mobile app — local env + native build output
+mobile/.env
+mobile/.expo/
+mobile/android/
+mobile/ios/
