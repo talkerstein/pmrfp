@@ -9,7 +9,7 @@ import { getSession } from "@/lib/access/access";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Your PMRFP Verified Vendor Badge",
+  title: "Your Verified Vendor Badge",
   description:
     "Show clients you're a credible commercial vendor with the PMRFP badge — a verified-status mark that links back to your profile. Free for members.",
   alternates: { canonical: "/badge" },

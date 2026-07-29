@@ -137,7 +137,7 @@ export default async function RfpTemplateDetailPage({
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
             <FactPill icon={<Sparkles className="size-4" />} label="Pre-filled scope + requirements" />
-            <FactPill icon={<FileText className="size-4" />} label={`Tagged to /trades/${t.tradeSlug}`} />
+            <FactPill icon={<FileText className="size-4" />} label={`Relevant trade: ${t.tradeName}`} />
             <FactPill icon={<Calendar className="size-4" />} label={`${t.timeline.length}-phase timeline`} />
           </div>
         </Container>

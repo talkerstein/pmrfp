@@ -14,7 +14,7 @@ export default async function OG() {
   return renderOgImage({
     eyebrow: "Founding members · Free to join",
     title: "Get found. Win building work.",
-    subline: "Property managers post projects. Vetted trades bid. No credit card.",
+    subline: "Property managers post projects. Commercial trades bid. No credit card.",
     caption: "pmrfp.com/sign-up",
   });
 }

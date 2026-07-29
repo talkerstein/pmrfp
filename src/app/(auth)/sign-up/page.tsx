@@ -18,16 +18,21 @@ export async function generateMetadata({
   const { role } = await searchParams;
   const trade = role === "trade" || role === "supplier";
   const pm = role === "property_manager" || role === "real_estate_agent";
+  // Brand comes from the root layout's `%s — PMRFP` title template; repeating it
+  // here rendered "… — PMRFP — PMRFP".
   const title = trade
-    ? "Join PMRFP as a founding trade — free"
+    ? "Join as a founding trade — free"
     : pm
-      ? "Post your building project free — PMRFP"
-      : "Join PMRFP — free";
+      ? "Post your building project free"
+      : "Create your free account";
+  // "Vetted" is not a claim the platform can currently substantiate — listing is
+  // open and the disclaimer puts due diligence, licensing and insurance on the
+  // member. Describe what actually happens instead.
   const description = trade
-    ? "Property managers post building jobs. Vetted trades get found and bid. Free to join, no credit card."
+    ? "Property managers post building jobs. Listed trades get found and respond. Free to join, no credit card."
     : pm
-      ? "Post your project once and vetted trades come to you with bids. Free for property managers, always."
-      : "Property managers post building RFPs free. Vetted trades bid on the work.";
+      ? "Post your project once and matching trade companies respond. Free for property managers, always."
+      : "Property managers post building RFPs free. Commercial trades get listed and respond to the work.";
   return {
     title,
     description,

@@ -16,6 +16,12 @@ import { getCategories } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
 import { cn } from "@/lib/utils";
 
+// The homepage reads live marketplace data (open RFP board + counters). Without
+// this it is prerendered once at build time and the numbers/dates fossilize
+// until the next deploy — which is how the hero board ended up advertising
+// long-expired opportunities under a "Live now" label.
+export const revalidate = 3600;
+
 const PROBLEMS = [
   { n: "01", t: "Scattered RFPs", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
   { n: "02", t: "Hard-to-reach buyers", d: "Property managers keep private preferred-vendor lists that newcomers simply can't see." },
@@ -78,6 +84,11 @@ export default async function HomePage() {
   const [categories, rfps] = await Promise.all([getCategories(), listRfps()]);
   const board = rfps.slice(0, 6);
   const chips = categories.slice(0, 6);
+  // Only genuinely open RFPs may appear in the hero panel (it's labelled "Live
+  // now") or be counted as "Live RFPs" — listRfps() also returns past-deadline
+  // rows, which render grayed as "Closed" on /rfps by design.
+  const openRfps = rfps.filter((r) => r.status === "open");
+  const heroBoard = openRfps.slice(0, 3);
 
   return (
     <>
@@ -90,7 +101,7 @@ export default async function HomePage() {
                 <span className="h-px w-5 bg-teal-300" /> Now live in the GTA · Your region next
               </span>
               <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
-                Post commercial property RFPs <span className="text-teal-300">free</span>. Vetted
+                Post commercial property RFPs <span className="text-teal-300">free</span>. Commercial
                 trades bid to win them.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/75">
@@ -139,50 +150,55 @@ export default async function HomePage() {
                     <h4 className="font-semibold text-foreground">RFP Board</h4>
                     <span className="font-mono text-[11px] text-muted-foreground">Live now</span>
                   </div>
-                  {[
-                    { cat: "Electrical", title: "Condominium Electrical Maintenance Contract", meta: ["Toronto · Condo", "Closes Jun 18"], status: "open" as const },
-                    { cat: "Snow Removal", title: "Commercial Plaza Snow Removal Services", meta: ["Mississauga · Retail", "Closes Jun 09"], status: "soon" as const },
-                    { cat: "HVAC", title: "Apartment Building HVAC Preventive Maintenance", meta: [] as string[], status: "locked" as const },
-                  ].map((r) => (
-                    <div
-                      key={r.title}
-                      className={cn(
-                        "mb-2.5 rounded-lg border border-border p-3.5 transition-colors last:mb-0 hover:border-teal-300",
-                        r.status === "locked" ? "bg-secondary" : "bg-white",
-                      )}
-                    >
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="font-mono text-[10.5px] uppercase tracking-wide text-teal-600">
-                          {r.cat}
-                        </span>
-                        {r.status === "locked" ? (
-                          <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
-                            Locked
+                  {heroBoard.map((r, i) => {
+                    // Last card renders as the locked/teaser treatment a
+                    // non-member actually sees on /rfps — a real product state,
+                    // not a decorative placeholder.
+                    const locked = i === heroBoard.length - 1 && heroBoard.length > 1;
+                    const meta = locked
+                      ? []
+                      : [
+                          [r.city ?? r.regionName, r.propertyTypeName].filter(Boolean).join(" · "),
+                          r.deadline ? `Closes ${formatDeadline(r.deadline)}` : "Open until filled",
+                        ].filter(Boolean);
+                    return (
+                      <div
+                        key={r.slug}
+                        className={cn(
+                          "mb-2.5 rounded-lg border border-border p-3.5 transition-colors last:mb-0 hover:border-teal-300",
+                          locked ? "bg-secondary" : "bg-white",
+                        )}
+                      >
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10.5px] uppercase tracking-wide text-teal-600">
+                            {r.categories[0] ?? "Trade"}
                           </span>
+                          {locked ? (
+                            <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
+                              Locked
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 font-mono text-[10px] uppercase text-teal-700">
+                              <span className="size-1.5 rounded-full bg-current" />
+                              Open
+                            </span>
+                          )}
+                        </div>
+                        <div className={cn("font-semibold", locked ? "text-muted-foreground" : "text-foreground")}>
+                          {r.title}
+                        </div>
+                        {meta.length > 0 ? (
+                          <div className="mt-2 flex gap-4 font-mono text-[11.5px] text-muted-foreground">
+                            {meta.map((m) => <span key={m}>{m}</span>)}
+                          </div>
                         ) : (
-                          <span className={cn(
-                            "flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase",
-                            r.status === "soon" ? "bg-warning/10 text-warning" : "bg-teal-50 text-teal-700",
-                          )}>
-                            <span className="size-1.5 rounded-full bg-current" />
-                            {r.status === "soon" ? "Closing" : "Open"}
-                          </span>
+                          <div className="mt-2.5 flex items-center gap-2 border-t border-dashed border-border pt-2.5 font-mono text-[11.5px] text-muted-foreground">
+                            <Lock className="size-3.5 text-periwinkle" /> Subscribe to view full opportunity
+                          </div>
                         )}
                       </div>
-                      <div className={cn("font-semibold", r.status === "locked" ? "text-muted-foreground" : "text-foreground")}>
-                        {r.title}
-                      </div>
-                      {r.meta.length > 0 ? (
-                        <div className="mt-2 flex gap-4 font-mono text-[11.5px] text-muted-foreground">
-                          {r.meta.map((m) => <span key={m}>{m}</span>)}
-                        </div>
-                      ) : (
-                        <div className="mt-2.5 flex items-center gap-2 border-t border-dashed border-border pt-2.5 font-mono text-[11.5px] text-muted-foreground">
-                          <Lock className="size-3.5 text-periwinkle" /> Subscribe to view full opportunity
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -210,7 +226,7 @@ export default async function HomePage() {
         <Container className="py-12">
           <div className="mx-auto grid max-w-4xl grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{rfps.length}</div>
+              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{openRfps.length}</div>
               <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Live RFPs</div>
             </div>
             <div>

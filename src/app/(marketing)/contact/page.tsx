@@ -4,7 +4,7 @@ import { ContactForm } from "@/components/public/contact-form";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Contact PMRFP",
+  title: "Contact",
   description: "Get in touch with the PMRFP team — for trades, property managers, and sourcing help.",
 };
 

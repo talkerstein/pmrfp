@@ -9,7 +9,7 @@ import { SITE } from "@/lib/site";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Compare PMRFP — Alternatives for Canadian Commercial Trades",
+  title: "Compare Alternatives for Canadian Commercial Trades",
   description: `How ${SITE.name} compares to MERX, Biddingo, ConstructConnect, HomeStars, VendorPM, and more — for Canadian trades and property managers.`,
   alternates: { canonical: "/vs" },
 };

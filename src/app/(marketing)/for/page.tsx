@@ -9,7 +9,7 @@ import { SITE } from "@/lib/site";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Solutions — PMRFP for Builders, Trades, Sales Teams & Investors",
+  title: "Solutions for Builders, Trades, Sales Teams & Investors",
   description: `How ${SITE.name} works for every side of commercial property: builders, trade contractors, sales teams, and property investors.`,
   alternates: { canonical: "/for" },
 };
@@ -48,7 +48,7 @@ export default function SolutionsIndexPage() {
       </Container>
       <CTASection
         title="Find your place in the network"
-        description="Property managers post building RFPs free. Vetted trades bid on the work."
+        description="Property managers post building RFPs free. Commercial trades discover the work and respond."
         primaryHref="/sign-up"
         primaryLabel={`Join ${SITE.name}`}
         secondaryHref="/vs"

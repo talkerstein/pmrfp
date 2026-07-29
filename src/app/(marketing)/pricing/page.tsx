@@ -17,6 +17,11 @@ import { cn } from "@/lib/utils";
 import { PRICING } from "@/lib/site";
 import { TradeProCard } from "@/components/public/trade-pro-card";
 
+// This page renders getPlatformStats() social proof but takes no searchParams,
+// so it was statically prerendered at build time and kept publishing build-time
+// counters forever — /rfps (dynamic) and /pricing (static) disagreed in public.
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Pricing",
   description:
