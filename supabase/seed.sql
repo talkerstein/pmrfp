@@ -71,13 +71,12 @@ values
    'Window and door supply, replacement, and repair for residential & commercial buildings.',
    'Northview Windows and Doors handles window and door replacement, storefront glazing, and repairs for condominiums, apartments, and commercial properties across the Greater Toronto Area.',
    15,'11-50','Fully insured','Active','false','true','false','true',
-   'approved',72,'request_intro','active'),
-  ('Maple Electric Supply','maple-electric-supply','supplier','Toronto','Ontario','Canada',
-   null,null,null,
-   'Electrical supply distributor for contractors — fixtures, panels, wire & lighting.',
-   'Maple Electric Supply distributes electrical materials, lighting, panels, and wire to contractors and property-maintenance teams across the GTA, with contractor accounts and job-site delivery.',
-   20,'11-50','Fully insured','Active','false','true','false','true',
-   'approved',75,'show_contact','active')
+   'approved',72,'request_intro','active')
+-- A 'Maple Electric Supply' fixture was removed from this list: it was invented
+-- (verified=true, "20 years", "Fully insured", WSIB "Active") but Maple Electric
+-- Supply is a real Concord, ON distributor. The slug now belongs to the actual
+-- company, seeded from its own published data by
+-- scripts/seed-electrical-orgs.mjs. Fixture names must stay obviously fictional.
 on conflict (slug) do nothing;
 
 -- ── Link orgs → categories ──────────────────────────────────────────
@@ -93,8 +92,7 @@ where (o.slug,c.slug) in (
   ('guardian-fire-safety','fire-safety'),('guardian-fire-safety','security-systems'),
   ('vista-glass-windows','glass-and-windows'),
   ('toronto-painters','painting'),('toronto-painters','drywall'),
-  ('northview-windows-doors','glass-and-windows'),('northview-windows-doors','garage-doors'),
-  ('maple-electric-supply','electrical'),('maple-electric-supply','lighting')
+  ('northview-windows-doors','glass-and-windows'),('northview-windows-doors','garage-doors')
 ) on conflict do nothing;
 
 -- ── Link orgs → regions ─────────────────────────────────────────────
@@ -124,8 +122,7 @@ where (o.slug,p.slug) in (
   ('guardian-fire-safety','institutional'),('guardian-fire-safety','commercial-office'),
   ('vista-glass-windows','commercial-office'),('vista-glass-windows','retail-plaza'),
   ('toronto-painters','condominium'),('toronto-painters','apartment-building'),('toronto-painters','commercial-office'),
-  ('northview-windows-doors','condominium'),('northview-windows-doors','apartment-building'),('northview-windows-doors','commercial-office'),
-  ('maple-electric-supply','commercial-office'),('maple-electric-supply','apartment-building')
+  ('northview-windows-doors','condominium'),('northview-windows-doors','apartment-building'),('northview-windows-doors','commercial-office')
 ) on conflict do nothing;
 
 -- ── 5 sample RFPs (§21) — published, admin-seeded, demo ─────────────

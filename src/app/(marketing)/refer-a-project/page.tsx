@@ -52,7 +52,7 @@ const WHO = [
   },
   {
     title: "Insurance brokers",
-    body: "Claims-related repair work where a vetted trade speed matters.",
+    body: "Claims-related repair work where trade response speed matters.",
   },
   {
     title: "Property managers",
@@ -193,7 +193,7 @@ export default function ReferProjectPage() {
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
                   <strong className="text-foreground">Help your client first.</strong>{" "}
-                  Their project gets vetted bids fast — better outcome, stronger relationship.
+                  Their project gets competitive bids fast — better outcome, stronger relationship.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -214,9 +214,9 @@ export default function ReferProjectPage() {
               <li className="flex gap-3">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
-                  <strong className="text-foreground">Lower your own liability.</strong>{" "}
-                  A vetted platform with insured trades — vs. recommending &ldquo;a guy you
-                  know&rdquo; and inheriting the risk.
+                  <strong className="text-foreground">Keep it at arm&rsquo;s length.</strong>{" "}
+                  An open posting several companies can respond to — vs. personally
+                  vouching for &ldquo;a guy you know&rdquo; and owning the outcome.
                 </span>
               </li>
               <li className="flex gap-3">

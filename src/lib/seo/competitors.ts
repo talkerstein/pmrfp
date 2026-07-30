@@ -336,7 +336,7 @@ export const COMPETITORS: Competitor[] = [
       "No competitive pricing signal or documented process",
     ],
     angle:
-      "If you're not already on someone's preferred list, you don't exist. PMRFP creates a front door for trades that aren't yet connected — and gives property managers a searchable, vetted alternative to their rolodex.",
+      "If you're not already on someone's preferred list, you don't exist. PMRFP creates a front door for trades that aren't yet connected — and gives property managers a searchable, documented alternative to their rolodex.",
     rows: [
       { feature: "Annual price", pmrfp: PRICE, them: "$0 (high time cost)" },
       { feature: "Discoverability for new vendors", pmrfp: "Yes", them: "No" },

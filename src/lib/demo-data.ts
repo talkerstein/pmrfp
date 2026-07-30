@@ -254,15 +254,12 @@ export const DEMO_SUPPLIERS: DemoVendor[] = [
     website: "https://example.com", email: "sales@example.com", phone: "(905) 555-0277",
     categories: ["cleaning-janitorial", "waste-removal"], regions: ["hamilton", "burlington"], propertyTypes: ["rental-residential", "commercial-office"],
   },
-  {
-    slug: "maple-electric-supply", name: "Maple Electric Supply", city: "Toronto", province: "Ontario",
-    shortDescription: "Electrical supply distributor for contractors — fixtures, panels, wire & lighting.",
-    fullDescription: "Maple Electric Supply distributes electrical materials, lighting, panels, and wire to contractors and property-maintenance teams across the GTA, with contractor accounts and job-site delivery.",
-    yearsInBusiness: 20, employeeCountRange: "11-50", insuranceStatus: "Fully insured", wsibStatus: "Active",
-    emergencyService: false, verified: true, featured: false, contactVisibility: "show_contact",
-    website: null, email: null, phone: null,
-    categories: ["electrical", "lighting"], regions: ["toronto", "greater-toronto-area"], propertyTypes: ["commercial-office", "apartment-building"],
-  },
+  // NOTE: a "Maple Electric Supply" fixture used to sit here, invented, with
+  // verified=true and a fabricated "20 years / Fully insured / WSIB Active".
+  // Maple Electric Supply is a REAL Concord, ON distributor
+  // (mapleelectricsupply.ca) and now occupies that slug with its own data via
+  // scripts/seed-electrical-orgs.mjs. Keep fixture names obviously fictional —
+  // a fabricated company profile asserts that a real business exists.
 ];
 
 export interface DemoRfp {

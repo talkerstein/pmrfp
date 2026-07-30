@@ -113,7 +113,15 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     .select(ORG_SELECT)
     .eq("organization_type", orgType)
     .eq("profile_status", "approved")
-    .eq("status", "active");
+    .eq("status", "active")
+    // Seeded fixture companies (supabase/seed.sql) are invented. Unlike a demo
+    // RFP — which the UI honestly badges "Sample" — a fabricated *company*
+    // profile asserts a real-world business exists, and several fixtures collide
+    // with the names of actual firms. They must never appear in a live listing,
+    // a profile page, or the sitemap. getPlatformStats() already filters on
+    // is_demo; this reader was the one place that didn't, which is why the
+    // public counters and the visible directory disagreed.
+    .eq("is_demo", false);
   if (filters.verified) query = query.eq("verified", true);
   if (filters.q) query = query.ilike("name", `%${filters.q}%`);
   const { data } = await query.limit(200);
@@ -173,6 +181,10 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     .select(ORG_SELECT)
     .eq("slug", slug)
     .eq("profile_status", "approved")
+    // Same rule as listVendors: a fixture company must not be reachable by
+    // direct URL either, or it stays indexed and linkable after being pulled
+    // from the listing.
+    .eq("is_demo", false)
     .maybeSingle();
   const r = data as unknown as OrgRow | null;
   if (!r) return null;

@@ -29,7 +29,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const v = await getVendor(slug);
-  if (!v) return { title: "Vendor not found" };
+  // notFound() rather than a fallback title: returning metadata here left the
+  // route resolving as a normal page, so an unknown vendor slug answered
+  // 200 OK with the not-found body (a soft 404 — Google indexes those as thin
+  // duplicates instead of dropping them). Verified: this route was the only
+  // dynamic segment in the app returning 200 for a bogus slug.
+  if (!v) notFound();
   const title = `${v.name} — ${[v.city, v.province].filter(Boolean).join(", ")}`;
   const description =
     v.shortDescription ?? `${v.name} on the ${SITE.name} commercial property vendor directory.`;
@@ -93,9 +98,13 @@ export default async function VendorProfilePage({
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 {v.name}
+                {/* The tooltip previously claimed "We confirm licensing, insurance,
+                    and a real business presence before listing" — untrue: listing is
+                    open, and COPY.disclaimer puts licensing/insurance checks on the
+                    member. State only what the flag actually represents. */}
                 {v.verified && (
                   <span
-                    title="Verified by PMRFP. We confirm licensing, insurance, and a real business presence before listing."
+                    title="Reviewed by PMRFP staff. Licensing, insurance and WSIB details shown on this profile are self-reported by the company."
                     className="inline-flex"
                   >
                     <BadgeCheck className="size-5 text-success" aria-label="Verified by PMRFP" />
