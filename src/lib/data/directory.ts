@@ -165,6 +165,8 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
       email: showContact ? v.email : null,
       phone: showContact ? v.phone : null,
       portfolioPhotos: [],
+      googleRating: null,
+      googleReviewCount: null,
     };
   }
   const supabase = createReadClient();
@@ -178,6 +180,21 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
   if (!r) return null;
   const showContact = r.public_contact_visibility === "show_contact";
   const portfolioPhotos = await getPortfolioPhotos(r.id);
+  // Google rating columns arrive with the 20260819 migration. Queried
+  // separately from ORG_SELECT so a not-yet-migrated database degrades to
+  // "no rating shown" instead of breaking every vendor query on the site.
+  let googleRating: number | null = null;
+  let googleReviewCount: number | null = null;
+  {
+    const { data: g } = await supabase
+      .from("organizations")
+      .select("google_rating,google_review_count")
+      .eq("id", r.id)
+      .maybeSingle();
+    const gr = g as { google_rating: number | null; google_review_count: number | null } | null;
+    googleRating = gr?.google_rating ?? null;
+    googleReviewCount = gr?.google_review_count ?? null;
+  }
   return {
     id: r.id,
     slug: r.slug,
@@ -197,6 +214,8 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     wsibStatus: r.wsib_status,
     emergencyService: r.emergency_service,
     propertyTypes: r.organization_property_types.map((c) => c.property_types?.name).filter(Boolean) as string[],
+    googleRating,
+    googleReviewCount,
     contactVisibility: r.public_contact_visibility,
     website: showContact ? r.website : null,
     email: showContact ? r.email : null,

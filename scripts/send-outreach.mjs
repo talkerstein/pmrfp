@@ -71,22 +71,28 @@ const CAP = Number(process.env.OUTREACH_DAILY_CAP || 15);
 const MAILING_ADDRESS =
   process.env.OUTREACH_MAILING_ADDRESS || "5050 Dufferin St, North York, ON M3H 5T5";
 
+const argv = process.argv.slice(2);
+const dryRun = argv.includes("--dry-run");
+// --reply: this is an answer to someone who wrote to US first. The opt-out
+// line belongs on cold outreach; on an inbound reply it reads like a bulk
+// list and undercuts a personal answer. Mailing address is kept either way.
+const isReply = argv.includes("--reply");
+const flags = Object.fromEntries(
+  argv
+    .map((a, i) => [a, argv[i + 1]])
+    .filter(([a]) => a.startsWith("--")),
+);
+
 const SIGNATURE = [
   "",
   "Rishon",
   "Founder, PMRFP",
   "pmrfp.com",
   MAILING_ADDRESS,
-  'Not a fit? Reply "no thanks" and you won\'t hear from me again.',
+  ...(isReply
+    ? []
+    : ['Not a fit? Reply "no thanks" and you won\'t hear from me again.']),
 ].join("\n");
-
-const argv = process.argv.slice(2);
-const dryRun = argv.includes("--dry-run");
-const flags = Object.fromEntries(
-  argv
-    .map((a, i) => [a, argv[i + 1]])
-    .filter(([a]) => a.startsWith("--")),
-);
 
 function bodyWithSig(body) {
   return `${String(body).trimEnd()}\n${SIGNATURE}\n`;
@@ -187,7 +193,16 @@ async function runSingle() {
   }
 }
 
-const positional = argv.find((a) => !a.startsWith("--") && (a.endsWith(".json") || existsSync(a)));
+// A flag's value is not a positional argument. Without this, `--body-file
+// draft.txt` was picked up as the queue file (it passes the existsSync test)
+// and single-send mode died trying to JSON.parse the email body.
+const VALUE_FLAGS = new Set(["--to", "--subject", "--body-file"]);
+const positional = argv.find(
+  (a, i) =>
+    !a.startsWith("--") &&
+    !VALUE_FLAGS.has(argv[i - 1]) &&
+    (a.endsWith(".json") || existsSync(a)),
+);
 if (positional && existsSync(positional) && statSync(positional).isDirectory()) {
   const files = readdirSync(positional)
     .filter((f) => f.endsWith(".json") && f !== "EXAMPLE.json")

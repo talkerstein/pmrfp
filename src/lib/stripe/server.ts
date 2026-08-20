@@ -28,6 +28,14 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
   const item = sub.items.data[0];
   const priceId = item?.price.id ?? null;
   const status = mapStatus(sub.status);
+  // Tier drives entitlement: has_active_trade_access() only unlocks RFPs for
+  // pro/featured. Without this, an active $99 SEO sub would silently grant
+  // the $249 product.
+  const tier = isFeaturedPriceId(priceId)
+    ? "featured"
+    : isSeoPriceId(priceId)
+      ? "seo"
+      : "pro";
   await supabase
     .from("subscriptions")
     .upsert(
@@ -41,6 +49,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
         current_period_start: toIso(item?.current_period_start),
         current_period_end: toIso(item?.current_period_end),
         cancel_at_period_end: sub.cancel_at_period_end,
+        tier,
         amount: item?.price.unit_amount != null ? item.price.unit_amount / 100 : null,
         currency: (item?.price.currency ?? "cad").toUpperCase(),
       },
@@ -60,6 +69,12 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
 export function isFeaturedPriceId(priceId: string | null | undefined): boolean {
   const featured = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
   return Boolean(featured && priceId && priceId === featured);
+}
+
+/** True when the price id is the $99 directory-only SEO tier. */
+export function isSeoPriceId(priceId: string | null | undefined): boolean {
+  const seo = process.env.STRIPE_PRICE_SEO_ANNUAL;
+  return Boolean(seo && priceId && priceId === seo);
 }
 
 function mapStatus(s: Stripe.Subscription.Status): string {

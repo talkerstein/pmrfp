@@ -4,6 +4,8 @@ import { listRfps } from "@/lib/data/rfps";
 import { listVendors } from "@/lib/data/directory";
 import { listResources } from "@/lib/data/resources";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
+import { listQualifyingCombos } from "@/lib/data/trade-city";
+import { listCaseStudies } from "@/lib/data/case-studies";
 import { COMPETITORS } from "@/lib/seo/competitors";
 import { VERTICALS } from "@/lib/seo/verticals";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
@@ -29,6 +31,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/for", priority: 0.7, freq: "monthly" },
     { path: "/cost-guides", priority: 0.7, freq: "monthly" },
     { path: "/rfp-templates", priority: 0.8, freq: "monthly" },
+    { path: "/case-studies", priority: 0.7, freq: "weekly" },
+    { path: "/get-found", priority: 0.8, freq: "monthly" },
     { path: "/refer-a-project", priority: 0.9, freq: "monthly" },
     { path: "/contact", priority: 0.5, freq: "yearly" },
     { path: "/terms", priority: 0.3, freq: "yearly" },
@@ -36,12 +40,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/disclaimer", priority: 0.3, freq: "yearly" },
   ];
 
-  const [rfps, vendors, resources, categories, regions] = await Promise.all([
+  const [rfps, vendors, resources, categories, regions, tradeCityCombos, caseStudies] = await Promise.all([
     listRfps().catch(() => []),
     listVendors().catch(() => []),
     listResources().catch(() => []),
     getCategories().catch(() => []),
     getRegions().catch(() => []),
+    listQualifyingCombos().catch(() => []),
+    listCaseStudies().catch(() => []),
   ]);
 
   const entries: MetadataRoute.Sitemap = staticPaths.map((p) => ({
@@ -56,6 +62,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const a of resources) entries.push({ url: `${base}/resources/${a.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const c of categories) entries.push({ url: `${base}/trades/${c.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const rg of regions) entries.push({ url: `${base}/regions/${rg.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  // Trade×city pages exist only for combos that clear the vendor gate, so the
+  // sitemap stays in lockstep with what actually renders.
+  for (const tc of tradeCityCombos) entries.push({ url: `${base}/trades/${tc.category.slug}/${tc.region.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  for (const cs of caseStudies) entries.push({ url: `${base}/case-studies/${cs.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const c of COMPETITORS) entries.push({ url: `${base}/vs/${c.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const v of VERTICALS) entries.push({ url: `${base}/for/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
   for (const g of COST_GUIDES) entries.push({ url: `${base}/cost-guides/${g.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
