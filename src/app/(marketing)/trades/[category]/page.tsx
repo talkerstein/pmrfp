@@ -23,6 +23,7 @@ import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listVendors } from "@/lib/data/directory";
 import { listRfps } from "@/lib/data/rfps";
 import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
+import { listCitiesForTrade } from "@/lib/data/trade-city";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { SITE } from "@/lib/site";
 
@@ -72,11 +73,13 @@ export default async function TradeCategoryPage({
   const cat = await getCategory(category);
   if (!cat) notFound();
 
-  const [vendors, rfps, regions] = await Promise.all([
+  const [vendors, rfps, regions, liveCities] = await Promise.all([
     listVendors({ category: cat.slug }),
     listRfps({ category: cat.slug }),
     getRegions(),
+    listCitiesForTrade(cat.slug),
   ]);
+  const liveCitySlugs = new Set(liveCities.map((c) => c.region.slug));
 
   const lower = cat.name.toLowerCase();
   const faqs = [
@@ -207,7 +210,11 @@ export default async function TradeCategoryPage({
         <p className="mt-2 text-sm text-muted-foreground">Explore {lower} demand and vendors across Canada.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {topRegions.map((r) => (
-            <Link key={r.slug} href={`/regions/${r.slug}`} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-teal-400">
+            <Link
+              key={r.slug}
+              href={liveCitySlugs.has(r.slug) ? `/trades/${cat.slug}/${r.slug}` : `/regions/${r.slug}`}
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-teal-400"
+            >
               {cat.name} in {r.name}
             </Link>
           ))}
