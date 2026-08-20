@@ -21,6 +21,9 @@ export const PRICING = {
   proAnnual: 249,
   proMonthly: 29,
   featuredAnnual: 599,
+  seoAnnual: 99,
+  seoNote:
+    "SEO Listing: your company on the trade + city pages property managers find on Google and in AI answers. Directory placement only — RFP access is Trade Pro.",
   currency: "CAD",
   earlyBirdNote: "Early-bird: lock in $249/yr — rises to $399 once we hit 100 subscribers.",
   featuredNote:
@@ -82,6 +85,7 @@ export const TRADE_NAV = [
   { href: "/dashboard/rfps", label: "RFP Feed" },
   { href: "/dashboard/saved-rfps", label: "Saved RFPs" },
   { href: "/dashboard/interests", label: "My Interests" },
+  { href: "/dashboard/case-studies/new", label: "Submit a Case Study" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/settings", label: "Settings" },
 ] as const;
@@ -106,6 +110,7 @@ export const ADMIN_NAV = [
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/regions", label: "Regions" },
   { href: "/admin/resources", label: "Resources" },
+  { href: "/admin/case-studies", label: "Case Studies" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/audit-logs", label: "Audit Logs" },
 ] as const;
@@ -126,6 +131,7 @@ export const FOOTER_COLS = [
     heading: "Solutions",
     links: [
       { label: "For Trades", href: "/for-trades" },
+      { label: "Get Found (SEO & AI)", href: "/get-found" },
       { label: "For Suppliers", href: "/for/suppliers" },
       { label: "For Property Managers", href: "/for-property-managers" },
       { label: "For Condo Boards", href: "/for/condo-boards" },
@@ -147,6 +153,7 @@ export const FOOTER_COLS = [
   {
     heading: "Resources",
     links: [
+      { label: "Case Studies", href: "/case-studies" },
       { label: "Resource Hub", href: "/resources" },
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },

@@ -17,6 +17,7 @@ import { getQualifyingCombo, listQualifyingCombos } from "@/lib/data/trade-city"
 import { listVendors } from "@/lib/data/directory";
 import { listRfps } from "@/lib/data/rfps";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
+import { listCaseStudies } from "@/lib/data/case-studies";
 import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
 import { SITE } from "@/lib/site";
 
@@ -64,9 +65,10 @@ export default async function TradeCityPage({
   const { category: cat, region } = combo;
   const lower = cat.name.toLowerCase();
 
-  const [vendors, rfps] = await Promise.all([
+  const [vendors, rfps, caseStudies] = await Promise.all([
     listVendors({ category: cat.slug, region: region.slug }),
     listRfps({ category: cat.slug, region: region.slug }),
+    listCaseStudies({ categorySlug: cat.slug, regionSlug: region.slug, limit: 3 }),
   ]);
   // The gate ran against a cached combo list; the live vendor query is the
   // truth. If approvals were just revoked, don't render a hollow page.
@@ -175,6 +177,31 @@ export default async function TradeCityPage({
             </div>
           </Container>
         </section>
+      )}
+
+      {caseStudies.length > 0 && (
+        <Container className="py-12">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Recent {lower} projects in {region.name}
+          </h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {caseStudies.map((cs) => (
+              <Link
+                key={cs.slug}
+                href={`/case-studies/${cs.slug}`}
+                className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
+              >
+                <h3 className="text-base font-semibold leading-snug group-hover:text-teal-ink">
+                  {cs.title}
+                </h3>
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                  {cs.challenge}
+                </p>
+                <span className="mt-4 text-sm font-medium text-teal-ink">By {cs.orgName} →</span>
+              </Link>
+            ))}
+          </div>
+        </Container>
       )}
 
       {(guide || templates.length > 0) && (

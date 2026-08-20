@@ -34,6 +34,10 @@ export interface VendorDetail extends VendorListItem {
   phone: string | null;
   /** Public portfolio photo URLs (listed by storage prefix). */
   portfolioPhotos: string[];
+  /** Google rating pulled via the official Places API (display-only — never
+   * schema markup; rich-result rules require first-party reviews). */
+  googleRating: number | null;
+  googleReviewCount: number | null;
 }
 
 export interface RfpListItem {

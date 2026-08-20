@@ -104,6 +104,18 @@ export default async function VendorProfilePage({
               </h1>
               <p className="text-sm text-muted-foreground">
                 {[v.city, v.province].filter(Boolean).join(", ")}
+                {v.googleRating != null && v.googleReviewCount != null && v.googleReviewCount > 0 && (
+                  // Displayed with attribution, sourced via the official Places
+                  // API. Deliberately NOT in schema markup — rich-result rules
+                  // require first-party reviews for aggregateRating.
+                  <span className="ml-2 inline-flex items-center gap-1 font-medium text-foreground">
+                    <span aria-hidden className="text-warn">★</span>
+                    {v.googleRating.toFixed(1)}
+                    <span className="font-normal text-muted-foreground">
+                      · {v.googleReviewCount} Google reviews
+                    </span>
+                  </span>
+                )}
               </p>
             </div>
             {v.featured && <Badge className="ml-auto bg-teal-100 text-teal-700">Featured</Badge>}

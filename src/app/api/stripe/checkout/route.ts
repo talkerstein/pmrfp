@@ -18,14 +18,19 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const plan = body?.plan === "featured" ? "featured" : "pro";
-  // Featured is annual-only — premium positioning. Pro supports both.
+  const plan =
+    body?.plan === "featured" ? "featured" : body?.plan === "seo" ? "seo" : "pro";
+  // Featured and SEO are annual-only. Pro supports both intervals.
   const interval: "monthly" | "annual" =
     plan === "pro" && body?.interval === "monthly" ? "monthly" : "annual";
 
   let price: string | undefined;
   if (plan === "featured") {
     price = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
+  } else if (plan === "seo") {
+    // $99 directory-only tier — gated on the env var like every other price,
+    // so it simply reports "not available" until the Stripe price exists.
+    price = process.env.STRIPE_PRICE_SEO_ANNUAL;
   } else if (interval === "monthly") {
     price = process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY;
   } else {
