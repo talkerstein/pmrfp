@@ -55,7 +55,16 @@ export async function getSession(): Promise<SessionContext | null> {
   return { userId: user.id, profile, organization, hasTradeAccess };
 }
 
-/** Mirror of the SQL has_active_trade_access(): active|comped sub + not suspended. */
+/**
+ * Mirror of the SQL has_active_trade_access(): active|comped sub, tier
+ * pro/featured, org not suspended.
+ *
+ * The tier check matters as much as the status check: the SEO Listing tier
+ * is directory-only (see PRICING.seoNote), so an active SEO subscription
+ * must NOT satisfy this — otherwise the cheapest paid tier would silently
+ * unlock the RFP dashboard this function gates (dashboard/rfps, rfp-interest,
+ * save-rfp). Keep this in lockstep with the SQL function of the same name.
+ */
 async function computeTradeAccess(
   supabase: Awaited<ReturnType<typeof createClient>>,
   organization: Organization | null,
@@ -65,8 +74,26 @@ async function computeTradeAccess(
   if (organization.status === "suspended") return false;
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("status")
+    .select("status,tier")
     .eq("organization_id", organization.id)
+    .maybeSingle<{ status: string; tier: string }>();
+  const activeStatus = sub?.status === "active" || sub?.status === "comped";
+  const paidTier = sub?.tier === "pro" || sub?.tier === "featured";
+  return activeStatus && paidTier;
+}
+
+/**
+ * Any active/comped paid tier — seo, pro, or featured. Unlike
+ * computeTradeAccess (RFP-gate specific), this is for perks every paid tier
+ * shares, e.g. the unlimited portfolio gallery advertised on SEO Listing.
+ */
+export async function hasAnyPaidTier(organizationId: string | null): Promise<boolean> {
+  if (!organizationId || !isSupabaseConfigured()) return false;
+  const supabase = await createClient();
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("status")
+    .eq("organization_id", organizationId)
     .maybeSingle<{ status: string }>();
   return sub?.status === "active" || sub?.status === "comped";
 }

@@ -30,6 +30,7 @@ export function CompanyProfileForm({
   selectedCategories = [],
   selectedRegions = [],
   selectedPropertyTypes = [],
+  portfolioMaxPhotos = 1,
 }: {
   defaults: CompanyDefaults;
   organizationId: string | null;
@@ -39,6 +40,8 @@ export function CompanyProfileForm({
   selectedCategories?: string[];
   selectedRegions?: string[];
   selectedPropertyTypes?: string[];
+  /** 1 on the free tier, unlimited (12 — the upload cap) on any paid tier. */
+  portfolioMaxPhotos?: number;
 }) {
   const [state, action, pending] = useActionState(updateCompanyProfileAction, {} as ActionState);
 
@@ -55,7 +58,7 @@ export function CompanyProfileForm({
       </Section>
 
       <Section title="Portfolio">
-        <PortfolioUploader organizationId={organizationId} />
+        <PortfolioUploader organizationId={organizationId} maxPhotos={portfolioMaxPhotos} />
       </Section>
 
       <Section title="Company basics">

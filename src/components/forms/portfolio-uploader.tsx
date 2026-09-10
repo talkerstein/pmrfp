@@ -20,7 +20,7 @@ import { createClient as createBrowserClient } from "@/lib/supabase/browser";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-const MAX_PHOTOS = 12;
+const UPLOAD_CAP = 12;
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -33,12 +33,21 @@ interface PortfolioPhoto {
 export function PortfolioUploader({
   organizationId,
   label = "Portfolio photos",
-  helpText = "Show past work — projects, sites, finished installs. JPEG, PNG, or WebP. Max 12 photos, 5 MB each.",
+  helpText,
+  maxPhotos = 1,
 }: {
   organizationId: string | null;
   label?: string;
   helpText?: string;
+  /** 1 on the free tier, 12 (the upload cap) on any paid tier. */
+  maxPhotos?: number;
 }) {
+  const limit = Math.min(maxPhotos, UPLOAD_CAP);
+  const resolvedHelpText =
+    helpText ??
+    (limit <= 1
+      ? "Show one photo of your best work — JPEG, PNG, or WebP, up to 5 MB. Upgrade for an unlimited gallery."
+      : `Show past work — projects, sites, finished installs. JPEG, PNG, or WebP. Up to ${limit} photos, 5 MB each.`);
   const [photos, setPhotos] = useState<PortfolioPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,10 +109,10 @@ export function PortfolioUploader({
       setError("Save your basic profile first, then upload portfolio photos.");
       return;
     }
-    const remaining = MAX_PHOTOS - photos.length;
+    const remaining = limit - photos.length;
     const files = Array.from(fileList).slice(0, remaining);
     if (files.length === 0) {
-      setError(`Max ${MAX_PHOTOS} photos. Remove one to upload more.`);
+      setError(limit <= 1 ? "Free listings get 1 portfolio photo. Upgrade to add more." : `Max ${limit} photos. Remove one to upload more.`);
       return;
     }
     for (const f of files) {
@@ -155,7 +164,7 @@ export function PortfolioUploader({
   return (
     <div>
       <Label className="mb-1.5 block">{label}</Label>
-      <p className="mb-3 text-xs text-muted-foreground">{helpText}</p>
+      <p className="mb-3 text-xs text-muted-foreground">{resolvedHelpText}</p>
 
       <input
         ref={fileInputRef}
@@ -204,7 +213,7 @@ export function PortfolioUploader({
             </div>
           ))}
 
-          {photos.length < MAX_PHOTOS && (
+          {photos.length < limit && (
             <button
               type="button"
               onClick={pick}
@@ -232,7 +241,7 @@ export function PortfolioUploader({
       )}
 
       <p className="mt-2 text-xs text-muted-foreground">
-        {photos.length}/{MAX_PHOTOS} uploaded · Tip: 4-6 sharp project photos beat 12 mediocre ones
+        {photos.length}/{limit} uploaded{limit <= 1 ? " · Upgrade to SEO Listing for an unlimited gallery" : " · Tip: 4-6 sharp project photos beat 12 mediocre ones"}
       </p>
 
       {!organizationId && (

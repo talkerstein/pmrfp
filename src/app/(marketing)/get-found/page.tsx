@@ -112,9 +112,10 @@ export default function GetFoundPage() {
               {
                 name: "SEO Listing",
                 price: `$${PRICING.seoAnnual}/yr`,
-                badge: "Founding pricing",
+                badge: `or $${PRICING.seoMonthly}/mo`,
                 lines: [
                   "Placement on your trade + city pages — the ones Google indexes",
+                  "Unlimited project photo gallery on your profile",
                   "Google rating displayed on your profile (official Places data)",
                   "Case studies featured on your city pages",
                   "Priority ordering over free listings",

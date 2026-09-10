@@ -71,10 +71,12 @@ export function isFeaturedPriceId(priceId: string | null | undefined): boolean {
   return Boolean(featured && priceId && priceId === featured);
 }
 
-/** True when the price id is the $99 directory-only SEO tier. */
+/** True when the price id is the directory-only SEO tier (either interval). */
 export function isSeoPriceId(priceId: string | null | undefined): boolean {
-  const seo = process.env.STRIPE_PRICE_SEO_ANNUAL;
-  return Boolean(seo && priceId && priceId === seo);
+  if (!priceId) return false;
+  const annual = process.env.STRIPE_PRICE_SEO_ANNUAL;
+  const monthly = process.env.STRIPE_PRICE_SEO_MONTHLY;
+  return priceId === annual || priceId === monthly;
 }
 
 function mapStatus(s: Stripe.Subscription.Status): string {
