@@ -14,6 +14,7 @@ import {
   CTASection,
 } from "@/components/public/section";
 import { CategoryGrid } from "@/components/public/category-grid";
+import { EmailCapture } from "@/components/public/email-capture";
 import { ReferBanner } from "@/components/public/refer-banner";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +72,7 @@ export default async function ForPropertyManagersPage() {
               .
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/sign-up?role=property_manager" className={buttonVariants({ size: "lg" })}>
+              <Link href="/sign-up?role=property_manager&next=/pm-dashboard/rfps/new" className={buttonVariants({ size: "lg" })}>
                 Post an RFP — free
               </Link>
               <Link
@@ -81,6 +82,13 @@ export default async function ForPropertyManagersPage() {
                 Browse the directory
               </Link>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Short on time?{" "}
+              <Link href="/post-for-me" className="font-medium text-teal-700 hover:underline">
+                Describe your project and we&apos;ll post the RFP for you
+              </Link>{" "}
+              — free.
+            </p>
             <ReferBanner variant="subtle" className="mt-10 max-w-3xl" />
           </div>
         </Container>
@@ -163,10 +171,20 @@ export default async function ForPropertyManagersPage() {
         </div>
       </Section>
 
+      <Section>
+        <EmailCapture
+          role="property_manager"
+          heading="Not ready to post an RFP yet?"
+          sub="Leave your email and we'll keep you posted as more vetted trades join your regions — so when you're ready, a full bench of bidders is waiting. No spam, unsubscribe anytime."
+          buttonLabel="Keep me posted"
+          className="max-w-3xl"
+        />
+      </Section>
+
       <CTASection
         title="Find the right vendors for your next commercial project."
         description="Post your project free. Trades come to you with their interest."
-        primaryHref="/sign-up?role=property_manager"
+        primaryHref="/sign-up?role=property_manager&next=/pm-dashboard/rfps/new"
         primaryLabel="Post an RFP — free"
         secondaryHref="/directory"
         secondaryLabel="Browse the directory"

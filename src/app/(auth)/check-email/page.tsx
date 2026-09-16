@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
+import { ResendConfirmation } from "@/components/forms/resend-confirmation";
 
 export const metadata: Metadata = { title: "Check your email" };
 
@@ -31,6 +32,9 @@ export default async function CheckEmailPage({
         Don&apos;t see it within a minute? Check your spam or junk folder. The sender is{" "}
         <span className="font-mono">Supabase Auth</span> on behalf of PMRFP.
       </p>
+      <div className="mt-5">
+        <ResendConfirmation email={email} />
+      </div>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already confirmed?{" "}
         <Link href="/sign-in" className="font-medium text-teal-700 hover:underline">

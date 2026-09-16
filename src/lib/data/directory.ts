@@ -113,7 +113,8 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     .select(ORG_SELECT)
     .eq("organization_type", orgType)
     .eq("profile_status", "approved")
-    .eq("status", "active");
+    .eq("status", "active")
+    .eq("is_demo", false);
   if (filters.verified) query = query.eq("verified", true);
   if (filters.q) query = query.ilike("name", `%${filters.q}%`);
   const { data } = await query.limit(200);
@@ -175,6 +176,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     .select(ORG_SELECT)
     .eq("slug", slug)
     .eq("profile_status", "approved")
+    .eq("is_demo", false)
     .maybeSingle();
   const r = data as unknown as OrgRow | null;
   if (!r) return null;

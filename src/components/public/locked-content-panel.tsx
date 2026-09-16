@@ -21,7 +21,10 @@ export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
         are available to PMRFP Trade Pro members.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link href={signedIn ? "/dashboard/billing" : "/sign-up"} className={buttonVariants({ size: "lg" })}>
+        <Link
+          href={signedIn ? "/dashboard/billing" : "/sign-up?role=trade&next=/dashboard/billing"}
+          className={buttonVariants({ size: "lg" })}
+        >
           {signedIn ? "Activate Trade Pro" : "Join as a Trade Company"}
         </Link>
         <Link href="/pricing" className={buttonVariants({ size: "lg", variant: "outline" })}>
@@ -34,6 +37,18 @@ export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
           : `$${PRICING.proAnnual}/yr · cancel any time`}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">{PRICING.earlyBirdNote}</p>
+      {/* Free on-ramp: a trade not ready to subscribe can still create a profile
+          and get found in the directory. Captures the "listed but not yet paying"
+          middle instead of losing everyone who won't pay on the first visit. */}
+      {!signedIn && (
+        <p className="mt-4 border-t border-teal-200/70 pt-4 text-xs text-muted-foreground">
+          Not ready to subscribe?{" "}
+          <Link href="/sign-up?role=trade" className="font-medium text-teal-700 hover:underline">
+            Get listed free
+          </Link>{" "}
+          — create a company profile and show up in the directory.
+        </p>
+      )}
     </div>
   );
 }

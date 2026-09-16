@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendSubscriptionActivatedEmail, sendAdminNewSale } from "@/lib/email/send";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
+import { trackEvent, EVENT } from "@/lib/analytics";
 
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -37,6 +38,13 @@ export async function POST(request: Request) {
             sub.metadata = { ...sub.metadata, ...cs.metadata };
           }
           await syncSubscriptionFromStripe(sub);
+
+          // Fire the revenue event — the one that matters most. Primitive props only.
+          await trackEvent(EVENT.SUBSCRIPTION_ACTIVE, {
+            plan: sub.metadata?.plan === "featured" ? "featured" : "trade_pro",
+            interval:
+              sub.items.data[0]?.price.recurring?.interval === "year" ? "annual" : "monthly",
+          });
 
           // Auto-approve on payment: a trade/supplier who pays should appear in
           // the directory immediately — never sit invisible in 'pending_review'
