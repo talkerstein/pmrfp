@@ -1,4 +1,4 @@
-import { requireRole, isDemoMode } from "@/lib/access/access";
+import { requireRole, isDemoMode, hasAnyPaidTier } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories, getRegions, getPropertyTypes } from "@/lib/data/taxonomy";
 import { PageHeader } from "@/components/dashboard/stat-card";
@@ -54,6 +54,10 @@ export default async function CompanyProfilePage() {
     selectedPropertyTypes = slugs(props.data, "property_types");
   }
 
+  // Portfolio gallery: 1 photo free, unlimited on any paid tier (seo/pro/
+  // featured) — the concrete value behind the SEO Listing tier.
+  const isPaid = await hasAnyPaidTier(org?.id ?? null);
+
   return (
     <div>
       <PageHeader
@@ -69,6 +73,7 @@ export default async function CompanyProfilePage() {
         selectedCategories={selectedCategories}
         selectedRegions={selectedRegions}
         selectedPropertyTypes={selectedPropertyTypes}
+        portfolioMaxPhotos={isPaid ? 12 : 1}
       />
     </div>
   );

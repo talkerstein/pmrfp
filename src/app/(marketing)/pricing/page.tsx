@@ -16,6 +16,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRICING } from "@/lib/site";
 import { TradeProCard } from "@/components/public/trade-pro-card";
+import { SeoListingCard } from "@/components/public/seo-listing-card";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -98,7 +99,7 @@ export default async function PricingPage() {
           {PRICING.roiNote}
         </p>
 
-        <div className="grid items-start gap-6 md:grid-cols-3">
+        <div className="grid items-start gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Free */}
           <div className="flex h-full flex-col rounded-xl border border-border bg-card p-8">
             <h2 className="text-lg font-semibold text-foreground">Free</h2>
@@ -131,9 +132,11 @@ export default async function PricingPage() {
             </Link>
           </div>
 
-          {/* Trade Pro — client component handles monthly/annual toggle.
-              Monthly toggle is suppressed when the Stripe monthly price isn't
-              configured yet, so we don't promise a plan we can't sell. */}
+          {/* SEO Listing + Trade Pro — client components handle their own
+              monthly/annual toggle. Each toggle is suppressed when its Stripe
+              monthly price isn't configured, so we never promise an
+              unsellable plan. */}
+          <SeoListingCard monthlyEnabled={Boolean(process.env.STRIPE_PRICE_SEO_MONTHLY)} />
           <TradeProCard monthlyEnabled={Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY)} />
 
           {/* Featured */}

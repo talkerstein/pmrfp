@@ -21,9 +21,10 @@ export const PRICING = {
   proAnnual: 249,
   proMonthly: 29,
   featuredAnnual: 599,
-  seoAnnual: 99,
+  seoAnnual: 120,
+  seoMonthly: 12,
   seoNote:
-    "SEO Listing: your company on the trade + city pages property managers find on Google and in AI answers. Directory placement only — RFP access is Trade Pro.",
+    "SEO Listing: your company on the trade + city pages property managers find on Google and in AI answers, plus an unlimited project photo gallery. Directory placement only — RFP access is Trade Pro.",
   currency: "CAD",
   earlyBirdNote: "Early-bird: lock in $249/yr — rises to $399 once we hit 100 subscribers.",
   featuredNote:
