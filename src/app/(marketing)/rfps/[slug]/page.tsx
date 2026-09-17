@@ -53,10 +53,18 @@ export default async function RfpDetailPage({
   // Match-proof before the paywall (audit #2/#4/#10): show a locked-out trade
   // that real liquidity exists in their region BEFORE asking them to pay. Uses
   // only public board data (listRfps = rfp_public view) — no RLS-gated fields.
+  //
+  // listRfps() deliberately returns EVERY RFP, closed included, so the public
+  // board can render past-deadline ones grayed out. Using that raw count here
+  // meant this banner claimed "N open commercial RFPs right now" by counting
+  // closed ones too — live, unrelated to any deploy, confirmed on a fully
+  // closed board still claiming open regional matches (external audit,
+  // 2026-09-17). Filter to status === "open" before counting anything.
   let regionMatchCount = 0;
   let totalOpenCount = 0;
   if (!showFull) {
-    const openRfps = await listRfps();
+    const allRfps = await listRfps();
+    const openRfps = allRfps.filter((r) => r.status === "open");
     totalOpenCount = openRfps.length;
     if (teaser.regionName) {
       regionMatchCount = openRfps.filter(
@@ -64,6 +72,9 @@ export default async function RfpDetailPage({
       ).length;
     }
   }
+  // The "+1" below only makes sense if the RFP being viewed is itself open —
+  // a closed listing shouldn't count toward its own region's "open" total.
+  const teaserIsOpen = teaser.status === "open";
 
   return (
     <Container className="py-10">
@@ -172,12 +183,12 @@ export default async function RfpDetailPage({
                 <div className="rounded-xl border border-teal-400/50 bg-teal-100/30 p-5">
                   <p className="text-sm font-semibold text-foreground">
                     {regionMatchCount > 0 && teaser.regionName
-                      ? `${regionMatchCount + 1} open commercial RFPs in ${teaser.regionName} right now`
+                      ? `${regionMatchCount + (teaserIsOpen ? 1 : 0)} open commercial RFPs in ${teaser.regionName} right now`
                       : `${totalOpenCount} open commercial RFPs on PMRFP right now`}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Trade Pro members see full scope, documents, and can express interest on
-                    every one — and new opportunities post every week.
+                    every one.
                   </p>
                 </div>
               )}
