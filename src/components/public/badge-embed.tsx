@@ -17,9 +17,9 @@ export function BadgeEmbed({
   const img = `${base}/api/badge/${slug}`;
   const imgDark = `${img}?theme=dark`;
 
-  const html = `<a href="${profileUrl}" target="_blank" rel="noopener">\n  <img src="${img}" alt="PMRFP Verified Vendor" width="214" height="54" />\n</a>`;
-  const htmlDark = `<a href="${profileUrl}" target="_blank" rel="noopener">\n  <img src="${imgDark}" alt="PMRFP Verified Vendor" width="214" height="54" />\n</a>`;
-  const markdown = `[![PMRFP Verified Vendor](${img})](${profileUrl})`;
+  const html = `<a href="${profileUrl}" target="_blank" rel="nofollow noopener">\n  <img src="${img}" alt="PMRFP company profile badge" width="214" height="54" />\n</a>`;
+  const htmlDark = `<a href="${profileUrl}" target="_blank" rel="nofollow noopener">\n  <img src="${imgDark}" alt="PMRFP company profile badge" width="214" height="54" />\n</a>`;
+  const markdown = `[![PMRFP company profile badge](${img})](${profileUrl})`;
 
   return (
     <div className="space-y-8">

@@ -108,9 +108,9 @@ export function FoundingRegionNotice({
             href="/refer-a-trade"
             className="font-medium text-teal-ink underline underline-offset-2"
           >
-            Refer them and earn $75
+            Refer them to Trade Pro and earn up to $75
           </Link>{" "}
-          when they join — it&apos;s how founding regions get built.
+          when they subscribe — it&apos;s how founding regions get built.
         </p>
       )}
     </div>

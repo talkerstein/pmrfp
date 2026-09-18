@@ -484,7 +484,7 @@ export function ForPmV2() {
           <span className="it"><span className="dot" />Free for PMs — forever</span>
           <span className="it"><span className="dot" />Contact details hidden by default</span>
           <span className="it"><span className="dot" />No obligation to hire</span>
-          <span className="it"><span className="dot" />Verified, insured trades</span>
+          <span className="it"><span className="dot" />Reviewed company profiles</span>
         </div>
       </div>
 

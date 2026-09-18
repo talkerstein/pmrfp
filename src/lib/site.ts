@@ -54,13 +54,19 @@ export const PRICING = {
 export const REFERRAL = {
   currency: "CAD",
   // Cash lane (trade) — direct revenue justifies aggressive CAC.
+  // ONE rule (audit F13/F14, 2026-09-17): $75 only on an ANNUAL Trade Pro or
+  // Featured subscription. A monthly sub ($29) paid a $75 bounty before the
+  // member had even paid $75 back, so monthly referrals earn a smaller fee
+  // released after the third monthly payment clears ($87 collected).
   tradeFee: 75,
+  tradeFeeMonthly: 25,
+  monthlyPaymentsRequired: 3,
   // Recognition lane (project) — no cash. Public credit + leaderboard.
   projectIncentive: "Public credit on the RFP + top-connectors leaderboard",
   // Headline number (for the cash lane only).
   maxFee: 75,
   // Short copy (used in banner + nav).
-  oneLiner: "Refer a trade and earn $75. Refer a project and get public credit.",
+  oneLiner: "Refer a trade to Trade Pro and earn up to $75. Refer a project and get public credit.",
   shortCta: "Refer to PMRFP",
 } as const;
 

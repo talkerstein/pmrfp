@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { VendorListItem } from "@/lib/data/types";
 
 const VERIFIED_TOOLTIP =
-  "Verified by PMRFP. We confirm licensing, insurance, and a real business presence before listing.";
+  "Reviewed by the PMRFP team before this company was marked verified. Always confirm current licensing and insurance directly for your project.";
 
 // Only surface a trust chip when the status clearly reads as positive coverage,
 // so we never mislabel an "expired" / "none" status as covered.
@@ -50,9 +50,9 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
 
   const trust: { icon: React.ReactNode; label: string }[] = [];
   if (positive(vendor.insuranceStatus))
-    trust.push({ icon: <ShieldCheck className="size-3.5 text-success" />, label: "Insured" });
+    trust.push({ icon: <ShieldCheck className="size-3.5 text-success" />, label: "Insurance listed" });
   if (positive(vendor.wsibStatus))
-    trust.push({ icon: <ShieldCheck className="size-3.5 text-success" />, label: "WSIB" });
+    trust.push({ icon: <ShieldCheck className="size-3.5 text-success" />, label: "WSIB listed" });
   if (vendor.yearsInBusiness && vendor.yearsInBusiness > 0)
     trust.push({ icon: <Clock className="size-3.5" />, label: `${vendor.yearsInBusiness} yrs` });
 
@@ -89,7 +89,7 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
             {vendor.name}
             {vendor.verified && (
               <span title={VERIFIED_TOOLTIP} className="inline-flex shrink-0">
-                <BadgeCheck className="size-4 text-success" aria-label="Verified by PMRFP" />
+                <BadgeCheck className="size-4 text-success" aria-label="Reviewed by PMRFP" />
               </span>
             )}
           </h3>

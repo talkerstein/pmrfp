@@ -7,8 +7,8 @@ import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { PRICING, REFERRAL, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `Refer a Trade — Earn $${REFERRAL.tradeFee} When They List`,
-  description: `Know a commercial trade who'd benefit from being listed on ${SITE.name}? Refer them and earn $${REFERRAL.tradeFee} ${REFERRAL.currency} ~30 days after their Trade Pro payment clears.`,
+  title: `Refer a Trade — Earn up to $${REFERRAL.tradeFee} When They Join Trade Pro`,
+  description: `Know a commercial trade who'd benefit from being listed on ${SITE.name}? Refer them and earn up to $${REFERRAL.tradeFee} ${REFERRAL.currency} after their Trade Pro payment clears.`,
   alternates: { canonical: "/refer-a-trade" },
 };
 
@@ -25,19 +25,19 @@ const STEPS = [
   },
   {
     icon: HandCoins,
-    title: `$${REFERRAL.tradeFee} when it sticks`,
-    desc: `Once the referred trade activates Trade Pro and their payment clears, your $${REFERRAL.tradeFee} ${REFERRAL.currency} is paid by e-transfer about 30 days later — once it's settled with no refund or dispute.`,
+    title: `Up to $${REFERRAL.tradeFee} when it sticks`,
+    desc: `Annual Trade Pro: your $${REFERRAL.tradeFee} ${REFERRAL.currency} is paid by e-transfer about 30 days after their payment clears. Monthly Trade Pro: $${REFERRAL.tradeFeeMonthly} after their third monthly payment clears. Either way it's paid once it's settled with no refund or dispute.`,
   },
 ];
 
 const WHO = [
   {
     title: "Property managers",
-    body: "Refer the trades you actually use. Strengthens your bench, gives them a paper trail, and pays you for the introduction.",
+    body: "Refer the trades you actually use. Strengthens your bench and gives them a paper trail. If your employer restricts referral payments, decline the fee and we'll credit you by name instead.",
   },
   {
     title: "Other trades",
-    body: "Refer peers in adjacent trades (HVAC ↔ electrical, roofing ↔ waterproofing). $75 per referred Pro sub adds up fast.",
+    body: "Refer peers in adjacent trades (HVAC ↔ electrical, roofing ↔ waterproofing). Up to $75 per referred Pro sub adds up fast.",
   },
   {
     title: "Suppliers + distributors",
@@ -45,7 +45,7 @@ const WHO = [
   },
   {
     title: "Trade associations",
-    body: "Bulk introduce your members. Each Pro activation pays $75. We can do co-marketing for membership lists.",
+    body: "Bulk introduce your members. Each annual Pro activation pays $75. We can do co-marketing for membership lists.",
   },
   {
     title: "Industry consultants",
@@ -69,12 +69,13 @@ export default function ReferTradePage() {
               <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
                 Refer a trade.
                 <br />
-                <span className="text-teal-300">Earn ${REFERRAL.tradeFee}</span> when they list.
+                <span className="text-teal-300">Earn up to ${REFERRAL.tradeFee}</span> when they join Trade Pro.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/80">
                 Know a commercial trade or service company that should be listed on{" "}
-                {SITE.name}? Refer them. About 30 days after their Trade Pro payment clears,
-                you earn a ${REFERRAL.tradeFee} {REFERRAL.currency} finder&rsquo;s fee by e-transfer.
+                {SITE.name}? Refer them. When they subscribe to Trade Pro
+                and their payment clears, you earn a finder&rsquo;s fee by e-transfer: ${REFERRAL.tradeFee} {REFERRAL.currency} for an annual
+                plan, ${REFERRAL.tradeFeeMonthly} for a monthly plan.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
@@ -87,7 +88,7 @@ export default function ReferTradePage() {
                   href="/refer-a-project"
                   className="inline-flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100/80 transition-colors hover:text-white"
                 >
-                  Have a project instead? Refer that for $25 →
+                  Have a project instead? Refer it for public credit →
                 </Link>
               </div>
             </div>
@@ -103,13 +104,14 @@ export default function ReferTradePage() {
                     Finder&rsquo;s fee
                   </p>
                   <p className="text-2xl font-semibold text-white">
-                    ${REFERRAL.tradeFee} {REFERRAL.currency}
+                    Up to ${REFERRAL.tradeFee} {REFERRAL.currency}
                   </p>
                 </div>
               </div>
               <ul className="mt-5 space-y-2.5 text-sm text-indigo-100/85">
-                <li>· $75 cash per referred Trade Pro sub</li>
-                <li>· paid ~30 days after their payment clears</li>
+                <li>· ${REFERRAL.tradeFee} cash per referred annual Trade Pro sub</li>
+                <li>· ${REFERRAL.tradeFeeMonthly} per referred monthly sub, after their 3rd payment clears</li>
+                <li>· annual: paid ~30 days after their payment clears</li>
                 <li>· by e-transfer, once settled (no dispute)</li>
                 <li>· no cap on referrals · no signup required</li>
               </ul>
@@ -174,8 +176,7 @@ export default function ReferTradePage() {
               <li className="flex gap-3">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
-                  <strong className="text-foreground">A new Trade Pro subscription is ${PRICING.proAnnual}/yr (or ${PRICING.proMonthly}/mo)</strong> in direct revenue to {SITE.name}. Paying $
-                  {REFERRAL.tradeFee} to the referrer beats almost any paid acquisition channel — and the ~30-day hold means the payment has cleared before the fee goes out.
+                  <strong className="text-foreground">A new Trade Pro subscription is ${PRICING.proAnnual}/yr (or ${PRICING.proMonthly}/mo)</strong> in direct revenue to {SITE.name}. The ${REFERRAL.tradeFee} fee only applies to annual plans, and the ~30-day hold means the payment has cleared before it goes out. Monthly plans earn ${REFERRAL.tradeFeeMonthly}, released after the third monthly payment — so we never pay out more than we've collected.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -198,7 +199,7 @@ export default function ReferTradePage() {
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
                   <strong className="text-foreground">Paid clean.</strong>{" "}
-                  Once the referred trade&rsquo;s payment clears (~30 days), your e-transfer goes out. No quarterly-payout runaround.
+                  Once the referred trade&rsquo;s qualifying payment clears, your e-transfer goes out. No quarterly-payout runaround.
                 </span>
               </li>
             </ul>
@@ -222,7 +223,7 @@ export default function ReferTradePage() {
         <Container size="narrow" className="py-16">
           <Eyebrow>Refer a trade</Eyebrow>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-            Two minutes. Earn ${REFERRAL.tradeFee} when they list.
+            Two minutes. Earn up to ${REFERRAL.tradeFee} when they join Trade Pro.
           </h2>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
             Tell us about the trade. If you have their contact details and permission to share,
@@ -233,7 +234,7 @@ export default function ReferTradePage() {
           </div>
           <div className="mt-10">
             <TrustDisclaimer
-              text={`Finder's fees are paid ~30 days after the referred trade's Trade Pro payment clears (settled, with no refund or dispute). PMRFP does not guarantee that any referred trade will subscribe or remain subscribed.`}
+              text={`Finder's fees: $${REFERRAL.tradeFee} for an annual Trade Pro plan, paid ~30 days after the referred trade's payment clears; $${REFERRAL.tradeFeeMonthly} for a monthly plan, paid after the third monthly payment clears — in both cases once settled, with no refund or dispute. Self-referrals and duplicates aren't eligible; the first documented introduction counts. PMRFP does not guarantee that any referred trade will subscribe or remain subscribed.`}
             />
           </div>
         </Container>

@@ -122,7 +122,7 @@ export function ReferTradeForm() {
 
       <Section
         title="You"
-        sub="So we can pay your $75 finder's fee + send you monthly updates."
+        sub="So we can pay your finder's fee (if the trade subscribes) + send you monthly updates."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Your name" required>
@@ -156,8 +156,9 @@ export function ReferTradeForm() {
           {pending ? "Submitting…" : `Submit referral`}
         </Button>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Finder&apos;s fee: ${REFERRAL.tradeFee} {REFERRAL.currency}, paid ~30 days after the
-          referred trade&apos;s Trade Pro payment clears (settled, no refund or dispute) — by e-transfer.
+          Finder&apos;s fee: ${REFERRAL.tradeFee} {REFERRAL.currency} for an annual Trade Pro plan (paid ~30 days after
+          their payment clears), or ${REFERRAL.tradeFeeMonthly} for a monthly plan (after their third payment clears) —
+          once settled, no refund or dispute, by e-transfer.
         </p>
       </div>
     </form>

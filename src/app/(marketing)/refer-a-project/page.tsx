@@ -15,7 +15,7 @@ import { REFERRAL, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: `Refer a Project — Public Credit + Top Connectors Leaderboard`,
-  description: `Know someone with a property project? Refer it to ${SITE.name}. When the RFP goes live, you get public credit ("Introduced by [you]") and a spot on the Top Connectors leaderboard. For cash, refer a trade and earn $${REFERRAL.tradeFee}.`,
+  description: `Know someone with a property project? Refer it to ${SITE.name}. When the RFP goes live, you get public credit ("Introduced by [you]") and a spot on the Top Connectors leaderboard. For cash, refer a trade to Trade Pro (up to $${REFERRAL.tradeFee}).`,
   alternates: { canonical: "/refer-a-project" },
 };
 
@@ -97,7 +97,7 @@ export default function ReferProjectPage() {
                   href="/refer-a-trade"
                   className="inline-flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100/80 transition-colors hover:text-white"
                 >
-                  Want cash? Refer a trade for $75 →
+                  Want cash? Refer a trade →
                 </Link>
               </div>
             </div>
@@ -125,9 +125,9 @@ export default function ReferProjectPage() {
               <p className="mt-5 border-t border-white/15 pt-4 text-xs text-indigo-100/65">
                 Want cash? The{" "}
                 <Link href="/refer-a-trade" className="font-semibold text-teal-300 hover:text-teal-300/80">
-                  Refer a Trade lane pays $75
+                  Refer a Trade lane pays up to ${REFERRAL.tradeFee}
                 </Link>
-                {" "}per activated Pro subscription.
+                {" "}per Trade Pro subscription.
               </p>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function ReferProjectPage() {
           <div>
             <Eyebrow>Why refer</Eyebrow>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              Help your client. Get paid. Stay informed.
+              Help your client. Get credited. Stay informed.
             </h2>
             <ul className="mt-6 space-y-4 text-base leading-relaxed text-foreground/85">
               <li className="flex gap-3">
@@ -214,9 +214,9 @@ export default function ReferProjectPage() {
               <li className="flex gap-3">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-ink" />
                 <span>
-                  <strong className="text-foreground">Lower your own liability.</strong>{" "}
-                  A vetted platform with insured trades — vs. recommending &ldquo;a guy you
-                  know&rdquo; and inheriting the risk.
+                  <strong className="text-foreground">Give your client a real process.</strong>{" "}
+                  A documented way to invite relevant trades — vs. recommending &ldquo;a guy you
+                  know.&rdquo; Clients still choose and vet who they hire.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -235,7 +235,7 @@ export default function ReferProjectPage() {
             <p className="mt-4 text-lg leading-relaxed text-foreground/90">
               The smart play for any professional who touches real estate but doesn&rsquo;t
               sell trades: be the person who knew how to get the work done. We handle the
-              process. You get paid for the introduction.
+              process. You get the credit for the introduction.
             </p>
             <p className="mt-4 text-xs uppercase tracking-wide text-muted-foreground">
               — The {SITE.name} team
@@ -261,7 +261,7 @@ export default function ReferProjectPage() {
           </div>
           <div className="mt-10">
             <TrustDisclaimer
-              text={`Project referrals earn public credit on the RFP + a spot on the Top Connectors leaderboard — not cash. The cash-paying lane is /refer-a-trade ($75 per activated Trade Pro subscription). PMRFP does not guarantee work or vendor selection. Trades and property contacts make their own decisions.`}
+              text={`Project referrals earn public credit on the RFP + a spot on the Top Connectors leaderboard — not cash. The cash-paying lane is /refer-a-trade (up to $${REFERRAL.tradeFee} per Trade Pro subscription). PMRFP does not guarantee work or vendor selection. Trades and property contacts make their own decisions.`}
             />
           </div>
         </Container>

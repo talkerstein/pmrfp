@@ -68,7 +68,7 @@ const INCLUDED = [
   {
     icon: BadgeCheck,
     title: "Verified vendor badge",
-    body: "Embed a PMRFP badge on your own website that links back to your profile — instant third-party credibility and a quality backlink for your SEO.",
+    body: "Embed a PMRFP badge on your website so visitors can open your company profile and see the details recorded there.",
   },
 ];
 
@@ -188,8 +188,8 @@ export default function ForTradesPage() {
             <div>
               <h3 className="font-semibold text-indigo">Show you&apos;re a verified {SITE.name} vendor</h3>
               <p className="mt-1 text-sm leading-relaxed text-teal-700">
-                Grab a copy-paste badge for your website that links back to your profile —
-                credibility for visitors and a backlink for your search ranking.
+                Grab a copy-paste badge for your website that links visitors to your profile,
+                so they can see your services, areas and the details recorded there.
               </p>
             </div>
           </div>

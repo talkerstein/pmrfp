@@ -72,6 +72,8 @@ export default async function RegionPage({
     listRfps({ region: region.slug }),
     getCategories(),
   ]);
+  // listRfps() includes closed RFPs — only status === "open" may be called open.
+  const openRfps = rfps.filter((r) => r.status === "open");
 
   const regionLiq = await getRegionLiquidityBySlug(region.slug);
   const showFounding = regionLiq ? regionLiq.tier !== "active" : false;
@@ -133,15 +135,24 @@ export default async function RegionPage({
 
       <Container className="py-12">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="text-2xl font-semibold tracking-tight">Open opportunities in {region.name}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {openRfps.length > 0 ? `Open opportunities in ${region.name}` : `Recent RFPs in ${region.name}`}
+          </h2>
           <Link href={`/rfps?region=${region.slug}`} className="text-sm text-teal-700 hover:underline">View all →</Link>
         </div>
         {rfps.length === 0 ? (
-          <div className="mt-4"><EmptyState title={`No open RFPs in ${region.name} right now`} description="New opportunities are added regularly." /></div>
+          <div className="mt-4"><EmptyState title={`No RFPs in ${region.name} right now`} description="Create a free profile and save your trade and region — we'll notify you when a match is posted." /></div>
         ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked={false} />)}
-          </div>
+          <>
+            {openRfps.length === 0 && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Nothing is open right now. These closed projects show the kind of work posted here.
+              </p>
+            )}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked={false} />)}
+            </div>
+          </>
         )}
       </Container>
 

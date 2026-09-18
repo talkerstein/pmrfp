@@ -9,8 +9,8 @@ import { Container, Eyebrow } from "@/components/container";
 import { PRICING, REFERRAL, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: `Refer to ${SITE.name} — Earn $${REFERRAL.tradeFee} (Trade) or Get Credit (Project)`,
-  description: `Two referral lanes. Refer a trade and earn $${REFERRAL.tradeFee} cash when they activate Trade Pro. Refer a project and earn public credit on the RFP + a spot on the Top Connectors leaderboard.`,
+  title: `Refer to ${SITE.name} — Earn up to $${REFERRAL.tradeFee} (Trade) or Get Credit (Project)`,
+  description: `Two referral lanes. Refer a trade and earn up to $${REFERRAL.tradeFee} cash when they subscribe to Trade Pro. Refer a project and earn public credit on the RFP + a spot on the Top Connectors leaderboard.`,
   alternates: { canonical: "/refer" },
 };
 
@@ -21,12 +21,12 @@ export default function ReferHubPage() {
         <Eyebrow className="text-teal">Referral program</Eyebrow>
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
           Two lanes.{" "}
-          <span className="text-teal-300">${REFERRAL.tradeFee} cash</span> for trades. Public
+          <span className="text-teal-300">Up to ${REFERRAL.tradeFee} cash</span> for trades. Public
           credit for projects.
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-indigo-100/80">
-          Both lanes trigger when the LISTING happens. The cash lane (trade) pays where the
-          revenue is. The credit lane (project) pays in visibility — your name on every RFP
+          The cash lane (trade) pays after the trade you refer subscribes to Trade Pro and
+          their payment clears. The credit lane (project) starts when the RFP goes live and pays in visibility — your name on every RFP
           you bring, plus a spot on the Top Connectors leaderboard.
         </p>
 
@@ -46,11 +46,12 @@ export default function ReferHubPage() {
                 </p>
                 <h2 className="mt-1 text-2xl font-semibold text-white">Refer a Trade</h2>
                 <p className="mt-1 text-3xl font-semibold text-teal-300">
-                  ${REFERRAL.tradeFee} {REFERRAL.currency}
+                  Up to ${REFERRAL.tradeFee} {REFERRAL.currency}
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-indigo-100/85">
-                  Refer a trade or service company. Fee paid ~30 days after their Trade Pro
-                  payment clears, by e-transfer.
+                  Refer a trade or service company. ${REFERRAL.tradeFee} on an annual Trade Pro plan, paid ~30 days
+                  after their payment clears; ${REFERRAL.tradeFeeMonthly} on a monthly plan, after their
+                  third monthly payment clears. By e-transfer.
                 </p>
                 <p className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-300">
                   Refer a trade <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
@@ -95,8 +96,8 @@ export default function ReferHubPage() {
             <strong className="text-white">Why two lanes:</strong> Trade subscriptions are PMRFP&rsquo;s
             direct revenue, so the trade lane pays cash. Project referrals create the inventory
             that retains paying trades — real value, but indirect — so we reward those in
-            recognition (public credit + leaderboard) rather than cash. Both fire when the
-            listing happens; both are no-cap; both have no signup required. The reference visible
+            recognition (public credit + leaderboard) rather than cash. Both are no-cap and
+            need no signup. The reference visible
             on the live RFP is the most valuable thing your name can sit next to in this network.
           </p>
         </div>

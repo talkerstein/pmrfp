@@ -95,10 +95,10 @@ export default async function VendorProfilePage({
                 {v.name}
                 {v.verified && (
                   <span
-                    title="Verified by PMRFP. We confirm licensing, insurance, and a real business presence before listing."
+                    title="Reviewed by the PMRFP team before this company was marked verified. Always confirm current licensing and insurance directly for your project."
                     className="inline-flex"
                   >
-                    <BadgeCheck className="size-5 text-success" aria-label="Verified by PMRFP" />
+                    <BadgeCheck className="size-5 text-success" aria-label="Reviewed by PMRFP" />
                   </span>
                 )}
               </h1>
