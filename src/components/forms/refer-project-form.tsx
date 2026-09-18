@@ -157,7 +157,7 @@ export function ReferProjectForm() {
         </Button>
         <p className="text-xs leading-relaxed text-muted-foreground">
           What you get: public credit on the live RFP + a spot on the Top Connectors leaderboard.
-          Know a trade instead? Refer them for ${REFERRAL.tradeFee} cash.
+          Know a trade instead? Refer them to Trade Pro for up to ${REFERRAL.tradeFee} cash.
         </p>
       </div>
     </form>

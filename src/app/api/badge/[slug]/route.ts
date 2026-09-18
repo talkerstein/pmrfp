@@ -27,7 +27,9 @@ function renderBadge(tier: BadgeTier, theme: "light" | "dark", variant: "standar
   const accent = dark ? C.teal : C.tealInk;
   const font = "system-ui, -apple-system, Segoe UI, Arial, sans-serif";
   const check = tier.verified ? "✓ " : "";
-  const sublabel = `${check}${tier.label}${tier.insured ? " · Insured" : ""}`;
+  // No "Insured" on the seal: insurance is self-reported detail on the profile, and a
+  // tiny badge can't carry the qualifiers (date, scope) a coverage claim needs.
+  const sublabel = `${check}${tier.label}`;
 
   if (variant === "compact") {
     const w = 188, h = 32;

@@ -77,6 +77,11 @@ function formatDeadline(d: string | null) {
 export default async function HomePage() {
   const [categories, rfps] = await Promise.all([getCategories(), listRfps()]);
   const board = rfps.slice(0, 6);
+  // listRfps() returns closed RFPs too (they stay on the board as proof of
+  // activity), so a raw length is NOT an "open" count. Count status === "open"
+  // — the same rule the board and detail pages use — or the homepage claims
+  // projects are live that closed weeks ago (external audit, 2026-09-17).
+  const openCount = rfps.filter((r) => r.status === "open").length;
   const chips = categories.slice(0, 6);
 
   return (
@@ -137,11 +142,11 @@ export default async function HomePage() {
                 <div className="bg-secondary/60 p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h4 className="font-semibold text-foreground">RFP Board</h4>
-                    <span className="font-mono text-[11px] text-muted-foreground">Live now</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">Example projects</span>
                   </div>
                   {[
-                    { cat: "Electrical", title: "Condominium Electrical Maintenance Contract", meta: ["Toronto · Condo", "Closes Jun 18"], status: "open" as const },
-                    { cat: "Snow Removal", title: "Commercial Plaza Snow Removal Services", meta: ["Mississauga · Retail", "Closes Jun 09"], status: "soon" as const },
+                    { cat: "Electrical", title: "Condominium Electrical Maintenance Contract", meta: ["Toronto · Condo", "Example listing"], status: "open" as const },
+                    { cat: "Snow Removal", title: "Commercial Plaza Snow Removal Services", meta: ["Mississauga · Retail", "Example listing"], status: "soon" as const },
                     { cat: "HVAC", title: "Apartment Building HVAC Preventive Maintenance", meta: [] as string[], status: "locked" as const },
                   ].map((r) => (
                     <div
@@ -210,8 +215,10 @@ export default async function HomePage() {
         <Container className="py-12">
           <div className="mx-auto grid max-w-4xl grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{rfps.length}</div>
-              <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Live RFPs</div>
+              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{openCount > 0 ? openCount : rfps.length}</div>
+              <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                {openCount > 0 ? "Open RFPs" : "Recent RFPs"}
+              </div>
             </div>
             <div>
               <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{categories.length}</div>
@@ -335,13 +342,14 @@ export default async function HomePage() {
         <Container className="py-20">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-xl">
-              <Eyebrow>Live RFP board</Eyebrow>
+              <Eyebrow>RFP board</Eyebrow>
               <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-                Live commercial property RFPs.
+                {openCount > 0 ? "Open commercial property RFPs." : "Recent commercial property RFPs."}
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Posted by property managers, builders, and owners. Filter by trade to see
-                what&apos;s open in your region — full scope and contacts unlock with membership.
+                {openCount > 0
+                  ? "Posted by property managers, builders, and owners. Filter by trade to see what’s open in your region — full scope and contacts unlock with membership."
+                  : "No projects are open right now — these recently closed RFPs show the kind of work property managers post. Save your trade and region to hear about future matches."}
               </p>
             </div>
             <Link href="/rfps" className={buttonVariants({ variant: "outline" })}>
@@ -378,9 +386,15 @@ export default async function HomePage() {
                   <span className="font-mono text-[11px] uppercase tracking-wide text-teal-600">
                     {r.categories[0] ?? "Commercial"}
                   </span>
-                  <span className="rounded-full bg-teal-50 px-2 py-0.5 font-mono text-[10px] uppercase text-teal-700">
-                    Open
-                  </span>
+                  {r.status === "open" ? (
+                    <span className="rounded-full bg-teal-50 px-2 py-0.5 font-mono text-[10px] uppercase text-teal-700">
+                      Open
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
+                      Closed
+                    </span>
+                  )}
                 </div>
                 <h3 className="mt-3 text-base font-semibold leading-snug group-hover:text-teal-700">
                   {r.title}
@@ -400,7 +414,7 @@ export default async function HomePage() {
                     <div className="mt-0.5 font-semibold text-foreground">{r.propertyTypeName ?? "Commercial"}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Deadline</div>
+                    <div className="text-muted-foreground">{r.status === "open" ? "Deadline" : "Closed"}</div>
                     <div className="mt-0.5 font-semibold text-foreground">{formatDeadline(r.deadline)}</div>
                   </div>
                   <div>
@@ -416,10 +430,12 @@ export default async function HomePage() {
 
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-secondary/40 px-6 py-5">
             <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-              Full scope, contacts &amp; documents unlock with membership
+              {openCount > 0
+                ? "Full scope, contacts & documents unlock with membership"
+                : "Free profile now — RFP access when projects match your trade"}
             </span>
             <Link href="/pricing" className={buttonVariants()}>
-              Subscribe to see full RFPs <ArrowRight className="size-4" />
+              {openCount > 0 ? "Subscribe to see full RFPs" : "See pricing"} <ArrowRight className="size-4" />
             </Link>
           </div>
         </Container>

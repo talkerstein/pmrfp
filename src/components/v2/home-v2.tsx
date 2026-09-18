@@ -269,7 +269,7 @@ export function HomeV2() {
         <div className="dx-wrap">
           <span className="it"><span className="dot" />Canada-first · GTA focus</span>
           <span className="it"><span className="dot" />Commercial property only</span>
-          <span className="it"><span className="dot" />Verified, insured trades</span>
+          <span className="it"><span className="dot" />Reviewed company profiles</span>
           <span className="it"><span className="dot" />Free for property managers</span>
         </div>
       </div>

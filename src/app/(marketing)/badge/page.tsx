@@ -11,7 +11,7 @@ import { SITE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Your PMRFP Verified Vendor Badge",
   description:
-    "Show clients you're a credible commercial vendor with the PMRFP badge — a verified-status mark that links back to your profile. Free for members.",
+    "Show clients you're a credible commercial vendor with the PMRFP badge — a mark that links visitors to your PMRFP company profile. Free for members.",
   alternates: { canonical: "/badge" },
 };
 
@@ -34,9 +34,9 @@ export default async function BadgePage() {
         Your PMRFP Verified Vendor badge
       </h1>
       <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-        Add the {SITE.name} badge to your website and email signature. It signals third-party
-        credibility to property managers and builders — and links back to your {SITE.name} profile,
-        sending you traffic.
+        Add the {SITE.name} badge to your website and email signature. Visitors can click it to
+        open your {SITE.name} company profile and see the details recorded there. It is a link to
+        your profile — not a search-ranking tactic, and not a certification.
       </p>
 
       {!memberSlug && (
@@ -62,8 +62,8 @@ export default async function BadgePage() {
         <p className="mt-2 text-sm text-muted-foreground">Your badge gets stronger as you complete your profile.</p>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <Tier icon={<Star className="size-5" />} title="Listed Vendor" desc="You have an approved profile in the PMRFP directory." />
-          <Tier icon={<BadgeCheck className="size-5" />} title="Verified Vendor" desc="Admin-verified company — the credibility upgrade most clients look for." />
-          <Tier icon={<ShieldCheck className="size-5" />} title="+ Insured" desc="Insurance details on file — shown as 'Insured' on your badge." />
+          <Tier icon={<BadgeCheck className="size-5" />} title="Verified Vendor" desc="Company details reviewed by the PMRFP team. Buyers should still confirm licensing and insurance directly." />
+          <Tier icon={<ShieldCheck className="size-5" />} title="+ Insured" desc="Insurance details listed on your profile (self-reported). Not shown on the badge image — buyers confirm coverage with you." />
         </div>
       </section>
 
