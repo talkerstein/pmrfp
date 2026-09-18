@@ -36,10 +36,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
     : isSeoPriceId(priceId)
       ? "seo"
       : "pro";
-  await supabase
-    .from("subscriptions")
-    .upsert(
-      {
+  const row = {
         organization_id: orgId,
         user_id: sub.metadata?.user_id ?? null,
         stripe_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
@@ -52,9 +49,20 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
         tier,
         amount: item?.price.unit_amount != null ? item.price.unit_amount / 100 : null,
         currency: (item?.price.currency ?? "cad").toUpperCase(),
-      },
-      { onConflict: "organization_id" },
-    );
+      };
+  let { error: upsertErr } = await supabase
+    .from("subscriptions")
+    .upsert(row, { onConflict: "organization_id" });
+  if (upsertErr && /tier/i.test(upsertErr.message)) {
+    // Migration 20260819000001 (adds subscriptions.tier) not applied yet.
+    // Without this retry the whole upsert fails and a paid checkout never
+    // activates the member — payment taken, nothing unlocked.
+    const { tier: _omit, ...legacyRow } = row;
+    ({ error: upsertErr } = await supabase
+      .from("subscriptions")
+      .upsert(legacyRow, { onConflict: "organization_id" }));
+  }
+  if (upsertErr) console.error("[stripe] subscription sync failed:", upsertErr.message);
 
   // Featured plan controls the org's `featured` placement. We only touch the
   // flag for the Featured price, so admin-set editorial featuring on Pro/Free

@@ -157,7 +157,9 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     deadline: r.deadline,
     isDemo: r.is_demo,
     photoUrls: photos.get(r.id) ?? [],
-    status: "open" as const,
+    // Was hardcoded "open" regardless of deadline — every RFP detail page
+    // reported itself as open even after closing. Compute it for real.
+    status: r.deadline && r.deadline < new Date().toISOString().slice(0, 10) ? ("closed" as const) : ("open" as const),
   };
 }
 
