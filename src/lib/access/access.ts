@@ -72,11 +72,25 @@ async function computeTradeAccess(
   if (!organization) return false;
   if (organization.organization_type !== "trade_company" && organization.organization_type !== "supplier") return false;
   if (organization.status === "suspended") return false;
-  const { data: sub } = await supabase
+  let { data: sub, error } = await supabase
     .from("subscriptions")
     .select("status,tier")
     .eq("organization_id", organization.id)
     .maybeSingle<{ status: string; tier: string }>();
+  if (error) {
+    // subscriptions.tier ships with migration 20260819000001. Until it is
+    // applied, that select errors, and treating the error as "no
+    // subscription" would lock EVERY paying member out of the RFP board.
+    // Pre-migration every subscription is Pro-equivalent (the SEO tier cannot
+    // be sold before the column exists — see the checkout guard), so fall
+    // back to status alone.
+    const legacy = await supabase
+      .from("subscriptions")
+      .select("status")
+      .eq("organization_id", organization.id)
+      .maybeSingle<{ status: string }>();
+    sub = legacy.data ? { status: legacy.data.status, tier: "pro" } : null;
+  }
   const activeStatus = sub?.status === "active" || sub?.status === "comped";
   const paidTier = sub?.tier === "pro" || sub?.tier === "featured";
   return activeStatus && paidTier;

@@ -3,6 +3,8 @@ import { getSession } from "@/lib/access/access";
 import { getStripe, isStripeConfigured, SITE_URL } from "@/lib/stripe/server";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isServiceConfigured } from "@/lib/supabase/config";
 
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "checkout");
@@ -41,6 +43,19 @@ export async function POST(request: Request) {
   }
   if (!price) {
     return NextResponse.json({ error: "That plan isn't available yet." }, { status: 400 });
+  }
+
+  // The SEO tier is directory-only, and that is enforced by subscriptions.tier
+  // (migration 20260819000001). If the column doesn't exist yet, every
+  // subscription is treated as Pro-equivalent — so selling SEO now would hand
+  // a $12/mo buyer the $249 RFP product. Refuse until the migration lands.
+  if (plan === "seo") {
+    const probe = isServiceConfigured()
+      ? await createServiceClient().from("subscriptions").select("tier").limit(1)
+      : { error: new Error("service client not configured") };
+    if (probe.error) {
+      return NextResponse.json({ error: "That plan isn't available yet." }, { status: 400 });
+    }
   }
 
   const metadata = {
