@@ -115,7 +115,7 @@ export function FeaturedUpsellSlot() {
         Your company, seen first.
       </h4>
       <p className="text-[12.5px] leading-normal text-muted-foreground">
-        Featured partners appear above every search on this page.
+        Featured partners appear above matching searches for their trades and regions.
       </p>
       <Link
         href="/pricing"

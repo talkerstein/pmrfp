@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { ActivateButton, ManageBillingButton } from "@/components/dashboard/billing-actions";
 import { PRICING } from "@/lib/site";
+import { parsePlanIntent } from "@/lib/billing/plan-intent";
 
 export const metadata = { title: "Billing" };
 
@@ -19,8 +20,14 @@ function fmt(d: string) {
   return new Date(d).toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric" });
 }
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plan?: string; interval?: string }>;
+}) {
   const session = await requireRole(["trade"]);
+  const sp = await searchParams;
+  const intent = parsePlanIntent(sp.plan, sp.interval);
 
   let sub: SubRow | null = null;
   if (!isDemoMode() && session.organization) {
@@ -51,6 +58,26 @@ export default async function BillingPage() {
   return (
     <div>
       <PageHeader title="Billing" description="Manage your Trade Pro subscription." />
+
+      {intent && !isActive && (
+        <div className="mb-4 rounded-lg border border-teal-300 bg-teal-50/60 p-5">
+          <p className="font-semibold text-foreground">
+            Finish what you started: {intent.name} — {intent.priceLabel}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This is the plan you picked on the pricing page. You&apos;ll review the total on the secure
+            Stripe checkout before paying.
+          </p>
+          <div className="mt-4">
+            <ActivateButton
+              plan={intent.plan}
+              interval={intent.interval}
+              variant="accent"
+              label={`Continue with ${intent.name}`}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-card p-6">
         {isActive && sub ? (

@@ -53,9 +53,11 @@ export default async function DirectoryPage({
   const regionLiq = activeRegion ? await getRegionLiquidityBySlug(activeRegion.slug) : null;
   const showFounding = !!activeRegion && !!regionLiq && regionLiq.tier !== "active";
 
-  // Featured marquee always shows the full featured set — "featured partners
-  // appear above every search on this page" is the product promise being sold.
-  const featured = pool.filter((v) => v.featured).slice(0, 3);
+  // Paid placement must still be RELEVANT (audit F06): a featured electrician
+  // was shown above an HVAC search and above zero-result keyword searches.
+  // Draw the marquee from the filtered results, so a sponsor only appears when
+  // it actually matches the visitor's trade / region / keyword.
+  const featured = vendors.filter((v) => v.featured).slice(0, 3);
   const featuredSlugs = new Set(featured.map((v) => v.slug));
   const rows = vendors.filter((v) => !featuredSlugs.has(v.slug));
 
@@ -199,7 +201,7 @@ export default async function DirectoryPage({
         <Container className="pt-9">
           <div className="mb-4 flex items-baseline justify-between gap-4">
             <span className="inline-flex items-center gap-2 font-mono text-[11.5px] uppercase tracking-[0.16em] text-teal-700">
-              <span className="h-0.5 w-5 rounded bg-teal-700" /> Featured partners
+              <span className="h-0.5 w-5 rounded bg-teal-700" /> Featured partners · Sponsored placement
             </span>
             <Link href="/pricing" className="text-[13px] font-semibold text-periwinkle hover:underline">
               What is a featured listing? →
