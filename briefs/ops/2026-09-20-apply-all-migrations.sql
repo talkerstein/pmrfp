@@ -270,7 +270,10 @@ commit;
 -- City Limits Landscaping & Snow Removal — grant the access they paid for
 -- Run in: Supabase SQL editor
 -- ════════════════════════════════════════════════════════════════════
--- First paying customer (2026-08-17, $249 CAD). The subscription never
+-- First paying customer: CA$29.00 MONTHLY Trade Pro, paid 2026-08-18 (Stripe
+-- receipt pi_3U5yrCDfrKup3VPa3QB4q7gF, sales@citylimitsab.com). NOT $249 annual —
+-- corrected 2026-09-20 from the Stripe receipt. Period end below is one month
+-- out; the Stripe webhook overwrites this row on the next renewal event. The subscription never
 -- reached the database, so two things silently failed:
 --   1. no subscriptions row  -> has_active_trade_access() = false
 --                               -> they see the paywall, not the RFPs
@@ -287,8 +290,8 @@ insert into public.subscriptions (
 )
 values (
   'a164f24b-2e14-4b31-a3d2-8189d4c3475b',
-  'active', 249, 'CAD',
-  '2026-08-17T00:00:00Z', '2027-08-17T00:00:00Z', false
+  'active', 29, 'CAD',
+  '2026-09-19T00:00:00Z', '2026-10-19T00:00:00Z', false
 )
 on conflict (organization_id) do nothing;
 
