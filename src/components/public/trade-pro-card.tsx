@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { Check, Sparkles } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -98,7 +99,7 @@ export function TradeProCard({ monthlyEnabled = true }: { monthlyEnabled?: boole
         ))}
       </ul>
       <Link
-        href="/sign-up"
+        href={signUpHrefForPlan("pro", isAnnual ? "annual" : "monthly")}
         className={cn(buttonVariants({ size: "lg" }), "mt-8 w-full")}
       >
         Join {SITE.name}

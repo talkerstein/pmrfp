@@ -4,6 +4,7 @@ import { SignUpForm } from "@/components/forms/auth-forms";
 import { DemoNotice } from "@/components/forms/demo-notice";
 import { COPY } from "@/lib/site";
 import { safeNextPath } from "@/lib/auth/next";
+import { billingPathForIntent, parsePlanIntent } from "@/lib/billing/plan-intent";
 
 const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent"] as const;
 type ValidRole = (typeof VALID_ROLES)[number];
@@ -39,15 +40,20 @@ export async function generateMetadata({
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; next?: string; template?: string }>;
+  searchParams: Promise<{ role?: string; next?: string; template?: string; plan?: string; interval?: string }>;
 }) {
-  const { role: rawRole, next: rawNext, template } = await searchParams;
+  const { role: rawRole, next: rawNext, template, plan, interval } = await searchParams;
+  // Plan chosen on /pricing — re-validated against an allowlist; never trusted for price.
+  const intent = parsePlanIntent(plan, interval);
   const initialRole: ValidRole | undefined =
     rawRole && (VALID_ROLES as readonly string[]).includes(rawRole)
       ? (rawRole as ValidRole)
       : undefined;
   // Back-compat: older links pass ?template=X; promote it to a `next` path.
-  const next = safeNextPath(rawNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : null));
+  const next = safeNextPath(
+    rawNext ??
+      (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? billingPathForIntent(intent) : null),
+  );
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
 
   return (
@@ -61,6 +67,20 @@ export default async function SignUpPage({
         The commercial property RFP network — trades, suppliers, property
         managers, builders, and real estate professionals on one platform.
       </p>
+      {intent && (
+        <div className="mt-5 rounded-lg border border-teal-300 bg-teal-50/60 p-4 text-sm">
+          <p className="font-semibold text-foreground">
+            You chose {intent.name} — {intent.priceLabel}
+          </p>
+          <p className="mt-1 leading-relaxed text-muted-foreground">
+            Create your free account first — no card needed now. We&apos;ll take you straight to
+            billing to confirm {intent.name} before anything is charged.{" "}
+            <Link href="/pricing" className="font-medium text-teal-700 hover:underline">
+              Change plan
+            </Link>
+          </p>
+        </div>
+      )}
       <div className="mt-6">
         <SignUpForm initialRole={initialRole} next={next} />
       </div>

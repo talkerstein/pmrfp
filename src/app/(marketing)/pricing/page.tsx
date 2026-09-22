@@ -1,3 +1,4 @@
+import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
@@ -164,7 +165,7 @@ export default async function PricingPage() {
                 ))}
               </ul>
               <Link
-                href="/sign-up"
+                href={signUpHrefForPlan("featured")}
                 className={cn(buttonVariants({ size: "lg", variant: "accent" }), "mt-8 w-full")}
               >
                 Get Featured
