@@ -24,6 +24,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Idempotency: Stripe retries on any non-2xx response or timeout. Without
+  // this, a slow handler (several sequential awaited email/GHL calls below)
+  // that times out gets redelivered, and the customer sees the "you're
+  // activated" email twice on day one. Table is service-role only (RLS
+  // enabled, no policies); missing table (migration not yet applied)
+  // degrades to "process every time" rather than breaking the webhook.
+  if (isServiceConfigured()) {
+    const svc = createServiceClient();
+    const { error: dupErr } = await svc
+      .from("stripe_webhook_events")
+      .insert({ id: event.id });
+    if (dupErr) {
+      if (dupErr.code === "23505") {
+        // Already processed this exact event — ack without redoing work.
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      // Any other error (e.g. table doesn't exist pre-migration) — log and
+      // fall through to processing; better to risk a duplicate email than
+      // to silently drop a real subscription event.
+      console.error("[stripe webhook] idempotency check failed:", dupErr.message);
+    }
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -113,6 +136,32 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         await syncSubscriptionFromStripe(sub);
+
+        // Revenue leak: nothing previously demoted a churned org out of the
+        // paid directory. listVendors()/getVendor() already exclude
+        // status='suspended' (used today for admin bans), so a canceled
+        // subscriber otherwise kept showing — ranked alongside active
+        // paying competitors — for free, forever. Demote on deletion only
+        // (not past_due — Stripe's own dunning retries run for weeks first,
+        // and a temporary card failure shouldn't unlist anyone). Does NOT
+        // auto-reactivate on a later resubscribe — that mirrors the existing
+        // "never touches a suspended org" rule on the profile_status
+        // promotion above, so an admin ban can't be silently undone by a
+        // new Stripe event. Reactivating after billing is fixed is a
+        // deliberate one-click admin action, same as lifting any other ban.
+        if (
+          event.type === "customer.subscription.deleted" &&
+          isServiceConfigured() &&
+          sub.metadata?.organization_id
+        ) {
+          const svc = createServiceClient();
+          await svc
+            .from("organizations")
+            .update({ status: "suspended" })
+            .eq("id", sub.metadata.organization_id)
+            .eq("status", "active");
+        }
+
         // GHL: if we have the org's email, mirror the new subscription state.
         // The deletion event also fires here → flips status to canceled.
         if (isServiceConfigured() && sub.metadata?.organization_id) {
@@ -143,13 +192,22 @@ export async function POST(request: Request) {
         break;
       }
       case "invoice.payment_failed": {
-        const inv = event.data.object as Stripe.Invoice & { subscription?: string };
-        if (inv.subscription && isServiceConfigured()) {
+        const inv = event.data.object as Stripe.Invoice;
+        // Dead code before this fix: Stripe SDK ^22 moved this field to
+        // invoice.parent.subscription_details.subscription. The old
+        // `(inv as Stripe.Invoice & { subscription?: string }).subscription`
+        // cast lied to TypeScript — at runtime it was always undefined, so
+        // this branch never ran (past_due was only ever set as a side
+        // effect of customer.subscription.updated, which Stripe also fires
+        // on payment failure — worked by coincidence, not by design).
+        const subField = inv.parent?.subscription_details?.subscription;
+        const subId = typeof subField === "string" ? subField : subField?.id;
+        if (subId && isServiceConfigured()) {
           const supabase = createServiceClient();
           await supabase
             .from("subscriptions")
             .update({ status: "past_due" })
-            .eq("stripe_subscription_id", inv.subscription);
+            .eq("stripe_subscription_id", subId);
         }
         break;
       }
