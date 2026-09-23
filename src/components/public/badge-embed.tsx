@@ -17,9 +17,15 @@ export function BadgeEmbed({
   const img = `${base}/api/badge/${slug}`;
   const imgDark = `${img}?theme=dark`;
 
-  const html = `<a href="${profileUrl}" target="_blank" rel="nofollow noopener">\n  <img src="${img}" alt="PMRFP company profile badge" width="214" height="54" />\n</a>`;
-  const htmlDark = `<a href="${profileUrl}" target="_blank" rel="nofollow noopener">\n  <img src="${imgDark}" alt="PMRFP company profile badge" width="214" height="54" />\n</a>`;
-  const markdown = `[![PMRFP company profile badge](${img})](${profileUrl})`;
+  // Branded anchor, pointing at the member's own profile — a plain, natural
+  // link (no keyword-stuffed anchor text, which is what search engines treat
+  // as widget link spam).
+  const alt = "Find us on PMRFP";
+  const html = `<a href="${profileUrl}" target="_blank" rel="noopener">\n  <img src="${img}" alt="${alt}" width="214" height="54" />\n</a>`;
+  const htmlDark = `<a href="${profileUrl}" target="_blank" rel="noopener">\n  <img src="${imgDark}" alt="${alt}" width="214" height="54" />\n</a>`;
+  const textLink = `<a href="${profileUrl}" target="_blank" rel="noopener">Find us on PMRFP</a>`;
+  const signature = `Find us on PMRFP: ${profileUrl}`;
+  const markdown = `[![${alt}](${img})](${profileUrl})`;
 
   return (
     <div className="space-y-8">
@@ -35,8 +41,10 @@ export function BadgeEmbed({
         </div>
       </div>
 
-      <Snippet label="HTML — light" code={html} />
-      <Snippet label="HTML — dark" code={htmlDark} />
+      <Snippet label="Website — light background" code={html} />
+      <Snippet label="Website — dark background" code={htmlDark} />
+      <Snippet label="Text link (footer or About page)" code={textLink} />
+      <Snippet label="Email signature" code={signature} />
       <Snippet label="Markdown (README / docs)" code={markdown} />
     </div>
   );

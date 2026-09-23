@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { BadgeCheck, ShieldCheck, Star } from "lucide-react";
+import { BadgeCheck, Code2, Mail, ShieldCheck, Star } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { BadgeEmbed } from "@/components/public/badge-embed";
 import { buttonVariants } from "@/components/ui/button";
@@ -9,9 +9,9 @@ import { getSession } from "@/lib/access/access";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Your PMRFP Verified Vendor Badge",
+  title: "Free Website Badge for Commercial Trades",
   description:
-    "Show clients you're a credible commercial vendor with the PMRFP badge — a mark that links visitors to your PMRFP company profile. Free for members.",
+    "Add the free PMRFP badge to your website and email signature. Property managers who click it see your company profile — trades, regions, insurance — which links back to your site.",
   alternates: { canonical: "/badge" },
 };
 
@@ -29,15 +29,21 @@ export default async function BadgePage() {
 
   return (
     <Container size="narrow" className="py-14">
-      <Eyebrow>Member benefit</Eyebrow>
+      <Eyebrow>Free for listed companies</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-        Your PMRFP Verified Vendor badge
+        Put your {SITE.name} badge on your website
       </h1>
       <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-        Add the {SITE.name} badge to your website and email signature. Visitors can click it to
-        open your {SITE.name} company profile and see the details recorded there. It is a link to
-        your profile — not a search-ranking tactic, and not a certification.
+        Free for every listed company. Add it to your website footer, your quotes and your email
+        signature. A property manager who clicks it lands on your {SITE.name} profile — your
+        trades, regions, insurance and projects — and your profile links straight back to your
+        website.
       </p>
+      <ul className="mt-5 space-y-2 text-sm text-foreground/90">
+        <li className="flex gap-2"><BadgeCheck className="mt-0.5 size-4 shrink-0 text-teal-600" /> Shows buyers you&apos;re set up for commercial work before they call.</li>
+        <li className="flex gap-2"><BadgeCheck className="mt-0.5 size-4 shrink-0 text-teal-600" /> Updates itself — the badge always reflects your current {SITE.name} status.</li>
+        <li className="flex gap-2"><BadgeCheck className="mt-0.5 size-4 shrink-0 text-teal-600" /> Takes two minutes: copy the code below and paste it into your site.</li>
+      </ul>
 
       {!memberSlug && (
         <div className="mt-6 rounded-lg border border-dashed border-teal-300 bg-teal-50/60 p-4 text-sm">
@@ -56,6 +62,19 @@ export default async function BadgePage() {
       <div className="mt-10">
         <BadgeEmbed base={base} slug={slug} profileUrl={profileUrl} />
       </div>
+
+      <section className="mt-12">
+        <h2 className="text-2xl font-semibold tracking-tight">Where to paste it</h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <Tier icon={<Code2 className="size-5" />} title="WordPress" desc="Appearance → Widgets (or the Site Editor) → add a Custom HTML block to your footer → paste the website code." />
+          <Tier icon={<Code2 className="size-5" />} title="Wix" desc="Add → Embed Code → Embed HTML → paste the website code, then drag it into your footer." />
+          <Tier icon={<Code2 className="size-5" />} title="Squarespace" desc="Edit your footer → add a Code block → paste the website code." />
+          <Tier icon={<Mail className="size-5" />} title="Email & quotes" desc="Paste the email-signature line into Gmail or Outlook signature settings, and at the bottom of your quote template." />
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Someone else runs your website? Send them this page — the code works on any site.
+        </p>
+      </section>
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight">Badge tiers</h2>

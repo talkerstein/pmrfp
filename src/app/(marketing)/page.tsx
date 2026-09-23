@@ -1,25 +1,37 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
   Building2,
   Check,
+  Flame,
   LayoutGrid,
   Lock,
   Search,
   Send,
+  Trophy,
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { VideoLoop } from "@/components/public/video-loop";
+import { RfpCard } from "@/components/public/rfp-card";
 import { buttonVariants } from "@/components/ui/button";
 import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
+import { boardStats, closingLabel, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { cn } from "@/lib/utils";
 
 // The RFP board now refreshes daily from the public-tender feed; without
 // this the page was frozen at build time and showed stale open counts
 // (and the sitemap missed every new tender) until the next deploy.
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: { absolute: `${SITE.name} — Commercial Property RFPs & Public Tenders in Canada` },
+  description:
+    "Open commercial property contracts across Canada — snow removal, HVAC, roofing, cleaning, electrical and more — from property managers and public buyers, updated daily. Trades get listed free; property managers post free.",
+  alternates: { canonical: "/" },
+};
 
 const PROBLEMS = [
   { n: "01", t: "Scattered RFPs", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
@@ -61,7 +73,7 @@ const PRICE_FEATURES = [
   "Save RFPs",
   "Bid on RFPs",
   "Alerts for matching RFPs",
-  "Verified vendor badge for your website",
+  "Website badge that links to your profile",
   "Early-bird annual rate, locked in when you join",
 ];
 
@@ -72,6 +84,27 @@ const FAQS = [
   { q: "Can property managers post for free?", a: "Yes. Posting RFPs and browsing the vendor directory is free for property managers, builders, and owners." },
   { q: "What if I only serve one region?", a: "That's fine. Choose the exact regions and categories you cover and you'll only be matched to relevant work." },
 ];
+
+/** SEAO (Quebec) notices are published in French. */
+function isFrench(r: { slug: string }) {
+  return /-qca?-/.test(r.slug);
+}
+
+/** Round-robin by key, keeping each group's order: a, b, c, a, b, c, … */
+function spread<T>(items: T[], key: (t: T) => string): T[] {
+  const groups = new Map<string, T[]>();
+  for (const it of items) {
+    const k = key(it);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(it);
+  }
+  const out: T[] = [];
+  const queues = [...groups.values()];
+  while (out.length < items.length) {
+    for (const q of queues) if (q.length) out.push(q.shift()!);
+  }
+  return out;
+}
 
 function formatDeadline(d: string | null) {
   if (!d) return "Open";
@@ -88,6 +121,34 @@ export default async function HomePage() {
   // projects are live that closed weeks ago (external audit, 2026-09-17).
   const openCount = rfps.filter((r) => r.status === "open").length;
   const chips = categories.slice(0, 6);
+  // Everything below is counted from real listings — no example numbers.
+  const stats = boardStats(rfps);
+  // Still biddable (closes tomorrow or later), soonest first, English-language
+  // notices ahead of SEAO's French ones, and spread across regions so the
+  // homepage doesn't read as one city's board.
+  const closingSoon = spread(
+    rfps
+      .filter((r) => r.status === "open" && (daysUntil(r.deadline) ?? -1) >= 1)
+      .sort((a, b) => Number(isFrench(a)) - Number(isFrench(b)) || (a.deadline ?? "").localeCompare(b.deadline ?? "")),
+    (r) => r.regionName ?? "",
+  );
+  const heroRows = closingSoon.slice(0, 3);
+  const openBoard = closingSoon.length >= 3 ? closingSoon.slice(0, 6) : board;
+  // Awards a trade can picture winning: $50K–$2M, most recent first, one per source.
+  const bigAwards = spread(
+    rfps
+      .filter((r) => {
+        const amount = parseAward(r.summary).amount ?? 0;
+        return (
+          isPastContract(r) && !isFrench(r) && !/\bdesign\b/i.test(r.title) &&
+          amount >= 50_000 && amount <= 2_000_000
+        );
+      })
+      .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? "")),
+    (r) => r.slug.match(/-(cba|tora|nsa|qca)-/)?.[1] ?? "",
+  ).slice(0, 3);
+  // Below ~10 open listings the live-count headline undersells; keep the PM pitch.
+  const live = stats.open >= 10;
 
   return (
     <>
@@ -97,33 +158,50 @@ export default async function HomePage() {
           <div className="grid items-center gap-14 py-20 lg:grid-cols-[1.04fr_.96fr] lg:py-28">
             <div>
               <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
-                <span className="h-px w-5 bg-teal-300" /> Now live in the GTA · Your region next
+                <span className="h-px w-5 bg-teal-300" />{" "}
+                {live ? "Live across Canada · Updated daily" : "Now live in the GTA · Your region next"}
               </span>
-              <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
-                Post commercial property RFPs <span className="text-teal-300">free</span>. Vetted
-                trades bid to win them.
-              </h1>
+              {live ? (
+                <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
+                  <span className="text-teal-300">{stats.open}</span> commercial property contracts
+                  are open for bids right now.
+                </h1>
+              ) : (
+                <h1 className="mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl xl:text-6xl">
+                  Post commercial property RFPs <span className="text-teal-300">free</span>. Vetted
+                  trades bid to win them.
+                </h1>
+              )}
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/75">
-                {SITE.name} is the RFP board for commercial and residential buildings. Post a
-                project, or get listed and bid.
+                {live
+                  ? "Snow, HVAC, roofing, cleaning, electrical and more — property-manager RFPs and public tenders on one board, filtered to your trade and region. Get listed free and see what's closing this week."
+                  : `${SITE.name} is the RFP board for commercial and residential buildings. Post a project, or get listed and bid.`}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/sign-up?role=property_manager"
+                  href={live ? "/sign-up" : "/sign-up?role=property_manager"}
                   className={buttonVariants({ size: "lg", variant: "accent" })}
                 >
-                  Post a project — free <ArrowRight className="size-4" />
+                  {live ? "Get listed free" : "Post a project — free"} <ArrowRight className="size-4" />
                 </Link>
                 <Link
-                  href="/sign-up"
+                  href={live ? "/rfps" : "/sign-up"}
                   className={cn(
                     buttonVariants({ size: "lg", variant: "outline" }),
                     "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white",
                   )}
                 >
-                  Join as a Trade Company
+                  {live ? "Browse open contracts" : "Join as a Trade Company"}
                 </Link>
               </div>
+              {live && (
+                <p className="mt-5 text-sm text-indigo-100/75">
+                  Property manager?{" "}
+                  <Link href="/sign-up?role=property_manager" className="font-semibold text-teal-300 hover:underline">
+                    Post a project free →
+                  </Link>
+                </p>
+              )}
               <p className="mt-6 flex max-w-md items-start gap-2 text-[13px] leading-relaxed text-indigo-100/55">
                 <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-teal-400" />
                 {SITE.name} lists projects and trades — we don&apos;t guarantee contracts,
@@ -147,9 +225,39 @@ export default async function HomePage() {
                 <div className="bg-secondary/60 p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h4 className="font-semibold text-foreground">RFP Board</h4>
-                    <span className="font-mono text-[11px] text-muted-foreground">Example projects</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      {heroRows.length === 3 ? "Live · closing soonest" : "Example projects"}
+                    </span>
                   </div>
-                  {[
+                  {heroRows.length === 3 && heroRows.map((r) => {
+                    const soon = closingLabel(daysUntil(r.deadline));
+                    return (
+                      <Link
+                        key={r.slug}
+                        href={`/rfps/${r.slug}`}
+                        className="mb-2.5 block rounded-lg border border-border bg-white p-3.5 transition-colors last:mb-0 hover:border-teal-300"
+                      >
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="truncate font-mono text-[10.5px] uppercase tracking-wide text-teal-600">
+                            {r.categories[0] ?? "Commercial"}
+                          </span>
+                          <span className={cn(
+                            "flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase",
+                            soon ? "bg-warning/10 text-warning" : "bg-teal-50 text-teal-700",
+                          )}>
+                            {soon ? <Flame className="size-3" /> : <span className="size-1.5 rounded-full bg-current" />}
+                            {soon ?? "Open"}
+                          </span>
+                        </div>
+                        <div className="line-clamp-2 font-semibold text-foreground">{r.title}</div>
+                        <div className="mt-2 flex gap-4 font-mono text-[11.5px] text-muted-foreground">
+                          <span>{r.regionName ?? "Canada"}</span>
+                          <span>Closes {formatDeadline(r.deadline)}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                  {heroRows.length < 3 && [
                     { cat: "Electrical", title: "Condominium Electrical Maintenance Contract", meta: ["Toronto · Condo", "Example listing"], status: "open" as const },
                     { cat: "Snow Removal", title: "Commercial Plaza Snow Removal Services", meta: ["Mississauga · Retail", "Example listing"], status: "soon" as const },
                     { cat: "HVAC", title: "Apartment Building HVAC Preventive Maintenance", meta: [] as string[], status: "locked" as const },
@@ -201,7 +309,7 @@ export default async function HomePage() {
           {/* ticker */}
           <div className="grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4">
             {[
-              ["Now live", "Greater Toronto Area"],
+              live ? ["Coverage", "Canada-wide · updated daily"] : ["Now live", "Greater Toronto Area"],
               ["Focus", "Commercial property"],
               ["For trades", "Directory + RFP access"],
               ["Membership", `$${PRICING.proAnnual} / year`],
@@ -225,14 +333,32 @@ export default async function HomePage() {
                 {openCount > 0 ? "Open RFPs" : "Recent RFPs"}
               </div>
             </div>
-            <div>
-              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{categories.length}</div>
-              <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Trade categories</div>
-            </div>
-            <div>
-              <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">GTA</div>
-              <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Primary market</div>
-            </div>
+            {live ? (
+              <div>
+                <div className="flex items-center justify-center gap-1.5 text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">
+                  <Flame className="size-7 text-warning" /> {stats.closingThisWeek}
+                </div>
+                <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Close in the next 7 days</div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{categories.length}</div>
+                <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Trade categories</div>
+              </div>
+            )}
+            {stats.awardedValue > 0 ? (
+              <div>
+                <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">{compactDollars(stats.awardedValue)}</div>
+                <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Awarded in {stats.pastContracts.toLocaleString("en-CA")} past contracts
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-3xl font-extrabold tracking-tight text-indigo sm:text-4xl">GTA</div>
+                <div className="mt-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Primary market</div>
+              </div>
+            )}
           </div>
         </Container>
       </section>
@@ -353,7 +479,7 @@ export default async function HomePage() {
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
                 {openCount > 0
-                  ? "Posted by property managers, builders, and owners. Filter by trade to see what’s open in your region — full scope and contacts unlock with membership."
+                  ? "Closing soonest first — from property managers, owners and public buyers across Canada. Filter by trade to see what’s open in your region."
                   : "No projects are open right now — these recently closed RFPs show the kind of work property managers post. Save your trade and region to hear about future matches."}
               </p>
             </div>
@@ -381,7 +507,7 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {board.map((r) => (
+            {openBoard.map((r) => (
               <Link
                 key={r.slug}
                 href={`/rfps/${r.slug}`}
@@ -445,6 +571,42 @@ export default async function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* ===================== ALREADY AWARDED (real award notices) ===================== */}
+      {bigAwards.length === 3 && (
+        <section className="bg-indigo text-white">
+          <Container className="py-20">
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div className="max-w-2xl">
+                <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
+                  <Trophy className="size-3.5" /> Already awarded
+                </span>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                  Someone else won these.
+                </h2>
+                <p className="mt-4 text-lg leading-relaxed text-indigo-100/75">
+                  Real public contracts from the past year — who won, and for how much. The next
+                  ones are on the board now. Get listed and you&apos;ll see them while they&apos;re
+                  still open.
+                </p>
+              </div>
+              <Link href="/rfps?view=awarded" className="text-sm font-semibold text-teal-300 hover:underline">
+                See all {stats.pastContracts.toLocaleString("en-CA")} awarded contracts →
+              </Link>
+            </div>
+            <div className="mt-8 grid gap-4 text-foreground md:grid-cols-3">
+              {bigAwards.map((r) => (
+                <RfpCard key={r.slug} rfp={r} locked />
+              ))}
+            </div>
+            <div className="mt-8">
+              <Link href="/sign-up" className={buttonVariants({ size: "lg", variant: "accent" })}>
+                Get alerts for the next one <ArrowRight className="size-4" />
+              </Link>
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* ===================== AUDIENCE SPLIT ===================== */}
       <section className="bg-secondary/40">
