@@ -8,9 +8,11 @@ export const OGL_CANADA_ATTRIBUTION =
   "Contains information licensed under the Open Government Licence – Canada.";
 export const OGL_TORONTO_ATTRIBUTION =
   "Contains information licensed under the Open Government Licence – Toronto.";
+export const SEAO_ATTRIBUTION =
+  "Source: Système électronique d'appel d'offres (SEAO), Secrétariat du Conseil du trésor du Québec — Données Québec, CC BY 4.0.";
 
 export interface PublicTenderSource {
-  key: "canadabuys" | "toronto" | "awards";
+  key: "canadabuys" | "toronto" | "awards" | "seao";
   /** Short badge text for cards. */
   badge: string;
   /** "Issued by …" */
@@ -28,6 +30,15 @@ export function publicTenderSource(slug: string): PublicTenderSource {
       issuer: "the Government of Canada",
       portal: "CanadaBuys",
       attribution: OGL_CANADA_ATTRIBUTION,
+    };
+  }
+  if (/-qc-[a-z0-9-]+$/.test(slug)) {
+    return {
+      key: "seao",
+      badge: "Public tender · Quebec (SEAO)",
+      issuer: "a Quebec public body",
+      portal: "SEAO",
+      attribution: SEAO_ATTRIBUTION,
     };
   }
   if (/-tor-[a-z0-9-]+$/.test(slug)) {
