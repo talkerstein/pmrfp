@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { BadgeCheck, Building2, Globe, Mail, Phone, ShieldCheck, Clock } from "lucide-react";
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
-import { getVendor, listVendors } from "@/lib/data/directory";
+import { getVendor, listVendors, retiredVendorRedirect } from "@/lib/data/directory";
 import { cn } from "@/lib/utils";
 import { SITE } from "@/lib/site";
 
@@ -51,7 +51,13 @@ export default async function VendorProfilePage({
 }) {
   const { slug } = await params;
   const v = await getVendor(slug);
-  if (!v) notFound();
+  if (!v) {
+    // Retired listing (demo / suspended): permanent redirect to the closest
+    // real page so the URL's search value isn't thrown away. Unknown → 404.
+    const to = await retiredVendorRedirect(slug);
+    if (to) permanentRedirect(to);
+    notFound();
+  }
 
   const initials = v.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const showContact = v.contactVisibility === "show_contact";
@@ -127,7 +133,6 @@ export default async function VendorProfilePage({
                 )}
               </p>
             </div>
-            {v.featured && <Badge className="ml-auto bg-teal-100 text-teal-700">Featured</Badge>}
           </div>
 
           {v.fullDescription && (
