@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  Building2,
   Check,
+  BellRing,
+  FileSearch,
   Flame,
+  Hand,
   LayoutGrid,
   Lock,
-  Search,
-  Send,
+  Minus,
+  Radar,
   Trophy,
 } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
@@ -20,6 +22,7 @@ import { getCategories } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
 import { boardStats, closingLabel, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { cn } from "@/lib/utils";
+import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 
 // The RFP board now refreshes daily from the public-tender feed; without
 // this the page was frozen at build time and showed stale open counts
@@ -33,25 +36,39 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const PROBLEMS = [
-  { n: "01", t: "Scattered RFPs", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
-  { n: "02", t: "Hard-to-reach buyers", d: "Property managers keep private preferred-vendor lists that newcomers simply can't see." },
-  { n: "03", t: "Manual vendor hunts", d: "Owners and managers lose hours chasing down qualified, insured, available trades." },
-  { n: "04", t: "Missed follow-ups", d: "Good leads die in inboxes — with no structured way to track interest and outcomes." },
+// Every line here must stay true of Trade Pro (see rfp-alerts cron,
+// LockedContentPanel, express-interest). No "appear higher" claims.
+const PRO_BENEFITS = [
+  {
+    icon: Radar,
+    t: "Every open tender, one board",
+    d: "CanadaBuys, City of Toronto, Quebec SEAO and Yukon tenders plus property-manager RFPs — checked every morning, filtered to your trade and region.",
+  },
+  {
+    icon: BellRing,
+    t: "An email the day a match posts",
+    d: "Daily alerts for your trade and region. Stop refreshing four government portals and hoping you didn't miss one.",
+  },
+  {
+    icon: FileSearch,
+    t: "Full scope, documents and the buyer",
+    d: "Requirements, budget, submission instructions, attachments and contact details on every listing — everything you need to price it.",
+  },
+  {
+    icon: Hand,
+    t: "Put your name on property-manager RFPs",
+    d: "Express interest in one click. The property manager sees your company profile, insurance and trades.",
+  },
 ];
 
-const PROPERTY_TYPES = [
-  { name: "Condominiums", sub: "High-rise & low-rise", img: "/images/property-condominium.jpg", grad: "from-indigo to-indigo-500" },
-  { name: "Commercial Office", sub: "Towers & business parks", img: "/images/property-office.jpg", grad: "from-indigo-500 to-periwinkle" },
-  { name: "Retail Plazas", sub: "Strip malls & centres", img: "/images/property-retail.jpg", grad: "from-periwinkle to-indigo-400" },
-  { name: "Apartments", sub: "Multi-residential", img: "/images/property-apartment.jpg", grad: "from-indigo to-periwinkle" },
-  { name: "Industrial", sub: "Warehouse & logistics", img: "/images/property-industrial.jpg", grad: "from-indigo-700 to-indigo-500" },
-];
-
-const STEPS = [
-  { step: "STEP 01", icon: Building2, t: "Get listed", d: "Build your company profile — categories, regions, insurance — and show up in the trade directory property managers search.", more: "Build your profile", href: "/sign-up" },
-  { step: "STEP 02", icon: Search, t: "Browse RFPs", d: "One board of building projects, filtered to your trade and region. Save the fits and get alerts when new ones land.", more: "Browse RFPs", href: "/rfps" },
-  { step: "STEP 03", icon: Send, t: "Bid on the fit", d: "Put your name on the RFPs that match — experience, availability, done. Track every submission in one place.", more: "See how it works", href: "/for-trades" },
+const COMPARE: [string, boolean, boolean][] = [
+  ["Company profile in the trade directory", true, true],
+  ["Website badge that links to your profile", true, true],
+  ["Open RFP titles, regions and closing dates", true, true],
+  ["Weekly tender digest email", true, true],
+  ["Full scope, documents and buyer contact", false, true],
+  ["Daily email the day a matching RFP posts", false, true],
+  ["Express interest on property-manager RFPs", false, true],
 ];
 
 const TRADE_POINTS = [
@@ -147,6 +164,12 @@ export default async function HomePage() {
       .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? "")),
     (r) => r.slug.match(/-(cba|tora|nsa|qca)-/)?.[1] ?? "",
   ).slice(0, 3);
+  // Median real award value (past public contracts) — the ROI anchor.
+  const awardAmounts = rfps
+    .map((r) => (isPastContract(r) ? parseAward(r.summary).amount : null))
+    .filter((n): n is number => typeof n === "number" && n > 0)
+    .sort((a, b) => a - b);
+  const medianAward = awardAmounts.length >= 25 ? awardAmounts[Math.floor(awardAmounts.length / 2)] : null;
   // Below ~10 open listings the live-count headline undersells; keep the PM pitch.
   const live = stats.open >= 10;
 
@@ -174,15 +197,15 @@ export default async function HomePage() {
               )}
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-indigo-100/75">
                 {live
-                  ? "Snow, HVAC, roofing, cleaning, electrical and more — property-manager RFPs and public tenders on one board, filtered to your trade and region. Get listed free and see what's closing this week."
+                  ? "Snow, HVAC, roofing, cleaning, electrical and more — public tenders and property-manager RFPs on one board. Trade Pro gets you the full scope, the buyer's contact, and an email the day a new one in your trade posts."
                   : `${SITE.name} is the RFP board for commercial and residential buildings. Post a project, or get listed and bid.`}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href={live ? "/sign-up" : "/sign-up?role=property_manager"}
+                  href={live ? signUpHrefForPlan("pro", "monthly") : "/sign-up?role=property_manager"}
                   className={buttonVariants({ size: "lg", variant: "accent" })}
                 >
-                  {live ? "Get listed free" : "Post a project — free"} <ArrowRight className="size-4" />
+                  {live ? `Start Trade Pro — $${PRICING.proMonthly}/mo` : "Post a project — free"} <ArrowRight className="size-4" />
                 </Link>
                 <Link
                   href={live ? "/rfps" : "/sign-up"}
@@ -191,11 +214,23 @@ export default async function HomePage() {
                     "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white",
                   )}
                 >
-                  {live ? "Browse open contracts" : "Join as a Trade Company"}
+                  {live ? "See what's open" : "Join as a Trade Company"}
                 </Link>
               </div>
               {live && (
-                <p className="mt-5 text-sm text-indigo-100/75">
+                <p className="mt-4 text-sm text-indigo-100/75">
+                  Or{" "}
+                  <Link href={signUpHrefForPlan("pro", "annual")} className="font-semibold text-teal-300 hover:underline">
+                    lock in ${PRICING.proAnnual}/yr
+                  </Link>{" "}
+                  before it rises to $399 · Cancel anytime ·{" "}
+                  <Link href="/sign-up?role=trade" className="underline decoration-white/30 hover:text-white">
+                    free listing
+                  </Link>
+                </p>
+              )}
+              {live && (
+                <p className="mt-2 text-sm text-indigo-100/75">
                   Property manager?{" "}
                   <Link href="/sign-up?role=property_manager" className="font-semibold text-teal-300 hover:underline">
                     Post a project free →
@@ -363,107 +398,106 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* ===================== PROBLEM ===================== */}
+      {/* ===================== WHAT TRADE PRO GETS YOU ===================== */}
       <section className="bg-background">
         <Container className="py-20">
           <div className="max-w-2xl">
-            <Eyebrow>The problem</Eyebrow>
+            <Eyebrow>Trade Pro</Eyebrow>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Commercial property work runs on who you already know.
+              Stop finding out about the work after it&apos;s awarded.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-              Opportunities move through preferred-vendor lists, referrals, and fragmented RFP
-              channels. If you&apos;re not already in the room, you never hear about the work.
+              Most commercial work goes to whoever heard about it first. Trade Pro makes that you.
             </p>
           </div>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {PROBLEMS.map((p) => (
-              <div
-                key={p.n}
-                className="rounded-xl border border-border bg-card p-6"
-              >
-                <div className="font-mono text-xs font-medium text-periwinkle">{p.n}</div>
-                <h3 className="mt-4 text-lg font-semibold">{p.t}</h3>
-                <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{p.d}</p>
-              </div>
-            ))}
-          </div>
-        </Container>
-      </section>
-
-      {/* ===================== PROPERTY TYPES ===================== */}
-      <section className="bg-secondary/40">
-        <Container className="py-20">
-          <div className="max-w-2xl">
-            <Eyebrow>What we cover</Eyebrow>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Commercial and residential property work, all in one place.
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-              From rental communities and high-rise condos to retail plazas and office towers,{" "}
-              {SITE.name} connects the buildings that need work with the trades who do it.
-            </p>
-          </div>
-          <div className="mt-11 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {PROPERTY_TYPES.map(({ name, sub, img, grad }) => (
-              <div
-                key={name}
-                className={cn(
-                  "group relative flex aspect-[3/4] flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br text-white shadow-sm transition-transform hover:-translate-y-1.5",
-                  grad,
-                )}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img}
-                  alt={`${name} — commercial property`}
-                  loading="lazy"
-                  className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-indigo/90 via-indigo/35 to-transparent" />
-                <div className="relative p-5">
-                  <div className="font-semibold">{name}</div>
-                  <div className="mt-1 font-mono text-[11px] text-teal-300">{sub}</div>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            {PRO_BENEFITS.map(({ icon: Icon, t, d }) => (
+              <div key={t} className="flex gap-4 rounded-xl border border-border bg-card p-6">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                  <Icon className="size-5" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-semibold">{t}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{d}</p>
                 </div>
               </div>
             ))}
           </div>
+          <p className="mt-6 text-sm text-muted-foreground">
+            Also on {SITE.name}, free for everyone: who won and for how much on{" "}
+            {stats.pastContracts > 0 ? stats.pastContracts.toLocaleString("en-CA") : "hundreds of"} past public contracts,
+            and free bid help on public tenders.
+          </p>
         </Container>
       </section>
 
-      {/* ===================== APPROACH (teal band) ===================== */}
-      <section className="bg-teal-300">
-        <Container className="py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="eyebrow inline-flex items-center gap-2 text-indigo">
-              <span className="h-px w-5 bg-indigo" /> What {SITE.name} does
-            </span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-indigo sm:text-4xl">
-              A focused place to get found and follow the work.
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-indigo/70">
-              Property managers post projects free. Trades get listed, browse the board, and bid.
-              The PM picks who to hire.
-            </p>
-          </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {STEPS.map(({ step, icon: Icon, t, d, more, href }) => (
-              <Link
-                key={t}
-                href={href}
-                className="group rounded-2xl border border-transparent bg-card p-8 shadow-sm transition-all hover:-translate-y-1.5 hover:shadow-lg"
-              >
-                <div className="font-mono text-xs tracking-widest text-periwinkle">{step}</div>
-                <span className="mt-3.5 flex size-13 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                  <Icon className="size-6" />
-                </span>
-                <h3 className="mt-5 text-xl font-semibold">{t}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{d}</p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600">
-                  {more} <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                </span>
+      {/* ===================== ROI ===================== */}
+      {medianAward && (
+        <section className="bg-teal-300">
+          <Container className="grid items-center gap-8 py-14 md:grid-cols-[1.3fr_1fr]">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-indigo sm:text-3xl">
+                The median public contract on our board sold for {compactDollars(medianAward)}.
+              </h2>
+              <p className="mt-3 text-lg text-indigo/75">
+                Trade Pro is ${PRICING.proAnnual} a year. One small win covers it many times over.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 md:justify-end">
+              <Link href={signUpHrefForPlan("pro", "annual")} className={buttonVariants({ size: "lg" })}>
+                Lock in ${PRICING.proAnnual}/yr <ArrowRight className="size-4" />
               </Link>
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {/* ===================== FREE vs TRADE PRO ===================== */}
+      <section className="bg-secondary/40">
+        <Container className="py-20">
+          <div className="max-w-2xl">
+            <Eyebrow>Free vs Trade Pro</Eyebrow>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Free gets you seen. Pro gets you the work.
+            </h2>
+          </div>
+          <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="grid grid-cols-[1fr_72px_96px] items-center border-b border-border bg-secondary/60 px-5 py-3 text-sm font-semibold sm:grid-cols-[1fr_120px_140px]">
+              <span />
+              <span className="text-center">Free</span>
+              <span className="text-center text-indigo">Trade Pro</span>
+            </div>
+            {COMPARE.map(([label, free, pro]) => (
+              <div
+                key={label}
+                className="grid grid-cols-[1fr_72px_96px] items-center border-b border-border px-5 py-3.5 text-sm last:border-b-0 sm:grid-cols-[1fr_120px_140px]"
+              >
+                <span className={cn(!free && "font-medium")}>{label}</span>
+                <span className="flex justify-center">
+                  {free ? <Check className="size-4 text-teal-600" strokeWidth={3} /> : <Minus className="size-4 text-muted-foreground/50" />}
+                </span>
+                <span className="flex justify-center">
+                  {pro && <Check className="size-4 text-indigo" strokeWidth={3} />}
+                </span>
+              </div>
             ))}
+            <div className="grid grid-cols-[1fr_72px_96px] items-center gap-y-3 border-t border-border bg-secondary/40 px-5 py-4 sm:grid-cols-[1fr_120px_140px]">
+              <span className="text-sm font-semibold">Price</span>
+              <span className="text-center text-sm font-semibold">$0</span>
+              <span className="text-center text-sm font-semibold text-indigo">
+                ${PRICING.proMonthly}/mo
+                <span className="block text-xs font-normal text-muted-foreground">or ${PRICING.proAnnual}/yr</span>
+              </span>
+            </div>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Link href={signUpHrefForPlan("pro", "monthly")} className={buttonVariants({ size: "lg" })}>
+              Start Trade Pro — ${PRICING.proMonthly}/mo <ArrowRight className="size-4" />
+            </Link>
+            <Link href="/sign-up?role=trade" className={buttonVariants({ size: "lg", variant: "outline" })}>
+              Start free
+            </Link>
+            <span className="text-sm text-muted-foreground">Cancel anytime. Access runs to the end of your billing period.</span>
           </div>
         </Container>
       </section>
@@ -693,16 +727,16 @@ export default async function HomePage() {
           <div className="max-w-2xl">
             <Eyebrow>Pricing</Eyebrow>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              One plan. One flat price.
+              Lock in ${PRICING.proAnnual}/yr before it goes to $399.
             </h2>
           </div>
           <div className="mt-10 grid gap-10 lg:grid-cols-2">
             <div>
               <p className="text-lg leading-relaxed text-muted-foreground">
-                Early Trade Pro membership is{" "}
-                <b className="text-foreground">${PRICING.proAnnual} CAD per year</b> — your listing
-                in the trade directory, full access to posted RFPs, and the ability to bid on the
-                ones that match.
+                Early-bird Trade Pro is{" "}
+                <b className="text-foreground">${PRICING.proAnnual} CAD per year</b>, or ${PRICING.proMonthly}/month.
+                The annual rate rises to $399 once we reach 100 members — join before then and
+                your rate is locked in.
               </p>
               <div className="mt-7 divide-y divide-border border-y border-border">
                 {FAQS.map((f, i) => (
@@ -744,10 +778,16 @@ export default async function HomePage() {
                   ))}
                 </ul>
                 <Link
-                  href="/sign-up"
+                  href={signUpHrefForPlan("pro", "annual")}
                   className={cn(buttonVariants({ size: "lg", variant: "accent" }), "mt-7 w-full")}
                 >
-                  Join {SITE.name} <ArrowRight className="size-4" />
+                  Lock in ${PRICING.proAnnual}/yr <ArrowRight className="size-4" />
+                </Link>
+                <Link
+                  href={signUpHrefForPlan("pro", "monthly")}
+                  className="mt-3 block text-center text-sm font-medium text-teal-300 hover:underline"
+                >
+                  Or start monthly at ${PRICING.proMonthly}/mo
                 </Link>
                 <p className="mt-3 text-center text-xs text-indigo-100/55">
                   Cancel anytime · Access runs to the end of your billing period
@@ -775,15 +815,24 @@ export default async function HomePage() {
             <span className="h-px w-5 bg-teal-300" /> Get started
           </span>
           <h2 className="mx-auto mt-4 max-w-3xl text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-            Get listed before your <span className="text-teal-300">competitors</span> do.
+            {stats.closingThisWeek > 0 ? (
+              <>
+                <span className="text-teal-300">{stats.closingThisWeek}</span> contracts close this week.
+                Are you bidding?
+              </>
+            ) : (
+              <>
+                Get listed before your <span className="text-teal-300">competitors</span> do.
+              </>
+            )}
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-indigo-100/70">
-            Join the early trade members building visibility on the commercial property
-            opportunity network.
+            Trade Pro puts every one that fits your trade in your inbox, with the full scope and the
+            buyer&apos;s contact. ${PRICING.proMonthly}/month, cancel anytime.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/sign-up" className={buttonVariants({ size: "lg", variant: "accent" })}>
-              Join as a Trade Company <ArrowRight className="size-4" />
+            <Link href={signUpHrefForPlan("pro", "monthly")} className={buttonVariants({ size: "lg", variant: "accent" })}>
+              Start Trade Pro <ArrowRight className="size-4" />
             </Link>
             <Link
               href="/sign-up?role=property_manager"
