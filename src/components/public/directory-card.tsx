@@ -61,7 +61,11 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
       href={`/directory/${vendor.slug}`}
       className={cn(
         "group flex flex-col rounded-lg border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm",
-        vendor.featured ? "border-teal-200 ring-1 ring-teal-100" : "border-border",
+        vendor.platinum
+          ? "border-indigo/40 ring-2 ring-indigo/15"
+          : vendor.featured
+            ? "border-teal-200 ring-1 ring-teal-100"
+            : "border-border",
       )}
     >
       <div className="flex items-center gap-3">
@@ -99,9 +103,11 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
             </p>
           )}
         </div>
-        {vendor.featured && (
+        {vendor.platinum ? (
+          <Badge className="ml-auto bg-indigo text-teal-300 hover:bg-indigo">Platinum</Badge>
+        ) : vendor.featured ? (
           <Badge className="ml-auto bg-teal-100 text-teal-700 hover:bg-teal-100">Featured</Badge>
-        )}
+        ) : null}
       </div>
 
       {trust.length > 0 && (

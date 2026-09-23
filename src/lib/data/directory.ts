@@ -101,6 +101,23 @@ async function getPortfolioPhotos(orgId: string): Promise<string[]> {
   }
 }
 
+/**
+ * Slugs on the Platinum tier. Queried separately from ORG_SELECT (same
+ * pattern as the Google-rating columns) so a database without the
+ * `platinum` column degrades to "nobody is Platinum" instead of breaking
+ * every directory query on the site.
+ */
+async function platinumSlugs(supabase: ReturnType<typeof createReadClient>): Promise<Set<string>> {
+  const { data, error } = await supabase.from("organizations").select("slug").eq("platinum", true);
+  if (error || !data) return new Set();
+  return new Set((data as { slug: string }[]).map((r) => r.slug));
+}
+
+/** Platinum, then featured, then verified. */
+function tierRank(v: { platinum?: boolean; featured: boolean; verified: boolean }): number {
+  return (v.platinum ? 4 : 0) + (v.featured ? 2 : 0) + (v.verified ? 1 : 0);
+}
+
 export async function listVendors(filters: VendorFilters = {}): Promise<VendorListItem[]> {
   const orgType = filters.orgType ?? "trade_company";
   if (!isSupabaseConfigured()) {
@@ -116,8 +133,8 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     .eq("status", "active");
   if (filters.verified) query = query.eq("verified", true);
   if (filters.q) query = query.ilike("name", `%${filters.q}%`);
-  const { data } = await query.limit(200);
-  let rows = ((data as unknown as OrgRow[]) ?? []).filter((r) => {
+  const [{ data }, platinum] = await Promise.all([query.limit(200), platinumSlugs(supabase)]);
+  const rows = ((data as unknown as OrgRow[]) ?? []).filter((r) => {
     const cats = r.organization_categories.map((c) => c.trade_categories?.slug).filter(Boolean);
     const regs = r.organization_regions.map((c) => c.regions?.slug).filter(Boolean);
     const props = r.organization_property_types.map((c) => c.property_types?.slug).filter(Boolean);
@@ -126,9 +143,7 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     if (filters.propertyType && !props.includes(filters.propertyType)) return false;
     return true;
   });
-  if (filters.sort === "alpha") rows = rows.sort((a, b) => a.name.localeCompare(b.name));
-  else rows = rows.sort((a, b) => Number(b.featured) - Number(a.featured) || Number(b.verified) - Number(a.verified));
-  return rows.map((r) => ({
+  const out: VendorListItem[] = rows.map((r) => ({
     slug: r.slug,
     name: r.name,
     city: r.city,
@@ -136,13 +151,16 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     shortDescription: r.short_description,
     logoUrl: r.logo_url,
     verified: r.verified,
-    featured: r.featured,
+    featured: r.featured || platinum.has(r.slug),
+    platinum: platinum.has(r.slug),
     yearsInBusiness: r.years_in_business,
     insuranceStatus: r.insurance_status,
     wsibStatus: r.wsib_status,
     categories: r.organization_categories.map((c) => c.trade_categories?.name).filter(Boolean) as string[],
     regions: r.organization_regions.map((c) => c.regions?.name).filter(Boolean) as string[],
   }));
+  if (filters.sort === "alpha") return out.sort((a, b) => a.name.localeCompare(b.name));
+  return out.sort((a, b) => tierRank(b) - tierRank(a));
 }
 
 export async function getVendor(slug: string): Promise<VendorDetail | null> {
@@ -195,6 +213,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     googleRating = gr?.google_rating ?? null;
     googleReviewCount = gr?.google_review_count ?? null;
   }
+  const isPlatinum = (await platinumSlugs(supabase)).has(r.slug);
   return {
     id: r.id,
     slug: r.slug,
@@ -204,7 +223,8 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     shortDescription: r.short_description,
     logoUrl: r.logo_url,
     verified: r.verified,
-    featured: r.featured,
+    featured: r.featured || isPlatinum,
+    platinum: isPlatinum,
     categories: r.organization_categories.map((c) => c.trade_categories?.name).filter(Boolean) as string[],
     regions: r.organization_regions.map((c) => c.regions?.name).filter(Boolean) as string[],
     fullDescription: r.full_description,

@@ -9,6 +9,8 @@ export interface VendorListItem {
   logoUrl: string | null;
   verified: boolean;
   featured: boolean;
+  /** Top paid tier — always also featured; sorts above featured. */
+  platinum?: boolean;
   /** Trust signals surfaced on cards. Optional on the base type so other
    *  constructors need not set them; the directory data layer always does. */
   yearsInBusiness?: number | null;
