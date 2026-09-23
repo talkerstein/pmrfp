@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CA_PROVINCES, US_STATE_NAMES, isUsState } from "@/lib/geo";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Check, Copy, FileText, Mail, Printer, Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,6 @@ export interface StoredDraft {
   savedAt: string;
 }
 
-const PROVINCES = ["Ontario", "Quebec", "British Columbia", "Alberta", "Manitoba", "Saskatchewan", "Nova Scotia", "New Brunswick", "Newfoundland and Labrador", "Prince Edward Island", "Yukon", "Northwest Territories", "Nunavut"];
 
 const TIMING: [string, string][] = [
   ["asap", "As soon as possible"],
@@ -524,9 +524,14 @@ export function RfpWizard({
             <Field label="City">
               <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Mississauga" autoComplete="address-level2" />
             </Field>
-            <Field label="Province">
+            <Field label="Province / state">
               <select value={province} onChange={(e) => setProvince(e.target.value)} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-                {PROVINCES.map((p) => <option key={p}>{p}</option>)}
+                <optgroup label="Canada">
+                  {CA_PROVINCES.map((p) => <option key={p}>{p}</option>)}
+                </optgroup>
+                <optgroup label="United States">
+                  {US_STATE_NAMES.map((p) => <option key={p}>{p}</option>)}
+                </optgroup>
               </select>
             </Field>
             <Field label="Is the building occupied during the work?">
@@ -546,7 +551,7 @@ export function RfpWizard({
             <Field label="Bid deadline" hint="Three weeks is right for capital work; 1–2 weeks for small jobs.">
               <Input type="date" value={bidDeadline} min={plusDays(3)} onChange={(e) => setBidDeadline(e.target.value)} />
             </Field>
-            <Field label="Budget range (optional, CAD)" hint="Shared with bidders only if you choose to when posting.">
+            <Field label={`Budget range (optional, ${isUsState(province) ? "USD" : "CAD"})`} hint="Shared with bidders only if you choose to when posting.">
               <div className="flex items-center gap-2">
                 <Input inputMode="numeric" placeholder="Min" value={budgetMin} onChange={(e) => setBudgetMin(e.target.value.replace(/\D/g, ""))} />
                 <span className="text-muted-foreground">–</span>

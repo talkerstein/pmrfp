@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { isUsState } from "@/lib/geo";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, Landmark } from "lucide-react";
@@ -273,7 +274,7 @@ export default async function RfpDetailPage({
               <Block title="Requirements" body={full.requirements} />
               {(full.budgetPublic && (full.budgetMin || full.budgetMax)) && (
                 <Section2 title="Budget range" icon={<DollarSign className="size-4" />}>
-                  ${full.budgetMin?.toLocaleString() ?? "—"} – ${full.budgetMax?.toLocaleString() ?? "—"} CAD
+                  ${full.budgetMin?.toLocaleString() ?? "—"} – ${full.budgetMax?.toLocaleString() ?? "—"} {isUsState(full.province) ? "USD" : "CAD"}
                 </Section2>
               )}
               <Block title="Submission instructions" body={full.submissionInstructions} />

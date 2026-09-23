@@ -16,7 +16,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   // Search Console (Jun–Sep 2026): "rfp real estate", "commercial real estate
   // rfp" and "rfp property management" show impressions, zero clicks. Use their words.
-  title: "Commercial Real Estate & Property Management RFP Writer — Free (Canada)",
+  title: "Commercial Real Estate & Property Management RFP Writer — Free (Canada & US)",
   description: DESCRIPTION,
   alternates: { canonical: "/rfp-writer" },
 };

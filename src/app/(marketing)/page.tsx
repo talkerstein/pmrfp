@@ -28,14 +28,14 @@ import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: { absolute: `${SITE.name} — Commercial Property RFPs & Public Tenders in Canada` },
+  title: { absolute: `${SITE.name} — Commercial Property RFPs & Public Tenders in Canada and the US` },
   description:
-    "Open commercial property contracts across Canada — snow removal, HVAC, roofing, cleaning, electrical and more — from property managers and public buyers, updated daily. Trades get listed free; property managers post free.",
+    "Open commercial property contracts across Canada and the U.S. — snow removal, HVAC, roofing, cleaning, electrical and more — from property managers and public buyers, updated daily. Trades get listed free; property managers post free.",
   alternates: { canonical: "/" },
 };
 
 /** Public buyers the board pulls from every morning (see /api/cron/public-tenders). */
-const SOURCES = ["CanadaBuys", "City of Toronto", "Quebec SEAO", "Yukon", "Property managers"];
+const SOURCES = ["CanadaBuys", "City of Toronto", "Quebec SEAO", "Yukon", "SAM.gov (U.S. federal)", "Property managers"];
 
 // Every row must stay true of Trade Pro (rfp-alerts cron, LockedContentPanel,
 // express-interest). No "appear higher" claims.
@@ -61,7 +61,7 @@ const TRADE_TILES = [
 const FAQS = [
   { q: "Does PMRFP guarantee work?", a: "No. PMRFP lists projects and trades. We don't guarantee contracts, bid success, or responses." },
   { q: "Can I cancel anytime?", a: "Yes. Cancel from the billing portal at any time. Your membership stays active until the end of your billing period." },
-  { q: "Where do the public tenders come from?", a: "Official open-data feeds from CanadaBuys, the City of Toronto, Quebec's SEAO and the Government of Yukon, checked every morning. Bids go directly to the public buyer." },
+  { q: "Where do the public tenders come from?", a: "Official open-data feeds, checked every morning: CanadaBuys, the City of Toronto, Quebec's SEAO and the Government of Yukon in Canada, and U.S. federal building and property work from SAM.gov. Bids go directly to the public buyer." },
   { q: "Can property managers post for free?", a: "Yes. Posting RFPs, using the RFP Writer and browsing the directory are free for property managers, builders and owners." },
 ];
 
@@ -157,7 +157,7 @@ export default async function HomePage() {
                 <span className="absolute inline-flex size-full rounded-full bg-teal-300 opacity-60 motion-safe:animate-ping" />
                 <span className="relative inline-flex size-2 rounded-full bg-teal-300" />
               </span>
-              {live ? "Live across Canada, updated every morning" : "Now live in the GTA"}
+              {live ? "Live across Canada and the U.S., updated every morning" : "Now live in the GTA"}
             </p>
             <h1 className="mt-6 text-balance text-4xl font-extrabold leading-[1.06] tracking-tight text-white md:text-5xl lg:text-[3.35rem] xl:text-[3.6rem]">
               {live ? (
@@ -441,7 +441,7 @@ export default async function HomePage() {
         <section className="bg-background">
           <Container className="py-20 md:py-24">
             <div className="flex flex-wrap items-end justify-between gap-6">
-              <h2 className="max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">Closing soonest, across Canada.</h2>
+              <h2 className="max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">Closing soonest, across Canada and the U.S.</h2>
               <Link href="/rfps" className={cn(buttonVariants({ variant: "outline" }), "active:scale-[0.98]")}>
                 See all {stats.open} <ArrowRight className="size-4" />
               </Link>

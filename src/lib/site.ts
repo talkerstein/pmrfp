@@ -6,9 +6,9 @@
 export const SITE = {
   name: "PMRFP",
   longName: "PMRFP — Property Management RFP",
-  tagline: "Property managers post building RFPs free. Vetted trades bid on the work. Region by region across Canada.",
+  tagline: "Property managers post building RFPs free. Vetted trades bid on the work. Region by region across Canada and the U.S.",
   description:
-    "PMRFP is where property managers post commercial and residential building RFPs free, and vetted trades get listed and bid on the work — by region across Canada.",
+    "PMRFP is where property managers post commercial and residential building RFPs free, and vetted trades get listed and bid on the work — by region across Canada and the United States.",
   url: "https://pmrfp.com",
   email: "info@pmrfp.com",
   supportEmail: "info@pmrfp.com",

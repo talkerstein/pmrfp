@@ -21,8 +21,8 @@ const AWARDED_PREVIEW = 9;
 export async function generateMetadata(): Promise<Metadata> {
   const open = (await listRfps().catch(() => [])).filter((r) => r.status === "open").length;
   return {
-    title: "Commercial Property RFPs & Tenders in Canada",
-    description: `${open > 0 ? `${open} open` : "Open"} commercial property RFPs and public tenders across Canada — snow removal, HVAC, roofing, cleaning, electrical and more. Updated daily, with closing dates and past awards.`,
+    title: "Commercial Property RFPs & Tenders in Canada and the US",
+    description: `${open > 0 ? `${open} open` : "Open"} commercial property RFPs and public tenders across Canada and the U.S. — snow removal, HVAC, roofing, cleaning, electrical and more. Updated daily, with closing dates and past awards.`,
     alternates: { canonical: "/rfps" },
   };
 }

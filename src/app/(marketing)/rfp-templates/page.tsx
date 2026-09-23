@@ -11,7 +11,7 @@ import { SITE } from "@/lib/site";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Free Property Management & Commercial Real Estate RFP Templates (Canada)",
+  title: "Free Property Management & Commercial Real Estate RFP Templates (Canada & US)",
   description:
     "20 ready-to-use RFP templates for property managers and commercial real estate owners — roofing, HVAC, snow, paving, painting, elevator service, mold and more. Customize and post in 60 seconds.",
   alternates: { canonical: "/rfp-templates" },
