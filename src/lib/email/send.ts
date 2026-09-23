@@ -119,24 +119,63 @@ export async function sendAdminNewSale(params: {
   );
 }
 
-export async function sendMatchingRfpAlert(
+/**
+ * Daily match digest for paying members — one email per person per day with
+ * every new RFP in their trades and regions (see lib/alerts/digest).
+ */
+export async function sendDailyMatches(
   to: string,
-  rfp: { title: string; slug: string; region?: string | null; category?: string | null; deadline?: string | null },
+  params: {
+    subject: string;
+    items: { title: string; slug: string; trade: string | null; region: string | null; deadline: string | null; summary: string | null }[];
+    unsubscribeUrl: string | null;
+    mailingAddress: string | null;
+  },
 ): Promise<void> {
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const fmt = (d: string) =>
+    new Date(`${d}T12:00:00Z`).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const shown = params.items.slice(0, 15);
+  const list = shown
+    .map((i) => {
+      const meta = [i.trade, i.region, i.deadline ? `Closes ${fmt(i.deadline)}` : "No fixed closing date"].filter(Boolean).join(" · ");
+      const summary = i.summary
+        ? `<br><span style="color:#3A3D4D;font-size:14px">${esc(i.summary.length > 220 ? `${i.summary.slice(0, 217)}…` : i.summary)}</span>`
+        : "";
+      return (
+        `<li style="margin:0 0 16px"><a href="${BASE}/rfps/${i.slug}" style="color:#282B59;font-weight:600;font-size:15px">${esc(i.title)}</a>` +
+        `<br><span style="color:#0C7A5A;font-size:12px;text-transform:uppercase;letter-spacing:.04em">${esc(meta)}</span>${summary}</li>`
+      );
+    })
+    .join("");
+  const more =
+    params.items.length > shown.length
+      ? `<p>…and ${params.items.length - shown.length} more in <a href="${BASE}/dashboard/rfps" style="color:#282B59">your feed</a>.</p>`
+      : "";
+  const footer = [
+    `You're receiving this because your ${SITE.name} Trade Pro membership includes daily match alerts`,
+    `<a href="${BASE}/dashboard/settings" style="color:#64748b">Change your trades, regions or alert settings</a>`,
+    params.unsubscribeUrl ? `<a href="${params.unsubscribeUrl}" style="color:#64748b">Turn off opportunity emails</a>` : null,
+    params.mailingAddress ? `${SITE.name}, ${esc(params.mailingAddress)} · ${SITE.email}` : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
   await send(
     to,
-    `New PMRFP Opportunity: ${rfp.title}`,
+    params.subject,
     layout(
-      rfp.title,
-      `<p>A new opportunity matching your profile was posted:</p>
-       <ul>
-         ${rfp.category ? `<li><strong>Category:</strong> ${rfp.category}</li>` : ""}
-         ${rfp.region ? `<li><strong>Region:</strong> ${rfp.region}</li>` : ""}
-         ${rfp.deadline ? `<li><strong>Closes:</strong> ${rfp.deadline}</li>` : ""}
-       </ul>
-       <p>${btn(`${BASE}/rfps/${rfp.slug}`, "View opportunity")}</p>`,
-      COPY.disclaimer,
+      params.subject,
+      `<p>New RFPs and public tenders in your trades and regions since yesterday, soonest deadline first:</p>
+       <ul style="padding-left:18px;margin:16px 0">${list}</ul>${more}
+       <p>${btn(`${BASE}/dashboard/rfps`, "Open your feed")}</p>`,
+      `${footer}.`,
     ),
+    params.unsubscribeUrl
+      ? {
+          "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        }
+      : undefined,
   );
 }
 
