@@ -172,13 +172,10 @@ export async function GET(request: Request) {
   );
   if (results.every((r) => !r.ok)) return NextResponse.json({ error: "all sources failed" }, { status: 502 });
 
-  const [{ data: cats }, { data: regions }, { data: existing }] = await Promise.all([
+  const [{ data: cats }, { data: regions }, existing] = await Promise.all([
     supabase.from("trade_categories").select("id,slug"),
     supabase.from("regions").select("id,slug"),
-    supabase
-      .from("rfp_posts")
-      .select("id,slug,source_url,status,deadline,title,region_id")
-      .eq("source_type", "public_source"),
+    allExistingPublic(supabase),
   ]);
   const catId = new Map((cats ?? []).map((c: { id: string; slug: string }) => [c.slug, c.id]));
   const regionId = new Map((regions ?? []).map((r: { id: string; slug: string }) => [r.slug, r.id]));
@@ -323,4 +320,26 @@ interface ExistingRow {
   source_url: string | null;
   status: string;
   deadline: string | null;
+}
+
+/**
+ * Every public-source row, paged. PostgREST caps a response at 1,000 rows;
+ * past that, rows beyond the cap looked "new", were re-inserted, and the
+ * slug unique index failed the whole batch.
+ */
+async function allExistingPublic(supabase: ReturnType<typeof createServiceClient>): Promise<ExistingRow[]> {
+  const PAGE = 1000;
+  const out: ExistingRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("rfp_posts")
+      .select("id,slug,source_url,status,deadline,title,region_id")
+      .eq("source_type", "public_source")
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(`existing rows lookup failed: ${error.message}`);
+    out.push(...((data ?? []) as ExistingRow[]));
+    if (!data || data.length < PAGE) break;
+  }
+  return out;
 }
