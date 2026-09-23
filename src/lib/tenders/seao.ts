@@ -39,6 +39,11 @@ interface OcdsTender {
   tenderPeriod?: { startDate?: string; endDate?: string };
   documents?: { url?: string }[];
 }
+export interface OcdsAward {
+  date?: string;
+  value?: { amount?: number; currency?: string };
+  suppliers?: { name?: string }[];
+}
 export interface OcdsRelease {
   ocid: string;
   date?: string;
@@ -46,6 +51,7 @@ export interface OcdsRelease {
   parties?: OcdsParty[];
   buyer?: { name?: string };
   tender?: OcdsTender;
+  awards?: OcdsAward[];
 }
 
 // French trade vocabulary → PMRFP category slugs. Accents are stripped first.
@@ -86,7 +92,7 @@ const EXCLUDE_FR =
   /\bpont|ponceau|\broute|chaussee|egout|aqueduc|\brue\b|\brues\b|trottoir|talus|voirie|emissaire|enrochement|informatique|logiciel|infonuagique|services professionnels|ingenieur|ingenierie|architecte|consultant|expertise|etude|solutions technologiques|recensement|vehicule|camion|autobus|location de|fourniture de (?!.*installation)|achat de|acquisition de/;
 
 function fold(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 /** The newest release per tender (ocid) across all weekly files. */
@@ -166,6 +172,77 @@ export function seaoToRfpInsert(r: OcdsRelease, today: string): TenderInsert | n
   };
 }
 
+/* ── Past contracts ─────────────────────────────────────────────────────
+ * The same weekly files carry award releases: who won a competitive call
+ * and for how much. Listed as "Past public contract · Quebec (SEAO)" —
+ * never as PMRFP activity — with deadline = award date so every open count,
+ * alert and digest ignores them. */
+export const SEAO_AWARD_WINDOW_DAYS = 180;
+
+function firstAward(r: OcdsRelease): OcdsAward | null {
+  return (r.awards ?? []).find((a) => a.suppliers?.[0]?.name && a.date) ?? null;
+}
+
+export function classifySeaoAward(r: OcdsRelease, today: string): string[] {
+  const t = r.tender;
+  if (!t || t.status !== "complete") return [];
+  // Competitive calls only — a gré-à-gré award isn't work anyone could bid on.
+  if (t.procurementMethod !== "open" && t.procurementMethod !== "selective") return [];
+  if (t.mainProcurementCategory === "goods") return [];
+  const codes = (t.items ?? []).map((i) => i.description ?? "").join(" ");
+  if (/\bC02\b/.test(codes)) return [];
+  const award = firstAward(r);
+  const awarded = (award?.date ?? "").slice(0, 10);
+  const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - SEAO_AWARD_WINDOW_DAYS * 86_400_000).toISOString().slice(0, 10);
+  if (!award || !awarded || awarded > today || awarded < cutoff) return [];
+  if ((award.value?.currency ?? "CAD") !== "CAD") return [];
+  const title = fold(t.title ?? "");
+  if (!title || EXCLUDE_FR.test(title)) return [];
+  return RULES_FR.filter(([, p]) => p.test(title)).map(([slug]) => slug).slice(0, 3);
+}
+
+export function seaoAwardToRfpInsert(r: OcdsRelease, _today?: string): TenderInsert | null {
+  const t = r.tender;
+  const award = firstAward(r);
+  const url = t?.documents?.find((d) => d.url?.includes("seao.gouv.qc.ca"))?.url;
+  const title = clean(t?.title ?? "");
+  if (!t || !award || !url || !title) return null;
+  const supplier = clean(award.suppliers?.[0]?.name ?? "");
+  const awarded = (award.date ?? "").slice(0, 10);
+  const amount = award.value?.amount ?? 0;
+  const buyer = clean(r.buyer?.name ?? "") || "un organisme public du Québec";
+  const value = amount > 0 ? `$${Math.round(amount).toLocaleString("en-CA")} CAD` : null;
+  const when = new Date(`${awarded}T00:00:00Z`).toLocaleDateString("en-CA", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const headline = `Awarded ${when} to ${supplier}${value ? ` — ${value}` : " — value not disclosed"}.`;
+  return {
+    title: title.length > 180 ? `${title.slice(0, 177)}…` : title,
+    slug: `${slugify(title).slice(0, 60)}-qca-${slugify(t.id || r.ocid)}`.replace(/-+/g, "-"),
+    summary: `${headline} Past public contract from ${buyer}.`,
+    scope: [headline, `Appel d'offres : ${title}`, `Organisme : ${buyer}`].join("\n"),
+    requirements: null,
+    province: "Quebec",
+    deadline: awarded,
+    submission_instructions:
+      "This contract has already been awarded — it's listed so trades can see what this kind of work sells " +
+      "for and who wins it. It did not go through PMRFP.",
+    contact_name: null,
+    contact_email: null,
+    contact_phone: null,
+    contact_visibility: "public_contact",
+    source_type: "public_source",
+    source_url: `${url}#award`,
+    source_notes: `SEAO award ${t.id ?? ""} · ${buyer} · ${supplier}. ${SEAO_ATTRIBUTION}`,
+    status: "published",
+    is_demo: false,
+    published_at: `${awarded}T00:00:00Z`,
+  };
+}
+
 /** URLs of the most recent weekly files, newest first. */
 export async function seaoWeeklyUrls(weeks = SEAO_WEEKS): Promise<string[]> {
   const res = await fetch(SEAO_PACKAGE_URL, { cache: "no-store" });
@@ -189,8 +266,8 @@ export async function fetchSeaoReleases(): Promise<OcdsRelease[]> {
     if (!res.ok) throw new Error(`SEAO weekly fetch failed: HTTP ${res.status}`);
     const { releases } = (await res.json()) as { releases: OcdsRelease[] };
     for (const r of releases) {
-      if (r.tender?.tenderPeriod?.endDate) {
-        kept.push({ ocid: r.ocid, date: r.date, parties: r.parties, buyer: r.buyer, tender: r.tender });
+      if (r.tender && (r.tender.tenderPeriod?.endDate || r.awards?.length)) {
+        kept.push({ ocid: r.ocid, date: r.date, parties: r.parties, buyer: r.buyer, tender: r.tender, awards: r.awards });
       }
     }
   }

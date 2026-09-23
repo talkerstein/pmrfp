@@ -30,7 +30,7 @@ describe("awards", () => {
   it("keeps recent trade awards; skips amendments, old, future-dated and IT work", () => {
     expect(classifyAward(row(), TODAY)).toEqual(["garage-doors"]);
     expect(classifyAward(row({ "amendmentNumber-numeroModification": "001" }), TODAY)).toEqual([]);
-    expect(classifyAward(row({ "contractAwardDate-dateAttributionContrat": "2026-01-02" }), TODAY)).toEqual([]);
+    expect(classifyAward(row({ "contractAwardDate-dateAttributionContrat": "2025-06-01" }), TODAY)).toEqual([]);
     expect(classifyAward(row({ "contractAwardDate-dateAttributionContrat": "2029-06-15" }), TODAY)).toEqual([]);
     expect(classifyAward(row({ "title-titre-eng": "Senior IT security TRA and C&A analyst" }), TODAY)).toEqual([]);
   });

@@ -20,15 +20,15 @@ import { regionForTender } from "./canadabuys";
 import { EXCLUDE, RULES, clean, slugify } from "./shared";
 import { OGL_CANADA_ATTRIBUTION } from "./sources";
 
-/** Current fiscal year's awards (Apr–Mar). */
-export function awardsUrl(today: string): string {
+/** A fiscal year's awards file (Apr–Mar); offset -1 = the previous year. */
+export function awardsUrl(today: string, offset = 0): string {
   const y = Number(today.slice(0, 4));
-  const start = Number(today.slice(5, 7)) >= 4 ? y : y - 1;
+  const start = (Number(today.slice(5, 7)) >= 4 ? y : y - 1) + offset;
   return `https://canadabuys.canada.ca/opendata/pub/${start}-${start + 1}-awardNotice-avisAttribution.csv`;
 }
 
-/** How long a past contract stays on the board. */
-export const AWARD_WINDOW_DAYS = 180;
+/** How long a past contract stays on the board — a full year of wins. */
+export const AWARD_WINDOW_DAYS = 365;
 
 export type AwardRow = Record<string, string>;
 
@@ -127,11 +127,16 @@ export function awardNoticeUrl(refSlug: string): string {
   return `https://canadabuys.canada.ca/en/tender-opportunities/award-notice/${refSlug}`;
 }
 
+/** This fiscal year plus the previous one, so the 365-day window is full. */
 export async function fetchAwards(today: string): Promise<AwardRow[]> {
-  const res = await fetch(awardsUrl(today), {
-    cache: "no-store",
-    headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" },
-  });
-  if (!res.ok) throw new Error(`CanadaBuys awards fetch failed: HTTP ${res.status}`);
-  return parseCsv(await res.text());
+  const rows: AwardRow[] = [];
+  for (const offset of [0, -1]) {
+    const res = await fetch(awardsUrl(today, offset), {
+      cache: "no-store",
+      headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" },
+    });
+    if (!res.ok) throw new Error(`CanadaBuys awards fetch failed: HTTP ${res.status}`);
+    rows.push(...parseCsv(await res.text()));
+  }
+  return rows;
 }

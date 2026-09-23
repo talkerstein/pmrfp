@@ -42,7 +42,12 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       .from("rfp_public")
       .select("*", { count: "exact", head: true })
       .eq("is_demo", false)
-      .gte("created_at", since),
+      // published_at, not created_at: imported public tenders carry the
+      // issuer's real posting date, so a backlog import can't inflate this.
+      .gte("published_at", since)
+      // Past public contracts (award notices) were never "posted" as work.
+      .not("slug", "like", "%-cba-%")
+      .not("slug", "like", "%-qca-%"),
     supabase
       .from("organizations")
       .select("*", { count: "exact", head: true })
