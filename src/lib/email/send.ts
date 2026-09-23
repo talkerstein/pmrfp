@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { COPY, SITE } from "@/lib/site";
 import { ROLE_LABEL, withDelta, type WeeklyReport } from "@/lib/admin/weekly-report";
+import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset
@@ -484,18 +485,23 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 
 /** Monday numbers email to the admin inbox (cron: /api/cron/admin-weekly). */
 export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
-  const money = (n: number) => `$${n.toLocaleString("en-CA")}`;
   const row = (label: string, value: string) =>
     `<tr><td style="padding:6px 12px 6px 0;color:#64748b">${label}</td><td style="padding:6px 0;font-weight:600">${value}</td></tr>`;
   const list = (items: string[]) => (items.length ? `<ul style="margin:6px 0 16px;padding-left:18px">${items.join("")}</ul>` : `<p style="margin:6px 0 16px;color:#64748b">None this week.</p>`);
 
+  const s = r.stripe;
   const body = `
     <table style="border-collapse:collapse;margin-bottom:16px">
       ${row("Signups", withDelta(r.signups.count, r.signups.prev))}
-      ${row("Paying members", `${r.revenue.payingCount}${r.revenue.comped ? ` (+${r.revenue.comped} comped)` : ""}`)}
-      ${row("MRR", `${money(r.revenue.mrr)} CAD · ARR ${money(r.revenue.arr)}`)}
-      ${row("New paid this week", String(r.revenue.newPaid.length))}
-      ${row("Cancellations", String(r.revenue.churned.length))}
+      ${
+        s
+          ? row("Money in (Stripe)", `${fmtByCurrency(s.moneyIn7d)} this week · ${fmtByCurrency(s.moneyIn30d)} last 30 days`) +
+            row("Active subscriptions (Stripe)", `${s.active.length} · MRR ${fmtByCurrency(s.mrr)}`) +
+            (s.pastDue.length ? row("Failed payments (Stripe)", `${s.pastDue.length}: ${esc(s.pastDue.join(", "))}`) : "") +
+            (s.canceled7d.length ? row("Canceled this week (Stripe)", esc(s.canceled7d.join(", "))) : "")
+          : row("Revenue", "Stripe unavailable — check the Stripe dashboard")
+      }
+      ${row("Members with RFP access", `${r.access.payingCount}${r.access.comped ? ` (+${r.access.comped} comped)` : ""} <span style="color:#64748b;font-weight:400">(database; includes manual grants)</span>`)}
       ${row("RFPs posted by PMs", String(r.activity.pmRfps.length))}
       ${row("Interest expressed", withDelta(r.activity.interests, r.activity.interestsPrev))}
       ${row("Contact requests", String(r.activity.contactRequests))}
@@ -505,11 +511,11 @@ export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
     <h2 style="font-size:16px;margin:16px 0 4px">Signups by type</h2>
     ${list(r.signups.byRole.map(([label, n]) => `<li>${esc(label)}: <strong>${n}</strong></li>`))}
 
-    <h2 style="font-size:16px;margin:16px 0 4px">New paying members</h2>
-    ${list(r.revenue.newPaid.map((p) => `<li>${esc(p.org ?? "Unknown company")} — ${p.amount != null ? money(p.amount) : "?"}${p.monthly ? "/mo" : "/yr"}</li>`))}
+    <h2 style="font-size:16px;margin:16px 0 4px">Payments received this week (Stripe)</h2>
+    ${s ? list(s.payments7d.map((p) => `<li>${esc(p.who)} — $${p.amount.toLocaleString("en-CA")} ${p.currency} · ${p.date}</li>`)) : "<p>Stripe unavailable.</p>"}
 
-    <h2 style="font-size:16px;margin:16px 0 4px">Cancellations</h2>
-    ${list(r.revenue.churned.map((c) => `<li>${esc(c.org ?? "Unknown company")} — ${c.status === "canceled" ? "canceled" : "cancels at period end"}</li>`))}
+    <h2 style="font-size:16px;margin:16px 0 4px">Active subscriptions (Stripe)</h2>
+    ${s ? list(s.active.map((a) => `<li>${esc(a.who)} — $${a.amount.toLocaleString("en-CA")} ${a.currency}/${a.interval}</li>`)) : "<p>Stripe unavailable.</p>"}
 
     <h2 style="font-size:16px;margin:16px 0 4px">RFPs posted by property managers</h2>
     ${list(r.activity.pmRfps.map((p) => `<li><a href="${BASE}/rfps/${encodeURIComponent(p.slug)}" style="color:#282B59">${esc(p.title)}</a></li>`))}
@@ -521,7 +527,7 @@ export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
 
   await send(
     ADMIN,
-    `PMRFP weekly: ${r.signups.count} signups, ${r.revenue.newPaid.length} new paid, ${money(r.revenue.mrr)} MRR`,
+    `PMRFP weekly: ${r.signups.count} signups, ${s ? `${fmtByCurrency(s.moneyIn7d)} in` : "revenue: check Stripe"}`,
     layout(`Your week: ${r.period.from} → ${r.period.to}`, body),
   );
 }

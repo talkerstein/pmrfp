@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type Stripe from "stripe";
 import { buildWeeklyReport, withDelta } from "@/lib/admin/weekly-report";
+import { fmtByCurrency, summarizeStripe } from "@/lib/admin/stripe-revenue";
 
 const now = new Date("2026-09-28T12:30:00Z");
 const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000).toISOString();
@@ -23,13 +25,7 @@ describe("weekly admin report", () => {
       { email: "c@x.com", primary_role: "property_manager", created_at: daysAgo(6) },
       { email: "d@x.com", primary_role: "trade", created_at: daysAgo(9) }, // last week
     ],
-    subscriptions: [
-      sub({}), // $249/yr → 20.75/mo
-      sub({ amount: 29, stripe_price_id: "price_monthly", created_at: daysAgo(2), orgName: "NewCo" }),
-      sub({ status: "comped", amount: null }),
-      sub({ status: "canceled", updated_at: daysAgo(2), orgName: "GoneCo" }),
-      sub({ cancel_at_period_end: true, updated_at: daysAgo(4), orgName: "LeavingCo" }),
-    ],
+    subscriptions: [sub({}), sub({ status: "comped", amount: null }), sub({ status: "canceled" })],
     pmRfps: [
       { title: "Roof", slug: "roof", created_at: daysAgo(2) },
       { title: "Old", slug: "old", created_at: daysAgo(10) },
@@ -38,7 +34,7 @@ describe("weekly admin report", () => {
     interests: 5,
     interestsPrev: 2,
     contactRequests: 1,
-    monthlyPriceIds: ["price_monthly"],
+    stripe: null,
   });
 
   it("counts this week's signups by type, against last week", () => {
@@ -48,13 +44,9 @@ describe("weekly admin report", () => {
     expect(r.signups.latest[0].email).toBe("a@x.com");
   });
 
-  it("computes MRR from annual and monthly plans, new paid and cancellations", () => {
-    // 249/12 + 29 + LeavingCo 249/12 (still paying until period end)
-    expect(r.revenue.mrr).toBe(Math.round(249 / 12 + 29 + 249 / 12));
-    expect(r.revenue.arr).toBe(Math.round((249 / 12 + 29 + 249 / 12) * 12)); // 846
-    expect(r.revenue.comped).toBe(1);
-    expect(r.revenue.newPaid).toEqual([{ org: "NewCo", amount: 29, monthly: true }]);
-    expect(r.revenue.churned.map((c) => c.org).sort()).toEqual(["GoneCo", "LeavingCo"]);
+  it("reports database access separately from money", () => {
+    expect(r.access).toEqual({ payingCount: 1, comped: 1 });
+    expect(r).not.toHaveProperty("revenue");
   });
 
   it("splits PM RFPs from imported tenders", () => {
@@ -63,5 +55,66 @@ describe("weekly admin report", () => {
     expect(r.activity.usTendersImported).toBe(1);
     expect(withDelta(5, 2)).toBe("5 (+3 vs last week)");
     expect(withDelta(2, 5)).toBe("2 (−3 vs last week)");
+  });
+});
+
+describe("Stripe revenue", () => {
+  const nowS = Math.floor(now.getTime() / 1000);
+  const DAY = 86_400;
+  const charge = (over: Partial<Stripe.Charge>) =>
+    ({
+      status: "succeeded",
+      paid: true,
+      amount: 2900,
+      amount_refunded: 0,
+      currency: "cad",
+      created: nowS - 2 * DAY,
+      customer: { id: "cus_1", object: "customer", name: "City Limits", email: "x@y.com" },
+      billing_details: { name: null, email: null },
+      ...over,
+    }) as unknown as Stripe.Charge;
+  const subscription = (over: Partial<Stripe.Subscription>, unit: number, interval: "month" | "year") =>
+    ({
+      status: "active",
+      currency: "cad",
+      customer: { id: "cus_1", object: "customer", name: "City Limits", email: "x@y.com" },
+      canceled_at: null,
+      items: { data: [{ quantity: 1, price: { unit_amount: unit, currency: "cad", recurring: { interval, interval_count: 1 } } }] },
+      ...over,
+    }) as unknown as Stripe.Subscription;
+
+  it("counts only money actually received", () => {
+    const s = summarizeStripe(
+      [
+        charge({}),
+        charge({ created: nowS - 20 * DAY, amount: 24900 }),
+        charge({ status: "failed", paid: false }),
+        charge({ amount_refunded: 2900 }), // fully refunded
+      ],
+      [],
+      nowS,
+    );
+    expect(s.moneyIn7d).toEqual({ CAD: 29 });
+    expect(s.moneyIn30d).toEqual({ CAD: 278 });
+    expect(s.payments7d).toEqual([{ who: "City Limits", amount: 29, currency: "CAD", date: "2026-09-26" }]);
+  });
+
+  it("computes MRR from active subscriptions and flags failed and canceled ones", () => {
+    const s = summarizeStripe(
+      [],
+      [
+        subscription({}, 2900, "month"),
+        subscription({}, 24900, "year"),
+        subscription({ status: "past_due" }, 2900, "month"),
+        subscription({ status: "canceled", canceled_at: nowS - DAY }, 2900, "month"),
+      ],
+      nowS,
+    );
+    expect(s.active).toHaveLength(2);
+    expect(s.mrr).toEqual({ CAD: 49.75 });
+    expect(s.pastDue).toEqual(["City Limits"]);
+    expect(s.canceled7d).toEqual(["City Limits"]);
+    expect(fmtByCurrency({})).toBe("$0");
+    expect(fmtByCurrency({ CAD: 49.75 })).toBe("$49.75 CAD");
   });
 });

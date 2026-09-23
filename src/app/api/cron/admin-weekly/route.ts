@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { buildWeeklyReport } from "@/lib/admin/weekly-report";
 import { sendAdminWeeklyReport } from "@/lib/email/send";
+import { fetchStripeRevenue } from "@/lib/admin/stripe-revenue";
+import { getStripe } from "@/lib/stripe/server";
 
 export const maxDuration = 60;
 
@@ -27,7 +29,8 @@ export async function GET(request: Request) {
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
   const twoWeeksAgo = new Date(now.getTime() - 14 * 86_400_000).toISOString();
 
-  const [users, subs, pmRfps, tenders, usTenders, interests, interestsPrev, contacts] = await Promise.all([
+  const [stripe, users, subs, pmRfps, tenders, usTenders, interests, interestsPrev, contacts] = await Promise.all([
+    process.env.STRIPE_SECRET_KEY ? fetchStripeRevenue(getStripe()) : Promise.resolve(null),
     supabase.from("users_profile").select("email,primary_role,created_at").gte("created_at", twoWeeksAgo).limit(5000),
     supabase
       .from("subscriptions")
@@ -71,7 +74,7 @@ export async function GET(request: Request) {
     interests: interests.count ?? 0,
     interestsPrev: interestsPrev.count ?? 0,
     contactRequests: contacts.count ?? 0,
-    monthlyPriceIds: [process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY ?? "", process.env.STRIPE_PRICE_SEO_MONTHLY ?? ""],
+    stripe,
   });
 
   if (new URL(request.url).searchParams.get("dry") === "1") {
@@ -79,5 +82,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ dry: true, ...report, signups: { ...report.signups, latest: report.signups.latest.length } });
   }
   await sendAdminWeeklyReport(report);
-  return NextResponse.json({ sent: true, signups: report.signups.count, mrr: report.revenue.mrr });
+  return NextResponse.json({ sent: true, signups: report.signups.count, stripe: !!report.stripe });
 }
