@@ -35,14 +35,14 @@ export const RULES: [slug: string, pattern: RegExp][] = [
 
 // Services a trade can't bid on, even when a keyword above matches.
 export const EXCLUDE =
-  /software|cyber|\bit\b services|information technology|consult|architect|engineering services|\ba&e\b|design services|modell?ing|assessment|study|research|laboratory|testing|training|translation|aircraft|vessel|\bship|satellite|weapon|ammunition|medical|pharmac|spare parts|advisory|equipment rental|rental/;
+  /software|cyber|\bit\b services|information technology|consult|architect|engineering services|\ba&e\b|design services|modell?ing|assessment|study|research|laboratory|testing|training|translation|aircraft|vessel|\bship|satellite|weapon|ammunition|medical|pharmac|spare parts|advisory|equipment rental|design engineering|pre-design|rental/;
 
 
 export function slugify(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
@@ -51,3 +51,7 @@ export function clean(s: string): string {
   return s.replace(/\r/g, "").replace(/ | /g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+
+/** Public-works infrastructure — not work a building trade bids on. */
+export const CIVIL =
+  /culvert|bridge|watermain|sewer|road (re)?construction|resurfacing|transit|pedestrian bridge|creek|trenchless|pipe lining|red light camera|highway|ditching|dredg|runway|student transportation|transportation of students|school bus|roadway|overpass|shoulder gravel|paving of roads|repairs to roads|\broute \d+|\btrunk \d+|\bbr\d{3,}/i;

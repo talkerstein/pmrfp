@@ -15,7 +15,7 @@
  * parts) are dropped: not work a building trade bids on.
  */
 import { parseCsv } from "./csv";
-import { EXCLUDE, RULES, clean, slugify } from "./shared";
+import { CIVIL, EXCLUDE, RULES, clean, slugify } from "./shared";
 import type { TenderInsert } from "./canadabuys";
 
 export const TORONTO_OPEN_URL =
@@ -35,9 +35,6 @@ const COL = {
   category: "High Level Category",
   description: "Solicitation Document Description",
   division: "Division",
-  buyer: "Buyer Name",
-  email: "Buyer Email",
-  phone: "Buyer Phone Number",
 } as const;
 
 // Leading procurement boilerplate, most specific first.
@@ -70,8 +67,6 @@ export function titleFromDescription(description: string): string | null {
   return t.length > 140 ? `${t.slice(0, 137).trimEnd()}…` : t;
 }
 
-// Public-works infrastructure, not building trades.
-const CIVIL = /culvert|bridge|watermain|sewer|road (re)?construction|resurfacing|transit|pedestrian bridge|creek|trenchless|pipe lining|red light camera/i;
 // Pure supply orders: "supply and delivery of rock salt" — no service or
 // installation anywhere in the opening. "Supply of ... maintenance services"
 // and "supply and install" are trade work and stay in.
@@ -117,9 +112,11 @@ export function torontoToRfpInsert(r: TorontoRow, today: string): TenderInsert |
       `This is a public City of Toronto ${type || "solicitation"} issued by ${division} (document #${doc}). ` +
       "Bids are submitted directly to the City — search the document number on the City's bid portal for the " +
       "full solicitation, addenda and any site-meeting dates. PMRFP does not manage this bid.",
-    contact_name: clean(r[COL.buyer] ?? "") || null,
-    contact_email: clean(r[COL.email] ?? "") || null,
-    contact_phone: clean(r[COL.phone] ?? "") || null,
+    // Named buyer contacts are personal information, which OGL – Toronto
+    // excludes. Bidders get the buyer from the City's portal instead.
+    contact_name: null,
+    contact_email: null,
+    contact_phone: null,
     contact_visibility: "public_contact",
     source_type: "public_source",
     // The dataset has no per-solicitation link; the portal is the official
@@ -138,5 +135,91 @@ export async function fetchTorontoSolicitations(): Promise<TorontoRow[]> {
     headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" },
   });
   if (!res.ok) throw new Error(`Toronto open data fetch failed: HTTP ${res.status}`);
+  return parseCsv(await res.text());
+}
+
+/* ── Past contracts: "Toronto Bids Awarded Contracts" ────────────────────
+ * Same portal licence (OGL – Toronto). Winner always present; the dollar
+ * value only on a minority of rows, so most read "value not disclosed".
+ * Buyer name/email/phone are personal information under the licence's
+ * exemptions and are never imported. */
+export const TORONTO_AWARDS_URL =
+  "https://ckan0.cf.opendata.inter.prod-toronto.ca/datastore/dump/e211f003-5909-4bea-bd96-d75899d8e612";
+export const TORONTO_AWARD_WINDOW_DAYS = 365;
+
+const AWD = {
+  doc: "Document Number",
+  type: "RFx (Solicitation) Type",
+  category: "High Level Category",
+  supplier: "Successful Supplier",
+  award: "Award",
+  date: "Award Authority Obtained Date",
+  division: "Division",
+  description: "Solicitation Document Description",
+} as const;
+
+export function classifyTorontoAward(r: TorontoRow, today: string): string[] {
+  const date = (r[AWD.date] ?? "").slice(0, 10);
+  const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - TORONTO_AWARD_WINDOW_DAYS * 86_400_000).toISOString().slice(0, 10);
+  if (!date || date > today || date < cutoff) return [];
+  if (!(r[AWD.supplier] ?? "").trim()) return [];
+  const cat = r[AWD.category] ?? "";
+  if (cat !== "Construction Services" && cat !== "Goods and Services") return [];
+  const title = titleFromDescription(r[AWD.description] ?? "");
+  if (!title) return [];
+  const head = stripBoilerplate(r[AWD.description] ?? "").slice(0, 400).toLowerCase();
+  const t = title.toLowerCase();
+  // Award descriptions are often procurement boilerplate the stripper can't
+  // turn into a title. Better to skip than publish "No award has been made".
+  if (BOILERPLATE_TITLE.test(t)) return [];
+  if (EXCLUDE.test(t) || CIVIL.test(t)) return [];
+  if (SUPPLY_ONLY.test(t) && !HAS_SERVICE.test(head)) return [];
+  return RULES.filter(([, p]) => p.test(head)).map(([slug]) => slug).slice(0, 3);
+}
+
+const BOILERPLATE_TITLE =
+  /^(\.?\d|this |the scope|only the bids|no award|(the )?work under this contract|it is the contractor|the city|request for|the purpose|as per|further to|pursuant|in accordance)/i;
+
+export function torontoAwardToRfpInsert(r: TorontoRow, _today?: string): TenderInsert | null {
+  const doc = (r[AWD.doc] ?? "").trim();
+  const title = titleFromDescription(r[AWD.description] ?? "");
+  const supplier = clean(r[AWD.supplier] ?? "");
+  const date = (r[AWD.date] ?? "").slice(0, 10);
+  if (!doc || !title || !supplier || !date) return null;
+  const amount = Number(String(r[AWD.award] ?? "").replace(/[^\d.]/g, "")) || 0;
+  const value = amount >= 1000 ? `$${Math.round(amount).toLocaleString("en-CA")} CAD` : null;
+  const division = clean(r[AWD.division] ?? "") || "City of Toronto";
+  const when = new Date(`${date}T00:00:00Z`).toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const headline = `Awarded ${when} to ${supplier}${value ? ` — ${value}` : " — value not disclosed"}.`;
+  return {
+    title,
+    slug: `${slugify(title).slice(0, 60)}-tora-${slugify(doc)}`.replace(/-+/g, "-"),
+    summary: `${headline} Past public contract from the City of Toronto (${division}).`,
+    scope: [headline, clean(r[AWD.description] ?? "").slice(0, 6000)].join("\n\n"),
+    requirements: null,
+    province: "Ontario",
+    deadline: date,
+    submission_instructions:
+      "This contract has already been awarded — it's listed so trades can see who wins this kind of work. " +
+      "It did not go through PMRFP.",
+    contact_name: null,
+    contact_email: null,
+    contact_phone: null,
+    contact_visibility: "public_contact",
+    source_type: "public_source",
+    source_url: `${TORONTO_PORTAL_URL}?doc=${encodeURIComponent(doc)}#award`,
+    source_notes: `City of Toronto award · ${r[AWD.type] ?? ""} #${doc} · ${division}. ${TORONTO_ATTRIBUTION}`,
+    status: "published",
+    is_demo: false,
+    published_at: `${date}T00:00:00Z`,
+  };
+}
+
+export async function fetchTorontoAwards(): Promise<TorontoRow[]> {
+  const res = await fetch(TORONTO_AWARDS_URL, {
+    cache: "no-store",
+    headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" },
+  });
+  if (!res.ok) throw new Error(`Toronto awards fetch failed: HTTP ${res.status}`);
   return parseCsv(await res.text());
 }
