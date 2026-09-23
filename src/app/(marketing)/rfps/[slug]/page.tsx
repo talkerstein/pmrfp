@@ -12,7 +12,7 @@ import { ExpressInterestDialog } from "@/components/forms/express-interest-dialo
 import { getFullRfp, getRfpTeaser, listRfps } from "@/lib/data/rfps";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { OGL_ATTRIBUTION } from "@/lib/tenders/canadabuys";
+import { publicTenderSource } from "@/lib/tenders/sources";
 
 export async function generateMetadata({
   params,
@@ -77,6 +77,7 @@ export default async function RfpDetailPage({
   // a closed listing shouldn't count toward its own region's "open" total.
   const teaserIsOpen = teaser.status === "open";
   const isPublicTender = teaser.sourceType === "public_source";
+  const tenderSource = publicTenderSource(teaser.slug);
 
   return (
     <Container className="py-10">
@@ -114,9 +115,9 @@ export default async function RfpDetailPage({
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
               <Landmark className="mt-0.5 size-4 shrink-0" />
               <span>
-                <strong className="text-foreground">Public tender.</strong> Issued by the Government of Canada
-                and published on CanadaBuys. PMRFP collects the tenders that fit commercial trades — bids go
-                directly to the government, not through PMRFP.
+                <strong className="text-foreground">Public tender.</strong> Issued by {tenderSource.issuer} and
+                published on {tenderSource.portal}. PMRFP collects the tenders that fit commercial trades — bids
+                go directly to the issuer, not through PMRFP.
               </span>
             </p>
           )}
@@ -196,9 +197,9 @@ export default async function RfpDetailPage({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
                   >
-                    Open the official notice on CanadaBuys <ExternalLink className="size-4" />
+                    Open the official notice on {tenderSource.portal} <ExternalLink className="size-4" />
                   </a>
-                  <p className="mt-3 text-xs text-muted-foreground">{OGL_ATTRIBUTION}</p>
+                  <p className="mt-3 text-xs text-muted-foreground">{tenderSource.attribution}</p>
                 </div>
               )}
               <TrustDisclaimer />
@@ -221,11 +222,11 @@ export default async function RfpDetailPage({
               {isPublicTender && (
                 <div className="rounded-xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
                   <p>
-                    This tender is public. What Trade Pro adds: every federal tender that fits your trade in
+                    This tender is public. What Trade Pro adds: every public tender that fits your trade in
                     one place, a daily email when a new one is posted in your region, and the direct link,
-                    full scope and buyer contact for each — instead of searching CanadaBuys yourself.
+                    full scope and buyer contact for each — instead of checking government bid portals yourself.
                   </p>
-                  <p className="mt-2 text-xs">{OGL_ATTRIBUTION}</p>
+                  <p className="mt-2 text-xs">{tenderSource.attribution}</p>
                 </div>
               )}
               <LockedContentPanel signedIn={Boolean(session)} />
@@ -248,7 +249,7 @@ export default async function RfpDetailPage({
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
                     >
-                      Bid on CanadaBuys <ExternalLink className="size-4" />
+                      {tenderSource.key === "toronto" ? "Bid on the City portal" : "Bid on CanadaBuys"} <ExternalLink className="size-4" />
                     </a>
                   )
                 ) : (
