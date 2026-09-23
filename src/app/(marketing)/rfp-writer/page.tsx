@@ -14,7 +14,9 @@ const DESCRIPTION =
   "Answer four quick questions and get a complete commercial property RFP — scope, insurance and WSIB requirements, submission instructions and bid scoring — ready to send or post free. Built for Canadian property managers.";
 
 export const metadata: Metadata = {
-  title: `${TITLE} (Canada)`,
+  // Search Console (Jun–Sep 2026): "rfp real estate", "commercial real estate
+  // rfp" and "rfp property management" show impressions, zero clicks. Use their words.
+  title: "Commercial Real Estate & Property Management RFP Writer — Free (Canada)",
   description: DESCRIPTION,
   alternates: { canonical: "/rfp-writer" },
 };
