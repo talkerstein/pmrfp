@@ -6,6 +6,7 @@ import { Container, Eyebrow } from "@/components/container";
 import { BadgeEmbed } from "@/components/public/badge-embed";
 import { buttonVariants } from "@/components/ui/button";
 import { getSession } from "@/lib/access/access";
+import { getBadgeInfo } from "@/lib/badge/data";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -15,11 +16,21 @@ export const metadata: Metadata = {
   alternates: { canonical: "/badge" },
 };
 
-export default async function BadgePage() {
-  const session = await getSession();
+export default async function BadgePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ company?: string }>;
+}) {
+  const [session, { company }] = await Promise.all([getSession(), searchParams]);
   const memberSlug = session?.organization?.slug ?? null;
+  // ?company=<slug> — the link in the badge email, so a listed company can
+  // grab its own code without an account. Only approved, active listings
+  // resolve (getBadgeInfo); the code is just a public link to a public
+  // profile, so nothing here is private.
+  const linked = !memberSlug && company ? await getBadgeInfo(company) : null;
+  const companySlug = linked?.found ? linked.slug : null;
   // Demo / not-signed-in: preview with a sample vendor so the page is useful to everyone.
-  const slug = memberSlug ?? "northline-electrical";
+  const slug = memberSlug ?? companySlug ?? "northline-electrical";
 
   const h = await headers();
   const host = h.get("host") ?? "pmrfp.com";
@@ -45,7 +56,21 @@ export default async function BadgePage() {
         <li className="flex gap-2"><BadgeCheck className="mt-0.5 size-4 shrink-0 text-teal-600" /> Takes two minutes: copy the code below and paste it into your site.</li>
       </ul>
 
-      {!memberSlug && (
+      {companySlug && linked && (
+        <div className="mt-6 rounded-lg border border-teal-300 bg-teal-50/60 p-4 text-sm">
+          This is the badge for <strong>{linked.name}</strong>. Copy the code below — it links to{" "}
+          <Link href={`/directory/${companySlug}`} className="font-medium text-teal-700 hover:underline">
+            your {SITE.name} profile
+          </Link>
+          . Want to edit that profile?{" "}
+          <Link href="/sign-up" className="font-medium text-teal-700 hover:underline">
+            Create your free account
+          </Link>
+          .
+        </div>
+      )}
+
+      {!memberSlug && !companySlug && (
         <div className="mt-6 rounded-lg border border-dashed border-teal-300 bg-teal-50/60 p-4 text-sm">
           {session ? (
             <>Complete your company profile to generate your own badge. </>
