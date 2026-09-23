@@ -62,11 +62,24 @@ export default async function SignUpPage({
         <span className="mr-2 inline-block h-px w-5 align-middle bg-teal-500" />
         Membership
       </p>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">Join the PMRFP network</h1>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-        The commercial property RFP network — trades, suppliers, property
-        managers, builders, and real estate professionals on one platform.
-      </p>
+      {intent ? (
+        <>
+          {/* Paid path: one decision on this page, not five. */}
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Start {intent.name}</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            For trade and service companies. Every matching commercial RFP and public tender in your trade and
+            regions, emailed the morning it posts.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Join the PMRFP network</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            The commercial property RFP network — trades, suppliers, property
+            managers, builders, and real estate professionals on one platform.
+          </p>
+        </>
+      )}
       {intent && (
         <div className="mt-5 rounded-lg border border-teal-300 bg-teal-50/60 p-4 text-sm">
           <p className="font-semibold text-foreground">
@@ -82,7 +95,11 @@ export default async function SignUpPage({
         </div>
       )}
       <div className="mt-6">
-        <SignUpForm initialRole={initialRole} next={next} />
+        <SignUpForm
+          initialRole={intent ? (initialRole === "supplier" ? "supplier" : "trade") : initialRole}
+          lockRole={!!intent}
+          next={next}
+        />
       </div>
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{COPY.signupDisclaimer}</p>
       <DemoNotice />

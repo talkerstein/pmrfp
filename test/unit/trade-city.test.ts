@@ -94,3 +94,27 @@ describe("trade × place pages", () => {
     expect(t.past.map((r) => r.deadline)).toEqual(["2026-08-01", "2026-01-01"]);
   });
 });
+
+describe("open counts for the homepage finder", () => {
+  it("rolls each open tender up to its province and country, never counts past or closed", async () => {
+    const { openCountsByTradeRegion } = await import("@/lib/data/trade-city");
+    const counts = openCountsByTradeRegion(
+      [
+        rfp({ region: "Toronto" }),
+        rfp({ region: "Vaughan" }),
+        rfp({ region: "Texas" }),
+        rfp({ region: "Toronto", past: true }),
+        rfp({ region: "Toronto", status: "closed" }),
+      ],
+      categories,
+      tree,
+    );
+    expect(counts["hvac|toronto"]).toBe(1);
+    expect(counts["hvac|greater-toronto-area"]).toBe(2);
+    expect(counts["hvac|ontario"]).toBe(2);
+    expect(counts["hvac|canada"]).toBe(2);
+    expect(counts["hvac|united-states"]).toBe(1);
+    expect(counts["hvac|*"]).toBe(3);
+    expect(counts["roofing|*"]).toBeUndefined();
+  });
+});

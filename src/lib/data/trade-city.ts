@@ -89,7 +89,7 @@ async function vendorComboCounts(): Promise<Map<string, number>> {
   return counts;
 }
 
-async function regionTree(): Promise<RegionNodeLite[]> {
+export async function regionTree(): Promise<RegionNodeLite[]> {
   if (!isSupabaseConfigured()) {
     return (await getRegions()).map((r) => ({ slug: r.slug, name: r.name, parentSlug: null }));
   }
@@ -229,3 +229,38 @@ export async function listTradesForRegion(regionSlug: string): Promise<TradeCity
   const combos = await listQualifyingCombos();
   return combos.filter((c) => c.region.slug === regionSlug);
 }
+
+/**
+ * Open tenders per trade × place, counting each tender toward its region and
+ * every region above it INCLUDING the country ("electrical|ontario",
+ * "electrical|canada"), plus "electrical|*" for everywhere. Feeds the
+ * homepage "your trade + your area" finder. Pure; exported for tests.
+ */
+export function openCountsByTradeRegion(
+  rfps: RfpListItem[],
+  categories: CategoryOption[],
+  tree: RegionNodeLite[],
+): Record<string, number> {
+  const catSlug = new Map(categories.map((c) => [c.name, c.slug]));
+  const node = new Map(tree.map((n) => [n.slug, n]));
+  const slugByName = new Map(tree.map((n) => [n.name, n.slug]));
+  const out: Record<string, number> = {};
+  const bump = (k: string) => (out[k] = (out[k] ?? 0) + 1);
+  for (const r of rfps) {
+    if (r.isDemo || r.status !== "open" || isPastContract(r)) continue;
+    const places: string[] = [];
+    const seen = new Set<string>();
+    for (let s = r.regionName ? slugByName.get(r.regionName) ?? null : null; s && !seen.has(s); s = node.get(s)?.parentSlug ?? null) {
+      seen.add(s);
+      places.push(s);
+    }
+    for (const name of r.categories) {
+      const cat = catSlug.get(name);
+      if (!cat) continue;
+      bump(`${cat}|*`);
+      for (const p of places) bump(`${cat}|${p}`);
+    }
+  }
+  return out;
+}
+
