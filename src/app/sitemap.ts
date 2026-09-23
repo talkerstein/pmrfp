@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/site";
 import { listRfps } from "@/lib/data/rfps";
+import { winnersFromRfps } from "@/lib/data/winners";
 import { listVendors } from "@/lib/data/directory";
 import { listResources } from "@/lib/data/resources";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
@@ -65,6 +66,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: p.priority,
   }));
 
+  entries.push({ url: `${base}/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
+  for (const w of winnersFromRfps(rfps)) entries.push({ url: `${base}/contract-winners/${w.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
   for (const r of rfps) entries.push({ url: `${base}/rfps/${r.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const v of vendors) entries.push({ url: `${base}/directory/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const a of resources) entries.push({ url: `${base}/resources/${a.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
