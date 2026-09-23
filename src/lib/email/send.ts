@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 import { COPY, SITE } from "@/lib/site";
+import { ROLE_LABEL, withDelta, type WeeklyReport } from "@/lib/admin/weekly-report";
+import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset
@@ -476,5 +478,56 @@ export async function sendRfpDraftEmail(
        ${btn(`${BASE}/rfp-writer?post=1`, "Post this RFP free")}`,
       "You're getting this because you asked the PMRFP RFP Writer to email you a copy. Review it before sending to bidders — it's a starting draft, not legal advice.",
     ),
+  );
+}
+
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+/** Monday numbers email to the admin inbox (cron: /api/cron/admin-weekly). */
+export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding:6px 12px 6px 0;color:#64748b">${label}</td><td style="padding:6px 0;font-weight:600">${value}</td></tr>`;
+  const list = (items: string[]) => (items.length ? `<ul style="margin:6px 0 16px;padding-left:18px">${items.join("")}</ul>` : `<p style="margin:6px 0 16px;color:#64748b">None this week.</p>`);
+
+  const s = r.stripe;
+  const body = `
+    <table style="border-collapse:collapse;margin-bottom:16px">
+      ${row("Signups", withDelta(r.signups.count, r.signups.prev))}
+      ${
+        s
+          ? row("Money in (Stripe)", `${fmtByCurrency(s.moneyIn7d)} this week · ${fmtByCurrency(s.moneyIn30d)} last 30 days`) +
+            row("Active subscriptions (Stripe)", `${s.active.length} · MRR ${fmtByCurrency(s.mrr)}`) +
+            (s.pastDue.length ? row("Failed payments (Stripe)", `${s.pastDue.length}: ${esc(s.pastDue.join(", "))}`) : "") +
+            (s.canceled7d.length ? row("Canceled this week (Stripe)", esc(s.canceled7d.join(", "))) : "")
+          : row("Revenue", "Stripe unavailable — check the Stripe dashboard")
+      }
+      ${row("Members with RFP access", `${r.access.payingCount}${r.access.comped ? ` (+${r.access.comped} comped)` : ""} <span style="color:#64748b;font-weight:400">(database; includes manual grants)</span>`)}
+      ${row("RFPs posted by PMs", String(r.activity.pmRfps.length))}
+      ${row("Interest expressed", withDelta(r.activity.interests, r.activity.interestsPrev))}
+      ${row("Contact requests", String(r.activity.contactRequests))}
+      ${row("Tenders imported", `${r.activity.tendersImported} (${r.activity.usTendersImported} U.S.)`)}
+    </table>
+
+    <h2 style="font-size:16px;margin:16px 0 4px">Signups by type</h2>
+    ${list(r.signups.byRole.map(([label, n]) => `<li>${esc(label)}: <strong>${n}</strong></li>`))}
+
+    <h2 style="font-size:16px;margin:16px 0 4px">Payments received this week (Stripe)</h2>
+    ${s ? list(s.payments7d.map((p) => `<li>${esc(p.who)} — $${p.amount.toLocaleString("en-CA")} ${p.currency} · ${p.date}</li>`)) : "<p>Stripe unavailable.</p>"}
+
+    <h2 style="font-size:16px;margin:16px 0 4px">Active subscriptions (Stripe)</h2>
+    ${s ? list(s.active.map((a) => `<li>${esc(a.who)} — $${a.amount.toLocaleString("en-CA")} ${a.currency}/${a.interval}</li>`)) : "<p>Stripe unavailable.</p>"}
+
+    <h2 style="font-size:16px;margin:16px 0 4px">RFPs posted by property managers</h2>
+    ${list(r.activity.pmRfps.map((p) => `<li><a href="${BASE}/rfps/${encodeURIComponent(p.slug)}" style="color:#282B59">${esc(p.title)}</a></li>`))}
+
+    <h2 style="font-size:16px;margin:16px 0 4px">Newest signups</h2>
+    ${list(r.signups.latest.map((u) => `<li>${esc(u.email)} · ${esc(ROLE_LABEL[u.primary_role] ?? u.primary_role)} · ${u.created_at.slice(0, 10)}</li>`))}
+
+    <p>${btn(`${BASE}/admin`, "Open admin")}</p>`;
+
+  await send(
+    ADMIN,
+    `PMRFP weekly: ${r.signups.count} signups, ${s ? `${fmtByCurrency(s.moneyIn7d)} in` : "revenue: check Stripe"}`,
+    layout(`Your week: ${r.period.from} → ${r.period.to}`, body),
   );
 }
