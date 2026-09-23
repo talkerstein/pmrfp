@@ -11,7 +11,14 @@ import {
 import { classifyToronto, fetchTorontoSolicitations, torontoToRfpInsert } from "@/lib/tenders/toronto";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardToRfpInsert, classifyAward, fetchAwards } from "@/lib/tenders/awards";
-import { classifySeao, fetchSeaoReleases, regionForSeao, seaoToRfpInsert } from "@/lib/tenders/seao";
+import {
+  classifySeao,
+  classifySeaoAward,
+  fetchSeaoReleases,
+  regionForSeao,
+  seaoAwardToRfpInsert,
+  seaoToRfpInsert,
+} from "@/lib/tenders/seao";
 
 interface Candidate {
   insert: TenderInsert;
@@ -51,11 +58,18 @@ const SOURCES: Source[] = [
     // Quebec: six weekly OCDS files, newest release per tender, open calls only.
     key: "seao",
     minMatchesToArchive: 25,
+    // Same files, two outputs: open calls, and past contracts (who won,
+    // for how much) from award releases.
     collect: async (today) =>
       (await fetchSeaoReleases()).flatMap((r) => {
-        const categories = classifySeao(r, today);
-        const insert = categories.length ? seaoToRfpInsert(r, today) : null;
-        return insert ? [{ insert, categories, regionSlug: regionForSeao(r) }] : [];
+        const open = classifySeao(r, today);
+        if (open.length) {
+          const insert = seaoToRfpInsert(r, today);
+          return insert ? [{ insert, categories: open, regionSlug: regionForSeao(r) }] : [];
+        }
+        const past = classifySeaoAward(r, today);
+        const insert = past.length ? seaoAwardToRfpInsert(r, today) : null;
+        return insert ? [{ insert, categories: past, regionSlug: regionForSeao(r) }] : [];
       }),
   },
   {
@@ -126,6 +140,8 @@ export async function GET(request: Request) {
   ]);
   const catId = new Map((cats ?? []).map((c: { id: string; slug: string }) => [c.slug, c.id]));
   const regionId = new Map((regions ?? []).map((r: { id: string; slug: string }) => [r.slug, r.id]));
+  // Unknown slug (e.g. a province region not created yet) → national, not blank.
+  const resolveRegion = (slug: string): string | null => regionId.get(slug) ?? regionId.get("canada") ?? null;
   const bySource = new Map(
     ((existing ?? []) as ExistingRow[]).filter((e) => e.source_url).map((e) => [e.source_url as string, e]),
   );
@@ -152,14 +168,22 @@ export async function GET(request: Request) {
         if (prior.status === "published" && !dry) {
           const { error } = await supabase
             .from("rfp_posts")
-            .update({ title: ins.title, summary: ins.summary, scope: ins.scope, deadline: ins.deadline })
+            .update({
+              title: ins.title,
+              summary: ins.summary,
+              scope: ins.scope,
+              deadline: ins.deadline,
+              // Re-file existing rows when region mapping improves (e.g. new
+              // province regions) — never blank a region we already had.
+              ...(resolveRegion(regionSlug) ? { region_id: resolveRegion(regionSlug) } : {}),
+            })
             .eq("id", prior.id)
             .eq("source_type", "public_source");
           if (!error) refreshed++;
         }
         continue;
       }
-      toInsert.push({ ...ins, region_id: regionId.get(regionSlug) ?? null });
+      toInsert.push({ ...ins, region_id: resolveRegion(regionSlug) });
       categoriesBySource.set(
         ins.source_url,
         slugs.map((s) => catId.get(s)).filter((id): id is string => !!id),

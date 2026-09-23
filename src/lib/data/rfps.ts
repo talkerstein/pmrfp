@@ -127,6 +127,9 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     const rb = b.status === "open" ? 0 : 1;
     if (ra !== rb) return ra - rb;
     if (ra === 1) return (b.deadline ?? "").localeCompare(a.deadline ?? ""); // closed: most recent first
+    // No-deadline listings (standing qualification lists) sort LAST under
+    // "closing soon" — "" would otherwise sort before every real date.
+    if (!a.deadline !== !b.deadline) return a.deadline ? -1 : 1;
     return filters.sort === "newest"
       ? (b.deadline ?? "").localeCompare(a.deadline ?? "")
       : (a.deadline ?? "").localeCompare(b.deadline ?? "");

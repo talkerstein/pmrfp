@@ -14,6 +14,7 @@ import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardNoticeUrl } from "@/lib/tenders/awards";
+import { parseAward } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 
 export async function generateMetadata({
@@ -82,8 +83,19 @@ export default async function RfpDetailPage({
   const tenderSource = publicTenderSource(teaser.slug);
   // Past public contracts (CanadaBuys award notices) aren't biddable — show who
   // won and for how much, never a paywall or a "bid" button.
-  const isAward = isPublicTender && tenderSource.key === "awards";
-  const awardUrl = isAward ? awardNoticeUrl(teaser.slug.split("-cba-").pop() ?? "") : null;
+  const isAward = isPublicTender && tenderSource.past;
+  // Federal award pages derive from the slug; Quebec award links are only in
+  // the full (member) row.
+  const awardUrl = !isAward
+    ? null
+    : tenderSource.key === "awards"
+      ? awardNoticeUrl(teaser.slug.split("-cba-").pop() ?? "")
+      : (full?.sourceUrl ?? null);
+  const award = isAward ? parseAward(teaser.summary) : null;
+  // "The next one": how many OPEN tenders exist right now in the same trade.
+  const similarOpen = isAward
+    ? (await listRfps()).filter((r) => r.status === "open" && teaser.categories.some((c) => r.categories.includes(c))).length
+    : 0;
 
   return (
     <Container className="py-10">
@@ -188,7 +200,19 @@ export default async function RfpDetailPage({
 
           {isAward ? (
             <div className="mt-8 rounded-xl border border-teal-400/50 bg-teal-100/30 p-6">
-              <h2 className="text-lg font-semibold tracking-tight">Want the next one like this?</h2>
+              {award?.winner && (
+                <div className="mb-5 rounded-lg border border-border bg-card p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Won by</div>
+                  <div className="mt-0.5 text-lg font-semibold">{award.winner}</div>
+                  {award.value && <div className="mt-1 text-3xl font-extrabold tracking-tight text-indigo">{award.value}</div>}
+                </div>
+              )}
+              <h2 className="text-lg font-semibold tracking-tight">
+                This contract is gone.{" "}
+                {similarOpen > 0
+                  ? `${similarOpen} open ${teaser.categories[0]?.toLowerCase() ?? "trade"} tender${similarOpen === 1 ? " is" : "s are"} live right now.`
+                  : "The next one won't wait either."}
+              </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Trade Pro emails you the day a new public tender in your trade and region is posted, with the
                 direct link, full scope and buyer contact — so you&apos;re bidding on the next contract, not
@@ -200,6 +224,11 @@ export default async function RfpDetailPage({
               >
                 Get tender alerts for my trade
               </Link>
+              {similarOpen > 0 && teaser.categories[0] && (
+                <Link href="/rfps" className="ml-3 mt-4 inline-flex text-sm font-medium text-teal-700 hover:underline">
+                  See the open ones →
+                </Link>
+              )}
               <p className="mt-4 text-xs text-muted-foreground">{tenderSource.attribution}</p>
             </div>
           ) : showFull && full ? (

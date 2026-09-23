@@ -13,6 +13,8 @@ export const SEAO_ATTRIBUTION =
 
 export interface PublicTenderSource {
   key: "canadabuys" | "toronto" | "awards" | "seao";
+  /** Already awarded — a past public contract, not a biddable tender. */
+  past: boolean;
   /** Short badge text for cards. */
   badge: string;
   /** "Issued by …" */
@@ -23,9 +25,20 @@ export interface PublicTenderSource {
 }
 
 export function publicTenderSource(slug: string): PublicTenderSource {
+  if (/-qca-[a-z0-9-]+$/.test(slug)) {
+    return {
+      key: "seao",
+      past: true,
+      badge: "Past public contract · Quebec (SEAO)",
+      issuer: "a Quebec public body",
+      portal: "SEAO",
+      attribution: SEAO_ATTRIBUTION,
+    };
+  }
   if (/-cba-[a-z0-9-]+$/.test(slug)) {
     return {
       key: "awards",
+      past: true,
       badge: "Past public contract · Gov. of Canada",
       issuer: "the Government of Canada",
       portal: "CanadaBuys",
@@ -35,6 +48,7 @@ export function publicTenderSource(slug: string): PublicTenderSource {
   if (/-qc-[a-z0-9-]+$/.test(slug)) {
     return {
       key: "seao",
+      past: false,
       badge: "Public tender · Quebec (SEAO)",
       issuer: "a Quebec public body",
       portal: "SEAO",
@@ -44,6 +58,7 @@ export function publicTenderSource(slug: string): PublicTenderSource {
   if (/-tor-[a-z0-9-]+$/.test(slug)) {
     return {
       key: "toronto",
+      past: false,
       badge: "Public tender · City of Toronto",
       issuer: "the City of Toronto",
       portal: "the City of Toronto bid portal",
@@ -52,6 +67,7 @@ export function publicTenderSource(slug: string): PublicTenderSource {
   }
   return {
     key: "canadabuys",
+    past: false,
     badge: "Public tender · Gov. of Canada",
     issuer: "the Government of Canada",
     portal: "CanadaBuys",

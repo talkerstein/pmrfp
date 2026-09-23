@@ -116,9 +116,20 @@ export function regionForTender(r: TenderRow): { regionSlug: string; province: s
     const city = CITY_REGIONS.find(([p]) => p.test(d))?.[1];
     if (city) return { regionSlug: city, province };
   }
-  if (regionCount <= 2 && province === "Ontario") return { regionSlug: "ontario", province };
-  if (regionCount <= 2 && province === "Quebec") return { regionSlug: "quebec", province };
-  return { regionSlug: "canada", province: regionCount <= 2 ? province : null };
+  // Single-province notices go to that province's region (migration
+  // 20260923000001 adds BC, AB, SK, MB, the Atlantic provinces and the
+  // territories); the importer falls back to "canada" if a slug is missing.
+  if (regionCount <= 2 && province) return { regionSlug: provinceSlug(province), province };
+  return { regionSlug: "canada", province: null };
+}
+
+export function provinceSlug(province: string): string {
+  return province
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export interface TenderInsert {

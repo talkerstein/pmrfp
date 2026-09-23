@@ -55,7 +55,9 @@ describe("regionForTender", () => {
     expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*Edmonton" })).regionSlug).toBe("edmonton");
     expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*National Capital Region (NCR)" })).regionSlug).toBe("ottawa");
     expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*Ontario (except NCR)" })).regionSlug).toBe("ontario");
-    expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*Nova Scotia" }))).toEqual({ regionSlug: "canada", province: "Nova Scotia" });
+    expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*Nova Scotia" }))).toEqual({ regionSlug: "nova-scotia", province: "Nova Scotia" });
+    expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*British Columbia" })).regionSlug).toBe("british-columbia");
+    expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*Newfoundland and Labrador" })).regionSlug).toBe("newfoundland-and-labrador");
     expect(regionForTender(row({ "regionsOfDelivery-regionsLivraison-eng": "*Canada\n*Ontario\n*British Columbia" })).regionSlug).toBe("canada");
   });
 });
