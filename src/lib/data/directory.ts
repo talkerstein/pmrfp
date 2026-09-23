@@ -166,6 +166,30 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
   return out.sort((a, b) => tierRank(b) - tierRank(a));
 }
 
+/**
+ * Where a retired listing's URL should permanently redirect, or null if the
+ * slug never existed (→ plain 404). Retired = a seeded demo company or a
+ * suspended/deleted one. Sends the URL's search equity to the closest real
+ * page: its trade's page, else the directory.
+ */
+export async function retiredVendorRedirect(slug: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+  const supabase = createReadClient();
+  const { data } = await supabase
+    .from("organizations")
+    .select("organization_type,organization_categories(trade_categories(slug))")
+    .eq("slug", slug)
+    .maybeSingle();
+  const r = data as unknown as {
+    organization_type: string;
+    organization_categories: { trade_categories: { slug: string } | null }[];
+  } | null;
+  if (!r) return null;
+  const cat = r.organization_categories.map((c) => c.trade_categories?.slug).find(Boolean);
+  if (r.organization_type === "supplier") return "/suppliers";
+  return cat ? `/trades/${cat}` : "/directory";
+}
+
 export async function getVendor(slug: string): Promise<VendorDetail | null> {
   if (!isSupabaseConfigured()) {
     const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);

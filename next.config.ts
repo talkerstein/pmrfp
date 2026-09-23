@@ -52,9 +52,28 @@ const legacyWordPressRedirects = [
   { source: "/project-management-dashboard-2", destination: "/" },
 ];
 
+// Seeded demo companies removed from the live directory (2026-09-23). Each
+// old profile URL goes to its trade's page, which has real vendors and live
+// RFPs. These must be config redirects: /directory streams (loading.tsx), so a
+// redirect thrown inside the page can only send a 200 + client-side redirect.
+// The page-level retiredVendorRedirect() stays as a fallback for future
+// retirements until they're added here.
+const retiredListingRedirects: { source: string; destination: string }[] = [
+  ["northline-electrical", "/trades/electrical"],
+  ["summit-mechanical-hvac", "/trades/hvac"],
+  ["ironclad-roofing", "/trades/roofing"],
+  ["pureclean-facility", "/trades/cleaning-janitorial"],
+  ["gta-snowpro", "/trades/snow-removal"],
+  ["apex-asphalt-concrete", "/trades/concrete-and-asphalt"],
+  ["guardian-fire-safety", "/trades/fire-safety"],
+  ["vista-glass-windows", "/trades/glass-and-windows"],
+  ["toronto-painters", "/trades/painting"],
+  ["northview-windows-doors", "/trades/glass-and-windows"],
+].map(([slug, destination]) => ({ source: `/directory/${slug}`, destination }));
+
 const nextConfig: NextConfig = {
   async redirects() {
-    return legacyWordPressRedirects.map((r) => ({ ...r, permanent: true }));
+    return [...legacyWordPressRedirects, ...retiredListingRedirects].map((r) => ({ ...r, permanent: true }));
   },
   images: {
     // Allow next/image to optimize Supabase-hosted assets (logos, RFP photos,
