@@ -68,6 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   entries.push({ url: `${base}/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
+  entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   for (const w of winnersFromRfps(rfps)) entries.push({ url: `${base}/contract-winners/${w.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
   // Closed public tenders are noindexed (see isIndexableRfp) — keep them out too.
   for (const r of rfps.filter(isIndexableRfp)) entries.push({ url: `${base}/rfps/${r.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });

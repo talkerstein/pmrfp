@@ -45,6 +45,12 @@ export default async function ContractWinnersPage() {
             The companies that keep winning building, maintenance and service contracts — how often, for how much, and
             from which buyers. Every figure comes from an official award notice.
           </p>
+          <Link
+            href="/reports/public-building-contracts"
+            className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-teal-300 hover:text-teal-200"
+          >
+            Read the data report: how concentrated is public building work? <ArrowRight className="size-3.5" />
+          </Link>
           <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-6">
             {[
               [String(winners.length), "Repeat winners"],
