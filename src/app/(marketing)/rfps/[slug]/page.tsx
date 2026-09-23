@@ -213,8 +213,8 @@ export default async function RfpDetailPage({
                       : `${totalOpenCount} open commercial RFPs on PMRFP right now`}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Trade Pro members see full scope, documents, and can express interest on
-                    every one.
+                    Trade Pro members get the full scope and contacts for every one, plus an email
+                    the day a new one matches their trade.
                   </p>
                 </div>
               )}
@@ -240,7 +240,20 @@ export default async function RfpDetailPage({
             <Meta label="Closes" value={fmt(teaser.deadline)} />
             {showFull && full ? (
               <div className="flex flex-col gap-2 pt-2">
-                <ExpressInterestDialog rfpId={full.id} rfpTitle={full.title} />
+                {isPublicTender ? (
+                  full.sourceUrl && (
+                    <a
+                      href={full.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+                    >
+                      Bid on CanadaBuys <ExternalLink className="size-4" />
+                    </a>
+                  )
+                ) : (
+                  <ExpressInterestDialog rfpId={full.id} rfpTitle={full.title} />
+                )}
                 <SaveButton rfpId={full.id} />
               </div>
             ) : (

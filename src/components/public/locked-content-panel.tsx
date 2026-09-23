@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Lock } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PRICING } from "@/lib/site";
+import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 
 /** Shown to visitors / unpaid trades in place of full RFP details (§9.2). */
 export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
@@ -21,7 +22,10 @@ export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
         are available to PMRFP Trade Pro members.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link href={signedIn ? "/dashboard/billing" : "/sign-up"} className={buttonVariants({ size: "lg" })}>
+        <Link
+          href={signedIn ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro")}
+          className={buttonVariants({ size: "lg" })}
+        >
           {signedIn ? "Activate Trade Pro" : "Join as a Trade Company"}
         </Link>
         <Link href="/pricing" className={buttonVariants({ size: "lg", variant: "outline" })}>

@@ -16,14 +16,19 @@ function client(): Resend | null {
   return key ? new Resend(key) : null;
 }
 
-async function send(to: string, subject: string, html: string): Promise<void> {
+async function send(
+  to: string,
+  subject: string,
+  html: string,
+  headers?: Record<string, string>,
+): Promise<void> {
   const resend = client();
   if (!resend) {
     console.info(`[email:noop] to=${to} subject="${subject}"`);
     return;
   }
   try {
-    await resend.emails.send({ from: FROM, to, subject, html });
+    await resend.emails.send({ from: FROM, to, subject, html, ...(headers ? { headers } : {}) });
   } catch (err) {
     console.error("[email] send failed", err);
   }
@@ -386,5 +391,53 @@ export async function sendAdminContactEmail(params: { name: string; email: strin
        </ul>
        <p><strong>Message:</strong><br/>${params.message}</p>`,
     ),
+  );
+}
+
+/**
+ * Weekly "new tenders for your trade" digest to FREE trades — the upgrade
+ * nudge. Commercial message under CASL, so it carries sender identity, a
+ * mailing address and a working one-click unsubscribe (link + RFC 8058
+ * List-Unsubscribe headers). The caller refuses to send without an address.
+ */
+export async function sendTenderDigest(
+  to: string,
+  params: {
+    count: number;
+    tradeLabel: string;
+    items: { title: string; slug: string; deadline: string | null }[];
+    upgradeUrl: string;
+    unsubscribeUrl: string;
+    mailingAddress: string;
+  },
+): Promise<void> {
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const list = params.items
+    .map(
+      (i) =>
+        `<li style="margin:0 0 10px"><a href="${BASE}/rfps/${i.slug}" style="color:#282B59;font-weight:600">${esc(i.title)}</a>` +
+        `<br><span style="color:#64748b;font-size:13px">${i.deadline ? `Closes ${i.deadline}` : "Ongoing — no fixed closing date"}</span></li>`,
+    )
+    .join("");
+  const more = params.count > params.items.length ? `<p>…and ${params.count - params.items.length} more on the board.</p>` : "";
+  const noun = params.count === 1 ? "tender" : "tenders";
+  await send(
+    to,
+    `${params.count} new ${params.tradeLabel} ${noun} this week`,
+    layout(
+      `${params.count} new ${params.tradeLabel} ${noun} this week`,
+      `<p>These public tenders matching your trade were posted in the last 7 days:</p>
+       <ul style="padding-left:18px">${list}</ul>${more}
+       <p>Trade Pro gets you the direct link to each official notice, the full scope and buyer contact,
+       and an email the day a new one lands in your trade — instead of checking government portals yourself.</p>
+       <p>${btn(params.upgradeUrl, "See Trade Pro")}</p>`,
+      `You're receiving this because you have a free ${SITE.name} company profile. ` +
+        `<a href="${params.unsubscribeUrl}" style="color:#64748b">Unsubscribe from opportunity emails</a>. ` +
+        `${SITE.name}, ${esc(params.mailingAddress)} · ${SITE.email}`,
+    ),
+    {
+      "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
   );
 }
