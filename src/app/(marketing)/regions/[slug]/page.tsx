@@ -19,6 +19,7 @@ import { getRegionLiquidityBySlug } from "@/lib/data/liquidity";
 import { FoundingRegionNotice } from "@/components/public/founding-region-notice";
 import { listVendors } from "@/lib/data/directory";
 import { listRfps } from "@/lib/data/rfps";
+import { listTradesForRegion } from "@/lib/data/trade-city";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -67,11 +68,24 @@ export default async function RegionPage({
   const region = await getRegion(slug);
   if (!region) notFound();
 
-  const [vendors, rfps, categories] = await Promise.all([
+  const [vendors, rfps, categories, liveTrades] = await Promise.all([
     listVendors({ region: region.slug }),
     listRfps({ region: region.slug }),
     getCategories(),
+    listTradesForRegion(region.slug),
   ]);
+  const liveTradeSlugs = new Set(liveTrades.map((c) => c.category.slug));
+  // Trades with a live page here first, linked to it; the rest to the trade hub.
+  const tradeLinks = [
+    ...liveTrades.map((c) => ({
+      slug: c.category.slug,
+      name: c.open.length + c.past.length ? `${c.category.name} RFPs in ${region.name}` : `${c.category.name} in ${region.name}`,
+      href: `/trades/${c.category.slug}/${region.slug}`,
+    })),
+    ...categories
+      .filter((c) => !liveTradeSlugs.has(c.slug))
+      .map((c) => ({ slug: c.slug, name: c.name, href: `/trades/${c.slug}` })),
+  ].slice(0, Math.max(18, liveTrades.length));
   // listRfps() includes closed RFPs — only status === "open" may be called open.
   const openRfps = rfps.filter((r) => r.status === "open");
 
@@ -150,7 +164,7 @@ export default async function RegionPage({
               </p>
             )}
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked={false} />)}
+              {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
             </div>
           </>
         )}
@@ -175,8 +189,8 @@ export default async function RegionPage({
       <Container className="py-12">
         <h2 className="text-2xl font-semibold tracking-tight">Trades in {region.name}</h2>
         <div className="mt-4 flex flex-wrap gap-2">
-          {categories.slice(0, 18).map((c) => (
-            <Link key={c.slug} href={`/trades/${c.slug}`} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-teal-400">
+          {tradeLinks.map((c) => (
+            <Link key={c.slug} href={c.href} className="rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:border-teal-400">
               {c.name}
             </Link>
           ))}
