@@ -4,11 +4,8 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
-  BellRing,
   Check,
-  FileSearch,
   Flame,
-  Hand,
   Minus,
   Trophy,
 } from "lucide-react";
@@ -39,7 +36,6 @@ export const metadata: Metadata = {
 };
 
 /** Public buyers the board pulls from every morning (see /api/cron/public-tenders). */
-const SOURCES = ["CanadaBuys", "City of Toronto", "Quebec SEAO", "Yukon", "SAM.gov (U.S. federal)", "Property managers"];
 
 // Every row must stay true of Trade Pro (rfp-alerts cron, LockedContentPanel,
 // express-interest). No "appear higher" claims.
@@ -114,9 +110,6 @@ export default async function HomePage() {
   const closingSoonUs = closingSoon.filter((r) => rfpMarket(r) === "US");
   const heroRows = closingSoonCa.slice(0, 4);
   const heroRowsUs = closingSoonUs.slice(0, 4);
-  const openBoard = closingSoonCa.slice(0, 6);
-  const openBoardUs = closingSoonUs.slice(0, 6);
-  const newest = closingSoonCa.find((r) => (daysUntil(r.deadline) ?? 0) >= 7) ?? closingSoonCa[0];
   // Awards a trade can picture winning: $50K–$2M, most recent first, one per source.
   const bigAwards = spread(
     rfps
@@ -255,139 +248,6 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* ──────────────────── WHAT TRADE PRO GETS YOU (bento) ──────────────────── */}
-      <section className="bg-background">
-        <Container className="py-20 md:py-24">
-          <h2 className="max-w-2xl text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-            Stop finding out about the work after it&apos;s awarded.
-          </h2>
-          <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-            Most commercial work goes to whoever heard about it first. Trade Pro makes that you.
-          </p>
-
-          <div className="mt-12 grid gap-4 lg:grid-cols-3 lg:grid-rows-[auto_auto]">
-            {/* Tall: the board */}
-            <div className="relative overflow-hidden rounded-2xl bg-indigo p-7 text-white lg:row-span-2">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-24 -left-24 size-80 rounded-full"
-                style={{ background: "radial-gradient(circle, rgba(145,242,207,.16), transparent 65%)" }}
-              />
-              <div className="relative flex h-full flex-col">
-                <h3 className="text-xl font-semibold">Every open tender, one board</h3>
-                <p className="mt-2 text-sm leading-relaxed text-indigo-100/80">
-                  Checked every morning and filtered to your trade and region.
-                </p>
-                <ul className="mt-6 flex flex-wrap gap-2">
-                  {SOURCES.map((s) => (
-                    <li key={s} className="rounded-full border border-white/15 px-3 py-1 text-sm text-indigo-100">{s}</li>
-                  ))}
-                </ul>
-                <div className="mt-auto pt-10">
-                  <div className="font-heading text-6xl font-extrabold tracking-tight text-teal-300">{stats.open}</div>
-                  <div className="text-sm text-indigo-100/70">open contracts today</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Wide: the alert, shown with a real listing */}
-            <div className="rounded-2xl bg-teal-300 p-7 text-indigo lg:col-span-2">
-              <div className="flex items-start gap-3">
-                <BellRing className="mt-1 size-5 shrink-0" />
-                <div>
-                  <h3 className="text-xl font-semibold">An email the day a match posts</h3>
-                  <p className="mt-1 text-sm text-indigo/75">Daily alerts for your trade and region. No more checking four portals.</p>
-                </div>
-              </div>
-              {newest && (
-                <Link
-                  href={`/rfps/${newest.slug}`}
-                  className="mt-6 flex items-center justify-between gap-4 rounded-xl bg-white/80 p-4 transition-colors hover:bg-white"
-                >
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium text-indigo/60">New match · {newest.categories[0] ?? "Commercial"}</div>
-                    <div className="mt-0.5 line-clamp-1 font-semibold">{newest.title}</div>
-                  </div>
-                  <span className="shrink-0 text-xs font-medium text-indigo/70">Closes {formatDeadline(newest.deadline)}</span>
-                </Link>
-              )}
-            </div>
-
-            {/* Small: full scope */}
-            <div className="rounded-2xl border border-border bg-card p-7">
-              <FileSearch className="size-5 text-teal-700" />
-              <h3 className="mt-4 text-lg font-semibold">Full scope, documents and the buyer</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Requirements, budget, attachments and contact details on every listing.
-              </p>
-            </div>
-
-            {/* Small, photographic: express interest */}
-            <div className="relative overflow-hidden rounded-2xl bg-indigo p-7 text-white">
-              <Image src="/images/audience-trades.jpg" alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/80 to-indigo/30" />
-              <div className="relative">
-                <Hand className="size-5 text-teal-300" />
-                <h3 className="mt-4 text-lg font-semibold">Put your name on property-manager RFPs</h3>
-                <p className="mt-2 text-sm leading-relaxed text-indigo-100/85">
-                  One click, and the property manager sees your profile, insurance and trades.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
-
-      {/* ──────────────────── FREE vs PRO + ROI ──────────────────── */}
-      <section className="bg-secondary/40">
-        <Container className="grid gap-12 py-20 md:py-24 lg:grid-cols-[1.25fr_.75fr] lg:items-center">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Free gets you seen. Pro gets you the work.</h2>
-            <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-card">
-              <div className="grid grid-cols-[1fr_64px_88px] items-center border-b border-border px-5 py-3 text-sm font-semibold sm:grid-cols-[1fr_100px_120px]">
-                <span />
-                <span className="text-center text-muted-foreground">Free</span>
-                <span className="text-center text-indigo">Trade Pro</span>
-              </div>
-              {COMPARE.map(([label, free, pro]) => (
-                <div key={label} className="grid grid-cols-[1fr_64px_88px] items-center px-5 py-3 text-sm sm:grid-cols-[1fr_100px_120px]">
-                  <span className={cn(!free && "font-semibold")}>{label}</span>
-                  <span className="flex justify-center">
-                    {free ? <Check className="size-4 text-teal-700" strokeWidth={3} /> : <Minus className="size-4 text-muted-foreground/40" />}
-                  </span>
-                  <span className="flex justify-center">{pro && <Check className="size-4 text-indigo" strokeWidth={3} />}</span>
-                </div>
-              ))}
-              <div className="grid grid-cols-[1fr_64px_88px] items-center border-t border-border bg-secondary/50 px-5 py-4 text-sm font-semibold sm:grid-cols-[1fr_100px_120px]">
-                <span>Price</span>
-                <span className="text-center">$0</span>
-                <span className="text-center text-indigo">${PRICING.proMonthly}/mo</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-card p-8 shadow-sm ring-1 ring-border">
-            {medianAward ? (
-              <>
-                <p className="text-sm text-muted-foreground">Median public contract on our board</p>
-                <p className="mt-1 font-heading text-6xl font-extrabold tracking-tight text-indigo">{compactDollars(medianAward)}</p>
-                <p className="mt-4 text-muted-foreground">
-                  Trade Pro is <strong className="text-foreground">${PRICING.proAnnual} a year</strong>. One small win covers it many times over.
-                </p>
-              </>
-            ) : (
-              <p className="text-lg text-muted-foreground">One won commercial job typically covers years of Trade Pro.</p>
-            )}
-            <Link href={proMonthly} className={cn(buttonVariants({ size: "lg" }), "mt-7 w-full active:scale-[0.98]")}>
-              Start Trade Pro <ArrowRight className="size-4" />
-            </Link>
-            <Link href="/sign-up?role=trade" className="mt-3 block text-center text-sm font-medium text-teal-700 hover:underline">
-              Or list your company free
-            </Link>
-          </div>
-        </Container>
-      </section>
-
       {/* ──────────────────── PICK YOUR TRADE (photo mosaic) ──────────────────── */}
       <section className="bg-background">
         <Container className="pt-20 md:pt-24">
@@ -420,21 +280,6 @@ export default async function HomePage() {
           </div>
         </Container>
       </section>
-
-      {/* ──────────────────── THE BOARD ──────────────────── */}
-      {openBoard.length > 0 && (
-        <section className="bg-background">
-          <Container className="py-20 md:py-24">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <h2 className="max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">Closing soonest, across Canada and the U.S.</h2>
-              <Link href="/rfps" className={cn(buttonVariants({ variant: "outline" }), "active:scale-[0.98]")}>
-                See all {stats.open} <ArrowRight className="size-4" />
-              </Link>
-            </div>
-            <ByMarket ca={<BoardGrid rows={openBoard} />} us={openBoardUs.length ? <BoardGrid rows={openBoardUs} /> : undefined} />
-          </Container>
-        </section>
-      )}
 
       {/* ──────────────────── ALREADY AWARDED ──────────────────── */}
       {bigAwards.length === 3 && (
@@ -498,11 +343,33 @@ export default async function HomePage() {
       <section className="border-t border-border bg-secondary/40">
         <Container className="grid gap-12 py-20 md:py-24 lg:grid-cols-[1fr_420px] lg:items-start">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Lock in ${PRICING.proAnnual}/yr before it goes to $399.</h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Free gets you seen. Pro gets you the work.</h2>
             <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-              Early-bird Trade Pro is ${PRICING.proAnnual} a year or ${PRICING.proMonthly} a month. The annual rate rises
-              once we reach 100 members. Join before then and your rate is locked in.
+              Early-bird Trade Pro is ${PRICING.proAnnual} a year or ${PRICING.proMonthly} a month. The annual rate rises to
+              $399 once we reach 100 members; join before then and your rate is locked in.
+              {medianAward ? ` The median public contract on the board is ${compactDollars(medianAward)}.` : ""}
             </p>
+            <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-card">
+              <div className="grid grid-cols-[1fr_64px_88px] items-center border-b border-border px-5 py-3 text-sm font-semibold sm:grid-cols-[1fr_100px_120px]">
+                <span />
+                <span className="text-center text-muted-foreground">Free</span>
+                <span className="text-center text-indigo">Trade Pro</span>
+              </div>
+              {COMPARE.map(([label, free, pro]) => (
+                <div key={label} className="grid grid-cols-[1fr_64px_88px] items-center px-5 py-3 text-sm sm:grid-cols-[1fr_100px_120px]">
+                  <span className={cn(!free && "font-semibold")}>{label}</span>
+                  <span className="flex justify-center">
+                    {free ? <Check className="size-4 text-teal-700" strokeWidth={3} /> : <Minus className="size-4 text-muted-foreground/40" />}
+                  </span>
+                  <span className="flex justify-center">{pro && <Check className="size-4 text-indigo" strokeWidth={3} />}</span>
+                </div>
+              ))}
+              <div className="grid grid-cols-[1fr_64px_88px] items-center border-t border-border bg-secondary/50 px-5 py-4 text-sm font-semibold sm:grid-cols-[1fr_100px_120px]">
+                <span>Price</span>
+                <span className="text-center">$0</span>
+                <span className="text-center text-indigo">${PRICING.proMonthly}/mo</span>
+              </div>
+            </div>
             <div className="mt-8 divide-y divide-border border-y border-border">
               {FAQS.map((f, i) => (
                 <details key={f.q} open={i === 0} className="group py-4">
@@ -517,7 +384,7 @@ export default async function HomePage() {
           </div>
 
           <div className="rounded-2xl bg-indigo p-8 text-white shadow-xl shadow-indigo/20">
-            <div className="text-sm text-teal-300">Trade Pro · Annual</div>
+            <div className="text-sm text-teal-300">Trade Pro · Annual · locked in before it rises to $399</div>
             <div className="mt-3 flex items-end gap-2">
               <span className="font-heading text-6xl font-extrabold leading-none tracking-tight">${PRICING.proAnnual}</span>
               <span className="pb-1.5 text-sm text-indigo-100/70">CAD / year</span>
@@ -539,24 +406,6 @@ export default async function HomePage() {
             </Link>
             <p className="mt-4 text-center text-xs text-indigo-100/55">Cancel anytime. Access runs to the end of your billing period.</p>
           </div>
-        </Container>
-      </section>
-
-      {/* ──────────────────── FINAL CTA ──────────────────── */}
-      <section className="grid-tex relative overflow-hidden bg-indigo text-white [--grid-color:rgba(145,242,207,0.06)]">
-        <Container className="relative z-10 flex flex-col items-start justify-between gap-8 py-16 md:flex-row md:items-center md:py-20">
-          <h2 className="max-w-2xl text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            {stats.closingThisWeek > 0 ? (
-              <>
-                <span className="text-teal-300">{stats.closingThisWeek}</span> contracts close this week. Are you bidding?
-              </>
-            ) : (
-              <>Get listed before your competitors do.</>
-            )}
-          </h2>
-          <Link href={proMonthly} className={cn(buttonVariants({ size: "lg", variant: "accent" }), "shrink-0 active:scale-[0.98]")}>
-            Start Trade Pro <ArrowRight className="size-4" />
-          </Link>
         </Container>
       </section>
 
@@ -601,15 +450,5 @@ function HeroRows({ rows }: { rows: RfpListItem[] }) {
         );
       })}
     </ul>
-  );
-}
-
-function BoardGrid({ rows }: { rows: RfpListItem[] }) {
-  return (
-    <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {rows.map((r) => (
-        <RfpCard key={r.slug} rfp={r} locked />
-      ))}
-    </div>
   );
 }

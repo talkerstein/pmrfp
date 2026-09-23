@@ -71,13 +71,13 @@ export const REFERRAL = {
 } as const;
 
 /** Primary public navigation (§30 header) */
+// Four jobs, four links: find work, find a trade, hire (PMs), pay. "For
+// Trades" is what the homepage already is; guides live in the footer.
 export const MAIN_NAV = [
-  { href: "/for-property-managers", label: "For Property Managers" },
-  { href: "/for-trades", label: "For Trades" },
-  { href: "/directory", label: "Trade Directory" },
   { href: "/rfps", label: "RFPs" },
+  { href: "/directory", label: "Trade Directory" },
+  { href: "/for-property-managers", label: "For Property Managers" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/resources", label: "Guides" },
 ] as const;
 
 /** Secondary nav slot — sits between primary nav and auth CTAs in the header.
@@ -123,69 +123,51 @@ export const ADMIN_NAV = [
   { href: "/admin/audit-logs", label: "Audit Logs" },
 ] as const;
 
+// Three short columns: 18 links plus a 4-link legal row (22, down from 37). Pages that
+// left the footer are still one click away: /for lists every solution page,
+// /vs every comparison, /resources every guide; sign in / join are in the header.
 export const FOOTER_COLS = [
   {
-    heading: "Product",
+    heading: "Find work",
     links: [
-      { label: "Trade Directory", href: "/directory" },
-      { label: "Supplier Directory", href: "/suppliers" },
       { label: "Browse RFPs", href: "/rfps" },
       { label: "Contract Winners", href: "/contract-winners" },
-      { label: "Trade Categories", href: "/trades" },
-      { label: "Browse by Region", href: "/regions" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "Trades", href: "/trades" },
+      { label: "Regions", href: "/regions" },
+      { label: "Supplier Directory", href: "/suppliers" },
     ],
   },
   {
-    heading: "Solutions",
+    heading: "Who it's for",
     links: [
       { label: "For Trades", href: "/for-trades" },
-      { label: "Get Found (SEO & AI)", href: "/get-found" },
-      { label: "For Suppliers", href: "/for/suppliers" },
       { label: "For Property Managers", href: "/for-property-managers" },
-      { label: "For Condo Boards", href: "/for/condo-boards" },
-      { label: "For Builders", href: "/for/builders" },
-      { label: "For Investors", href: "/for/investors" },
-      { label: "For Real Estate", href: "/for/real-estate" },
-    ],
-  },
-  {
-    heading: "Compare",
-    links: [
-      { label: "All comparisons", href: "/vs" },
-      { label: "PMRFP vs MERX", href: "/vs/merx" },
-      { label: "PMRFP vs HomeStars", href: "/vs/homestars" },
-      { label: "PMRFP vs ConstructConnect", href: "/vs/constructconnect" },
-      { label: "PMRFP vs the status quo", href: "/vs/status-quo" },
+      { label: "All Solutions", href: "/for" },
+      { label: "Get Found (SEO & AI)", href: "/get-found" },
+      { label: "Pricing", href: "/pricing" },
     ],
   },
   {
     heading: "Resources",
     links: [
-      { label: "Case Studies", href: "/case-studies" },
-      { label: "Resource Hub", href: "/resources" },
-      { label: "RFP Templates", href: "/rfp-templates" },
       { label: "RFP Writer (free)", href: "/rfp-writer" },
+      { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
-      { label: "How to Write an RFP", href: "/resources/how-to-write-a-commercial-property-maintenance-rfp" },
-      { label: "Post an RFP That Gets Bids", href: "/resources/how-to-post-a-quality-rfp" },
-      { label: `Refer a trade — earn $${REFERRAL.tradeFee}`, href: "/refer-a-trade" },
-      { label: `Refer a project — get credit`, href: "/refer-a-project" },
-      { label: "Grow Your Business", href: "/resources/grow" },
+      { label: "Guides", href: "/resources" },
+      { label: "Case Studies", href: "/case-studies" },
+      { label: "Compare", href: "/vs" },
       { label: "Vendor Badge", href: "/badge" },
-      { label: "Contact", href: "/contact" },
-      { label: "Sign In", href: "/sign-in" },
-      { label: "Join PMRFP", href: "/sign-up" },
+      { label: `Refer a trade — earn $${REFERRAL.tradeFee}`, href: "/refer-a-trade" },
     ],
   },
-  {
-    heading: "Legal",
-    links: [
-      { label: "Terms of Service", href: "/terms" },
-      { label: "Privacy Policy", href: "/privacy" },
-      { label: "Disclaimer", href: "/disclaimer" },
-    ],
-  },
+] as const;
+
+/** Bottom-row links under the footer columns. */
+export const FOOTER_LEGAL = [
+  { label: "Contact", href: "/contact" },
+  { label: "Terms", href: "/terms" },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Disclaimer", href: "/disclaimer" },
 ] as const;
 
 /** Canonical copy blocks (§29) — reuse everywhere. Disclaimer legal substance is
