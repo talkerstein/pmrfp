@@ -70,7 +70,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Repair or replace?", a: "If the membrane is past 75% of its expected life and you're seeing repeat leaks, replacement is usually more economical than chasing patches. A scoped RFP gets you both options priced." },
       { q: "Are these prices guaranteed?", a: "No. These are general Canadian planning ranges, not quotes. Actual pricing depends on your building, region, and scope — post an RFP to get real numbers from interested roofers." },
     ],
-    metaTitle: "Commercial Roof Replacement Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial Roof Replacement Cost in Canada (2026 Guide)",
     metaDescription:
       "What commercial roof replacement costs per square foot in Canada by membrane type (TPO, EPDM, modified bitumen), plus the factors that move the price. Get real quotes by posting an RFP.",
   },
@@ -105,7 +105,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Should I replace all units at once?", a: "Bundling replacements usually lowers the per-unit price and lets you standardize on one manufacturer for parts. Post a single RFP listing all units to get bundled pricing." },
       { q: "Are these prices guaranteed?", a: "No — they're general Canadian planning ranges, not quotes. Your real number depends on tonnage, access, and controls. Post an RFP to get competitive bids from HVAC contractors." },
     ],
-    metaTitle: "Commercial HVAC Replacement Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial HVAC Replacement Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial HVAC and rooftop unit replacement costs in Canada — per unit and per ton — plus the factors that drive the price. Get real quotes by posting an RFP.",
   },
@@ -140,7 +140,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "How do I keep bids comparable?", a: "Give every contractor the same scope, drawings, and finish schedule. An RFP that spells out the scope once gets you apples-to-apples proposals instead of guesswork." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Real pricing depends heavily on finish level and MEP scope. Post an RFP to get competitive bids from general contractors." },
     ],
-    metaTitle: "Office Renovation Cost Per Square Foot in Canada (2026) | PMRFP",
+    metaTitle: "Office Renovation Cost Per Square Foot in Canada (2026)",
     metaDescription:
       "Office renovation and tenant fit-out costs per square foot in Canada — from cosmetic refresh to full fit-out — plus the factors that move the price. Get real quotes by posting an RFP.",
   },
@@ -175,7 +175,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Can lighting retrofits pay for themselves?", a: "Often, through energy savings and utility rebates. Ask bidders to include the rebate-adjusted payback in their RFP response." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Post an RFP to get real, scope-specific bids from licensed commercial electricians." },
     ],
-    metaTitle: "Commercial Electrician Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial Electrician Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial electrical costs in Canada — service upgrades, panels, lighting retrofits, EV chargers, and hourly rates — plus what drives the price. Get real quotes by posting an RFP.",
   },
@@ -210,7 +210,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Can I get one price across multiple buildings?", a: "Yes — portfolio owners often bundle repaint cycles into one contract for a better rate. Post a single RFP covering all locations." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Post an RFP to get real bids from commercial painters." },
     ],
-    metaTitle: "Commercial Painting Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial Painting Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial painting costs in Canada per square foot — interior, exterior, epoxy floors, and high-access work — plus what drives the price. Get real quotes by posting an RFP.",
   },
@@ -245,7 +245,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Overlay or full reconstruction?", a: "If the base is sound and cracking is surface-level, an overlay works. Widespread alligator cracking and potholes usually signal base failure. A scoped RFP gets both options priced." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Post an RFP to get real bids from paving contractors." },
     ],
-    metaTitle: "Parking Lot Paving Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Parking Lot Paving Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial parking lot paving and asphalt costs in Canada — overlay, reconstruction, sealcoating, and striping — plus what drives the price. Get real quotes by posting an RFP.",
   },
@@ -280,7 +280,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Is salting included?", a: "Not always — confirm whether de-icing, sidewalks, and a service log are in scope. Spell out the service level in your RFP so bids are comparable." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Post an RFP to get real bids from snow-removal contractors for your specific site." },
     ],
-    metaTitle: "Commercial Snow Removal Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial Snow Removal Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial snow removal costs in Canada — per push, seasonal, salting, and sidewalks — plus the factors that drive the price. Get real quotes by posting an RFP.",
   },
@@ -315,7 +315,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Can I cover multiple sites in one contract?", a: "Yes — portfolio owners commonly bundle locations for a better rate and one point of contact. Post a single RFP listing all sites." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Post an RFP to get real bids from janitorial companies." },
     ],
-    metaTitle: "Commercial Cleaning Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial Cleaning Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial cleaning and janitorial costs in Canada — per square foot, hourly, and floor care — plus what drives the price. Get real quotes by posting an RFP.",
   },
@@ -350,7 +350,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "Do I need independent testing?", a: "For larger jobs, third-party clearance testing protects you and reassures tenants that the area is safe. Ask bidders to include testing in their RFP response." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Post an RFP to get real bids from qualified remediation contractors." },
     ],
-    metaTitle: "Commercial Mold Remediation Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial Mold Remediation Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial mold remediation costs in Canada by affected area and containment level, plus testing and source repair. Get real quotes by posting an RFP.",
   },
@@ -385,7 +385,7 @@ export const COST_GUIDES: CostGuide[] = [
       { q: "How is glazing quoted?", a: "Per window for individual units, or per square foot for storefront and curtain wall. Provide counts, sizes, and access details in your RFP for accurate bids." },
       { q: "Are these prices guaranteed?", a: "No — these are general Canadian planning ranges, not quotes. Post an RFP to get real bids from commercial glaziers." },
     ],
-    metaTitle: "Commercial Window Replacement Cost in Canada (2026 Guide) | PMRFP",
+    metaTitle: "Commercial Window Replacement Cost in Canada (2026 Guide)",
     metaDescription:
       "Commercial window and glazing replacement costs in Canada — per window, storefront, and curtain wall — plus what drives the price. Get real quotes by posting an RFP.",
   },

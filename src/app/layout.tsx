@@ -46,17 +46,16 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   applicationName: SITE.name,
+  // No og/twitter title, description or url here on purpose: Next fills them
+  // from each page's own title + description. Hardcoding them made every page
+  // share the homepage's social preview (and og:url) when linked.
   openGraph: {
     type: "website",
     siteName: SITE.name,
-    url: metadataBaseUrl,
-    title: `${SITE.name} — Commercial Property RFPs & Trade Directory`,
-    description: SITE.description,
+    locale: "en_CA",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — Commercial Property RFPs & Trade Directory`,
-    description: SITE.description,
   },
   robots: { index: true, follow: true },
   // Google Search Console (URL-prefix property) verification — renders
