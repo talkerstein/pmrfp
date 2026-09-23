@@ -1,5 +1,6 @@
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import type { Metadata } from "next";
+import { UsdHint } from "@/components/geo/usd-hint";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
@@ -160,6 +161,7 @@ export default async function PricingPage() {
                   {PRICING.currency}/year
                 </span>
               </div>
+              <UsdHint cad={PRICING.featuredAnnual} per="year" className="mt-1 text-teal-300" />
               <ul className="mt-6 flex-1 space-y-3">
                 {FEATURED_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-indigo-100">

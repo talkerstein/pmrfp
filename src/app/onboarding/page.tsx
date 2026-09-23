@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getVisitorGeo } from "@/lib/visitor-geo.server";
+import { visitorMarket, visitorRegionSlug } from "@/lib/visitor-geo";
 import { OnboardingForm } from "@/components/forms/onboarding-form";
 import { requireUser } from "@/lib/access/access";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
@@ -17,7 +19,14 @@ export default async function OnboardingPage({
   const role = session.profile.primary_role;
   const { next: rawNext } = await searchParams;
   const next = safeNextPath(rawNext);
-  const [categories, regions] = await Promise.all([getCategories(), getRegions()]);
+  const [categories, allRegions, geo] = await Promise.all([getCategories(), getRegions(), getVisitorGeo()]);
+  // Visitors in the U.S. see the U.S. regions first (the list is long and
+  // scrolls); everyone gets their own province/state ticked to start.
+  const us = visitorMarket(geo) === "US";
+  const isUsRegion = (r: { slug: string }) => r.slug === "united-states" || r.slug.startsWith("us-");
+  const regions = us ? [...allRegions.filter(isUsRegion), ...allRegions.filter((r) => !isUsRegion(r))] : allRegions;
+  const home = visitorRegionSlug(geo);
+  const preselectedRegions = home && regions.some((r) => r.slug === home) ? [home] : [];
 
   const heading =
     role === "trade"
@@ -46,7 +55,7 @@ export default async function OnboardingPage({
             : "Just the basics — you can post an RFP right after."}
         </p>
         <div className="mt-8 rounded-xl border border-border bg-card p-6 sm:p-8">
-          <OnboardingForm role={role} categories={categories} regions={regions} next={next} />
+          <OnboardingForm role={role} categories={categories} regions={regions} next={next} preselectedRegions={preselectedRegions} />
         </div>
       </main>
     </div>

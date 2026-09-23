@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getVisitorGeo } from "@/lib/visitor-geo.server";
 import { Container, Eyebrow } from "@/components/container";
 import { Markdown } from "@/components/public/markdown";
 import { RfpWizard } from "@/components/rfp-writer/wizard";
@@ -9,7 +10,6 @@ import { getCategories, getPropertyTypes } from "@/lib/data/taxonomy";
 import { RFP_TEMPLATES } from "@/lib/seo/rfp-templates";
 import { SITE } from "@/lib/site";
 
-const TITLE = "Free RFP Writer for Property Managers";
 const DESCRIPTION =
   "Answer four quick questions and get a complete commercial property RFP — scope, insurance and WSIB requirements, submission instructions and bid scoring — ready to send or post free. Built for Canadian property managers.";
 
@@ -61,10 +61,11 @@ A complete request for proposal that gets **real, comparable bids**, because eve
 It starts from our [expert RFP templates](/rfp-templates) for that trade and tailors them to your answers. Want the reasoning behind each section? Read [how to post an RFP that gets real bids](/resources/how-to-post-a-quality-rfp).`;
 
 export default async function RfpWriterPage() {
-  const [categories, propertyTypes, session] = await Promise.all([
+  const [categories, propertyTypes, session, geo] = await Promise.all([
     getCategories(),
     getPropertyTypes(),
     getSession(),
+    getVisitorGeo(),
   ]);
   const postPath = "/pm-dashboard/rfps/new?draft=1";
   const isPm = session?.profile.primary_role === "property_manager";
@@ -114,7 +115,7 @@ export default async function RfpWriterPage() {
       </section>
 
       <Container className="py-10">
-        <RfpWizard categories={categories} propertyTypes={propertyTypes} templates={templates} postHref={postHref} />
+        <RfpWizard categories={categories} propertyTypes={propertyTypes} templates={templates} postHref={postHref} defaultProvince={geo.province ?? undefined} />
       </Container>
 
       <Container size="narrow" className="pb-16">

@@ -82,6 +82,19 @@ export function marketForCountry(country: string | null | undefined): Market {
   return MARKETS.CA;
 }
 
+/**
+ * Rough CAD → USD rate for "about US$X" hints shown to U.S. visitors. Billing
+ * stays in CAD (the card issuer converts), so this is display-only — refresh it
+ * if the loonie moves more than a few cents.
+ */
+export const USD_PER_CAD = 0.72;
+
+/** "about US$180" for CA$249: whole dollars under $50, nearest $5 above. */
+export function approxUsd(cad: number): number {
+  const usd = cad * USD_PER_CAD;
+  return usd < 50 ? Math.round(usd) : Math.round(usd / 5) * 5;
+}
+
 /** Format a whole-dollar amount in the market's currency. */
 export function formatPrice(amount: number, market: Market = DEFAULT_MARKET): string {
   return new Intl.NumberFormat(market.locale, {
