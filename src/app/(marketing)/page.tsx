@@ -16,6 +16,11 @@ import { getCategories } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
 import { cn } from "@/lib/utils";
 
+// The RFP board now refreshes daily from the public-tender feed; without
+// this the page was frozen at build time and showed stale open counts
+// (and the sitemap missed every new tender) until the next deploy.
+export const revalidate = 3600;
+
 const PROBLEMS = [
   { n: "01", t: "Scattered RFPs", d: "RFPs are scattered across emails, portals, networks, and referrals with no single place to watch." },
   { n: "02", t: "Hard-to-reach buyers", d: "Property managers keep private preferred-vendor lists that newcomers simply can't see." },
