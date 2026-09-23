@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,7 +13,6 @@ import {
   Trophy,
 } from "lucide-react";
 import { Container } from "@/components/container";
-import { VideoLoop } from "@/components/public/video-loop";
 import { RfpCard } from "@/components/public/rfp-card";
 import { buttonVariants } from "@/components/ui/button";
 import { COPY, PRICING, SITE } from "@/lib/site";
@@ -47,6 +47,15 @@ const COMPARE: [string, boolean, boolean][] = [
   ["Full scope, documents and buyer contact", false, true],
   ["Daily email the day a matching RFP posts", false, true],
   ["Express interest on property-manager RFPs", false, true],
+];
+
+/** Photo tiles: one per headline trade, each with its live open count. */
+const TRADE_TILES = [
+  { slug: "roofing", img: "/images/home/hero-roofing.webp", alt: "Roofers installing a new membrane on a commercial flat roof" },
+  { slug: "snow-removal", img: "/images/home/trade-snow.webp", alt: "Plow truck clearing a condominium parking lot before dawn" },
+  { slug: "hvac", img: "/images/home/trade-hvac.webp", alt: "HVAC technician servicing a rooftop unit" },
+  { slug: "electrical", img: "/images/home/trade-electrical.webp", alt: "Electrician testing a distribution panel" },
+  { slug: "cleaning-janitorial", img: "/images/home/trade-cleaning.webp", alt: "Cleaning crew polishing an office lobby floor at night" },
 ];
 
 const FAQS = [
@@ -113,7 +122,11 @@ export default async function HomePage() {
     .filter((n): n is number => typeof n === "number" && n > 0)
     .sort((a, b) => a - b);
   const medianAward = awardAmounts.length >= 25 ? awardAmounts[Math.floor(awardAmounts.length / 2)] : null;
-  const chips = categories.slice(0, 7);
+  const tiles = TRADE_TILES.map((t) => {
+    const name = categories.find((c) => c.slug === t.slug)?.name ?? t.slug;
+    const open = rfps.filter((r) => r.status === "open" && r.categories.includes(name)).length;
+    return { ...t, name, open };
+  });
   // Below ~10 open listings a live-count headline undersells; lead with the PM pitch.
   const live = stats.open >= 10;
   const proMonthly = signUpHrefForPlan("pro", "monthly");
@@ -128,6 +141,15 @@ export default async function HomePage() {
           className="pointer-events-none absolute -right-40 -top-40 size-[640px] rounded-full"
           style={{ background: "radial-gradient(circle, rgba(145,242,207,.14), transparent 62%)" }}
         />
+        <Image
+          src="/images/home/hero-roofing.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[70%_40%] opacity-60 mix-blend-luminosity"
+        />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-indigo via-indigo/85 to-indigo/35" />
         <Container className="relative z-10 grid items-center gap-12 py-16 md:py-20 lg:grid-cols-[1.2fr_.8fr] lg:py-24">
           <div>
             <p className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-indigo-100">
@@ -230,6 +252,24 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* ──────────────────── HOW IT WORKS (infographic) ──────────────────── */}
+      <section className="bg-background">
+        <Container className="pt-20 md:pt-24">
+          <h2 className="sr-only">How PMRFP works</h2>
+          <picture>
+            <source media="(max-width: 767px)" srcSet="/images/home/how-it-works-tall.webp" />
+            <img
+              src="/images/home/how-it-works-wide.webp"
+              width={1800}
+              height={1018}
+              loading="lazy"
+              className="w-full rounded-2xl shadow-xl shadow-indigo/15"
+              alt="How PMRFP works: 1. Every morning we collect open tenders from CanadaBuys, the City of Toronto, Quebec SEAO, Yukon and property managers. 2. They're matched to your trade and region. 3. You get an email the day one posts, with the full scope, documents and the buyer's contact. 4. You bid, and the buyer picks the winner."
+            />
+          </picture>
+        </Container>
+      </section>
+
       {/* ──────────────────── WHAT TRADE PRO GETS YOU (bento) ──────────────────── */}
       <section className="bg-background">
         <Container className="py-20 md:py-24">
@@ -299,8 +339,7 @@ export default async function HomePage() {
 
             {/* Small, photographic: express interest */}
             <div className="relative overflow-hidden rounded-2xl bg-indigo p-7 text-white">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/audience-trades.jpg" alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+              <Image src="/images/audience-trades.jpg" alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-indigo via-indigo/80 to-indigo/30" />
               <div className="relative">
                 <Hand className="size-5 text-teal-300" />
@@ -364,6 +403,39 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* ──────────────────── PICK YOUR TRADE (photo mosaic) ──────────────────── */}
+      <section className="bg-background">
+        <Container className="pt-20 md:pt-24">
+          <h2 className="max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">Pick your trade. See what&apos;s open.</h2>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2">
+            {tiles.map((t, i) => (
+              <Link
+                key={t.slug}
+                href={`/rfps?category=${t.slug}`}
+                className={cn(
+                  "group relative isolate flex min-h-56 flex-col justify-end overflow-hidden rounded-2xl bg-indigo p-6 text-white",
+                  i === 0 && "sm:col-span-2 lg:col-span-1 lg:row-span-2 lg:min-h-[30rem]",
+                )}
+              >
+                <Image
+                  src={t.img}
+                  alt={t.alt}
+                  fill
+                  sizes={i === 0 ? "(min-width: 1024px) 33vw, 100vw" : "(min-width: 1024px) 33vw, 50vw"}
+                  className="-z-10 object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                />
+                <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-indigo via-indigo/40 to-transparent" />
+                <span className="text-xl font-semibold">{t.name}</span>
+                <span className="mt-1 inline-flex items-center gap-1.5 text-sm text-teal-300">
+                  {t.open > 0 ? `${t.open} open now` : "See recent work"}
+                  <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Container>
+      </section>
+
       {/* ──────────────────── THE BOARD ──────────────────── */}
       {openBoard.length > 0 && (
         <section className="bg-background">
@@ -373,17 +445,6 @@ export default async function HomePage() {
               <Link href="/rfps" className={cn(buttonVariants({ variant: "outline" }), "active:scale-[0.98]")}>
                 See all {stats.open} <ArrowRight className="size-4" />
               </Link>
-            </div>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {chips.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/rfps?category=${c.slug}`}
-                  className="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm transition-colors hover:border-teal-300 hover:bg-teal-50"
-                >
-                  {c.name}
-                </Link>
-              ))}
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {openBoard.map((r) => (
@@ -426,7 +487,13 @@ export default async function HomePage() {
       <section className="bg-background">
         <Container className="grid items-center gap-10 py-20 md:py-24 lg:grid-cols-2">
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-indigo">
-            <VideoLoop src="/video/audience-pm.mp4" poster="/images/audience-pm.jpg" alt="Property manager reviewing a building portfolio" />
+            <Image
+              src="/images/home/pm-lobby.webp"
+              alt="Property manager and contractor reviewing drawings in a condominium lobby"
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
           </div>
           <div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Property manager? Write the RFP in two minutes.</h2>
