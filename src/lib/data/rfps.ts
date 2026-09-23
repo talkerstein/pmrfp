@@ -26,6 +26,7 @@ function demoToList(r: DemoRfp): RfpListItem {
     isDemo: true,
     photoUrls: [],
     status: r.deadline && r.deadline < today ? "closed" : "open",
+    sourceType: null,
   };
 }
 
@@ -45,6 +46,8 @@ function demoToDetail(r: DemoRfp): RfpDetail {
     contactName: r.contactVisibility === "public_contact" ? "Property Manager" : null,
     contactEmail: r.contactVisibility === "public_contact" ? "rfp@example.com" : null,
     contactPhone: null,
+    sourceUrl: null,
+    sourceNotes: null,
   };
 }
 
@@ -100,6 +103,7 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     // The view exposes only published RFPs. Past-deadline ones still show, but
     // as "closed" → the card grays them out as social proof of real activity.
     status: r.deadline && r.deadline < today ? ("closed" as const) : ("open" as const),
+    sourceType: r.source_type ?? null,
   }));
   if (filters.region) {
     const name = regionSlugName.get(filters.region);
@@ -160,6 +164,7 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     // Was hardcoded "open" regardless of deadline — every RFP detail page
     // reported itself as open even after closing. Compute it for real.
     status: r.deadline && r.deadline < new Date().toISOString().slice(0, 10) ? ("closed" as const) : ("open" as const),
+    sourceType: r.source_type ?? null,
   };
 }
 
@@ -207,6 +212,9 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     contactName: r.contact_name,
     contactEmail: r.contact_email,
     contactPhone: r.contact_phone,
+    sourceType: r.source_type ?? null,
+    sourceUrl: r.source_url,
+    sourceNotes: r.source_notes,
     status:
       r.status === "awarded" || r.status === "closed" || r.status === "archived"
         ? r.status === "awarded"
@@ -221,6 +229,7 @@ interface RfpPublicRow {
   id: string; slug: string; title: string; summary: string | null;
   region_id: string | null; property_type_id: string | null;
   city: string | null; province: string | null; deadline: string | null; is_demo: boolean;
+  source_type?: string | null;
 }
 interface RfpFullRow extends RfpPublicRow {
   scope: string | null; requirements: string | null;
@@ -229,6 +238,7 @@ interface RfpFullRow extends RfpPublicRow {
   submission_instructions: string | null;
   contact_visibility: RfpDetail["contactVisibility"];
   contact_name: string | null; contact_email: string | null; contact_phone: string | null;
+  source_url: string | null; source_notes: string | null;
   status: string;
 }
 

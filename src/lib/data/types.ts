@@ -55,6 +55,9 @@ export interface RfpListItem {
   photoUrls: string[];
   /** Lifecycle status visible to the public — derived from rfp_posts.status. */
   status: "open" | "awarded" | "closed";
+  /** 'public_source' = a public tender aggregated from open government data
+   *  (labelled as such everywhere it renders); null for demo data. */
+  sourceType: string | null;
 }
 
 // Override the optional/narrow status on the full detail with the real one.
@@ -73,6 +76,9 @@ export interface RfpDetail extends Omit<RfpListItem, "status"> {
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
+  /** Official notice link for public tenders (members only — full row is RLS-gated). */
+  sourceUrl: string | null;
+  sourceNotes: string | null;
 }
 
 export interface ResourceItem {

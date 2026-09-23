@@ -52,6 +52,11 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
               {rfp.propertyTypeName}
             </Badge>
           )}
+          {rfp.sourceType === "public_source" && (
+            <Badge variant="outline" className="font-normal text-muted-foreground">
+              Public tender · Gov. of Canada
+            </Badge>
+          )}
         </div>
         {closed ? (
           <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

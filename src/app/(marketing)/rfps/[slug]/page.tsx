@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { CalendarClock, MapPin, FileText, Building2, DollarSign } from "lucide-react";
+import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, Landmark } from "lucide-react";
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { LockedContentPanel } from "@/components/public/locked-content-panel";
@@ -12,6 +12,7 @@ import { ExpressInterestDialog } from "@/components/forms/express-interest-dialo
 import { getFullRfp, getRfpTeaser, listRfps } from "@/lib/data/rfps";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { OGL_ATTRIBUTION } from "@/lib/tenders/canadabuys";
 
 export async function generateMetadata({
   params,
@@ -75,6 +76,7 @@ export default async function RfpDetailPage({
   // The "+1" below only makes sense if the RFP being viewed is itself open —
   // a closed listing shouldn't count toward its own region's "open" total.
   const teaserIsOpen = teaser.status === "open";
+  const isPublicTender = teaser.sourceType === "public_source";
 
   return (
     <Container className="py-10">
@@ -105,8 +107,19 @@ export default async function RfpDetailPage({
           <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {teaser.regionName && <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {teaser.regionName}</span>}
-            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> Closes {fmt(teaser.deadline)}</span>
+            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {teaser.deadline ? `Closes ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
           </div>
+
+          {isPublicTender && (
+            <p className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
+              <Landmark className="mt-0.5 size-4 shrink-0" />
+              <span>
+                <strong className="text-foreground">Public tender.</strong> Issued by the Government of Canada
+                and published on CanadaBuys. PMRFP collects the tenders that fit commercial trades — bids go
+                directly to the government, not through PMRFP.
+              </span>
+            </p>
+          )}
 
           {full?.status === "awarded" && (
             <div className="mt-6 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
@@ -175,6 +188,19 @@ export default async function RfpDetailPage({
                   <span>This opportunity is mediated by PMRFP — express interest to connect.</span>
                 )}
               </Section2>
+              {isPublicTender && full.sourceUrl && (
+                <div>
+                  <a
+                    href={full.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+                  >
+                    Open the official notice on CanadaBuys <ExternalLink className="size-4" />
+                  </a>
+                  <p className="mt-3 text-xs text-muted-foreground">{OGL_ATTRIBUTION}</p>
+                </div>
+              )}
               <TrustDisclaimer />
             </div>
           ) : (
@@ -190,6 +216,16 @@ export default async function RfpDetailPage({
                     Trade Pro members see full scope, documents, and can express interest on
                     every one.
                   </p>
+                </div>
+              )}
+              {isPublicTender && (
+                <div className="rounded-xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
+                  <p>
+                    This tender is public. What Trade Pro adds: every federal tender that fits your trade in
+                    one place, a daily email when a new one is posted in your region, and the direct link,
+                    full scope and buyer contact for each — instead of searching CanadaBuys yourself.
+                  </p>
+                  <p className="mt-2 text-xs">{OGL_ATTRIBUTION}</p>
                 </div>
               )}
               <LockedContentPanel signedIn={Boolean(session)} />
