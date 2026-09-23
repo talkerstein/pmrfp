@@ -135,7 +135,7 @@ export async function GET(request: Request) {
     supabase.from("regions").select("id,slug"),
     supabase
       .from("rfp_posts")
-      .select("id,slug,source_url,status,deadline")
+      .select("id,slug,source_url,status,deadline,title,region_id")
       .eq("source_type", "public_source"),
   ]);
   const catId = new Map((cats ?? []).map((c: { id: string; slug: string }) => [c.slug, c.id]));
@@ -150,6 +150,7 @@ export async function GET(request: Request) {
   const categoriesBySource = new Map<string, string[]>();
   const openSources = new Set<string>();
   let refreshed = 0;
+  const updates: { id: string; patch: Record<string, unknown> }[] = [];
 
   const matchedBySource = new Map<string, number>();
   for (const { src, candidates, ok } of results) {
@@ -164,22 +165,28 @@ export async function GET(request: Request) {
 
       const prior = bySource.get(ins.source_url);
       if (prior) {
-        // Amendments often move the closing date; keep live listings current.
-        if (prior.status === "published" && !dry) {
-          const { error } = await supabase
-            .from("rfp_posts")
-            .update({
-              title: ins.title,
-              summary: ins.summary,
-              scope: ins.scope,
-              deadline: ins.deadline,
-              // Re-file existing rows when region mapping improves (e.g. new
-              // province regions) — never blank a region we already had.
-              ...(resolveRegion(regionSlug) ? { region_id: resolveRegion(regionSlug) } : {}),
-            })
-            .eq("id", prior.id)
-            .eq("source_type", "public_source");
-          if (!error) refreshed++;
+        // Amendments move closing dates; region mapping improves. Only write
+        // rows that actually changed — one UPDATE per unchanged row blew the
+        // 60 s limit once the feed passed ~600 listings.
+        if (prior.status === "published") {
+          const region = resolveRegion(regionSlug);
+          const changed =
+            prior.title !== ins.title ||
+            (prior.deadline ?? null) !== (ins.deadline ?? null) ||
+            (!!region && prior.region_id !== region);
+          if (changed) {
+            updates.push({
+              id: prior.id,
+              patch: {
+                title: ins.title,
+                summary: ins.summary,
+                scope: ins.scope,
+                deadline: ins.deadline,
+                // never blank a region we already had
+                ...(region ? { region_id: region } : {}),
+              },
+            });
+          }
         }
         continue;
       }
@@ -204,8 +211,20 @@ export async function GET(request: Request) {
     .filter((e) => !e.source_url || !openSources.has(e.source_url))
     .map((e) => e.id);
 
+  if (!dry) {
+    for (let i = 0; i < updates.length; i += 25) {
+      const results = await Promise.all(
+        updates.slice(i, i + 25).map(({ id, patch }) =>
+          supabase.from("rfp_posts").update(patch).eq("id", id).eq("source_type", "public_source"),
+        ),
+      );
+      refreshed += results.filter((r) => !r.error).length;
+    }
+  }
+
   if (dry) {
     return NextResponse.json({
+      wouldRefresh: updates.length,
       dry: true,
       matched: Object.fromEntries(matchedBySource),
       failed: results.filter((r) => !r.ok).map((r) => r.src.key),
@@ -256,6 +275,8 @@ export async function GET(request: Request) {
 
 interface ExistingRow {
   id: string;
+  title: string;
+  region_id: string | null;
   slug: string;
   source_url: string | null;
   status: string;
