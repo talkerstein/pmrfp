@@ -4,6 +4,7 @@ import { CalendarClock, Lock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { RfpListItem } from "@/lib/data/types";
+import { publicTenderSource } from "@/lib/tenders/sources";
 
 function formatDeadline(d: string | null) {
   if (!d) return "Open";
@@ -54,7 +55,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
           )}
           {rfp.sourceType === "public_source" && (
             <Badge variant="outline" className="font-normal text-muted-foreground">
-              Public tender · Gov. of Canada
+              {publicTenderSource(rfp.slug).badge}
             </Badge>
           )}
         </div>
