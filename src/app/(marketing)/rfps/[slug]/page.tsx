@@ -92,6 +92,9 @@ export default async function RfpDetailPage({
       ? awardNoticeUrl(teaser.slug.split("-cba-").pop() ?? "")
       : (full?.sourceUrl ?? null);
   const award = isAward ? parseAward(teaser.summary) : null;
+  // Past its deadline but not an award notice: say so plainly and point at
+  // what's open — never ask someone to pay to read a listing they can't bid on.
+  const isClosed = !isAward && !teaserIsOpen;
   // "The next one": how many OPEN tenders exist right now in the same trade.
   const similarOpen = isAward
     ? (await listRfps()).filter((r) => r.status === "open" && teaser.categories.some((c) => r.categories.includes(c))).length
@@ -126,7 +129,7 @@ export default async function RfpDetailPage({
           <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {teaser.regionName && <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {teaser.regionName}</span>}
-            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : teaser.deadline ? `Closes ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
+            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : isClosed ? `Closed ${fmt(teaser.deadline)}` : teaser.deadline ? `Closes ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
           </div>
 
           {isPublicTender && (
@@ -265,6 +268,33 @@ export default async function RfpDetailPage({
               )}
               <TrustDisclaimer />
             </div>
+          ) : isClosed ? (
+            <div className="mt-8 rounded-xl border border-border bg-secondary/40 p-6">
+              <h2 className="text-lg font-semibold tracking-tight">
+                This one closed on {fmt(teaser.deadline)}.{" "}
+                {regionMatchCount > 0 && teaser.regionName
+                  ? `${regionMatchCount} open RFP${regionMatchCount === 1 ? " is" : "s are"} live in ${teaser.regionName} right now.`
+                  : totalOpenCount > 0
+                    ? `${totalOpenCount} open RFPs are live right now.`
+                    : ""}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Trade Pro emails you the day a new RFP in your trade and region is posted, so you see the
+                next one while it&apos;s still open.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Link
+                  href={session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro")}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+                >
+                  Get alerts for my trade
+                </Link>
+                <Link href="/rfps" className="text-sm font-medium text-teal-700 hover:underline">
+                  See what&apos;s open →
+                </Link>
+              </div>
+              {isPublicTender && <p className="mt-4 text-xs text-muted-foreground">{tenderSource.attribution}</p>}
+            </div>
           ) : (
             <div className="mt-8 space-y-6">
               {totalOpenCount > 0 && (
@@ -299,7 +329,7 @@ export default async function RfpDetailPage({
           <div className="space-y-4 rounded-xl border border-border bg-card p-5">
             <Meta label="Region" value={teaser.regionName ?? "—"} />
             <Meta label="Property type" value={teaser.propertyTypeName ?? "—"} />
-            <Meta label={isAward ? "Awarded" : "Closes"} value={fmt(teaser.deadline)} />
+            <Meta label={isAward ? "Awarded" : isClosed ? "Closed" : "Closes"} value={fmt(teaser.deadline)} />
             {isAward && awardUrl ? (
               <div className="pt-2">
                 <a
@@ -333,8 +363,9 @@ export default async function RfpDetailPage({
               <div className="pt-2">
                 <FileText className="mx-auto size-6 text-muted-foreground" />
                 <p className="mt-2 text-center text-xs text-muted-foreground">
-                  Full details, documents, and the ability to express interest are available to Trade
-                  Pro members.
+                  {isClosed
+                    ? "This RFP is closed. Trade Pro members get alerted to new ones in their trade and region."
+                    : "Full details, documents, and the ability to express interest are available to Trade Pro members."}
                 </p>
               </div>
             )}
