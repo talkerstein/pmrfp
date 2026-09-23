@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { createRfpAction } from "@/lib/dashboard/actions";
 import type { ActionState } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
@@ -20,26 +20,91 @@ export interface RfpPostDefaults {
   categories?: string[];
   templateSlug?: string;
   templateName?: string;
+  submissionInstructions?: string;
+  propertyType?: string;
+  city?: string;
+  province?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  deadline?: string;
+  /** Set when the defaults came from the RFP Writer. */
+  fromWriter?: boolean;
+}
+
+/** Same key the RFP Writer saves to (components/rfp-writer/wizard.tsx). */
+const WRITER_DRAFT_KEY = "pmrfp:rfp-draft";
+
+function readWriterDraft(): RfpPostDefaults | undefined {
+  try {
+    const raw = window.localStorage.getItem(WRITER_DRAFT_KEY);
+    if (!raw) return undefined;
+    const d = JSON.parse(raw);
+    const r = d.rfp;
+    if (!r?.title) return undefined;
+    const bullets = (items: unknown) =>
+      Array.isArray(items) ? items.map((i: string) => `- ${i}`).join("\n") : "";
+    const evaluation = bullets(r.evaluationCriteria)
+      ? `\n\nHow bids will be evaluated:\n${bullets(r.evaluationCriteria)}`
+      : "";
+    const questions = bullets(r.questionsForBidders)
+      ? `\n\nPlease answer in your bid:\n${bullets(r.questionsForBidders)}`
+      : "";
+    return {
+      title: r.title,
+      summary: r.summary,
+      scope: r.scope,
+      requirements: r.requirements,
+      submissionInstructions: `${r.submissionInstructions}${evaluation}${questions}`,
+      categories: d.tradeSlug ? [d.tradeSlug] : [],
+      propertyType: d.propertyTypeSlug,
+      city: d.city,
+      province: d.province,
+      budgetMin: d.budgetMin,
+      budgetMax: d.budgetMax,
+      deadline: d.deadline,
+      fromWriter: true,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 export function RfpPostForm({
   categories,
   regions,
   propertyTypes,
-  defaults,
+  defaults: serverDefaults,
   organizationId,
+  loadWriterDraft,
 }: {
   categories: Option[];
   regions: Option[];
   propertyTypes: Option[];
   defaults?: RfpPostDefaults;
   organizationId: string | null;
+  /** ?draft=1 — prefill from the RFP Writer's saved draft (same browser). */
+  loadWriterDraft?: boolean;
 }) {
   const [state, action, pending] = useActionState(createRfpAction, {} as ActionState);
+  const [writerDraft, setWriterDraft] = useState<RfpPostDefaults | undefined>(undefined);
+  useEffect(() => {
+    // localStorage only exists in the browser, so this can't be a server default.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (loadWriterDraft) setWriterDraft(readWriterDraft());
+  }, [loadWriterDraft]);
+  const defaults = writerDraft ?? serverDefaults;
   const preselected = new Set(defaults?.categories ?? []);
   return (
-    <form action={action} className="space-y-6">
+    // Re-mount when the writer draft arrives so the uncontrolled inputs pick it up.
+    <form key={writerDraft ? "writer" : "blank"} action={action} className="space-y-6">
       {state.error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+
+      {defaults?.fromWriter && (
+        <div className="rounded-md border border-teal-300 bg-teal-100 px-4 py-3 text-sm text-teal-ink">
+          <span className="font-semibold">Pre-filled from the RFP Writer.</span> Pick your region, check
+          everything, then submit.
+        </div>
+      )}
 
       {defaults?.templateName && (
         <div className="rounded-md border border-teal-300 bg-teal-100 px-4 py-3 text-sm text-teal-ink">
@@ -74,7 +139,7 @@ export function RfpPostForm({
         <CheckboxGroup label="Categories" name="categories" options={categories} req preselected={preselected} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Property type">
-            <select name="propertyType" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+            <select name="propertyType" defaultValue={defaults?.propertyType ?? ""} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
               <option value="">Select…</option>
               {propertyTypes.map((p) => <option key={p.slug} value={p.slug}>{p.name}</option>)}
             </select>
@@ -85,8 +150,8 @@ export function RfpPostForm({
               {regions.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
             </select>
           </Field>
-          <Field label="City"><Input name="city" /></Field>
-          <Field label="Province"><Input name="province" defaultValue="Ontario" /></Field>
+          <Field label="City"><Input name="city" defaultValue={defaults?.city ?? ""} /></Field>
+          <Field label="Province"><Input name="province" defaultValue={defaults?.province ?? "Ontario"} /></Field>
         </div>
       </Section>
 
@@ -96,17 +161,18 @@ export function RfpPostForm({
 
       <Section title="Budget & timeline">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Budget min (CAD)"><Input name="budgetMin" type="number" /></Field>
-          <Field label="Budget max (CAD)"><Input name="budgetMax" type="number" /></Field>
+          <Field label="Budget min (CAD)"><Input name="budgetMin" type="number" defaultValue={defaults?.budgetMin ?? ""} /></Field>
+          <Field label="Budget max (CAD)"><Input name="budgetMax" type="number" defaultValue={defaults?.budgetMax ?? ""} /></Field>
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="budgetPublic" className="size-4" /> Show budget publicly
         </label>
-        <Field label="Submission deadline" req hint="Allow three weeks for capital work or multi-year contracts, and one to two weeks for small jobs."><Input name="deadline" type="date" required /></Field>
+        <Field label="Submission deadline" req hint="Allow three weeks for capital work or multi-year contracts, and one to two weeks for small jobs."><Input name="deadline" type="date" required defaultValue={defaults?.deadline ?? ""} /></Field>
         <Field label="Submission instructions" hint="What to send, the site-walk date, the question cut-off, and how you'll score bids.">
           <Textarea
             name="submissionInstructions"
-            rows={3}
+            rows={defaults?.submissionInstructions ? 10 : 3}
+            defaultValue={defaults?.submissionInstructions ?? ""}
             placeholder="e.g. Lump-sum price for the base scope, add-alternates priced separately. Include insurance certificate, WSIB clearance, schedule and 3 references. Site walk May 12, 10 a.m. Evaluation: price 40%, experience 30%, scope coverage 20%, schedule 10%."
           />
         </Field>

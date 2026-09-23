@@ -23,7 +23,7 @@ import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-type BucketName = "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth";
+type BucketName = "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
@@ -32,6 +32,8 @@ const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${n
   checkout: { tokens: 10, window: "60 s" },
   "save-rfp": { tokens: 30, window: "60 s" },
   auth: { tokens: 10, window: "60 s" },
+  // RFP Writer: each call can spend model tokens — keep it human-paced.
+  ai: { tokens: 5, window: "10 m" },
 };
 
 let _redis: Redis | null = null;
