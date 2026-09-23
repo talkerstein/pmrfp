@@ -165,6 +165,7 @@ export const FOOTER_COLS = [
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
       { label: "How to Write an RFP", href: "/resources/how-to-write-a-commercial-property-maintenance-rfp" },
+      { label: "Post an RFP That Gets Bids", href: "/resources/how-to-post-a-quality-rfp" },
       { label: `Refer a trade — earn $${REFERRAL.tradeFee}`, href: "/refer-a-trade" },
       { label: `Refer a project — get credit`, href: "/refer-a-project" },
       { label: "Grow Your Business", href: "/resources/grow" },
