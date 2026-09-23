@@ -14,11 +14,14 @@ export function OnboardingForm({
   categories,
   regions,
   next,
+  preselectedRegions = [],
 }: {
   role: "trade" | "property_manager" | "visitor" | "admin" | "super_admin" | "supplier" | "real_estate_agent";
   categories: Option[];
   regions: Option[];
   next?: string | null;
+  /** Ticked to start — the visitor's own province/state. */
+  preselectedRegions?: string[];
 }) {
   const [state, action, pending] = useActionState(completeOnboardingAction, {} as ActionState);
   const isListing = role === "trade" || role === "supplier";
@@ -57,7 +60,7 @@ export function OnboardingForm({
       {isListing && (
         <>
           <CheckboxGroup label="Service categories (select all that apply)" name="categories" options={categories} required />
-          <CheckboxGroup label="Service regions" name="regions" options={regions} required />
+          <CheckboxGroup label="Service regions" name="regions" options={regions} required preselected={preselectedRegions} />
           <Field label="How should buyers contact you?">
             <select
               name="publicContactVisibility"
@@ -88,14 +91,14 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
-function CheckboxGroup({ label, name, options, required }: { label: string; name: string; options: Option[]; required?: boolean }) {
+function CheckboxGroup({ label, name, options, required, preselected = [] }: { label: string; name: string; options: Option[]; required?: boolean; preselected?: string[] }) {
   return (
     <div>
       <Label className="mb-2 block">{label}{required && <span className="text-red-600"> *</span>}</Label>
       <div className="grid max-h-56 grid-cols-2 gap-1.5 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-3">
         {options.map((o) => (
           <label key={o.slug} className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name={name} value={o.slug} className="size-4 rounded border-input" />
+            <input type="checkbox" name={name} value={o.slug} defaultChecked={preselected.includes(o.slug)} className="size-4 rounded border-input" />
             {o.name}
           </label>
         ))}

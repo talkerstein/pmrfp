@@ -7,6 +7,7 @@ import { Check, Sparkles } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRICING, SITE } from "@/lib/site";
+import { UsdHint } from "@/components/geo/usd-hint";
 
 const FEATURES = [
   "Full company profile",
@@ -84,6 +85,7 @@ export function TradeProCard({ monthlyEnabled = true }: { monthlyEnabled?: boole
           {PRICING.currency}/{isAnnual ? "year" : "month"}
         </span>
       </div>
+      <UsdHint cad={isAnnual ? PRICING.proAnnual : PRICING.proMonthly} per={isAnnual ? "year" : "month"} className="mt-1 text-teal-700" />
       <p className="mt-1 text-xs text-muted-foreground">
         {isAnnual
           ? `~$${(PRICING.proAnnual / 12).toFixed(0)}/mo billed annually`

@@ -93,12 +93,15 @@ export function RfpWizard({
   propertyTypes,
   templates,
   postHref,
+  defaultProvince,
 }: {
   categories: Option[];
   propertyTypes: Option[];
   templates: TemplateOption[];
   /** Where "Post it free" goes: the PM form if signed in as a PM, else sign-up. */
   postHref: string;
+  /** The visitor's province/state from IP geolocation, when we serve it. */
+  defaultProvince?: string;
 }) {
   const [step, setStep] = useState(0);
   const [tradeSlug, setTradeSlug] = useState("");
@@ -107,7 +110,7 @@ export function RfpWizard({
   const [description, setDescription] = useState("");
   const [propertyTypeSlug, setPropertyTypeSlug] = useState("");
   const [city, setCity] = useState("");
-  const [province, setProvince] = useState("Ontario");
+  const [province, setProvince] = useState(defaultProvince ?? "Ontario");
   const [size, setSize] = useState("");
   const [occupied, setOccupied] = useState<"yes" | "no" | "">("");
   const [contractType, setContractType] = useState<"project" | "service-contract">("project");

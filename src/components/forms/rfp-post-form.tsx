@@ -24,6 +24,8 @@ export interface RfpPostDefaults {
   propertyType?: string;
   city?: string;
   province?: string;
+  /** Region to preselect (from the visitor's location). */
+  regionSlug?: string;
   budgetMin?: number;
   budgetMax?: number;
   deadline?: string;
@@ -145,7 +147,7 @@ export function RfpPostForm({
             </select>
           </Field>
           <Field label="Region" req>
-            <select name="regionSlug" required className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+            <select name="regionSlug" required defaultValue={defaults?.regionSlug ?? ""} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
               <option value="">Select…</option>
               {regions.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
             </select>

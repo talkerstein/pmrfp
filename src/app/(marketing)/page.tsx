@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/container";
 import { RfpCard } from "@/components/public/rfp-card";
+import { ByMarket } from "@/components/geo/by-market";
+import { UsdHint } from "@/components/geo/usd-hint";
+import { rfpMarket } from "@/lib/visitor-geo";
+import type { RfpListItem } from "@/lib/data/types";
 import { buttonVariants } from "@/components/ui/button";
 import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -104,9 +108,15 @@ export default async function HomePage() {
       .sort((a, b) => Number(isFrench(a)) - Number(isFrench(b)) || (a.deadline ?? "").localeCompare(b.deadline ?? "")),
     (r) => r.regionName ?? "",
   );
-  const heroRows = closingSoon.slice(0, 4);
-  const openBoard = closingSoon.slice(0, 6);
-  const newest = closingSoon.find((r) => (daysUntil(r.deadline) ?? 0) >= 7) ?? closingSoon[0];
+  // Canadian by default (crawlers, first paint); visitors in the U.S. get U.S.
+  // tenders swapped in on the client (ByMarket, lib/visitor-geo).
+  const closingSoonCa = closingSoon.filter((r) => rfpMarket(r) === "CA");
+  const closingSoonUs = closingSoon.filter((r) => rfpMarket(r) === "US");
+  const heroRows = closingSoonCa.slice(0, 4);
+  const heroRowsUs = closingSoonUs.slice(0, 4);
+  const openBoard = closingSoonCa.slice(0, 6);
+  const openBoardUs = closingSoonUs.slice(0, 6);
+  const newest = closingSoonCa.find((r) => (daysUntil(r.deadline) ?? 0) >= 7) ?? closingSoonCa[0];
   // Awards a trade can picture winning: $50K–$2M, most recent first, one per source.
   const bigAwards = spread(
     rfps
@@ -200,32 +210,7 @@ export default async function HomePage() {
                       All {stats.open} open
                     </Link>
                   </div>
-                  <ul className="divide-y divide-border">
-                    {heroRows.map((r, i) => {
-                      const soon = closingLabel(daysUntil(r.deadline));
-                      return (
-                        <li key={r.slug} className="animate-rise" style={{ animationDelay: `${120 + i * 90}ms` }}>
-                          <Link href={`/rfps/${r.slug}`} className="group flex items-start justify-between gap-4 py-3.5">
-                            <div className="min-w-0">
-                              <div className="font-mono text-[11px] uppercase tracking-wide text-teal-700">
-                                {r.categories[0] ?? "Commercial"} · {r.regionName ?? "Canada"}
-                              </div>
-                              <div className="mt-1 line-clamp-1 font-medium group-hover:text-teal-700">{r.title}</div>
-                            </div>
-                            <span
-                              className={cn(
-                                "mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                                soon ? "bg-warning/10 text-warning" : "bg-secondary text-muted-foreground",
-                              )}
-                            >
-                              {soon && <Flame className="size-3" />}
-                              {soon ?? formatDeadline(r.deadline)}
-                            </span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <ByMarket ca={<HeroRows rows={heroRows} />} us={heroRowsUs.length ? <HeroRows rows={heroRowsUs} /> : undefined} />
                 </div>
               </div>
             </div>
@@ -446,11 +431,7 @@ export default async function HomePage() {
                 See all {stats.open} <ArrowRight className="size-4" />
               </Link>
             </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {openBoard.map((r) => (
-                <RfpCard key={r.slug} rfp={r} locked />
-              ))}
-            </div>
+            <ByMarket ca={<BoardGrid rows={openBoard} />} us={openBoardUs.length ? <BoardGrid rows={openBoardUs} /> : undefined} />
           </Container>
         </section>
       )}
@@ -541,6 +522,7 @@ export default async function HomePage() {
               <span className="font-heading text-6xl font-extrabold leading-none tracking-tight">${PRICING.proAnnual}</span>
               <span className="pb-1.5 text-sm text-indigo-100/70">CAD / year</span>
             </div>
+            <UsdHint cad={PRICING.proAnnual} per="year" className="mt-2 text-teal-300" />
             <ul className="mt-7 space-y-3 text-sm text-indigo-100">
               {COMPARE.filter(([, , pro]) => pro).map(([label]) => (
                 <li key={label} className="flex items-start gap-3">
@@ -587,5 +569,47 @@ export default async function HomePage() {
         </Container>
       </div>
     </>
+  );
+}
+
+/** "Closing soonest" rows in the hero card. */
+function HeroRows({ rows }: { rows: RfpListItem[] }) {
+  return (
+    <ul className="divide-y divide-border">
+      {rows.map((r, i) => {
+        const soon = closingLabel(daysUntil(r.deadline));
+        return (
+          <li key={r.slug} className="animate-rise" style={{ animationDelay: `${120 + i * 90}ms` }}>
+            <Link href={`/rfps/${r.slug}`} className="group flex items-start justify-between gap-4 py-3.5">
+              <div className="min-w-0">
+                <div className="font-mono text-[11px] uppercase tracking-wide text-teal-700">
+                  {r.categories[0] ?? "Commercial"} · {r.regionName ?? "Canada"}
+                </div>
+                <div className="mt-1 line-clamp-1 font-medium group-hover:text-teal-700">{r.title}</div>
+              </div>
+              <span
+                className={cn(
+                  "mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                  soon ? "bg-warning/10 text-warning" : "bg-secondary text-muted-foreground",
+                )}
+              >
+                {soon && <Flame className="size-3" />}
+                {soon ?? formatDeadline(r.deadline)}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function BoardGrid({ rows }: { rows: RfpListItem[] }) {
+  return (
+    <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {rows.map((r) => (
+        <RfpCard key={r.slug} rfp={r} locked />
+      ))}
+    </div>
   );
 }
