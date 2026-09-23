@@ -20,6 +20,8 @@ import { awardNoticeUrl } from "@/lib/tenders/awards";
 import { parseAward } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
+import { BidChecklist } from "@/components/public/bid-checklist";
+import { getBidCheckBySlug } from "@/lib/bid-check/data";
 
 export async function generateMetadata({
   params,
@@ -102,6 +104,16 @@ export default async function RfpDetailPage({
   // Past its deadline but not an award notice: say so plainly and point at
   // what's open — never ask someone to pay to read a listing they can't bid on.
   const isClosed = !isAward && !teaserIsOpen;
+  // "Can my company bid?" — open RFPs only. Members get the full checklist.
+  const bidCheck = !isAward && !isClosed ? await getBidCheckBySlug(teaser.slug) : null;
+  const bidChecklist = bidCheck ? (
+    <BidChecklist
+      check={bidCheck}
+      locked={!showFull}
+      proHref={session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly")}
+      translated={isPublicTender && tenderSource.key === "seao"}
+    />
+  ) : null;
   // "The next one": how many OPEN tenders exist right now in the same trade.
   const boardRfps = isAward ? await listRfps() : [];
   const similarOpen = boardRfps.filter((r) => r.status === "open" && teaser.categories.some((c) => r.categories.includes(c))).length;
@@ -270,6 +282,7 @@ export default async function RfpDetailPage({
             </div>
           ) : showFull && full ? (
             <div className="mt-8 space-y-8">
+              {bidChecklist}
               <Block title="Project scope" body={full.scope} />
               <Block title="Requirements" body={full.requirements} />
               {(full.budgetPublic && (full.budgetMin || full.budgetMax)) && (
@@ -331,6 +344,7 @@ export default async function RfpDetailPage({
             </div>
           ) : (
             <div className="mt-8 space-y-6">
+              {bidChecklist}
               {totalOpenCount > 0 && (
                 <div className="rounded-xl border border-teal-400/50 bg-teal-100/30 p-5">
                   <p className="text-sm font-semibold text-foreground">
