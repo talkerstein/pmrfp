@@ -627,6 +627,9 @@ export default async function HomePage() {
               <Link href="/rfps?view=awarded" className="text-sm font-semibold text-teal-300 hover:underline">
                 See all {stats.pastContracts.toLocaleString("en-CA")} awarded contracts →
               </Link>
+              <Link href="/contract-winners" className="text-sm font-semibold text-teal-300 hover:underline">
+                Who wins the most →
+              </Link>
             </div>
             <div className="mt-8 grid gap-4 text-foreground md:grid-cols-3">
               {bigAwards.map((r) => (

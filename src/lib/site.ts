@@ -130,6 +130,7 @@ export const FOOTER_COLS = [
       { label: "Trade Directory", href: "/directory" },
       { label: "Supplier Directory", href: "/suppliers" },
       { label: "Browse RFPs", href: "/rfps" },
+      { label: "Contract Winners", href: "/contract-winners" },
       { label: "Trade Categories", href: "/trades" },
       { label: "Browse by Region", href: "/regions" },
       { label: "Pricing", href: "/pricing" },

@@ -6,6 +6,7 @@ import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, L
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { LockedContentPanel } from "@/components/public/locked-content-panel";
+import { winnerKey, winnersFromRfps } from "@/lib/data/winners";
 import { BidHelpCard } from "@/components/public/bid-help-card";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { SaveButton } from "@/components/dashboard/save-button";
@@ -97,9 +98,12 @@ export default async function RfpDetailPage({
   // what's open — never ask someone to pay to read a listing they can't bid on.
   const isClosed = !isAward && !teaserIsOpen;
   // "The next one": how many OPEN tenders exist right now in the same trade.
-  const similarOpen = isAward
-    ? (await listRfps()).filter((r) => r.status === "open" && teaser.categories.some((c) => r.categories.includes(c))).length
-    : 0;
+  const boardRfps = isAward ? await listRfps() : [];
+  const similarOpen = boardRfps.filter((r) => r.status === "open" && teaser.categories.some((c) => r.categories.includes(c))).length;
+  // Winner's company page, when they have 2+ awards on record.
+  const winnerPage = award?.winner
+    ? winnersFromRfps(boardRfps).find((w) => winnerKey(w.name) === winnerKey(award.winner!))
+    : undefined;
 
   return (
     <Container className="py-10">
@@ -218,7 +222,20 @@ export default async function RfpDetailPage({
               {award?.winner && (
                 <div className="mb-5 rounded-lg border border-border bg-card p-4">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">Won by</div>
-                  <div className="mt-0.5 text-lg font-semibold">{award.winner}</div>
+                  <div className="mt-0.5 text-lg font-semibold">
+                    {winnerPage ? (
+                      <Link href={`/contract-winners/${winnerPage.slug}`} className="hover:text-teal-700 hover:underline">
+                        {award.winner}
+                      </Link>
+                    ) : (
+                      award.winner
+                    )}
+                  </div>
+                  {winnerPage && (
+                    <Link href={`/contract-winners/${winnerPage.slug}`} className="mt-1 inline-block text-xs font-medium text-teal-700 hover:underline">
+                      See all {winnerPage.awards.length} contracts they&apos;ve won →
+                    </Link>
+                  )}
                   {award.value && <div className="mt-1 text-3xl font-extrabold tracking-tight text-indigo">{award.value}</div>}
                 </div>
               )}
