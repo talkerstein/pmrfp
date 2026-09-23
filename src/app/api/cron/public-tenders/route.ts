@@ -8,7 +8,16 @@ import {
   toRfpInsert,
   type TenderInsert,
 } from "@/lib/tenders/canadabuys";
-import { classifyToronto, fetchTorontoSolicitations, torontoToRfpInsert } from "@/lib/tenders/toronto";
+import {
+  classifyToronto,
+  classifyTorontoAward,
+  fetchTorontoAwards,
+  fetchTorontoSolicitations,
+  torontoAwardToRfpInsert,
+  torontoToRfpInsert,
+} from "@/lib/tenders/toronto";
+import { classifyNsAward, fetchNsAwards, nsAwardToRfpInsert } from "@/lib/tenders/nova-scotia";
+import { classifyYukon, fetchYukonOpenTenders, yukonToRfpInsert } from "@/lib/tenders/yukon";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardToRfpInsert, classifyAward, fetchAwards } from "@/lib/tenders/awards";
 import {
@@ -27,7 +36,7 @@ interface Candidate {
 }
 
 interface Source {
-  key: "canadabuys" | "toronto" | "awards" | "seao";
+  key: string;
   /** Below this many matches, assume a bad download and don't archive. */
   minMatchesToArchive: number;
   collect: (today: string) => Promise<Candidate[]>;
@@ -70,6 +79,39 @@ const SOURCES: Source[] = [
         const past = classifySeaoAward(r, today);
         const insert = past.length ? seaoAwardToRfpInsert(r, today) : null;
         return insert ? [{ insert, categories: past, regionSlug: regionForSeao(r) }] : [];
+      }),
+  },
+  {
+    // Toronto past contracts (winner; value on a minority of rows).
+    key: "toronto-awards",
+    minMatchesToArchive: 10,
+    collect: async (today) =>
+      (await fetchTorontoAwards()).flatMap((row) => {
+        const categories = classifyTorontoAward(row, today);
+        const insert = categories.length ? torontoAwardToRfpInsert(row, today) : null;
+        return insert ? [{ insert, categories, regionSlug: "toronto" }] : [];
+      }),
+  },
+  {
+    // Nova Scotia past contracts — the whole NS public sector.
+    key: "ns-awards",
+    minMatchesToArchive: 20,
+    collect: async (today) =>
+      (await fetchNsAwards()).flatMap((row) => {
+        const categories = classifyNsAward(row, today);
+        const insert = categories.length ? nsAwardToRfpInsert(row, today) : null;
+        return insert ? [{ insert, categories, regionSlug: "nova-scotia" }] : [];
+      }),
+  },
+  {
+    // Yukon open tenders — tiny but live and biddable.
+    key: "yukon",
+    minMatchesToArchive: 1,
+    collect: async (today) =>
+      (await fetchYukonOpenTenders()).flatMap((row) => {
+        const categories = classifyYukon(row, today);
+        const insert = categories.length ? yukonToRfpInsert(row, today) : null;
+        return insert ? [{ insert, categories, regionSlug: "yukon" }] : [];
       }),
   },
   {
