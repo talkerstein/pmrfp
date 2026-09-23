@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { geminiAvailable, geminiClient } from "@/lib/ai/gemini";
 import { z } from "zod";
 import type { RfpTemplate } from "@/lib/seo/rfp-templates";
 import { TIMING_LABEL, type RfpDraft, type WizardInput } from "./schema";
@@ -37,21 +37,10 @@ Rules:
 - requirements: bullets for the insurance amount given (building owner / condo corporation as additional insured), workers' compensation (WSIB or provincial WCB clearance in Canada; proof of coverage under state law in the U.S.), the licences and certifications this trade needs where the property is (e.g. TSSA for gas and elevators and ESA for electrical in Ontario; state or local licensing in the U.S.), references for comparable work, and a named project lead.
 - questionsForBidders: 4 to 6 specific questions that separate strong bidders from weak ones for this exact job.`;
 
-let _client: GoogleGenAI | null = null;
-function client(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  // The SDK retries 5× with backoff by default — on a busy model that's a
-  // minute of waiting. Retry once, then move to the next model in MODELS.
-  _client ??= new GoogleGenAI({
-    apiKey,
-    httpOptions: { timeout: 30_000, retryOptions: { attempts: 2, initialDelay: 1 } },
-  });
-  return _client;
-}
+const client = geminiClient;
 
 export function aiAvailable(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY);
+  return geminiAvailable();
 }
 
 export async function tailorRfp(
