@@ -101,6 +101,15 @@ export default async function VendorProfilePage({
                     <BadgeCheck className="size-5 text-success" aria-label="Reviewed by PMRFP" />
                   </span>
                 )}
+                {v.platinum ? (
+                  <span className="rounded-full bg-indigo px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-teal-300">
+                    Platinum
+                  </span>
+                ) : v.featured ? (
+                  <span className="rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-teal-700">
+                    Featured
+                  </span>
+                ) : null}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {[v.city, v.province].filter(Boolean).join(", ")}

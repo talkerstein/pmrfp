@@ -49,8 +49,14 @@ export function FeaturedVendorCard({ vendor }: { vendor: VendorListItem }) {
             {monogram(vendor.name)}
           </span>
         )}
-        <span className="rounded-full bg-teal-300 px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-indigo">
-          Featured
+        <span
+          className={
+            vendor.platinum
+              ? "rounded-full bg-gradient-to-r from-slate-200 via-white to-slate-300 px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-indigo shadow-sm"
+              : "rounded-full bg-teal-300 px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-indigo"
+          }
+        >
+          {vendor.platinum ? "Platinum" : "Featured"}
         </span>
       </div>
       <h3 className="relative mt-3.5 text-lg font-bold leading-tight tracking-tight text-white">
