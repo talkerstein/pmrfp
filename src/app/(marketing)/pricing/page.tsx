@@ -19,6 +19,12 @@ import { cn } from "@/lib/utils";
 import { PRICING } from "@/lib/site";
 import { TradeProCard } from "@/components/public/trade-pro-card";
 import { SeoListingCard } from "@/components/public/seo-listing-card";
+import { EmailPreview } from "@/components/public/email-preview";
+import { listRfps } from "@/lib/data/rfps";
+import { isPastContract, daysUntil } from "@/lib/data/fomo";
+import { rfpMarket } from "@/lib/visitor-geo";
+import { publicTenderSource } from "@/lib/tenders/sources";
+import type { RfpListItem } from "@/lib/data/types";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -72,8 +78,29 @@ const FAQ = [
   },
 ];
 
+/** Three real open tenders from the busiest trade, for the email preview. */
+function previewItems(rfps: RfpListItem[]): { items: RfpListItem[]; trade: string } | null {
+  const openCa = rfps.filter(
+    (r) => r.status === "open" && !isPastContract(r) && rfpMarket(r) === "CA" && (daysUntil(r.deadline) ?? 99) >= 3,
+  );
+  // English notices first: a French SEAO sample is the wrong first impression
+  // for most buyers of this page. Fall back to everything if that's all there is.
+  const english = openCa.filter((r) => r.sourceType !== "public_source" || publicTenderSource(r.slug).key !== "seao");
+  const open = english.length >= 3 ? english : openCa;
+  const counts = new Map<string, number>();
+  for (const r of open) for (const c of r.categories.slice(0, 1)) counts.set(c, (counts.get(c) ?? 0) + 1);
+  const trade = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (!trade) return null;
+  const items = open
+    .filter((r) => r.categories[0] === trade)
+    .sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"))
+    .slice(0, 3);
+  return items.length ? { items, trade } : null;
+}
+
 export default async function PricingPage() {
-  const stats = await getPlatformStats();
+  const [stats, rfps] = await Promise.all([getPlatformStats(), listRfps().catch(() => [] as RfpListItem[])]);
+  const preview = previewItems(rfps);
   return (
     <>
       <section className="border-b border-border bg-background">
@@ -180,6 +207,19 @@ export default async function PricingPage() {
           </div>
         </div>
       </Section>
+
+      {preview && (
+        <Section>
+          <SectionHeading
+            eyebrow="What you get"
+            title="One email every morning. Every match in your trade and area."
+            description="This is the Trade Pro alert, filled with real open tenders from today's board. No more checking a dozen portals."
+          />
+          <div className="mt-10">
+            <EmailPreview items={preview.items} tradeLabel={preview.trade} />
+          </div>
+        </Section>
+      )}
 
       <Section tone="muted">
         <SectionHeading eyebrow="FAQ" title="Pricing questions" />

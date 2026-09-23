@@ -1,12 +1,32 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
-import { sendMatchingRfpAlert } from "@/lib/email/send";
+import { sendDailyMatches } from "@/lib/email/send";
+import { unsubscribeUrl } from "@/lib/email/unsubscribe";
 import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
+import { buildDigests, digestSubject, type DigestRfp } from "@/lib/alerts/digest";
+
+export const maxDuration = 60;
+
+interface RfpRow {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  deadline: string | null;
+  region_id: string | null;
+  rfp_categories: { category_id: string; trade_categories: { name: string } | null }[];
+}
+type Pair = Record<string, string>;
 
 /**
- * Daily matching-alert digest (Vercel cron). For RFPs published in the last
- * ~26h, email paid trades whose category + region match. Live-only.
+ * Daily match digest for paying members (Vercel cron, 13:00 UTC — after the
+ * Canadian and U.S. tender imports). For RFPs published in the last ~26h,
+ * each member gets ONE email listing every new match in their trades and
+ * regions (a region covers everything under it). Honors opt-outs
+ * (notification_preferences new_rfps='off' / email off), never repeats an RFP
+ * (notifications log), and uses the plain-English bid summary when one
+ * exists. `?dry=1` returns per-member counts without sending.
  * Protect with CRON_SECRET if set.
  */
 export async function GET(request: Request) {
@@ -15,97 +35,143 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const params = new URL(request.url).searchParams;
+  const dry = params.get("dry") === "1";
+  // Dry runs may look further back to exercise matching; real sends are always 26h.
+  const hours = dry ? Math.min(Number(params.get("hours")) || 26, 24 * 14) : 26;
 
   const supabase = createServiceClient();
-  const since = new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 
-  const { data: rfps } = await supabase
+  const { data: rfpRows } = await supabase
     .from("rfp_posts")
-    .select("id,title,slug,region_id, rfp_categories(category_id)")
+    .select("id,title,slug,summary,deadline,region_id, rfp_categories(category_id, trade_categories(name))")
     .eq("status", "published")
     .gte("published_at", since)
     // Never alert on something already closed — incl. past public contracts,
     // whose "deadline" is their award date.
-    .or(`deadline.is.null,deadline.gte.${new Date().toISOString().slice(0, 10)}`)
-    // A daily run sees ~a day of new tenders (Canada + U.S. federal); 50
-    // silently dropped the rest once SAM.gov was added.
-    .limit(500);
-  if (!rfps?.length) return NextResponse.json({ sent: 0, reason: "no recent RFPs" });
+    .or(`deadline.is.null,deadline.gte.${today}`)
+    .limit(1000);
+  const rows = (rfpRows ?? []) as unknown as RfpRow[];
+  if (!rows.length) return NextResponse.json({ sent: 0, reason: "no recent RFPs" });
 
-  const { data: paidSubs } = await supabase
-    .from("subscriptions")
-    .select("organization_id")
-    .in("status", ["active", "comped"]);
-  const orgIds = (paidSubs ?? []).map((s: { organization_id: string }) => s.organization_id);
-  if (!orgIds.length) return NextResponse.json({ sent: 0, reason: "no paid orgs" });
+  const { data: paidSubs } = await supabase.from("subscriptions").select("organization_id").in("status", ["active", "comped"]);
+  const paidOrgIds = [...new Set(((paidSubs ?? []) as Pair[]).map((s) => s.organization_id))];
+  if (!paidOrgIds.length) return NextResponse.json({ sent: 0, reason: "no paid orgs" });
 
-  const [{ data: orgCats }, { data: orgRegs }, { data: members }, { data: regionRows }] = await Promise.all([
-    supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", orgIds),
-    supabase.from("organization_regions").select("organization_id,region_id").in("organization_id", orgIds),
-    supabase.from("organization_members").select("organization_id,user_id").in("organization_id", orgIds),
-    supabase.from("regions").select("id,parent_id"),
+  const [{ data: orgCats }, { data: orgRegs }, { data: members }, { data: regionRows }, { data: checks }] = await Promise.all([
+    supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", paidOrgIds),
+    supabase.from("organization_regions").select("organization_id,region_id").in("organization_id", paidOrgIds),
+    supabase.from("organization_members").select("organization_id,user_id").in("organization_id", paidOrgIds),
+    supabase.from("regions").select("id,name,parent_id"),
+    // Plain-English summaries from the bid checklist, when they exist (an
+    // error here — e.g. the table isn't migrated yet — just means none).
+    supabase.from("rfp_bid_checks").select("rfp_id,result").in("rfp_id", rows.map((r) => r.id)).not("result", "is", null),
   ]);
 
-  const catsByOrg = group(orgCats ?? [], "organization_id", "category_id");
-  // Serving a region means serving everything under it (Ontario → Toronto).
-  const tree = (regionRows ?? []) as RegionNode[];
-  const regsByOrg = new Map(
-    [...group(orgRegs ?? [], "organization_id", "region_id")].map(([org, ids]) => [org, expandRegionIds(ids, tree)]),
+  const tree = (regionRows ?? []) as (RegionNode & { name: string })[];
+  const regionName = new Map(tree.map((r) => [r.id, r.name]));
+  const plain = new Map(
+    ((checks ?? []) as { rfp_id: string; result: { plainSummary?: string } | null }[]).map((c) => [
+      c.rfp_id,
+      c.result?.plainSummary ?? null,
+    ]),
   );
-  const usersByOrg = group(members ?? [], "organization_id", "user_id");
+  const rfps: DigestRfp[] = rows.map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    deadline: r.deadline,
+    regionId: r.region_id,
+    regionName: r.region_id ? regionName.get(r.region_id) ?? null : null,
+    categoryIds: r.rfp_categories.map((c) => c.category_id),
+    categoryNames: r.rfp_categories.map((c) => c.trade_categories?.name ?? ""),
+    summary: plain.get(r.id) ?? r.summary,
+  }));
 
-  const allUserIds = [...new Set((members ?? []).map((m: { user_id: string }) => m.user_id))];
-  const { data: profiles } = await supabase.from("users_profile").select("id,email").in("id", allUserIds.length ? allUserIds : ["__"]);
-  const emailById = new Map((profiles ?? []).map((p: { id: string; email: string }) => [p.id, p.email]));
+  const userIds = [...new Set(((members ?? []) as Pair[]).map((m) => m.user_id))];
+  const ids = userIds.length ? userIds : ["__"];
+  const [{ data: profiles }, { data: prefs }, { data: recent }] = await Promise.all([
+    supabase.from("users_profile").select("id,email,status").in("id", ids),
+    supabase.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", ids),
+    supabase
+      .from("notifications")
+      .select("user_id,link_url")
+      .eq("type", "rfp_alert")
+      .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString())
+      .in("user_id", ids),
+  ]);
 
-  let sent = 0;
-  for (const rfp of rfps as RfpRow[]) {
-    const rfpCats = new Set(rfp.rfp_categories.map((c) => c.category_id));
-    for (const orgId of orgIds) {
-      const orgCatSet = catsByOrg.get(orgId) ?? new Set();
-      const sharesCat = [...rfpCats].some((c) => orgCatSet.has(c));
-      if (!sharesCat) continue;
-      const orgRegSet = regsByOrg.get(orgId) ?? new Set();
-      const regionOk = !rfp.region_id || orgRegSet.has(rfp.region_id);
-      if (!regionOk) continue;
+  const digests = buildDigests({
+    rfps,
+    paidOrgIds,
+    catsByOrg: group((orgCats ?? []) as Pair[], "organization_id", "category_id"),
+    regionsByOrg: new Map(
+      [...group((orgRegs ?? []) as Pair[], "organization_id", "region_id")].map(([org, regionIds]) => [
+        org,
+        expandRegionIds(regionIds, tree),
+      ]),
+    ),
+    usersByOrg: group((members ?? []) as Pair[], "organization_id", "user_id"),
+    emailByUser: new Map(
+      ((profiles ?? []) as { id: string; email: string; status: string }[])
+        .filter((p) => p.email && p.status !== "suspended")
+        .map((p) => [p.id, p.email]),
+    ),
+    optedOut: new Set(
+      ((prefs ?? []) as { user_id: string; new_rfps: string; channel_email: boolean }[])
+        .filter((p) => p.new_rfps === "off" || p.channel_email === false)
+        .map((p) => p.user_id),
+    ),
+    alreadySent: new Set(
+      ((recent ?? []) as { user_id: string; link_url: string }[]).map(
+        (n) => `${n.user_id}|${n.link_url.replace(/^\/rfps\//, "")}`,
+      ),
+    ),
+  });
 
-      for (const userId of usersByOrg.get(orgId) ?? new Set<string>()) {
-        const email = emailById.get(userId);
-        if (!email) continue;
-        // Dedupe: skip if we already notified this user about this RFP.
-        const { count } = await supabase
-          .from("notifications")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .eq("type", "rfp_alert")
-          .eq("link_url", `/rfps/${rfp.slug}`);
-        if (count && count > 0) continue;
-
-        await sendMatchingRfpAlert(email, { title: rfp.title, slug: rfp.slug });
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          type: "rfp_alert",
-          title: "New matching opportunity",
-          message: rfp.title,
-          link_url: `/rfps/${rfp.slug}`,
-        });
-        sent++;
-      }
-    }
+  if (dry) {
+    return NextResponse.json({
+      dry: true,
+      recentRfps: rfps.length,
+      members: digests.map((d) => ({ matches: d.items.length, subject: digestSubject(d) })),
+    });
   }
 
-  return NextResponse.json({ sent });
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
+  const mailingAddress = process.env.BUSINESS_MAILING_ADDRESS?.trim() || null;
+  let sent = 0;
+  for (const d of digests) {
+    await sendDailyMatches(d.email, {
+      subject: digestSubject(d),
+      items: d.items.map((i) => ({
+        title: i.title,
+        slug: i.slug,
+        trade: i.categoryNames.find(Boolean) ?? null,
+        region: i.regionName,
+        deadline: i.deadline,
+        summary: i.summary,
+      })),
+      unsubscribeUrl: unsubscribeUrl(base, d.userId),
+      mailingAddress,
+    });
+    await supabase.from("notifications").insert(
+      d.items.map((i) => ({
+        user_id: d.userId,
+        type: "rfp_alert",
+        title: "New matching opportunity",
+        message: i.title,
+        link_url: `/rfps/${i.slug}`,
+      })),
+    );
+    sent++;
+  }
+
+  return NextResponse.json({ sent, rfpsNotified: digests.reduce((s, d) => s + d.items.length, 0) });
 }
 
-interface RfpRow {
-  id: string;
-  title: string;
-  slug: string;
-  region_id: string | null;
-  rfp_categories: { category_id: string }[];
-}
-
-function group<T extends Record<string, string>>(rows: T[], keyField: keyof T, valField: keyof T): Map<string, Set<string>> {
+function group(rows: Pair[], keyField: string, valField: string): Map<string, Set<string>> {
   const map = new Map<string, Set<string>>();
   for (const r of rows) {
     const k = r[keyField];
