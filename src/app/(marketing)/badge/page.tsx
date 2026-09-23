@@ -29,8 +29,11 @@ export default async function BadgePage({
   // profile, so nothing here is private.
   const linked = !memberSlug && company ? await getBadgeInfo(company) : null;
   const companySlug = linked?.found ? linked.slug : null;
-  // Demo / not-signed-in: preview with a sample vendor so the page is useful to everyone.
-  const slug = memberSlug ?? companySlug ?? "northline-electrical";
+  // Not signed in and no ?company=: show a generic sample. The placeholder
+  // slug resolves to no listing, so the badge renders as a plain "Listed
+  // Vendor" seal and the profile link is obviously a placeholder.
+  const isSample = !memberSlug && !companySlug;
+  const slug = memberSlug ?? companySlug ?? "your-company";
 
   const h = await headers();
   const host = h.get("host") ?? "pmrfp.com";
@@ -115,8 +118,8 @@ export default async function BadgePage({
         <Link href={memberSlug ? "/dashboard/company" : "/sign-up"} className={buttonVariants()}>
           {memberSlug ? "Update my profile" : "Get my badge"}
         </Link>
-        <Link href={`/directory/${slug}`} className={buttonVariants({ variant: "outline" })}>
-          View profile
+        <Link href={isSample ? "/directory" : `/directory/${slug}`} className={buttonVariants({ variant: "outline" })}>
+          {isSample ? "Browse the directory" : "View profile"}
         </Link>
       </div>
 

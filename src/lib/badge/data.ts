@@ -45,6 +45,7 @@ export async function getBadgeInfo(slug: string): Promise<BadgeInfo> {
     .eq("slug", slug)
     .eq("profile_status", "approved")
     .eq("status", "active")
+    .eq("is_demo", false)
     .maybeSingle<{ name: string; verified: boolean; insurance_status: string | null }>();
   if (!data) return { found: false, slug, name: "PMRFP", tier: badgeTier({ verified: false, insured: false }) };
   return {
