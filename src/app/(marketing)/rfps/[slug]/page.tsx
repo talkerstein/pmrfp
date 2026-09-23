@@ -6,6 +6,7 @@ import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, L
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { LockedContentPanel } from "@/components/public/locked-content-panel";
+import { BidHelpCard } from "@/components/public/bid-help-card";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { SaveButton } from "@/components/dashboard/save-button";
 import { ExpressInterestDialog } from "@/components/forms/express-interest-dialog";
@@ -151,6 +152,17 @@ export default async function RfpDetailPage({
                 )}
               </span>
             </p>
+          )}
+
+          {isPublicTender && !isAward && !isClosed && (
+            <div className="mt-4">
+              <BidHelpCard
+                rfpSlug={teaser.slug}
+                rfpTitle={teaser.title}
+                trade={teaser.categories[0]}
+                portal={tenderSource.portal}
+              />
+            </div>
           )}
 
           {full?.status === "awarded" && (

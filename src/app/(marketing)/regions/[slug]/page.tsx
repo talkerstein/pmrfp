@@ -51,7 +51,7 @@ export async function generateMetadata({
   ]);
   const isThin = vendors.length === 0 && rfps.length === 0;
   return {
-    title: `Commercial Property Vendors & RFPs in ${region.name} | ${SITE.name}`,
+    title: `Commercial Property Vendors & RFPs in ${region.name}`,
     description: `Find commercial property trades and service companies in ${region.name}, and monitor local property RFP opportunities on ${SITE.name}.`,
     alternates: { canonical: `/regions/${region.slug}` },
     ...(isThin ? { robots: { index: false, follow: true } } : {}),

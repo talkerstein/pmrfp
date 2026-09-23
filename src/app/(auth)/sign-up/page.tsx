@@ -22,7 +22,7 @@ export async function generateMetadata({
   const title = trade
     ? "Join PMRFP as a founding trade — free"
     : pm
-      ? "Post your building project free — PMRFP"
+      ? "Post your building project free"
       : "Join PMRFP — free";
   const description = trade
     ? "Property managers post building jobs. Vetted trades get found and bid. Free to join, no credit card."

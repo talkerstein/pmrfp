@@ -118,7 +118,7 @@ Out of scope unless quoted as add-alternates:
       { q: "Should I get a roof condition report first?", a: "If you're unsure whether you need replacement or just repair, a paid roof condition report from an independent consultant (not a bidder) is usually $1,500–$4,000 well-spent." },
       { q: "Is this template legally binding?", a: "No. This is a scoping template to help you get apples-to-apples bids. Your final contract should be reviewed by your lawyer and ideally use a standard CCDC short-form for clarity." },
     ],
-    metaTitle: "Flat Roof Replacement RFP Template (Canada, 2026) | PMRFP",
+    metaTitle: "Flat Roof Replacement RFP Template (Canada, 2026)",
     metaDescription:
       "Free, ready-to-use RFP template for commercial flat roof replacement in Canada. Pre-filled scope, requirements, timeline, and evaluation criteria — post in 60 seconds.",
   },
@@ -175,7 +175,7 @@ Out of scope: full roof replacement (separate RFP) unless assessment determines 
       { q: "How much does an emergency roof repair cost?", a: "Emergency call-out + temporary patch typically runs $500–$2,500 in Canada. Permanent repair pricing depends on the scope discovered during the assessment." },
       { q: "Will an emergency repair void my roof warranty?", a: "Only if it's done by an installer who isn't certified for your membrane system. Always confirm the bidder is certified before authorizing repairs." },
     ],
-    metaTitle: "Emergency Roof Repair RFP Template — 48-Hour Response | PMRFP",
+    metaTitle: "Emergency Roof Repair RFP Template — 48-Hour Response",
     metaDescription:
       "Free RFP template for emergency commercial roof repair in Canada. Pre-filled response-time requirements, scope, and evaluation criteria. Post and get quotes today.",
   },
@@ -233,7 +233,7 @@ Documentation:
       { q: "Why bother with a maintenance contract?", a: "Documented inspection + maintenance is usually required to keep manufacturer NDL warranties valid. Skipping it can void a 20-year warranty over a missed drain cleaning." },
       { q: "How often should commercial roofs be inspected?", a: "Industry standard is twice a year (spring + fall) plus after any major weather event. More frequent for buildings with heavy rooftop equipment or chronic issues." },
     ],
-    metaTitle: "Annual Roof Inspection Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "Annual Roof Inspection Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for annual roof inspection and maintenance contracts in Canada. Twice-yearly inspections + maintenance allowance — protect your warranty.",
   },
@@ -299,7 +299,7 @@ Add-alternates (price separately):
       { q: "Should I replace one unit or all of them at once?", a: "Bundling replacements usually lowers the per-unit price and lets you standardize on one manufacturer for parts. Always list all candidate units in the RFP and ask for bundled pricing." },
       { q: "Like-for-like or high-efficiency upgrade?", a: "Ask for both. High-efficiency units cost more up front but the energy savings often pay back in 3–7 years. Make the bidder show the math." },
     ],
-    metaTitle: "Rooftop HVAC Unit Replacement RFP Template (Canada) | PMRFP",
+    metaTitle: "Rooftop HVAC Unit Replacement RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial rooftop HVAC unit replacement in Canada. Pre-filled scope, crane requirements, warranty terms, and evaluation criteria.",
   },
@@ -367,7 +367,7 @@ Emergency response:
       { q: "What's the ROI on preventive maintenance?", a: "Properly maintained HVAC equipment lasts 30–50% longer and runs 10–25% more efficiently. The contract usually pays for itself in avoided emergency calls and extended equipment life." },
       { q: "1-year or 3-year contract?", a: "1-year is safer if it's a new vendor relationship. 3-year usually gets you better pricing and locks in rates. Make sure the contract has a clear exit clause for non-performance." },
     ],
-    metaTitle: "HVAC Maintenance Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "HVAC Maintenance Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial HVAC preventive maintenance contracts in Canada. Quarterly visits, repair allowance, and emergency response terms pre-filled.",
   },
@@ -430,7 +430,7 @@ Add-alternates:
       { q: "Can I replace a boiler in winter?", a: "Yes, but you'll likely need a temporary boiler to maintain tenant heating during the swap. Budget $5k–$15k extra for the rental + setup." },
       { q: "Is a high-efficiency condensing boiler always the right choice?", a: "Usually for buildings under 90% existing efficiency — but the venting upgrade and condensate handling can add cost. Make the bidder show projected payback." },
     ],
-    metaTitle: "Boiler Replacement RFP Template (Canada) | PMRFP",
+    metaTitle: "Boiler Replacement RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial / multi-unit residential boiler replacement in Canada. Pre-filled scope, TSSA requirements, and warranty terms.",
   },
@@ -495,7 +495,7 @@ Add-alternates:
       { q: "Mill and overlay or full reconstruction?", a: "Mill + overlay works if the base is sound and damage is surface-level. Full reconstruction is needed if you see alligator cracking, sinkholes, or base failure. Ask the bidder to inspect and recommend." },
       { q: "Why does asphalt cost so much more than it used to?", a: "Liquid asphalt cement prices have risen significantly post-2020. Get bids in early in the paving season for the best pricing." },
     ],
-    metaTitle: "Parking Lot Resurfacing RFP Template (Canada) | PMRFP",
+    metaTitle: "Parking Lot Resurfacing RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial parking lot resurfacing in Canada. Mill + overlay or full reconstruction, phasing plan, and AODA compliance pre-filled.",
   },
@@ -562,7 +562,7 @@ Service standards:
       { q: "Per-season or per-event?", a: "Per-season is predictable and usually the right choice for high-traffic commercial properties. Per-event can be cheaper in a mild winter but exposes you to bad-winter cost surprises and slip-and-fall risk from delayed response." },
       { q: "Why is slip-and-fall coverage so important?", a: "If a slip-and-fall suit happens on your property, the snow contractor's insurance is the first line of defence. $5M minimum is standard for commercial properties." },
     ],
-    metaTitle: "Snow Removal Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "Snow Removal Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial snow removal and ice management contracts in Canada. Per-season or per-event pricing, response times, liability coverage.",
   },
@@ -628,7 +628,7 @@ Add-alternates (price separately):
       { q: "Is electric / quiet equipment worth the premium?", a: "For mixed-use or residential-adjacent properties, yes — fewer tenant complaints and increasingly required by some municipalities. Cost premium is usually 10–15%." },
       { q: "Weekly or bi-weekly?", a: "Weekly is standard for commercial properties with visible lawn. Bi-weekly works for properties where curb appeal is less important." },
     ],
-    metaTitle: "Landscaping Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "Landscaping Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial landscaping and grounds maintenance contracts in Canada. Weekly visits, seasonal cleanups, irrigation, fertilizer.",
   },
@@ -691,7 +691,7 @@ Out of scope unless quoted as add-alts:
       { q: "How long should an exterior paint job last?", a: "On a properly prepped surface with premium product, 7–10 years. Cheap product or rushed prep can cut that in half." },
       { q: "Should I pay more for premium paint?", a: "Yes — the cost difference is small compared to labour, and premium product lasts almost twice as long. The bidder using bargain paint isn't saving you money over a 10-year window." },
     ],
-    metaTitle: "Exterior Painting RFP Template (Canada) | PMRFP",
+    metaTitle: "Exterior Painting RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial exterior painting projects in Canada. Pre-filled scope, prep allowance, paint quality requirements, and warranty terms.",
   },
@@ -756,7 +756,7 @@ Add-alternates:
       { q: "Zero-VOC vs. low-VOC paint — really worth it?", a: "For tenants in residence, yes. Zero-VOC eliminates odour and chemical sensitivity complaints. Cost premium is small ($5–$10 / gallon)." },
       { q: "How long does common-area painting take?", a: "A typical mid-rise (10 floors) takes 3–4 weeks at one floor per week. Stairwells and lobby add 1–2 weeks." },
     ],
-    metaTitle: "Common Area Painting RFP Template (Canada) | PMRFP",
+    metaTitle: "Common Area Painting RFP Template (Canada)",
     metaDescription:
       "Free RFP template for common-area interior painting in occupied buildings. Zero-VOC, tenant-friendly phasing, full scope pre-filled.",
   },
@@ -822,7 +822,7 @@ Add-alternates:
       { q: "Carpet tile or LVT?", a: "Carpet tile is warmer underfoot and quieter but harder to clean. LVT is more durable, easier to clean, and better in high-moisture areas (laundry corridors). Most properties end up choosing LVT for new builds and carpet tile for residential corridors." },
       { q: "How long does corridor flooring last?", a: "Premium carpet tile: 10–15 years. LVT with a 20-mil wear layer: 15–20 years. Cheaper products half that." },
     ],
-    metaTitle: "Corridor Flooring Replacement RFP Template (Canada) | PMRFP",
+    metaTitle: "Corridor Flooring Replacement RFP Template (Canada)",
     metaDescription:
       "Free RFP template for replacing corridor flooring in occupied multi-unit buildings. Carpet tile vs. LVT, phasing, full scope pre-filled.",
   },
@@ -898,7 +898,7 @@ Service standards:
       { q: "Why do elevator contracts feel impossible to escape?", a: "Because most are 5-year auto-renewing 'oil-and-grease' contracts that escalate. Insist on 1–3 year initial term with a 90-day no-cause termination clause." },
       { q: "Full-maintenance or oil-and-grease?", a: "Full-maintenance is more expensive monthly but caps your big-ticket exposure. Oil-and-grease is cheap monthly but bills you separately for cables, controllers, etc. — which can be $$$ surprises. Most owners with budget predictability needs choose full-maintenance." },
     ],
-    metaTitle: "Elevator Service Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "Elevator Service Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial elevator service and maintenance contracts in Canada. Full-maintenance scope, response-time guarantees, fair termination clauses.",
   },
@@ -965,7 +965,7 @@ Add-alternates:
       { q: "How long does an electrical service upgrade take?", a: "From RFP award to power cut-over, typically 8–16 weeks — most of which is utility and permit lead time, not actual installation." },
       { q: "Do I need a consulting engineer?", a: "For service upgrades over 600A or anything triggering a building permit, usually yes. The bidder can recommend or include one." },
     ],
-    metaTitle: "Electrical Panel Upgrade RFP Template (Canada) | PMRFP",
+    metaTitle: "Electrical Panel Upgrade RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial electrical service and panel upgrades in Canada. ESA coordination, tenant downtime planning, full scope pre-filled.",
   },
@@ -1026,7 +1026,7 @@ Add-alternates:
       { q: "What's the typical payback on a LED retrofit?", a: "2–5 years for most commercial buildings, often less with utility rebates. Parking garages with 24/7 lighting tend to have the fastest payback." },
       { q: "Full-fixture replacement or retrofit kit?", a: "Replacement gives longer life and modern controls but costs more. Retrofit kits are cheaper and faster but inherit the existing fixture's lifespan. Bidder should recommend per location." },
     ],
-    metaTitle: "LED Lighting Retrofit RFP Template (Canada) | PMRFP",
+    metaTitle: "LED Lighting Retrofit RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial LED lighting retrofits in Canada. Utility rebate coordination, payback analysis, full scope pre-filled.",
   },
@@ -1097,7 +1097,7 @@ Add-alternates:
       { q: "Why is fire inspection cost so variable?", a: "Cheap inspections often come with padded deficiency repair quotes — that's how they make money. Get itemized inspection + at least 2 second opinions on any large deficiency before authorizing repair." },
       { q: "Can I split inspection and repair vendors?", a: "Yes, and you probably should. Some PMs use one company for inspection (so they have no incentive to inflate deficiencies) and a separate one for repair (competitive on price)." },
     ],
-    metaTitle: "Fire Safety Inspection Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "Fire Safety Inspection Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for annual fire safety inspection contracts in Canada. CFAA-certified, transparent pricing, deficiency reporting standards.",
   },
@@ -1164,7 +1164,7 @@ Post-remediation:
       { q: "Why insist on an independent IH?", a: "Because if the same company does both removal and clearance testing, there's an obvious conflict of interest. Independent IH protects you legally and reputationally." },
       { q: "Will tenants need to relocate?", a: "Depends on scope. Small containment in one room may not require relocation. Full-unit remediation usually does. Budget for short-term hotel costs." },
     ],
-    metaTitle: "Mold Remediation RFP Template (Canada) | PMRFP",
+    metaTitle: "Mold Remediation RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial / residential mold remediation in Canada. IICRC-compliant containment, independent IH clearance, tenant communication plan.",
   },
@@ -1233,7 +1233,7 @@ Add-alternates:
       { q: "Why IPM instead of regular spraying?", a: "Regular pesticide spraying is increasingly restricted by provincial regs and unpopular with tenants. IPM (inspection + exclusion + targeted treatment) is more effective long-term and produces fewer tenant complaints." },
       { q: "Is bedbug treatment usually included?", a: "Rarely — most contracts price bedbug treatment as a per-unit add-on because it's labour-intensive. Ask for the per-unit rate up front." },
     ],
-    metaTitle: "Pest Control Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "Pest Control Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial pest control contracts in Canada. IPM-based approach, quarterly visits, on-call response, transparent pricing.",
   },
@@ -1326,7 +1326,7 @@ Communication:
       { q: "Should I rebid janitorial every year?", a: "Every 2–3 years is the sweet spot. Annual rebids create churn; longer than 3 years invites price drift and service slippage." },
       { q: "Direct employees vs. subcontracted — does it matter?", a: "Yes. Direct-employee contractors have better staff retention, accountability, and quality consistency. Subcontracted models have higher turnover and inconsistent service." },
     ],
-    metaTitle: "Janitorial Cleaning Contract RFP Template (Canada) | PMRFP",
+    metaTitle: "Janitorial Cleaning Contract RFP Template (Canada)",
     metaDescription:
       "Free RFP template for commercial janitorial cleaning contracts in Canada. Daily/weekly/monthly scope, direct-employee requirement, transparent pricing.",
   },
@@ -1400,7 +1400,7 @@ Documentation throughout:
       { q: "Will insurance cover the full cost?", a: "Depends on the policy and the cause of loss. Restoration companies that bill insurance directly know how to maximize coverage. Always document everything from minute one — photos before any work begins." },
       { q: "What's Xactimate?", a: "Xactimate is the standard estimating software used by insurance adjusters. Restoration companies that use it speak the same language as your insurer — fewer billing disputes." },
     ],
-    metaTitle: "Post-Damage Restoration RFP Template (Canada) | PMRFP",
+    metaTitle: "Post-Damage Restoration RFP Template (Canada)",
     metaDescription:
       "Free RFP template for emergency water, fire, and smoke damage restoration in Canada. 24-hour response, Xactimate, insurance-direct billing pre-filled.",
   },
