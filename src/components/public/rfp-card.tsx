@@ -15,7 +15,8 @@ function formatDeadline(d: string | null) {
 export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) {
   const heroPhoto = rfp.photoUrls[0];
   const closed = rfp.status !== "open";
-  const statusLabel = rfp.status === "awarded" ? "Filled" : "Closed";
+  const isAward = rfp.sourceType === "public_source" && publicTenderSource(rfp.slug).key === "awards";
+  const statusLabel = isAward ? "Awarded" : rfp.status === "awarded" ? "Filled" : "Closed";
   return (
     <Link
       href={`/rfps/${rfp.slug}`}

@@ -10,7 +10,7 @@ export const OGL_TORONTO_ATTRIBUTION =
   "Contains information licensed under the Open Government Licence – Toronto.";
 
 export interface PublicTenderSource {
-  key: "canadabuys" | "toronto";
+  key: "canadabuys" | "toronto" | "awards";
   /** Short badge text for cards. */
   badge: string;
   /** "Issued by …" */
@@ -21,6 +21,15 @@ export interface PublicTenderSource {
 }
 
 export function publicTenderSource(slug: string): PublicTenderSource {
+  if (/-cba-[a-z0-9-]+$/.test(slug)) {
+    return {
+      key: "awards",
+      badge: "Past public contract · Gov. of Canada",
+      issuer: "the Government of Canada",
+      portal: "CanadaBuys",
+      attribution: OGL_CANADA_ATTRIBUTION,
+    };
+  }
   if (/-tor-[a-z0-9-]+$/.test(slug)) {
     return {
       key: "toronto",

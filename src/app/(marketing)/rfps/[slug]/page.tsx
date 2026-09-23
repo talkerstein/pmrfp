@@ -13,6 +13,8 @@ import { getFullRfp, getRfpTeaser, listRfps } from "@/lib/data/rfps";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { publicTenderSource } from "@/lib/tenders/sources";
+import { awardNoticeUrl } from "@/lib/tenders/awards";
+import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 
 export async function generateMetadata({
   params,
@@ -78,6 +80,10 @@ export default async function RfpDetailPage({
   const teaserIsOpen = teaser.status === "open";
   const isPublicTender = teaser.sourceType === "public_source";
   const tenderSource = publicTenderSource(teaser.slug);
+  // Past public contracts (CanadaBuys award notices) aren't biddable — show who
+  // won and for how much, never a paywall or a "bid" button.
+  const isAward = isPublicTender && tenderSource.key === "awards";
+  const awardUrl = isAward ? awardNoticeUrl(teaser.slug.split("-cba-").pop() ?? "") : null;
 
   return (
     <Container className="py-10">
@@ -108,16 +114,26 @@ export default async function RfpDetailPage({
           <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {teaser.regionName && <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {teaser.regionName}</span>}
-            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {teaser.deadline ? `Closes ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
+            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : teaser.deadline ? `Closes ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
           </div>
 
           {isPublicTender && (
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
               <Landmark className="mt-0.5 size-4 shrink-0" />
               <span>
-                <strong className="text-foreground">Public tender.</strong> Issued by {tenderSource.issuer} and
-                published on {tenderSource.portal}. PMRFP collects the tenders that fit commercial trades — bids
-                go directly to the issuer, not through PMRFP.
+                {isAward ? (
+                  <>
+                    <strong className="text-foreground">Past public contract.</strong> Already awarded by{" "}
+                    {tenderSource.issuer} — listed so trades can see what this kind of work sells for and who wins
+                    it. It did not go through PMRFP.
+                  </>
+                ) : (
+                  <>
+                    <strong className="text-foreground">Public tender.</strong> Issued by {tenderSource.issuer} and
+                    published on {tenderSource.portal}. PMRFP collects the tenders that fit commercial trades — bids
+                    go directly to the issuer, not through PMRFP.
+                  </>
+                )}
               </span>
             </p>
           )}
@@ -170,7 +186,23 @@ export default async function RfpDetailPage({
             </div>
           )}
 
-          {showFull && full ? (
+          {isAward ? (
+            <div className="mt-8 rounded-xl border border-teal-400/50 bg-teal-100/30 p-6">
+              <h2 className="text-lg font-semibold tracking-tight">Want the next one like this?</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Trade Pro emails you the day a new public tender in your trade and region is posted, with the
+                direct link, full scope and buyer contact — so you&apos;re bidding on the next contract, not
+                reading about who won the last one.
+              </p>
+              <Link
+                href={session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro")}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+              >
+                Get tender alerts for my trade
+              </Link>
+              <p className="mt-4 text-xs text-muted-foreground">{tenderSource.attribution}</p>
+            </div>
+          ) : showFull && full ? (
             <div className="mt-8 space-y-8">
               <Block title="Project scope" body={full.scope} />
               <Block title="Requirements" body={full.requirements} />
@@ -238,8 +270,19 @@ export default async function RfpDetailPage({
           <div className="space-y-4 rounded-xl border border-border bg-card p-5">
             <Meta label="Region" value={teaser.regionName ?? "—"} />
             <Meta label="Property type" value={teaser.propertyTypeName ?? "—"} />
-            <Meta label="Closes" value={fmt(teaser.deadline)} />
-            {showFull && full ? (
+            <Meta label={isAward ? "Awarded" : "Closes"} value={fmt(teaser.deadline)} />
+            {isAward && awardUrl ? (
+              <div className="pt-2">
+                <a
+                  href={awardUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+                >
+                  Official award notice <ExternalLink className="size-4" />
+                </a>
+              </div>
+            ) : showFull && full ? (
               <div className="flex flex-col gap-2 pt-2">
                 {isPublicTender ? (
                   full.sourceUrl && (
