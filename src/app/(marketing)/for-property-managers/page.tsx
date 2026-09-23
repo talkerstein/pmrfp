@@ -75,10 +75,10 @@ export default async function ForPropertyManagersPage() {
                 Post an RFP — free
               </Link>
               <Link
-                href="/directory"
+                href="/rfp-writer"
                 className={buttonVariants({ size: "lg", variant: "outline" })}
               >
-                Browse the directory
+                Write my RFP — free tool
               </Link>
             </div>
             <ReferBanner variant="subtle" className="mt-10 max-w-3xl" />

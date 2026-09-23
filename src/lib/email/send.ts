@@ -441,3 +441,40 @@ export async function sendTenderDigest(
     },
   );
 }
+
+/** "Email me this RFP" from the RFP Writer — the draft, plus a one-click path to post it. */
+export async function sendRfpDraftEmail(
+  to: string,
+  rfp: {
+    title: string;
+    summary: string;
+    scope: string;
+    requirements: string;
+    submissionInstructions: string;
+    evaluationCriteria: string[];
+    questionsForBidders: string[];
+  },
+): Promise<void> {
+  const esc = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  const para = (s: string) => `<p style="white-space:pre-wrap;margin:0 0 16px;line-height:1.5">${esc(s)}</p>`;
+  const list = (items: string[]) =>
+    `<ul style="margin:0 0 16px;padding-left:20px;line-height:1.5">${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
+  const h = (s: string) => `<h2 style="font-size:15px;margin:20px 0 8px;color:#282B59">${s}</h2>`;
+  await send(
+    to,
+    `Your RFP: ${rfp.title}`,
+    layout(
+      esc(rfp.title),
+      `${para(rfp.summary)}
+       ${h("Scope")}${para(rfp.scope)}
+       ${h("Requirements")}${para(rfp.requirements)}
+       ${h("Submission instructions")}${para(rfp.submissionInstructions)}
+       ${h("How bids will be evaluated")}${list(rfp.evaluationCriteria)}
+       ${h("Questions for bidders")}${list(rfp.questionsForBidders)}
+       <p style="margin:24px 0 8px">Ready to get bids? Post it on PMRFP free — qualified trades in your region see it, and you stay anonymous until you choose to engage.</p>
+       ${btn(`${BASE}/rfp-writer?post=1`, "Post this RFP free")}`,
+      "You're getting this because you asked the PMRFP RFP Writer to email you a copy. Review it before sending to bidders — it's a starting draft, not legal advice.",
+    ),
+  );
+}

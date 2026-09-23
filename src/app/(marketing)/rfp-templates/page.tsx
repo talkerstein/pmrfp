@@ -63,6 +63,13 @@ export default function RfpTemplatesIndexPage() {
               <Download className="size-3.5" /> Free PDF download
             </span>
           </div>
+          <p className="mt-6 text-sm text-muted-foreground">
+            Want it written for your exact job?{" "}
+            <Link href="/rfp-writer" className="font-semibold text-teal-700 hover:underline">
+              Use the free RFP Writer →
+            </Link>{" "}
+            Four questions, two minutes.
+          </p>
         </Container>
       </section>
 

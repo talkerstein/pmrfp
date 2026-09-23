@@ -9,10 +9,10 @@ export const metadata = { title: "Post an RFP" };
 export default async function NewRfpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ template?: string }>;
+  searchParams: Promise<{ template?: string; draft?: string }>;
 }) {
   const session = await requireRole(["property_manager"]);
-  const [{ template: templateSlug }, categories, regions, propertyTypes] = await Promise.all([
+  const [{ template: templateSlug, draft }, categories, regions, propertyTypes] = await Promise.all([
     searchParams,
     getCategories(),
     getRegions(),
@@ -48,6 +48,7 @@ export default async function NewRfpPage({
         propertyTypes={propertyTypes}
         defaults={defaults}
         organizationId={session.organization?.id ?? null}
+        loadWriterDraft={draft === "1"}
       />
     </div>
   );

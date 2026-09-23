@@ -102,6 +102,7 @@ export const PM_NAV = [
   { href: "/pm-dashboard", label: "Home" },
   { href: "/pm-dashboard/rfps", label: "My RFPs" },
   { href: "/pm-dashboard/rfps/new", label: "Post an RFP" },
+  { href: "/rfp-writer", label: "RFP Writer" },
   { href: "/pm-dashboard/saved-vendors", label: "Saved Vendors" },
 ] as const;
 
@@ -163,6 +164,7 @@ export const FOOTER_COLS = [
       { label: "Case Studies", href: "/case-studies" },
       { label: "Resource Hub", href: "/resources" },
       { label: "RFP Templates", href: "/rfp-templates" },
+      { label: "RFP Writer (free)", href: "/rfp-writer" },
       { label: "Cost Guides", href: "/cost-guides" },
       { label: "How to Write an RFP", href: "/resources/how-to-write-a-commercial-property-maintenance-rfp" },
       { label: "Post an RFP That Gets Bids", href: "/resources/how-to-post-a-quality-rfp" },

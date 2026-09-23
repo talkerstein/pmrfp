@@ -679,6 +679,9 @@ export default async function HomePage() {
               >
                 Post an RFP <ArrowRight className="size-4" />
               </Link>
+              <Link href="/rfp-writer" className="ml-4 mt-7 inline-block text-sm font-semibold text-teal-700 hover:underline">
+                Or write one in 2 minutes →
+              </Link>
             </div>
           </div>
         </Container>
