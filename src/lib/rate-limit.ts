@@ -7,10 +7,9 @@
  *   UPSTASH_REDIS_REST_URL
  *   UPSTASH_REDIS_REST_TOKEN
  *
- * If either is missing, this module FAILS OPEN — no limiting happens. That's
- * deliberate: dev environments and the demo deploy should keep working without
- * an Upstash account. In production, set both env vars in Vercel and the limits
- * activate automatically.
+ * If either is missing, it falls back to a fixed-window counter in Supabase
+ * (see checkWithPostgres). With neither available it FAILS OPEN — dev and the
+ * demo deploy keep working with no limiter at all.
  *
  * Limits per bucket (per IP, sliding window):
  *   - default: 30 / 60s
@@ -19,9 +18,12 @@
  *   - checkout: 10 / 60s
  *   - auth: 10 / 60s     (login/signup brute-force protection)
  */
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isServiceConfigured } from "@/lib/supabase/config";
 
 type BucketName = "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai";
 
@@ -102,10 +104,40 @@ export async function checkRateLimitByIp(
   bucket: BucketName = "default",
 ): Promise<RateLimitInfo | null> {
   const limiter = getLimiter(bucket);
-  if (!limiter) return null;
-  const result = await limiter.limit(`${bucket}:${ip || "unknown"}`);
-  if (result.success) return null;
-  return { limit: result.limit, remaining: result.remaining, reset: result.reset };
+  if (limiter) {
+    const result = await limiter.limit(`${bucket}:${ip || "unknown"}`);
+    if (result.success) return null;
+    return { limit: result.limit, remaining: result.remaining, reset: result.reset };
+  }
+  return checkWithPostgres(ip, bucket);
+}
+
+function windowSeconds(window: string): number {
+  const [n, unit] = window.split(" ");
+  return Number(n) * (unit === "m" ? 60 : 1);
+}
+
+/**
+ * No Upstash → fixed-window counter in Supabase (rate_limit_hit(), migration
+ * 20260923000004). The key is a sha256 of bucket+IP, so no raw IPs are stored.
+ * Fails open on any error so a database hiccup never blocks a real visitor.
+ */
+async function checkWithPostgres(ip: string, bucket: BucketName): Promise<RateLimitInfo | null> {
+  if (!isServiceConfigured()) return null;
+  const { tokens, window } = BUCKETS[bucket];
+  try {
+    const key = createHash("sha256").update(`${bucket}:${ip || "unknown"}`).digest("hex");
+    const { data, error } = await createServiceClient().rpc("rate_limit_hit", {
+      p_key: key,
+      p_window_seconds: windowSeconds(window),
+      p_limit: tokens,
+    });
+    const row = (Array.isArray(data) ? data[0] : data) as { allowed: boolean; hits: number; reset_at: string } | null;
+    if (error || !row || row.allowed) return null;
+    return { limit: tokens, remaining: 0, reset: Date.parse(row.reset_at) };
+  } catch {
+    return null;
+  }
 }
 
 export function rateLimitResponse(info: RateLimitInfo): NextResponse {
