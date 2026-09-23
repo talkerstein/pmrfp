@@ -11,6 +11,7 @@ import {
 import { classifyToronto, fetchTorontoSolicitations, torontoToRfpInsert } from "@/lib/tenders/toronto";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardToRfpInsert, classifyAward, fetchAwards } from "@/lib/tenders/awards";
+import { classifySeao, fetchSeaoReleases, regionForSeao, seaoToRfpInsert } from "@/lib/tenders/seao";
 
 interface Candidate {
   insert: TenderInsert;
@@ -19,7 +20,7 @@ interface Candidate {
 }
 
 interface Source {
-  key: "canadabuys" | "toronto" | "awards";
+  key: "canadabuys" | "toronto" | "awards" | "seao";
   /** Below this many matches, assume a bad download and don't archive. */
   minMatchesToArchive: number;
   collect: (today: string) => Promise<Candidate[]>;
@@ -44,6 +45,17 @@ const SOURCES: Source[] = [
         const categories = classifyToronto(row, today);
         const insert = categories.length ? torontoToRfpInsert(row, today) : null;
         return insert ? [{ insert, categories, regionSlug: "toronto" }] : [];
+      }),
+  },
+  {
+    // Quebec: six weekly OCDS files, newest release per tender, open calls only.
+    key: "seao",
+    minMatchesToArchive: 25,
+    collect: async (today) =>
+      (await fetchSeaoReleases()).flatMap((r) => {
+        const categories = classifySeao(r, today);
+        const insert = categories.length ? seaoToRfpInsert(r, today) : null;
+        return insert ? [{ insert, categories, regionSlug: regionForSeao(r) }] : [];
       }),
   },
   {

@@ -25,43 +25,22 @@ drop policy if exists "members self insert" on public.organization_members;
 create policy "members admin insert" on public.organization_members
   for insert to authenticated with check (public.is_admin(auth.uid()));
 
--- ── 2. logos bucket: any authenticated user could write into any
---    org's public folder ────────────────────────────────────────────
--- "logos auth insert" only checked bucket_id, not the object path. Any
--- signed-in user could upload to logos/<any-org-uuid>/..., and that
--- image renders live on that org's public directory/vendor page
--- (getPortfolioPhotos() lists everything under logos/{orgId}/). Scope
--- inserts to the uploader's own organization folder — mirrors the
--- owner-scoping already applied to update/delete below.
-drop policy if exists "logos auth insert" on storage.objects;
-create policy "logos org-scoped insert" on storage.objects
-  for insert to authenticated with check (
-    bucket_id = 'logos'
-    and (storage.foldername(name))[1] in (
-      select organization_id::text
-      from public.organization_members
-      where user_id = auth.uid()
-    )
-  );
-
--- ── 3. rfp-photos bucket: same unscoped-insert gap as logos ─────────
--- 20260531000001_rfp_photos.sql's own comment says the path convention
--- "{orgId}/{rfpId}/{uuid}.ext keeps objects scoped per org" — but the
--- policy never enforced it, only checked bucket_id. Any authenticated
--- user could upload into another org's RFP photo folder (visible to
--- anonymous visitors on /rfps, since this bucket is public-read by
--- design). Found while verifying the logos-bucket fix above — same
--- pattern, not in the original scan.
-drop policy if exists "rfp-photos auth insert" on storage.objects;
-create policy "rfp-photos org-scoped insert" on storage.objects
-  for insert to authenticated with check (
-    bucket_id = 'rfp-photos'
-    and (storage.foldername(name))[1] in (
-      select organization_id::text
-      from public.organization_members
-      where user_id = auth.uid()
-    )
-  );
+-- ── 2+3. logos / rfp-photos uploads — applied from the DASHBOARD ──────
+-- Both buckets' insert policies checked only bucket_id, so any signed-in
+-- user could upload into another org's folder (public on their profile /
+-- RFP). The SQL editor and CLI can't alter storage.objects policies
+-- ("must be owner of table objects"), so these were changed on 2026-09-22
+-- in Storage -> Policies, which issues:
+--   ALTER POLICY "logos auth insert" ON storage.objects WITH CHECK (
+--     bucket_id = 'logos' AND (storage.foldername(name))[1] IN (
+--       SELECT organization_id::text FROM public.organization_members
+--       WHERE user_id = auth.uid()));
+--   ALTER POLICY "rfp-photos auth insert" ON storage.objects WITH CHECK (
+--     bucket_id = 'rfp-photos' AND (storage.foldername(name))[1] IN (
+--       SELECT organization_id::text FROM public.organization_members
+--       WHERE user_id = auth.uid()));
+-- Deliberately NOT executable here, so a CLI/GitHub-integration run of this
+-- file doesn't fail on the ownership error.
 
 -- ── 4. Stripe webhook idempotency ────────────────────────────────────
 -- checkout.session.completed sends a customer "activated" email and an
@@ -78,9 +57,8 @@ alter table public.stripe_webhook_events enable row level security;
 -- service client, which bypasses RLS). No anon/authenticated access.
 
 -- ── Verify ────────────────────────────────────────────────────────────
--- Expect: "members admin insert" present, "members self insert" gone;
--- "logos org-scoped insert" and "rfp-photos org-scoped insert" present,
--- the old unscoped "* auth insert" variants gone.
+-- Expect: "members admin insert" present, "members self insert" gone.
+-- (Storage insert policies keep their names; their WITH CHECK is scoped.)
 select policyname, cmd from pg_policies
  where tablename = 'organization_members' and schemaname = 'public'
 union all
