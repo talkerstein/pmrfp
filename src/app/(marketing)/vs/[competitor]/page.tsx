@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { CTASection } from "@/components/public/section";
+import { RfpCard } from "@/components/public/rfp-card";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Accordion,
@@ -14,6 +15,9 @@ import {
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
 import { COMPETITORS, getCompetitor } from "@/lib/seo/competitors";
 import { PRICING, SITE } from "@/lib/site";
+import { listRfps } from "@/lib/data/rfps";
+import { publicTenderSource } from "@/lib/tenders/sources";
+import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 
 export const revalidate = 86400;
 
@@ -35,10 +39,12 @@ export async function generateMetadata({
   // Putting our brand first buried the term they actually typed, and the layout
   // already appends "— PMRFP", so the old title spent its budget saying our name
   // twice. "Pricing" is in the title because it's the top comparison query.
-  const title = `${c.name} vs ${SITE.name}: Pricing & Which Fits Canadian Trades`;
+  const title = c.seoTitle ?? `${c.name} vs ${SITE.name}: Pricing & Which Fits Canadian Trades`;
   return {
     title,
-    description: `Compare ${c.name} and ${SITE.name} on price, focus, and what each is actually built for. ${SITE.name} is $${PRICING.proAnnual} CAD/yr flat.`,
+    description:
+      c.seoDescription ??
+      `Compare ${c.name} and ${SITE.name} on price, focus, and what each is actually built for. ${SITE.name} is $${PRICING.proAnnual} CAD/yr flat.`,
     alternates: { canonical: `/vs/${c.slug}` },
   };
 }
@@ -51,6 +57,18 @@ export default async function VersusPage({
   const { competitor } = await params;
   const c = getCompetitor(competitor);
   if (!c) notFound();
+
+  // Competitors that sell tender access get live proof: what's open on PMRFP
+  // right now from public sources, soonest-closing first.
+  const openTenders = c.publicTenderProof
+    ? (await listRfps().catch(() => [])).filter(
+        (r) => r.status === "open" && r.sourceType === "public_source" && !publicTenderSource(r.slug).past,
+      )
+    : [];
+  const sample = [...openTenders]
+    .sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"))
+    .slice(0, 3);
+  const proHref = signUpHrefForPlan("pro", "annual");
 
   return (
     <>
@@ -68,12 +86,14 @@ export default async function VersusPage({
           </nav>
           <Eyebrow>Comparison</Eyebrow>
           <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            {SITE.name} vs {c.name}
+            {c.name} vs {SITE.name}{c.publicTenderProof ? ": price, coverage and a cheaper option" : ""}
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">{c.angle}</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/sign-up" className={buttonVariants()}>Join {SITE.name} — ${PRICING.proAnnual}/yr</Link>
-            <Link href="/pricing" className={buttonVariants({ variant: "outline" })}>See pricing</Link>
+            <Link href={proHref} className={buttonVariants()}>Start Trade Pro — ${PRICING.proAnnual}/yr</Link>
+            <Link href={openTenders.length ? "/rfps" : "/pricing"} className={buttonVariants({ variant: "outline" })}>
+              {openTenders.length ? `See ${openTenders.length} open tenders free` : "See pricing"}
+            </Link>
           </div>
         </Container>
       </section>
@@ -101,6 +121,23 @@ export default async function VersusPage({
           </table>
         </div>
       </Container>
+
+      {sample.length > 0 && (
+        <Container className="pb-12">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {openTenders.length} public building tenders open on {SITE.name} right now
+          </h2>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Imported every morning from CanadaBuys, the City of Toronto, Quebec&apos;s SEAO and Yukon. Titles and
+            deadlines are free to browse; Trade Pro emails you the day a match posts.
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {sample.map((r) => (
+              <RfpCard key={r.slug} rfp={r} locked />
+            ))}
+          </div>
+        </Container>
+      )}
 
       <section className="bg-secondary/30">
         <Container className="py-12">
@@ -148,8 +185,8 @@ export default async function VersusPage({
       <CTASection
         title={`Ready to try the commercial & residential property network?`}
         description={`Free directory listing, or go Pro for $${PRICING.proAnnual} CAD/year.`}
-        primaryHref="/sign-up"
-        primaryLabel="Join as a Trade Company"
+        primaryHref={proHref}
+        primaryLabel="Start Trade Pro"
         secondaryHref="/vs"
         secondaryLabel="See all comparisons"
       />

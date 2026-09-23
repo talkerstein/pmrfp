@@ -18,6 +18,7 @@ import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardNoticeUrl } from "@/lib/tenders/awards";
 import { parseAward } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
+import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 
 export async function generateMetadata({
   params,
@@ -30,6 +31,9 @@ export async function generateMetadata({
   return {
     title: `${rfp.title} — RFP Opportunity`,
     description: rfp.summary ?? "Commercial property RFP opportunity on PMRFP.",
+    // ?view=locked and tracking params were being indexed as duplicates.
+    alternates: { canonical: `/rfps/${rfp.slug}` },
+    ...(isIndexableRfp(rfp) ? {} : { robots: { index: false, follow: true } }),
   };
 }
 

@@ -22,6 +22,11 @@ export interface Competitor {
   angle: string; // PMRFP's honest positioning vs them
   rows: ComparisonRow[];
   faqs: { q: string; a: string }[];
+  /** Overrides the default "<name> vs PMRFP" title when Search Console shows a sharper query. */
+  seoTitle?: string;
+  seoDescription?: string;
+  /** Show live open public-tender counts and samples (competitor sells tender access). */
+  publicTenderProof?: boolean;
 }
 
 const PRICE = "$249 CAD/yr (flat)";
@@ -30,33 +35,47 @@ export const COMPETITORS: Competitor[] = [
   {
     slug: "merx",
     name: "MERX",
+    // Search Console (Jun–Sep 2026): this page earns ~1,000 impressions on
+    // "merx", "merx canada", "merx pricing" and "merx rfp" but ~0.3% CTR. Those
+    // searchers already pay for tender leads — lead with price and the
+    // alternative, the two things they came to check.
+    seoTitle: "MERX Pricing (2026) & a Cheaper Alternative for Building Trades",
+    seoDescription:
+      "What MERX costs, what it covers, and where it's overkill. PMRFP puts CanadaBuys, Toronto, Quebec and Yukon building tenders plus private property-manager RFPs on one board — $249 CAD/yr flat.",
+    publicTenderProof: true,
     tagline: "Canada's largest public-tender aggregator.",
     whatItIs:
-      "MERX pulls federal, provincial, municipal, and MASH-sector tenders (plus some private construction) into one feed. It's the default for vendors bidding on government contracts.",
-    whoFor: "Vendors bidding on government and public-sector tenders.",
-    pricing: "$30–$80/mo for tenders (≈$360–$960/yr), private construction $26–$367/mo, documents ~$70 each",
+      "MERX pulls federal, provincial, municipal and MASH-sector tenders (plus some private construction) into one feed, sold by province, region or all of Canada. It hosts electronic bid submission for the buyers who publish on it.",
+    whoFor: "Vendors bidding on public tenders in every sector, across many provinces.",
+    pricing:
+      "Plans are sold per province, per region or all-Canada; regional and national plans bill annually, and full documents and alerts need a paid plan. Check merx.com for current rates",
     strengths: [
-      "Largest Canadian tender database (15,000–20,000 active)",
-      "Bilingual and government-trusted",
-      "Covers every province and territory",
+      "Largest Canadian tender database, every sector",
+      "Every province and territory, bilingual",
+      "Electronic bid submission for buyers that publish on MERX",
     ],
     weaknesses: [
-      "Primarily government / public-sector work, not private commercial property",
-      "Interface is widely described as cumbersome",
-      "National tier and per-document fees get expensive",
+      "You pay for every sector when you only bid on building and property work",
+      "Wider coverage costs more — regional and national plans are annual-only",
+      "No private property-manager RFPs, contract-winner history or company directory",
     ],
     angle:
-      "MERX is for government contracts. PMRFP is for private commercial property — a different buyer, a different opportunity type, and none of the bureaucratic procurement hoops.",
+      "MERX sells the whole Canadian tender feed. If you only bid on building and property work, PMRFP puts the tenders that matter — CanadaBuys, City of Toronto, Quebec's SEAO and Yukon — next to private RFPs from property managers, with daily alerts for $249 a year.",
     rows: [
-      { feature: "Annual price", pmrfp: PRICE, them: "≈$360–$960/yr (higher on national tier + per-doc fees)" },
-      { feature: "Focus", pmrfp: "Private commercial property", them: "Government / public tenders" },
-      { feature: "Vendor directory listing", pmrfp: "Yes — searchable", them: "No" },
-      { feature: "Canada-native", pmrfp: "Yes", them: "Yes" },
-      { feature: "Best for small/mid trades", pmrfp: "Yes", them: "Mixed" },
+      { feature: "Price", pmrfp: `${PRICE}, or $29/mo`, them: "Varies by province, region or all-Canada; regional and national billed annually" },
+      { feature: "Public tenders", pmrfp: "CanadaBuys, City of Toronto, Quebec SEAO, Yukon", them: "Federal, provincial, municipal, MASH — every sector" },
+      { feature: "Private property-manager RFPs", pmrfp: "Yes", them: "No" },
+      { feature: "Filtered to building & property trades", pmrfp: "Yes", them: "You filter by category" },
+      { feature: "Who won past contracts, and for how much", pmrfp: "Yes — free", them: "Award notices, where the buyer posts them" },
+      { feature: "Company profile in a public directory", pmrfp: "Yes", them: "No" },
+      { feature: "Submit bids on the platform", pmrfp: "No — you bid on the issuer's portal", them: "Yes, for MERX-hosted tenders" },
     ],
     faqs: [
-      { q: "Is PMRFP a tender platform like MERX?", a: "No. MERX aggregates public-sector tenders. PMRFP focuses on private commercial property RFPs — maintenance, renovation, and fit-out work from property managers, builders, and owners — and also lists your company in a searchable directory." },
-      { q: "Can I use both?", a: "Many trades do. Use MERX for government tenders and PMRFP for private commercial property opportunities and directory exposure." },
+      { q: "How much does MERX cost?", a: "MERX sells subscriptions by coverage: a single province, a region, or all of Canada. Regional and national plans are billed annually, and full tender documents, alerts and e-bidding need a paid plan. Rates change, so check merx.com for the current price for your region. PMRFP Trade Pro is $249 CAD a year flat, or $29 a month." },
+      { q: "Is MERX free?", a: "You can browse tender summaries on MERX with a free account. Documents, email alerts and bidding need a paid subscription." },
+      { q: "Is there a cheaper alternative to MERX?", a: "If you only bid on building, maintenance and property work, yes. PMRFP collects public tenders from CanadaBuys, the City of Toronto, Quebec's SEAO and Yukon, adds private RFPs from property managers, and emails you the day a match posts — $249 CAD a year. If you bid across every sector and province, MERX's wider coverage is worth its price." },
+      { q: "Does PMRFP have government tenders?", a: "Yes. Every morning PMRFP imports open building and property tenders from CanadaBuys, the City of Toronto, Quebec's SEAO and the Government of Yukon, under their open-data licences. You still submit your bid on the issuer's own portal." },
+      { q: "Can I use both?", a: "Many trades do. MERX for the broadest public-sector coverage, PMRFP for property-manager RFPs, filtered building tenders, past contract winners and a directory profile that gets you found." },
     ],
   },
   {
@@ -93,6 +112,7 @@ export const COMPETITORS: Competitor[] = [
   },
   {
     slug: "bidnet-direct",
+    publicTenderProof: true,
     name: "BidNet Direct",
     tagline: "North American public-sector bid aggregator.",
     whatItIs:
@@ -106,19 +126,20 @@ export const COMPETITORS: Competitor[] = [
       "No private commercial real-estate angle",
     ],
     angle:
-      "BidNet is another government-tender tool. PMRFP is built for private commercial property operators — property managers, developers, and owners — who never post on government portals.",
+      "BidNet is a US-first government-tender tool. PMRFP is Canadian: building and property tenders from CanadaBuys, Toronto, Quebec and Yukon, plus private RFPs from property managers who never post on government portals.",
     rows: [
       { feature: "Annual price", pmrfp: PRICE, them: "≈US$500–$1,500/yr" },
-      { feature: "Focus", pmrfp: "Private commercial property", them: "Government tenders" },
+      { feature: "Focus", pmrfp: "Canadian building & property work — public tenders + private RFPs", them: "Government tenders" },
       { feature: "Vendor directory", pmrfp: "Yes", them: "No" },
       { feature: "Canada-native", pmrfp: "Yes", them: "US-primary" },
     ],
     faqs: [
-      { q: "Does PMRFP have government tenders?", a: "No — that's what BidNet and MERX are for. PMRFP is private commercial property RFPs plus a vendor directory." },
+      { q: "Does PMRFP have government tenders?", a: "Yes, for building and property work: PMRFP imports open tenders from CanadaBuys, the City of Toronto, Quebec's SEAO and Yukon every morning, next to private RFPs from property managers. BidNet covers far more US agencies." },
     ],
   },
   {
     slug: "biddingo",
+    publicTenderProof: true,
     name: "Biddingo",
     tagline: "Canadian MASH-sector tender platform.",
     whatItIs:
