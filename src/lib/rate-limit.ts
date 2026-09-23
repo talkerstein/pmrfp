@@ -41,8 +41,9 @@ const _limiters = new Map<BucketName, Ratelimit>();
 
 function getRedis(): Redis | null {
   if (_redis) return _redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Upstash's own names, or the KV_* names Vercel's Marketplace integration sets.
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
   if (!url || !token) return null;
   _redis = new Redis({ url, token });
   return _redis;

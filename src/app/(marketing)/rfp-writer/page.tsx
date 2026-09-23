@@ -22,11 +22,11 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: "Is the RFP writer really free?",
-    a: "Yes. Write as many RFPs as you need, copy them, print them or email them to yourself. Posting on PMRFP to get bids is free for property managers too.",
+    a: "Yes. Anyone can write RFPs from our expert templates. With a free property manager account, AI also tailors each RFP to your specific building and job. Posting on PMRFP to get bids is free for property managers too.",
   },
   {
     q: "Do I need an account?",
-    a: "No account is needed to write an RFP. You only create a free account if you want to post it on PMRFP so trades in your region can bid.",
+    a: "No account is needed to write an RFP from our templates. A free property manager account adds AI tailoring and lets you post the RFP on PMRFP so trades in your region can bid.",
   },
   {
     q: "Can I use the RFP outside PMRFP?",
@@ -103,6 +103,10 @@ export default async function RfpWriterPage() {
           <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
             Answer four quick questions. Get the scope, insurance and WSIB requirements, submission
             instructions and bid scoring, ready to send to your vendors or post free on {SITE.name}.
+          </p>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-indigo px-3 py-1 text-sm text-white">
+            <span className="size-1.5 rounded-full bg-teal-300" />
+            Property managers: sign in and our AI tailors it to your exact building — free.
           </p>
         </Container>
       </section>
