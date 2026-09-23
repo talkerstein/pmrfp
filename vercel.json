@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
+      "path": "/api/cron/public-tenders",
+      "schedule": "0 12 * * *"
+    },
+    {
       "path": "/api/cron/rfp-alerts",
       "schedule": "0 13 * * *"
     },
