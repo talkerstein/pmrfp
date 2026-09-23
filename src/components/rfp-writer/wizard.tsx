@@ -13,6 +13,20 @@ type Option = { slug: string; name: string };
 type TemplateOption = { slug: string; name: string; tradeSlug: string };
 
 export const DRAFT_KEY = "pmrfp:rfp-draft";
+/** Last wizard answers — so a visitor who signs up comes back to an AI-tailored version. */
+const ANSWERS_KEY = "pmrfp:rfp-answers";
+
+type Payload = Record<string, unknown>;
+interface SavedAnswers {
+  payload: Payload;
+  tradeSlug: string;
+  propertyTypeSlug: string;
+  city: string;
+  province: string;
+  bidDeadline: string;
+  budgetMin: string;
+  budgetMax: string;
+}
 
 /** What the post form reads back after sign-up (localStorage, same browser). */
 export interface StoredDraft {
@@ -109,9 +123,33 @@ export function RfpWizard({
   const [loading, setLoading] = useState(false);
   const [rfp, setRfp] = useState<RfpDraft | null>(null);
   const [source, setSource] = useState<"ai" | "template" | null>(null);
+  const [aiLocked, setAiLocked] = useState(false);
   const [email, setEmail] = useState("");
   const [emailing, setEmailing] = useState(false);
   const [emailed, setEmailed] = useState(false);
+
+  // Back from sign-up (?tailor=1): re-run the saved answers, now AI-tailored.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("tailor")) return;
+    try {
+      const raw = window.localStorage.getItem(ANSWERS_KEY);
+      if (!raw) return;
+      const a = JSON.parse(raw) as SavedAnswers;
+      // Browser storage only exists client-side, so this can't be initial state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTradeSlug(a.tradeSlug);
+      setPropertyTypeSlug(a.propertyTypeSlug);
+      setCity(a.city);
+      setProvince(a.province);
+      setBidDeadline(a.bidDeadline);
+      setBudgetMin(a.budgetMin);
+      setBudgetMax(a.budgetMax);
+      void generate(a.payload);
+    } catch {
+      /* storage unavailable — show the wizard */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Coming back from the "Post this RFP" email link: resume the saved draft.
   useEffect(() => {
@@ -144,41 +182,56 @@ export function RfpWizard({
     true,
   ][step];
 
-  async function generate() {
+  function currentPayload(): Payload {
+    return {
+      tradeSlug,
+      tradeName: trade?.name ?? tradeSlug,
+      templateSlug: templateSlug || undefined,
+      description: description.trim(),
+      propertyType: propertyTypes.find((p) => p.slug === propertyTypeSlug)?.name,
+      city: city.trim() || undefined,
+      province: province || undefined,
+      size: size.trim() || undefined,
+      occupied: occupied === "" ? undefined : occupied === "yes",
+      contractType,
+      timing,
+      bidDeadline,
+      budgetMin: budgetMin ? Number(budgetMin) : undefined,
+      budgetMax: budgetMax ? Number(budgetMax) : undefined,
+      insurance,
+      siteVisit,
+      siteVisitDate: siteVisit && siteVisitDate ? siteVisitDate : undefined,
+      priority,
+    };
+  }
+
+  /** `resume` = saved answers being re-run after sign-up (don't overwrite them). */
+  async function generate(resume?: Payload) {
+    const payload = resume ?? currentPayload();
     setLoading(true);
     try {
+      if (!resume) {
+        try {
+          const saved: SavedAnswers = { payload, tradeSlug, propertyTypeSlug, city, province, bidDeadline, budgetMin, budgetMax };
+          window.localStorage.setItem(ANSWERS_KEY, JSON.stringify(saved));
+        } catch {
+          /* private mode — the sign-up round trip just won't auto-resume */
+        }
+      }
       const res = await fetch("/api/rfp-writer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tradeSlug,
-          tradeName: trade?.name ?? tradeSlug,
-          templateSlug: templateSlug || undefined,
-          description: description.trim(),
-          propertyType: propertyTypes.find((p) => p.slug === propertyTypeSlug)?.name,
-          city: city.trim() || undefined,
-          province: province || undefined,
-          size: size.trim() || undefined,
-          occupied: occupied === "" ? undefined : occupied === "yes",
-          contractType,
-          timing,
-          bidDeadline,
-          budgetMin: budgetMin ? Number(budgetMin) : undefined,
-          budgetMax: budgetMax ? Number(budgetMax) : undefined,
-          insurance,
-          siteVisit,
-          siteVisitDate: siteVisit && siteVisitDate ? siteVisitDate : undefined,
-          priority,
-        }),
+        body: JSON.stringify(payload),
       });
       if (res.status === 429) {
         toast.error("You've written a few RFPs in a row — try again in a few minutes.");
         return;
       }
       if (!res.ok) throw new Error();
-      const data = (await res.json()) as { rfp: RfpDraft; source: "ai" | "template" };
+      const data = (await res.json()) as { rfp: RfpDraft; source: "ai" | "template"; aiLocked?: boolean };
       setRfp(data.rfp);
       setSource(data.source);
+      setAiLocked(Boolean(data.aiLocked));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       toast.error("Something went wrong writing your RFP. Please try again.");
@@ -246,7 +299,7 @@ export function RfpWizard({
           <p className="flex items-center gap-2 text-sm font-medium text-teal-900">
             <Check className="size-4" /> Your RFP is ready.{" "}
             <span className="font-normal text-teal-900/80">
-              {source === "ai" ? "Tailored to your job." : "Built from our expert template for this trade."} Edit anything below.
+              {source === "ai" ? "Tailored to your job by AI." : "Built from our expert template for this trade."} Edit anything below.
             </span>
           </p>
           <div className="flex flex-wrap gap-2">
@@ -267,6 +320,30 @@ export function RfpWizard({
             </Button>
           </div>
         </div>
+
+        {aiLocked && (
+          <div className="rfp-noprint mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo/20 bg-indigo p-4 text-white">
+            <p className="flex items-start gap-2 text-sm">
+              <Sparkles className="mt-0.5 size-4 shrink-0 text-teal-300" />
+              <span>
+                <strong>Want it written around your exact job?</strong>{" "}
+                <span className="text-indigo-100/80">
+                  Our AI tailors the scope, requirements and bidder questions to your building — free
+                  with a property manager account.
+                </span>
+              </span>
+            </p>
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={() => {
+                window.location.href = `/sign-up?role=property_manager&next=${encodeURIComponent("/rfp-writer?tailor=1")}`;
+              }}
+            >
+              Tailor it free <ArrowRight className="size-3.5" />
+            </Button>
+          </div>
+        )}
 
         <div className="rfp-print mt-6 space-y-6">
           <Field label="Title">
@@ -505,7 +582,7 @@ export function RfpWizard({
               Next <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <Button size="lg" onClick={generate} disabled={loading}>
+            <Button size="lg" onClick={() => generate()} disabled={loading}>
               {loading ? (
                 <><Sparkles className="size-4 animate-pulse" /> Writing your RFP…</>
               ) : (
