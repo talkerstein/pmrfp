@@ -71,12 +71,12 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
   // (proof that real work flows through here) — until the expiry cron archives
   // them after the PM grace window. Active listings sort first (see sort below).
   const today = new Date().toISOString().slice(0, 10);
-  const [{ data: rfps }, regionMap, propMap] = await Promise.all([
-    supabase.from("rfp_public").select("*"),
+  const [rfps, regionMap, propMap] = await Promise.all([
+    allPublicRfps(supabase),
     idNameMap(supabase, "regions"),
     idNameMap(supabase, "property_types"),
   ]);
-  const list = (rfps as RfpPublicRow[] | null) ?? [];
+  const list = rfps;
   const rfpIds = list.map((r) => r.id);
   const [cats, photos] = await Promise.all([
     categoriesByRfp(supabase, rfpIds),
@@ -265,16 +265,46 @@ async function slugNameMap(
   return map;
 }
 
+/**
+ * Every published RFP. PostgREST caps a response at 1,000 rows by default —
+ * with the public-tender feed the board passed that, and listings silently
+ * dropped off the board, its counts and the sitemap. Page through instead.
+ */
+async function allPublicRfps(supabase: SupabaseClient): Promise<RfpPublicRow[]> {
+  const PAGE = 1000;
+  const out: RfpPublicRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("rfp_public")
+      .select("*")
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error || !data) break;
+    out.push(...(data as RfpPublicRow[]));
+    if (data.length < PAGE) break;
+  }
+  return out;
+}
+
+/** Split an id list so `.in()` filters stay well under URL-length limits. */
+function chunks<T>(items: T[], size = 150): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 async function categoriesByRfp(
   supabase: SupabaseClient,
   rfpIds: string[],
 ): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();
   if (rfpIds.length === 0) return map;
-  const { data } = await supabase
-    .from("rfp_categories")
-    .select("rfp_id, trade_categories(name)")
-    .in("rfp_id", rfpIds);
+  const pages = await Promise.all(
+    chunks(rfpIds).map((ids) =>
+      supabase.from("rfp_categories").select("rfp_id, trade_categories(name)").in("rfp_id", ids),
+    ),
+  );
+  const data = pages.flatMap((p) => p.data ?? []);
   for (const row of (data as unknown as { rfp_id: string; trade_categories: { name: string } | null }[] | null) ?? []) {
     const arr = map.get(row.rfp_id) ?? [];
     if (row.trade_categories?.name) arr.push(row.trade_categories.name);
@@ -290,13 +320,18 @@ async function publicPhotosByRfp(
 ): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();
   if (rfpIds.length === 0) return map;
-  const { data } = await supabase
-    .from("rfp_documents")
-    .select("rfp_id, file_url, created_at")
-    .in("rfp_id", rfpIds)
-    .eq("visibility", "public")
-    .like("file_type", "image/%")
-    .order("created_at", { ascending: true });
+  const pages = await Promise.all(
+    chunks(rfpIds).map((ids) =>
+      supabase
+        .from("rfp_documents")
+        .select("rfp_id, file_url, created_at")
+        .in("rfp_id", ids)
+        .eq("visibility", "public")
+        .like("file_type", "image/%")
+        .order("created_at", { ascending: true }),
+    ),
+  );
+  const data = pages.flatMap((p) => p.data ?? []);
   for (const row of (data as { rfp_id: string; file_url: string | null }[] | null) ?? []) {
     if (!row.file_url) continue;
     const arr = map.get(row.rfp_id) ?? [];
