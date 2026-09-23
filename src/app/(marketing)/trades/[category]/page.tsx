@@ -97,7 +97,12 @@ export default async function TradeCategoryPage({
     },
   ];
 
-  const topRegions = regions.filter((r) => !["canada"].includes(r.slug)).slice(0, 12);
+  // Live trade × place pages first (busiest first), then other regions to fill.
+  const liveRegions = liveCities.map((c) => c.region);
+  const topRegions = [
+    ...liveRegions,
+    ...regions.filter((r) => !["canada", "united-states"].includes(r.slug) && !liveCitySlugs.has(r.slug)),
+  ].slice(0, Math.max(12, liveRegions.length));
   const templates = getTemplatesForTrade(cat.slug);
   const costGuide = COST_GUIDES.find((g) => g.tradeSlug === cat.slug);
 
@@ -150,7 +155,7 @@ export default async function TradeCategoryPage({
           <div className="mt-4"><EmptyState title={`No open ${lower} RFPs right now`} description="New opportunities are added regularly — check back soon or get listed to be ready." /></div>
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked={false} />)}
+            {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
           </div>
         )}
       </Container>
@@ -207,7 +212,7 @@ export default async function TradeCategoryPage({
 
       <Container className="py-12">
         <h2 className="text-2xl font-semibold tracking-tight">{cat.name} by region</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Explore {lower} demand and vendors across Canada.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Open {lower} RFPs, past contracts and companies, place by place.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {topRegions.map((r) => (
             <Link
