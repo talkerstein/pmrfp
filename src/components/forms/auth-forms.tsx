@@ -65,9 +65,12 @@ const ROLES = [
 export function SignUpForm({
   initialRole,
   next,
+  lockRole = false,
 }: {
   initialRole?: "trade" | "supplier" | "property_manager" | "visitor" | "real_estate_agent";
   next?: string | null;
+  /** Arrived from a paid-plan button: the role is decided, so don't show the picker. */
+  lockRole?: boolean;
 }) {
   const [state, action, pending] = useActionState(signUpAction, initial);
   const [role, setRole] = useState<string>(initialRole ?? "trade");
@@ -76,6 +79,7 @@ export function SignUpForm({
       <Alert state={state} />
       <input type="hidden" name="role" value={role} />
       {next && <input type="hidden" name="next" value={next} />}
+      {!lockRole && (
       <div className="space-y-2">
         <Label>I am…</Label>
         <div className="grid gap-2">
@@ -98,6 +102,7 @@ export function SignUpForm({
           ))}
         </div>
       </div>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor="fullName">Your name</Label>
         <Input id="fullName" name="fullName" required autoComplete="name" />

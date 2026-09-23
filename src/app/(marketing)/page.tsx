@@ -17,8 +17,9 @@ import { rfpMarket } from "@/lib/visitor-geo";
 import type { RfpListItem } from "@/lib/data/types";
 import { buttonVariants } from "@/components/ui/button";
 import { COPY, PRICING, SITE } from "@/lib/site";
-import { getCategories } from "@/lib/data/taxonomy";
-import { listRfps } from "@/lib/data/rfps";
+import { getCategories, getRegions } from "@/lib/data/taxonomy";
+import { listAllRfpsCached, listQualifyingCombos, openCountsByTradeRegion, regionTree } from "@/lib/data/trade-city";
+import { JobFinder, type FinderPlace } from "@/components/public/job-finder";
 import { winnersFromRfps } from "@/lib/data/winners";
 import { boardStats, closingLabel, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { cn } from "@/lib/utils";
@@ -93,7 +94,27 @@ function formatDeadline(d: string | null) {
 }
 
 export default async function HomePage() {
-  const [categories, rfps] = await Promise.all([getCategories(), listRfps()]);
+  // One cached board fetch shared with the trade × place index.
+  const [categories, rfps, regions, tree, combos] = await Promise.all([
+    getCategories(),
+    listAllRfpsCached(),
+    getRegions(),
+    regionTree(),
+    listQualifyingCombos(),
+  ]);
+  // "Your trade + your area" finder data: open counts per trade × place.
+  const openCounts = openCountsByTradeRegion(rfps, categories, tree);
+  const parentOf = new Map(tree.map((n) => [n.slug, n.parentSlug]));
+  const finderPlaces: FinderPlace[] = regions.map((r) => {
+    const parent = parentOf.get(r.slug) ?? null;
+    const grand = parent ? parentOf.get(parent) ?? null : null;
+    const us = r.slug === "united-states" || r.slug.startsWith("us-") || r.country === "USA";
+    return { slug: r.slug, name: r.name, country: us ? "US" : "CA", level: !parent ? 0 : !grand ? 1 : 2 };
+  });
+  const finderTrades = categories
+    .map((c) => ({ slug: c.slug, name: c.name }))
+    .sort((a, b) => (openCounts[`${b.slug}|*`] ?? 0) - (openCounts[`${a.slug}|*`] ?? 0) || a.name.localeCompare(b.name));
+  const livePages = combos.map((c) => `${c.category.slug}|${c.region.slug}`);
   const stats = boardStats(rfps);
   const winners = winnersFromRfps(rfps);
   // Still biddable (closes tomorrow or later), soonest first, English notices
@@ -176,20 +197,33 @@ export default async function HomePage() {
                 ? "Public tenders and property-manager RFPs on one board. Trade Pro emails you every match the day it posts."
                 : `${SITE.name} is the RFP board for commercial and residential buildings.`}
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link href={live ? proMonthly : "/sign-up?role=property_manager"} className={cn(buttonVariants({ size: "lg", variant: "accent" }), "active:scale-[0.98]")}>
-                {live ? "Start Trade Pro" : "Post a project"} <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                href="/rfps"
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "outline" }),
-                  "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white active:scale-[0.98]",
-                )}
-              >
-                See what&apos;s open
-              </Link>
-            </div>
+            {live ? (
+              <div className="mt-9">
+                {/* Relevance before payment: show this trade, this area, right now. */}
+                <JobFinder trades={finderTrades} places={finderPlaces} counts={openCounts} livePages={livePages} />
+                <p className="mt-4 text-sm text-indigo-100/70">
+                  Want every match emailed the morning it posts?{" "}
+                  <Link href={proMonthly} className="font-semibold text-teal-300 hover:underline">
+                    Start Trade Pro, ${PRICING.proMonthly}/month
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <div className="mt-9 flex flex-wrap items-center gap-3">
+                <Link href="/sign-up?role=property_manager" className={cn(buttonVariants({ size: "lg", variant: "accent" }), "active:scale-[0.98]")}>
+                  Post a project <ArrowRight className="size-4" />
+                </Link>
+                <Link
+                  href="/rfps"
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "outline" }),
+                    "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white active:scale-[0.98]",
+                  )}
+                >
+                  See what&apos;s open
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Live preview: real listings closing soonest, not a mock. */}
@@ -343,7 +377,7 @@ export default async function HomePage() {
       <section className="border-t border-border bg-secondary/40">
         <Container className="grid gap-12 py-20 md:py-24 lg:grid-cols-[1fr_420px] lg:items-start">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Free gets you seen. Pro gets you the work.</h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Free gets you seen. Pro gets you every match, first.</h2>
             <p className="mt-4 max-w-xl text-lg text-muted-foreground">
               Early-bird Trade Pro is ${PRICING.proAnnual} a year or ${PRICING.proMonthly} a month. The annual rate rises to
               $399 once we reach 100 members; join before then and your rate is locked in.
