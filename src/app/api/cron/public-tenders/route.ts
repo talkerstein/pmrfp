@@ -10,6 +10,7 @@ import {
 } from "@/lib/tenders/canadabuys";
 import { classifyToronto, fetchTorontoSolicitations, torontoToRfpInsert } from "@/lib/tenders/toronto";
 import { publicTenderSource } from "@/lib/tenders/sources";
+import { awardToRfpInsert, classifyAward, fetchAwards } from "@/lib/tenders/awards";
 
 interface Candidate {
   insert: TenderInsert;
@@ -18,7 +19,7 @@ interface Candidate {
 }
 
 interface Source {
-  key: "canadabuys" | "toronto";
+  key: "canadabuys" | "toronto" | "awards";
   /** Below this many matches, assume a bad download and don't archive. */
   minMatchesToArchive: number;
   collect: (today: string) => Promise<Candidate[]>;
@@ -43,6 +44,18 @@ const SOURCES: Source[] = [
         const categories = classifyToronto(row, today);
         const insert = categories.length ? torontoToRfpInsert(row, today) : null;
         return insert ? [{ insert, categories, regionSlug: "toronto" }] : [];
+      }),
+  },
+  {
+    // Past contracts: the "feed" is every trade award in the last 180 days,
+    // so anything that ages out of the window is archived by the same rule.
+    key: "awards",
+    minMatchesToArchive: 20,
+    collect: async (today) =>
+      (await fetchAwards(today)).flatMap((row) => {
+        const categories = classifyAward(row, today);
+        const insert = categories.length ? awardToRfpInsert(row, today) : null;
+        return insert ? [{ insert, categories, regionSlug: regionForTender(row).regionSlug }] : [];
       }),
   },
 ];

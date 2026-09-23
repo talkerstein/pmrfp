@@ -23,6 +23,9 @@ export async function GET(request: Request) {
     .select("id,title,slug,region_id, rfp_categories(category_id)")
     .eq("status", "published")
     .gte("published_at", since)
+    // Never alert on something already closed — incl. past public contracts,
+    // whose "deadline" is their award date.
+    .or(`deadline.is.null,deadline.gte.${new Date().toISOString().slice(0, 10)}`)
     .limit(50);
   if (!rfps?.length) return NextResponse.json({ sent: 0, reason: "no recent RFPs" });
 
