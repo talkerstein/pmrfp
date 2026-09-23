@@ -30,15 +30,24 @@ Rules:
 - Requirements: bullets for the insurance amount given (building owner / condo corporation as additional insured), WSIB or provincial WCB clearance, the licences and certifications this trade needs in the given province (e.g. TSSA for gas and elevators, ESA for electrical in Ontario), references for comparable work, and a named project lead.
 - Questions for bidders: 4 to 6 specific questions that separate strong bidders from weak ones for this exact job.`;
 
-let _client: Anthropic | null = null;
-function client(): Anthropic | null {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  _client ??= new Anthropic({ timeout: 90_000, maxRetries: 1 });
-  return _client;
+/**
+ * AI tailoring runs only when rate limiting is live too (Upstash) — without
+ * it the public endpoint would be an uncapped spend path. Missing either →
+ * template composer only.
+ */
+export function aiAvailable(): boolean {
+  return Boolean(
+    process.env.ANTHROPIC_API_KEY &&
+      process.env.UPSTASH_REDIS_REST_URL &&
+      process.env.UPSTASH_REDIS_REST_TOKEN,
+  );
 }
 
-export function aiAvailable(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+let _client: Anthropic | null = null;
+function client(): Anthropic | null {
+  if (!aiAvailable()) return null;
+  _client ??= new Anthropic({ timeout: 90_000, maxRetries: 1 });
+  return _client;
 }
 
 export async function tailorRfp(
