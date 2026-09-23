@@ -35,7 +35,7 @@ export const RULES: [slug: string, pattern: RegExp][] = [
 
 // Services a trade can't bid on, even when a keyword above matches.
 export const EXCLUDE =
-  /software|cyber|\bit\b services|information technology|consult|architect|engineering services|\ba&e\b|design services|modell?ing|assessment|study|research|laboratory|testing|training|translation|aircraft|vessel|\bship|satellite|weapon|ammunition|medical|pharmac|spare parts|advisory|equipment rental|design engineering|pre-design|rental/;
+  /software|cyber|\bit\b services|information technology|consult|architect|engineering services|\ba&e\b|design services|modell?ing|assessment|study|research|laboratory|testing|training|translation|aircraft|vessel|\bship|satellite|weapon|ammunition|medical|pharmac|spare parts|advisory|equipment rental|design engineering|pre-design|\brental\b/;
 
 
 export function slugify(s: string): string {

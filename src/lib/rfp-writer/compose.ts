@@ -1,5 +1,6 @@
 import { RFP_TEMPLATES, type RfpTemplate } from "@/lib/seo/rfp-templates";
 import { TIMING_LABEL, WEIGHTS, type RfpDraft, type WizardInput } from "./schema";
+import { isUsState } from "@/lib/geo";
 
 /**
  * Template-based RFP composer — no AI, always available. Starts from the
@@ -51,6 +52,39 @@ function placePhrase(input: WizardInput): string {
   return `a ${type}${at ? ` in ${at}` : ""}`;
 }
 
+// Templates and defaults are written for Canadian buildings. A U.S. property
+// needs U.S. terms: state workers' comp instead of WSIB/WCB, state licensing
+// instead of TSSA/ESA, USD budgets. Most specific phrases first.
+const US_TERMS: [RegExp, string][] = [
+  [/WSIB clearance certificate in good standing(?: \(or provincial WCB equivalent\))?\.?/g, "Proof of workers' compensation coverage as required by state law."],
+  [/WSIB clearance(?: in good standing)?\.?/g, "Proof of workers' compensation coverage as required by state law."],
+  [/WSIB \(or provincial WCB\) clearance/g, "proof of workers' compensation coverage"],
+  [/TSSA certification \(Ontario\) or provincial equivalent/g, "State or local licensing"],
+  [/TSSA or provincial equivalent/g, "State or local licensing"],
+  [/TSSA Gas Technician 2 minimum \(TSSA Gas Tech 1 for larger units\)/g, "Gas-fitter licensing as required by the state"],
+  [/TSSA-licensed elevator mechanic/g, "State-licensed elevator mechanic"],
+  [/ESA-licensed contractor \(Ontario\) or provincial equivalent/g, "Licensed electrical contractor in the state"],
+  [/ESA \/ provincial inspection/g, "Electrical permit and inspection"],
+  [/Refrigerant handling certification \(Canada CARO \/ ODP-compliant\)/g, "EPA Section 608 refrigerant handling certification"],
+  [/ASME A17\.1 \/ CSA B44/g, "ASME A17.1"],
+  [/per Canadian Electrical Code/g, "per the National Electrical Code (NEC)"],
+  [/CAN\/ULC-S536/g, "NFPA 72"],
+  [/CFAA-certified fire alarm technician \(Canadian Fire Alarm Association\)/g, "NICET-certified fire alarm technician"],
+  [/major Canadian insurers/g, "major insurers"],
+  [/\bTSSA\b/g, "state"],
+  [/\bESA\b/g, "electrical inspection"],
+  [/\bWSIB\b/g, "workers' comp"],
+  [/in the province/g, "in the state"],
+  [/\bprovincial\b/g, "state"],
+  [/condo corporation/g, "condominium association"],
+  [/\(CAD, before tax\)/g, "(USD, before tax)"],
+];
+
+export function localize(text: string, input: Pick<WizardInput, "province">): string {
+  if (!isUsState(input.province)) return text;
+  return US_TERMS.reduce((out, [p, r]) => out.replace(p, r), text);
+}
+
 /** Replace template placeholders with answers where we have them. */
 function fill(text: string, input: WizardInput): string {
   return text
@@ -98,7 +132,7 @@ export function submissionInstructions(input: WizardInput): string {
       : money((input.budgetMax ?? input.budgetMin)!);
     lines.push(`Budget guidance: ${range} (CAD, before tax).`);
   }
-  return lines.join("\n");
+  return localize(lines.join("\n"), input);
 }
 
 function genericScope(): string {
@@ -135,18 +169,18 @@ export function composeRfp(input: WizardInput): RfpDraft {
     t?.siteAccess ? `Site access (to confirm for this property):\n${fill(t.siteAccess, input)}` : null,
   ].filter(Boolean).join("\n\n");
 
-  const requirements = t
+  const requirements = localize(t
     ? fill(t.requirements, input)
     : `- ${input.insurance === "5m" ? "$5M" : "$2M"} commercial general liability insurance, with the building owner / condo corporation named as additional insured (certificate required before mobilization).
 - WSIB clearance certificate in good standing (or provincial WCB equivalent).
 - All licences and certifications required for ${input.tradeName.toLowerCase()} work in the province.
 - Three references for comparable work completed in the last 24 months.
-- A named project lead or site contact for the duration of the work.`;
+- A named project lead or site contact for the duration of the work.`, input);
 
   return {
     title,
     summary,
-    scope,
+    scope: localize(scope, input),
     requirements,
     submissionInstructions: submissionInstructions(input),
     evaluationCriteria: WEIGHTS[input.priority].map(([k, v]) => `${k} (${v}%)`),

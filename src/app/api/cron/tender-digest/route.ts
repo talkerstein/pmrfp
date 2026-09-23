@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendTenderDigest } from "@/lib/email/send";
@@ -63,7 +64,7 @@ export async function GET(request: Request) {
       .eq("is_demo", false)
       .eq("status", "active"),
     supabase.from("subscriptions").select("organization_id,status"),
-    supabase.from("regions").select("id,slug"),
+    supabase.from("regions").select("id,slug,parent_id"),
   ]);
 
   const openRfps = ((rfps ?? []) as unknown as RfpRow[]).filter((r) => !r.deadline || r.deadline >= today);
@@ -85,7 +86,11 @@ export async function GET(request: Request) {
     supabase.from("organization_members").select("organization_id,user_id").in("organization_id", orgIds),
   ]);
   const catsByOrg = group((orgCats ?? []) as Pair[], "organization_id", "category_id");
-  const regsByOrg = group((orgRegs ?? []) as Pair[], "organization_id", "region_id");
+  // Serving a region means serving everything under it (Ontario → Toronto).
+  const tree = (regions ?? []) as RegionNode[];
+  const regsByOrg = new Map(
+    [...group((orgRegs ?? []) as Pair[], "organization_id", "region_id")].map(([org, ids]) => [org, expandRegionIds(ids, tree)]),
+  );
   const usersByOrg = group((members ?? []) as Pair[], "organization_id", "user_id");
 
   const userIds = [...new Set(((members ?? []) as Pair[]).map((m) => m.user_id as string))];

@@ -6,6 +6,10 @@
       "schedule": "0 12 * * *"
     },
     {
+      "path": "/api/cron/us-tenders",
+      "schedule": "15 12 * * *"
+    },
+    {
       "path": "/api/cron/rfp-alerts",
       "schedule": "0 13 * * *"
     },

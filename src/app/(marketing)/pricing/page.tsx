@@ -22,7 +22,7 @@ import { SeoListingCard } from "@/components/public/seo-listing-card";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple, transparent pricing for Canadian trades. Start with a free directory listing, or go Trade Pro for full RFP access.",
+    "Simple, transparent pricing for trades in Canada and the U.S. Start with a free directory listing, or go Trade Pro for full RFP access.",
 };
 
 const FREE_FEATURES = [
@@ -54,8 +54,12 @@ const FAQ = [
     a: "Yes, your subscription stays active until the end of the billing period. Monthly plans can be cancelled any time.",
   },
   {
-    q: "Is this Canada-wide?",
-    a: "We start Canada-wide with a strong Ontario/GTA focus.",
+    q: "Where does PMRFP work?",
+    a: "Across Canada and the United States. Public tenders come from CanadaBuys, the City of Toronto, Quebec's SEAO and Yukon in Canada, and from SAM.gov for U.S. federal building work. Property managers post RFPs in both countries.",
+  },
+  {
+    q: "Can U.S. companies sign up and pay?",
+    a: "Yes. Prices are in Canadian dollars and any major card works. At current exchange rates Trade Pro comes to about US$180 a year (or about US$21 a month); your card issuer does the conversion.",
   },
   {
     q: "Can property managers post for free?",

@@ -130,7 +130,7 @@ export function RfpPostForm({
         <Field label="Full scope" req hint="Cover the building and access, the work, what's included, what's excluded, and any add-alternates to price separately.">
           <Textarea name="scope" rows={defaults?.scope ? 12 : 5} required defaultValue={defaults?.scope ?? ""} />
         </Field>
-        <Field label="Requirements" hint="Insurance (and who's named as additional insured), WSIB/WCB clearance, licences for the trade, and references.">
+        <Field label="Requirements" hint="Insurance (and who's named as additional insured), workers' comp (WSIB/WCB in Canada, state coverage in the U.S.), licences for the trade, and references.">
           <Textarea name="requirements" rows={defaults?.requirements ? 8 : 3} defaultValue={defaults?.requirements ?? ""} placeholder="Insurance, licensing, references, etc." />
         </Field>
       </Section>
@@ -151,7 +151,7 @@ export function RfpPostForm({
             </select>
           </Field>
           <Field label="City"><Input name="city" defaultValue={defaults?.city ?? ""} /></Field>
-          <Field label="Province"><Input name="province" defaultValue={defaults?.province ?? "Ontario"} /></Field>
+          <Field label="Province / state"><Input name="province" defaultValue={defaults?.province ?? "Ontario"} /></Field>
         </div>
       </Section>
 
@@ -161,8 +161,8 @@ export function RfpPostForm({
 
       <Section title="Budget & timeline">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Budget min (CAD)"><Input name="budgetMin" type="number" defaultValue={defaults?.budgetMin ?? ""} /></Field>
-          <Field label="Budget max (CAD)"><Input name="budgetMax" type="number" defaultValue={defaults?.budgetMax ?? ""} /></Field>
+          <Field label="Budget min" hint="In the property's currency: CAD in Canada, USD in the U.S."><Input name="budgetMin" type="number" defaultValue={defaults?.budgetMin ?? ""} /></Field>
+          <Field label="Budget max"><Input name="budgetMax" type="number" defaultValue={defaults?.budgetMax ?? ""} /></Field>
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="budgetPublic" className="size-4" /> Show budget publicly

@@ -71,7 +71,7 @@ export function titleFromDescription(description: string): string | null {
 // installation anywhere in the opening. "Supply of ... maintenance services"
 // and "supply and install" are trade work and stay in.
 const SUPPLY_ONLY = /^(non-exclusive )?supply (and|&) delivery of|^(non-exclusive )?supply of /i;
-const HAS_SERVICE = /services?|maintenance|install|repair|replacement|renovat/i;
+const HAS_SERVICE = /services?\b|maintenance|install|repair|replacement|renovat/i;
 
 /** PMRFP trade slugs for this Toronto solicitation (max 3), or [] to skip. */
 export function classifyToronto(r: TorontoRow, today: string): string[] {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendMatchingRfpAlert } from "@/lib/email/send";
+import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
 
 /**
  * Daily matching-alert digest (Vercel cron). For RFPs published in the last
@@ -26,7 +27,9 @@ export async function GET(request: Request) {
     // Never alert on something already closed — incl. past public contracts,
     // whose "deadline" is their award date.
     .or(`deadline.is.null,deadline.gte.${new Date().toISOString().slice(0, 10)}`)
-    .limit(50);
+    // A daily run sees ~a day of new tenders (Canada + U.S. federal); 50
+    // silently dropped the rest once SAM.gov was added.
+    .limit(500);
   if (!rfps?.length) return NextResponse.json({ sent: 0, reason: "no recent RFPs" });
 
   const { data: paidSubs } = await supabase
@@ -36,14 +39,19 @@ export async function GET(request: Request) {
   const orgIds = (paidSubs ?? []).map((s: { organization_id: string }) => s.organization_id);
   if (!orgIds.length) return NextResponse.json({ sent: 0, reason: "no paid orgs" });
 
-  const [{ data: orgCats }, { data: orgRegs }, { data: members }] = await Promise.all([
+  const [{ data: orgCats }, { data: orgRegs }, { data: members }, { data: regionRows }] = await Promise.all([
     supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", orgIds),
     supabase.from("organization_regions").select("organization_id,region_id").in("organization_id", orgIds),
     supabase.from("organization_members").select("organization_id,user_id").in("organization_id", orgIds),
+    supabase.from("regions").select("id,parent_id"),
   ]);
 
   const catsByOrg = group(orgCats ?? [], "organization_id", "category_id");
-  const regsByOrg = group(orgRegs ?? [], "organization_id", "region_id");
+  // Serving a region means serving everything under it (Ontario → Toronto).
+  const tree = (regionRows ?? []) as RegionNode[];
+  const regsByOrg = new Map(
+    [...group(orgRegs ?? [], "organization_id", "region_id")].map(([org, ids]) => [org, expandRegionIds(ids, tree)]),
+  );
   const usersByOrg = group(members ?? [], "organization_id", "user_id");
 
   const allUserIds = [...new Set((members ?? []).map((m: { user_id: string }) => m.user_id))];

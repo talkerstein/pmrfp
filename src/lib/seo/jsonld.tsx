@@ -19,7 +19,7 @@ export function organizationSchema() {
     name: SITE.name,
     url: BASE,
     description: SITE.description,
-    areaServed: "CA",
+    areaServed: ["CA", "US"],
     sameAs: [SITE.sisterBrand.url],
   };
 }

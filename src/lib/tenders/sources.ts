@@ -15,6 +15,9 @@ export const OGL_NS_ATTRIBUTION =
 export const OGL_YUKON_ATTRIBUTION =
   "Contains information licensed under the Open Government Licence – Yukon.";
 
+export const SAM_ATTRIBUTION =
+  "Source: SAM.gov Contract Opportunities, U.S. General Services Administration (U.S. federal government data, public domain).";
+
 export interface PublicTenderSource {
   /** Importer feed key — archiving is scoped per key. */
   key: string;
@@ -40,6 +43,8 @@ const SOURCES: [suffix: RegExp, source: PublicTenderSource][] = [
   [/-nsa-[a-z0-9-]+$/, { key: "ns-awards", past: true, badge: "Past public contract · Nova Scotia", issuer: "a Nova Scotia public body", portal: "the Nova Scotia procurement portal", bidLabel: "Open the NS portal", attribution: OGL_NS_ATTRIBUTION }],
   [/-qc-[a-z0-9-]+$/, { key: "seao", past: false, badge: "Public tender · Quebec (SEAO)", issuer: "a Quebec public body", portal: "SEAO", bidLabel: "Bid on SEAO", attribution: SEAO_ATTRIBUTION }],
   [/-tor-[a-z0-9-]+$/, { key: "toronto", past: false, badge: "Public tender · City of Toronto", issuer: "the City of Toronto", portal: "the City of Toronto bid portal", bidLabel: "Bid on the City portal", attribution: OGL_TORONTO_ATTRIBUTION }],
+  // SAM NoticeIds are 32 hex chars — anchored so a CanadaBuys title with "-us-" in it never matches.
+  [/-us-[a-f0-9]{32}$/, { key: "sam", past: false, badge: "Public tender · U.S. federal (SAM.gov)", issuer: "a U.S. federal agency", portal: "SAM.gov", bidLabel: "Bid on SAM.gov", attribution: SAM_ATTRIBUTION }],
   [/-yk-[a-z0-9-]+$/, { key: "yukon", past: false, badge: "Public tender · Yukon", issuer: "the Government of Yukon", portal: "Yukon's bids&tenders portal", bidLabel: "Bid on Yukon's portal", attribution: OGL_YUKON_ATTRIBUTION }],
 ];
 

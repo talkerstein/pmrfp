@@ -62,7 +62,9 @@ export default async function VersusPage({
   // right now from public sources, soonest-closing first.
   const openTenders = c.publicTenderProof
     ? (await listRfps().catch(() => [])).filter(
-        (r) => r.status === "open" && r.sourceType === "public_source" && !publicTenderSource(r.slug).past,
+        // Canadian sources only — the copy below names them, and these
+        // competitors sell Canadian tender access.
+        (r) => r.status === "open" && r.sourceType === "public_source" && !publicTenderSource(r.slug).past && publicTenderSource(r.slug).key !== "sam",
       )
     : [];
   const sample = [...openTenders]
