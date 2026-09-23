@@ -18,11 +18,14 @@ import { boardStats, compactDollars, isPastContract } from "@/lib/data/fomo";
 const PAGE_SIZE = 30;
 const AWARDED_PREVIEW = 9;
 
-export const metadata: Metadata = {
-  title: "Commercial Property RFP Opportunities",
-  description:
-    "Monitor commercial property RFPs by region — electrical, HVAC, roofing, snow removal, cleaning, and more. Subscribe to view full opportunities and express interest.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const open = (await listRfps().catch(() => [])).filter((r) => r.status === "open").length;
+  return {
+    title: "Commercial Property RFPs & Tenders in Canada",
+    description: `${open > 0 ? `${open} open` : "Open"} commercial property RFPs and public tenders across Canada — snow removal, HVAC, roofing, cleaning, electrical and more. Updated daily, with closing dates and past awards.`,
+    alternates: { canonical: "/rfps" },
+  };
+}
 
 export default async function RfpsPage({
   searchParams,

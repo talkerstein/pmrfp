@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import { buttonVariants } from "@/components/ui/button";
 import { listRfps } from "@/lib/data/rfps";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ActivateButton } from "@/components/dashboard/billing-actions";
@@ -10,7 +12,7 @@ export default async function TradeDashboardHome() {
   const session = await requireRole(["trade"]);
   const demo = isDemoMode();
   const org = session.organization;
-  const matchingRfps = (await listRfps()).length;
+  const matchingRfps = (await listRfps()).filter((r) => r.status === "open").length;
 
   return (
     <div>
@@ -37,6 +39,25 @@ export default async function TradeDashboardHome() {
         <StatCard label="Interests submitted" value={0} href="/dashboard/interests" />
         <StatCard label="Profile views" value={demo ? 42 : 0} hint="Last 30 days" />
       </div>
+
+      {org?.profile_status === "approved" && org.slug && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-6">
+          <div className="flex items-start gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/api/badge/${org.slug}`} alt="Your PMRFP badge" width={160} height={40} className="mt-1 hidden sm:block" />
+            <div>
+              <h2 className="text-base font-semibold">Your profile is live — add your badge</h2>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                Paste it into your website footer and email signature. Property managers who click it
+                see your profile, and your profile links back to your site. Two minutes, free.
+              </p>
+            </div>
+          </div>
+          <Link href="/badge" className={buttonVariants({ variant: "outline" })}>
+            Get the code
+          </Link>
+        </div>
+      )}
 
       {!session.hasTradeAccess && (
         <div className="mt-6 rounded-lg border border-teal-300 bg-teal-50/60 p-6">
