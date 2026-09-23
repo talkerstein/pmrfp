@@ -48,17 +48,24 @@ export function RfpPostForm({
         </div>
       )}
 
+      <p className="rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+        Clear requests get more — and more comparable — bids.{" "}
+        <a href="/resources/how-to-post-a-quality-rfp" target="_blank" rel="noopener" className="font-medium text-teal-700 underline">
+          The 7-step guide to posting a quality RFP
+        </a>
+      </p>
+
       <Section title="Project">
-        <Field label="RFP title" req>
+        <Field label="RFP title" req hint="Name the work, the property type and the city.">
           <Input name="title" required defaultValue={defaults?.title ?? ""} placeholder="e.g. Condominium Electrical Maintenance Contract" />
         </Field>
-        <Field label="Short summary" req>
+        <Field label="Short summary" req hint="Two sentences: what you need, plus the one detail that shapes the price.">
           <Textarea name="summary" rows={2} required defaultValue={defaults?.summary ?? ""} />
         </Field>
-        <Field label="Full scope" req>
+        <Field label="Full scope" req hint="Cover the building and access, the work, what's included, what's excluded, and any add-alternates to price separately.">
           <Textarea name="scope" rows={defaults?.scope ? 12 : 5} required defaultValue={defaults?.scope ?? ""} />
         </Field>
-        <Field label="Requirements">
+        <Field label="Requirements" hint="Insurance (and who's named as additional insured), WSIB/WCB clearance, licences for the trade, and references.">
           <Textarea name="requirements" rows={defaults?.requirements ? 8 : 3} defaultValue={defaults?.requirements ?? ""} placeholder="Insurance, licensing, references, etc." />
         </Field>
       </Section>
@@ -95,8 +102,14 @@ export function RfpPostForm({
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="budgetPublic" className="size-4" /> Show budget publicly
         </label>
-        <Field label="Submission deadline" req><Input name="deadline" type="date" required /></Field>
-        <Field label="Submission instructions"><Textarea name="submissionInstructions" rows={2} /></Field>
+        <Field label="Submission deadline" req hint="Allow three weeks for capital work or multi-year contracts, and one to two weeks for small jobs."><Input name="deadline" type="date" required /></Field>
+        <Field label="Submission instructions" hint="What to send, the site-walk date, the question cut-off, and how you'll score bids.">
+          <Textarea
+            name="submissionInstructions"
+            rows={3}
+            placeholder="e.g. Lump-sum price for the base scope, add-alternates priced separately. Include insurance certificate, WSIB clearance, schedule and 3 references. Site walk May 12, 10 a.m. Evaluation: price 40%, experience 30%, scope coverage 20%, schedule 10%."
+          />
+        </Field>
       </Section>
 
       <Section title="Contact">
@@ -132,11 +145,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-function Field({ label, req, children }: { label: string; req?: boolean; children: React.ReactNode }) {
+function Field({ label, req, hint, children }: { label: string; req?: boolean; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <Label className="mb-1.5 block">{label}{req && <span className="text-red-600"> *</span>}</Label>
       {children}
+      {hint && <span className="mt-1.5 block text-xs text-muted-foreground">{hint}</span>}
     </label>
   );
 }

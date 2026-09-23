@@ -12,7 +12,7 @@ const META_DESC =
   "A working property manager's guide to writing commercial maintenance RFPs that get real, comparable bids — scope, insurance, evaluation, and the mistakes to avoid. Canada-specific.";
 
 export const metadata: Metadata = {
-  title: `${TITLE} | ${SITE.name}`,
+  title: TITLE,
   description: META_DESC,
   alternates: { canonical: `/resources/${SLUG}` },
 };
