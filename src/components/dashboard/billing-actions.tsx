@@ -37,7 +37,7 @@ export function ActivateButton({
   className,
 }: {
   label?: string;
-  plan?: "seo" | "pro" | "featured";
+  plan?: "seo" | "pro" | "featured" | "realtor";
   interval?: "monthly" | "annual";
   variant?: "default" | "outline" | "accent";
   className?: string;
