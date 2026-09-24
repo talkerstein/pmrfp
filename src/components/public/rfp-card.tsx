@@ -4,8 +4,8 @@ import { CalendarClock, Flame, Lock, MapPin, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { RfpListItem } from "@/lib/data/types";
-import { publicTenderSource } from "@/lib/tenders/sources";
 import { closingLabel, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
+import { isGcPackage, sourceTypeLabel } from "@/lib/gc/packages";
 
 function formatDeadline(d: string | null) {
   if (!d) return "Open";
@@ -21,6 +21,9 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
   const award = past ? parseAward(rfp.summary) : null;
   // Real countdown from the real closing date — only inside the last week.
   const urgency = !closed ? closingLabel(daysUntil(rfp.deadline)) : null;
+  // "Public tender · …" or "GC sub-trade package"; plain PM RFPs get no badge.
+  const sourceBadge = sourceTypeLabel(rfp.sourceType, rfp.slug);
+  const gc = isGcPackage(rfp);
   return (
     <Link
       href={`/rfps/${rfp.slug}`}
@@ -64,9 +67,12 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
               {rfp.propertyTypeName}
             </Badge>
           )}
-          {rfp.sourceType === "public_source" && (
-            <Badge variant="outline" className="font-normal text-muted-foreground">
-              {publicTenderSource(rfp.slug).badge}
+          {sourceBadge && (
+            <Badge
+              variant="outline"
+              className={cn("font-normal", gc ? "border-teal-400 text-teal-ink" : "text-muted-foreground")}
+            >
+              {sourceBadge}
             </Badge>
           )}
         </div>
@@ -117,7 +123,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
             <CalendarClock className="size-3.5" />{" "}
             {!rfp.deadline
               ? "Ongoing — no fixed deadline"
-              : `${past ? "Awarded" : closed ? "Closed" : "Closes"} ${formatDeadline(rfp.deadline)}`}
+              : `${past ? "Awarded" : closed ? "Closed" : gc ? "Quotes due" : "Closes"} ${formatDeadline(rfp.deadline)}`}
           </span>
         )}
         {rfp.isDemo && (
