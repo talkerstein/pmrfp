@@ -8,6 +8,7 @@ import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { fmtDate, dash } from "@/lib/admin/queries";
 import type { Organization } from "@/types/db";
+import { reviewOrganizationAction } from "@/lib/admin/org-actions";
 
 export const metadata: Metadata = { title: "Organizations · Admin · PMRFP" };
 
@@ -36,6 +37,9 @@ export default async function AdminOrganizationsPage() {
       .returns<OrgRow[]>();
     rows = data ?? [];
   }
+  // Waiting companies first: they're invisible in the directory until approved.
+  rows = [...rows].sort((a, b) => Number(b.profile_status === "pending_review") - Number(a.profile_status === "pending_review"));
+  const pending = rows.filter((r) => r.profile_status === "pending_review").length;
 
   return (
     <>
@@ -46,13 +50,15 @@ export default async function AdminOrganizationsPage() {
       {isDemoMode() && <DemoBanner />}
 
       <p className="mb-4 text-sm text-muted-foreground">
-        Profile approval, verification, and suspension actions are managed from this view.
+        {pending > 0
+          ? `${pending} ${pending === 1 ? "company is" : "companies are"} waiting for approval and hidden from the directory until then.`
+          : "No companies waiting for approval."}
       </p>
 
       {rows.length === 0 ? (
         <EmptyState title="No organizations yet" description="Registered companies will appear here." />
       ) : (
-        <AdminTable columns={["Name", "Type", "Profile", "Verified", "Completion", "Created"]}>
+        <AdminTable columns={["Name", "Type", "Profile", "Verified", "Completion", "Created", ""]}>
           {rows.map((o) => (
             <TableRow key={o.id}>
               <TableCell className="font-medium">{dash(o.name)}</TableCell>
@@ -61,6 +67,26 @@ export default async function AdminOrganizationsPage() {
               <TableCell>{o.verified ? "✓" : "—"}</TableCell>
               <TableCell className="text-muted-foreground">{o.profile_completion_score}%</TableCell>
               <TableCell className="text-muted-foreground">{fmtDate(o.created_at)}</TableCell>
+              <TableCell>
+                {o.profile_status === "pending_review" && !isDemoMode() && (
+                  <div className="flex gap-2">
+                    <form action={reviewOrganizationAction}>
+                      <input type="hidden" name="id" value={o.id} />
+                      <input type="hidden" name="decision" value="approved" />
+                      <button className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90">
+                        Approve
+                      </button>
+                    </form>
+                    <form action={reviewOrganizationAction}>
+                      <input type="hidden" name="id" value={o.id} />
+                      <input type="hidden" name="decision" value="rejected" />
+                      <button className="rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary">
+                        Reject
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </AdminTable>
