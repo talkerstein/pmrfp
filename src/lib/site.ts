@@ -157,6 +157,7 @@ export const FOOTER_COLS = [
       { label: "Case Studies", href: "/case-studies" },
       { label: "Compare", href: "/vs" },
       { label: "Vendor Badge", href: "/badge" },
+      { label: "Services for Trades", href: "/services-for-trades" },
       { label: `Refer a trade — earn $${REFERRAL.tradeFee}`, href: "/refer-a-trade" },
     ],
   },
