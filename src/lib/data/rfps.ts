@@ -10,6 +10,7 @@ import {
   type DemoRfp,
 } from "@/lib/demo-data";
 import type { RfpDetail, RfpFilters, RfpListItem } from "@/lib/data/types";
+import { displayTitle } from "@/lib/tenders/title";
 
 function demoToList(r: DemoRfp): RfpListItem {
   const today = new Date().toISOString().slice(0, 10);
@@ -90,7 +91,7 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
   ]);
   let mapped: RfpListItem[] = list.map((r) => ({
     slug: r.slug,
-    title: r.title,
+    ...displayTitle(r.title, r.source_type),
     summary: r.summary,
     categories: cats.get(r.id) ?? [],
     regionName: r.region_id ? regionMap.get(r.region_id) ?? null : null,
@@ -156,7 +157,7 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
   ]);
   return {
     slug: r.slug,
-    title: r.title,
+    ...displayTitle(r.title, r.source_type),
     summary: r.summary,
     categories: cats.get(r.id) ?? [],
     regionName: r.region_id ? regionMap.get(r.region_id) ?? null : null,
@@ -197,7 +198,7 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
   return {
     id: r.id,
     slug: r.slug,
-    title: r.title,
+    ...displayTitle(r.title, r.source_type),
     summary: r.summary,
     categories: cats.get(r.id) ?? [],
     regionName: r.region_id ? regionMap.get(r.region_id) ?? null : null,
@@ -234,6 +235,7 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────
+
 interface RfpPublicRow {
   id: string; slug: string; title: string; summary: string | null;
   region_id: string | null; property_type_id: string | null;

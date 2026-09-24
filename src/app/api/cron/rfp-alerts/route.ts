@@ -5,6 +5,7 @@ import { sendDailyMatches } from "@/lib/email/send";
 import { unsubscribeUrl } from "@/lib/email/unsubscribe";
 import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
 import { buildDigests, digestSubject, type DigestRfp } from "@/lib/alerts/digest";
+import { displayTitle } from "@/lib/tenders/title";
 import {
   awardLine,
   recentAwardsByUser,
@@ -18,6 +19,7 @@ export const maxDuration = 60;
 interface RfpRow {
   id: string;
   title: string;
+  source_type: string | null;
   slug: string;
   summary: string | null;
   deadline: string | null;
@@ -54,7 +56,7 @@ export async function GET(request: Request) {
 
   const { data: rfpRows } = await supabase
     .from("rfp_posts")
-    .select("id,title,slug,summary,deadline,region_id, rfp_categories(category_id, trade_categories(name))")
+    .select("id,title,slug,summary,deadline,region_id,source_type, rfp_categories(category_id, trade_categories(name))")
     .eq("status", "published")
     .gte("published_at", since)
     // Never alert on something already closed — incl. past public contracts,
@@ -89,7 +91,7 @@ export async function GET(request: Request) {
   const rfps: DigestRfp[] = rows.map((r) => ({
     id: r.id,
     slug: r.slug,
-    title: r.title,
+    title: displayTitle(r.title, r.source_type).title,
     deadline: r.deadline,
     regionId: r.region_id,
     regionName: r.region_id ? regionName.get(r.region_id) ?? null : null,

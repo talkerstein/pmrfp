@@ -3,7 +3,7 @@ import Link from "next/link";
 import { isUsState } from "@/lib/geo";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, HardHat, Landmark } from "lucide-react";
+import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, HardHat, Hash, Landmark } from "lucide-react";
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { LockedContentPanel } from "@/components/public/locked-content-panel";
@@ -165,6 +165,7 @@ export default async function RfpDetailPage({
           <h1 lang={noticeLang} className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {teaser.regionName && <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {teaser.regionName}</span>}
+            {teaser.reference && <span className="flex items-center gap-1.5"><Hash className="size-4" /> Ref. <span className="font-mono text-foreground">{teaser.reference}</span></span>}
             <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : isClosed ? `Closed ${fmt(teaser.deadline)}` : teaser.deadline ? `${closesLabel} ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
           </div>
 
