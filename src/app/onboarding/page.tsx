@@ -7,17 +7,19 @@ import { requireUser } from "@/lib/access/access";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { SITE } from "@/lib/site";
 import { safeNextPath } from "@/lib/auth/next";
+import { getSignupGcIntent } from "@/lib/gc/intent";
+import { parseAwardRef } from "@/lib/gc/packages";
 
 export const metadata: Metadata = { title: "Set up your account" };
 
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; kind?: string; award?: string }>;
 }) {
   const session = await requireUser();
   const role = session.profile.primary_role;
-  const { next: rawNext } = await searchParams;
+  const { next: rawNext, kind, award: awardParam } = await searchParams;
   const next = safeNextPath(rawNext);
   const [categories, allRegions, geo] = await Promise.all([getCategories(), getRegions(), getVisitorGeo()]);
   // Visitors in the U.S. see the U.S. regions first (the list is long and
@@ -28,14 +30,22 @@ export default async function OnboardingPage({
   const home = visitorRegionSlug(geo);
   const preselectedRegions = home && regions.some((r) => r.slug === home) ? [home] : [];
 
+  // Buyers pick "property manager" or "general contractor"; a GC sign-up
+  // (or ?kind=gc) starts on the contractor choice.
+  const gcIntent = role === "property_manager" ? await getSignupGcIntent() : { builder: false, award: null };
+  const isGc = role === "property_manager" && (kind === "gc" || gcIntent.builder);
+  const award = parseAwardRef(awardParam) ?? gcIntent.award;
+
   const heading =
     role === "trade"
       ? "Set up your company profile"
       : role === "supplier"
         ? "Set up your supplier profile"
-        : role === "property_manager"
-          ? "Tell us about your organization"
-          : "You're all set";
+        : isGc
+          ? "Tell us about your company"
+          : role === "property_manager"
+            ? "Tell us about your organization"
+            : "You're all set";
 
   return (
     <div className="min-h-screen bg-secondary/40">
@@ -52,10 +62,20 @@ export default async function OnboardingPage({
         <p className="mt-1 text-sm text-muted-foreground">
           {role === "trade" || role === "supplier"
             ? "This helps property decision-makers and trades find you. You can edit everything later."
-            : "Just the basics — you can post an RFP right after."}
+            : isGc
+              ? "Just the basics — you can post your first sub-trade package right after."
+              : "Just the basics — you can post an RFP right after."}
         </p>
         <div className="mt-8 rounded-xl border border-border bg-card p-6 sm:p-8">
-          <OnboardingForm role={role} categories={categories} regions={regions} next={next} preselectedRegions={preselectedRegions} />
+          <OnboardingForm
+            role={role}
+            categories={categories}
+            regions={regions}
+            next={next}
+            preselectedRegions={preselectedRegions}
+            orgKind={isGc ? "builder" : "property_manager"}
+            award={award}
+          />
         </div>
       </main>
     </div>

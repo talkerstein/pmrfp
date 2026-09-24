@@ -10,6 +10,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { buttonVariants } from "@/components/ui/button";
 import { fmtDate, dash } from "@/lib/admin/queries";
 import type { RfpPost } from "@/types/db";
+import { reviewRfpAction } from "@/lib/admin/rfp-actions";
 
 export const metadata: Metadata = { title: "RFPs · Admin · PMRFP" };
 
@@ -26,14 +27,26 @@ export default async function AdminRfpsPage() {
   await requireRole(["admin", "super_admin"]);
 
   let rows = DEMO_RFPS;
+  let waiting: RfpRow[] = DEMO_RFPS.filter((r) => r.status === "pending_review");
   if (!isDemoMode()) {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("rfp_posts")
-      .select("id, title, status, deadline, source_type, created_at")
-      .order("created_at", { ascending: false })
-      .returns<RfpRow[]>();
+    const [{ data }, { data: queue }] = await Promise.all([
+      supabase
+        .from("rfp_posts")
+        .select("id, title, status, deadline, source_type, created_at")
+        .order("created_at", { ascending: false })
+        .returns<RfpRow[]>(),
+      // Asked for separately: the full list is capped at 1,000 rows by the
+      // API and is mostly imported tenders, so a waiting post could fall off.
+      supabase
+        .from("rfp_posts")
+        .select("id, title, status, deadline, source_type, created_at")
+        .eq("status", "pending_review")
+        .order("created_at", { ascending: false })
+        .returns<RfpRow[]>(),
+    ]);
     rows = data ?? [];
+    waiting = queue ?? [];
   }
 
   return (
@@ -48,6 +61,44 @@ export default async function AdminRfpsPage() {
         }
       />
       {isDemoMode() && <DemoBanner />}
+
+      {waiting.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold">
+            Waiting for review ({waiting.length}): hidden until you publish
+          </h2>
+          <AdminTable columns={["Title", "Source", "Deadline", "Created", ""]}>
+            {waiting.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="max-w-xs truncate font-medium">{dash(r.title)}</TableCell>
+                <TableCell className="capitalize text-muted-foreground">{r.source_type.replace(/_/g, " ")}</TableCell>
+                <TableCell className="text-muted-foreground">{fmtDate(r.deadline)}</TableCell>
+                <TableCell className="text-muted-foreground">{fmtDate(r.created_at)}</TableCell>
+                <TableCell>
+                  {!isDemoMode() && (
+                    <div className="flex gap-2">
+                      <form action={reviewRfpAction}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <input type="hidden" name="decision" value="published" />
+                        <button className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90">
+                          Publish
+                        </button>
+                      </form>
+                      <form action={reviewRfpAction}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <input type="hidden" name="decision" value="rejected" />
+                        <button className="rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary">
+                          Reject
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </AdminTable>
+        </section>
+      )}
 
       {rows.length === 0 ? (
         <EmptyState

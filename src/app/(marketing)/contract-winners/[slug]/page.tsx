@@ -12,6 +12,7 @@ import { compactDollars, daysUntil } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING, SITE } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { GcPackageCta } from "@/components/public/gc-package-cta";
 
 export const revalidate = 3600;
 
@@ -155,6 +156,9 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
               </ul>
             )}
           </div>
+
+          {/* The winner may need subs — their latest award prefills the first package. */}
+          <GcPackageCta awardSlug={w.awards[0]?.slug ?? null} title="Won one of these contracts?" />
 
           <div className="rounded-xl border border-border bg-card p-6">
             <h2 className="flex items-center gap-2 text-base font-semibold"><Building2 className="size-4" /> Is this your company?</h2>

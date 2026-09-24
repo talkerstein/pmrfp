@@ -47,7 +47,10 @@ export async function updateSession(request: NextRequest) {
   if (isProtected && !data.user) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
-    url.searchParams.set("next", path);
+    // Keep the query inside `next` (e.g. ?kind=gc&award=…) — it used to be
+    // left on /sign-in, where nothing reads it.
+    url.search = "";
+    url.searchParams.set("next", `${path}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 

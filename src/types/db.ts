@@ -14,7 +14,7 @@ export type RfpStatus =
 export type RfpContactVisibility =
   | "public_contact" | "pmrfp_mediated" | "anonymous_until_interest_approved";
 export type RfpSourceType =
-  | "property_manager_direct" | "admin_seeded" | "public_source" | "partner_referral";
+  | "property_manager_direct" | "admin_seeded" | "public_source" | "partner_referral" | "gc_package";
 export type DocVisibility = "public" | "paid_users" | "admin_only";
 export type InterestStatus =
   | "submitted" | "viewed" | "contact_revealed" | "shortlisted" | "declined" | "closed";
@@ -131,6 +131,9 @@ export interface RfpPost {
   source_type: RfpSourceType;
   source_url: string | null;
   source_notes: string | null;
+  /** GC sub-trade packages (migration 20260924000002) — absent before it runs. */
+  awarded_rfp_id?: string | null;
+  gc_project_name?: string | null;
   status: RfpStatus;
   is_demo: boolean;
   published_at: string | null;
@@ -156,6 +159,9 @@ export interface RfpTeaser {
   is_demo: boolean;
   published_at: string | null;
   created_at: string;
+  /** GC sub-trade packages (migration 20260924000002) — absent before it runs. */
+  gc_project_name?: string | null;
+  awarded_rfp_id?: string | null;
 }
 
 export interface RfpDocument {

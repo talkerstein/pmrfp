@@ -7,6 +7,14 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession } from "@/lib/access/access";
 import { companyProfileSchema, rfpPostSchema } from "@/lib/validations";
 import { sendAdminNewRfp } from "@/lib/email/send";
+import {
+  GC_PACKAGE,
+  GC_UNAVAILABLE_MESSAGE,
+  gcPackageTitle,
+  isGcSchemaMissingError,
+  parseAwardRef,
+} from "@/lib/gc/packages";
+import { getLinkableAward } from "@/lib/gc/data";
 import type { ActionState } from "@/lib/auth/actions";
 
 const DEMO = "Demo mode: connect a Supabase project to save changes.";
@@ -198,14 +206,43 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
   };
 }
 
+/**
+ * A GC sub-trade package (the form sends kind=gc) is a regular RFP row with
+ * source_type 'gc_package', titled from the trade + project. Returns null for
+ * a regular RFP.
+ */
+async function gcPackageFields(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  formData: FormData,
+  categories: string[],
+): Promise<null | { error: string } | { title: string; gcProjectName: string; awardedRfpId: string | null }> {
+  if (formData.get("kind") !== "gc") return null;
+  const project = String(formData.get("gcProjectName") ?? "").trim().replace(/\s+/g, " ").slice(0, 160);
+  if (!project) return { error: "Project name is required" };
+  if (!categories.length) return { error: "Pick the trade for this package" };
+  const relatedInput = formData.get("relatedContract")?.toString().trim() ?? "";
+  const [{ data: cat }, award] = await Promise.all([
+    supabase.from("trade_categories").select("name").eq("slug", categories[0]).maybeSingle<{ name: string }>(),
+    getLinkableAward(parseAwardRef(relatedInput)),
+  ]);
+  if (!cat) return { error: "Pick the trade for this package" };
+  if (relatedInput && !award) {
+    return { error: "That link isn't a public contract award on PMRFP. Paste the award page link, or leave it blank." };
+  }
+  return { title: gcPackageTitle(cat.name, project), gcProjectName: project, awardedRfpId: award?.id ?? null };
+}
+
 export async function createRfpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   if (!isSupabaseConfigured()) return { error: DEMO };
   const session = await getSession();
   if (!session) redirect("/sign-in");
 
   const categories = formData.getAll("categories").map(String);
+  const supabase = await createClient();
+  const gc = await gcPackageFields(supabase, formData, categories);
+  if (gc && "error" in gc) return { error: gc.error };
   const parsed = rfpPostSchema.safeParse({
-    title: formData.get("title"),
+    title: gc ? gc.title : formData.get("title"),
     summary: formData.get("summary"),
     scope: formData.get("scope"),
     requirements: formData.get("requirements") ?? "",
@@ -228,7 +265,6 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please complete the required fields." };
   const d = parsed.data;
 
-  const supabase = await createClient();
   const [{ data: region }, { data: pt }] = await Promise.all([
     supabase.from("regions").select("id").eq("slug", d.regionSlug).maybeSingle<{ id: string }>(),
     d.propertyType
@@ -260,12 +296,20 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
       contact_phone: d.contactPhone || null,
       posted_by_user_id: session.userId,
       posted_by_organization_id: session.organization?.id ?? null,
-      source_type: session.profile.primary_role === "admin" || session.profile.primary_role === "super_admin" ? "admin_seeded" : "property_manager_direct",
+      source_type: gc
+        ? GC_PACKAGE
+        : session.profile.primary_role === "admin" || session.profile.primary_role === "super_admin"
+          ? "admin_seeded"
+          : "property_manager_direct",
+      ...(gc ? { gc_project_name: gc.gcProjectName, awarded_rfp_id: gc.awardedRfpId } : {}),
       status: "pending_review",
     })
     .select("id")
     .single<{ id: string }>();
-  if (error || !rfp) return { error: "Could not create the RFP." };
+  if (error || !rfp) {
+    // Before the GC-package migration runs, say so plainly instead of failing vaguely.
+    return { error: gc && isGcSchemaMissingError(error) ? GC_UNAVAILABLE_MESSAGE : "Could not create the RFP." };
+  }
 
   const { data: catRows } = await supabase.from("trade_categories").select("id,slug").in("slug", categories);
   if (catRows?.length)

@@ -5,6 +5,13 @@ import { sendDailyMatches } from "@/lib/email/send";
 import { unsubscribeUrl } from "@/lib/email/unsubscribe";
 import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
 import { buildDigests, digestSubject, type DigestRfp } from "@/lib/alerts/digest";
+import {
+  awardLine,
+  recentAwardsByUser,
+  toDigestAward,
+  type AwardRow,
+  type DigestAward,
+} from "@/lib/alerts/awards";
 
 export const maxDuration = 60;
 
@@ -26,7 +33,8 @@ type Pair = Record<string, string>;
  * regions (a region covers everything under it). Honors opt-outs
  * (notification_preferences new_rfps='off' / email off), never repeats an RFP
  * (notifications log), and uses the plain-English bid summary when one
- * exists. `?dry=1` returns per-member counts without sending.
+ * exists. A digest also carries up to 3 "recently awarded near you" public
+ * contracts (lib/alerts/awards). `?dry=1` returns per-member counts without sending.
  * Protect with CRON_SECRET if set.
  */
 export async function GET(request: Request) {
@@ -103,8 +111,7 @@ export async function GET(request: Request) {
       .in("user_id", ids),
   ]);
 
-  const digests = buildDigests({
-    rfps,
+  const membership = {
     paidOrgIds,
     catsByOrg: group((orgCats ?? []) as Pair[], "organization_id", "category_id"),
     regionsByOrg: new Map(
@@ -114,6 +121,10 @@ export async function GET(request: Request) {
       ]),
     ),
     usersByOrg: group((members ?? []) as Pair[], "organization_id", "user_id"),
+  };
+  const digests = buildDigests({
+    rfps,
+    ...membership,
     emailByUser: new Map(
       ((profiles ?? []) as { id: string; email: string; status: string }[])
         .filter((p) => p.email && p.status !== "suspended")
@@ -131,11 +142,21 @@ export async function GET(request: Request) {
     ),
   });
 
+  // "Recently awarded near you": award notices that landed in the same window.
+  // Only rides along with a digest that's going out anyway — never its own email.
+  const awardsByUser = digests.length
+    ? await recentAwards(supabase, { since, today, ...membership })
+    : new Map<string, DigestAward[]>();
+
   if (dry) {
     return NextResponse.json({
       dry: true,
       recentRfps: rfps.length,
-      members: digests.map((d) => ({ matches: d.items.length, subject: digestSubject(d) })),
+      members: digests.map((d) => ({
+        matches: d.items.length,
+        recentAwards: awardsByUser.get(d.userId)?.length ?? 0,
+        subject: digestSubject(d),
+      })),
     });
   }
 
@@ -155,6 +176,7 @@ export async function GET(request: Request) {
       })),
       unsubscribeUrl: unsubscribeUrl(base, d.userId),
       mailingAddress,
+      recentAwards: (awardsByUser.get(d.userId) ?? []).map((a) => ({ slug: a.slug, line: awardLine(a, d.tradeLabel) })),
     });
     await supabase.from("notifications").insert(
       d.items.map((i) => ({
@@ -169,6 +191,44 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({ sent, rfpsNotified: digests.reduce((s, d) => s + d.items.length, 0) });
+}
+
+/**
+ * Award notices first seen in the digest window (created_at, not the award
+ * date — notices land days after the award). Any error just means no section.
+ */
+async function recentAwards(
+  supabase: ReturnType<typeof createServiceClient>,
+  opts: {
+    since: string;
+    today: string;
+    paidOrgIds: string[];
+    catsByOrg: Map<string, Set<string>>;
+    regionsByOrg: Map<string, Set<string>>;
+    usersByOrg: Map<string, Set<string>>;
+  },
+): Promise<Map<string, DigestAward[]>> {
+  const { data, error } = await supabase
+    .from("rfp_posts")
+    .select("id,title,slug,summary,deadline,region_id,source_type, rfp_categories(category_id, trade_categories(slug))")
+    .eq("status", "published")
+    .eq("source_type", "public_source")
+    .gte("created_at", opts.since)
+    .lte("deadline", opts.today)
+    .limit(500);
+  if (error || !data) return new Map();
+  const rows = data as unknown as (Omit<AwardRow, "categories"> & {
+    rfp_categories: { category_id: string; trade_categories: { slug: string } | null }[];
+  })[];
+  const awards = rows
+    .map((r) =>
+      toDigestAward(
+        { ...r, categories: r.rfp_categories.map((c) => ({ id: c.category_id, slug: c.trade_categories?.slug ?? "" })) },
+        opts.today,
+      ),
+    )
+    .filter((a): a is DigestAward => a !== null);
+  return recentAwardsByUser({ awards, ...opts });
 }
 
 function group(rows: Pair[], keyField: string, valField: string): Map<string, Set<string>> {
