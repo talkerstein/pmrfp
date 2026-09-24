@@ -213,17 +213,16 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
       province: data.province || null,
       short_description: data.shortDescription || null,
       public_contact_visibility: data.publicContactVisibility,
-      // Listings auto-approve when the profile clears a minimum-quality floor
-      // (real description + at least one category and region), so a signup is
-      // visible in the directory immediately instead of parking in a review
-      // queue nobody drains — 7 orgs sat invisible for weeks that way. Thin
-      // profiles still land in pending_review, and admins can suspend anything
+      // Listings auto-approve once they say what they do and where (at least
+      // one category and one region), so a signup is visible in the directory
+      // immediately. The old floor also required a 40+ character description,
+      // and 11 real companies sat invisible for up to 3 months behind it.
+      // Profiles with no trade or area still land in pending_review (approve
+      // them in /admin/organizations), and admins can suspend anything
       // retroactively. This is also what makes the gated trade×city pages turn
       // on without manual work.
       profile_status: isListing
-        ? (data.shortDescription ?? "").trim().length >= 40 &&
-          categories.length > 0 &&
-          regions.length > 0
+        ? categories.length > 0 && regions.length > 0
           ? "approved"
           : "pending_review"
         : "approved",
