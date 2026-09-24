@@ -513,17 +513,17 @@ export function ProjectCapture({
             {publishError}
           </p>
         )}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
           <button
             type="button"
             onClick={publish}
             disabled={publishing || uploading || (flagged && !photosChecked)}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40 sm:flex-none"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40 sm:w-auto"
           >
             {publishing && <Loader2 className="size-4 animate-spin" />}
             {paid ? "Publish project" : "Send for review"}
           </button>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-center text-xs text-muted-foreground sm:text-left">
             {paid
               ? "Goes live on your profile right away."
               : "We check free-plan projects before they go live, usually within a day."}
