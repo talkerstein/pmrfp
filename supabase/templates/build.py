@@ -76,10 +76,10 @@ def para(text: str) -> str:
     return f'<p style="margin:0 0 16px 0;font-size:16px;line-height:26px;color:{TEXT};">{text}</p>'
 
 
-def button(label: str) -> str:
+def button(label: str, href: str = "{{ .ConfirmationURL }}") -> str:
     return f"""<table role="presentation" class="btn-table" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 20px 0;">
           <tr><td align="center" bgcolor="{NAVY}" style="border-radius:10px;background:{NAVY};">
-            <a class="btn-a" href="{{{{ .ConfirmationURL }}}}" style="display:inline-block;padding:15px 30px;font-family:{FONT};font-size:16px;line-height:20px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;">{label}</a>
+            <a class="btn-a" href="{href}" style="display:inline-block;padding:15px 30px;font-family:{FONT};font-size:16px;line-height:20px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;">{label}</a>
           </td></tr>
         </table>"""
 
@@ -137,11 +137,30 @@ TEMPLATES = {
         + f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 8px 0;"><tr><td style="background:#F6F7FB;border:1px solid #E6E8F0;border-radius:10px;padding:14px 22px;font-family:{FONT};font-size:30px;line-height:36px;font-weight:700;letter-spacing:6px;color:{INK};">{{{{ .Token }}}}</td></tr></table>',
         note="The code expires soon. Didn&#39;t ask for a code? You can ignore this email.",
     ),
+    # Security notifications (Supabase Auth → Emails → Notifications).
+    "password-changed": dict(
+        subject="Your PMRFP password was changed",
+        preheader="A security notice about your PMRFP account.",
+        title="Your password was changed",
+        body=para("The password for your PMRFP account <strong style=\"color:#1B1E45;\">{{ .Email }}</strong> was just changed. If that was you, you&#39;re all set.")
+        + para("Wasn&#39;t you? Reset your password now, then email us at <a href=\"mailto:info@pmrfp.com\" style=\"color:#282B59;\">info@pmrfp.com</a> so we can help secure your account.")
+        + button("Reset my password", "https://pmrfp.com/forgot-password"),
+        note="We send this notice every time your password changes, to keep your account safe.",
+    ),
+    "email-changed": dict(
+        subject="Your PMRFP sign-in email was changed",
+        preheader="A security notice about your PMRFP account.",
+        title="Your sign-in email was changed",
+        body=para("The sign-in email for your PMRFP account was changed from <strong style=\"color:#1B1E45;\">{{ .OldEmail }}</strong> to <strong style=\"color:#1B1E45;\">{{ .Email }}</strong>.")
+        + para("Wasn&#39;t you? Email us right away at <a href=\"mailto:info@pmrfp.com\" style=\"color:#282B59;\">info@pmrfp.com</a> and we&#39;ll lock the account down."),
+        note="We send this notice every time your sign-in email changes, to keep your account safe.",
+    ),
 }
 
 SAMPLE = {
     "{{ .ConfirmationURL }}": "https://pmrfp.com/auth/confirm?token=5f2c8a",
     "{{ .Email }}": "you@yourcompany.com",
+    "{{ .OldEmail }}": "old@yourcompany.com",
     "{{ .NewEmail }}": "new@yourcompany.com",
     "{{ .Token }}": "482913",
 }

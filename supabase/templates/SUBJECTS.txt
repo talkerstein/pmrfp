@@ -4,3 +4,5 @@ reset-password: Reset your PMRFP password
 change-email: Confirm your new email for PMRFP
 invite: You're invited to PMRFP
 reauthentication: Your PMRFP verification code
+password-changed: Your PMRFP password was changed
+email-changed: Your PMRFP sign-in email was changed
