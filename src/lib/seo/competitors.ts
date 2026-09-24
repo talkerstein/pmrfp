@@ -27,6 +27,10 @@ export interface Competitor {
   seoDescription?: string;
   /** Show live open public-tender counts and samples (competitor sells tender access). */
   publicTenderProof?: boolean;
+  /** The competitor's published prices, shown as the first table on the page. Only
+   *  figures read off their own pricing page, with where and when they were checked. */
+  priceTable?: { plan: string; covers: string; price: string; perYear: string }[];
+  priceSource?: { url: string; checked: string; note?: string };
 }
 
 const PRICE = "$249 CAD/yr (flat)";
@@ -41,14 +45,27 @@ export const COMPETITORS: Competitor[] = [
     // alternative, the two things they came to check.
     seoTitle: "MERX Pricing (2026) & a Cheaper Alternative for Building Trades",
     seoDescription:
-      "What MERX costs, what it covers, and where it's overkill. PMRFP puts CanadaBuys, Toronto, Quebec and Yukon building tenders plus private property-manager RFPs on one board — $249 CAD/yr flat.",
+      "MERX Premium costs $50 to $167 a month, billed annually ($600 to $2,004 a year). What each plan covers, and a $249/yr option if you only bid on building and property work.",
+    // Read off merx.com/public/pricing on 2026-09-24 (Canadian Tenders tab,
+    // annual billing). Re-check before changing; never estimate.
+    priceTable: [
+      { plan: "Basic", covers: "Solicitations from participating member agencies", price: "Free", perYear: "$0" },
+      { plan: "Premium Local", covers: "One province (territories included)", price: "$50/month, billed annually", perYear: "$600" },
+      { plan: "Premium Regional", covers: "One region", price: "$100/month, billed annually", perYear: "$1,200" },
+      { plan: "Premium National", covers: "All of Canada", price: "$167/month, billed annually", perYear: "$2,004" },
+    ],
+    priceSource: {
+      url: "https://www.merx.com/public/pricing",
+      checked: "September 24, 2026",
+      note: "CAD, before tax. MERX says annual billing saves 50% over monthly. Private construction leads are a separate subscription (for example Ontario at $113.17/month, billed annually).",
+    },
     publicTenderProof: true,
     tagline: "Canada's largest public-tender aggregator.",
     whatItIs:
       "MERX pulls federal, provincial, municipal and MASH-sector tenders (plus some private construction) into one feed, sold by province, region or all of Canada. It hosts electronic bid submission for the buyers who publish on it.",
     whoFor: "Vendors bidding on public tenders in every sector, across many provinces.",
     pricing:
-      "Plans are sold per province, per region or all-Canada; regional and national plans bill annually, and full documents and alerts need a paid plan. Check merx.com for current rates",
+      "Basic is free; Premium is $50 (one province), $100 (one region) or $167 (all of Canada) a month, billed annually",
     strengths: [
       "Largest Canadian tender database, every sector",
       "Every province and territory, bilingual",
@@ -62,7 +79,7 @@ export const COMPETITORS: Competitor[] = [
     angle:
       "MERX sells the whole Canadian tender feed. If you only bid on building and property work, PMRFP puts the tenders that matter — CanadaBuys, City of Toronto, Quebec's SEAO and Yukon — next to private RFPs from property managers, with daily alerts for $249 a year.",
     rows: [
-      { feature: "Price", pmrfp: `${PRICE}, or $29/mo`, them: "Varies by province, region or all-Canada; regional and national billed annually" },
+      { feature: "Price", pmrfp: `${PRICE}, or $29/mo`, them: "Free Basic; Premium $50 to $167/mo billed annually ($600 to $2,004/yr)" },
       { feature: "Public tenders", pmrfp: "CanadaBuys, City of Toronto, Quebec SEAO, Yukon", them: "Federal, provincial, municipal, MASH — every sector" },
       { feature: "Private property-manager RFPs", pmrfp: "Yes", them: "No" },
       { feature: "Filtered to building & property trades", pmrfp: "Yes", them: "You filter by category" },
@@ -71,7 +88,8 @@ export const COMPETITORS: Competitor[] = [
       { feature: "Submit bids on the platform", pmrfp: "No — you bid on the issuer's portal", them: "Yes, for MERX-hosted tenders" },
     ],
     faqs: [
-      { q: "How much does MERX cost?", a: "MERX sells subscriptions by coverage: a single province, a region, or all of Canada. Regional and national plans are billed annually, and full tender documents, alerts and e-bidding need a paid plan. Rates change, so check merx.com for the current price for your region. PMRFP Trade Pro is $249 CAD a year flat, or $29 a month." },
+      { q: "How much does MERX cost?", a: "On MERX's pricing page (checked September 24, 2026), Basic is free and Premium is sold by coverage, billed annually: Local (one province) $50 a month, Regional $100 a month, National $167 a month. That's $600, $1,200 or $2,004 a year, in CAD before tax. MERX says annual billing saves 50% over paying monthly. PMRFP Trade Pro is $249 CAD a year, or $29 a month." },
+      { q: "How much is MERX for Ontario?", a: "Ontario on its own is the Premium Local plan: $50 a month billed annually, $600 a year before tax (checked September 24, 2026). MERX's private construction leads are a separate subscription; the Ontario plan is $113.17 a month, billed annually." },
       { q: "Is MERX free?", a: "You can browse tender summaries on MERX with a free account. Documents, email alerts and bidding need a paid subscription." },
       { q: "Is there a cheaper alternative to MERX?", a: "If you only bid on building, maintenance and property work, yes. PMRFP collects public tenders from CanadaBuys, the City of Toronto, Quebec's SEAO and Yukon, adds private RFPs from property managers, and emails you the day a match posts — $249 CAD a year. If you bid across every sector and province, MERX's wider coverage is worth its price." },
       { q: "Does PMRFP have government tenders?", a: "Yes. Every morning PMRFP imports open building and property tenders from CanadaBuys, the City of Toronto, Quebec's SEAO and the Government of Yukon, under their open-data licences. You still submit your bid on the issuer's own portal." },
