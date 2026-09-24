@@ -5,23 +5,21 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendSubscriptionActivatedEmail, sendAdminNewSale } from "@/lib/email/send";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
+import { verifyStripeEvent } from "@/lib/stripe/verify-event";
 
 export async function POST(request: Request) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "Webhook not configured" }, { status: 400 });
-  }
-
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
   if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
+  // Signature first; if the env secret doesn't match this endpoint, fall back
+  // to fetching the event from Stripe by id (see verifyStripeEvent).
   const stripe = getStripe();
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, secret);
-  } catch {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  const verified = await verifyStripeEvent(stripe, body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  if (!verified) return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  const event: Stripe.Event = verified.event;
+  if (verified.via === "api") {
+    console.warn("[stripe webhook] signature mismatch; verified via API. Update STRIPE_WEBHOOK_SECRET.");
   }
 
   // Idempotency: Stripe retries on any non-2xx response or timeout. Without
@@ -134,7 +132,9 @@ export async function POST(request: Request) {
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
+        // Sync Stripe's CURRENT state, not the event snapshot, so a late
+        // retry or a backlog resent out of order can't roll a status back.
+        const sub = await stripe.subscriptions.retrieve((event.data.object as Stripe.Subscription).id);
         await syncSubscriptionFromStripe(sub);
 
         // Revenue leak: nothing previously demoted a churned org out of the
@@ -202,12 +202,21 @@ export async function POST(request: Request) {
         // on payment failure — worked by coincidence, not by design).
         const subField = inv.parent?.subscription_details?.subscription;
         const subId = typeof subField === "string" ? subField : subField?.id;
-        if (subId && isServiceConfigured()) {
-          const supabase = createServiceClient();
-          await supabase
-            .from("subscriptions")
-            .update({ status: "past_due" })
-            .eq("stripe_subscription_id", subId);
+        // Mirror the subscription's current status rather than forcing
+        // past_due: an old failed invoice resent after the customer paid
+        // must not mark them past_due again.
+        if (subId) {
+          const sub = await stripe.subscriptions.retrieve(subId);
+          if (sub.metadata?.organization_id) {
+            await syncSubscriptionFromStripe(sub);
+          } else if (isServiceConfigured() && sub.status !== "active" && sub.status !== "trialing") {
+            // No org id on the subscription (e.g. a hand-linked row): keep the
+            // old behaviour and flag the row by subscription id.
+            await createServiceClient()
+              .from("subscriptions")
+              .update({ status: "past_due" })
+              .eq("stripe_subscription_id", subId);
+          }
         }
         break;
       }
