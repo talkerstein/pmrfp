@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Container, Eyebrow } from "@/components/container";
 import { CTASection } from "@/components/public/section";
 import { EmptyState } from "@/components/public/empty-state";
 import { JsonLd, breadcrumbSchema, itemListSchema } from "@/lib/seo/jsonld";
 import { listCaseStudies } from "@/lib/data/case-studies";
+import { heroUrlsBySlug } from "@/lib/data/projects";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -17,6 +19,7 @@ export const metadata: Metadata = {
 
 export default async function CaseStudiesIndexPage() {
   const studies = await listCaseStudies();
+  const heroes = await heroUrlsBySlug(studies.map((s) => s.slug));
 
   return (
     <>
@@ -55,22 +58,35 @@ export default async function CaseStudiesIndexPage() {
               <Link
                 key={s.slug}
                 href={`/case-studies/${s.slug}`}
-                className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
+                className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-teal-400 hover:shadow-sm"
               >
-                <p className="text-xs font-medium uppercase tracking-wide text-teal-ink">
-                  {[s.categoryName, [s.city, s.province].filter(Boolean).join(", ")]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-                <h2 className="mt-2 text-base font-semibold leading-snug group-hover:text-teal-ink">
-                  {s.title}
-                </h2>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                  {s.challenge}
-                </p>
-                <span className="mt-4 text-sm font-medium text-teal-ink">
-                  By {s.orgName} →
-                </span>
+                {heroes.get(s.slug) && (
+                  <div className="relative aspect-[16/10] bg-secondary">
+                    <Image
+                      src={heroes.get(s.slug)!}
+                      alt={s.title}
+                      fill
+                      sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-1 flex-col p-5">
+                  <p className="text-xs font-medium uppercase tracking-wide text-teal-ink">
+                    {[s.categoryName, [s.city, s.province].filter(Boolean).join(", ")]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  <h2 className="mt-2 text-base font-semibold leading-snug group-hover:text-teal-ink">
+                    {s.title}
+                  </h2>
+                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                    {s.challenge}
+                  </p>
+                  <span className="mt-auto pt-4 text-sm font-medium text-teal-ink">
+                    By {s.orgName} →
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
@@ -80,8 +96,8 @@ export default async function CaseStudiesIndexPage() {
       <CTASection
         title="Done work like this?"
         description={`Member trades publish case studies free — each one strengthens your profile and your visibility on ${SITE.name}'s trade and city pages.`}
-        primaryHref="/dashboard/case-studies/new"
-        primaryLabel="Submit a case study"
+        primaryHref="/dashboard/projects"
+        primaryLabel="Add a project"
         secondaryHref="/for-trades"
         secondaryLabel="How membership works"
       />

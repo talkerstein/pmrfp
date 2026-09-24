@@ -24,6 +24,7 @@ export interface CaseStudyListItem {
 }
 
 export interface CaseStudyDetail extends CaseStudyListItem {
+  id: string;
   approach: string;
   outcome: string;
   timeline: string | null;
@@ -32,6 +33,7 @@ export interface CaseStudyDetail extends CaseStudyListItem {
 }
 
 interface Row {
+  id: string;
   slug: string;
   title: string;
   city: string | null;
@@ -49,7 +51,7 @@ interface Row {
 }
 
 const SELECT =
-  "slug,title,city,province,property_type,challenge,approach,outcome,timeline,budget_band,published_at," +
+  "id,slug,title,city,province,property_type,challenge,approach,outcome,timeline,budget_band,published_at," +
   "organizations(name,slug,verified),trade_categories(name,slug),regions(slug)";
 
 function toList(r: Row): CaseStudyListItem {
@@ -76,16 +78,21 @@ export async function listCaseStudies(filters?: {
 }): Promise<CaseStudyListItem[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = createReadClient();
+  const filtered = Boolean(filters?.categorySlug || filters?.regionSlug);
+  const limit = filters?.limit ?? 60;
   const { data } = await supabase
     .from("case_studies")
     .select(SELECT)
     .eq("status", "published")
     .order("published_at", { ascending: false })
-    .limit(filters?.limit ?? 60);
+    // Trade / region are filtered below (they're joined slugs), so a filtered
+    // call reads a wider window first. Limiting before the filter would only
+    // ever match among the newest few studies site-wide.
+    .limit(filtered ? 500 : limit);
   let rows = ((data as unknown as Row[]) ?? []).map(toList);
   if (filters?.categorySlug) rows = rows.filter((r) => r.categorySlug === filters.categorySlug);
   if (filters?.regionSlug) rows = rows.filter((r) => r.regionSlug === filters.regionSlug);
-  return rows;
+  return rows.slice(0, limit);
 }
 
 export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null> {
@@ -101,6 +108,7 @@ export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null
   if (!r) return null;
   return {
     ...toList(r),
+    id: r.id,
     approach: r.approach,
     outcome: r.outcome,
     timeline: r.timeline,

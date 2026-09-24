@@ -21,7 +21,7 @@ export function DashboardShell({
 }) {
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 flex-col bg-sidebar p-4 md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col bg-sidebar p-4 md:flex print:hidden">
         <Link href="/" className="mb-6 flex items-center px-2" aria-label="PMRFP home">
           <Logo className="text-teal-300" />
         </Link>
@@ -30,7 +30,7 @@ export function DashboardShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-border px-5">
+        <header className="flex h-14 items-center justify-between border-b border-border px-5 print:hidden">
           <div className="eyebrow text-muted-foreground md:hidden">
             {SITE.name} · {area}
           </div>
@@ -45,7 +45,7 @@ export function DashboardShell({
             </form>
           </div>
         </header>
-        <main className="flex-1 p-5 sm:p-8">{children}</main>
+        <main className="flex-1 p-5 sm:p-8 print:p-0">{children}</main>
       </div>
     </div>
   );

@@ -73,10 +73,11 @@ function loadMigration(file: string): string {
 
 export type Db = PGlite;
 
-export async function createTestDb(): Promise<PGlite> {
+/** `extra`: later migrations to load on top of the base set, in order. */
+export async function createTestDb(extra: string[] = []): Promise<PGlite> {
   const db = new PGlite();
   await db.exec(SHIM);
-  for (const m of MIGRATIONS) {
+  for (const m of [...MIGRATIONS, ...extra]) {
     await db.exec(loadMigration(m));
   }
   await db.exec(GRANTS);

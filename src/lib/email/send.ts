@@ -37,7 +37,10 @@ async function send(
   }
 }
 
-function layout(title: string, bodyHtml: string, footnote?: string): string {
+function layout(title: string, bodyHtml: string, footnote?: string, opts?: { referralPs?: boolean }): string {
+  // The referral P.S. is for our members. Emails we send on a member's
+  // behalf to THEIR clients (review requests) leave it off.
+  const ps = opts?.referralPs ?? true;
   return `
   <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;color:#282B59">
     <div style="padding:20px 0;border-bottom:1px solid #e2e8f0">
@@ -49,11 +52,11 @@ function layout(title: string, bodyHtml: string, footnote?: string): string {
     </div>
     <div style="padding:16px 0;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b">
       ${footnote ? `<p style="margin:0 0 8px">${footnote}</p>` : ""}
-      <p style="margin:0 0 8px">
+      ${ps ? `<p style="margin:0 0 8px">
         <strong style="color:#0C7A5A">P.S.</strong> Know a trade or a project?
         <a href="${BASE}/refer" style="color:#282B59;font-weight:600;text-decoration:underline">Refer them — earn up to $75</a>
         when they list on PMRFP.
-      </p>
+      </p>` : ""}
       <p style="margin:0">${SITE.name} · Commercial &amp; residential property RFPs, by region · ${BASE}</p>
     </div>
   </div>`;
@@ -572,5 +575,49 @@ export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
     ADMIN,
     `PMRFP weekly: ${r.signups.count} signups, ${s ? `${fmtByCurrency(s.moneyIn7d)} in` : "revenue: check Stripe"}`,
     layout(`Your week: ${r.period.from} → ${r.period.to}`, body),
+  );
+}
+
+/**
+ * Review request, sent on a trade's behalf to their client for one
+ * published project. Plain and short: who's asking, which job, one button.
+ * The link is single-use and opens /review/[token] (no account needed).
+ */
+export async function sendReviewRequest(
+  to: string,
+  params: { clientName: string; tradeName: string; projectTitle: string; url: string },
+): Promise<void> {
+  const first = params.clientName.trim().split(/\s+/)[0] ?? "";
+  await send(
+    to,
+    `${params.tradeName} asked for your review`,
+    layout(
+      `How did ${esc(params.tradeName)} do?`,
+      `<p>Hi${first ? ` ${esc(first)}` : ""},</p>
+       <p>${esc(params.tradeName)} asked us to get your honest review of this job:</p>
+       <p style="font-weight:600;font-size:16px;margin:8px 0 16px">${esc(params.projectTitle)}</p>
+       <p>It takes about two minutes. No account needed.</p>
+       <p>${btn(params.url, "Write a review")}</p>
+       <p style="color:#64748b;font-size:13px">The ${SITE.name} team checks every review before it shows on their profile, good or bad. We show your first name and last initial unless you tell us we can show your company.</p>`,
+      `You're getting this one email because ${esc(params.tradeName)} named you as the client for this project on ${SITE.name}. We won't add you to any mailing list. The link works once.`,
+      { referralPs: false },
+    ),
+  );
+}
+
+/** Admin heads-up: a project review is waiting for moderation. */
+export async function sendAdminNewReview(params: { tradeName: string; projectTitle: string; rating: number }): Promise<void> {
+  await send(
+    ADMIN,
+    `New review to check (${params.rating}/5) · ${params.tradeName}`,
+    layout(
+      "New review waiting",
+      `<ul>
+        <li><strong>Trade:</strong> ${esc(params.tradeName)}</li>
+        <li><strong>Project:</strong> ${esc(params.projectTitle)}</li>
+        <li><strong>Rating:</strong> ${params.rating}/5</li>
+       </ul>
+       <p>${btn(`${BASE}/admin/reviews`, "Review in admin")}</p>`,
+    ),
   );
 }
