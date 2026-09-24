@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/resources/how-to-post-a-quality-rfp", priority: 0.7, freq: "monthly" },
     { path: "/resources/how-to-write-a-commercial-property-maintenance-rfp", priority: 0.7, freq: "monthly" },
     { path: "/badge", priority: 0.5, freq: "monthly" },
+    { path: "/services-for-trades", priority: 0.5, freq: "monthly" },
     { path: "/trades", priority: 0.8, freq: "weekly" },
     { path: "/regions", priority: 0.8, freq: "weekly" },
     { path: "/vs", priority: 0.7, freq: "monthly" },
