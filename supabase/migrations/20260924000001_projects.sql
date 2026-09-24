@@ -71,6 +71,9 @@ create index if not exists vendor_reviews_case_study_idx
 -- vendor_reviews_public view below instead. Admins keep full access through
 -- "vendor reviews admin all".
 drop policy if exists "vendor reviews public read published" on public.vendor_reviews;
+-- Reviews now arrive only through a project invite link (server-side, service
+-- role), so signed-in users can no longer insert reviews directly.
+drop policy if exists "vendor reviews authed insert" on public.vendor_reviews;
 
 -- Postgres-owned view (like rfp_public): published reviews only, safe
 -- columns only. The company shows only with consent (show_building);
