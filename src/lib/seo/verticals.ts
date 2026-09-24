@@ -50,6 +50,40 @@ export const VERTICALS: Vertical[] = [
       "Builders and developers: post RFPs and get qualified trade proposals back from a vetted directory of Canadian commercial subcontractors. Free to post.",
   },
   {
+    slug: "general-contractors",
+    name: "General Contractors",
+    who: "General contractors hiring subs",
+    headline: "Won the job? Get your sub-trade quotes in this week.",
+    positioning:
+      "Post a package for each trade you need — roofing, electrical, drywall — free. Local trades in that trade and region get it in their morning email and send you quotes. And because PMRFP imports public contract awards daily, you can see who just won public work near you.",
+    pains: [
+      "Days on the phone chasing subs for every trade on a new job",
+      "The same few subs quote every time, when they have room",
+      "No easy way to check a new sub's past work before you hire them",
+      "Quotes arrive by text, email and voicemail, in different formats",
+      "Public jobs come with deadlines that don't wait for callbacks",
+    ],
+    valueProps: [
+      { title: "Post sub-trade packages free", desc: "One package per trade: scope, site, quotes-due date. No fees, no contract, no per-lead charges." },
+      { title: "Quotes from local trades", desc: "Trades who work that trade in that region get your package in their daily email and respond through PMRFP." },
+      { title: "See their work first", desc: "Trade profiles show work photos and reviews, plus insurance and WSIB where the trade has added them." },
+      { title: "Link the public contract you won", desc: "Coming from a public award? Your package shows the contract, so trades know the job is real and funded." },
+      { title: "See who just won public work", desc: "Every day we add new public contract awards — who won, what, and for how much." },
+    ],
+    features: ["Sub-trade packages", "Daily trade alerts", "Trade directory", "Public contract awards", "Interest tracking"],
+    faqs: [
+      { q: "What does it cost a general contractor?", a: "Nothing. Posting packages and browsing the trade directory are free for contractors. Trades pay for the subscription that sends them your package." },
+      { q: "Who sees my package?", a: "Anyone can see the title, summary, region and quotes-due date. The full scope and your contact details go to subscribed trades, and you choose whether your contact details show or trades reach you through PMRFP." },
+      { q: "Do I have to have won a public contract?", a: "No. Post packages for any job you're bidding or running, private or public. Linking a public award is optional." },
+      { q: "Does PMRFP guarantee quotes?", a: "No. PMRFP puts your package in front of trades in that trade and region. We can't promise how many will quote." },
+    ],
+    cta: { label: "Post a sub-trade package — free", href: "/gc-packages/new" },
+    secondaryCta: { label: "See who just won public work", href: "/contract-winners" },
+    metaTitle: "Post Sub-Trade Packages Free — PMRFP for General Contractors",
+    metaDescription:
+      "General contractors: post a sub-trade package per trade, free, and get quotes from local trades with work photos and reviews. See who just won public contracts near you.",
+  },
+  {
     slug: "tradesmen",
     name: "Trade Contractors",
     who: "Electricians, HVAC, roofers, cleaners, snow & more",
