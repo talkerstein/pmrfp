@@ -163,6 +163,16 @@ export default async function ProjectsPage({
         </ul>
       )}
 
+      {projects.some((p) => p.status === "published") && (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Bidding on a job?{" "}
+          <Link href="/dashboard/projects/reference-sheet" className="font-medium text-teal-ink hover:underline">
+            Print a reference sheet
+          </Link>{" "}
+          with your published projects and the clients who agreed to be references.
+        </p>
+      )}
+
       {ready && !canAdd && (
         <p className="mt-6 text-sm text-muted-foreground">
           The free plan includes one project.{" "}

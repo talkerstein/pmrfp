@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Container, Eyebrow } from "@/components/container";
 import { DirectoryCard } from "@/components/public/directory-card";
@@ -28,6 +29,7 @@ import { publicTenderSource } from "@/lib/tenders/sources";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { listCaseStudies } from "@/lib/data/case-studies";
+import { heroUrlsBySlug } from "@/lib/data/projects";
 import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
 import { PRICING, SITE } from "@/lib/site";
 
@@ -121,6 +123,7 @@ export default async function TradeCityPage({
     listCitiesForTrade(cat.slug),
     listTradesForRegion(region.slug),
   ]);
+  const heroes = await heroUrlsBySlug(caseStudies.map((cs) => cs.slug));
   // A vendor-only page whose approvals were just revoked: don't render a hollow page.
   if (!hasListings(combo) && vendors.length === 0) notFound();
 
@@ -416,15 +419,28 @@ export default async function TradeCityPage({
               <Link
                 key={cs.slug}
                 href={`/case-studies/${cs.slug}`}
-                className="group flex flex-col rounded-lg border border-border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm"
+                className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-teal-400 hover:shadow-sm"
               >
-                <h3 className="text-base font-semibold leading-snug group-hover:text-teal-ink">
-                  {cs.title}
-                </h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                  {cs.challenge}
-                </p>
-                <span className="mt-4 text-sm font-medium text-teal-ink">By {cs.orgName} →</span>
+                {heroes.get(cs.slug) && (
+                  <div className="relative aspect-[16/10] bg-secondary">
+                    <Image
+                      src={heroes.get(cs.slug)!}
+                      alt={cs.title}
+                      fill
+                      sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="text-base font-semibold leading-snug group-hover:text-teal-ink">
+                    {cs.title}
+                  </h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                    {cs.challenge}
+                  </p>
+                  <span className="mt-auto pt-4 text-sm font-medium text-teal-ink">By {cs.orgName} →</span>
+                </div>
               </Link>
             ))}
           </div>
