@@ -338,6 +338,9 @@ export default async function HomePage() {
               <Link href="/contract-winners" className="text-sm font-semibold text-teal-300 hover:underline">
                 See who wins the most
               </Link>
+              <Link href="/reports/public-building-contracts" className="text-sm font-semibold text-teal-300 hover:underline">
+                Read the public contracts report
+              </Link>
             </div>
           </Container>
         </section>

@@ -90,6 +90,8 @@ export default async function RfpDetailPage({
   const teaserIsOpen = teaser.status === "open";
   const isPublicTender = teaser.sourceType === "public_source";
   const tenderSource = publicTenderSource(teaser.slug);
+  // Quebec SEAO notices are published in French; say so to Google and screen readers.
+  const noticeLang = isPublicTender && tenderSource.key === "seao" ? "fr" : undefined;
   // Past public contracts (CanadaBuys award notices) aren't biddable — show who
   // won and for how much, never a paywall or a "bid" button.
   const isAward = isPublicTender && tenderSource.past;
@@ -148,7 +150,7 @@ export default async function RfpDetailPage({
             {teaser.propertyTypeName && <Badge variant="outline">{teaser.propertyTypeName}</Badge>}
             {teaser.isDemo && <Badge variant="outline" className="border-dashed">Sample</Badge>}
           </div>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
+          <h1 lang={noticeLang} className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {teaser.regionName && <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {teaser.regionName}</span>}
             <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : isClosed ? `Closed ${fmt(teaser.deadline)}` : teaser.deadline ? `Closes ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
@@ -198,7 +200,7 @@ export default async function RfpDetailPage({
             </div>
           )}
 
-          {teaser.summary && <p className="mt-6 text-lg leading-relaxed text-foreground/90">{teaser.summary}</p>}
+          {teaser.summary && <p lang={noticeLang} className="mt-6 text-lg leading-relaxed text-foreground/90">{teaser.summary}</p>}
 
           {teaser.photoUrls.length > 0 && (
             <div className="mt-6">

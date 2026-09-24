@@ -30,6 +30,7 @@ export const metadata: Metadata = {
   title: "Pricing",
   description:
     "Simple, transparent pricing for trades in Canada and the U.S. Start with a free directory listing, or go Trade Pro for full RFP access.",
+  alternates: { canonical: "/pricing" },
 };
 
 const FREE_FEATURES = [

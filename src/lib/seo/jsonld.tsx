@@ -12,6 +12,8 @@ export function JsonLd({ data }: { data: Record<string, unknown> }) {
   );
 }
 
+const absolute = (u?: string | null) => (u ? (/^https?:\/\//.test(u) ? u : `${BASE}${u.startsWith("/") ? "" : "/"}${u}`) : undefined);
+
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
@@ -19,8 +21,11 @@ export function organizationSchema() {
     name: SITE.name,
     url: BASE,
     description: SITE.description,
+    email: SITE.email,
+    logo: `${BASE}/apple-icon.png`,
     areaServed: ["CA", "US"],
-    sameAs: [SITE.sisterBrand.url],
+    // sameAs is for profiles of THIS organization only (not sister brands);
+    // add LinkedIn/Crunchbase here once those pages exist.
   };
 }
 
@@ -53,8 +58,8 @@ export function localBusinessSchema(v: {
     name: v.name,
     url: `${BASE}/directory/${v.slug}`,
     description: v.shortDescription ?? undefined,
-    image: v.logoUrl ?? undefined,
-    logo: v.logoUrl ?? undefined,
+    image: absolute(v.logoUrl),
+    logo: absolute(v.logoUrl),
     address: {
       "@type": "PostalAddress",
       addressLocality: v.city ?? undefined,

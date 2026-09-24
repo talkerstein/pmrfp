@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "Resources — Commercial Property RFP & Vendor Guides",
   description:
     "Guides and checklists for Canadian trades and property managers: how RFPs work, prequalification, capability statements, and more.",
+  alternates: { canonical: "/resources" },
 };
 
 export default async function ResourcesPage() {
