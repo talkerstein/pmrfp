@@ -65,19 +65,37 @@ function layout(title: string, bodyHtml: string, footnote?: string, opts?: { ref
 const btn = (href: string, label: string) =>
   `<a href="${href}" style="display:inline-block;background:#282B59;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">${label}</a>`;
 
-export async function sendWelcomeEmail(to: string, name?: string): Promise<void> {
-  await send(
-    to,
-    "Welcome to PMRFP",
-    layout(
-      `Welcome${name ? `, ${name}` : ""}`,
-      `<p>Thanks for joining PMRFP. Two quick next steps:</p>
-       <ol><li>Complete your company profile so property decision-makers can find you.</li>
-       <li>Activate your Trade Pro membership to view full RFP opportunities.</li></ol>
-       <p>${btn(`${BASE}/dashboard`, "Go to your dashboard")}</p>`,
-      "PMRFP provides visibility and opportunity access — not guaranteed work.",
-    ),
-  );
+export type WelcomeKind = "trade" | "supplier" | "property_manager" | "general_contractor";
+
+/**
+ * Sent once, when onboarding completes (not at sign-up: the account isn't
+ * confirmed yet, and a re-submitted sign-up form used to send it twice).
+ * One clear next step per kind of member.
+ */
+export async function sendWelcomeEmail(
+  to: string,
+  opts: { name?: string | null; kind: WelcomeKind; companyName: string; profileSlug?: string | null; live?: boolean; tradeSlug?: string | null },
+): Promise<void> {
+  const first = opts.name?.trim().split(/\s+/)[0];
+  const title = `Welcome to PMRFP${first ? `, ${first}` : ""}`;
+  let body: string;
+  if (opts.kind === "trade" || opts.kind === "supplier") {
+    const profile = opts.profileSlug ? `${BASE}/directory/${opts.profileSlug}` : `${BASE}/dashboard`;
+    body = `<p>${opts.live
+        ? `<strong>${opts.companyName}</strong> is now listed in the PMRFP directory, where property managers look for trades: <a href="${profile}" style="color:#282B59">see your profile</a>.`
+        : `<strong>${opts.companyName}</strong> is set up. Add the trades and areas you cover so property managers can find you.`}</p>
+       <p style="margin:16px 0 4px"><strong>Your best next step:</strong> add a project. Snap before-and-after photos of a job you're proud of, type one sentence, and PMRFP writes it up for your profile.</p>
+       <p>${btn(`${BASE}/dashboard/projects/new`, "Add your first project")}</p>
+       <p style="margin:16px 0 0">Then see the open tenders in your trade: <a href="${BASE}/rfps${opts.tradeSlug ? `?category=${opts.tradeSlug}` : ""}" style="color:#282B59">browse open work</a>. Trade Pro ($249 a year) opens the full details and emails you every new match each morning.</p>`;
+  } else if (opts.kind === "general_contractor") {
+    body = `<p>Post each sub-trade package for free, for example "Roofing package, quotes due Oct 10". Local trades in that trade see it in their morning email and send you quotes. Their profiles show photos of past work and reviews.</p>
+       <p>${btn(`${BASE}/gc-packages/new`, "Post a sub-trade package")}</p>`;
+  } else {
+    body = `<p>Posting an RFP on PMRFP is free. Describe the job once, and local trades in that trade see it in their morning email and send you interest.</p>
+       <p>${btn(`${BASE}/pm-dashboard/rfps/new`, "Post your first RFP")}</p>
+       <p style="margin:16px 0 0">Not sure how to write it? The <a href="${BASE}/rfp-writer" style="color:#282B59">free RFP writer</a> drafts one for you.</p>`;
+  }
+  await send(to, title, layout(title, body, "PMRFP helps you find work and get found. It doesn't guarantee contracts."));
 }
 
 export async function sendSubscriptionActivatedEmail(to: string): Promise<void> {

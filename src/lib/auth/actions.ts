@@ -87,7 +87,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     console.error("[signUp]", error.message);
     return { error: "We couldn't complete your sign-up. Please try again." };
   }
-  await sendWelcomeEmail(parsed.data.email, parsed.data.fullName);
+  // No welcome email here: it goes out once onboarding completes.
   const next = safeNextPath(formData.get("next")?.toString());
   await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc });
   // Fire-and-forget GHL sync; no-ops if GHL_API_KEY unset.
@@ -226,8 +226,8 @@ export async function chooseRoleAction(_prev: ActionState, formData: FormData): 
   });
   if (metaErr) return saveFailed;
 
-  // What signUpAction does for an email sign-up.
-  await sendWelcomeEmail(session.profile.email, session.profile.full_name ?? undefined);
+  // What signUpAction does for an email sign-up (the welcome email goes out
+  // when onboarding completes).
   await trackEvent(EVENT.SIGNUP_COMPLETED, { role: pick.role, hasNext: !!next, gc: pick.builder, method: "google" });
   await syncPmrfpUserToGhl({
     email: session.profile.email,
@@ -343,6 +343,16 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder });
+
+  // One welcome email per member, with the next step for their kind of account.
+  await sendWelcomeEmail(session.profile.email, {
+    name: session.profile.full_name,
+    kind: isBuilder ? "general_contractor" : isSupplier ? "supplier" : isListing ? "trade" : "property_manager",
+    companyName: data.name,
+    profileSlug: isListing ? slug : null,
+    live: isListing && categories.length > 0 && regions.length > 0,
+    tradeSlug: isListing ? categories[0] ?? null : null,
+  });
 
   // Sync the freshly-onboarded user to GHL with the org fields filled in.
   await syncPmrfpUserToGhl({
