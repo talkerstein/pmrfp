@@ -1,0 +1,6 @@
+confirm-signup: Confirm your PMRFP account
+magic-link: Your PMRFP sign-in link
+reset-password: Reset your PMRFP password
+change-email: Confirm your new email for PMRFP
+invite: You're invited to PMRFP
+reauthentication: Your PMRFP verification code
