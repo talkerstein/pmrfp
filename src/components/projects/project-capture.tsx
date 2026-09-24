@@ -136,12 +136,15 @@ function upload(blob: Blob, onProgress: (p: number) => void): Promise<NonNullabl
 
 export function ProjectCapture({
   paid,
+  autoPublish,
   photoLimit,
   categories,
   propertyTypes,
   regions,
 }: {
   paid: boolean;
+  /** Publishes straight to the profile (Trade Pro + approved profile). */
+  autoPublish: boolean;
   photoLimit: number;
   categories: Option[];
   propertyTypes: Option[];
@@ -521,12 +524,12 @@ export function ProjectCapture({
             className="inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40 sm:w-auto"
           >
             {publishing && <Loader2 className="size-4 animate-spin" />}
-            {paid ? "Publish project" : "Send for review"}
+            {autoPublish ? "Publish project" : "Send for review"}
           </button>
           <span className="text-center text-xs text-muted-foreground sm:text-left">
-            {paid
+            {autoPublish
               ? "Goes live on your profile right away."
-              : "We check free-plan projects before they go live, usually within a day."}
+              : "We check it before it goes live, usually within a day."}
           </span>
         </div>
       </div>

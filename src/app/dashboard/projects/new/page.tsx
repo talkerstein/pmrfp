@@ -81,6 +81,7 @@ export default async function NewProjectPage() {
       />
       <ProjectCapture
         paid={paid}
+        autoPublish={paid && org.profile_status === "approved"}
         photoLimit={photoLimit(paid)}
         categories={categories.map((c) => ({ slug: c.slug, name: c.name }))}
         propertyTypes={propertyTypes}

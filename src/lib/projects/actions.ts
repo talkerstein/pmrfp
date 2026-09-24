@@ -44,8 +44,8 @@ export interface PublishState {
 /**
  * Publish a captured project as a case study. Membership is proven by the
  * session; the insert then uses the service role because RLS stops members
- * from setting status 'published' (Trade Pro skips moderation; free plans
- * go to the review queue like the long form).
+ * from setting status 'published' (Trade Pro with an approved profile
+ * skips moderation; everyone else goes to the review queue).
  */
 export async function publishProjectAction(input: PublishInput): Promise<PublishState> {
   const session = await getProjectSession();
@@ -85,7 +85,11 @@ export async function publishProjectAction(input: PublishInput): Promise<Publish
       : Promise.resolve({ data: null }),
   ]);
 
-  const status = paid ? "published" : "pending_review";
+  // Straight to live only for Trade Pro companies whose profile we've
+  // approved; everything else goes through the same review queue as the
+  // long form.
+  const live = paid && org.profile_status === "approved";
+  const status = live ? "published" : "pending_review";
   const row = {
     organization_id: org.id,
     submitted_by_user_id: session.userId,
@@ -104,7 +108,7 @@ export async function publishProjectAction(input: PublishInput): Promise<Publish
     source: "capture",
     client_approved: d.clientApproved,
     status,
-    published_at: paid ? new Date().toISOString() : null,
+    published_at: live ? new Date().toISOString() : null,
   };
 
   let slug = "";
@@ -127,12 +131,12 @@ export async function publishProjectAction(input: PublishInput): Promise<Publish
   if (!saved) return { error: "Couldn't save the project. Try again in a minute." };
 
   revalidatePath("/dashboard/projects");
-  if (paid) {
+  if (live) {
     revalidatePath("/case-studies");
     revalidatePath(`/case-studies/${slug}`);
     revalidatePath(`/directory/${org.slug}`);
   }
-  redirect(`/dashboard/projects?${paid ? `published=${encodeURIComponent(slug)}` : "submitted=1"}`);
+  redirect(`/dashboard/projects?${live ? `published=${encodeURIComponent(slug)}` : "submitted=1"}`);
 }
 
 // ── Review requests ──────────────────────────────────────────────────
