@@ -7,6 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession, roleHome } from "@/lib/access/access";
 import { safeNextPath } from "@/lib/auth/next";
+import { DEFAULT_SIGNUP_ROLE, onboardingPath, resolveRolePick } from "@/lib/auth/oauth";
 import {
   companyProfileSchema,
   forgotPasswordSchema,
@@ -163,6 +164,79 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { error: error.message };
   redirect("/dashboard");
+}
+
+/**
+ * Saves the role someone picks after signing up with Google. They arrive on
+ * the trigger's default role with no role in their metadata (see
+ * lib/auth/oauth). resolveRolePick() is the guard: once only, before
+ * onboarding, and only to trade, property_manager or supplier (a GC is
+ * property_manager + a builder org). Admin roles can't be reached. Then
+ * onboarding carries on exactly as for an email sign-up.
+ */
+export async function chooseRoleAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (!isSupabaseConfigured()) return { error: DEMO_NOTICE };
+  const session = await getSession();
+  if (!session) redirect("/sign-in");
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth.user;
+  if (!user) redirect("/sign-in");
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+
+  const next = safeNextPath(formData.get("next")?.toString());
+  const pick = resolveRolePick(
+    {
+      primaryRole: session.profile.primary_role,
+      onboardingCompleted: session.profile.onboarding_completed,
+      metadataRole: meta.primary_role,
+    },
+    formData.get("role"),
+  );
+  if (!pick.ok) {
+    if (pick.reason === "invalid_role") return { error: "Pick the option that fits you best." };
+    redirect(onboardingPath({ next })); // already chosen (another tab, say): carry on
+  }
+  const saveFailed = { error: "We couldn't save that. Please try again." };
+  if (!isServiceConfigured()) return saveFailed;
+
+  const admin = createServiceClient();
+  const award = pick.builder ? parseAwardRef(formData.get("award")?.toString()) : null;
+
+  // Service role, because guard_users_profile_privileged stops users changing
+  // their own role. The filters keep it one-shot if two tabs race.
+  if (pick.role !== session.profile.primary_role) {
+    const { data: rows, error } = await admin
+      .from("users_profile")
+      .update({ primary_role: pick.role })
+      .eq("id", user.id)
+      .eq("primary_role", DEFAULT_SIGNUP_ROLE)
+      .eq("onboarding_completed", false)
+      .select("id");
+    if (error) return saveFailed;
+    if (!rows?.length) redirect(onboardingPath({ next }));
+  }
+  // The same metadata an email sign-up writes: marks the choice as made and
+  // keeps a GC's intent (read by getSignupGcIntent at onboarding).
+  const { error: metaErr } = await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: {
+      primary_role: pick.role,
+      ...(pick.builder ? { org_kind: "builder", ...(award ? { gc_award: award } : {}) } : {}),
+    },
+  });
+  if (metaErr) return saveFailed;
+
+  // What signUpAction does for an email sign-up.
+  await sendWelcomeEmail(session.profile.email, session.profile.full_name ?? undefined);
+  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: pick.role, hasNext: !!next, gc: pick.builder, method: "google" });
+  await syncPmrfpUserToGhl({
+    email: session.profile.email,
+    fullName: session.profile.full_name,
+    role: pick.role,
+    subscriptionStatus: "none",
+  }, { extraTags: pick.builder ? ["pmrfp-signup", "pmrfp-gc"] : ["pmrfp-signup"] });
+
+  redirect(onboardingPath({ role: pick.builder ? "general_contractor" : null, award, next }));
 }
 
 /**

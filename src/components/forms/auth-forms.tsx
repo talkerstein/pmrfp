@@ -10,6 +10,8 @@ import {
   signUpAction,
   type ActionState,
 } from "@/lib/auth/actions";
+import { onboardingPath, parseRoleChoice } from "@/lib/auth/oauth";
+import { ContinueWithGoogle } from "@/components/forms/google-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +70,7 @@ export function SignUpForm({
   next,
   lockRole = false,
   award,
+  google = false,
 }: {
   initialRole?: "trade" | "supplier" | "property_manager" | "visitor" | "real_estate_agent" | "general_contractor";
   next?: string | null;
@@ -75,6 +78,8 @@ export function SignUpForm({
   lockRole?: boolean;
   /** Award notice a GC came from — prefills their first sub-trade package. */
   award?: string | null;
+  /** Show "Continue with Google" (only when it's switched on in Supabase). */
+  google?: boolean;
 }) {
   const [state, action, pending] = useActionState(signUpAction, initial);
   const [role, setRole] = useState<string>(initialRole ?? "trade");
@@ -111,6 +116,10 @@ export function SignUpForm({
           ))}
         </div>
       </div>
+      )}
+      {google && (
+        // The role rides to onboarding, where it's asked again (pre-selected) before anything is saved.
+        <ContinueWithGoogle next={onboardingPath({ role: parseRoleChoice(role), award, next })} />
       )}
       <div className="space-y-1.5">
         <Label htmlFor="fullName">Your name</Label>
