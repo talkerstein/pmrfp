@@ -1,4 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSession, type SessionContext } from "@/lib/access/access";
+import { getSessionFromRequest } from "@/lib/access/request-session";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -18,7 +20,24 @@ export type ProjectSession = SessionContext & { organization: Organization };
  * proof of membership.
  */
 export async function getProjectSession(): Promise<ProjectSession | null> {
-  const session = await getSession();
+  return toProjectSession(await getSession());
+}
+
+/**
+ * Same checks for Route Handlers the mobile app also calls: cookie session
+ * or `Authorization: Bearer <access token>`. `db` is an RLS-bound client
+ * acting as the caller; pass it to countActiveProjects / listMyProjects,
+ * because the cookie client knows nothing about a bearer caller.
+ */
+export async function getProjectSessionFromRequest(
+  request: Request,
+): Promise<{ session: ProjectSession; db: SupabaseClient } | null> {
+  const auth = await getSessionFromRequest(request);
+  const session = toProjectSession(auth?.session ?? null);
+  return auth && session ? { session, db: auth.db } : null;
+}
+
+function toProjectSession(session: SessionContext | null): ProjectSession | null {
   if (!session?.organization) return null;
   if (session.profile.status === "suspended") return null;
   const t = session.organization.organization_type;
@@ -65,8 +84,8 @@ interface MyProjectRow {
 }
 
 /** Every case study this company submitted (members can read all statuses). */
-export async function listMyProjects(organizationId: string): Promise<MyProject[]> {
-  const supabase = await createClient();
+export async function listMyProjects(organizationId: string, db?: SupabaseClient): Promise<MyProject[]> {
+  const supabase = db ?? (await createClient());
   const base = "id,slug,title,status,city,province,created_at";
   const run = (cols: string) =>
     supabase
@@ -220,8 +239,8 @@ export async function listReferenceSheet(organizationId: string): Promise<Refere
  * has submitted except rejected and archived ones. Text case studies count
  * too, they're projects on the profile all the same.
  */
-export async function countActiveProjects(organizationId: string): Promise<number> {
-  const supabase = await createClient();
+export async function countActiveProjects(organizationId: string, db?: SupabaseClient): Promise<number> {
+  const supabase = db ?? (await createClient());
   const { count, error } = await supabase
     .from("case_studies")
     .select("id", { count: "exact", head: true })

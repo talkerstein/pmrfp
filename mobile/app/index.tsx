@@ -59,14 +59,18 @@ export default function BoardScreen() {
         <View style={styles.header}>
           <Text style={styles.eyebrow}>Commercial property</Text>
           <Text style={styles.h1}>Open RFPs</Text>
-          <Pressable
-            onPress={() => router.push(session ? "/account" : "/sign-in")}
-            style={styles.headerLink}
-          >
-            <Text style={styles.headerLinkText}>
-              {session ? "Account" : "Sign in"}
-            </Text>
-          </Pressable>
+          <View style={styles.headerLinks}>
+            {session ? (
+              <Pressable onPress={() => router.push("/projects")} hitSlop={8}>
+                <Text style={styles.headerLinkText}>Projects</Text>
+              </Pressable>
+            ) : null}
+            <Pressable onPress={() => router.push(session ? "/account" : "/sign-in")} hitSlop={8}>
+              <Text style={styles.headerLinkText}>
+                {session ? "Account" : "Sign in"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       }
       ListEmptyComponent={
@@ -111,7 +115,7 @@ const styles = StyleSheet.create({
   h1: { ...type.display, marginTop: spacing.xs },
   h2: { ...type.h2, marginBottom: spacing.sm },
   body: { ...type.body, marginTop: spacing.xs },
-  headerLink: { marginTop: spacing.md, alignSelf: "flex-start" },
+  headerLinks: { marginTop: spacing.md, flexDirection: "row", gap: spacing.xl },
   headerLinkText: { color: colors.tealInk, fontWeight: "700", fontSize: 14 },
   card: {
     backgroundColor: colors.paper,

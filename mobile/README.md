@@ -24,6 +24,48 @@ screens without a device. Push notifications do not work there or in a simulator
 | Express interest | `app/rfp/[id].tsx` | Live. Writes to `rfp_interests` against the user's org. |
 | Sign in | `app/sign-in.tsx` | Live. Same credentials as pmrfp.com. |
 | Account + push toggle | `app/account.tsx` | Live, but push needs an EAS project — see below. |
+| Projects list | `app/projects/index.tsx` | Live. The company's projects, hero thumbnail + status. Linked from the board header. |
+| Snap a project | `app/projects/new.tsx` | Live. Before / during / after photos → AI draft → publish. |
+| Project / success + review request | `app/projects/[id].tsx` | Live. "View page" and "Ask the client for a review" once it's live. |
+
+## Projects talk to pmrfp.com, not just Supabase
+
+The board reads Supabase directly. Projects can't: photos have to be
+re-encoded with GPS/EXIF stripped, the draft calls the AI, and publishing
+writes with the service role. So the Projects screens call the web API
+(`src/lib/api.ts`), sending the Supabase access token as
+`Authorization: Bearer <token>`:
+
+| Call | Route |
+|---|---|
+| List + plan limits | `GET /api/projects` |
+| Upload one photo (multipart `file`) | `POST /api/projects/photos` |
+| "Write it for me" | `POST /api/projects/draft` |
+| Publish | `POST /api/projects` |
+| Review request | `POST /api/projects/[id]/review-invite` |
+
+The server runs the same rules as the web capture form (plan limits,
+auto-publish for Trade Pro with an approved profile, privacy check, review
+invite limits). The app only mirrors them in the UI.
+
+**`EXPO_PUBLIC_SITE_URL`** sets the API base. It defaults to
+`https://pmrfp.com`; set it in `mobile/.env` to point at a preview deploy
+when testing API changes that aren't on production yet. These routes must be
+deployed before the app can use them.
+
+Photos shrink on the phone first (`expo-image-manipulator`, ≤2000px JPEG at
+0.8) and upload one by one with progress and tap-to-retry.
+
+`expo start --web` can't call these routes: the browser blocks the
+cross-origin request (there's no CORS on the API). Use a phone or emulator.
+
+### Expo Go or a dev build?
+
+`expo-image-picker` and `expo-image-manipulator` are both in Expo Go, so the
+whole Projects flow runs in Expo Go on a real phone. A dev or store build is
+what applies the camera/photo permission text in `app.json`; Expo Go shows
+its own. The camera doesn't work in the iOS simulator; use "Choose from
+library" there.
 
 ## How the paywall works here
 
@@ -68,7 +110,8 @@ grows it will rarely fire.
 
 Directory/vendor browse, saved RFPs, notification preferences by trade and
 region, onboarding and sign-up (sign-up deliberately stays on the web, where the
-role picker and Stripe live).
+role picker and Stripe live). Editing or deleting a project isn't in the app
+yet.
 
 ## Repo notes
 

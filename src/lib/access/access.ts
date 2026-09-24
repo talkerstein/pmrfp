@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Organization, UserProfile, UserRole } from "@/types/db";
@@ -21,8 +22,21 @@ export async function getSessionUserId(): Promise<string | null> {
 /** Full session context (profile + org + access) for the current user, or null. */
 export async function getSession(): Promise<SessionContext | null> {
   if (!isSupabaseConfigured()) return null;
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
+  return loadSessionContext(await createClient());
+}
+
+/**
+ * Session context for whoever `supabase` is signed in as. Every read goes
+ * through that client, so RLS sees the same user. Pass `accessToken` when
+ * the client carries a bearer token (the mobile app) rather than cookies:
+ * getUser(token) checks it with Supabase Auth, so an expired or revoked
+ * token gets null.
+ */
+export async function loadSessionContext(
+  supabase: SupabaseClient,
+  accessToken?: string,
+): Promise<SessionContext | null> {
+  const { data: auth } = await supabase.auth.getUser(accessToken);
   const user = auth.user;
   if (!user) return null;
 
@@ -66,17 +80,18 @@ export async function getSession(): Promise<SessionContext | null> {
  * save-rfp). Keep this in lockstep with the SQL function of the same name.
  */
 async function computeTradeAccess(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   organization: Organization | null,
 ): Promise<boolean> {
   if (!organization) return false;
   if (organization.organization_type !== "trade_company" && organization.organization_type !== "supplier") return false;
   if (organization.status === "suspended") return false;
-  let { data: sub, error } = await supabase
+  const { data, error } = await supabase
     .from("subscriptions")
     .select("status,tier")
     .eq("organization_id", organization.id)
     .maybeSingle<{ status: string; tier: string }>();
+  let sub = data;
   if (error) {
     // subscriptions.tier ships with migration 20260819000001. Until it is
     // applied, that select errors, and treating the error as "no

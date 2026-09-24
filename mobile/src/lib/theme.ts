@@ -33,6 +33,11 @@ export const colors = {
   success: "#15803D",
   warn: "#D97706",
   error: "#B91C1C",
+  /** Amber callouts (privacy check), as the web's amber-50 / amber-900. */
+  warnBg: "#FFFBEB",
+  warnBorder: "#FCD34D",
+  warnInk: "#78350F",
+  errorBg: "#FEF2F2",
 } as const;
 
 /** 20px on cards, pill on buttons — matches the web geometry. */

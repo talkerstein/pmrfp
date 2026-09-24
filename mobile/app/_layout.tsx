@@ -21,6 +21,9 @@ export default function RootLayout() {
           <Stack.Screen name="rfp/[id]" options={{ title: "Opportunity" }} />
           <Stack.Screen name="sign-in" options={{ title: "Sign in" }} />
           <Stack.Screen name="account" options={{ title: "Account" }} />
+          <Stack.Screen name="projects/index" options={{ title: "Projects" }} />
+          <Stack.Screen name="projects/new" options={{ title: "New project" }} />
+          <Stack.Screen name="projects/[id]" options={{ title: "Project" }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>
