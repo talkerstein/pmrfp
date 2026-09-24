@@ -35,6 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/resources/how-to-write-a-commercial-property-maintenance-rfp", priority: 0.7, freq: "monthly" },
     { path: "/badge", priority: 0.5, freq: "monthly" },
     { path: "/services-for-trades", priority: 0.5, freq: "monthly" },
+    { path: "/about", priority: 0.5, freq: "monthly" },
     { path: "/trades", priority: 0.8, freq: "weekly" },
     { path: "/regions", priority: 0.8, freq: "weekly" },
     { path: "/vs", priority: 0.7, freq: "monthly" },
@@ -71,11 +72,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   entries.push({ url: `${base}/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   for (const w of winnersFromRfps(rfps)) entries.push({ url: `${base}/contract-winners/${w.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
-  // Closed public tenders are noindexed (see isIndexableRfp) — keep them out too.
+  // Only open RFPs are indexable (see isIndexableRfp); everything else stays out.
   for (const r of rfps.filter(isIndexableRfp)) entries.push({ url: `${base}/rfps/${r.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const v of vendors) entries.push({ url: `${base}/directory/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const a of resources) entries.push({ url: `${base}/resources/${a.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
-  for (const c of categories) entries.push({ url: `${base}/trades/${c.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  // Same thin-content guard as the trade page: a trade with no companies and no
+  // RFPs is noindexed there, so it must not be in the sitemap either.
+  for (const c of categories) {
+    const hasContent = vendors.some((v) => v.categories.includes(c.name)) || rfps.some((r) => r.categories.includes(c.name));
+    if (hasContent) entries.push({ url: `${base}/trades/${c.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  }
   for (const rg of regions) entries.push({ url: `${base}/regions/${rg.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   // Trade×city pages exist only for combos that clear the vendor gate, so the
   // sitemap stays in lockstep with what actually renders.

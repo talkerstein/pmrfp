@@ -24,6 +24,7 @@ export async function generateMetadata({
   return {
     title: r.seoTitle ?? r.title,
     description: r.metaDescription ?? r.excerpt ?? undefined,
+    alternates: { canonical: `/resources/${slug}` },
   };
 }
 

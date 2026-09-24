@@ -132,6 +132,7 @@ export const FOOTER_COLS = [
     links: [
       { label: "Browse RFPs", href: "/rfps" },
       { label: "Contract Winners", href: "/contract-winners" },
+      { label: "Public Contracts Report", href: "/reports/public-building-contracts" },
       { label: "Trades", href: "/trades" },
       { label: "Regions", href: "/regions" },
       { label: "Supplier Directory", href: "/suppliers" },
@@ -165,6 +166,7 @@ export const FOOTER_COLS = [
 
 /** Bottom-row links under the footer columns. */
 export const FOOTER_LEGAL = [
+  { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },

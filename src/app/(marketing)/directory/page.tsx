@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   title: "Vendor Directory — Commercial Property Trades",
   description:
     "Browse qualified trade and service companies for commercial property work. Filter by category, region, and property type.",
+  // Filtered views (?category=, ?region=, ?q=) are the same page to Google.
+  alternates: { canonical: "/directory" },
 };
 
 export default async function DirectoryPage({

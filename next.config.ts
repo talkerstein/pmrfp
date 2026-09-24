@@ -54,8 +54,8 @@ const legacyWordPressRedirects = [
 
 // Seeded demo companies removed from the live directory (2026-09-23). Each
 // old profile URL goes to its trade's page, which has real vendors and live
-// RFPs. These must be config redirects: /directory streams (loading.tsx), so a
-// redirect thrown inside the page can only send a 200 + client-side redirect.
+// RFPs. Kept as config redirects so they answer with a real 301/308 before
+// any page code runs.
 // The page-level retiredVendorRedirect() stays as a fallback for future
 // retirements until they're added here.
 const retiredListingRedirects: { source: string; destination: string }[] = [
