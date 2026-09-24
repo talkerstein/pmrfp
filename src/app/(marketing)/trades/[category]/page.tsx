@@ -26,6 +26,8 @@ import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
 import { listCitiesForTrade } from "@/lib/data/trade-city";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { SITE } from "@/lib/site";
+import { liveSolutionFor } from "@/lib/partners/vertical-solutions";
+import { VerticalSolutionBlock } from "@/components/public/vertical-solution";
 
 export const revalidate = 3600;
 
@@ -73,11 +75,12 @@ export default async function TradeCategoryPage({
   const cat = await getCategory(category);
   if (!cat) notFound();
 
-  const [vendors, rfps, regions, liveCities] = await Promise.all([
+  const [vendors, rfps, regions, liveCities, solution] = await Promise.all([
     listVendors({ category: cat.slug }),
     listRfps({ category: cat.slug }),
     getRegions(),
     listCitiesForTrade(cat.slug),
+    liveSolutionFor(cat.slug),
   ]);
   const liveCitySlugs = new Set(liveCities.map((c) => c.region.slug));
 
@@ -175,6 +178,8 @@ export default async function TradeCategoryPage({
           )}
         </Container>
       </section>
+
+      {solution && <VerticalSolutionBlock solution={solution} />}
 
       {templates.length > 0 && (
         <Container className="py-12">
