@@ -60,6 +60,10 @@ export interface RfpListItem {
   /** 'public_source' = a public tender aggregated from open government data
    *  (labelled as such everywhere it renders); null for demo data. */
   sourceType: string | null;
+  /** GC sub-trade packages only; null until migration 20260924000002 runs. */
+  gcProjectName?: string | null;
+  /** The public award notice a GC package belongs to. */
+  awardedRfpId?: string | null;
 }
 
 // Override the optional/narrow status on the full detail with the real one.

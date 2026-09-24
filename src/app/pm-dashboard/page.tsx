@@ -4,12 +4,15 @@ import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { buttonVariants } from "@/components/ui/button";
+import { gcFormPath } from "@/lib/gc/packages";
 
 export const metadata = { title: "Property Manager Dashboard" };
 
 export default async function PmDashboardHome() {
   const session = await requireRole(["property_manager"]);
   const demo = isDemoMode();
+  // General contractors share this dashboard; they post sub-trade packages.
+  const gc = session.organization?.organization_type === "builder";
 
   let activeRfps = 0;
   let pendingReview = 0;
@@ -41,8 +44,12 @@ export default async function PmDashboardHome() {
     <div>
       {demo && <DemoBanner />}
       <PageHeader
-        title="Property Manager Dashboard"
-        description="Post project needs, review interested vendors, and manage your RFPs."
+        title={gc ? "Contractor Dashboard" : "Property Manager Dashboard"}
+        description={
+          gc
+            ? "Post sub-trade packages, review interested trades, and manage your packages."
+            : "Post project needs, review interested vendors, and manage your RFPs."
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -58,14 +65,16 @@ export default async function PmDashboardHome() {
             <FileText className="size-5" />
           </span>
           <div>
-            <h2 className="text-base font-semibold">Post an RFP</h2>
+            <h2 className="text-base font-semibold">{gc ? "Post a sub-trade package" : "Post an RFP"}</h2>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              Describe your project and let qualified Canadian trades come to you.
+              {gc
+                ? "One package per trade. Local trades in that trade and region send you quotes. Free."
+                : "Describe your project and let qualified Canadian trades come to you."}
             </p>
           </div>
         </div>
-        <Link href="/pm-dashboard/rfps/new" className={buttonVariants({ size: "lg" })}>
-          Post an RFP <ArrowRight className="size-4" />
+        <Link href={gc ? gcFormPath() : "/pm-dashboard/rfps/new"} className={buttonVariants({ size: "lg" })}>
+          {gc ? "Post a package" : "Post an RFP"} <ArrowRight className="size-4" />
         </Link>
       </div>
     </div>
