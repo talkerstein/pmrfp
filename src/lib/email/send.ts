@@ -503,31 +503,54 @@ export async function sendTenderDigest(
     count: number;
     tradeLabel: string;
     items: { title: string; slug: string; deadline: string | null }[];
+    /** How many of this week's matches close within 7 days. */
+    closingSoon?: number;
+    /** Monthly Trade Pro: the low-commitment first step. */
     upgradeUrl: string;
+    annualUrl?: string;
     unsubscribeUrl: string;
     mailingAddress: string;
   },
 ): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const fmt = (d: string) =>
+    new Date(`${d}T12:00:00Z`).toLocaleDateString("en-CA", { month: "short", day: "numeric", timeZone: "UTC" });
   const list = params.items
     .map(
       (i) =>
-        `<li style="margin:0 0 12px;line-height:22px"><a href="${BASE}/rfps/${i.slug}" style="color:#282B59;font-weight:600">${esc(i.title)}</a>` +
-        `<br><span style="color:#64748b;font-size:13px">${i.deadline ? `Closes ${i.deadline}` : "Ongoing — no fixed closing date"}</span></li>`,
+        `<li style="margin:0 0 14px;line-height:22px"><a href="${BASE}/rfps/${i.slug}" style="color:#282B59;font-weight:600">${esc(i.title)}</a>` +
+        `<br><span style="color:#64748b;font-size:13px">${i.deadline ? `Closes ${fmt(i.deadline)}` : "Ongoing, no fixed closing date"} · full scope and buyer contact with Trade Pro</span></li>`,
     )
     .join("");
   const more = params.count > params.items.length ? `<p>…and ${params.count - params.items.length} more on the board.</p>` : "";
   const noun = params.count === 1 ? "tender" : "tenders";
+  const urgency =
+    params.closingSoon && params.closingSoon > 0
+      ? ` <strong style="color:#1B1E45">${params.closingSoon} ${params.closingSoon === 1 ? "closes" : "close"} in the next 7 days.</strong>`
+      : "";
+  const check = (t: string) =>
+    `<tr><td valign="top" style="padding:0 10px 8px 0;color:#0C7A5A;font-weight:700">&#10003;</td><td style="padding:0 0 8px 0;font-size:15px;line-height:22px;color:#1B1E45">${t}</td></tr>`;
   await send(
     to,
     `${params.count} new ${params.tradeLabel} ${noun} this week`,
     layout(
       `${params.count} new ${params.tradeLabel} ${noun} this week`,
-      `<p>These public tenders matching your trade were posted in the last 7 days:</p>
-       <ul style="padding-left:18px">${list}</ul>${more}
-       <p>Trade Pro gets you the direct link to each official notice, the full scope and buyer contact,
-       and an email the day a new one lands in your trade — instead of checking government portals yourself.</p>
-       <p>${btn(params.upgradeUrl, "See Trade Pro")}</p>`,
+      `<p>Public tenders matching your trade and area, posted in the last 7 days.${urgency}</p>
+       <ul style="padding-left:18px;margin:16px 0">${list}</ul>${more}
+       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 8px;background:#F6F7FB;border:1px solid #E6E8F0;border-radius:12px;">
+         <tr><td style="padding:20px 20px 12px 20px;">
+           <p style="margin:0 0 12px;font-weight:700;color:#1B1E45;font-size:16px">What Trade Pro adds</p>
+           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+             ${check("The full scope, documents and the buyer's contact on every notice")}
+             ${check("An email the morning each new match posts, not once a week")}
+             ${check("Express interest on property-manager RFPs in one click")}
+           </table>
+           <p style="margin:12px 0 16px">${btn(params.upgradeUrl, "Start Trade Pro, $29/month")}</p>
+           <p style="margin:0;font-size:13px;line-height:20px;color:#64748b">Cancel anytime.${
+             params.annualUrl ? ` Or <a href="${params.annualUrl}" style="color:#282B59">pay $249 a year</a> and save $99.` : ""
+           }</p>
+         </td></tr>
+       </table>`,
       `You're receiving this because you have a free ${SITE.name} company profile. ` +
         `<a href="${params.unsubscribeUrl}" style="color:#64748b">Unsubscribe from opportunity emails</a>. ` +
         `${SITE.name}, ${esc(params.mailingAddress)} · ${SITE.email}`,

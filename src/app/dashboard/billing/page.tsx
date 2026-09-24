@@ -62,11 +62,10 @@ export default async function BillingPage({
       {intent && !isActive && (
         <div className="mb-4 rounded-lg border border-teal-300 bg-teal-50/60 p-5">
           <p className="font-semibold text-foreground">
-            Finish what you started: {intent.name} — {intent.priceLabel}
+            {intent.name}: {intent.priceLabel}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            This is the plan you picked on the pricing page. You&apos;ll review the total on the secure
-            Stripe checkout before paying.
+            You&apos;ll review the total on the secure Stripe checkout before paying. Cancel anytime.
           </p>
           <div className="mt-4">
             <ActivateButton

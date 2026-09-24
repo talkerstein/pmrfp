@@ -68,6 +68,7 @@ export async function GET(request: Request) {
     supabase.from("regions").select("id,slug,parent_id"),
   ]);
 
+  const weekAhead = new Date(now + 7 * 86_400_000).toISOString().slice(0, 10);
   const openRfps = ((rfps ?? []) as unknown as RfpRow[])
     .filter((r) => !r.deadline || r.deadline >= today)
     .map((r) => ({ ...r, title: displayTitle(r.title, r.source_type).title }));
@@ -164,7 +165,10 @@ export async function GET(request: Request) {
         count: matches.length,
         tradeLabel: trade,
         items: matches.slice(0, 5).map((m) => ({ title: m.title, slug: m.slug, deadline: m.deadline })),
-        upgradeUrl: `${base}/dashboard/billing?plan=pro&interval=annual`,
+        closingSoon: matches.filter((m) => m.deadline && m.deadline <= weekAhead).length,
+        // Monthly first: the one trade that has paid chose monthly.
+        upgradeUrl: `${base}/dashboard/billing?plan=pro&interval=monthly`,
+        annualUrl: `${base}/dashboard/billing?plan=pro&interval=annual`,
         unsubscribeUrl: unsub,
         mailingAddress: mailingAddress!,
       });
