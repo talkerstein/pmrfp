@@ -18,6 +18,7 @@ import { sendWelcomeEmail } from "@/lib/email/send";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
+import { gcFormPath, parseAwardRef } from "@/lib/gc/packages";
 
 async function authIp(): Promise<string> {
   const h = await headers();
@@ -60,12 +61,23 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   if (parsed.data.company_website) return { success: "Thanks!" }; // honeypot
   if (!isSupabaseConfigured()) return { error: DEMO_NOTICE };
 
+  // General contractors sign up as buyers (primary_role property_manager, so
+  // they post exactly like a PM) and get a 'builder' organization at
+  // onboarding. The intent + award ride in auth metadata so they survive the
+  // email-confirmation round trip.
+  const isGc = parsed.data.role === "property_manager" && formData.get("orgKind") === "builder";
+  const gcAward = isGc ? parseAwardRef(formData.get("award")?.toString()) : null;
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { full_name: parsed.data.fullName, primary_role: parsed.data.role },
+      data: {
+        full_name: parsed.data.fullName,
+        primary_role: parsed.data.role,
+        ...(isGc ? { org_kind: "builder", ...(gcAward ? { gc_award: gcAward } : {}) } : {}),
+      },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/onboarding`,
     },
   });
@@ -76,14 +88,14 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   }
   await sendWelcomeEmail(parsed.data.email, parsed.data.fullName);
   const next = safeNextPath(formData.get("next")?.toString());
-  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next });
+  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc });
   // Fire-and-forget GHL sync; no-ops if GHL_API_KEY unset.
   await syncPmrfpUserToGhl({
     email: parsed.data.email,
     fullName: parsed.data.fullName,
     role: parsed.data.role,
     subscriptionStatus: "none",
-  }, { extraTags: ["pmrfp-signup"] });
+  }, { extraTags: isGc ? ["pmrfp-signup", "pmrfp-gc"] : ["pmrfp-signup"] });
   // Email confirmation required → no session yet. Land on an explanation page
   // instead of silently bouncing /onboarding → /sign-in (a dead end for
   // invited trades). The confirmation link itself carries them to /onboarding.
@@ -178,6 +190,9 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   const regions = formData.getAll("regions").map(String);
   const isSupplier = role === "supplier";
   const isListing = role === "trade" || isSupplier; // lists in a directory + needs categories/regions
+  // "General contractor — hiring subs": a buyer like a PM (same role, same
+  // posting rights, no trade access) whose organization is a 'builder'.
+  const isBuilder = role === "property_manager" && formData.get("orgKind") === "builder";
 
   const parsed = companyProfileSchema.safeParse({
     name: formData.get("name"),
@@ -205,7 +220,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     .insert({
       name: data.name,
       slug,
-      organization_type: isSupplier ? "supplier" : isListing ? "trade_company" : "property_manager",
+      organization_type: isSupplier ? "supplier" : isListing ? "trade_company" : isBuilder ? "builder" : "property_manager",
       website: data.website || null,
       phone: data.phone || null,
       email: data.email,
@@ -253,7 +268,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   }
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
-  await trackEvent(EVENT.ONBOARDING_COMPLETED, { role });
+  await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder });
 
   // Sync the freshly-onboarded user to GHL with the org fields filled in.
   await syncPmrfpUserToGhl({
@@ -268,8 +283,10 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     tradeCategory: isListing && categories.length > 0 ? categories[0] : null,
     subscriptionStatus: "none",
     profileCompletionPct: 50, // baseline after onboarding; will rise as they add logo/portfolio
-  }, { extraTags: ["pmrfp-onboarded"] });
+  }, { extraTags: isBuilder ? ["pmrfp-onboarded", "pmrfp-gc"] : ["pmrfp-onboarded"] });
 
   if (next) redirect(next);
+  // A GC lands straight on the package form (award prefilled if they came from one).
+  if (isBuilder) redirect(gcFormPath(parseAwardRef(formData.get("award")?.toString())));
   redirect(isListing ? "/dashboard" : "/pm-dashboard");
 }

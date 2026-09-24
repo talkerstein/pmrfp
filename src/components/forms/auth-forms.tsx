@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Building2, HardHat, Package, Search, Home } from "lucide-react";
+import { Building2, Hammer, HardHat, Package, Search, Home } from "lucide-react";
 import {
   forgotPasswordAction,
   resetPasswordAction,
@@ -58,6 +58,7 @@ const ROLES = [
   { value: "trade", label: "Trade or service company", icon: HardHat, hint: "Get listed in the directory and access live RFP opportunities" },
   { value: "supplier", label: "Supplier or distributor", icon: Package, hint: "Reach the trades, builders, and property managers who buy what you sell" },
   { value: "property_manager", label: "Property manager, owner, or builder", icon: Building2, hint: "Post RFPs for your properties; browse and shortlist trades" },
+  { value: "general_contractor", label: "General contractor — hiring subs", icon: Hammer, hint: "Post sub-trade packages free and get quotes from local trades" },
   { value: "real_estate_agent", label: "Real estate professional", icon: Home, hint: "Post pre-listing repairs, turnovers, or portfolio work for your clients" },
   { value: "visitor", label: "Browsing the directory", icon: Search, hint: "Look around — you can join later" },
 ] as const;
@@ -66,18 +67,26 @@ export function SignUpForm({
   initialRole,
   next,
   lockRole = false,
+  award,
 }: {
-  initialRole?: "trade" | "supplier" | "property_manager" | "visitor" | "real_estate_agent";
+  initialRole?: "trade" | "supplier" | "property_manager" | "visitor" | "real_estate_agent" | "general_contractor";
   next?: string | null;
   /** Arrived from a paid-plan button: the role is decided, so don't show the picker. */
   lockRole?: boolean;
+  /** Award notice a GC came from — prefills their first sub-trade package. */
+  award?: string | null;
 }) {
   const [state, action, pending] = useActionState(signUpAction, initial);
   const [role, setRole] = useState<string>(initialRole ?? "trade");
+  // A GC is a buyer (same posting rights as a property manager) whose
+  // organization is a 'builder'; the org type is set at onboarding.
+  const isGc = role === "general_contractor";
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
-      <input type="hidden" name="role" value={role} />
+      <input type="hidden" name="role" value={isGc ? "property_manager" : role} />
+      {isGc && <input type="hidden" name="orgKind" value="builder" />}
+      {isGc && award && <input type="hidden" name="award" value={award} />}
       {next && <input type="hidden" name="next" value={next} />}
       {!lockRole && (
       <div className="space-y-2">

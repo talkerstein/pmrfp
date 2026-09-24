@@ -5,8 +5,9 @@ import { DemoNotice } from "@/components/forms/demo-notice";
 import { COPY } from "@/lib/site";
 import { safeNextPath } from "@/lib/auth/next";
 import { billingPathForIntent, parsePlanIntent } from "@/lib/billing/plan-intent";
+import { parseAwardRef } from "@/lib/gc/packages";
 
-const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent"] as const;
+const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent", "general_contractor"] as const;
 type ValidRole = (typeof VALID_ROLES)[number];
 
 /** Role-aware share card — link previews (WhatsApp/iMessage/LinkedIn) fetch the
@@ -19,16 +20,21 @@ export async function generateMetadata({
   const { role } = await searchParams;
   const trade = role === "trade" || role === "supplier";
   const pm = role === "property_manager" || role === "real_estate_agent";
+  const gc = role === "general_contractor";
   const title = trade
     ? "Join PMRFP as a founding trade — free"
-    : pm
-      ? "Post your building project free"
-      : "Join PMRFP — free";
+    : gc
+      ? "Post your sub-trade packages free"
+      : pm
+        ? "Post your building project free"
+        : "Join PMRFP — free";
   const description = trade
     ? "Property managers post building jobs. Vetted trades get found and bid. Free to join, no credit card."
-    : pm
-      ? "Post your project once and vetted trades come to you with bids. Free for property managers, always."
-      : "Property managers post building RFPs free. Vetted trades bid on the work.";
+    : gc
+      ? "Won a job? Post a package per trade and get quotes from local trades. Free for general contractors."
+      : pm
+        ? "Post your project once and vetted trades come to you with bids. Free for property managers, always."
+        : "Property managers post building RFPs free. Vetted trades bid on the work.";
   return {
     title,
     description,
@@ -40,9 +46,11 @@ export async function generateMetadata({
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; next?: string; template?: string; plan?: string; interval?: string }>;
+  searchParams: Promise<{ role?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string }>;
 }) {
-  const { role: rawRole, next: rawNext, template, plan, interval } = await searchParams;
+  const { role: rawRole, next: rawNext, template, plan, interval, award: rawAward } = await searchParams;
+  // A GC arriving from a public award they won: their first package is prefilled.
+  const award = parseAwardRef(rawAward);
   // Plan chosen on /pricing — re-validated against an allowlist; never trusted for price.
   const intent = parsePlanIntent(plan, interval);
   const initialRole: ValidRole | undefined =
@@ -99,6 +107,7 @@ export default async function SignUpPage({
           initialRole={intent ? (initialRole === "supplier" ? "supplier" : "trade") : initialRole}
           lockRole={!!intent}
           next={next}
+          award={award}
         />
       </div>
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{COPY.signupDisclaimer}</p>

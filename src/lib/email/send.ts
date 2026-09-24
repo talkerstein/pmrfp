@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { COPY, SITE } from "@/lib/site";
 import { ROLE_LABEL, withDelta, type WeeklyReport } from "@/lib/admin/weekly-report";
 import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
+import { recentAwardsHtml } from "@/lib/alerts/awards";
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset
@@ -133,6 +134,8 @@ export async function sendDailyMatches(
     items: { title: string; slug: string; trade: string | null; region: string | null; deadline: string | null; summary: string | null }[];
     unsubscribeUrl: string | null;
     mailingAddress: string | null;
+    /** Optional "Recently awarded near you" lines (see lib/alerts/awards). */
+    recentAwards?: { slug: string; line: string }[];
   },
 ): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -170,6 +173,7 @@ export async function sendDailyMatches(
       params.subject,
       `<p>New RFPs and public tenders in your trades and regions since yesterday, soonest deadline first:</p>
        <ul style="padding-left:18px;margin:16px 0">${list}</ul>${more}
+       ${recentAwardsHtml(params.recentAwards ?? [], BASE)}
        <p>${btn(`${BASE}/dashboard/rfps`, "Open your feed")}</p>`,
       `${footer}.`,
     ),

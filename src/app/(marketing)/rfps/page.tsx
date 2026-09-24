@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Flame, Lock, Trophy } from "lucide-react";
+import { Flame, HardHat, Lock, Trophy } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { FilterBar } from "@/components/public/filter-bar";
 import { RfpCard } from "@/components/public/rfp-card";
@@ -14,6 +14,7 @@ import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy
 import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { boardStats, compactDollars, isPastContract } from "@/lib/data/fomo";
+import { isGcPackage } from "@/lib/gc/packages";
 
 const PAGE_SIZE = 30;
 const AWARDED_PREVIEW = 9;
@@ -57,8 +58,11 @@ export default async function RfpsPage({
   const past = rfps.filter((r) => r.status !== "open" && isPastContract(r));
   const otherClosed = rfps.filter((r) => r.status !== "open" && !isPastContract(r));
   const showAwarded = sp.view === "awarded";
+  // GC sub-trade packages: open ones only, as their own tab once any exist.
+  const gcOpen = open.filter(isGcPackage);
+  const showGc = sp.view === "gc";
   const pageNum = Math.max(1, Number(sp.page) || 1);
-  const listing = showAwarded ? [...past, ...otherClosed] : open;
+  const listing = showAwarded ? [...past, ...otherClosed] : showGc ? gcOpen : open;
   const pages = Math.max(1, Math.ceil(listing.length / PAGE_SIZE));
   const pageItems = listing.slice((pageNum - 1) * PAGE_SIZE, pageNum * PAGE_SIZE);
   const pageHref = (n: number) => {
@@ -66,9 +70,9 @@ export default async function RfpsPage({
     q.set("page", String(n));
     return `/rfps?${q.toString()}`;
   };
-  const viewHref = (awarded: boolean) => {
+  const viewHref = (view: "awarded" | "gc" | null) => {
     const q = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "page" && k !== "view") as [string, string][]);
-    if (awarded) q.set("view", "awarded");
+    if (view) q.set("view", view);
     const qs = q.toString();
     return qs ? `/rfps?${qs}` : "/rfps";
   };
@@ -140,13 +144,21 @@ export default async function RfpsPage({
 
         <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
           <Link
-            href={viewHref(false)}
-            className={`rounded-full px-4 py-1.5 font-medium ${!showAwarded ? "bg-indigo text-white" : "border border-border hover:bg-secondary"}`}
+            href={viewHref(null)}
+            className={`rounded-full px-4 py-1.5 font-medium ${!showAwarded && !showGc ? "bg-indigo text-white" : "border border-border hover:bg-secondary"}`}
           >
             Open now ({open.length})
           </Link>
+          {(gcOpen.length > 0 || showGc) && (
+            <Link
+              href={viewHref("gc")}
+              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 font-medium ${showGc ? "bg-indigo text-white" : "border border-border hover:bg-secondary"}`}
+            >
+              <HardHat className="size-3.5" /> GC packages ({gcOpen.length})
+            </Link>
+          )}
           <Link
-            href={viewHref(true)}
+            href={viewHref("awarded")}
             className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 font-medium ${showAwarded ? "bg-indigo text-white" : "border border-border hover:bg-secondary"}`}
           >
             <Trophy className="size-3.5" /> Already awarded ({past.length + otherClosed.length})
@@ -156,7 +168,13 @@ export default async function RfpsPage({
         {pageItems.length === 0 ? (
           <div className="mt-4">
             <EmptyState
-              title={showAwarded ? "No past contracts match your filters" : "No open opportunities match your filters"}
+              title={
+                showAwarded
+                  ? "No past contracts match your filters"
+                  : showGc
+                    ? "No open GC sub-trade packages match your filters"
+                    : "No open opportunities match your filters"
+              }
               description="Try clearing a filter, or check the other tab."
             />
           </div>
@@ -177,7 +195,7 @@ export default async function RfpsPage({
         )}
 
         {/* The contracts trades already lost to someone else — real awards. */}
-        {!showAwarded && past.length > 0 && (
+        {!showAwarded && !showGc && past.length > 0 && (
           <section className="mt-14">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -187,7 +205,7 @@ export default async function RfpsPage({
                   the day the next one is posted.
                 </p>
               </div>
-              <Link href={viewHref(true)} className="text-sm font-medium text-teal-700 hover:underline">
+              <Link href={viewHref("awarded")} className="text-sm font-medium text-teal-700 hover:underline">
                 See all {past.length} →
               </Link>
             </div>

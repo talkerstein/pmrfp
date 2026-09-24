@@ -3,7 +3,7 @@ import Link from "next/link";
 import { isUsState } from "@/lib/geo";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, Landmark } from "lucide-react";
+import { CalendarClock, MapPin, FileText, Building2, DollarSign, ExternalLink, HardHat, Landmark } from "lucide-react";
 import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { LockedContentPanel } from "@/components/public/locked-content-panel";
@@ -22,6 +22,9 @@ import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { BidChecklist } from "@/components/public/bid-checklist";
 import { getBidCheckBySlug } from "@/lib/bid-check/data";
+import { GcPackageCta } from "@/components/public/gc-package-cta";
+import { GC_BADGE, isGcPackage, tradeWords } from "@/lib/gc/packages";
+import { getAwardById, listPackagesForAward } from "@/lib/gc/data";
 
 export async function generateMetadata({
   params,
@@ -123,6 +126,14 @@ export default async function RfpDetailPage({
   const winnerPage = award?.winner
     ? winnersFromRfps(boardRfps).find((w) => winnerKey(w.name) === winnerKey(award.winner!))
     : undefined;
+  // GC sub-trade packages: the award they belong to, and — on an award page —
+  // the packages the winning contractor has posted for it.
+  const isGc = isGcPackage(teaser);
+  const [gcAward, awardPackages] = await Promise.all([
+    isGc ? getAwardById(teaser.awardedRfpId) : Promise.resolve(null),
+    isAward ? listPackagesForAward(teaser.slug) : Promise.resolve([]),
+  ]);
+  const closesLabel = isGc ? "Quotes due" : "Closes";
 
   return (
     <Container className="py-10">
@@ -148,12 +159,13 @@ export default async function RfpDetailPage({
           <div className="flex flex-wrap gap-1.5">
             {teaser.categories.map((c) => <Badge key={c} variant="secondary">{c}</Badge>)}
             {teaser.propertyTypeName && <Badge variant="outline">{teaser.propertyTypeName}</Badge>}
+            {isGc && <Badge variant="outline" className="border-teal-400 text-teal-ink">{GC_BADGE}</Badge>}
             {teaser.isDemo && <Badge variant="outline" className="border-dashed">Sample</Badge>}
           </div>
           <h1 lang={noticeLang} className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {teaser.regionName && <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {teaser.regionName}</span>}
-            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : isClosed ? `Closed ${fmt(teaser.deadline)}` : teaser.deadline ? `Closes ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
+            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : isClosed ? `Closed ${fmt(teaser.deadline)}` : teaser.deadline ? `${closesLabel} ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
           </div>
 
           {isPublicTender && (
@@ -171,6 +183,27 @@ export default async function RfpDetailPage({
                     <strong className="text-foreground">Public tender.</strong> Issued by {tenderSource.issuer} and
                     published on {tenderSource.portal}. PMRFP collects the tenders that fit commercial trades — bids
                     go directly to the issuer, not through PMRFP.
+                  </>
+                )}
+              </span>
+            </p>
+          )}
+
+          {isGc && (
+            <p className="mt-4 flex items-start gap-2 rounded-lg border border-teal-300 bg-teal-50/60 p-3 text-sm text-muted-foreground">
+              <HardHat className="mt-0.5 size-4 shrink-0 text-teal-600" />
+              <span>
+                <strong className="text-foreground">GC sub-trade package.</strong> A general contractor is collecting{" "}
+                {teaser.categories[0] ? `${tradeWords(teaser.categories[0])} ` : ""}quotes
+                {teaser.gcProjectName ? <> for <strong className="text-foreground">{teaser.gcProjectName}</strong></> : null}.
+                {gcAward && (
+                  <>
+                    {" "}It&apos;s part of a public contract:{" "}
+                    <Link href={`/rfps/${gcAward.slug}`} className="font-medium text-teal-700 hover:underline">
+                      {gcAward.title}
+                    </Link>
+                    {gcAward.winner ? `, won by ${gcAward.winner}` : ""}
+                    {gcAward.value ? ` (${gcAward.value})` : ""}.
                   </>
                 )}
               </span>
@@ -256,6 +289,23 @@ export default async function RfpDetailPage({
                     </Link>
                   )}
                   {award.value && <div className="mt-1 text-3xl font-extrabold tracking-tight text-indigo">{award.value}</div>}
+                </div>
+              )}
+              {awardPackages.length > 0 && (
+                <div className="mb-5 rounded-lg border border-border bg-card p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    The winner is hiring subs for this job
+                  </div>
+                  <ul className="mt-2 space-y-1.5 text-sm">
+                    {awardPackages.map((p) => (
+                      <li key={p.slug}>
+                        <Link href={`/rfps/${p.slug}`} className="font-medium text-teal-700 hover:underline">
+                          {p.title}
+                        </Link>
+                        {p.deadline && <span className="text-muted-foreground"> · quotes due {fmt(p.deadline)}</span>}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
               <h2 className="text-lg font-semibold tracking-tight">
@@ -375,11 +425,11 @@ export default async function RfpDetailPage({
           )}
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="space-y-4 rounded-xl border border-border bg-card p-5">
             <Meta label="Region" value={teaser.regionName ?? "—"} />
             <Meta label="Property type" value={teaser.propertyTypeName ?? "—"} />
-            <Meta label={isAward ? "Awarded" : isClosed ? "Closed" : "Closes"} value={fmt(teaser.deadline)} />
+            <Meta label={isAward ? "Awarded" : isClosed ? "Closed" : closesLabel} value={fmt(teaser.deadline)} />
             {isAward && awardUrl ? (
               <div className="pt-2">
                 <a
@@ -420,6 +470,8 @@ export default async function RfpDetailPage({
               </div>
             )}
           </div>
+          {/* Aimed at the winning contractor: post sub-trade packages for this job. */}
+          {isAward && award?.winner && <GcPackageCta awardSlug={teaser.slug} />}
         </aside>
       </div>
     </Container>

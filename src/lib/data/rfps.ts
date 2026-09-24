@@ -104,6 +104,8 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
     // as "closed" → the card grays them out as social proof of real activity.
     status: r.deadline && r.deadline < today ? ("closed" as const) : ("open" as const),
     sourceType: r.source_type ?? null,
+    gcProjectName: r.gc_project_name ?? null,
+    awardedRfpId: r.awarded_rfp_id ?? null,
   }));
   if (filters.region) {
     const name = regionSlugName.get(filters.region);
@@ -168,6 +170,8 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     // reported itself as open even after closing. Compute it for real.
     status: r.deadline && r.deadline < new Date().toISOString().slice(0, 10) ? ("closed" as const) : ("open" as const),
     sourceType: r.source_type ?? null,
+    gcProjectName: r.gc_project_name ?? null,
+    awardedRfpId: r.awarded_rfp_id ?? null,
   };
 }
 
@@ -216,6 +220,8 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     contactEmail: r.contact_email,
     contactPhone: r.contact_phone,
     sourceType: r.source_type ?? null,
+    gcProjectName: r.gc_project_name ?? null,
+    awardedRfpId: r.awarded_rfp_id ?? null,
     sourceUrl: r.source_url,
     sourceNotes: r.source_notes,
     status:
@@ -233,6 +239,9 @@ interface RfpPublicRow {
   region_id: string | null; property_type_id: string | null;
   city: string | null; province: string | null; deadline: string | null; is_demo: boolean;
   source_type?: string | null;
+  // GC package columns — undefined until migration 20260924000002 runs.
+  gc_project_name?: string | null;
+  awarded_rfp_id?: string | null;
 }
 interface RfpFullRow extends RfpPublicRow {
   scope: string | null; requirements: string | null;
