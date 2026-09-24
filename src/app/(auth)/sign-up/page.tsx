@@ -4,6 +4,7 @@ import { SignUpForm } from "@/components/forms/auth-forms";
 import { DemoNotice } from "@/components/forms/demo-notice";
 import { COPY } from "@/lib/site";
 import { safeNextPath } from "@/lib/auth/next";
+import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { billingPathForIntent, parsePlanIntent } from "@/lib/billing/plan-intent";
 import { parseAwardRef } from "@/lib/gc/packages";
 
@@ -63,6 +64,7 @@ export default async function SignUpPage({
       (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? billingPathForIntent(intent) : null),
   );
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
+  const google = await isGoogleAuthEnabled();
 
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
@@ -108,6 +110,7 @@ export default async function SignUpPage({
           lockRole={!!intent}
           next={next}
           award={award}
+          google={google}
         />
       </div>
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{COPY.signupDisclaimer}</p>
