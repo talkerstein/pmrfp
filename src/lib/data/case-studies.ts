@@ -24,6 +24,7 @@ export interface CaseStudyListItem {
 }
 
 export interface CaseStudyDetail extends CaseStudyListItem {
+  id: string;
   approach: string;
   outcome: string;
   timeline: string | null;
@@ -32,6 +33,7 @@ export interface CaseStudyDetail extends CaseStudyListItem {
 }
 
 interface Row {
+  id: string;
   slug: string;
   title: string;
   city: string | null;
@@ -49,7 +51,7 @@ interface Row {
 }
 
 const SELECT =
-  "slug,title,city,province,property_type,challenge,approach,outcome,timeline,budget_band,published_at," +
+  "id,slug,title,city,province,property_type,challenge,approach,outcome,timeline,budget_band,published_at," +
   "organizations(name,slug,verified),trade_categories(name,slug),regions(slug)";
 
 function toList(r: Row): CaseStudyListItem {
@@ -101,6 +103,7 @@ export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null
   if (!r) return null;
   return {
     ...toList(r),
+    id: r.id,
     approach: r.approach,
     outcome: r.outcome,
     timeline: r.timeline,

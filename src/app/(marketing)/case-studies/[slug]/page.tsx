@@ -7,6 +7,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getCaseStudy, listCaseStudies } from "@/lib/data/case-studies";
 import { getQualifyingCombo } from "@/lib/data/trade-city";
+import { getProjectExtras, listPublishedReviews } from "@/lib/data/projects";
+import { ProjectGallery, ReviewList } from "@/components/projects/public";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -24,10 +26,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const cs = await getCaseStudy(slug);
   if (!cs) return { title: "Case study not found" };
+  const extras = await getProjectExtras(cs.id);
+  const description = (extras.summary ?? cs.challenge).slice(0, 155);
   return {
     title: `${cs.title} — Case Study`,
-    description: cs.challenge.slice(0, 155),
+    description,
     alternates: { canonical: `/case-studies/${cs.slug}` },
+    ...(extras.heroUrl ? { openGraph: { images: [{ url: extras.heroUrl }] } } : {}),
   };
 }
 
@@ -41,10 +46,13 @@ export default async function CaseStudyPage({
   if (!cs) notFound();
 
   // Only deep-link the trade×city page when it actually exists (gated).
-  const combo =
-    cs.categorySlug && cs.regionSlug
-      ? await getQualifyingCombo(cs.categorySlug, cs.regionSlug)
-      : null;
+  // Photos and reviews arrive with the Projects migration; before it, both
+  // come back empty and the page renders as the text-only study it was.
+  const [combo, extras, reviews] = await Promise.all([
+    cs.categorySlug && cs.regionSlug ? getQualifyingCombo(cs.categorySlug, cs.regionSlug) : null,
+    getProjectExtras(cs.id),
+    listPublishedReviews({ caseStudyId: cs.id }),
+  ]);
 
   const sections = [
     { label: "The challenge", body: cs.challenge },
@@ -68,6 +76,7 @@ export default async function CaseStudyPage({
           author: { "@type": "Organization", name: cs.orgName },
           publisher: { "@type": "Organization", name: SITE.name },
           about: cs.categoryName ?? undefined,
+          image: extras.photos.length ? extras.photos.map((p) => p.url) : undefined,
           contentLocation: cs.city
             ? { "@type": "Place", name: [cs.city, cs.province].filter(Boolean).join(", ") }
             : undefined,
@@ -95,16 +104,28 @@ export default async function CaseStudyPage({
             {cs.timeline ? <> · {cs.timeline}</> : null}
             {cs.budgetBand ? <> · {cs.budgetBand}</> : null}
           </p>
+          {extras.summary && (
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-foreground/90">{extras.summary}</p>
+          )}
         </Container>
       </section>
 
       <Container size="narrow" className="py-12">
+        <ProjectGallery
+          photos={extras.photos}
+          heroUrl={extras.heroUrl}
+          title={cs.title}
+          capturedOnSite={extras.source === "capture"}
+        />
+
         {sections.map((s) => (
           <div key={s.label} className="mb-8">
             <h2 className="text-xl font-semibold tracking-tight">{s.label}</h2>
             <p className="mt-3 whitespace-pre-line leading-relaxed text-foreground/90">{s.body}</p>
           </div>
         ))}
+
+        <ReviewList reviews={reviews} heading="What the client said" showSummary={false} />
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href={`/directory/${cs.orgSlug}`} className={buttonVariants()}>

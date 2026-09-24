@@ -9,6 +9,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
 import { getVendor, listVendors, retiredVendorRedirect } from "@/lib/data/directory";
+import { listOrgProjects, listPublishedReviews } from "@/lib/data/projects";
+import { reviewStats } from "@/lib/projects/reviews";
+import { ProjectGrid, ReviewList, Stars } from "@/components/projects/public";
 import { cn } from "@/lib/utils";
 import { SITE } from "@/lib/site";
 
@@ -62,9 +65,27 @@ export default async function VendorProfilePage({
   const initials = v.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const showContact = v.contactVisibility === "show_contact";
 
+  // Projects + first-party reviews (empty before the Projects migration).
+  const [projects, reviews] = await Promise.all([
+    listOrgProjects(v.id),
+    listPublishedReviews({ organizationId: v.id }, 100),
+  ]);
+  const rating = reviewStats(reviews);
+
   return (
     <Container className="py-10">
-      <JsonLd data={localBusinessSchema({ name: v.name, slug: v.slug, city: v.city, province: v.province, shortDescription: v.shortDescription, categories: v.categories, logoUrl: v.logoUrl })} />
+      <JsonLd
+        data={localBusinessSchema({
+          name: v.name,
+          slug: v.slug,
+          city: v.city,
+          province: v.province,
+          shortDescription: v.shortDescription,
+          categories: v.categories,
+          logoUrl: v.logoUrl,
+          aggregateRating: rating.count > 0 ? { ratingValue: rating.average, reviewCount: rating.count } : undefined,
+        })}
+      />
       <JsonLd data={breadcrumbSchema([
         { name: "Home", path: "/" },
         { name: "Directory", path: "/directory" },
@@ -131,6 +152,15 @@ export default async function VendorProfilePage({
                     </span>
                   </span>
                 )}
+                {rating.count > 0 && (
+                  <a href="#reviews-h" className="ml-2 inline-flex items-center gap-1 font-medium text-foreground hover:underline">
+                    <Stars rating={rating.average} />
+                    {rating.average.toFixed(1)}
+                    <span className="font-normal text-muted-foreground">
+                      · {rating.count} client {rating.count === 1 ? "review" : "reviews"}
+                    </span>
+                  </a>
+                )}
               </p>
             </div>
           </div>
@@ -184,6 +214,10 @@ export default async function VendorProfilePage({
               </div>
             </div>
           )}
+
+          <ProjectGrid projects={projects} companyName={v.name} />
+
+          <ReviewList reviews={reviews} />
 
           {v.portfolioPhotos.length > 0 && (
             <div className="mt-10">

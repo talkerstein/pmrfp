@@ -51,6 +51,12 @@ export function localBusinessSchema(v: {
   shortDescription: string | null;
   categories: string[];
   logoUrl?: string | null;
+  /**
+   * First-party reviews collected and moderated on PMRFP only (never the
+   * Google rating). Pass it only when at least one is published and shown
+   * on the page: markup must match visible reviews.
+   */
+  aggregateRating?: { ratingValue: number; reviewCount: number };
 }) {
   return {
     "@context": "https://schema.org",
@@ -68,6 +74,16 @@ export function localBusinessSchema(v: {
     },
     knowsAbout: v.categories,
     areaServed: v.province ?? "Canada",
+    aggregateRating:
+      v.aggregateRating && v.aggregateRating.reviewCount > 0
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: v.aggregateRating.ratingValue,
+            reviewCount: v.aggregateRating.reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
   };
 }
 
