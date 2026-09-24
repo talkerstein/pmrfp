@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { getProjectSession } from "@/lib/projects/server";
+import { getProjectSessionFromRequest } from "@/lib/projects/server";
 import { draftProject } from "@/lib/projects/ai";
 import { isOwnPhotoUrl, PHOTO_KINDS } from "@/lib/projects/photos";
 import { getCategories, getPropertyTypes } from "@/lib/data/taxonomy";
@@ -30,8 +30,10 @@ export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "project-draft");
   if (limited) return rateLimitResponse(limited);
 
-  const session = await getProjectSession();
-  if (!session) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
+  // Cookie session (web) or bearer token (mobile app).
+  const auth = await getProjectSessionFromRequest(request);
+  if (!auth) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
+  const { session } = auth;
 
   let body: z.infer<typeof bodySchema>;
   try {

@@ -27,7 +27,7 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 
 type BucketName =
   | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
-  | "photo-upload" | "project-draft" | "review";
+  | "photo-upload" | "project-draft" | "project-publish" | "review";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
@@ -42,6 +42,8 @@ const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${n
   // or twice. Review links: a client submits once; retries on a typo.
   "photo-upload": { tokens: 60, window: "10 m" },
   "project-draft": { tokens: 10, window: "10 m" },
+  // Publishing from the mobile app (the web publishes via a server action).
+  "project-publish": { tokens: 10, window: "10 m" },
   review: { tokens: 5, window: "10 m" },
 };
 

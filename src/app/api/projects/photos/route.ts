@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
-import { countActiveProjects, getProjectSession } from "@/lib/projects/server";
+import { countActiveProjects, getProjectSessionFromRequest } from "@/lib/projects/server";
 import { canAddProject } from "@/lib/projects/limits";
 import { MAX_UPLOAD_BYTES, processPhoto, UnreadableImageError } from "@/lib/projects/image";
 import { PROJECT_PHOTO_BUCKET, photoPath } from "@/lib/projects/photos";
@@ -16,19 +16,22 @@ export const maxDuration = 30;
  * the trust boundary: re-encode with sharp (upright, ≤1920px, JPEG, all
  * metadata incl. GPS stripped), then store at project-photos/{orgId}/{uuid}.jpg
  * with the service role. There is no client-side upload path to this bucket.
+ * The mobile app calls this too, with a bearer token instead of cookies.
  */
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "photo-upload");
   if (limited) return rateLimitResponse(limited);
 
-  const session = await getProjectSession();
-  if (!session) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
+  // Cookie session (web) or bearer token (mobile app).
+  const auth = await getProjectSessionFromRequest(request);
+  if (!auth) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
+  const { session, db } = auth;
   if (!isServiceConfigured()) {
     return NextResponse.json({ error: "Photo uploads aren't set up here yet." }, { status: 503 });
   }
 
   // Free plan: one project. Don't take photos for a second one it can't publish.
-  if (!session.hasTradeAccess && !canAddProject(false, await countActiveProjects(session.organization.id))) {
+  if (!session.hasTradeAccess && !canAddProject(false, await countActiveProjects(session.organization.id, db))) {
     return NextResponse.json(
       { error: "The free plan includes one project. Upgrade to Trade Pro to add more.", code: "plan_limit" },
       { status: 403 },
