@@ -15,8 +15,13 @@ export function StatsStrip({ stats, className = "" }: { stats: PlatformStats; cl
   return (
     <div className={`flex flex-wrap items-baseline gap-x-8 gap-y-3 ${className}`.trim()}>
       <Stat value={stats.rfpsPostedLast30Days} label="RFPs posted · last 30 days" />
-      <Stat value={stats.tradesListed} label="trade companies listed" />
-      <Stat value="By region" label="commercial & residential" />
+      {/* A small directory count undersells a board this busy; show it once it's big. */}
+      {stats.tradesListed >= 100 ? (
+        <Stat value={stats.tradesListed} label="trade companies listed" />
+      ) : (
+        <Stat value="Daily" label="new tenders every morning" />
+      )}
+      <Stat value="Canada + U.S." label="commercial & residential" />
     </div>
   );
 }

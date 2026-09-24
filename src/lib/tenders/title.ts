@@ -20,9 +20,18 @@ const LEADING_SEPARATORS = /^[\s,:;|–—-]+/;
 /** Procurement boilerplate that says nothing on an RFP board. */
 const NOISE_PREFIX = /^(?:RISO|RFP|RFQ)\s*[-–—:]\s*/i;
 const NOISE_SUFFIX = /\s*[-–—]\s*(?:RISO|RFP|RFQ)\.?$/i;
-/** "2026-2027", "2025/26": a season, not a reference number. */
-const YEAR_RANGE = /^(?:19|20)\d\d[-/](?:(?:19|20)?\d\d)$/;
+/** "Retender EQ754-…", "RFQ CBI26-107 …": a procurement word in front of the code. */
+const LEAD_WORD = /^(?:re-?tender|tender|rfp|rfq|rft|rfsq)\s+(?=[A-Z]*\d)/i;
 const YEAR = /^(?:19|20)\d\d$/;
+
+/** "2026-2027", "2025/26": a season, not a reference number ("2026-01" is a tender number). */
+function isSeason(code: string): boolean {
+  const m = code.match(/^((?:19|20)\d\d)[-/](\d{2}|\d{4})$/);
+  if (!m) return false;
+  const start = Number(m[1]);
+  const end = m[2].length === 4 ? Number(m[2]) : Math.floor(start / 100) * 100 + Number(m[2]);
+  return end > start && end - start <= 2;
+}
 
 const SMALL_WORDS = new Set([
   "a", "an", "and", "as", "at", "by", "for", "from", "in", "into", "of", "on", "or", "the", "to", "with",
@@ -86,9 +95,11 @@ export function tidyTenderTitle(raw: string): TidyTitle {
   let title = original;
   let reference: string | null = null;
 
-  const code = title.match(HYPHEN_CODE)?.[1] ?? title.match(SINGLE_CODE)?.[1] ?? null;
-  if (code && !YEAR_RANGE.test(code) && !YEAR.test(code)) {
-    const rest = title.slice(code.length).replace(LEADING_SEPARATORS, "");
+  const lead = title.match(LEAD_WORD)?.[0] ?? "";
+  const candidate = title.slice(lead.length);
+  const code = candidate.match(HYPHEN_CODE)?.[1] ?? candidate.match(SINGLE_CODE)?.[1] ?? null;
+  if (code && !isSeason(code) && !YEAR.test(code)) {
+    const rest = candidate.slice(code.length).replace(LEADING_SEPARATORS, "");
     // Only strip when a real title is left behind.
     if (rest.length >= 8 && /[A-Za-zÀ-ÿ]{3}/.test(rest) && /\s/.test(rest)) {
       title = rest;

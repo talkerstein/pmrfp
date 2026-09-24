@@ -14,6 +14,9 @@ describe("tidyTenderTitle", () => {
     ["085-240-43174/75-École internationale Lucille-Teasdale", "École internationale Lucille-Teasdale", "085-240-43174/75"],
     ["W6898-270825 – RISO - Video Inspection Clean Oil Interceptors", "Video Inspection Clean Oil Interceptors", "W6898-270825"],
     ["ET025-270110 - PIDS, FAAS Integration and Installation of IDS & MDS – RFP", "PIDS, FAAS Integration and Installation of IDS & MDS", "ET025-270110"],
+    ["Retender EQ754-251469 Burlington Lift Bridge Security Gate", "Burlington Lift Bridge Security Gate", "EQ754-251469"],
+    ["RFQ CBI26-107 New Roofing Multiple Properties", "New Roofing Multiple Properties", "CBI26-107"],
+    ["Tender 2026-01 DRS Renovation Phase 4", "DRS Renovation Phase 4", "2026-01"],
   ])("splits the reference off %s", (raw, title, reference) => {
     expect(tidyTenderTitle(raw)).toEqual({ title, reference });
   });
@@ -37,6 +40,8 @@ describe("tidyTenderTitle", () => {
   it("leaves seasons, years and already-clean titles alone", () => {
     expect(tidyTenderTitle("2026-2027 Snow Removal Season")).toEqual({ title: "2026-2027 Snow Removal Season", reference: null });
     expect(tidyTenderTitle("2026 Park Street Milling and Paving").reference).toBeNull();
+    expect(tidyTenderTitle("2025/26 Cyclical Street Tree Pruning").reference).toBeNull();
+    expect(tidyTenderTitle("New Haven Waste Management Facility").reference).toBeNull();
     expect(tidyTenderTitle("B225 Duct Cleaning Services")).toEqual({ title: "B225 Duct Cleaning Services", reference: null });
     expect(tidyTenderTitle("Barrow Observatory Flooring Replacement")).toEqual({
       title: "Barrow Observatory Flooring Replacement",
