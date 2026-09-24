@@ -100,6 +100,48 @@ export default async function VersusPage({
         </Container>
       </section>
 
+      {c.priceTable && c.priceSource && (
+        <Container className="pt-12">
+          <h2 className="text-2xl font-semibold tracking-tight">What {c.name} costs</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            From{" "}
+            <a href={c.priceSource.url} rel="nofollow noopener" target="_blank" className="text-teal-700 hover:underline">
+              {c.name}&apos;s pricing page
+            </a>
+            , checked {c.priceSource.checked}.
+          </p>
+          <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-secondary/40 text-left">
+                  <th className="p-3 font-medium">Plan</th>
+                  <th className="p-3 font-medium">Covers</th>
+                  <th className="p-3 font-medium">Price</th>
+                  <th className="p-3 font-medium">Per year</th>
+                </tr>
+              </thead>
+              <tbody>
+                {c.priceTable.map((p) => (
+                  <tr key={p.plan} className="border-b border-border">
+                    <td className="p-3 font-medium">{c.name} {p.plan}</td>
+                    <td className="p-3 text-muted-foreground">{p.covers}</td>
+                    <td className="p-3">{p.price}</td>
+                    <td className="p-3">{p.perYear}</td>
+                  </tr>
+                ))}
+                <tr className="bg-teal-100/40">
+                  <td className="p-3 font-semibold">{SITE.name} Trade Pro</td>
+                  <td className="p-3 text-muted-foreground">Building and property tenders and RFPs, daily email of matches</td>
+                  <td className="p-3">$29/month, or $249/year</td>
+                  <td className="p-3 font-semibold">${PRICING.proAnnual}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {c.priceSource.note && <p className="mt-2 text-xs text-muted-foreground">{c.priceSource.note}</p>}
+        </Container>
+      )}
+
       <Container className="py-12">
         <h2 className="text-2xl font-semibold tracking-tight">At a glance</h2>
         <div className="mt-4 overflow-x-auto rounded-lg border border-border">
