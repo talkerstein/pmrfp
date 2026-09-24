@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Camera } from "lucide-react";
 import { getSession } from "@/lib/access/access";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { submitCaseStudyAction } from "@/lib/case-studies/actions";
+import { projectsReady } from "@/lib/projects/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
 
 export const metadata: Metadata = { title: "Submit a Case Study · PMRFP" };
@@ -23,7 +26,7 @@ export default async function NewCaseStudyPage({
   if (!session.organization) redirect("/onboarding");
   const { error } = await searchParams;
 
-  const [categories, regions] = await Promise.all([getCategories(), getRegions()]);
+  const [categories, regions, photoProjects] = await Promise.all([getCategories(), getRegions(), projectsReady()]);
 
   const field =
     "mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm";
@@ -36,6 +39,20 @@ export default async function NewCaseStudyPage({
         title="Submit a case study"
         description="Write up one real, completed project. We review before it publishes — no marketing fluff, just what happened and how it went."
       />
+
+      {photoProjects && (
+        <Link
+          href="/dashboard/projects/new"
+          className="mb-6 flex max-w-2xl items-center gap-3 rounded-lg border border-teal-300 bg-teal-50/60 p-4 text-sm transition-colors hover:bg-teal-50"
+        >
+          <Camera className="size-5 shrink-0 text-teal-600" />
+          <span>
+            <strong className="font-semibold">Got photos from the job?</strong>{" "}
+            Snap before and after shots on your phone and we&apos;ll draft the write-up for you.{" "}
+            <span className="font-medium text-teal-ink underline">Add a photo project</span>
+          </span>
+        </Link>
+      )}
 
       {error && (
         <div className="mb-4 rounded-md border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">

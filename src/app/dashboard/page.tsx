@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Camera } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import { projectsReady } from "@/lib/projects/server";
 import { buttonVariants } from "@/components/ui/button";
 import { listRfps } from "@/lib/data/rfps";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
@@ -12,7 +14,8 @@ export default async function TradeDashboardHome() {
   const session = await requireRole(["trade"]);
   const demo = isDemoMode();
   const org = session.organization;
-  const matchingRfps = (await listRfps()).filter((r) => r.status === "open").length;
+  const [rfps, photoProjects] = await Promise.all([listRfps(), projectsReady()]);
+  const matchingRfps = rfps.filter((r) => r.status === "open").length;
 
   return (
     <div>
@@ -39,6 +42,25 @@ export default async function TradeDashboardHome() {
         <StatCard label="Interests submitted" value={0} href="/dashboard/interests" />
         <StatCard label="Profile views" value={demo ? 42 : 0} hint="Last 30 days" />
       </div>
+
+      {photoProjects && (
+        <Link
+          href="/dashboard/projects/new"
+          className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-teal-300 bg-teal-50/60 p-6 transition-colors hover:bg-teal-50"
+        >
+          <div className="flex items-start gap-4">
+            <Camera className="mt-0.5 size-6 shrink-0 text-teal-600" />
+            <div>
+              <h2 className="text-base font-semibold">Show a job you&apos;re proud of</h2>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                Snap before and after photos on your phone, say what you did in a line, and we&apos;ll
+                write it up. It goes on your profile for property managers to see.
+              </p>
+            </div>
+          </div>
+          <span className={buttonVariants()}>Add a project</span>
+        </Link>
+      )}
 
       {org?.profile_status === "approved" && org.slug && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-6">

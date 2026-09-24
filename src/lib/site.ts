@@ -92,7 +92,9 @@ export const TRADE_NAV = [
   { href: "/dashboard/rfps", label: "RFP Feed" },
   { href: "/dashboard/saved-rfps", label: "Saved RFPs" },
   { href: "/dashboard/interests", label: "My Interests" },
-  { href: "/dashboard/case-studies/new", label: "Submit a Case Study" },
+  // Projects covers both the photo capture and the typed case-study form
+  // (linked from the Projects page), so one entry instead of two.
+  { href: "/dashboard/projects", label: "Projects" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/settings", label: "Settings" },
 ] as const;
@@ -119,6 +121,7 @@ export const ADMIN_NAV = [
   { href: "/admin/regions", label: "Regions" },
   { href: "/admin/resources", label: "Resources" },
   { href: "/admin/case-studies", label: "Case Studies" },
+  { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/audit-logs", label: "Audit Logs" },
 ] as const;
