@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendTenderDigest } from "@/lib/email/send";
 import { unsubscribeUrl } from "@/lib/email/unsubscribe";
+import { displayTitle } from "@/lib/tenders/title";
 
 export const maxDuration = 60;
 
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
   const [{ data: rfps }, { data: orgs }, { data: subs }, { data: regions }] = await Promise.all([
     supabase
       .from("rfp_posts")
-      .select("id,title,slug,deadline,region_id,published_at, rfp_categories(category_id, trade_categories(name))")
+      .select("id,title,slug,deadline,region_id,published_at,source_type, rfp_categories(category_id, trade_categories(name))")
       .eq("status", "published")
       .eq("is_demo", false)
       .gte("published_at", weekAgo)
@@ -67,7 +68,10 @@ export async function GET(request: Request) {
     supabase.from("regions").select("id,slug,parent_id"),
   ]);
 
-  const openRfps = ((rfps ?? []) as unknown as RfpRow[]).filter((r) => !r.deadline || r.deadline >= today);
+  const weekAhead = new Date(now + 7 * 86_400_000).toISOString().slice(0, 10);
+  const openRfps = ((rfps ?? []) as unknown as RfpRow[])
+    .filter((r) => !r.deadline || r.deadline >= today)
+    .map((r) => ({ ...r, title: displayTitle(r.title, r.source_type).title }));
   if (!openRfps.length) return NextResponse.json({ sent: 0, reason: "no new open tenders this week" });
 
   const paid = new Set(
@@ -161,7 +165,10 @@ export async function GET(request: Request) {
         count: matches.length,
         tradeLabel: trade,
         items: matches.slice(0, 5).map((m) => ({ title: m.title, slug: m.slug, deadline: m.deadline })),
-        upgradeUrl: `${base}/dashboard/billing?plan=pro&interval=annual`,
+        closingSoon: matches.filter((m) => m.deadline && m.deadline <= weekAhead).length,
+        // Monthly first: the one trade that has paid chose monthly.
+        upgradeUrl: `${base}/dashboard/billing?plan=pro&interval=monthly`,
+        annualUrl: `${base}/dashboard/billing?plan=pro&interval=annual`,
         unsubscribeUrl: unsub,
         mailingAddress: mailingAddress!,
       });
@@ -176,6 +183,7 @@ type Pair = Record<string, string>;
 interface RfpRow {
   id: string;
   title: string;
+  source_type: string | null;
   slug: string;
   deadline: string | null;
   region_id: string | null;

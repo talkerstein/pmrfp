@@ -36,7 +36,7 @@ export default async function RfpInterestsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole(["property_manager"]);
+  await requireRole(["property_manager", "real_estate_agent"]);
   const { id } = await params;
 
   let interests: InterestRow[] = [];

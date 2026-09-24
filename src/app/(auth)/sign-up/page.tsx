@@ -7,6 +7,8 @@ import { safeNextPath } from "@/lib/auth/next";
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { billingPathForIntent, parsePlanIntent } from "@/lib/billing/plan-intent";
 import { parseAwardRef } from "@/lib/gc/packages";
+import { getJoinProof } from "@/lib/data/join-proof";
+import { JoinProof } from "@/components/public/join-proof";
 
 const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent", "general_contractor"] as const;
 type ValidRole = (typeof VALID_ROLES)[number];
@@ -64,10 +66,15 @@ export default async function SignUpPage({
       (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? billingPathForIntent(intent) : null),
   );
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
-  const google = await isGoogleAuthEnabled();
+  const [google, proof] = await Promise.all([isGoogleAuthEnabled(), getJoinProof()]);
+  // Buyers (PMs, GCs, realtors) see how posting works; everyone else sees the live board.
+  const audience =
+    !intent && (initialRole === "property_manager" || initialRole === "general_contractor" || initialRole === "real_estate_agent")
+      ? "buyer"
+      : "trade";
 
-  return (
-    <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+  const card = (
+    <div className="rounded-2xl border border-border bg-card p-8 shadow-xl shadow-indigo/5">
       <p className="eyebrow text-teal-ink">
         <span className="mr-2 inline-block h-px w-5 align-middle bg-teal-500" />
         Membership
@@ -121,6 +128,20 @@ export default async function SignUpPage({
           Sign in
         </Link>
       </p>
+    </div>
+  );
+
+  return (
+    <div data-wide className="grid items-start gap-8 lg:grid-cols-[minmax(0,448px)_minmax(0,1fr)] lg:gap-10">
+      {/* Phones get the panel below the form; lead with the one number that matters. */}
+      {audience === "trade" && proof.open > 0 && (
+        <p className="-mb-4 flex items-center justify-center gap-2 text-sm text-muted-foreground lg:hidden">
+          <span className="size-2 rounded-full bg-teal-500" />
+          <strong className="font-semibold text-foreground">{proof.open}</strong> contracts open for bids right now
+        </p>
+      )}
+      {card}
+      <JoinProof proof={proof} audience={audience} />
     </div>
   );
 }

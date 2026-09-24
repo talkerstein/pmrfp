@@ -146,7 +146,13 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     if (filters.propertyType && !props.includes(filters.propertyType)) return false;
     return true;
   });
-  const out: VendorListItem[] = rows.map((r) => ({
+  const out: VendorListItem[] = rows.map((r) => toListItem(r, platinum));
+  if (filters.sort === "alpha") return out.sort((a, b) => a.name.localeCompare(b.name));
+  return out.sort((a, b) => tierRank(b) - tierRank(a));
+}
+
+function toListItem(r: OrgRow, platinum: Set<string>): VendorListItem {
+  return {
     slug: r.slug,
     name: r.name,
     city: r.city,
@@ -161,9 +167,26 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     wsibStatus: r.wsib_status,
     categories: r.organization_categories.map((c) => c.trade_categories?.name).filter(Boolean) as string[],
     regions: r.organization_regions.map((c) => c.regions?.name).filter(Boolean) as string[],
-  }));
-  if (filters.sort === "alpha") return out.sort((a, b) => a.name.localeCompare(b.name));
-  return out.sort((a, b) => tierRank(b) - tierRank(a));
+  };
+}
+
+/** Live, approved trades by organization id, keyed by id (trusted-trades pages). */
+export async function listVendorsByIds(ids: string[]): Promise<Map<string, VendorListItem>> {
+  const out = new Map<string, VendorListItem>();
+  if (!ids.length || !isSupabaseConfigured()) return out;
+  const supabase = createReadClient();
+  const [{ data }, platinum] = await Promise.all([
+    supabase
+      .from("organizations")
+      .select(ORG_SELECT)
+      .in("id", ids)
+      .eq("profile_status", "approved")
+      .eq("status", "active")
+      .eq("is_demo", false),
+    platinumSlugs(supabase),
+  ]);
+  for (const r of (data as unknown as OrgRow[]) ?? []) out.set(r.id, toListItem(r, platinum));
+  return out;
 }
 
 /**

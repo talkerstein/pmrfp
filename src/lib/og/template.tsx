@@ -43,7 +43,10 @@ export interface OGTemplateProps {
  * Render the JSX → PNG via ImageResponse. Caller passes the props for their
  * specific page; the visual treatment stays consistent across all OG images.
  */
-export function renderOgImage({ eyebrow, title, subline, caption }: OGTemplateProps): ImageResponse {
+export function renderOgImage({ eyebrow, title: rawTitle, subline, caption }: OGTemplateProps): ImageResponse {
+  // A U+FFFD from a broken feed makes the renderer fetch a font for it, which
+  // 400s and takes the whole image down.
+  const title = rawTitle.replace(/�/g, "");
   return new ImageResponse(
     (
       <div

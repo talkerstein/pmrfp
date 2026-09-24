@@ -11,6 +11,8 @@ export const maxDuration = 60;
 const BATCH = 8;
 /** Stop starting new extractions after this long, to finish inside maxDuration. */
 const BUDGET_MS = 45_000;
+/** Hard stop for an extraction already running (one slow model call took the whole run past 60s). */
+const DEADLINE_MS = 52_000;
 
 interface Candidate {
   id: string;
@@ -68,6 +70,7 @@ export async function GET(request: Request) {
   let stoppedForQuota = false;
   for (const r of todo.slice(0, BATCH)) {
     if (Date.now() - started > BUDGET_MS) break;
+    const signal = AbortSignal.timeout(Math.max(1_000, DEADLINE_MS - (Date.now() - started)));
     const res = await extractBidCheck({
       title: r.title,
       summary: r.summary,
@@ -76,7 +79,9 @@ export async function GET(request: Request) {
       province: r.province,
       deadline: r.deadline,
       issuer: r.source_type === "public_source" ? publicTenderSource(r.slug).issuer : null,
-    });
+    }, signal);
+    // Ran out of time mid-call: leave it for the next run rather than marking it failed.
+    if (!res.ok && res.aborted) break;
     if (!res.ok && res.quota) {
       stoppedForQuota = true; // try again next run; don't mark it failed
       break;

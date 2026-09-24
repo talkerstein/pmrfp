@@ -21,13 +21,25 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const plan =
-    body?.plan === "featured" ? "featured" : body?.plan === "seo" ? "seo" : "pro";
-  // Featured is annual-only. Pro and SEO both support monthly/annual.
+    body?.plan === "featured"
+      ? "featured"
+      : body?.plan === "seo"
+        ? "seo"
+        : body?.plan === "realtor"
+          ? "realtor"
+          : "pro";
+  // Featured and Realtor Pro are annual-only. Pro and SEO support monthly/annual.
   const interval: "monthly" | "annual" =
-    plan !== "featured" && body?.interval === "monthly" ? "monthly" : "annual";
+    plan !== "featured" && plan !== "realtor" && body?.interval === "monthly" ? "monthly" : "annual";
 
   let price: string | undefined;
-  if (plan === "featured") {
+  if (plan === "realtor") {
+    // Only for buyers (realtors, property managers): it's their trusted-trades page.
+    if (session.organization.organization_type === "trade_company" || session.organization.organization_type === "supplier") {
+      return NextResponse.json({ error: "Realtor Pro is for realtors and property managers." }, { status: 400 });
+    }
+    price = process.env.STRIPE_PRICE_REALTOR_ANNUAL;
+  } else if (plan === "featured") {
     price = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
   } else if (plan === "seo") {
     // Directory-only tier — gated on the env var like every other price, so
@@ -70,8 +82,8 @@ export async function POST(request: Request) {
     mode: "subscription",
     line_items: [{ price, quantity: 1 }],
     customer_email: session.profile.email,
-    success_url: `${SITE_URL}/dashboard?welcome=1`,
-    cancel_url: `${SITE_URL}/pricing`,
+    success_url: plan === "realtor" ? `${SITE_URL}/pm-dashboard/saved-vendors?upgraded=1` : `${SITE_URL}/dashboard?welcome=1`,
+    cancel_url: plan === "realtor" ? `${SITE_URL}/pm-dashboard/saved-vendors` : `${SITE_URL}/pricing`,
     allow_promotion_codes: true,
     metadata,
     subscription_data: { metadata },

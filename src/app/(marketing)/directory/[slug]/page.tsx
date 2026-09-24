@@ -7,6 +7,7 @@ import { Container } from "@/components/container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
+import { SaveTradeButton } from "@/components/trusted/save-trade-button";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
 import { getVendor, listVendors, retiredVendorRedirect } from "@/lib/data/directory";
 import { listOrgProjects, listPublishedReviews } from "@/lib/data/projects";
@@ -262,6 +263,7 @@ export default async function VendorProfilePage({
           <p className="mb-4 text-center text-xs text-muted-foreground">
             Post a project and {v.name} comes to you with a bid. Free for property managers.
           </p>
+          <SaveTradeButton organizationId={v.id} slug={v.slug} name={v.name} />
           <div className="rounded-xl border border-border bg-card p-6">
             {showContact ? (
               <>

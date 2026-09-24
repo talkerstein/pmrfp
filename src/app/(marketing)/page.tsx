@@ -20,6 +20,7 @@ import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listAllRfpsCached, listQualifyingCombos, openCountsByTradeRegion, regionTree } from "@/lib/data/trade-city";
 import { JobFinder, type FinderPlace } from "@/components/public/job-finder";
+import { MatchEmailPreview } from "@/components/public/match-email-preview";
 import { winnersFromRfps } from "@/lib/data/winners";
 import { boardStats, closingLabel, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ export const metadata: Metadata = {
 };
 
 /** Public buyers the board pulls from every morning (see /api/cron/public-tenders). */
+const SOURCES = ["CanadaBuys", "SAM.gov", "City of Toronto", "Québec SEAO", "Nova Scotia", "Yukon"];
 
 // Every row must stay true of Trade Pro (rfp-alerts cron, LockedContentPanel,
 // express-interest). No "appear higher" claims.
@@ -131,6 +133,19 @@ export default async function HomePage() {
   const closingSoonUs = closingSoon.filter((r) => rfpMarket(r) === "US");
   const heroRows = closingSoonCa.slice(0, 4);
   const heroRowsUs = closingSoonUs.slice(0, 4);
+  // "Your morning email": the busiest trade's next closers, minus what the hero already shows.
+  const showcase = (pool: RfpListItem[], hero: RfpListItem[]) => {
+    const heroSlugs = new Set(hero.map((r) => r.slug));
+    const rest = pool.filter((r) => !isFrench(r) && !heroSlugs.has(r.slug) && r.categories[0]);
+    const counts = new Map<string, number>();
+    for (const r of rest) counts.set(r.categories[0], (counts.get(r.categories[0]) ?? 0) + 1);
+    const trade = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const rows = trade ? rest.filter((r) => r.categories[0] === trade).slice(0, 3) : [];
+    // The email lists soonest deadline first; so does the preview.
+    return { trade, rows: rows.sort((a, b) => (a.deadline ?? "9").localeCompare(b.deadline ?? "9")) };
+  };
+  const emailCa = showcase(closingSoonCa, heroRows);
+  const emailUs = showcase(closingSoonUs, heroRowsUs);
   // Awards a trade can picture winning: $50K–$2M, most recent first, one per source.
   const bigAwards = spread(
     rfps
@@ -245,6 +260,23 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* ─────────────────────── SOURCES ─────────────────────── */}
+      <section className="border-b border-border bg-secondary/40">
+        <Container className="flex flex-col gap-4 py-6 md:flex-row md:items-center md:gap-10">
+          <p className="shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            Pulled every morning from
+          </p>
+          <ul className="flex flex-wrap items-center gap-x-8 gap-y-2">
+            {SOURCES.map((s) => (
+              <li key={s} className="font-heading text-base font-semibold tracking-tight text-indigo/60">
+                {s}
+              </li>
+            ))}
+            <li className="text-sm text-muted-foreground">+ property managers</li>
+          </ul>
+        </Container>
+      </section>
+
       {/* ─────────────────────── LIVE NUMBERS ─────────────────────── */}
       <section className="border-b border-border bg-background">
         <Container className="grid grid-cols-2 divide-border py-10 md:grid-cols-4 md:divide-x">
@@ -314,6 +346,46 @@ export default async function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* ──────────────────── THE MORNING EMAIL ──────────────────── */}
+      {emailCa.trade && (
+        <section className="bg-background">
+          <Container className="grid items-center gap-12 py-20 md:py-24 lg:grid-cols-[.95fr_1.05fr] lg:gap-16">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.14em] text-teal-700">Trade Pro</p>
+              <h2 className="mt-3 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+                Every match lands in your inbox the morning it posts.
+              </h2>
+              <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
+                Tell us your trades and where you work. Every morning we check each source and email you only what fits,
+                soonest deadline first.
+              </p>
+              <ul className="mt-8 space-y-3.5">
+                {COMPARE.filter(([, free]) => !free).map(([label]) => (
+                  <li key={label} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-teal-100">
+                      <Check className="size-3 text-teal-800" strokeWidth={3} />
+                    </span>
+                    <span className="font-medium">{label}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link href={proMonthly} className={cn(buttonVariants({ size: "lg" }), "active:scale-[0.98]")}>
+                  Start Trade Pro <ArrowRight className="size-4" />
+                </Link>
+                <span className="text-sm text-muted-foreground">
+                  ${PRICING.proMonthly}/month or ${PRICING.proAnnual}/year. Cancel anytime.
+                </span>
+              </div>
+            </div>
+            <ByMarket
+              ca={<MatchEmailPreview trade={emailCa.trade} place="across Canada" rows={emailCa.rows} />}
+              us={emailUs.trade ? <MatchEmailPreview trade={emailUs.trade} place="across the U.S." rows={emailUs.rows} /> : undefined}
+            />
+          </Container>
+        </section>
+      )}
 
       {/* ──────────────────── ALREADY AWARDED ──────────────────── */}
       {bigAwards.length === 3 && (
@@ -471,7 +543,7 @@ function HeroRows({ rows }: { rows: RfpListItem[] }) {
                 <div className="font-mono text-[11px] uppercase tracking-wide text-teal-700">
                   {r.categories[0] ?? "Commercial"} · {r.regionName ?? "Canada"}
                 </div>
-                <div className="mt-1 line-clamp-1 font-medium group-hover:text-teal-700">{r.title}</div>
+                <div className="mt-1 line-clamp-2 font-medium group-hover:text-teal-700 sm:line-clamp-1">{r.title}</div>
               </div>
               <span
                 className={cn(

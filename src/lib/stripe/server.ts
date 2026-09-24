@@ -35,7 +35,9 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
     ? "featured"
     : isSeoPriceId(priceId)
       ? "seo"
-      : "pro";
+      : isRealtorPriceId(priceId)
+        ? "realtor"
+        : "pro";
   const row = {
         organization_id: orgId,
         user_id: sub.metadata?.user_id ?? null,
@@ -77,6 +79,12 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
 export function isFeaturedPriceId(priceId: string | null | undefined): boolean {
   const featured = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
   return Boolean(featured && priceId && priceId === featured);
+}
+
+/** True when the price id is Realtor Pro (trusted-trades page; never RFP access). */
+export function isRealtorPriceId(priceId: string | null | undefined): boolean {
+  const realtor = process.env.STRIPE_PRICE_REALTOR_ANNUAL;
+  return Boolean(realtor && priceId && priceId === realtor);
 }
 
 /** True when the price id is the directory-only SEO tier (either interval). */

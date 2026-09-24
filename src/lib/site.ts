@@ -23,6 +23,8 @@ export const PRICING = {
   featuredAnnual: 599,
   seoAnnual: 120,
   seoMonthly: 12,
+  /** Realtor Pro: unlimited trusted trades + a contact button on the page. */
+  realtorAnnual: 249,
   seoNote:
     "SEO Listing: your company on the trade + city pages property managers find on Google and in AI answers, plus an unlimited project photo gallery. Directory placement only — RFP access is Trade Pro.",
   currency: "CAD",
@@ -105,7 +107,7 @@ export const PM_NAV = [
   { href: "/pm-dashboard/rfps", label: "My RFPs" },
   { href: "/pm-dashboard/rfps/new", label: "Post an RFP" },
   { href: "/rfp-writer", label: "RFP Writer" },
-  { href: "/pm-dashboard/saved-vendors", label: "Saved Vendors" },
+  { href: "/pm-dashboard/saved-vendors", label: "Trusted trades" },
 ] as const;
 
 /** Admin dashboard sidebar (§10.5) */

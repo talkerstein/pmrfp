@@ -45,6 +45,8 @@ export interface VendorDetail extends VendorListItem {
 export interface RfpListItem {
   slug: string;
   title: string;
+  /** Buyer's solicitation number, split off the front of public-tender titles. */
+  reference?: string | null;
   summary: string | null;
   categories: string[];
   regionName: string | null;
