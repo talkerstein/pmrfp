@@ -68,7 +68,7 @@ export default async function RfpWriterPage() {
     getVisitorGeo(),
   ]);
   const postPath = "/pm-dashboard/rfps/new?draft=1";
-  const isPm = session?.profile.primary_role === "property_manager";
+  const isPm = session?.profile.primary_role === "property_manager" || session?.profile.primary_role === "real_estate_agent";
   const postHref = isPm
     ? postPath
     : `/sign-up?role=property_manager&next=${encodeURIComponent(postPath)}`;

@@ -8,7 +8,7 @@ import { aiAvailable, tailorRfp } from "@/lib/rfp-writer/ai";
 // AI tailoring can take up to a minute; the template path is instant.
 export const maxDuration = 90;
 
-const AI_ROLES = new Set(["property_manager", "admin", "super_admin"]);
+const AI_ROLES = new Set(["property_manager", "real_estate_agent", "admin", "super_admin"]);
 
 /**
  * POST /api/rfp-writer — wizard answers → a complete RFP draft.

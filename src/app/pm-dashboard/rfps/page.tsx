@@ -36,7 +36,7 @@ export default async function PmRfpsPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const session = await requireRole(["property_manager"]);
+  const session = await requireRole(["property_manager", "real_estate_agent"]);
   const sp = await searchParams;
 
   let posts: PostRow[] = [];
@@ -64,7 +64,7 @@ export default async function PmRfpsPage({
 
       {sp.posted === "1" && (
         <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          <strong>RFP submitted.</strong> It's now pending review and will be published once approved.
+          <strong>RFP submitted.</strong> It&apos;s now pending review and will be published once approved.
         </div>
       )}
 

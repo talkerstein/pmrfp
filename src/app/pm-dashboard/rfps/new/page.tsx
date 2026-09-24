@@ -17,7 +17,7 @@ export default async function NewRfpPage({
 }: {
   searchParams: Promise<{ template?: string; draft?: string; kind?: string; award?: string }>;
 }) {
-  const session = await requireRole(["property_manager"]);
+  const session = await requireRole(["property_manager", "real_estate_agent"]);
   const [{ template: templateSlug, draft, kind, award: awardParam }, categories, regions, propertyTypes, geo] = await Promise.all([
     searchParams,
     getCategories(),
