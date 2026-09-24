@@ -33,6 +33,14 @@
       "expo-secure-store",
       "expo-web-browser",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "PMRFP uses your photos so you can add job pictures to your projects.",
+          "cameraPermission": "PMRFP uses the camera so you can snap before, during and after photos of your jobs.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-notifications",
         {
           "color": "#282B59"
