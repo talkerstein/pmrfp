@@ -25,7 +25,9 @@ import { Redis } from "@upstash/redis";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 
-type BucketName = "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai";
+type BucketName =
+  | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
+  | "photo-upload" | "project-draft" | "review";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
@@ -36,6 +38,11 @@ const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${n
   auth: { tokens: 10, window: "60 s" },
   // RFP Writer: each call can spend model tokens — keep it human-paced.
   ai: { tokens: 5, window: "10 m" },
+  // Projects: a phone on site uploads a burst of photos, then drafts once
+  // or twice. Review links: a client submits once; retries on a typo.
+  "photo-upload": { tokens: 60, window: "10 m" },
+  "project-draft": { tokens: 10, window: "10 m" },
+  review: { tokens: 5, window: "10 m" },
 };
 
 let _redis: Redis | null = null;
