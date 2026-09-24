@@ -1,3 +1,5 @@
+import { repairFeedText } from "./shared";
+
 /**
  * Public-tender titles arrive with the buyer's solicitation number glued to
  * the front ("EE517-270096 Snow removal…", "2026-029: FOUR PROJECTS IN…") and
@@ -91,7 +93,8 @@ function titleCase(s: string): string {
 }
 
 export function tidyTenderTitle(raw: string): TidyTitle {
-  const original = raw.trim();
+  // Rows imported before clean() repaired feed text still carry U+FFFD.
+  const original = repairFeedText(raw).trim();
   let title = original;
   let reference: string | null = null;
 

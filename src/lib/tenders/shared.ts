@@ -48,7 +48,16 @@ export function slugify(s: string): string {
 }
 
 export function clean(s: string): string {
-  return s.replace(/\r/g, "").replace(/ | /g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  return repairFeedText(s).replace(/\r/g, "").replace(/ | /g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
+ * Some feeds (Nova Scotia's awards CSV) ship U+FFFD where the source had a
+ * dash or a curly quote. On the page it shows as a box; in an OG image it makes
+ * the renderer fetch a font for it and fail. A spaced one was a dash.
+ */
+export function repairFeedText(s: string): string {
+  return s.replace(/\s\uFFFD\s/g, " – ").replace(/\uFFFD/g, "");
 }
 
 

@@ -49,6 +49,11 @@ describe("tidyTenderTitle", () => {
     });
   });
 
+  it("repairs the replacement characters some feeds ship for dashes and quotes", () => {
+    expect(tidyTenderTitle("Libraries � Janitorial Services").title).toBe("Libraries – Janitorial Services");
+    expect(tidyTenderTitle("RFC - Halifax Infirmary (�HI�) Cath Lab").title).toBe("RFC - Halifax Infirmary (HI) Cath Lab");
+  });
+
   it("keeps the original when stripping would leave too little", () => {
     expect(tidyTenderTitle("EE517-270096 - Roof")).toEqual({ title: "EE517-270096 - Roof", reference: null });
   });

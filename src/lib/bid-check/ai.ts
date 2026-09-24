@@ -35,7 +35,7 @@ export interface BidCheckInput {
 
 export type BidCheckResult =
   | { ok: true; check: BidCheck; model: string }
-  | { ok: false; quota: boolean; error: string };
+  | { ok: false; quota: boolean; error: string; aborted?: boolean };
 
 export function noticeText(i: BidCheckInput): string {
   return [
@@ -51,12 +51,14 @@ export function noticeText(i: BidCheckInput): string {
     .join("\n");
 }
 
-export async function extractBidCheck(input: BidCheckInput): Promise<BidCheckResult> {
+/** `signal` cuts a slow call off (the cron has a hard 60-second limit); an aborted run is not a failure. */
+export async function extractBidCheck(input: BidCheckInput, signal?: AbortSignal): Promise<BidCheckResult> {
   const ai = geminiClient();
   if (!ai) return { ok: false, quota: false, error: "GEMINI_API_KEY not set" };
   let quota = false;
   let last = "no model succeeded";
   for (const model of MODELS) {
+    if (signal?.aborted) return { ok: false, quota, error: "out of time", aborted: true };
     try {
       const response = await ai.models.generateContent({
         model,
@@ -66,12 +68,14 @@ export async function extractBidCheck(input: BidCheckInput): Promise<BidCheckRes
           responseMimeType: "application/json",
           responseJsonSchema: z.toJSONSchema(bidCheckSchema),
           temperature: 0.1,
+          abortSignal: signal,
         },
       });
       const parsed = bidCheckSchema.safeParse(JSON.parse(response.text ?? ""));
       if (parsed.success) return { ok: true, check: parsed.data, model };
       last = `${model}: schema mismatch`;
     } catch (err) {
+      if (signal?.aborted) return { ok: false, quota, error: "out of time", aborted: true };
       quota = quota || isQuotaError(err);
       last = `${model}: ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`;
     }
