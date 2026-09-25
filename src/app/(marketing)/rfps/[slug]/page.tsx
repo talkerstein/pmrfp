@@ -17,7 +17,8 @@ import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardNoticeUrl } from "@/lib/tenders/awards";
-import { parseAward } from "@/lib/data/fomo";
+import { daysUntil, parseAward } from "@/lib/data/fomo";
+import { tradePhotoForName } from "@/lib/photos";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { BidChecklist } from "@/components/public/bid-checklist";
@@ -39,7 +40,7 @@ export async function generateMetadata({
   const rfp = await getRfpTeaser(slug);
   if (!rfp) return { title: "Opportunity not found" };
   return {
-    title: `${rfp.title} — RFP Opportunity`,
+    title: `${rfp.title} | RFP Opportunity`,
     description: rfp.summary ?? "Commercial property RFP opportunity on PMRFP.",
     // ?view=locked and tracking params were being indexed as duplicates.
     alternates: { canonical: `/rfps/${rfp.slug}` },
@@ -148,12 +149,20 @@ export default async function RfpDetailPage({
       upgradeHref={upgradeHref}
     />
   ) : null;
+  // Notice header.
+  const bannerPhoto = tradePhotoForName(teaser.categories[0]);
+  const noticeKind = isAward ? "Award notice" : isGc ? "GC sub-trade package" : isPublicTender ? "Public tender" : "Private RFP";
+  const place = [teaser.city, teaser.province].filter(Boolean).join(", ") || teaser.regionName;
+  const days = !isAward && !isClosed ? daysUntil(teaser.deadline) : null;
+  const daysLeft = days === null || days < 0 || days > 7 ? null : days === 0 ? "today" : days === 1 ? "tomorrow" : `${days} days left`;
 
   return (
     <Container className="py-10">
-      <Link href="/rfps" className="text-sm text-muted-foreground hover:text-foreground">
-        ← Back to opportunities
-      </Link>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/rfps" className="hover:text-foreground">Tender board</Link>
+        <span aria-hidden>/</span>
+        {teaser.categories[0] ? <span className="truncate">{teaser.categories[0]}</span> : <span>Listing</span>}
+      </nav>
 
       {!configured && (
         <div className="mt-4 rounded-lg border border-dashed border-teal-300 bg-teal-50/50 p-3 text-sm text-muted-foreground">
@@ -168,20 +177,51 @@ export default async function RfpDetailPage({
         </div>
       )}
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_300px]">
-        <div className="min-w-0">
-          <div className="flex flex-wrap gap-1.5">
+      <header className="mt-6 overflow-hidden rounded-lg border border-border bg-card">
+        {teaser.photoUrls.length === 0 && (
+          <div className="relative h-28 bg-indigo sm:h-36">
+            <Image src={bannerPhoto.src} alt={bannerPhoto.alt} fill priority sizes="(min-width: 1280px) 1200px, 100vw" className="object-cover opacity-60" />
+          </div>
+        )}
+        <div className="p-5 sm:p-7">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-teal-ink">{noticeKind}</span>
+            {teaser.isDemo && <span>· Sample listing</span>}
+          </div>
+          <h1 lang={noticeLang} className="mt-3 max-w-4xl font-heading text-2xl font-semibold leading-tight tracking-tight text-indigo sm:text-3xl">
+            {teaser.title}
+          </h1>
+          <div className="mt-4 flex flex-wrap gap-1.5">
             {teaser.categories.map((c) => <Badge key={c} variant="secondary">{c}</Badge>)}
             {teaser.propertyTypeName && <Badge variant="outline">{teaser.propertyTypeName}</Badge>}
             {isGc && <Badge variant="outline" className="border-teal-400 text-teal-ink">{GC_BADGE}</Badge>}
-            {teaser.isDemo && <Badge variant="outline" className="border-dashed">Sample</Badge>}
           </div>
-          <h1 lang={noticeLang} className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{teaser.title}</h1>
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            {teaser.regionName && <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {teaser.regionName}</span>}
-            {teaser.reference && <span className="flex items-center gap-1.5"><Hash className="size-4" /> Ref. <span className="font-mono text-foreground">{teaser.reference}</span></span>}
-            <span className="flex items-center gap-1.5"><CalendarClock className="size-4" /> {isAward ? `Awarded ${fmt(teaser.deadline)}` : isClosed ? `Closed ${fmt(teaser.deadline)}` : teaser.deadline ? `${closesLabel} ${fmt(teaser.deadline)}` : "Ongoing — no fixed closing date"}</span>
+        </div>
+        <dl className="grid grid-cols-2 border-t border-border sm:grid-cols-4 [&>div]:border-border [&>div]:px-5 [&>div]:py-3.5 sm:[&>div]:px-7">
+          <div className="border-b border-r sm:border-b-0">
+            <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground"><Hash className="size-3" /> Reference</dt>
+            <dd className="mt-1 truncate font-mono text-sm text-foreground">{teaser.reference ?? "Not published"}</dd>
           </div>
+          <div className="border-b sm:border-b-0 sm:border-r">
+            <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground"><Landmark className="size-3" /> Source</dt>
+            <dd className="mt-1 truncate text-sm font-medium text-foreground">{isPublicTender ? tenderSource.portal.replace(/^the /, "") : isGc ? "General contractor" : "Property manager"}</dd>
+          </div>
+          <div className="border-r">
+            <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground"><CalendarClock className="size-3" /> {isAward ? "Awarded" : isClosed ? "Closed" : closesLabel}</dt>
+            <dd className="mt-1 text-sm font-medium tabular-nums text-foreground">
+              {teaser.deadline ? fmt(teaser.deadline) : "Ongoing"}
+              {daysLeft && <span className="ml-1.5 text-teal-ink">· {daysLeft}</span>}
+            </dd>
+          </div>
+          <div>
+            <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground"><MapPin className="size-3" /> Location</dt>
+            <dd className="mt-1 text-sm font-medium text-foreground">{place ?? "Not specified"}</dd>
+          </div>
+        </dl>
+      </header>
+
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="min-w-0">
 
           {isPublicTender && (
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
@@ -190,13 +230,13 @@ export default async function RfpDetailPage({
                 {isAward ? (
                   <>
                     <strong className="text-foreground">Past public contract.</strong> Already awarded by{" "}
-                    {tenderSource.issuer} — listed so trades can see what this kind of work sells for and who wins
+                    {tenderSource.issuer}. Listed so trades can see what this kind of work sells for and who wins
                     it. It did not go through PMRFP.
                   </>
                 ) : (
                   <>
                     <strong className="text-foreground">Public tender.</strong> Issued by {tenderSource.issuer} and
-                    published on {tenderSource.portal}. PMRFP collects the tenders that fit commercial trades — bids
+                    published on {tenderSource.portal}. PMRFP collects the tenders that fit commercial trades. Bids
                     go directly to the issuer, not through PMRFP.
                   </>
                 )}
@@ -239,7 +279,7 @@ export default async function RfpDetailPage({
           {full?.status === "awarded" && (
             <div className="mt-6 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
               <strong>This RFP has been awarded.</strong> Watch for similar opportunities on the
-              feed — or post your own RFP if you have a project.
+              feed, or post your own RFP if you have a project.
             </div>
           )}
           {full?.status === "closed" && (
@@ -285,7 +325,7 @@ export default async function RfpDetailPage({
           )}
 
           {isAward ? (
-            <div className="mt-8 rounded-xl border border-teal-400/50 bg-teal-100/30 p-6">
+            <div className="mt-8 rounded-lg border border-teal-400/50 bg-teal-100/30 p-6">
               {award?.winner && (
                 <div className="mb-5 rounded-lg border border-border bg-card p-4">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">Won by</div>
@@ -300,7 +340,7 @@ export default async function RfpDetailPage({
                   </div>
                   {winnerPage && (
                     <Link href={`/contract-winners/${winnerPage.slug}`} className="mt-1 inline-block text-xs font-medium text-teal-700 hover:underline">
-                      See all {winnerPage.awards.length} contracts they&apos;ve won →
+                      See all {winnerPage.awards.length} contracts they&apos;ve won
                     </Link>
                   )}
                   {award.value && <div className="mt-1 text-3xl font-extrabold tracking-tight text-indigo">{award.value}</div>}
@@ -331,18 +371,18 @@ export default async function RfpDetailPage({
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Trade Pro emails you the day a new public tender in your trade and region is posted, with the
-                direct link, full scope and buyer contact — so you&apos;re bidding on the next contract, not
+                direct link, full scope and buyer contact, so you&apos;re bidding on the next contract, not
                 reading about who won the last one.
               </p>
               <Link
                 href={session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro")}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+                className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
               >
                 Get tender alerts for my trade
               </Link>
               {similarOpen > 0 && teaser.categories[0] && (
                 <Link href="/rfps" className="ml-3 mt-4 inline-flex text-sm font-medium text-teal-700 hover:underline">
-                  See the open ones →
+                  See the open ones
                 </Link>
               )}
               <p className="mt-4 text-xs text-muted-foreground">{tenderSource.attribution}</p>
@@ -365,7 +405,7 @@ export default async function RfpDetailPage({
                 ) : full.contactVisibility === "anonymous_until_interest_approved" ? (
                   <span>Contact details are revealed after the property manager approves your interest.</span>
                 ) : (
-                  <span>This opportunity is mediated by PMRFP — express interest to connect.</span>
+                  <span>This opportunity is mediated by PMRFP. Express interest to connect.</span>
                 )}
               </Section2>
               {isPublicTender && full.sourceUrl && (
@@ -374,7 +414,7 @@ export default async function RfpDetailPage({
                     href={full.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
                   >
                     Open the official notice on {tenderSource.portal} <ExternalLink className="size-4" />
                   </a>
@@ -384,7 +424,7 @@ export default async function RfpDetailPage({
               <TrustDisclaimer />
             </div>
           ) : isClosed ? (
-            <div className="mt-8 rounded-xl border border-border bg-secondary/40 p-6">
+            <div className="mt-8 rounded-lg border border-border bg-secondary/40 p-6">
               <h2 className="text-lg font-semibold tracking-tight">
                 This one closed on {fmt(teaser.deadline)}.{" "}
                 {regionMatchCount > 0 && teaser.regionName
@@ -400,12 +440,12 @@ export default async function RfpDetailPage({
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <Link
                   href={session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro")}
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
                 >
                   Get alerts for my trade
                 </Link>
                 <Link href="/rfps" className="text-sm font-medium text-teal-700 hover:underline">
-                  See what&apos;s open →
+                  See what&apos;s open
                 </Link>
               </div>
               {isPublicTender && <p className="mt-4 text-xs text-muted-foreground">{tenderSource.attribution}</p>}
@@ -415,7 +455,7 @@ export default async function RfpDetailPage({
               {bidChecklist}
               {intelCard}
               {totalOpenCount > 0 && (
-                <div className="rounded-xl border border-teal-400/50 bg-teal-100/30 p-5">
+                <div className="rounded-lg border border-teal-400/50 bg-teal-100/30 p-5">
                   <p className="text-sm font-semibold text-foreground">
                     {regionMatchCount > 0 && teaser.regionName
                       ? `${regionMatchCount + (teaserIsOpen ? 1 : 0)} open commercial RFPs in ${teaser.regionName} right now`
@@ -428,11 +468,11 @@ export default async function RfpDetailPage({
                 </div>
               )}
               {isPublicTender && (
-                <div className="rounded-xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
+                <div className="rounded-lg border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
                   <p>
                     This tender is public. What Trade Pro adds: every public tender that fits your trade in
                     one place, a daily email when a new one is posted in your region, and the direct link,
-                    full scope and buyer contact for each — instead of checking government bid portals yourself.
+                    full scope and buyer contact for each, instead of checking government bid portals yourself.
                   </p>
                   <p className="mt-2 text-xs">{tenderSource.attribution}</p>
                 </div>
@@ -443,17 +483,28 @@ export default async function RfpDetailPage({
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          <div className="space-y-4 rounded-xl border border-border bg-card p-5">
-            <Meta label="Region" value={teaser.regionName ?? "—"} />
-            <Meta label="Property type" value={teaser.propertyTypeName ?? "—"} />
-            <Meta label={isAward ? "Awarded" : isClosed ? "Closed" : closesLabel} value={fmt(teaser.deadline)} />
+          <div className="rounded-lg border border-border bg-card p-5">
+            <div className="border-b border-border pb-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                {isAward ? "Awarded" : isClosed ? "Closed" : closesLabel}
+              </div>
+              <div className="mt-1 font-heading text-2xl font-semibold tabular-nums text-indigo">
+                {teaser.deadline ? fmt(teaser.deadline) : "Ongoing"}
+              </div>
+              {daysLeft && <div className="mt-0.5 text-sm text-teal-ink">Closes {daysLeft === "today" || daysLeft === "tomorrow" ? daysLeft : `in ${daysLeft.replace(" left", "")}`}</div>}
+            </div>
+            <div className="space-y-3 py-4">
+              <Meta label="Region" value={teaser.regionName ?? "Not specified"} />
+              <Meta label="Property type" value={teaser.propertyTypeName ?? "Not specified"} />
+              {teaser.categories.length > 0 && <Meta label="Trade" value={teaser.categories.join(", ")} />}
+            </div>
             {isAward && awardUrl ? (
               <div className="pt-2">
                 <a
                   href={awardUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
                 >
                   Official award notice <ExternalLink className="size-4" />
                 </a>
@@ -466,7 +517,7 @@ export default async function RfpDetailPage({
                       href={full.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700"
                     >
                       {tenderSource.bidLabel} <ExternalLink className="size-4" />
                     </a>
@@ -476,13 +527,19 @@ export default async function RfpDetailPage({
                 )}
                 <SaveButton rfpId={full.id} />
               </div>
-            ) : (
+            ) : isAward ? null : (
               <div className="pt-2">
-                <FileText className="mx-auto size-6 text-muted-foreground" />
-                <p className="mt-2 text-center text-xs text-muted-foreground">
+                <Link
+                  href={upgradeHref}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-indigo px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  <FileText className="size-4" />
+                  {isClosed ? "Get alerts for my trade" : "Unlock full details"}
+                </Link>
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                   {isClosed
                     ? "This RFP is closed. Trade Pro members get alerted to new ones in their trade and region."
-                    : "Full details, documents, and the ability to express interest are available to Trade Pro members."}
+                    : "Scope, documents, buyer contact and the ability to express interest are included with Trade Pro."}
                 </p>
               </div>
             )}
@@ -507,27 +564,29 @@ export default async function RfpDetailPage({
 function Block({ title, body }: { title: string; body: string | null }) {
   if (!body) return null;
   return (
-    <div>
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-      <p className="mt-2 whitespace-pre-line leading-relaxed text-foreground/90">{body}</p>
-    </div>
+    <section className="border-t border-border pt-6">
+      <h2 className="font-heading text-lg font-semibold tracking-tight text-indigo">{title}</h2>
+      <p className="mt-3 max-w-prose whitespace-pre-line leading-relaxed text-foreground/90">{body}</p>
+    </section>
   );
 }
 
 function Section2({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div>
-      <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">{icon} {title}</h2>
-      <div className="mt-2 leading-relaxed text-foreground/90">{children}</div>
-    </div>
+    <section className="border-t border-border pt-6">
+      <h2 className="flex items-center gap-2 font-heading text-lg font-semibold tracking-tight text-indigo">
+        <span className="text-muted-foreground">{icon}</span> {title}
+      </h2>
+      <div className="mt-3 leading-relaxed text-foreground/90">{children}</div>
+    </section>
   );
 }
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div className="eyebrow text-muted-foreground">{label}</div>
-      <div className="mt-0.5 text-sm font-medium">{value}</div>
+    <div className="flex items-baseline justify-between gap-4">
+      <div className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+      <div className="text-right text-sm font-medium">{value}</div>
     </div>
   );
 }
