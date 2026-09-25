@@ -101,3 +101,14 @@ export const FALLBACK_TRADE_PHOTO: Photo = PHOTOS.loadingDocks;
 export function tradePhoto(slug: string): Photo {
   return TRADE_PHOTOS[slug] ?? FALLBACK_TRADE_PHOTO;
 }
+
+/** Trade display name ("Cleaning & Janitorial") → hero photo, via its slug. */
+export function tradePhotoForName(name: string | undefined | null): Photo {
+  if (!name) return FALLBACK_TRADE_PHOTO;
+  const slug = name
+    .toLowerCase()
+    .replace(/&/g, " ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return tradePhoto(slug);
+}

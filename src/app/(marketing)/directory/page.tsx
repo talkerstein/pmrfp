@@ -82,20 +82,16 @@ export default async function DirectoryPage({
 
       {/* ===== Indigo hero with stat block (Direction A) ===== */}
       <section className="grid-tex relative overflow-hidden bg-indigo text-white [--grid-color:rgba(255,255,255,0.045)]">
-        <div
-          className="pointer-events-none absolute -right-28 -top-44 size-[520px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(145,242,207,.16), transparent 62%)" }}
-        />
         <Container className="relative z-10 grid items-end gap-10 pb-20 pt-12 lg:grid-cols-[1fr_auto]">
           <div>
             <span className="eyebrow inline-flex items-center gap-2 text-teal-300">
               <span className="h-px w-5 bg-teal-300" /> Trade directory
             </span>
-            <h1 className="mt-4 max-w-xl text-balance text-4xl font-extrabold leading-[1.02] tracking-tight text-white sm:text-5xl">
+            <h1 className="mt-4 max-w-xl text-balance font-heading text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl">
               Trades worth shortlisting.
             </h1>
             <p className="mt-4 max-w-lg text-[16.5px] leading-relaxed text-indigo-100/75">
-              Commercial property trades across Canada — browsable by category, region, and
+              Commercial property trades across Canada and the U.S., browsable by category, region and
               property type. Property managers browse and post free.
             </p>
           </div>
@@ -110,8 +106,8 @@ export default async function DirectoryPage({
                 <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-indigo-100/60">Categories</div>
               </div>
               <div className="lg:text-right">
-                <div className="text-[26px] font-extrabold leading-none text-teal-300">ON</div>
-                <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-indigo-100/60">First region</div>
+                <div className="text-[26px] font-extrabold leading-none text-teal-300">{regions.length}</div>
+                <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-indigo-100/60">Regions</div>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -119,7 +115,7 @@ export default async function DirectoryPage({
                 href="/sign-up?role=property_manager"
                 className={buttonVariants({ size: "sm", variant: "accent" })}
               >
-                Post a project — free
+                Post a project free
               </Link>
               <Link
                 href="/sign-up"
@@ -137,7 +133,7 @@ export default async function DirectoryPage({
 
       {/* ===== Command bar — overlaps the hero ===== */}
       <Container className="relative z-20 -mt-10">
-        <div className="rounded-2xl border border-border bg-white p-2.5 shadow-lg">
+        <div className="rounded-lg border border-border bg-white p-2.5 shadow-lg">
           <FilterBar
             categories={categories}
             regions={regions}
@@ -157,7 +153,7 @@ export default async function DirectoryPage({
             <Link
               href="/directory"
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                "inline-flex items-center gap-2 rounded-md border px-3.5 py-1.5 text-sm font-medium transition-colors",
                 !sp.category
                   ? "border-indigo bg-indigo text-white"
                   : "border-border bg-card text-foreground hover:border-teal-300 hover:bg-teal-50",
@@ -170,7 +166,7 @@ export default async function DirectoryPage({
                 key={c.slug}
                 href={`/directory?category=${c.slug}`}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                  "inline-flex items-center gap-2 rounded-md border px-3.5 py-1.5 text-sm font-medium transition-colors",
                   sp.category === c.slug
                     ? "border-indigo bg-indigo text-white"
                     : "border-border bg-card text-foreground hover:border-teal-300 hover:bg-teal-50",
@@ -206,7 +202,7 @@ export default async function DirectoryPage({
               <span className="h-0.5 w-5 rounded bg-teal-700" /> Featured partners · Sponsored placement
             </span>
             <Link href="/pricing" className="text-[13px] font-semibold text-periwinkle hover:underline">
-              What is a featured listing? →
+              What is a featured listing?
             </Link>
           </div>
           <div
@@ -230,18 +226,18 @@ export default async function DirectoryPage({
         <div className="mb-4 flex items-baseline justify-between gap-4">
           <span className="inline-flex items-center gap-2 font-mono text-[11.5px] uppercase tracking-[0.16em] text-teal-700">
             <span className="h-0.5 w-5 rounded bg-teal-700" />
-            {hasFilters ? `Results — ${rows.length}` : `All companies — ${vendors.length}`}
+            {hasFilters ? `${rows.length} results` : `All companies · ${vendors.length}`}
           </span>
           <Link href="/regions" className="text-[13px] font-semibold text-periwinkle hover:underline">
-            Browse by region →
+            Browse by region
           </Link>
         </div>
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-4">
             <EmptyState
-              title="No trades match your filters"
-              description="Try clearing a filter or broadening your search."
+              title="No companies match these filters"
+              description="Widen the region or trade. New companies join every week, and property managers can post a project so trades come to them."
             />
             {hasFilters && (
               <Link href="/directory" className={buttonVariants({ variant: "outline" })}>
@@ -250,7 +246,7 @@ export default async function DirectoryPage({
             )}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-border bg-white">
+          <div className="overflow-hidden rounded-lg border border-border bg-white">
             <VendorRowHeader />
             {rows.map((v) => (
               <VendorRow key={v.slug} vendor={v} />
@@ -265,17 +261,13 @@ export default async function DirectoryPage({
 
       {/* ===== Bottom CTA band ===== */}
       <Container className="pb-16 pt-10">
-        <div className="relative grid items-center gap-8 overflow-hidden rounded-[20px] bg-indigo p-10 text-white sm:p-12 lg:grid-cols-[1fr_auto]">
-          <div
-            className="pointer-events-none absolute -right-20 -top-32 size-[340px] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(145,242,207,.2), transparent 64%)" }}
-          />
+        <div className="relative grid items-center gap-8 overflow-hidden rounded-lg bg-indigo p-10 text-white sm:p-12 lg:grid-cols-[1fr_auto]">
           <div className="relative">
-            <h2 className="max-w-lg text-3xl font-extrabold leading-tight tracking-tight text-white">
+            <h2 className="max-w-lg font-heading text-3xl font-semibold leading-tight tracking-tight text-white">
               Property managers browse this page before they post.
             </h2>
             <p className="mt-3 max-w-md text-[15px] text-indigo-100/70">
-              Get your company listed — or take a featured slot and be the first name they see.
+              Get your company listed, or take a featured slot and be the first name they see.
             </p>
           </div>
           <div className="relative flex flex-wrap gap-3">
