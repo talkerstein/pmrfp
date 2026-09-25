@@ -50,7 +50,7 @@ export function BadgeEmbed({
   );
 }
 
-function Snippet({ label, code }: { label: string; code: string }) {
+export function Snippet({ label, code }: { label: string; code: string }) {
   const [copied, setCopied] = useState(false);
   async function copy() {
     try {

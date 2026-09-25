@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins, Lato, IBM_Plex_Mono } from "next/font/google";
-import Script from "next/script";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "@/components/ui/sonner";
+import { RegisterServiceWorker } from "@/components/pwa/register-sw";
+import { SiteAnalytics } from "@/components/site-analytics";
 import { JsonLd, organizationSchema, websiteSchema } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/site";
 import "./globals.css";
@@ -46,6 +45,9 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   applicationName: SITE.name,
+  // Home-screen install on iPhone/iPad (the manifest covers everyone else).
+  // No site-wide theme color on purpose: marketing pages keep the browser's.
+  appleWebApp: { capable: true, title: "PMRFP", statusBarStyle: "default" },
   // No og/twitter title, description or url here on purpose: Next fills them
   // from each page's own title + description. Hardcoding them made every page
   // share the homepage's social preview (and og:url) when linked.
@@ -85,20 +87,10 @@ export default function RootLayout({
         <JsonLd data={organizationSchema()} />
         <JsonLd data={websiteSchema()} />
         {children}
-        <Toaster />
-        <Analytics />
-        <SpeedInsights />
-        {gaId ? (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
-            </Script>
-          </>
-        ) : null}
+        {/* Clear of the dashboards' bottom tab bar on phones. */}
+        <Toaster mobileOffset={{ bottom: 88 }} />
+        <RegisterServiceWorker />
+        <SiteAnalytics gaId={gaId} />
       </body>
     </html>
   );

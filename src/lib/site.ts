@@ -157,6 +157,7 @@ export const FOOTER_COLS = [
       { label: "All Solutions", href: "/for" },
       { label: "Get Found (SEO & AI)", href: "/get-found" },
       { label: "Pricing", href: "/pricing" },
+      { label: "Advertise with us", href: "/advertise" },
     ],
   },
   {
@@ -169,6 +170,7 @@ export const FOOTER_COLS = [
       { label: "Case Studies", href: "/case-studies" },
       { label: "Compare", href: "/vs" },
       { label: "Vendor Badge", href: "/badge" },
+      { label: "Website Widgets", href: "/widgets" },
       { label: "Services for Trades", href: "/services-for-trades" },
       { label: `Refer a trade — earn $${REFERRAL.tradeFee}`, href: "/refer-a-trade" },
     ],

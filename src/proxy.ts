@@ -18,6 +18,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Website widgets (/embed/*, /embed.js) and the service worker skip the
+    // session refresh: they're public, framed by other sites, and must stay cacheable.
+    "/((?!_next/static|_next/image|embed/|embed\.js|sw\.js|manifest\.webmanifest|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

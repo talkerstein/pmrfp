@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/access/access";
-import { getStripe, isStripeConfigured, SITE_URL } from "@/lib/stripe/server";
+import { getStripe, isStripeConfigured, realtorPriceId, SITE_URL } from "@/lib/stripe/server";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     if (session.organization.organization_type === "trade_company" || session.organization.organization_type === "supplier") {
       return NextResponse.json({ error: "Realtor Pro is for realtors and property managers." }, { status: 400 });
     }
-    price = process.env.STRIPE_PRICE_REALTOR_ANNUAL;
+    price = (await realtorPriceId()) ?? undefined;
   } else if (plan === "featured") {
     price = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
   } else if (plan === "seo") {

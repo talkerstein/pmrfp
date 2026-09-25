@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-DNS-Prefetch-Control", value: "on" },
   {
@@ -92,6 +91,35 @@ const nextConfig: NextConfig = {
         // Apply to every route.
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        // No framing by other sites, except the website widgets below.
+        source: "/:path((?!embed/).*)",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
+      {
+        // Website widgets (/embed/*) are made to be framed by any site. They're
+        // read-only and never use the visitor's session, so there's nothing to
+        // clickjack.
+        source: "/embed/:path*",
+        headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }],
+      },
+      {
+        // The service worker must never be served stale (see Next's PWA guide).
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+      {
+        // The widget loader other sites include: short cache so fixes reach them.
+        source: "/embed.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+        ],
       },
     ];
   },

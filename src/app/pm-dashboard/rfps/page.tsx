@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Code2, Plus } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
@@ -56,9 +56,14 @@ export default async function PmRfpsPage({
         title="My RFPs"
         description="Every project you've posted and where it stands."
         action={
-          <Link href="/pm-dashboard/rfps/new" className={buttonVariants()}>
-            <Plus className="size-4" /> Post an RFP
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/widgets?w=bids" className={buttonVariants({ variant: "outline" })}>
+              <Code2 className="size-4" /> Show on your website
+            </Link>
+            <Link href="/pm-dashboard/rfps/new" className={buttonVariants()}>
+              <Plus className="size-4" /> Post an RFP
+            </Link>
+          </div>
         }
       />
 
