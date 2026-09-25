@@ -35,7 +35,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
     ? "featured"
     : isSeoPriceId(priceId)
       ? "seo"
-      : isRealtorPriceId(priceId)
+      : isRealtorPriceId(priceId, item?.price.lookup_key)
         ? "realtor"
         : "pro";
   const row = {
@@ -81,10 +81,36 @@ export function isFeaturedPriceId(priceId: string | null | undefined): boolean {
   return Boolean(featured && priceId && priceId === featured);
 }
 
-/** True when the price id is Realtor Pro (trusted-trades page; never RFP access). */
-export function isRealtorPriceId(priceId: string | null | undefined): boolean {
+/**
+ * Realtor Pro can be switched on from Stripe alone: create the $249/yr price
+ * with this lookup key and checkout finds it, no env var or redeploy needed.
+ * STRIPE_PRICE_REALTOR_ANNUAL still wins when it's set.
+ */
+export const REALTOR_LOOKUP_KEY = "pmrfp_realtor_pro_annual";
+
+/** True when the price is Realtor Pro (trusted-trades page; never RFP access). */
+export function isRealtorPriceId(priceId: string | null | undefined, lookupKey?: string | null): boolean {
+  if (lookupKey === REALTOR_LOOKUP_KEY) return true;
   const realtor = process.env.STRIPE_PRICE_REALTOR_ANNUAL;
   return Boolean(realtor && priceId && priceId === realtor);
+}
+
+let realtorPriceCache: { at: number; id: string | null } | null = null;
+
+/** The Realtor Pro price id: env var first, then the Stripe lookup key (cached 5 minutes). */
+export async function realtorPriceId(): Promise<string | null> {
+  const fromEnv = process.env.STRIPE_PRICE_REALTOR_ANNUAL;
+  if (fromEnv) return fromEnv;
+  if (!process.env.STRIPE_SECRET_KEY) return null;
+  if (realtorPriceCache && Date.now() - realtorPriceCache.at < 5 * 60_000) return realtorPriceCache.id;
+  try {
+    const { data } = await getStripe().prices.list({ lookup_keys: [REALTOR_LOOKUP_KEY], active: true, limit: 1 });
+    realtorPriceCache = { at: Date.now(), id: data[0]?.id ?? null };
+  } catch (err) {
+    console.error("[stripe] realtor price lookup failed:", err instanceof Error ? err.message : err);
+    realtorPriceCache = { at: Date.now(), id: null };
+  }
+  return realtorPriceCache.id;
 }
 
 /** True when the price id is the directory-only SEO tier (either interval). */

@@ -49,12 +49,17 @@ export async function POST(request: Request) {
     });
   }
 
+  // The admin email is HTML: escape what the visitor typed so it can't inject markup.
   await sendAdminContactEmail({
-    name: data.name,
-    email: data.email,
+    name: esc(data.name),
+    email: esc(data.email),
     requestType: data.requestType,
-    message: data.message,
+    message: esc(data.message).replace(/\n/g, "<br/>"),
   });
 
   return NextResponse.json({ ok: true });
+}
+
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

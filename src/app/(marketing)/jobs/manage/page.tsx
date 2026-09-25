@@ -42,9 +42,14 @@ export default async function ManageJobsPage({ searchParams }: { searchParams: P
             {session.hasTradeAccess ? "" : ` of ${FREE_JOB_LIMIT} free`}
           </p>
         </div>
-        <Link href="/jobs/post" className={buttonVariants({ size: "lg" })}>
-          Post a job
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/widgets?w=jobs" className={buttonVariants({ size: "lg", variant: "outline" })}>
+            Add to your careers page
+          </Link>
+          <Link href="/jobs/post" className={buttonVariants({ size: "lg" })}>
+            Post a job
+          </Link>
+        </div>
       </div>
 
       {posted && (

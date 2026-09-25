@@ -9,6 +9,7 @@ import { ShareLink, TrustedPageForm, TrustedTradeRow } from "@/components/truste
 import { getMyTrustedList, isRealtorPro } from "@/lib/trusted/data";
 import { FREE_LIMIT } from "@/lib/trusted/rules";
 import { PRICING, SITE } from "@/lib/site";
+import { realtorPriceId } from "@/lib/stripe/server";
 
 export const metadata = { title: "Trusted trades" };
 
@@ -21,7 +22,7 @@ export default async function TrustedTradesPage({ searchParams }: { searchParams
     getMyTrustedList(session.userId),
     isRealtorPro(session.organization?.id ?? null),
   ]);
-  const canCheckout = Boolean(process.env.STRIPE_PRICE_REALTOR_ANNUAL);
+  const canCheckout = Boolean(await realtorPriceId());
 
   return (
     <div className="space-y-8">
@@ -57,6 +58,11 @@ export default async function TrustedTradesPage({ searchParams }: { searchParams
             <div className="mt-4">
               <ShareLink url={`${BASE}/trusted/${list.handle}`} path={`/trusted/${list.handle}`} />
             </div>
+            {list.published && (
+              <Link href="/widgets?w=trusted" className="mt-3 inline-block text-sm font-medium text-teal-700 hover:underline">
+                Put this list on your own website →
+              </Link>
+            )}
           </section>
 
           <section>

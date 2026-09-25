@@ -91,6 +91,21 @@ export default async function BadgePage({
         <BadgeEmbed base={base} slug={slug} profileUrl={profileUrl} />
       </div>
 
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-5">
+        <div>
+          <h2 className="text-base font-semibold">Want more than a badge?</h2>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            The company card widget shows your trades, service area and a Request a quote button, right on your site.
+          </p>
+        </div>
+        <Link
+          href={companySlug ? `/widgets?w=company&company=${companySlug}` : "/widgets?w=company"}
+          className={buttonVariants({ variant: "outline" })}
+        >
+          Get the card
+        </Link>
+      </div>
+
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight">Where to paste it</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">

@@ -77,9 +77,14 @@ export default async function TradeDashboardHome() {
               </p>
             </div>
           </div>
-          <Link href="/badge" className={buttonVariants({ variant: "outline" })}>
-            Get the code
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/badge" className={buttonVariants({ variant: "outline" })}>
+              Get the badge
+            </Link>
+            <Link href="/widgets?w=company" className={buttonVariants({ variant: "outline" })}>
+              Company card widget
+            </Link>
+          </div>
         </div>
       )}
 

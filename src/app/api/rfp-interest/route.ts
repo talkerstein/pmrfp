@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
   await Promise.all([
     sendInterestConfirmation(session.profile.email, rfp.title),
-    sendAdminNewInterest({ vendor: session.organization.name, rfpTitle: rfp.title, message: data.message }),
+    sendAdminNewInterest({ vendor: esc(session.organization.name), rfpTitle: esc(rfp.title), message: esc(data.message ?? "") }),
     pmEmail
       ? sendPmNewInterest(pmEmail, {
           vendorName: session.organization.name,
@@ -88,4 +88,9 @@ export async function POST(request: Request) {
   await trackEvent(EVENT.RFP_INTEREST_SUBMITTED, { rfpId: rfp.id });
 
   return NextResponse.json({ ok: true });
+}
+
+/** The admin email is HTML: escape member-typed text so it can't inject markup. */
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
