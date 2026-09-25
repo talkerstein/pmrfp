@@ -2,14 +2,22 @@ import { SITE } from "@/lib/site";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
 
-/** Renders a JSON-LD <script>. Safe: data is our own structured object. */
+/**
+ * Renders a JSON-LD <script>. Values include user-written text (company names,
+ * job titles), so "<" is escaped: a "</script>" inside a string can't close
+ * the tag. < is still "<" to any JSON parser.
+ */
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdString(data) }}
     />
   );
+}
+
+export function jsonLdString(data: Record<string, unknown>): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
 const absolute = (u?: string | null) => (u ? (/^https?:\/\//.test(u) ? u : `${BASE}${u.startsWith("/") ? "" : "/"}${u}`) : undefined);
