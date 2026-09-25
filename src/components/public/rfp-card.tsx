@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CalendarClock, Flame, Lock, MapPin, Trophy } from "lucide-react";
+import { CalendarClock, Lock, MapPin, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { RfpListItem } from "@/lib/data/types";
@@ -33,9 +33,7 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
           ? "border-border hover:border-teal-400 hover:shadow-sm"
           : closed
             ? "border-border opacity-60 saturate-[.35]"
-            : urgency
-              ? "border-warning/50 hover:border-warning hover:shadow-sm"
-              : "border-border hover:border-teal-400 hover:shadow-sm",
+            : "border-border hover:border-teal-400 hover:shadow-sm",
       )}
     >
       {heroPhoto && (
@@ -114,18 +112,13 @@ export function RfpCard({ rfp, locked }: { rfp: RfpListItem; locked: boolean }) 
             <MapPin className="size-3.5" /> {rfp.regionName}
           </span>
         )}
-        {urgency ? (
-          <span className="flex items-center gap-1 font-semibold text-warning">
-            <Flame className="size-3.5" /> {urgency}
-          </span>
-        ) : (
-          <span className="flex items-center gap-1">
-            <CalendarClock className="size-3.5" />{" "}
-            {!rfp.deadline
-              ? "Ongoing — no fixed deadline"
-              : `${past ? "Awarded" : closed ? "Closed" : gc ? "Quotes due" : "Closes"} ${formatDeadline(rfp.deadline)}`}
-          </span>
-        )}
+        <span className="flex items-center gap-1">
+          <CalendarClock className="size-3.5" />{" "}
+          {!rfp.deadline
+            ? "Ongoing, no fixed deadline"
+            : `${past ? "Awarded" : closed ? "Closed" : gc ? "Quotes due" : "Closes"} ${formatDeadline(rfp.deadline)}`}
+          {urgency && <span className="font-semibold text-foreground">· {urgency.replace(/^Closes /, "")}</span>}
+        </span>
         {rfp.isDemo && (
           <Badge variant="outline" className="ml-auto border-dashed text-[10px] uppercase tracking-wide">
             Sample

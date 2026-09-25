@@ -5,7 +5,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
-  Flame,
   Minus,
   Trophy,
 } from "lucide-react";
@@ -20,9 +19,11 @@ import { COPY, PRICING, SITE } from "@/lib/site";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listAllRfpsCached, listQualifyingCombos, openCountsByTradeRegion, regionTree } from "@/lib/data/trade-city";
 import { JobFinder, type FinderPlace } from "@/components/public/job-finder";
+import { DeadlineStamp } from "@/components/public/deadline-stamp";
+import { orderPlaces } from "@/lib/data/place-order";
 import { MatchEmailPreview } from "@/components/public/match-email-preview";
 import { winnersFromRfps } from "@/lib/data/winners";
-import { boardStats, closingLabel, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
+import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { cn } from "@/lib/utils";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 
@@ -38,7 +39,17 @@ export const metadata: Metadata = {
 };
 
 /** Public buyers the board pulls from every morning (see /api/cron/public-tenders). */
-const SOURCES = ["CanadaBuys", "SAM.gov", "City of Toronto", "Québec SEAO", "Nova Scotia", "Yukon"];
+// Public sources. CanadaBuys and SEAO show government signatures rather than
+// logos of their own, and those signatures are tightly controlled, so they
+// stay as names. Descriptive use only: PMRFP isn't affiliated with any of them.
+const SOURCES: { name: string; logo?: string; h?: number }[] = [
+  { name: "CanadaBuys" },
+  { name: "SAM.gov", logo: "/logos/sources/sam-gov.svg", h: 22 },
+  { name: "City of Toronto", logo: "/logos/sources/city-of-toronto.svg", h: 26 },
+  { name: "Québec SEAO" },
+  { name: "Nova Scotia", logo: "/logos/sources/nova-scotia.svg", h: 26 },
+  { name: "Yukon", logo: "/logos/sources/yukon.png", h: 28 },
+];
 
 // Every row must stay true of Trade Pro (rfp-alerts cron, LockedContentPanel,
 // express-interest). No "appear higher" claims.
@@ -89,11 +100,6 @@ function spread<T>(items: T[], key: (t: T) => string): T[] {
   return out;
 }
 
-function formatDeadline(d: string | null) {
-  if (!d) return "Open";
-  // timeZone: "UTC" pins server + client to the same day → no hydration mismatch.
-  return new Date(d).toLocaleDateString("en-CA", { month: "short", day: "numeric", timeZone: "UTC" });
-}
 
 export default async function HomePage() {
   // One cached board fetch shared with the trade × place index.
@@ -106,13 +112,12 @@ export default async function HomePage() {
   ]);
   // "Your trade + your area" finder data: open counts per trade × place.
   const openCounts = openCountsByTradeRegion(rfps, categories, tree);
-  const parentOf = new Map(tree.map((n) => [n.slug, n.parentSlug]));
-  const finderPlaces: FinderPlace[] = regions.map((r) => {
-    const parent = parentOf.get(r.slug) ?? null;
-    const grand = parent ? parentOf.get(parent) ?? null : null;
-    const us = r.slug === "united-states" || r.slug.startsWith("us-") || r.country === "USA";
-    return { slug: r.slug, name: r.name, country: us ? "US" : "CA", level: !parent ? 0 : !grand ? 1 : 2 };
-  });
+  const finderPlaces: FinderPlace[] = orderPlaces(regions, tree).map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    depth: p.depth,
+    country: p.root === "united-states" || p.slug.startsWith("us-") ? "US" : "CA",
+  }));
   const finderTrades = categories
     .map((c) => ({ slug: c.slug, name: c.name }))
     .sort((a, b) => (openCounts[`${b.slug}|*`] ?? 0) - (openCounts[`${a.slug}|*`] ?? 0) || a.name.localeCompare(b.name));
@@ -192,10 +197,7 @@ export default async function HomePage() {
         <Container className="relative z-10 grid items-center gap-12 py-16 md:py-20 lg:grid-cols-[1.2fr_.8fr] lg:py-24">
           <div>
             <p className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-indigo-100">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full rounded-full bg-teal-300 opacity-60 motion-safe:animate-ping" />
-                <span className="relative inline-flex size-2 rounded-full bg-teal-300" />
-              </span>
+              <span className="inline-flex size-2 rounded-full bg-teal-300" />
               {live ? "Live across Canada and the U.S., updated every morning" : "Now live in the GTA"}
             </p>
             <h1 className="mt-6 text-balance text-4xl font-extrabold leading-[1.06] tracking-tight text-white md:text-5xl lg:text-[3.35rem] xl:text-[3.6rem]">
@@ -266,13 +268,24 @@ export default async function HomePage() {
           <p className="shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
             Pulled every morning from
           </p>
-          <ul className="flex flex-wrap items-center gap-x-8 gap-y-2">
-            {SOURCES.map((s) => (
-              <li key={s} className="font-heading text-base font-semibold tracking-tight text-indigo/60">
-                {s}
+          <ul className="flex flex-wrap items-center gap-x-9 gap-y-3">
+            {SOURCES.map((src) => (
+              <li key={src.name} title={src.name}>
+                {src.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={src.logo}
+                    alt={src.name}
+                    style={{ height: src.h }}
+                    className="w-auto opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0"
+                  />
+                ) : (
+                  <span className="font-heading text-base font-semibold tracking-tight text-indigo/60">{src.name}</span>
+                )}
               </li>
             ))}
             <li className="text-sm text-muted-foreground">+ property managers</li>
+            <li className="basis-full text-[11px] text-muted-foreground/80">Public tender sources. PMRFP isn&apos;t affiliated with or endorsed by them.</li>
           </ul>
         </Container>
       </section>
@@ -448,6 +461,42 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* ──────────────────── REALTORS ──────────────────── */}
+      <section className="border-t border-border bg-card">
+        <Container className="grid items-center gap-10 py-16 md:py-20 lg:grid-cols-2">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border">
+            <Image
+              src="/images/photos/keys-in-door.webp"
+              alt="Keys in the front door of a newly sold home"
+              fill
+              sizes="(min-width: 1024px) 560px, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-teal-700">For realtors</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Send clients one link, not ten phone numbers.</h2>
+            <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              Build a free page of the trades you trust: inspectors&apos; fixes, pre-listing repairs, movers, cleaners.
+              Add a note on each, text the link after every deal, and put it on your own website.
+            </p>
+            <ul className="mt-6 space-y-2 text-sm">
+              <li className="flex gap-2"><ArrowRight className="mt-0.5 size-4 shrink-0 text-teal-700" /> Clients request quotes straight from your page</li>
+              <li className="flex gap-2"><ArrowRight className="mt-0.5 size-4 shrink-0 text-teal-700" /> Your name stays in front of them long after closing</li>
+              <li className="flex gap-2"><ArrowRight className="mt-0.5 size-4 shrink-0 text-teal-700" /> Free for up to {5} trades. Realtor Pro ${PRICING.realtorAnnual}/year for unlimited, plus your contact buttons</li>
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/sign-up?role=real_estate_agent" className={cn(buttonVariants({ size: "lg" }), "active:scale-[0.98]")}>
+                Build my trusted-trades page <ArrowRight className="size-4" />
+              </Link>
+              <Link href="/for/real-estate" className={buttonVariants({ size: "lg", variant: "outline" })}>
+                How it works
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* ──────────────────── PRICING ──────────────────── */}
       <section className="border-t border-border bg-secondary/40">
         <Container className="grid gap-12 py-20 md:py-24 lg:grid-cols-[1fr_420px] lg:items-start">
@@ -534,30 +583,19 @@ export default async function HomePage() {
 function HeroRows({ rows }: { rows: RfpListItem[] }) {
   return (
     <ul className="divide-y divide-border">
-      {rows.map((r, i) => {
-        const soon = closingLabel(daysUntil(r.deadline));
-        return (
-          <li key={r.slug} className="animate-rise" style={{ animationDelay: `${120 + i * 90}ms` }}>
-            <Link href={`/rfps/${r.slug}`} className="group flex items-start justify-between gap-4 py-3.5">
-              <div className="min-w-0">
-                <div className="font-mono text-[11px] uppercase tracking-wide text-teal-700">
-                  {r.categories[0] ?? "Commercial"} · {r.regionName ?? "Canada"}
-                </div>
-                <div className="mt-1 line-clamp-2 font-medium group-hover:text-teal-700 sm:line-clamp-1">{r.title}</div>
+      {rows.map((r) => (
+        <li key={r.slug}>
+          <Link href={`/rfps/${r.slug}`} className="group flex items-start justify-between gap-4 py-3.5">
+            <div className="min-w-0">
+              <div className="font-mono text-[11px] uppercase tracking-wide text-teal-700">
+                {r.categories[0] ?? "Commercial"} · {r.regionName ?? "Canada"}
               </div>
-              <span
-                className={cn(
-                  "mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                  soon ? "bg-warning/10 text-warning" : "bg-secondary text-muted-foreground",
-                )}
-              >
-                {soon && <Flame className="size-3" />}
-                {soon ?? formatDeadline(r.deadline)}
-              </span>
-            </Link>
-          </li>
-        );
-      })}
+              <div className="mt-1 line-clamp-2 font-medium group-hover:text-teal-700">{r.title}</div>
+            </div>
+            <DeadlineStamp deadline={r.deadline} />
+          </Link>
+        </li>
+      ))}
     </ul>
   );
 }

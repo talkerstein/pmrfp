@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Container, Eyebrow } from "@/components/container";
 import { TrustDisclaimer } from "@/components/public/trust-disclaimer";
 import { JsonLd, organizationSchema } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/site";
+import { PHOTOS } from "@/lib/photos";
 import {
   OGL_CANADA_ATTRIBUTION,
   OGL_NS_ATTRIBUTION,
@@ -42,6 +44,20 @@ export default function AboutPage() {
         building tenders from government buyers in Canada and the U.S., and a directory of the trades
         who do the work.
       </p>
+
+      <figure className="mt-8">
+        <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border bg-indigo">
+          <Image
+            src={PHOTOS.torontoFlatiron.src}
+            alt={PHOTOS.torontoFlatiron.alt}
+            fill
+            loading="eager"
+            sizes="(min-width: 896px) 832px, (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2.5rem)"
+            className="object-cover object-[50%_40%]"
+          />
+        </div>
+        <figcaption className="mt-2 text-xs text-muted-foreground">Built in Toronto.</figcaption>
+      </figure>
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold tracking-tight">Who runs PMRFP</h2>

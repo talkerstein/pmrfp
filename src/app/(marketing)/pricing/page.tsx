@@ -1,6 +1,7 @@
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import type { Metadata } from "next";
 import { UsdHint } from "@/components/geo/usd-hint";
+import Image from "next/image";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
@@ -17,6 +18,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRICING } from "@/lib/site";
+import { PHOTOS } from "@/lib/photos";
 import { TradeProCard } from "@/components/public/trade-pro-card";
 import { SeoListingCard } from "@/components/public/seo-listing-card";
 import { EmailPreview } from "@/components/public/email-preview";
@@ -105,7 +107,7 @@ export default async function PricingPage() {
   return (
     <>
       <section className="border-b border-border bg-background">
-        <Container className="py-20 sm:py-24">
+        <Container className="grid items-center gap-12 py-20 sm:py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
           <div className="max-w-3xl">
             <Eyebrow>Pricing</Eyebrow>
             <h1 className="mt-5 text-4xl font-semibold leading-[1.08] text-foreground sm:text-5xl">
@@ -116,6 +118,16 @@ export default async function PricingPage() {
               Property managers, builders, and owners post projects at no cost.
             </p>
             <StatsStrip stats={stats} className="mt-8" />
+          </div>
+          <div className="relative hidden aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-indigo lg:block">
+            <Image
+              src={PHOTOS.windowCleaners.src}
+              alt={PHOTOS.windowCleaners.alt}
+              fill
+              loading="eager"
+              sizes="400px"
+              className="object-cover object-[28%_50%]"
+            />
           </div>
         </Container>
       </section>

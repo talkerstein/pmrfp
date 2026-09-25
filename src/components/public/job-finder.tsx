@@ -12,8 +12,8 @@ export interface FinderPlace {
   slug: string;
   name: string;
   country: "CA" | "US";
-  /** Countries first, then provinces/states, then cities. */
-  level: 0 | 1 | 2;
+  /** 0 = country, 1 = province/state, 2+ = inside it. The list arrives in map order (lib/data/place-order). */
+  depth: number;
 }
 
 /**
@@ -58,10 +58,8 @@ export function JobFinder({
   const live = trade && place && livePages.includes(`${trade}|${place}`);
   const href = !trade ? "/rfps" : live ? `/trades/${trade}/${place}` : `/trades/${trade}`;
 
-  const byLevel = (country: "CA" | "US") =>
-    places
-      .filter((p) => p.country === country)
-      .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  // Native <select> can't indent, so non-breaking spaces do it.
+  const indent = (depth: number) => "    ".repeat(Math.max(0, depth - 1));
 
   const select =
     "h-12 w-full rounded-lg border-0 bg-white px-3 text-sm font-medium text-foreground shadow-sm focus:ring-2 focus:ring-teal-300";
@@ -92,11 +90,13 @@ export function JobFinder({
           <option value="">Anywhere</option>
           {(["CA", "US"] as const).map((c) => (
             <optgroup key={c} label={c === "CA" ? "Canada" : "United States"}>
-              {byLevel(c).map((p) => (
-                <option key={p.slug} value={p.slug}>
-                  {p.level === 0 ? `All of ${c === "CA" ? "Canada" : "the U.S."}` : p.level === 2 ? `· ${p.name}` : p.name}
-                </option>
-              ))}
+              {places
+                .filter((p) => p.country === c)
+                .map((p) => (
+                  <option key={p.slug} value={p.slug}>
+                    {p.depth === 0 ? `All of ${c === "CA" ? "Canada" : "the U.S."}` : `${indent(p.depth)}${p.name}`}
+                  </option>
+                ))}
             </optgroup>
           ))}
         </select>

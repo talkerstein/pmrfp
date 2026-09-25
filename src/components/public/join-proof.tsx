@@ -1,4 +1,4 @@
-import { Check, Flame } from "lucide-react";
+import { Check } from "lucide-react";
 import type { JoinProof as Proof } from "@/lib/data/join-proof";
 import { closingLabel, compactDollars, daysUntil } from "@/lib/data/fomo";
 
@@ -47,23 +47,18 @@ export function JoinProof({ proof, audience }: { proof: Proof; audience: Audienc
             </div>
             {proof.rows.length > 0 && (
               <ul className="mt-8 space-y-2.5">
-                {proof.rows.map((r, i) => {
+                {proof.rows.map((r) => {
                   const soon = closingLabel(daysUntil(r.deadline));
                   return (
                     <li
                       key={r.slug}
-                      className="animate-rise rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3"
-                      style={{ animationDelay: `${120 + i * 90}ms` }}
+                      className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <span className="font-mono text-[11px] uppercase tracking-wide text-teal-300">
                           {r.categories[0]} · {r.regionName ?? "Canada"}
                         </span>
-                        {soon && (
-                          <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-amber-200">
-                            <Flame className="size-3" /> {soon}
-                          </span>
-                        )}
+                        {soon && <span className="shrink-0 text-[11px] font-medium text-indigo-100/70">{soon}</span>}
                       </div>
                       <div className="mt-1 line-clamp-1 text-[15px] font-medium text-white">{r.title}</div>
                     </li>

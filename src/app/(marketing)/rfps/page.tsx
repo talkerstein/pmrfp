@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Flame, HardHat, Lock, Trophy } from "lucide-react";
+import { HardHat, Lock, Trophy } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { FilterBar } from "@/components/public/filter-bar";
 import { RfpCard } from "@/components/public/rfp-card";
@@ -125,7 +125,7 @@ export default async function RfpsPage({
             </div>
             <div>
               <div className="flex items-center gap-1.5 text-3xl font-extrabold tracking-tight text-teal-300">
-                <Flame className="size-6" /> {stats_.closingThisWeek}
+                {stats_.closingThisWeek}
               </div>
               <div className="text-xs uppercase tracking-wide text-indigo-100/75">close in the next 7 days</div>
             </div>

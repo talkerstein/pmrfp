@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, HardHat, Users } from "lucide-react";
 import { Container } from "@/components/container";
@@ -10,6 +11,7 @@ import { EMPLOYMENT_LABEL, EMPLOYMENT_TYPES, FREE_JOB_LIMIT } from "@/lib/jobs/r
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { gcFormPath } from "@/lib/gc/packages";
 import { cn } from "@/lib/utils";
+import { PHOTOS } from "@/lib/photos";
 
 export const metadata: Metadata = {
   title: "Construction & Trade Jobs in Canada and the U.S.",
@@ -37,28 +39,40 @@ export default async function JobsPage({
   return (
     <>
       <section className="grid-tex relative overflow-hidden bg-indigo text-white [--grid-color:rgba(145,242,207,0.06)]">
-        <Container className="relative py-14 md:py-16">
-          <p className="font-mono text-xs uppercase tracking-[0.16em] text-teal-300">PMRFP Jobs</p>
-          <h1 className="mt-3 max-w-3xl text-balance text-4xl font-extrabold tracking-tight text-white md:text-5xl">
-            Trade and construction jobs with companies that are winning work.
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-indigo-100/80">
-            General contractors, trade companies and property managers hiring electricians, plumbers, HVAC techs,
-            labourers, apprentices and more. Apply in a minute, no account needed.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#jobs" className={cn(buttonVariants({ size: "lg", variant: "accent" }), "active:scale-[0.98]")}>
-              See open jobs <ArrowRight className="size-4" />
-            </a>
-            <Link
-              href="/jobs/post"
-              className={cn(
-                buttonVariants({ size: "lg", variant: "outline" }),
-                "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white active:scale-[0.98]",
-              )}
-            >
-              Hiring? Post a job free
-            </Link>
+        <Container className="relative grid items-center gap-10 py-14 md:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.16em] text-teal-300">PMRFP Jobs</p>
+            <h1 className="mt-3 max-w-3xl text-balance text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+              Trade and construction jobs with companies that are winning work.
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg text-indigo-100/80">
+              General contractors, trade companies and property managers hiring electricians, plumbers, HVAC techs,
+              labourers, apprentices and more. Apply in a minute, no account needed.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href="#jobs" className={cn(buttonVariants({ size: "lg", variant: "accent" }), "active:scale-[0.98]")}>
+                See open jobs <ArrowRight className="size-4" />
+              </a>
+              <Link
+                href="/jobs/post"
+                className={cn(
+                  buttonVariants({ size: "lg", variant: "outline" }),
+                  "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white active:scale-[0.98]",
+                )}
+              >
+                Hiring? Post a job free
+              </Link>
+            </div>
+          </div>
+          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 lg:block">
+            <Image
+              src={PHOTOS.siteCrew.src}
+              alt={PHOTOS.siteCrew.alt}
+              fill
+              loading="eager"
+              sizes="400px"
+              className="object-cover"
+            />
           </div>
         </Container>
       </section>
