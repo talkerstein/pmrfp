@@ -461,6 +461,42 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* ──────────────────── REALTORS ──────────────────── */}
+      <section className="border-t border-border bg-card">
+        <Container className="grid items-center gap-10 py-16 md:py-20 lg:grid-cols-2">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border">
+            <Image
+              src="/images/photos/keys-in-door.webp"
+              alt="Keys in the front door of a newly sold home"
+              fill
+              sizes="(min-width: 1024px) 560px, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-teal-700">For realtors</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Send clients one link, not ten phone numbers.</h2>
+            <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              Build a free page of the trades you trust: inspectors&apos; fixes, pre-listing repairs, movers, cleaners.
+              Add a note on each, text the link after every deal, and put it on your own website.
+            </p>
+            <ul className="mt-6 space-y-2 text-sm">
+              <li className="flex gap-2"><ArrowRight className="mt-0.5 size-4 shrink-0 text-teal-700" /> Clients request quotes straight from your page</li>
+              <li className="flex gap-2"><ArrowRight className="mt-0.5 size-4 shrink-0 text-teal-700" /> Your name stays in front of them long after closing</li>
+              <li className="flex gap-2"><ArrowRight className="mt-0.5 size-4 shrink-0 text-teal-700" /> Free for up to {5} trades. Realtor Pro ${PRICING.realtorAnnual}/year for unlimited, plus your contact buttons</li>
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/sign-up?role=real_estate_agent" className={cn(buttonVariants({ size: "lg" }), "active:scale-[0.98]")}>
+                Build my trusted-trades page <ArrowRight className="size-4" />
+              </Link>
+              <Link href="/for/real-estate" className={buttonVariants({ size: "lg", variant: "outline" })}>
+                How it works
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* ──────────────────── PRICING ──────────────────── */}
       <section className="border-t border-border bg-secondary/40">
         <Container className="grid gap-12 py-20 md:py-24 lg:grid-cols-[1fr_420px] lg:items-start">
