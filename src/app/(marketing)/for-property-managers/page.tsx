@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ClipboardList,
@@ -21,6 +22,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategories } from "@/lib/data/taxonomy";
 import { COPY } from "@/lib/site";
+import { PHOTOS } from "@/lib/photos";
 
 export const metadata: Metadata = {
   title: "For Property Managers, Builders & Owners",
@@ -52,7 +54,7 @@ export default async function ForPropertyManagersPage() {
   return (
     <>
       <section className="border-b border-border bg-background">
-        <Container className="py-20 sm:py-28">
+        <Container className="grid items-center gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
           <div className="max-w-3xl">
             <Eyebrow>For property managers, builders, owners &amp; real estate professionals</Eyebrow>
             <Badge className="mt-5 bg-teal-100 text-teal-700 hover:bg-teal-100">
@@ -83,6 +85,20 @@ export default async function ForPropertyManagersPage() {
             </div>
             <ReferBanner variant="subtle" className="mt-10 max-w-3xl" />
           </div>
+          <figure className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-indigo lg:aspect-[4/5]">
+            <Image
+              src={PHOTOS.retailAerial.src}
+              alt={PHOTOS.retailAerial.alt}
+              fill
+              loading="eager"
+              fetchPriority="high"
+              sizes="(min-width: 1024px) 420px, (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2.5rem)"
+              className="object-cover object-[45%_50%]"
+            />
+            <figcaption className="absolute inset-x-3 bottom-3 rounded-xl bg-indigo/85 px-4 py-3 text-sm text-white backdrop-blur-sm">
+              Retail, office, industrial, condo: post the work for any building you run.
+            </figcaption>
+          </figure>
         </Container>
       </section>
 

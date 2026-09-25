@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Eyebrow } from "@/components/container";
@@ -29,6 +30,7 @@ import { SITE } from "@/lib/site";
 import { liveSolutionFor } from "@/lib/partners/vertical-solutions";
 import { VerticalSolutionBlock } from "@/components/public/vertical-solution";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { tradePhoto } from "@/lib/photos";
 
 export const revalidate = 3600;
 
@@ -109,6 +111,7 @@ export default async function TradeCategoryPage({
   ].slice(0, Math.max(12, liveRegions.length));
   const templates = getTemplatesForTrade(cat.slug);
   const costGuide = COST_GUIDES.find((g) => g.tradeSlug === cat.slug);
+  const photo = tradePhoto(cat.slug);
 
   return (
     <>
@@ -121,31 +124,44 @@ export default async function TradeCategoryPage({
       <JsonLd data={faqSchema(faqs.map((f) => ({ q: f.q, a: f.a })))} />
 
       <section className="border-b border-border bg-secondary/30">
-        <Container className="py-12">
-          <nav className="mb-3 text-xs text-muted-foreground">
-            <Link href="/trades" className="hover:text-foreground">Trades</Link> / {cat.name}
-          </nav>
-          <Eyebrow>Commercial {cat.name}</Eyebrow>
-          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            Commercial {cat.name} Contractors & RFP Opportunities in Canada
-          </h1>
-          <p className="mt-4 max-w-2xl text-muted-foreground">
-            Whether you run a {lower} company looking for commercial property work, or you manage
-            properties and need a qualified {lower} contractor, {SITE.name} connects both sides —
-            a focused directory plus a feed of {lower} RFP opportunities, matched by region.
-          </p>
-          {costGuide && (
-            <p className="mt-3 text-sm">
-              <Link href={`/cost-guides/${costGuide.slug}`} className="text-teal-700 hover:underline">
-                Planning a {lower} project? See typical {lower} costs →
-              </Link>
+        <Container className="grid items-center gap-8 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:gap-12">
+          <div>
+            <nav className="mb-3 text-xs text-muted-foreground">
+              <Link href="/trades" className="hover:text-foreground">Trades</Link> / {cat.name}
+            </nav>
+            <Eyebrow>Commercial {cat.name}</Eyebrow>
+            <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
+              Commercial {cat.name} Contractors & RFP Opportunities in Canada
+            </h1>
+            <p className="mt-4 max-w-2xl text-muted-foreground">
+              Whether you run a {lower} company looking for commercial property work, or you manage
+              properties and need a qualified {lower} contractor, {SITE.name} connects both sides —
+              a focused directory plus a feed of {lower} RFP opportunities, matched by region.
             </p>
-          )}
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/sign-up" className={buttonVariants()}>List your {lower} company</Link>
-            <Link href={`/rfps?category=${cat.slug}`} className={buttonVariants({ variant: "outline" })}>
-              View {lower} RFPs
-            </Link>
+            {costGuide && (
+              <p className="mt-3 text-sm">
+                <Link href={`/cost-guides/${costGuide.slug}`} className="text-teal-700 hover:underline">
+                  Planning a {lower} project? See typical {lower} costs →
+                </Link>
+              </p>
+            )}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/sign-up" className={buttonVariants()}>List your {lower} company</Link>
+              <Link href={`/rfps?category=${cat.slug}`} className={buttonVariants({ variant: "outline" })}>
+                View {lower} RFPs
+              </Link>
+            </div>
+          </div>
+          <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-indigo lg:aspect-[4/3]">
+            <Image
+              src={photo.src}
+              alt={photo.alt}
+              fill
+              loading="eager"
+              fetchPriority="high"
+              sizes="(min-width: 1024px) 440px, (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2.5rem)"
+              className="object-cover"
+            />
           </div>
         </Container>
       </section>

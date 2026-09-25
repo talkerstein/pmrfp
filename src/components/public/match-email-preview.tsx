@@ -32,20 +32,19 @@ export function MatchEmailPreview({ trade, place, rows }: { trade: string; place
             New RFPs and public tenders in your trades and regions since yesterday, soonest deadline first:
           </p>
           <ul className="mt-4 space-y-3">
-            {rows.map((r, i) => {
+            {rows.map((r) => {
               const soon = closingLabel(daysUntil(r.deadline));
               return (
                 <li
                   key={r.slug}
-                  className="animate-rise rounded-xl border border-border bg-background p-4"
-                  style={{ animationDelay: `${150 + i * 110}ms` }}
+                  className="rounded-xl border border-border bg-background p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="font-mono text-[11px] uppercase tracking-wide text-teal-700">
                       {r.categories[0] ?? trade} · {r.regionName ?? "Canada"}
                     </div>
                     {soon && (
-                      <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
+                      <span className="shrink-0 text-[11px] font-semibold text-foreground">
                         {soon}
                       </span>
                     )}

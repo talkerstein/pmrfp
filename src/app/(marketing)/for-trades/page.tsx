@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Building2,
@@ -27,6 +28,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { COPY, PRICING, SITE } from "@/lib/site";
+import { PHOTOS } from "@/lib/photos";
 
 export const metadata: Metadata = {
   title: "For Trade Companies",
@@ -137,15 +139,28 @@ export default function ForTradesPage() {
       </section>
 
       <Section>
-        <SectionHeading
-          eyebrow="The opportunity"
-          title="Why commercial property work matters"
-          description="Commercial properties need a steady roster of reliable trades — for maintenance, upgrades, emergencies, and capital projects. The work is consistent and high-value, but it rarely reaches companies that aren't already known."
-        />
-        <p className="mt-6 max-w-2xl text-lg font-medium leading-relaxed text-foreground">
-          Most commercial property opportunities never reach your inbox unless
-          you are already known.
-        </p>
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+          <div>
+            <SectionHeading
+              eyebrow="The opportunity"
+              title="Why commercial property work matters"
+              description="Commercial properties need a steady roster of reliable trades — for maintenance, upgrades, emergencies, and capital projects. The work is consistent and high-value, but it rarely reaches companies that aren't already known."
+            />
+            <p className="mt-6 max-w-2xl text-lg font-medium leading-relaxed text-foreground">
+              Most commercial property opportunities never reach your inbox unless
+              you are already known.
+            </p>
+          </div>
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-indigo">
+            <Image
+              src={PHOTOS.floorCoating.src}
+              alt={PHOTOS.floorCoating.alt}
+              fill
+              sizes="(min-width: 1152px) 540px, (min-width: 1024px) calc(50vw - 3.5rem), (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2.5rem)"
+              className="object-cover"
+            />
+          </div>
+        </div>
       </Section>
 
       <Section tone="muted">
