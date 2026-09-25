@@ -12,6 +12,7 @@ import { COMPETITORS } from "@/lib/seo/competitors";
 import { VERTICALS } from "@/lib/seo/verticals";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { RFP_TEMPLATES } from "@/lib/seo/rfp-templates";
+import { listOpenJobs } from "@/lib/jobs/data";
 
 // The RFP board now refreshes daily from the public-tender feed; without
 // this the page was frozen at build time and showed stale open counts
@@ -29,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/directory", priority: 0.8, freq: "weekly" },
     { path: "/suppliers", priority: 0.8, freq: "weekly" },
     { path: "/rfps", priority: 0.8, freq: "daily" },
+    { path: "/jobs", priority: 0.8, freq: "daily" },
     { path: "/pricing", priority: 0.9, freq: "monthly" },
     { path: "/resources", priority: 0.7, freq: "weekly" },
     { path: "/resources/how-to-post-a-quality-rfp", priority: 0.7, freq: "monthly" },
@@ -91,6 +93,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const v of VERTICALS) entries.push({ url: `${base}/for/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
   for (const g of COST_GUIDES) entries.push({ url: `${base}/cost-guides/${g.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
   for (const t of RFP_TEMPLATES) entries.push({ url: `${base}/rfp-templates/${t.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
+  // Open jobs (Google for Jobs reads the JobPosting markup on each page).
+  for (const j of (await listOpenJobs()).jobs) entries.push({ url: `${base}/jobs/${j.slug}`, lastModified: new Date(j.createdAt), changeFrequency: "daily", priority: 0.6 });
 
   return entries;
 }

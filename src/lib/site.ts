@@ -73,11 +73,12 @@ export const REFERRAL = {
 } as const;
 
 /** Primary public navigation (§30 header) */
-// Four jobs, four links: find work, find a trade, hire (PMs), pay. "For
-// Trades" is what the homepage already is; guides live in the footer.
+// Find work, find a trade, jobs (hiring people), hire trades (PMs), pay.
+// "For Trades" is what the homepage already is; guides live in the footer.
 export const MAIN_NAV = [
   { href: "/rfps", label: "RFPs" },
   { href: "/directory", label: "Trade Directory" },
+  { href: "/jobs", label: "Jobs" },
   { href: "/for-property-managers", label: "For Property Managers" },
   { href: "/pricing", label: "Pricing" },
 ] as const;
@@ -97,6 +98,7 @@ export const TRADE_NAV = [
   // Projects covers both the photo capture and the typed case-study form
   // (linked from the Projects page), so one entry instead of two.
   { href: "/dashboard/projects", label: "Projects" },
+  { href: "/jobs/manage", label: "Hiring" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/settings", label: "Settings" },
 ] as const;
@@ -108,6 +110,7 @@ export const PM_NAV = [
   { href: "/pm-dashboard/rfps/new", label: "Post an RFP" },
   { href: "/rfp-writer", label: "RFP Writer" },
   { href: "/pm-dashboard/saved-vendors", label: "Trusted trades" },
+  { href: "/jobs/manage", label: "Hiring" },
 ] as const;
 
 /** Admin dashboard sidebar (§10.5) */
@@ -138,6 +141,7 @@ export const FOOTER_COLS = [
     heading: "Find work",
     links: [
       { label: "Browse RFPs", href: "/rfps" },
+      { label: "Trade Jobs", href: "/jobs" },
       { label: "Contract Winners", href: "/contract-winners" },
       { label: "Public Contracts Report", href: "/reports/public-building-contracts" },
       { label: "Trades", href: "/trades" },

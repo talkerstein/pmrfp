@@ -745,3 +745,46 @@ export async function sendTrustedQuoteRequest(params: {
     { replyTo: params.requester.email, cc: params.cc },
   );
 }
+
+/** A job application, to the employer (Reply-To the applicant). */
+export async function sendJobApplication(params: {
+  to: string;
+  jobTitle: string;
+  jobUrl: string;
+  applicant: {
+    name: string;
+    email: string;
+    phone: string | null;
+    experienceYears: number | null;
+    certifications: string | null;
+    message: string | null;
+  };
+}): Promise<void> {
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const a = params.applicant;
+  const rows = [
+    ["Name", esc(a.name)],
+    ["Email", `<a href="mailto:${esc(a.email)}" style="color:#282B59">${esc(a.email)}</a>`],
+    a.phone ? ["Phone", `<a href="tel:${esc(a.phone)}" style="color:#282B59">${esc(a.phone)}</a>`] : null,
+    a.experienceYears != null ? ["Experience", `${a.experienceYears} year${a.experienceYears === 1 ? "" : "s"}`] : null,
+    a.certifications ? ["Tickets and certifications", esc(a.certifications)] : null,
+  ].filter((r): r is string[] => Boolean(r));
+  const table = rows
+    .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#64748b;font-size:14px;white-space:nowrap;vertical-align:top">${k}</td><td style="padding:4px 0;font-size:15px;color:#1B1E45">${v}</td></tr>`)
+    .join("");
+  await send(
+    params.to,
+    `New applicant: ${a.name} for ${params.jobTitle}`,
+    layout(
+      `${esc(a.name)} applied for ${esc(params.jobTitle)}`,
+      `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 16px">${table}</table>
+       ${a.message ? `<p style="margin:0 0 16px;padding:12px 14px;background:#F6F7FB;border-radius:10px;color:#1B1E45">${esc(a.message).replace(/\n/g, "<br>")}</p>` : ""}
+       <p>Reply to this email to answer ${esc(a.name.split(/\s+/)[0])} directly.</p>
+       <p>${btn(`${BASE}/jobs/manage`, "See all applicants")}</p>`,
+      `Sent because your company posted <a href="${params.jobUrl}" style="color:#64748b">${esc(params.jobTitle)}</a> on PMRFP. Close the job from your Hiring page to stop applications.`,
+      { referralPs: false },
+    ),
+    undefined,
+    { replyTo: a.email },
+  );
+}
