@@ -125,3 +125,24 @@ export async function getPublicTrustedList(
   const trades = visibleTrades(await tradesFor((items as ItemRow[] | null) ?? []), pro);
   return { list: toList(data), trades, pro };
 }
+
+export interface Recommender {
+  handle: string;
+  displayName: string;
+  brokerage: string | null;
+}
+
+/** Published trusted-trades pages that include this company ("Recommended by …"). */
+export async function getRecommendedBy(organizationId: string): Promise<Recommender[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await createReadClient()
+    .from("trusted_list_items")
+    .select("trusted_lists!inner(handle,display_name,brokerage,published)")
+    .eq("organization_id", organizationId)
+    .eq("trusted_lists.published", true)
+    .limit(20);
+  if (error || !data) return [];
+  return (data as unknown as { trusted_lists: { handle: string; display_name: string; brokerage: string | null } }[]).map(
+    (r) => ({ handle: r.trusted_lists.handle, displayName: r.trusted_lists.display_name, brokerage: r.trusted_lists.brokerage }),
+  );
+}

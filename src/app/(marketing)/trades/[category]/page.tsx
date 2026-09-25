@@ -28,6 +28,7 @@ import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { SITE } from "@/lib/site";
 import { liveSolutionFor } from "@/lib/partners/vertical-solutions";
 import { VerticalSolutionBlock } from "@/components/public/vertical-solution";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 
 export const revalidate = 3600;
 
@@ -229,6 +230,10 @@ export default async function TradeCategoryPage({
             </Link>
           ))}
         </div>
+        <SponsorSlot
+          className="mt-10 max-w-md"
+          ctx={{ placement: "trade_page", categories: [cat.slug], seed: cat.slug }}
+        />
       </Container>
 
       <section className="border-t border-border">

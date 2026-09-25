@@ -7,6 +7,8 @@ import { listRfps } from "@/lib/data/rfps";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ActivateButton } from "@/components/dashboard/billing-actions";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Dashboard" };
 
@@ -14,7 +16,7 @@ export default async function TradeDashboardHome() {
   const session = await requireRole(["trade"]);
   const demo = isDemoMode();
   const org = session.organization;
-  const [rfps, photoProjects] = await Promise.all([listRfps(), projectsReady()]);
+  const [rfps, photoProjects, tradeSlugs] = await Promise.all([listRfps(), projectsReady(), orgTradeSlugs(org?.id ?? null, demo)]);
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
 
   return (
@@ -85,14 +87,32 @@ export default async function TradeDashboardHome() {
         <div className="mt-6 rounded-lg border border-teal-300 bg-teal-50/60 p-6">
           <h2 className="text-base font-semibold">Unlock full RFP access with Trade Pro</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Activate your subscription to view full RFP details, express interest, and appear
-            higher in the vendor directory. $249 CAD/year.
+            See the full scope, documents and buyer contact on every RFP, what similar contracts sold
+            for, and get an email the morning each match posts. $29/month or $249 CAD/year.
           </p>
           <div className="mt-4">
             <ActivateButton />
           </div>
         </div>
       )}
+
+      <SponsorSlot
+        className="mt-6 max-w-md"
+        ctx={{ placement: "trade_dashboard", categories: tradeSlugs, seed: org?.id ?? "" }}
+      />
     </div>
   );
+}
+
+/** The trades this company lists under, for picking a relevant sponsor. */
+async function orgTradeSlugs(orgId: string | null, demo: boolean): Promise<string[]> {
+  if (!orgId || demo) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("organization_categories")
+    .select("trade_categories(slug)")
+    .eq("organization_id", orgId);
+  return ((data as unknown as { trade_categories: { slug: string } | null }[] | null) ?? [])
+    .map((r) => r.trade_categories?.slug)
+    .filter((s): s is string => Boolean(s));
 }

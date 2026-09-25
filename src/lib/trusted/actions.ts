@@ -76,23 +76,27 @@ export async function toggleTrustedTradeAction(organizationId: string): Promise<
   const list = await ensureList(admin, session);
   if ("error" in list) return { error: list.error };
 
-  const { data: existing } = await admin
-    .from("trusted_list_items")
-    .select("organization_id")
-    .eq("owner_id", session.userId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
+  const [{ data: existing }, { data: org }] = await Promise.all([
+    admin
+      .from("trusted_list_items")
+      .select("organization_id")
+      .eq("owner_id", session.userId)
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+    admin
+      .from("organizations")
+      .select("slug,organization_type,profile_status")
+      .eq("id", organizationId)
+      .maybeSingle<{ slug: string; organization_type: string; profile_status: string }>(),
+  ]);
+  // The trade's profile shows "Recommended by …"; refresh it too.
+  if (org?.slug) revalidatePath(`/directory/${org.slug}`);
   if (existing) {
     await admin.from("trusted_list_items").delete().eq("owner_id", session.userId).eq("organization_id", organizationId);
     refresh(list.handle);
     return { saved: false, handle: list.handle };
   }
 
-  const { data: org } = await admin
-    .from("organizations")
-    .select("organization_type,profile_status")
-    .eq("id", organizationId)
-    .maybeSingle<{ organization_type: string; profile_status: string }>();
   if (!org || org.profile_status !== "approved" || !["trade_company", "supplier"].includes(org.organization_type)) {
     return { error: "That company isn't listed in the directory." };
   }

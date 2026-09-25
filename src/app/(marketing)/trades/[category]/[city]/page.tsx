@@ -32,6 +32,7 @@ import { listCaseStudies } from "@/lib/data/case-studies";
 import { heroUrlsBySlug } from "@/lib/data/projects";
 import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
 import { PRICING, SITE } from "@/lib/site";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 
 export const revalidate = 3600;
 
@@ -513,6 +514,18 @@ export default async function TradeCityPage({
           )}
         </Container>
       )}
+
+      <Container className="pb-12">
+        <SponsorSlot
+          className="max-w-md"
+          ctx={{
+            placement: "trade_page",
+            categories: [cat.slug],
+            market: region.slug.startsWith("us-") || region.slug === "united-states" ? "US" : "CA",
+            seed: `${cat.slug}|${region.slug}`,
+          }}
+        />
+      </Container>
 
       <section className="border-t border-border">
         <Container size="narrow" className="py-12">

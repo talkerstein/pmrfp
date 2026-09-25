@@ -24,6 +24,7 @@ async function send(
   subject: string,
   html: string,
   headers?: Record<string, string>,
+  opts?: { replyTo?: string; cc?: string[] },
 ): Promise<void> {
   const resend = client();
   if (!resend) {
@@ -31,7 +32,15 @@ async function send(
     return;
   }
   try {
-    await resend.emails.send({ from: FROM, to, subject, html, ...(headers ? { headers } : {}) });
+    await resend.emails.send({
+      from: FROM,
+      to,
+      subject,
+      html,
+      ...(headers ? { headers } : {}),
+      ...(opts?.replyTo ? { replyTo: opts.replyTo } : {}),
+      ...(opts?.cc?.length ? { cc: opts.cc } : {}),
+    });
   } catch (err) {
     console.error("[email] send failed", err);
   }
@@ -185,6 +194,8 @@ export async function sendDailyMatches(
     mailingAddress: string | null;
     /** Optional "Recently awarded near you" lines (see lib/alerts/awards). */
     recentAwards?: { slug: string; line: string }[];
+    /** One relevant sponsor row (lib/sponsors/email), or "". */
+    sponsorHtml?: string;
   },
 ): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -223,7 +234,8 @@ export async function sendDailyMatches(
       `<p>New RFPs and public tenders in your trades and regions since yesterday, soonest deadline first:</p>
        <ul style="padding-left:18px;margin:16px 0">${list}</ul>${more}
        ${recentAwardsHtml(params.recentAwards ?? [], BASE)}
-       <p>${btn(`${BASE}/dashboard/rfps`, "Open your feed")}</p>`,
+       <p>${btn(`${BASE}/dashboard/rfps`, "Open your feed")}</p>
+       ${params.sponsorHtml ?? ""}`,
       `${footer}.`,
     ),
     params.unsubscribeUrl
@@ -510,6 +522,8 @@ export async function sendTenderDigest(
     annualUrl?: string;
     unsubscribeUrl: string;
     mailingAddress: string;
+    /** One relevant sponsor row (lib/sponsors/email), or "". */
+    sponsorHtml?: string;
   },
 ): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -550,7 +564,8 @@ export async function sendTenderDigest(
              params.annualUrl ? ` Or <a href="${params.annualUrl}" style="color:#282B59">pay $249 a year</a> and save $99.` : ""
            }</p>
          </td></tr>
-       </table>`,
+       </table>
+       ${params.sponsorHtml ?? ""}`,
       `You're receiving this because you have a free ${SITE.name} company profile. ` +
         `<a href="${params.unsubscribeUrl}" style="color:#64748b">Unsubscribe from opportunity emails</a>. ` +
         `${SITE.name}, ${esc(params.mailingAddress)} · ${SITE.email}`,
@@ -691,5 +706,42 @@ export async function sendAdminNewReview(params: { tradeName: string; projectTit
        </ul>
        <p>${btn(`${BASE}/admin/reviews`, "Review in admin")}</p>`,
     ),
+  );
+}
+
+/**
+ * A quote request from a realtor's trusted-trades page, straight to the
+ * trade (Reply-To the client) with the realtor copied. Falls back to the
+ * PMRFP inbox when the trade has no email on file.
+ */
+export async function sendTrustedQuoteRequest(params: {
+  to: string | null;
+  tradeName: string;
+  recommender: string;
+  pageUrl: string;
+  requester: { name: string; email: string; phone: string | null };
+  message: string;
+  cc: string[];
+}): Promise<void> {
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const to = params.to ?? ADMIN;
+  const who = `${esc(params.requester.name)} &lt;${esc(params.requester.email)}&gt;${params.requester.phone ? ` · ${esc(params.requester.phone)}` : ""}`;
+  await send(
+    to,
+    `Quote request from ${params.requester.name} (via ${params.recommender})`,
+    layout(
+      `A quote request for ${esc(params.tradeName)}`,
+      `<p>${esc(params.recommender)} lists ${esc(params.tradeName)} on their <a href="${params.pageUrl}" style="color:#282B59">trusted-trades page</a>, and one of their clients would like a quote.</p>
+       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0;background:#F6F7FB;border-radius:10px;">
+         <tr><td style="padding:14px 16px;font-size:15px;line-height:23px;color:#1B1E45;">
+           <strong>From:</strong> ${who}<br><br>${esc(params.message).replace(/\n/g, "<br>")}
+         </td></tr>
+       </table>
+       <p>Reply to this email to answer them directly.${params.to ? "" : " (This company has no email on file with PMRFP: please pass it along.)"}</p>`,
+      `You're getting this because ${esc(params.tradeName)} is listed on PMRFP. ${esc(params.recommender)} is copied.`,
+      { referralPs: false },
+    ),
+    undefined,
+    { replyTo: params.requester.email, cc: params.cc },
   );
 }

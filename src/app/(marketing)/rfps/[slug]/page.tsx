@@ -25,6 +25,10 @@ import { getBidCheckBySlug } from "@/lib/bid-check/data";
 import { GcPackageCta } from "@/components/public/gc-package-cta";
 import { GC_BADGE, isGcPackage, tradeWords } from "@/lib/gc/packages";
 import { getAwardById, listPackagesForAward } from "@/lib/gc/data";
+import { getAwardIndex, intelFor } from "@/lib/data/award-intel";
+import { AwardIntelCard } from "@/components/public/award-intel-card";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { rfpMarket } from "@/lib/visitor-geo";
 
 export async function generateMetadata({
   params,
@@ -134,6 +138,16 @@ export default async function RfpDetailPage({
     isAward ? listPackagesForAward(teaser.slug) : Promise.resolve([]),
   ]);
   const closesLabel = isGc ? "Quotes due" : "Closes";
+  // "What this job is worth": open tenders only; the numbers render for members only.
+  const intel = !isAward && !isClosed ? intelFor(teaser, await getAwardIndex()) : null;
+  const upgradeHref = session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly");
+  const intelCard = intel ? (
+    <AwardIntelCard
+      intel={showFull ? intel : { scope: intel.scope, trade: intel.trade, count: intel.count }}
+      locked={!showFull}
+      upgradeHref={upgradeHref}
+    />
+  ) : null;
 
   return (
     <Container className="py-10">
@@ -336,6 +350,7 @@ export default async function RfpDetailPage({
           ) : showFull && full ? (
             <div className="mt-8 space-y-8">
               {bidChecklist}
+              {intelCard}
               <Block title="Project scope" body={full.scope} />
               <Block title="Requirements" body={full.requirements} />
               {(full.budgetPublic && (full.budgetMin || full.budgetMax)) && (
@@ -398,6 +413,7 @@ export default async function RfpDetailPage({
           ) : (
             <div className="mt-8 space-y-6">
               {bidChecklist}
+              {intelCard}
               {totalOpenCount > 0 && (
                 <div className="rounded-xl border border-teal-400/50 bg-teal-100/30 p-5">
                   <p className="text-sm font-semibold text-foreground">
@@ -473,6 +489,15 @@ export default async function RfpDetailPage({
           </div>
           {/* Aimed at the winning contractor: post sub-trade packages for this job. */}
           {isAward && award?.winner && <GcPackageCta awardSlug={teaser.slug} />}
+          <SponsorSlot
+            ctx={{
+              placement: "rfp_detail",
+              categories: teaser.categories,
+              market: rfpMarket(teaser),
+              publicTender: isPublicTender,
+              seed: teaser.slug,
+            }}
+          />
         </aside>
       </div>
     </Container>

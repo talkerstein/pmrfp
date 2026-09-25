@@ -7,6 +7,7 @@ import { DirectoryCard } from "@/components/public/directory-card";
 import { buttonVariants } from "@/components/ui/button";
 import { getPublicTrustedList } from "@/lib/trusted/data";
 import { telHref } from "@/lib/trusted/rules";
+import { QuoteRequest } from "@/components/trusted/quote-request";
 import { cn } from "@/lib/utils";
 
 // Owners' edits call revalidatePath; this is the fallback refresh.
@@ -95,6 +96,12 @@ export default async function TrustedPage({ params }: Props) {
                       </span>
                     </p>
                   )}
+                  <QuoteRequest
+                    handle={list.handle}
+                    organizationId={t.organizationId}
+                    tradeName={t.vendor.name}
+                    recommender={first}
+                  />
                 </li>
               ))}
             </ul>
