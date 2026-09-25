@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
 import { SaveTradeButton } from "@/components/trusted/save-trade-button";
+import { getRecommendedBy } from "@/lib/trusted/data";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
 import { getVendor, listVendors, retiredVendorRedirect } from "@/lib/data/directory";
 import { listOrgProjects, listPublishedReviews } from "@/lib/data/projects";
@@ -67,9 +68,10 @@ export default async function VendorProfilePage({
   const showContact = v.contactVisibility === "show_contact";
 
   // Projects + first-party reviews (empty before the Projects migration).
-  const [projects, reviews] = await Promise.all([
+  const [projects, reviews, recommenders] = await Promise.all([
     listOrgProjects(v.id),
     listPublishedReviews({ organizationId: v.id }, 100),
+    getRecommendedBy(v.id),
   ]);
   const rating = reviewStats(reviews);
 
@@ -165,6 +167,23 @@ export default async function VendorProfilePage({
               </p>
             </div>
           </div>
+
+          {/* Realtors and PMs who put this company on their trusted-trades page. */}
+          {recommenders.length > 0 && (
+            <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <span className="font-medium text-foreground">Recommended by</span>
+              {recommenders.slice(0, 3).map((r, i) => (
+                <span key={r.handle}>
+                  <Link href={`/trusted/${r.handle}`} className="font-medium text-teal-700 hover:underline">
+                    {r.displayName}
+                  </Link>
+                  {r.brokerage && <span className="text-muted-foreground"> ({r.brokerage})</span>}
+                  {i < Math.min(recommenders.length, 3) - 1 && <span className="text-muted-foreground">,</span>}
+                </span>
+              ))}
+              {recommenders.length > 3 && <span className="text-muted-foreground">and {recommenders.length - 3} more</span>}
+            </p>
+          )}
 
           {v.fullDescription && (
             <p className="mt-6 leading-relaxed text-foreground/90">{v.fullDescription}</p>
