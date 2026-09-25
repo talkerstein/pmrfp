@@ -125,6 +125,7 @@ export const ADMIN_NAV = [
   { href: "/admin/resources", label: "Resources" },
   { href: "/admin/case-studies", label: "Case Studies" },
   { href: "/admin/reviews", label: "Reviews" },
+  { href: "/admin/sponsors", label: "Sponsors" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/audit-logs", label: "Audit Logs" },
 ] as const;

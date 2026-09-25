@@ -5,6 +5,7 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendTenderDigest } from "@/lib/email/send";
 import { unsubscribeUrl } from "@/lib/email/unsubscribe";
 import { displayTitle } from "@/lib/tenders/title";
+import { sponsorEmailBlock } from "@/lib/sponsors/email";
 
 export const maxDuration = 60;
 
@@ -171,6 +172,7 @@ export async function GET(request: Request) {
         annualUrl: `${base}/dashboard/billing?plan=pro&interval=annual`,
         unsubscribeUrl: unsub,
         mailingAddress: mailingAddress!,
+        sponsorHtml: sponsorEmailBlock({ placement: "digest_email", categories: [trade], seed: userId }, base),
       });
       sent++;
     }

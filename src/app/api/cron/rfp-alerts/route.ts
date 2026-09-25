@@ -6,6 +6,7 @@ import { unsubscribeUrl } from "@/lib/email/unsubscribe";
 import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
 import { buildDigests, digestSubject, type DigestRfp } from "@/lib/alerts/digest";
 import { displayTitle } from "@/lib/tenders/title";
+import { sponsorEmailBlock } from "@/lib/sponsors/email";
 import {
   awardLine,
   recentAwardsByUser,
@@ -179,6 +180,10 @@ export async function GET(request: Request) {
       unsubscribeUrl: unsubscribeUrl(base, d.userId),
       mailingAddress,
       recentAwards: (awardsByUser.get(d.userId) ?? []).map((a) => ({ slug: a.slug, line: awardLine(a, d.tradeLabel) })),
+      sponsorHtml: sponsorEmailBlock(
+        { placement: "alerts_email", categories: [d.tradeLabel], seed: d.userId },
+        base,
+      ),
     });
     await supabase.from("notifications").insert(
       d.items.map((i) => ({
