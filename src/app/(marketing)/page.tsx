@@ -39,14 +39,12 @@ export const metadata: Metadata = {
 };
 
 /** Public buyers the board pulls from every morning (see /api/cron/public-tenders). */
-// Public sources. CanadaBuys and SEAO show government signatures rather than
-// logos of their own, and those signatures are tightly controlled, so they
-// stay as names. Descriptive use only: PMRFP isn't affiliated with any of them.
+// Public tender sources. Descriptive use only: PMRFP isn't affiliated with any of them.
 const SOURCES: { name: string; logo?: string; h?: number }[] = [
-  { name: "CanadaBuys" },
+  { name: "CanadaBuys", logo: "/logos/sources/canadabuys.png", h: 24 },
   { name: "SAM.gov", logo: "/logos/sources/sam-gov.svg", h: 22 },
   { name: "City of Toronto", logo: "/logos/sources/city-of-toronto.svg", h: 26 },
-  { name: "Québec SEAO" },
+  { name: "Québec SEAO", logo: "/logos/sources/seao.png", h: 22 },
   { name: "Nova Scotia", logo: "/logos/sources/nova-scotia.svg", h: 26 },
   { name: "Yukon", logo: "/logos/sources/yukon.png", h: 28 },
   { name: "NYC City Record" },
