@@ -24,7 +24,7 @@ export type InstallAudience = "trade" | "pm" | "other";
  * "Install the PMRFP app" card. One tap on Chrome / Edge / Samsung Internet;
  * Share → Add to Home Screen steps on iPhone and iPad Safari. Renders nothing
  * once installed, when already running as the app, where the browser can't
- * install, or for 30 days after "Not now".
+ * install, or for 14 days after "Not now".
  *
  * `sidebar` sits in the indigo dashboard sidebar; `banner` is the light card
  * shown above the page content on phones.
