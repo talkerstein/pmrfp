@@ -160,6 +160,7 @@ export const FOOTER_COLS = [
       { label: "Get Found (SEO & AI)", href: "/get-found" },
       { label: "Pricing", href: "/pricing" },
       { label: "Advertise with us", href: "/advertise" },
+      { label: "Project Spotlight", href: "/spotlight" },
     ],
   },
   {

@@ -24,7 +24,7 @@ async function send(
   subject: string,
   html: string,
   headers?: Record<string, string>,
-  opts?: { replyTo?: string; cc?: string[] },
+  opts?: { replyTo?: string; cc?: string[]; attachments?: { filename: string; content: Buffer }[] },
 ): Promise<void> {
   const resend = client();
   if (!resend) {
@@ -40,6 +40,7 @@ async function send(
       ...(headers ? { headers } : {}),
       ...(opts?.replyTo ? { replyTo: opts.replyTo } : {}),
       ...(opts?.cc?.length ? { cc: opts.cc } : {}),
+      ...(opts?.attachments?.length ? { attachments: opts.attachments } : {}),
     });
   } catch (err) {
     console.error("[email] send failed", err);
@@ -172,6 +173,12 @@ export async function sendSubscriptionActivatedEmail(to: string): Promise<void> 
   );
 }
 
+/** The owner's inbox(es): the admin mailbox and the sign-up alert address, once each. */
+async function sendToOwners(subject: string, html: string, opts?: { replyTo?: string; attachments?: { filename: string; content: Buffer }[] }): Promise<void> {
+  const addrs = [...new Set([ADMIN, SIGNUP_ALERT].map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  await Promise.all(addrs.map((addr) => send(addr, subject, html, undefined, opts)));
+}
+
 /**
  * Notify the admin (you) the instant a paid membership activates — the
  * "you made a sale" email. Fires from the Stripe checkout.session.completed
@@ -186,8 +193,7 @@ export async function sendAdminNewSale(params: {
   amountFormatted: string;
   couponNote?: string;
 }): Promise<void> {
-  await send(
-    ADMIN,
+  await sendToOwners(
     `💰 New PMRFP sale — ${params.plan} · ${params.amountFormatted}`,
     layout(
       "You made a sale 🎉",
@@ -915,5 +921,91 @@ export async function sendTalentContact(params: {
     ),
     undefined,
     { replyTo: params.sender.email },
+  );
+}
+
+// ── Project Spotlight ────────────────────────────────────────────────────
+
+const NOT_PROMISED =
+  "A Spotlight is a permanent, labelled \"Sponsored Spotlight\" page about one finished project. We don't promise rankings, traffic, leads or mentions in AI answers. If we can't publish your article, you get a full refund.";
+
+const paragraphs = (s: string) =>
+  escHtml(s)
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 12px">${p.replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+
+/** To the buyer, right after payment: what to do next. */
+export async function sendSpotlightPaid(to: string, sessionId: string): Promise<void> {
+  const link = `${BASE}/spotlight/submit?session_id=${encodeURIComponent(sessionId)}`;
+  await send(
+    to,
+    "Your Project Spotlight is paid. Send us your article",
+    layout(
+      "Thanks, your Project Spotlight is booked",
+      `<p>Next step: send us your article and photos (about 5 minutes). We review every article, make light edits for clarity, and publish within 2 business days.</p>
+       <p>${btn(link, "Submit your article")}</p>
+       <p style="font-size:14px">What you'll need: a 400 to 800 word write-up of one finished project (the challenge, what you did, the result), 1 to 4 photos, and your client's OK to feature the project.</p>
+       <p style="font-size:14px">${NOT_PROMISED}</p>
+       <p style="font-size:14px">Questions? Just reply to this email.</p>`,
+      undefined,
+      { referralPs: false },
+    ),
+    undefined,
+    { replyTo: SIGNUP_ALERT },
+  );
+}
+
+/** To the owner: someone paid. (The generic sale email also fires; this one says what to expect.) */
+export async function sendAdminSpotlightSubmission(p: {
+  company: string;
+  contactName: string;
+  email: string;
+  website: string;
+  title: string;
+  trade: string;
+  city: string;
+  province: string;
+  article: string;
+  sessionId: string;
+  attachments: { filename: string; content: Buffer }[];
+}): Promise<void> {
+  await sendToOwners(
+    `📝 Spotlight article to review: ${p.company}`,
+    layout(
+      "A Spotlight article is ready to review",
+      `<ul>
+        <li><strong>Company:</strong> ${escHtml(p.company)}</li>
+        <li><strong>Contact:</strong> ${escHtml(p.contactName)} (${escHtml(p.email)})</li>
+        <li><strong>Website:</strong> ${escHtml(p.website || "(none)")}</li>
+        <li><strong>Title:</strong> ${escHtml(p.title)}</li>
+        <li><strong>Trade / place:</strong> ${escHtml(p.trade)} · ${escHtml(p.city)}${p.province ? ", " + escHtml(p.province) : ""}</li>
+        <li><strong>Stripe session:</strong> ${escHtml(p.sessionId)} (paid)</li>
+        <li><strong>Photos attached:</strong> ${p.attachments.length}</li>
+       </ul>
+       <h2 style="font-size:18px;margin:16px 0 8px;color:#1B1E45">Article</h2>
+       ${paragraphs(p.article)}
+       <p style="font-size:14px">To publish: tell Claude "publish the ${escHtml(p.company)} spotlight". Check: real project, no unverifiable claims, photos are theirs. To refuse: refund the Stripe payment and reply to the buyer.</p>`,
+      undefined,
+      { referralPs: false },
+    ),
+    { replyTo: p.email, attachments: p.attachments },
+  );
+}
+
+/** To the buyer: we got it. */
+export async function sendSpotlightReceived(to: string, title: string): Promise<void> {
+  await send(
+    to,
+    "We received your Spotlight article",
+    layout(
+      "We've got your article",
+      `<p>Thanks. We received <strong>${escHtml(title)}</strong> and will review it within 2 business days. We'll email you the link when it's live, or tell you if we need anything changed.</p>
+       <p style="font-size:14px">${NOT_PROMISED}</p>`,
+      undefined,
+      { referralPs: false },
+    ),
+    undefined,
+    { replyTo: SIGNUP_ALERT },
   );
 }
