@@ -27,6 +27,7 @@ import { HomeAncillary, HomeRecentProjects, HomeSuppliers } from "@/components/p
 import { winnersFromRfps } from "@/lib/data/winners";
 import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { cn } from "@/lib/utils";
+import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -147,6 +148,17 @@ export default async function HomePage({ params }: { params: Promise<object> }) 
     .map((c) => ({ slug: c.slug, name: tradeName(c.name, lang) }))
     .sort((a, b) => (openCounts[`${b.slug}|*`] ?? 0) - (openCounts[`${a.slug}|*`] ?? 0) || a.name.localeCompare(b.name));
   const livePages = combos.map((c) => `${c.category.slug}|${c.region.slug}`);
+  // Homepage links to trade × city pages and fresh tenders, so Google discovers
+  // them from the strongest page instead of only via the sitemap.
+  const topCombos = combos
+    .filter((c) => c.open.length > 0)
+    .sort((a, b) => b.open.length - a.open.length || a.category.name.localeCompare(b.category.name))
+    .slice(0, 16);
+  const newest = rfps
+    .filter((r) => isIndexableRfp(r) && (daysUntil(r.deadline) ?? -1) >= 1 && !isFrench(r))
+    // No posted date on list items; the latest deadlines are the freshest notices.
+    .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? ""))
+    .slice(0, 10);
   const stats = boardStats(rfps);
   const winners = winnersFromRfps(rfps);
   // Still biddable (closes tomorrow or later), soonest first, English notices
@@ -362,7 +374,7 @@ export default async function HomePage({ params }: { params: Promise<object> }) 
             {tiles.map((tile, i) => (
               <Link
                 key={tile.slug}
-                href={`/rfps?category=${tile.slug}`}
+                href={`/trades/${tile.slug}`}
                 className={cn(
                   "group relative isolate flex min-h-56 flex-col justify-end overflow-hidden rounded-2xl bg-indigo p-6 text-white",
                   i === 0 && "sm:col-span-2 lg:col-span-1 lg:row-span-2 lg:min-h-[30rem]",
@@ -386,6 +398,49 @@ export default async function HomePage({ params }: { params: Promise<object> }) 
           </div>
         </Container>
       </section>
+
+      {/* ──────────── BROWSE (crawlable links to trade × city pages and new tenders) ──────────── */}
+      {(topCombos.length > 0 || newest.length > 0) && (
+        <section className="bg-background">
+          <Container className="grid gap-10 pt-16 md:grid-cols-2">
+            {topCombos.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">{t.browse.heading}</h2>
+                <ul className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                  {topCombos.map((c) => (
+                    <li key={`${c.category.slug}/${c.region.slug}`}>
+                      <Link href={`/trades/${c.category.slug}/${c.region.slug}`} className="text-teal-700 hover:underline">
+                        {tradeName(c.category.name, lang)} · {regionName(c.region.name, lang)}
+                      </Link>{" "}
+                      <span className="text-muted-foreground">({count(c.open.length, lang)})</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium">
+                  <Link href="/trades" className="text-teal-700 hover:underline">{t.browse.allTrades}</Link>
+                  <Link href="/regions" className="text-teal-700 hover:underline">{t.browse.allRegions}</Link>
+                </p>
+              </div>
+            )}
+            {newest.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">{t.browse.newest}</h2>
+                <ul className="mt-4 space-y-2 text-sm">
+                  {newest.map((r) => (
+                    <li key={r.slug} className="truncate">
+                      <Link href={`/rfps/${r.slug}`} className="text-teal-700 hover:underline">{r.title}</Link>
+                      {r.city && <span className="text-muted-foreground"> — {r.city}</span>}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm font-medium">
+                  <Link href="/rfps" className="text-teal-700 hover:underline">{t.browse.allRfps}</Link>
+                </p>
+              </div>
+            )}
+          </Container>
+        </section>
+      )}
 
       {/* ──────────────────── THE MORNING EMAIL ──────────────────── */}
       {emailCa.trade && (

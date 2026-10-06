@@ -90,7 +90,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const hasContent = vendors.some((v) => v.categories.includes(c.name)) || rfps.some((r) => r.categories.includes(c.name));
     if (hasContent) entries.push({ url: `${base}/trades/${c.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   }
-  for (const rg of regions) entries.push({ url: `${base}/regions/${rg.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  // Same thin-content guard as the region page (no companies and no RFPs there
+  // → noindex). Listing those sent Google noindexed URLs (e.g. /regions/edmonton).
+  for (const rg of regions.filter((rg) => vendors.some((v) => v.regions.includes(rg.name)) || rfps.some((r) => r.regionName === rg.name))) entries.push({ url: `${base}/regions/${rg.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   // Trade×city pages exist only for combos that clear the vendor gate, so the
   // sitemap stays in lockstep with what actually renders.
   for (const tc of tradeCityCombos) entries.push({ url: `${base}/trades/${tc.category.slug}/${tc.region.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });

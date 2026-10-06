@@ -21,6 +21,7 @@ import { daysUntil, parseAward } from "@/lib/data/fomo";
 import { tradePhotoForName } from "@/lib/photos";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
+import { buyerFromSummary, cleanTenderTitle, clip, placeLabel } from "@/lib/seo/rfp-meta";
 import { BidChecklist } from "@/components/public/bid-checklist";
 import { getBidCheckBySlug } from "@/lib/bid-check/data";
 import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
@@ -51,9 +52,22 @@ export async function generateMetadata({
   const t = getDictionary(lang).board.detail.meta;
   const rfp = await getRfpTeaser(slug);
   if (!rfp) return { title: t.notFound };
+  // Full tender name + city in the title (what searchers type), buyer and
+  // closing date up front in the description (what bidders check first).
+  const name = cleanTenderTitle(rfp.title);
+  const place = placeLabel(rfp.city, rfp.province ? regionName(rfp.province, lang) : null);
+  // Not clipped short on purpose: tender-name queries match words late in the title.
+  const title = place ? fill(t.titlePlace, { title: clip(name, 110), place }) : clip(name, 110);
+  const buyer = buyerFromSummary(rfp.summary);
+  const who = buyer ? fill(t.descBuyer, { buyer }) : t.descPm;
+  const closes = rfp.deadline
+    ? fill(rfp.status === "open" ? t.descCloses : t.descClosed, { date: fmt(rfp.deadline, lang) })
+    : "";
+  const lead = fill(t.descTender, { who, where: place ? fill(t.descWhere, { place }) : "" });
+  const description = clip(`${lead}${closes} ${clip(name, 90).replace(/[.…]$/, "")}.${t.descTail}`, 300);
   return {
-    title: fill(t.title, { title: rfp.title }),
-    description: rfp.summary ?? t.description,
+    title,
+    description,
     // ?view=locked and tracking params were being indexed as duplicates.
     alternates: alternatesFor(lang, `/rfps/${rfp.slug}`),
     ...(isIndexableRfp(rfp) ? {} : { robots: { index: false, follow: true } }),
@@ -223,6 +237,7 @@ export default async function RfpDetailPage({
           </div>
           <h1 lang={noticeLang} className="mt-3 max-w-4xl font-heading text-2xl font-semibold leading-tight tracking-tight text-indigo sm:text-3xl">
             {teaser.title}
+            {place && <span className="font-normal text-muted-foreground"> — {place}</span>}
           </h1>
           <div className="mt-4 flex flex-wrap gap-1.5">
             {teaser.categories.map((c) => <Badge key={c} variant="secondary">{trade(c)}</Badge>)}
