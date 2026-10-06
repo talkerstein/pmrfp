@@ -23,6 +23,7 @@ import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { BidChecklist } from "@/components/public/bid-checklist";
 import { getBidCheckBySlug } from "@/lib/bid-check/data";
+import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
 import { GcPackageCta } from "@/components/public/gc-package-cta";
 import { isGcPackage, sourceTypeLabel, tradeWords } from "@/lib/gc/packages";
 import { getAwardById, listPackagesForAward } from "@/lib/gc/data";
@@ -97,25 +98,16 @@ export default async function RfpDetailPage({
 
   // Match-proof before the paywall (audit #2/#4/#10): show a locked-out trade
   // that real liquidity exists in their region BEFORE asking them to pay. Uses
-  // only public board data (listRfps = rfp_public view) — no RLS-gated fields.
+  // only count queries on the public teaser view — no RLS-gated fields.
   //
-  // listRfps() deliberately returns EVERY RFP, closed included, so the public
-  // board can render past-deadline ones grayed out. Using that raw count here
-  // meant this banner claimed "N open commercial RFPs right now" by counting
-  // closed ones too — live, unrelated to any deploy, confirmed on a fully
-  // closed board still claiming open regional matches (external audit,
-  // 2026-09-17). Filter to status === "open" before counting anything.
+  // Preserve the board's UTC deadline/null-date definition of "open", and
+  // exclude this slug from regional matches without hydrating the whole board.
   let regionMatchCount = 0;
   let totalOpenCount = 0;
   if (!showFull) {
-    const allRfps = await listRfps();
-    const openRfps = allRfps.filter((r) => r.status === "open");
-    totalOpenCount = openRfps.length;
-    if (teaser.regionName) {
-      regionMatchCount = openRfps.filter(
-        (r) => r.regionName === teaser.regionName && r.slug !== teaser.slug,
-      ).length;
-    }
+    const counts = await getOpenRfpCounts(teaser.regionName, teaser.slug);
+    totalOpenCount = counts.totalOpen;
+    regionMatchCount = counts.regionMatchCount;
   }
   // The "+1" below only makes sense if the RFP being viewed is itself open —
   // a closed listing shouldn't count toward its own region's "open" total.
@@ -151,7 +143,7 @@ export default async function RfpDetailPage({
     />
   ) : null;
   // "The next one": how many OPEN tenders exist right now in the same trade.
-  const boardRfps = isAward ? await listRfps() : [];
+  const boardRfps = isAward ? await listRfps({}, { photos: false }) : [];
   const similarOpen = boardRfps.filter((r) => r.status === "open" && teaser.categories.some((c) => r.categories.includes(c))).length;
   // Winner's company page, when they have 2+ awards on record.
   const winnerPage = award?.winner

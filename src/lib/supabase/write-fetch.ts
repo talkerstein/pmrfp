@@ -1,5 +1,5 @@
 import { revalidateTag } from "next/cache";
-import { PUBLIC_DATA_TAG } from "./public-cache";
+import { PUBLIC_DATA_TAG, TAXONOMY_DATA_TAG, TAXONOMY_TABLES } from "./public-cache";
 
 // Invalidate shared public reads after relevant server writes, including admin
 // moderation and tender imports. User/private queries themselves stay uncached.
@@ -19,6 +19,7 @@ export function createWriteFetch(baseUrl: string, transport: typeof fetch = (...
     const table = url.pathname.match(/^\/rest\/v1\/([^/]+)$/)?.[1];
     if (response.ok && url.origin === origin && ["POST", "PATCH", "DELETE", "PUT"].includes(method) && table && PUBLIC_TABLES.has(table)) {
       revalidateTag(PUBLIC_DATA_TAG, { expire: 0 });
+      if (TAXONOMY_TABLES.has(table)) revalidateTag(TAXONOMY_DATA_TAG, { expire: 0 });
     }
     return response;
   };

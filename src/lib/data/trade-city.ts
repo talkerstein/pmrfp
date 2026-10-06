@@ -2,7 +2,7 @@ import { cache } from "react";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DEMO_VENDORS } from "@/lib/demo-data";
-import { getCategories, getRegions, type CategoryOption, type RegionOption } from "@/lib/data/taxonomy";
+import { getCategories, getRegions, getTaxonomyRows, type CategoryOption, type RegionOption } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
 import { isPastContract } from "@/lib/data/fomo";
 import type { RfpListItem } from "@/lib/data/types";
@@ -93,8 +93,7 @@ export async function regionTree(): Promise<RegionNodeLite[]> {
   if (!isSupabaseConfigured()) {
     return (await getRegions()).map((r) => ({ slug: r.slug, name: r.name, parentSlug: null }));
   }
-  const { data } = await createReadClient().from("regions").select("id,slug,name,parent_id");
-  const rows = (data ?? []) as { id: string; slug: string; name: string; parent_id: string | null }[];
+  const rows = await getTaxonomyRows("regions");
   const slugById = new Map(rows.map((r) => [r.id, r.slug]));
   return rows.map((r) => ({ slug: r.slug, name: r.name, parentSlug: r.parent_id ? slugById.get(r.parent_id) ?? null : null }));
 }
@@ -263,4 +262,3 @@ export function openCountsByTradeRegion(
   }
   return out;
 }
-

@@ -7,7 +7,8 @@ import { RfpCard } from "@/components/public/rfp-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { ReferBanner } from "@/components/public/refer-banner";
 import { FoundingBanner } from "@/components/public/founding-banner";
-import { listRfps } from "@/lib/data/rfps";
+import { listRfps, withPublicRfpPhotos } from "@/lib/data/rfps";
+import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang: raw } = await params;
   const lang: Locale = hasLocale(raw) ? raw : "en";
   const t = getDictionary(lang).board.meta;
-  const open = (await listRfps().catch(() => [])).filter((r) => r.status === "open").length;
+  const open = (await getOpenRfpCounts().catch(() => ({ totalOpen: 0 }))).totalOpen;
   return {
     title: t.title,
     description: fmt(t.description, { lead: open > 0 ? plural(open, t.lead) : t.leadNone }),
@@ -55,7 +56,7 @@ export default async function RfpsPage({
       propertyType: sp.propertyType,
       q: sp.q,
       sort: (sp.sort as "closing" | "newest") ?? "closing",
-    }),
+    }, { photos: false }),
     getCategories(),
     getRegions(),
     getPropertyTypes(),
@@ -97,7 +98,11 @@ export default async function RfpsPage({
   const pageNum = Math.max(1, Number(sp.page) || 1);
   const listing = showAwarded ? [...past, ...otherClosed] : showGc ? gcOpen : open;
   const pages = Math.max(1, Math.ceil(listing.length / PAGE_SIZE));
-  const pageItems = listing.slice((pageNum - 1) * PAGE_SIZE, pageNum * PAGE_SIZE);
+  const visible = listing.slice((pageNum - 1) * PAGE_SIZE, pageNum * PAGE_SIZE);
+  const recent = !showAwarded && !showGc ? past.slice(0, AWARDED_PREVIEW) : [];
+  const hydrated = await withPublicRfpPhotos([...visible, ...recent]);
+  const pageItems = hydrated.slice(0, visible.length);
+  const recentItems = hydrated.slice(visible.length);
   const pageHref = (n: number) => {
     const q = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]);
     q.set("page", String(n));
@@ -275,7 +280,7 @@ export default async function RfpsPage({
               </Link>
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {past.slice(0, AWARDED_PREVIEW).map((r) => (
+              {recentItems.map((r) => (
                 <RfpCard key={r.slug} rfp={r} locked={locked} />
               ))}
             </div>
