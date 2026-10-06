@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 import { SiteAnalytics } from "@/components/site-analytics";
+import { AnalyticsConsent } from "@/components/analytics-consent";
 import { JsonLd, organizationSchema, websiteSchema } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/site";
 import { LOCALES, LOCALE_TAG, OG_LOCALE, hasLocale } from "@/i18n/config";
@@ -82,6 +83,8 @@ export default async function RootLayout({
           {children}
           {/* Clear of the dashboards' bottom tab bar on phones. */}
           <Toaster mobileOffset={{ bottom: 88 }} />
+          {/* Microsoft Clarity, only with NEXT_PUBLIC_CLARITY_ID and the visitor's consent. */}
+          <AnalyticsConsent />
         </I18nProvider>
         <RegisterServiceWorker />
         <SiteAnalytics gaId={gaId} />
