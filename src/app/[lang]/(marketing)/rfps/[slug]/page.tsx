@@ -39,6 +39,7 @@ import { hasLocale, type Locale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt as fill, formatDate, formatNumber, plural } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
+import { EmailCapture } from "@/components/public/email-capture";
 
 export async function generateMetadata({
   params,
@@ -595,6 +596,11 @@ export default async function RfpDetailPage({
           <SponsorSlot ctx={sponsorCtx} />
         </aside>
       </div>
+      <EmailCapture
+        trade={teaser.categories[0] ? trade(teaser.categories[0]) : null}
+        region={teaser.regionName ? regionName(teaser.regionName, lang) : null}
+        signedInHint={Boolean(session)}
+      />
     </Container>
   );
 }

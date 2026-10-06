@@ -70,6 +70,25 @@ const en = {
     error: "Something went wrong. Please try again.",
     disclaimer: "Bid support is provided by Talkerstein Consulting Group, an affiliate of PMRFP. No one can guarantee an award.",
   },
+  consent: {
+    label: "Cookie choice",
+    body: "We'd like to use Microsoft Clarity to see how visitors use the site (anonymous heatmaps and session recordings) so we can improve it.",
+    accept: "Accept analytics",
+    decline: "Decline",
+    privacy: "Privacy",
+  },
+  capture: {
+    label: "Tender alerts by email",
+    title: "Get new {what} tenders by email",
+    fallback: "commercial property",
+    email: "Email address",
+    placeholder: "you@company.com",
+    submit: "Notify me",
+    sending: "Sending…",
+    done: "You're on the list. We'll email you when new tenders match.",
+    error: "Something went wrong. Please try again.",
+    dismiss: "Dismiss",
+  },
 };
 
 const fr: typeof en = {
@@ -136,6 +155,25 @@ const fr: typeof en = {
     error: "Une erreur s'est produite. Veuillez réessayer.",
     disclaimer: "Le soutien aux soumissions est offert par Talkerstein Consulting Group, une société affiliée à PMRFP. Personne ne peut garantir l'octroi d'un contrat.",
   },
+  consent: {
+    label: "Choix des témoins",
+    body: "Nous aimerions utiliser Microsoft Clarity pour comprendre comment les visiteurs utilisent le site (cartes de chaleur et enregistrements anonymes de sessions) afin de l'améliorer.",
+    accept: "Accepter l'analyse",
+    decline: "Refuser",
+    privacy: "Confidentialité",
+  },
+  capture: {
+    label: "Alertes d'appels d'offres par courriel",
+    title: "Recevez les nouveaux appels d'offres {what} par courriel",
+    fallback: "en immobilier commercial",
+    email: "Adresse courriel",
+    placeholder: "vous@entreprise.com",
+    submit: "M'aviser",
+    sending: "Envoi…",
+    done: "Vous êtes inscrit. Nous vous écrirons quand de nouveaux appels d'offres correspondront.",
+    error: "Un problème est survenu. Veuillez réessayer.",
+    dismiss: "Fermer",
+  },
 };
 
 const es: typeof en = {
@@ -201,6 +239,25 @@ const es: typeof en = {
     submit: "Reservar mi llamada gratuita",
     error: "Algo salió mal. Inténtelo de nuevo.",
     disclaimer: "El apoyo para ofertas lo brinda Talkerstein Consulting Group, una empresa afiliada a PMRFP. Nadie puede garantizar una adjudicación.",
+  },
+  consent: {
+    label: "Preferencia de cookies",
+    body: "Nos gustaría usar Microsoft Clarity para ver cómo los visitantes usan el sitio (mapas de calor y grabaciones de sesiones anónimas) y así mejorarlo.",
+    accept: "Aceptar analítica",
+    decline: "Rechazar",
+    privacy: "Privacidad",
+  },
+  capture: {
+    label: "Alertas de licitaciones por correo",
+    title: "Reciba nuevas licitaciones de {what} por correo",
+    fallback: "propiedades comerciales",
+    email: "Correo electrónico",
+    placeholder: "usted@empresa.com",
+    submit: "Avisarme",
+    sending: "Enviando…",
+    done: "Ya está en la lista. Le escribiremos cuando haya nuevas licitaciones que coincidan.",
+    error: "Algo salió mal. Inténtelo de nuevo.",
+    dismiss: "Cerrar",
   },
 };
 

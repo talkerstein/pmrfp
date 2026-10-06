@@ -23,6 +23,7 @@ import { JobFinder, type FinderPlace } from "@/components/public/job-finder";
 import { DeadlineStamp } from "@/components/public/deadline-stamp";
 import { orderPlaces } from "@/lib/data/place-order";
 import { MatchEmailPreview } from "@/components/public/match-email-preview";
+import { HomeAncillary, HomeRecentProjects, HomeSuppliers } from "@/components/public/home-growth";
 import { winnersFromRfps } from "@/lib/data/winners";
 import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { cn } from "@/lib/utils";
@@ -519,6 +520,11 @@ export default async function HomePage({ params }: { params: Promise<object> }) 
           </div>
         </Container>
       </section>
+
+      {/* ──────────── RECENT PROJECTS · SUPPLIERS · REAL ESTATE & ADS ──────────── */}
+      <HomeRecentProjects />
+      <HomeSuppliers />
+      <HomeAncillary />
 
       {/* ──────────────────── PRICING ──────────────────── */}
       <section className="border-t border-border bg-secondary/40">

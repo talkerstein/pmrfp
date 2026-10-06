@@ -139,6 +139,28 @@ const en = {
     note: "Built from tenders open on the board right now.",
     canada: "Canada",
   },
+  recent: {
+    eyebrow: "Recent projects",
+    heading: "Work trades have finished lately",
+    all: "All case studies",
+    by: "by {org}",
+    spotlight: "Spotlight",
+    reviews: { one: "{n} review", other: "{n} reviews" },
+    rating: "Rated {avg} out of 5",
+  },
+  suppliers: {
+    eyebrow: "Suppliers",
+    heading: "Material and equipment suppliers",
+    all: "Browse suppliers",
+  },
+  ancillary: {
+    eyebrow: "Real estate & advertising",
+    heading: "More ways to work with the people who own and run buildings",
+    body: "Realtors refer trusted trades to their clients, brands reach property managers and contractors on the board, and companies get a Spotlight article on a finished job.",
+    realEstate: "For realtors",
+    advertise: "Advertise",
+    spotlight: "Get a Spotlight",
+  },
 };
 
 const fr: typeof en = {
@@ -281,6 +303,28 @@ const fr: typeof en = {
     note: "Créé à partir d'appels d'offres ouverts en ce moment sur le tableau.",
     canada: "Canada",
   },
+  recent: {
+    eyebrow: "Projets récents",
+    heading: "Des travaux terminés récemment par des entrepreneurs",
+    all: "Toutes les études de cas",
+    by: "par {org}",
+    spotlight: "Coup de projecteur",
+    reviews: { one: "{n} avis", other: "{n} avis" },
+    rating: "Note de {avg} sur 5",
+  },
+  suppliers: {
+    eyebrow: "Fournisseurs",
+    heading: "Fournisseurs de matériaux et d'équipement",
+    all: "Voir les fournisseurs",
+  },
+  ancillary: {
+    eyebrow: "Immobilier et publicité",
+    heading: "D'autres façons de travailler avec ceux qui possèdent et gèrent les immeubles",
+    body: "Les courtiers immobiliers recommandent des entrepreneurs de confiance à leurs clients, les marques joignent gestionnaires immobiliers et entrepreneurs sur le tableau, et les entreprises obtiennent un article Coup de projecteur sur un chantier terminé.",
+    realEstate: "Pour les courtiers",
+    advertise: "Annoncer",
+    spotlight: "Obtenir un Coup de projecteur",
+  },
 };
 
 const es: typeof en = {
@@ -422,6 +466,28 @@ const es: typeof en = {
     open: "Ver mis oportunidades",
     note: "Creado con licitaciones abiertas en el tablero ahora mismo.",
     canada: "Canadá",
+  },
+  recent: {
+    eyebrow: "Proyectos recientes",
+    heading: "Trabajos terminados recientemente por contratistas",
+    all: "Todos los casos de estudio",
+    by: "por {org}",
+    spotlight: "Spotlight",
+    reviews: { one: "{n} reseña", other: "{n} reseñas" },
+    rating: "Calificación de {avg} sobre 5",
+  },
+  suppliers: {
+    eyebrow: "Proveedores",
+    heading: "Proveedores de materiales y equipos",
+    all: "Ver proveedores",
+  },
+  ancillary: {
+    eyebrow: "Bienes raíces y publicidad",
+    heading: "Más formas de trabajar con quienes poseen y administran edificios",
+    body: "Los agentes inmobiliarios recomiendan contratistas de confianza a sus clientes, las marcas llegan a administradores de propiedades y contratistas en el tablero, y las empresas obtienen un artículo Spotlight sobre un trabajo terminado.",
+    realEstate: "Para agentes inmobiliarios",
+    advertise: "Anunciarse",
+    spotlight: "Obtener un Spotlight",
   },
 };
 
