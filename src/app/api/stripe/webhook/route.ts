@@ -3,7 +3,8 @@ import type Stripe from "stripe";
 import { getStripe, syncSubscriptionFromStripe } from "@/lib/stripe/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
-import { sendSubscriptionActivatedEmail, sendAdminNewSale } from "@/lib/email/send";
+import { sendSubscriptionActivatedEmail, sendAdminNewSale, sendSpotlightPaid } from "@/lib/email/send";
+import { SPOTLIGHT_PRODUCT } from "@/lib/spotlight/config";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { verifyStripeEvent } from "@/lib/stripe/verify-event";
 
@@ -49,6 +50,21 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const cs = event.data.object as Stripe.Checkout.Session;
+        // One-time Project Spotlight purchase: tell the owner, and tell the
+        // buyer where to send their article.
+        if (cs.mode === "payment" && cs.metadata?.product === SPOTLIGHT_PRODUCT) {
+          const cents = cs.amount_total;
+          const currency = (cs.currency || "cad").toUpperCase();
+          await sendAdminNewSale({
+            company: cs.custom_fields?.find((f) => f.key === "company")?.text?.value ?? cs.customer_details?.name ?? null,
+            email: cs.customer_details?.email ?? "(no email on file)",
+            plan: "Project Spotlight",
+            interval: "one-time",
+            amountFormatted: typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—",
+          });
+          if (cs.customer_details?.email) await sendSpotlightPaid(cs.customer_details.email, cs.id);
+          break;
+        }
         if (cs.subscription) {
           const sub = await stripe.subscriptions.retrieve(
             typeof cs.subscription === "string" ? cs.subscription : cs.subscription.id,
