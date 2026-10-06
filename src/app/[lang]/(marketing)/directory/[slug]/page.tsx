@@ -49,7 +49,12 @@ export async function generateMetadata({
   const v = await getVendor(slug);
   if (!v) return { title: t.notFound };
   const place = [v.city, v.province].filter((x): x is string => Boolean(x)).map((x) => regionName(x, l));
-  const title = `${v.name} — ${place.join(", ")}`;
+  // "<Company> — <Trade> in <City>, <Prov>": the trade + city is what PMs search.
+  const mainTrade = v.categories[0] ? tradeName(v.categories[0], l) : null;
+  const where = place.join(", ");
+  const title = [v.name, [mainTrade, where].filter(Boolean).join(where && mainTrade ? ` ${t.titleIn} ` : "")]
+    .filter(Boolean)
+    .join(" — ");
   const description =
     v.shortDescription ?? fmt(t.fallbackDescription, { name: v.name, site: SITE.name });
   const path = `/directory/${v.slug}`;

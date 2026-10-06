@@ -1,9 +1,9 @@
 /** Strings for this area. `fr` is typed against `en`, so every key must exist in both. */
 const en = {
   meta: {
-    title: "Vendor Directory — Commercial Property Trades",
+    title: "Commercial Contractor Directory — Find Property Trades Free",
     description:
-      "Browse qualified trade and service companies for commercial property work. Filter by category, region, and property type.",
+      "Free directory of commercial property contractors in Canada and the U.S.: HVAC, roofing, snow removal, cleaning, electrical and more. Compare companies by trade, city and insurance, then post an RFP free.",
     listName: "Commercial property vendor directory",
   },
   hero: {
@@ -76,7 +76,8 @@ const en = {
   },
   profile: {
     notFound: "Vendor not found",
-    fallbackDescription: "{name} on the {site} commercial property vendor directory.",
+    titleIn: "in",
+    fallbackDescription: "{name} on {site}: services, service area, insurance and past work. Property managers can request a quote or invite them to bid free.",
     home: "Home",
     directory: "Directory",
     breadcrumb: "Breadcrumb",
@@ -149,9 +150,9 @@ const en = {
 
 const fr: typeof en = {
   meta: {
-    title: "Répertoire des entrepreneurs — Immobilier commercial",
+    title: "Répertoire gratuit des entrepreneurs en immobilier commercial",
     description:
-      "Parcourez des entreprises de métiers et de services qualifiées pour vos travaux en immobilier commercial. Filtrez par corps de métier, région et type d'immeuble.",
+      "Répertoire gratuit d'entrepreneurs en immobilier commercial au Canada et aux États-Unis : CVC, toiture, déneigement, entretien ménager, électricité et plus. Comparez par métier, ville et assurance, puis publiez un appel d'offres gratuitement.",
     listName: "Répertoire d'entrepreneurs en immobilier commercial",
   },
   hero: {
@@ -224,6 +225,7 @@ const fr: typeof en = {
   },
   profile: {
     notFound: "Entreprise introuvable",
+    titleIn: "à",
     fallbackDescription: "{name} dans le répertoire d'entrepreneurs en immobilier commercial de {site}.",
     home: "Accueil",
     directory: "Répertoire",
@@ -299,9 +301,9 @@ const fr: typeof en = {
 
 const es: typeof en = {
   meta: {
-    title: "Directorio de proveedores — Contratistas para propiedades comerciales",
+    title: "Directorio gratuito de contratistas para propiedades comerciales",
     description:
-      "Explore empresas de oficios y servicios calificadas para trabajos en propiedades comerciales. Filtre por categoría, región y tipo de propiedad.",
+      "Directorio gratuito de contratistas para propiedades comerciales en Canadá y EE. UU.: HVAC, techado, remoción de nieve, limpieza, electricidad y más. Compare por oficio, ciudad y seguro, y publique una solicitud de propuestas gratis.",
     listName: "Directorio de proveedores para propiedades comerciales",
   },
   hero: {
@@ -374,6 +376,7 @@ const es: typeof en = {
   },
   profile: {
     notFound: "Proveedor no encontrado",
+    titleIn: "en",
     fallbackDescription: "{name} en el directorio de proveedores para propiedades comerciales de {site}.",
     home: "Inicio",
     directory: "Directorio",

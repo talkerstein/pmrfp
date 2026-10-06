@@ -43,9 +43,9 @@ export const COMPETITORS: Competitor[] = [
     // "merx", "merx canada", "merx pricing" and "merx rfp" but ~0.3% CTR. Those
     // searchers already pay for tender leads — lead with price and the
     // alternative, the two things they came to check.
-    seoTitle: "MERX Pricing (2026) & a Cheaper Alternative for Building Trades",
+    seoTitle: "MERX Pricing 2026: Plans $600–$2,004/yr vs a $249 Alternative",
     seoDescription:
-      "MERX Premium costs $50 to $167 a month, billed annually ($600 to $2,004 a year). What each plan covers, and a $249/yr option if you only bid on building and property work.",
+      "MERX Premium costs $600 to $2,004 a year. Compare every plan side by side, browse open building tenders free, and see the $249/yr flat option for property and building trades.",
     // Read off merx.com/public/pricing on 2026-09-24 (Canadian Tenders tab,
     // annual billing). Re-check before changing; never estimate.
     priceTable: [

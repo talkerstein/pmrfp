@@ -327,8 +327,8 @@ const en = {
   vs: {
     notFound: "Comparison not found",
     meta: {
-      title: "{name} vs {site}: Pricing & Which Fits Canadian Trades",
-      description: "Compare {name} and {site} on price, focus, and what each is actually built for. {site} is ${annual} CAD/yr flat.",
+      title: "{name} Alternative & Pricing (2026): {name} vs {site}",
+      description: "{name} vs {site}, side by side: price, coverage and who each is built for. Browse open commercial property tenders free; {site} Trade Pro is ${annual} CAD/yr flat.",
     },
     crumb: "vs {name}",
     trail: "{site} vs {name}",
@@ -694,9 +694,9 @@ const fr: typeof en = {
   vs: {
     notFound: "Comparaison introuvable",
     meta: {
-      title: "{name} vs {site} : tarifs et lequel convient aux entrepreneurs canadiens",
+      title: "Alternative à {name} et tarifs (2026) : {name} vs {site}",
       description:
-        "Comparez {name} et {site} : prix, créneau et ce pour quoi chacun est réellement conçu. {site} coûte {annual} $ CAD/an, prix fixe.",
+        "{name} vs {site} : prix, couverture et à qui chacun s'adresse. Consultez gratuitement les appels d'offres ouverts; Trade Pro de {site} coûte {annual} $ CAD/an, prix fixe.",
     },
     crumb: "vs {name}",
     trail: "{site} vs {name}",
@@ -1065,9 +1065,9 @@ const es: typeof en = {
   vs: {
     notFound: "Comparación no encontrada",
     meta: {
-      title: "{name} vs {site}: precios y cuál conviene a los contratistas canadienses",
+      title: "Alternativa a {name} y precios (2026): {name} vs {site}",
       description:
-        "Compare {name} y {site} en precio, enfoque y para qué está hecho realmente cada uno. {site} cuesta ${annual} CAD al año, tarifa fija.",
+        "{name} vs {site}: precio, cobertura y para quién es cada uno. Vea gratis las licitaciones abiertas; Trade Pro de {site} cuesta ${annual} CAD al año, tarifa fija.",
     },
     crumb: "vs {name}",
     trail: "{site} vs {name}",

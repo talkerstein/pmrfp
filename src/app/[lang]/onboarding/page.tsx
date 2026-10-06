@@ -21,7 +21,7 @@ import { alternatesFor } from "@/i18n/metadata";
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
   const l = hasLocale(lang) ? lang : "en";
-  return { title: getDictionary(l).auth.meta.onboarding, alternates: alternatesFor(l, "/onboarding") };
+  return { title: getDictionary(l).auth.meta.onboarding, alternates: alternatesFor(l, "/onboarding"), robots: { index: false, follow: true } };
 }
 
 export default async function OnboardingPage({

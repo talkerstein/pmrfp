@@ -6,11 +6,15 @@ type SourceCopy = { issuer: string; portal: string; bidLabel: string; attributio
 const en = {
   // ---------- /rfps (the board) ----------
   meta: {
-    title: "Commercial Property RFPs & Tenders in Canada and the US",
+    title: "Free Commercial Property RFPs & Tenders — Canada and the US",
+    titleCount: {
+      one: "{n} Open Commercial Property RFP & Tender — Free, Updated Daily",
+      other: "{n} Open Commercial Property RFPs & Tenders — Free, Updated Daily",
+    },
     lead: { one: "{n} open", other: "{n} open" },
     leadNone: "Open",
     description:
-      "{lead} commercial property RFPs and public tenders across Canada and the U.S. — snow removal, HVAC, roofing, cleaning, electrical and more. Updated daily, with closing dates and past awards.",
+      "{lead} commercial property RFPs and public tenders across Canada and the U.S., free to browse — snow removal, HVAC, roofing, cleaning, electrical and more. Updated every morning, with closing dates and past awards.",
   },
   hero: {
     eyebrow: "Tender board",
@@ -65,7 +69,15 @@ const en = {
     meta: {
       notFound: "Opportunity not found",
       title: "{title} | RFP Opportunity",
+      titlePlace: "{title} — {place}",
       description: "Commercial property RFP opportunity on PMRFP.",
+      descTender: "{who} tender{where}.",
+      descBuyer: "{buyer}",
+      descPm: "Property manager",
+      descWhere: " in {place}",
+      descCloses: " Closes {date}.",
+      descClosed: " Closed {date}.",
+      descTail: " Free to view on PMRFP with trade, scope summary and deadline.",
     },
     breadcrumb: { aria: "Breadcrumb", board: "Tender board", listing: "Listing" },
     demo: {
@@ -233,7 +245,11 @@ const TORONTO_FR: SourceCopy = {
 
 const fr: typeof en = {
   meta: {
-    title: "Appels d'offres en immobilier commercial au Canada et aux États-Unis",
+    title: "Appels d'offres en immobilier commercial au Canada et aux États-Unis (gratuit)",
+    titleCount: {
+      one: "{n} appel d'offres ouvert en immobilier commercial — gratuit, mis à jour chaque jour",
+      other: "{n} appels d'offres ouverts en immobilier commercial — gratuit, mis à jour chaque jour",
+    },
     lead: { one: "{n} appel d'offres ouvert", other: "{n} appels d'offres ouverts" },
     leadNone: "Appels d'offres ouverts",
     description:
@@ -293,7 +309,15 @@ const fr: typeof en = {
     meta: {
       notFound: "Occasion introuvable",
       title: "{title} | Appel d'offres",
+      titlePlace: "{title} — {place}",
       description: "Appel d'offres en immobilier commercial sur PMRFP.",
+      descTender: "Appel d'offres de {who}{where}.",
+      descBuyer: "{buyer}",
+      descPm: "gestionnaire immobilier",
+      descWhere: " à {place}",
+      descCloses: " Clôture le {date}.",
+      descClosed: " Clos le {date}.",
+      descTail: " Consultation gratuite sur PMRFP : métier, résumé et date limite.",
     },
     breadcrumb: { aria: "Fil d'Ariane", board: "Tableau des appels d'offres", listing: "Annonce" },
     demo: {
@@ -504,7 +528,11 @@ const TORONTO_ES: SourceCopy = {
 
 const es: typeof en = {
   meta: {
-    title: "Solicitudes de propuestas (RFP) y licitaciones de propiedades comerciales en Canadá y EE. UU.",
+    title: "Licitaciones y RFP de propiedades comerciales en Canadá y EE. UU. (gratis)",
+    titleCount: {
+      one: "{n} licitación abierta de propiedades comerciales — gratis, actualizada a diario",
+      other: "{n} licitaciones abiertas de propiedades comerciales — gratis, actualizadas a diario",
+    },
     lead: {
       one: "{n} solicitud de propuestas o licitación pública abierta",
       other: "{n} solicitudes de propuestas y licitaciones públicas abiertas",
@@ -565,7 +593,15 @@ const es: typeof en = {
     meta: {
       notFound: "Oportunidad no encontrada",
       title: "{title} | Solicitud de propuestas",
+      titlePlace: "{title} — {place}",
       description: "Oportunidad de solicitud de propuestas para propiedades comerciales en PMRFP.",
+      descTender: "Licitación de {who}{where}.",
+      descBuyer: "{buyer}",
+      descPm: "administrador de propiedades",
+      descWhere: " en {place}",
+      descCloses: " Cierra el {date}.",
+      descClosed: " Cerró el {date}.",
+      descTail: " Gratis en PMRFP: oficio, resumen y fecha límite.",
     },
     breadcrumb: { aria: "Ruta de navegación", board: "Tablero de licitaciones", listing: "Anuncio" },
     demo: {

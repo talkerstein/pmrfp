@@ -7,7 +7,7 @@ import { hasLocale } from "@/i18n/config";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  return { title: getDictionary(hasLocale(lang) ? lang : "en").misc.suspended.metaTitle };
+  return { title: getDictionary(hasLocale(lang) ? lang : "en").misc.suspended.metaTitle, robots: { index: false, follow: false } };
 }
 
 export default async function SuspendedPage({ params }: { params: Promise<object> }) {
