@@ -5,12 +5,12 @@
  */
 
 /** How long "Not now" hides the install card. */
-export const INSTALL_DISMISS_DAYS = 30;
+export const INSTALL_DISMISS_DAYS = 14;
 export const INSTALL_DISMISS_KEY = "pmrfp:install-dismissed-at";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** True while a stored dismissal (epoch ms as a string) is under 30 days old. */
+/** True while a stored dismissal (epoch ms as a string) is under INSTALL_DISMISS_DAYS old. */
 export function dismissedRecently(stored: string | null, now: number): boolean {
   if (!stored) return false;
   const at = Number(stored);

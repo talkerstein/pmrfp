@@ -97,7 +97,7 @@ export async function promptInstall(): Promise<void> {
   }
 }
 
-/** "Not now": hide the card everywhere for 30 days. */
+/** "Not now": hide the card everywhere for 14 days. */
 export function dismissInstall(): void {
   dismissed = true;
   try {

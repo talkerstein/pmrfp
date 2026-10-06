@@ -275,6 +275,70 @@ export async function sendDailyMatches(
 }
 
 /**
+ * Saved-tender alerts (cron/saved-rfp-alerts): one email per member listing
+ * saved tenders that close within 3 days and saved tenders whose status
+ * changed (closed / awarded / expired / archived).
+ */
+export async function sendSavedRfpAlerts(
+  to: string,
+  params: {
+    subject: string;
+    items: { kind: "closing" | "status"; title: string; slug: string; status: string; deadline: string | null }[];
+    unsubscribeUrl: string | null;
+  },
+): Promise<void> {
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const fmt = (d: string) =>
+    new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const STATUS: Record<string, string> = {
+    closed: "Now closed",
+    awarded: "Awarded",
+    expired: "Taken off the board (expired)",
+    archived: "Archived",
+  };
+  const row = (i: (typeof params.items)[number]) => {
+    const meta =
+      i.kind === "closing"
+        ? `Closes ${i.deadline ? fmt(i.deadline) : "soon"}`
+        : STATUS[i.status] ?? `Status: ${i.status}`;
+    return (
+      `<li style="margin:0 0 14px;line-height:22px"><a href="${BASE}/rfps/${i.slug}" style="color:#282B59;font-weight:600;font-size:15px">${esc(i.title)}</a>` +
+      `<br><span style="color:#0C7A5A;font-size:12px;text-transform:uppercase;letter-spacing:.04em">${esc(meta)}</span></li>`
+    );
+  };
+  const closing = params.items.filter((i) => i.kind === "closing");
+  const status = params.items.filter((i) => i.kind === "status");
+  const section = (heading: string, list: typeof params.items) =>
+    list.length
+      ? `<p style="margin:16px 0 6px;font-weight:600;color:#1B1E45">${heading}</p><ul style="padding-left:18px;margin:0">${list.map(row).join("")}</ul>`
+      : "";
+  const footer = [
+    `You're receiving this because you saved these tenders on ${SITE.name}`,
+    `<a href="${BASE}/dashboard/saved-rfps" style="color:#64748b">Manage saved tenders</a>`,
+    params.unsubscribeUrl ? `<a href="${params.unsubscribeUrl}" style="color:#64748b">Turn off opportunity emails</a>` : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
+  await send(
+    to,
+    params.subject,
+    layout(
+      params.subject,
+      `${section("Closing in the next 3 days", closing)}
+       ${section("Status changed", status)}
+       <p>${btn(`${BASE}/dashboard/saved-rfps`, "Open saved tenders")}</p>`,
+      `${footer}.`,
+    ),
+    params.unsubscribeUrl
+      ? {
+          "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        }
+      : undefined,
+  );
+}
+
+/**
  * RFP deadline passed — ask the posting PM whether it's still live. The
  * one-click "keep it live" link (token-authed, no login) pushes the deadline
  * out 30 days; if there's no action within 7 days, the rfp-expiry cron flips
