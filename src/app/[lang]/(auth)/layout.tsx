@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { Logo } from "@/components/logo";
 import { getT, setLangFrom } from "@/i18n/server";
+
+// Utility pages: keep them out of the index (links still followed).
+export const metadata: Metadata = { robots: { index: false, follow: true } };
 
 export default async function AuthLayout({ children, params }: { children: React.ReactNode } & { params: Promise<object> }) {
   await setLangFrom(params);

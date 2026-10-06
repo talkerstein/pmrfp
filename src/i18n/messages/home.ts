@@ -80,6 +80,13 @@ const en = {
     openNow: { one: "{n} open now", other: "{n} open now" },
     recent: "See recent work",
   },
+  browse: {
+    heading: "Open tenders by trade and city",
+    newest: "Newest open tenders",
+    allTrades: "All trades",
+    allRegions: "All regions",
+    allRfps: "All open RFPs",
+  },
   email: {
     eyebrow: "Trade Pro",
     heading: "Every match lands in your inbox the morning it posts.",
@@ -218,6 +225,13 @@ const fr: typeof en = {
     heading: "Choisissez votre métier. Voyez ce qui est ouvert.",
     openNow: { one: "{n} ouvert maintenant", other: "{n} ouverts maintenant" },
     recent: "Voir les contrats récents",
+  },
+  browse: {
+    heading: "Appels d'offres ouverts par métier et par ville",
+    newest: "Nouveaux appels d'offres ouverts",
+    allTrades: "Tous les métiers",
+    allRegions: "Toutes les régions",
+    allRfps: "Tous les appels d'offres ouverts",
   },
   email: {
     eyebrow: "Trade Pro",
@@ -360,6 +374,13 @@ const es: typeof en = {
     heading: "Elija su oficio. Vea lo que está abierto.",
     openNow: { one: "{n} abierto ahora", other: "{n} abiertos ahora" },
     recent: "Ver trabajos recientes",
+  },
+  browse: {
+    heading: "Licitaciones abiertas por oficio y ciudad",
+    newest: "Licitaciones abiertas más recientes",
+    allTrades: "Todos los oficios",
+    allRegions: "Todas las regiones",
+    allRfps: "Todas las licitaciones abiertas",
   },
   email: {
     eyebrow: "Trade Pro",

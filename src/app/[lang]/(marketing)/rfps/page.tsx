@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const t = getDictionary(lang).board.meta;
   const open = (await getOpenRfpCounts().catch(() => ({ totalOpen: 0 }))).totalOpen;
   return {
-    title: t.title,
+    // Live count + "free" in the title: searchers compare boards on volume and price.
+    title: open > 0 ? plural(open, t.titleCount, { n: lang === "en" ? String(open) : formatNumber(open, lang) }) : t.title,
     description: fmt(t.description, { lead: open > 0 ? plural(open, t.lead) : t.leadNone }),
     alternates: alternatesFor(lang, "/rfps"),
   };
