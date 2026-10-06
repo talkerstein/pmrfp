@@ -13,6 +13,11 @@ import { VERTICALS } from "@/lib/seo/verticals";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { RFP_TEMPLATES } from "@/lib/seo/rfp-templates";
 import { listOpenJobs } from "@/lib/jobs/data";
+import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
+import { PROVINCES } from "@/lib/data/province-hub";
+
+/** Toronto supplier pages in the sitemap: indexable ones only, biggest first. */
+const TORONTO_SITEMAP_LIMIT = 2000;
 import { localizePath } from "@/i18n/config";
 import { translationsOf } from "@/i18n/translated";
 
@@ -46,6 +51,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/about", priority: 0.5, freq: "monthly" },
     { path: "/trades", priority: 0.8, freq: "weekly" },
     { path: "/regions", priority: 0.8, freq: "weekly" },
+    ...Object.values(PROVINCES).map((p) => ({ path: `/${p.slug}`, priority: 0.8, freq: "daily" as const })),
+    { path: "/toronto-contracts", priority: 0.7, freq: "daily" },
     { path: "/vs", priority: 0.7, freq: "monthly" },
     { path: "/for", priority: 0.7, freq: "monthly" },
     { path: "/cost-guides", priority: 0.7, freq: "monthly" },
@@ -60,7 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/disclaimer", priority: 0.3, freq: "yearly" },
   ];
 
-  const [rfps, vendors, resources, categories, regions, tradeCityCombos, caseStudies] = await Promise.all([
+  const [rfps, vendors, resources, categories, regions, tradeCityCombos, caseStudies, toronto] = await Promise.all([
     listRfps().catch(() => []),
     listVendors().catch(() => []),
     listResources().catch(() => []),
@@ -68,6 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getRegions().catch(() => []),
     listQualifyingCombos().catch(() => []),
     listCaseStudies().catch(() => []),
+    getTorontoIndexSafe(),
   ]);
 
   const entries: MetadataRoute.Sitemap = staticPaths.map((p) => ({
@@ -80,6 +88,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   entries.push({ url: `${base}/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   for (const w of winnersFromRfps(rfps)) entries.push({ url: `${base}/contract-winners/${w.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
+  // City of Toronto suppliers: thin ones (one small award) are noindexed, so they stay out.
+  for (const s of toronto.suppliers.filter((x) => x.indexable).slice(0, TORONTO_SITEMAP_LIMIT))
+    entries.push({ url: `${base}/toronto-contracts/${s.slug}`, lastModified: s.latest ? new Date(`${s.latest}T12:00:00Z`) : now, changeFrequency: "monthly", priority: 0.5 });
   // Only open RFPs are indexable (see isIndexableRfp); everything else stays out.
   for (const r of rfps.filter(isIndexableRfp)) entries.push({ url: `${base}/rfps/${r.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const v of vendors) entries.push({ url: `${base}/directory/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });

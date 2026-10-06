@@ -60,6 +60,12 @@ export default async function ContractWinnersPage({ params }: { params: Promise<
           >
             {t.reportLink} <ArrowRight className="size-3.5" />
           </Link>
+          <Link
+            href="/toronto-contracts"
+            className="ml-6 mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-teal-300 hover:text-teal-200"
+          >
+            City of Toronto awards <ArrowRight className="size-3.5" />
+          </Link>
           <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-6">
             {[
               [String(winners.length), t.stats.repeat],
