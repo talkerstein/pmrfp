@@ -23,6 +23,8 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, type Locale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatNumber, plural } from "@/i18n/format";
+import { regionName, tradeName } from "@/i18n/terms";
+import { EmailCapture } from "@/components/public/email-capture";
 
 const PAGE_SIZE = 30;
 const AWARDED_PREVIEW = 9;
@@ -121,6 +123,9 @@ export default async function RfpsPage({
     { key: "gc", label: t.tabs.gc, count: gcOpen.length, href: viewHref("gc"), active: showGc, show: gcOpen.length > 0 || showGc },
     { key: "awarded", label: t.tabs.awarded, count: past.length + otherClosed.length, href: viewHref("awarded"), active: showAwarded, show: true },
   ];
+  // Email prompt names the filtered trade / place when there is one.
+  const captureCategory = sp.category ? categories.find((c) => c.slug === sp.category) : undefined;
+  const captureRegion = sp.region ? regions.find((r) => r.slug === sp.region) : undefined;
   const hasFilters = Boolean(sp.category || sp.region || sp.propertyType || sp.q);
 
   return (
@@ -289,6 +294,13 @@ export default async function RfpsPage({
         )}
 
         <ReferBanner variant="subtle" className="mt-14" />
+        <EmailCapture
+          trade={captureCategory ? tradeName(captureCategory.name, lang) : null}
+          region={captureRegion ? regionName(captureRegion.name, lang) : null}
+          categorySlug={captureCategory?.slug}
+          regionSlug={captureRegion?.slug}
+          signedInHint={access}
+        />
       </Container>
     </>
   );

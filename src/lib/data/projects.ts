@@ -2,7 +2,45 @@ import { cache } from "react";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isOwnPhotoUrl, pickHero, sanitizePhotos, type ProjectPhoto } from "@/lib/projects/photos";
-import type { PublicReview } from "@/lib/projects/reviews";
+import { reviewStats, type PublicReview } from "@/lib/projects/reviews";
+
+/**
+ * Review count + average per case-study slug, for list cards. Only slugs with
+ * at least one published review appear. Empty map before the migration.
+ */
+export async function ratingsBySlug(slugs: string[]): Promise<Map<string, { count: number; average: number }>> {
+  const out = new Map<string, { count: number; average: number }>();
+  if (!isSupabaseConfigured() || slugs.length === 0) return out;
+  try {
+    const supabase = createReadClient();
+    const { data: studies, error } = await supabase
+      .from("case_studies")
+      .select("id,slug")
+      .in("slug", slugs)
+      .eq("status", "published");
+    if (error || !studies?.length) return out;
+    const slugById = new Map((studies as { id: string; slug: string }[]).map((r) => [r.id, r.slug]));
+    const { data: reviews, error: rErr } = await supabase
+      .from("vendor_reviews_public")
+      .select("case_study_id,rating")
+      .in("case_study_id", [...slugById.keys()]);
+    if (rErr || !reviews) return out;
+    const bySlug = new Map<string, { rating: number }[]>();
+    for (const r of reviews as { case_study_id: string | null; rating: number }[]) {
+      const slug = r.case_study_id ? slugById.get(r.case_study_id) : undefined;
+      if (!slug) continue;
+      if (!bySlug.has(slug)) bySlug.set(slug, []);
+      bySlug.get(slug)!.push({ rating: r.rating });
+    }
+    for (const [slug, list] of bySlug) {
+      const stats = reviewStats(list);
+      if (stats.count > 0) out.set(slug, stats);
+    }
+  } catch {
+    // no ratings
+  }
+  return out;
+}
 
 /**
  * Public reads for Projects (photo case studies) and project reviews.

@@ -80,11 +80,11 @@ describe("install card helpers", () => {
   const DAY = 24 * 60 * 60 * 1000;
   const now = Date.UTC(2026, 8, 25);
 
-  it("hides the card for 30 days after 'Not now'", () => {
-    expect(INSTALL_DISMISS_DAYS).toBe(30);
+  it("hides the card for 14 days after 'Not now'", () => {
+    expect(INSTALL_DISMISS_DAYS).toBe(14);
     expect(dismissedRecently(String(now - DAY), now)).toBe(true);
-    expect(dismissedRecently(String(now - 29 * DAY), now)).toBe(true);
-    expect(dismissedRecently(String(now - 30 * DAY), now)).toBe(false);
+    expect(dismissedRecently(String(now - 13 * DAY), now)).toBe(true);
+    expect(dismissedRecently(String(now - 14 * DAY), now)).toBe(false);
   });
 
   it("ignores missing, junk and future timestamps", () => {

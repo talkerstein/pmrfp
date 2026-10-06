@@ -22,6 +22,10 @@
       "schedule": "45 13 * * *"
     },
     {
+      "path": "/api/cron/saved-rfp-alerts",
+      "schedule": "45 13 * * *"
+    },
+    {
       "path": "/api/cron/rfp-expiry",
       "schedule": "0 14 * * *"
     },
