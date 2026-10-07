@@ -1,0 +1,69 @@
+/* Claude Design homepage (handoff 2026-10-07), scoped to .pmrfp-v3 so none of
+   it leaks into the global Tailwind theme. Keyframes are prefixed v3-. */
+.pmrfp-v3, .pmrfp-v3 *, .pmrfp-v3 *::before, .pmrfp-v3 *::after { box-sizing: content-box; }
+.pmrfp-v3 a { color: #282B59; }
+.pmrfp-v3 a:hover { color: #14163A; }
+.pmrfp-v3 button:focus-visible, .pmrfp-v3 a:focus-visible, .pmrfp-v3 select:focus-visible, .pmrfp-v3 input:focus-visible { outline: 3px solid #5FD3AC; outline-offset: 2px; }
+
+/* One tree per layout: desktop at 1024px and up, the mobile design below. */
+.pmrfp-v3 .v3-desk { display: block; }
+.pmrfp-v3 .v3-mob { display: none; }
+@media (max-width: 1023px) {
+  .pmrfp-v3 .v3-desk { display: none; }
+  .pmrfp-v3 .v3-mob { display: block; }
+}
+
+.pmrfp-v3 .tile { transition: flex-grow .7s cubic-bezier(.2,.8,.2,1); }
+.pmrfp-v3 .tile img { transition: opacity .5s ease, transform 6s ease; }
+.pmrfp-v3 .vt { transition: height .6s cubic-bezier(.2,.8,.2,1); }
+.pmrfp-v3 .vt img { transition: opacity .5s ease; }
+.pmrfp-v3 .fadeup { animation: v3-fadeup .6s .15s both; }
+.pmrfp-v3 .swapa { display: inline-block; animation: v3-swapa .55s cubic-bezier(.2,.8,.2,1) both; }
+.pmrfp-v3 .swapb { display: inline-block; animation: v3-swapb .55s cubic-bezier(.2,.8,.2,1) both; }
+.pmrfp-v3 .marquee { animation: v3-marquee 60s linear infinite; }
+.pmrfp-v3 .v3-mob .marquee { animation-duration: 50s; }
+.pmrfp-v3 .marquee:hover { animation-play-state: paused; }
+.pmrfp-v3 .lift { transition: transform .2s ease, border-color .2s ease; }
+.pmrfp-v3 .lift:hover { transform: translateY(-4px); border-color: #282B59 !important; }
+.pmrfp-v3 .zoom img { transition: transform .8s ease; }
+.pmrfp-v3 .zoom:hover img { transform: scale(1.07); }
+.pmrfp-v3 .blk { transition: transform .2s ease, filter .2s ease; }
+.pmrfp-v3 .blk:hover { transform: translateY(-4px); filter: brightness(1.08); }
+.pmrfp-v3 .drop { animation: v3-drop 7s infinite both; }
+.pmrfp-v3 .pcard { transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+.pmrfp-v3 .float { animation: v3-float 5s ease-in-out infinite alternate; }
+.pmrfp-v3 .v3-mob .float { animation-name: v3-float-m; }
+.pmrfp-v3 .wave { animation: v3-wave 2.4s ease-in-out infinite; transform-origin: bottom; }
+.pmrfp-v3 .roll { animation: v3-roll 10s cubic-bezier(.7,0,.3,1) infinite; }
+.pmrfp-v3 .v3-mob .roll { animation-name: v3-roll-m; }
+.pmrfp-v3 .ping { animation: v3-ping 1.8s ease-out infinite; }
+.pmrfp-v3 .spin { animation: v3-spin 18s linear infinite; }
+.pmrfp-v3 .hs { scrollbar-width: none; }
+.pmrfp-v3 .hs::-webkit-scrollbar { display: none; }
+.pmrfp-v3 .pop { animation: v3-pop .45s cubic-bezier(.2,.9,.3,1.2) both; }
+.pmrfp-v3 .sheet { animation: v3-sheet .45s cubic-bezier(.2,.8,.2,1) both; }
+.pmrfp-v3 .toast { animation: v3-toast .5s cubic-bezier(.2,.9,.3,1.2) both; }
+
+@keyframes v3-drop { 0% { opacity: 0; transform: translateY(-22px) scale(.97); } 7% { opacity: 1; transform: none; } 92% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(8px); } }
+@keyframes v3-float { from { transform: translateY(-7px) rotate(-1.5deg); } to { transform: translateY(7px) rotate(1.5deg); } }
+@keyframes v3-float-m { from { transform: translateY(-6px) rotate(-1.5deg); } to { transform: translateY(6px) rotate(1.5deg); } }
+@keyframes v3-wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.55); } }
+@keyframes v3-roll { 0%, 14% { transform: translateY(0); } 20%, 34% { transform: translateY(-52px); } 40%, 54% { transform: translateY(-104px); } 60%, 74% { transform: translateY(-156px); } 80%, 94% { transform: translateY(-208px); } 100% { transform: translateY(-260px); } }
+@keyframes v3-roll-m { 0%, 14% { transform: translateY(0); } 20%, 34% { transform: translateY(-46px); } 40%, 54% { transform: translateY(-92px); } 60%, 74% { transform: translateY(-138px); } 80%, 94% { transform: translateY(-184px); } 100% { transform: translateY(-230px); } }
+@keyframes v3-ping { from { transform: scale(1); opacity: .7; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes v3-spin { to { transform: rotate(360deg); } }
+@keyframes v3-pop { from { opacity: 0; transform: translateY(24px) scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes v3-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes v3-toast { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes v3-fadeup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes v3-swapa { from { opacity: 0; transform: translateY(.5em); } to { opacity: 1; transform: none; } }
+@keyframes v3-swapb { from { opacity: 0; transform: translateY(.5em); } to { opacity: 1; transform: none; } }
+@keyframes v3-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pmrfp-v3 .tile, .pmrfp-v3 .tile img, .pmrfp-v3 .vt, .pmrfp-v3 .vt img, .pmrfp-v3 .pcard,
+  .pmrfp-v3 .lift, .pmrfp-v3 .zoom img, .pmrfp-v3 .blk { transition: none; }
+  .pmrfp-v3 .fadeup, .pmrfp-v3 .swapa, .pmrfp-v3 .swapb, .pmrfp-v3 .marquee, .pmrfp-v3 .drop,
+  .pmrfp-v3 .float, .pmrfp-v3 .wave, .pmrfp-v3 .roll, .pmrfp-v3 .ping, .pmrfp-v3 .spin,
+  .pmrfp-v3 .pop, .pmrfp-v3 .sheet, .pmrfp-v3 .toast { animation: none; }
+}
