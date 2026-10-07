@@ -5,6 +5,7 @@ import { Container, Eyebrow } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { FoundingBuyButton } from "@/components/founding/buy-button";
 import { FoundingTermsList } from "@/components/founding/terms-list";
+import { FoundingPrice, FoundingRegularPrice } from "@/components/founding/market-text";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
 import { FOUNDING, FOUNDING_PATH, spotsLeft } from "@/lib/founding/config";
 import { cachedLifetimeCount } from "@/lib/founding/server";
@@ -35,7 +36,6 @@ export default async function FoundingPage({ params }: { params: Promise<object>
   const vars = {
     usd: FOUNDING.priceUsd,
     cad: FOUNDING.priceCad,
-    regular: `C$${FOUNDING.regularAnnualCad}`,
     cap: FOUNDING.cap,
     days: FOUNDING.refundDays,
     months: FOUNDING.discontinueRefundMonths,
@@ -49,8 +49,8 @@ export default async function FoundingPage({ params }: { params: Promise<object>
     name: "PMRFP Trade Pro: Founding 500 lifetime",
     description: fmt(t.meta.description, vars),
     brand: { "@type": "Brand", name: SITE.name },
+    // One currency only (site default market, Canada); U.S. visitors see USD on the page.
     offers: [
-      { "@type": "Offer", price: FOUNDING.priceUsd, priceCurrency: "USD", availability, url: `${base}${FOUNDING_PATH}`, eligibleRegion: "US", inventoryLevel: left == null ? undefined : { "@type": "QuantitativeValue", value: left } },
       { "@type": "Offer", price: FOUNDING.priceCad, priceCurrency: "CAD", availability, url: `${base}${FOUNDING_PATH}`, eligibleRegion: "CA", inventoryLevel: left == null ? undefined : { "@type": "QuantitativeValue", value: left } },
     ],
   };
@@ -76,7 +76,7 @@ export default async function FoundingPage({ params }: { params: Promise<object>
             {left == null ? fmt(t.counterUnknown, vars) : fmt(t.counter, { ...vars, left })}
           </p>
           <p className="mt-2 text-2xl font-semibold">
-            {fmt(t.priceUs, vars)} <span className="text-base font-normal text-muted-foreground">/</span> {fmt(t.priceCa, vars)}
+            <FoundingPrice />
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{t.plusTax}</p>
           <FoundingBuyButton className="mt-5" />
@@ -98,7 +98,7 @@ export default async function FoundingPage({ params }: { params: Promise<object>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-border p-4">
             <div className="text-sm text-muted-foreground">{t.compareRegular}</div>
-            <div className="mt-1 font-semibold">{fmt(t.compareRegularPrice, vars)}</div>
+            <div className="mt-1 font-semibold"><FoundingRegularPrice /></div>
           </div>
           <div className="rounded-lg border border-teal-400 p-4">
             <div className="text-sm text-muted-foreground">{t.compareFounding}</div>
