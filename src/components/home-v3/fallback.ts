@@ -80,6 +80,7 @@ export const V3_FALLBACK: V3Data = {
     ).map(([name, n, m]) => ({ name, n, value: `$${m}M`, weight: m, href: "/contract-winners", most: n === 30 })),
     most: { name: "Dexter Construction", n: 30 },
   },
+  browse: { combos: [], newest: [] },
   awards: [
     { trade: "HVAC", value: "$498,992", title: "Replacement of electric boilers, IML, 850 Route de la mer, Mont-Joli, QC", buyer: "Gov. of Canada", winner: "Plomberie KRTB", date: "Oct 5", href: "/contract-winners" },
     { trade: "Cleaning", value: "$1,133,684", title: "Janitorial Services for Provincial Buildings in Digby Area", buyer: "Nova Scotia", winner: "Inside-Out Cleaning Services Inc", date: "Sep 10", href: "/contract-winners" },

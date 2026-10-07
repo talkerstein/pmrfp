@@ -9,6 +9,7 @@
 import type { Locale } from "./config";
 import common from "./messages/common";
 import home from "./messages/home";
+import homeV3 from "./messages/homeV3";
 import shared from "./messages/shared";
 import sharedClient from "./messages/sharedClient";
 import board from "./messages/board";
@@ -41,6 +42,7 @@ import foundingClient from "./messages/foundingClient";
 const NAMESPACES = {
   common,
   home,
+  homeV3,
   shared,
   sharedClient,
   board,

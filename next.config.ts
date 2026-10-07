@@ -72,7 +72,13 @@ const retiredListingRedirects: { source: string; destination: string }[] = [
 
 const nextConfig: NextConfig = {
   async redirects() {
-    return [...legacyWordPressRedirects, ...retiredListingRedirects].map((r) => ({ ...r, permanent: true }));
+    return [
+      ...legacyWordPressRedirects,
+      ...retiredListingRedirects,
+      // The homepage design was previewed here before it became the homepage.
+      { source: "/home-preview", destination: "/" },
+      { source: "/:lang(en|fr|es)/home-preview", destination: "/:lang" },
+    ].map((r) => ({ ...r, permanent: true }));
   },
   images: {
     // Allow next/image to optimize Supabase-hosted assets (logos, RFP photos,
