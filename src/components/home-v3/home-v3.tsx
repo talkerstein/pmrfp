@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
-import { V3Footer, V3Top } from "./chrome";
+import { V3Footer, V3Header, foundingLabel } from "./chrome";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
@@ -17,7 +17,8 @@ import type { Messages } from "@/i18n/dictionaries";
 
 /* ------------------------------------------------------------------ data */
 
-export type V3Messages = Messages["homeV3"];
+export type { V3Messages } from "./chrome-shared";
+type V3Messages = Messages["homeV3"];
 export interface V3Closing { mon: string; day: string; tag: string; left: string; title: string; href: string; soon: boolean }
 export interface V3Trade { name: string; n: number; href: string }
 export interface V3Data {
@@ -275,11 +276,8 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
   const ticker = data.ticker.concat(data.ticker);
   const toastItem = data.toast.length ? data.toast[toastIdx % data.toast.length] : null;
   const showToast = toastOn && !toastOff && !modal && toastItem != null;
-  const showFounding = data.foundingLeft !== 0;
-  // No remaining count is shown until fewer than FOUNDING_LOW_SPOTS remain, and then only "fewer than 50".
-  const lowSpots = foundingScarcity(data.foundingLeft) === "low";
-  const spots = lowSpots ? fmt(t.founding.spots, { n: num(FOUNDING_LOW_SPOTS) }) : null;
-  const spotsShort = lowSpots ? fmt(t.founding.spotsShort, { n: num(FOUNDING_LOW_SPOTS) }) : null;
+  const spots = foundingLabel(t, data.foundingLeft);
+  const showFounding = spots != null;
   const w = data.winners;
   const top = w.top;
   const bigwords = [
@@ -380,7 +378,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
     <div className="pmrfp-v3" data-live={dataSources?.live.join(",")} data-fallback={dataSources?.fallback.join(",")}>
       <a href="#main" className="v3-skip">{t.skip}</a>
 
-      <V3Top t={t} lang={lang} foundingLeft={data.foundingLeft} onJoin={openModalLink} />
+      <V3Header t={t} lang={lang} foundingLeft={data.foundingLeft} onJoin={openModalLink} />
 
       <main id="main" tabIndex={-1} style={{ outline: "none" }}>
         <div className="v3-top">
@@ -810,7 +808,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
             {showFounding && (
               <div className="v3-f500">
                 <div><span className="t">{t.plans.founding}</span><span className="b">{known ? fmt(t.plans.foundingBody, { price: foundingMoney() }) : <Sk w="22em" />}</span></div>
-                <div className="r">{spots && <span className="mono"><span className="d">{spots}</span><span className="m">{spotsShort}</span></span>}<a href={L(H.founding)}>{t.plans.foundingCta}</a></div>
+                <div className="r">{spots && <span className="mono"><span className="d">{spots.d}</span><span className="m">{spots.m}</span></span>}<a href={L(H.founding)}>{t.plans.foundingCta}</a></div>
               </div>
             )}
           </div>

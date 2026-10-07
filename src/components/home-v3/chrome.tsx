@@ -1,108 +1,143 @@
 "use client";
 
+/**
+ * The approved v3 design's shared chrome: Founding 500 announcement bar,
+ * header (nav, CA/US market switch, mobile menu), footer, and the
+ * one-currency-per-visitor price helpers. Used by the homepage and every page
+ * built from the Claude Design templates (directory lists, company profile,
+ * sign-up), so the header and footer exist once.
+ */
 import "./home-v3.css";
 import Image from "next/image";
-import { useState, type MouseEvent } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { setMarket, useVisitorMarket } from "@/components/geo/use-visitor-market";
-import { FOUNDING_LOW_SPOTS, FOUNDING_PATH, foundingScarcity } from "@/lib/founding/config";
+import { setMarket, useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
+import { foundingScarcity } from "@/lib/founding/config";
+import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
-import type { Messages } from "@/i18n/dictionaries";
+
+import { V3H, V3_MARK, type V3ChromeMessages } from "./chrome-shared";
+
+/* ------------------------------------------------------------------ money */
 
 /**
- * The v3 design's shared chrome (Founding 500 bar, header, footer), used by the
- * homepage and every page built on the v3 templates. One copy, so the nav, the
- * market switch and the Founding 500 rule can't drift between pages.
+ * One currency per visitor: CAD in Canada, USD in the U.S., and nothing (a
+ * skeleton) until the market is known, so a visitor never sees both.
  */
-type T = Pick<Messages["homeV3"], "founding" | "nav" | "footer">;
-
-const MARK = "/brand/mark-white.svg";
-const NAV = [
-  ["rfps", "/rfps"],
-  ["directory", "/directory"],
-  ["winners", "/contract-winners"],
-  ["jobs", "/jobs"],
-  ["forum", "/forum"],
-  ["pricing", "/pricing"],
-] as const;
-
-/** "/fr/rfps/x" → "/rfps/x". */
-function stripLang(path: string): string {
-  return path.replace(/^\/(fr|es)(?=\/|$)/, "") || "/";
+export function useV3Money(lang: Locale) {
+  const market = useVisitorMarket();
+  const rate = useUsdPerCad();
+  const known = market != null;
+  const us = market === "US";
+  const currency = us ? "USD" : "CAD";
+  const amount = (n: number) => {
+    const s = formatNumber(n, lang);
+    return lang === "fr" ? `${s} $` : `$${s}`;
+  };
+  return {
+    known,
+    us,
+    currency,
+    /** A CAD list price in the visitor's currency, without the code ("$249"). */
+    money: (cad: number) => amount(us ? toUsd(cad, rate) : cad),
+    /** A price already set per market (e.g. Founding 500). */
+    pick: (cad: number, usd: number) => amount(us ? usd : cad),
+  };
 }
 
-export function V3Top({
+/** Fixed-width placeholder while the visitor's market (and so the currency) is unknown. */
+export const V3Skeleton = ({ w }: { w: string }) => <span className="v3-sk" aria-hidden style={{ width: w }} />;
+
+/**
+ * A sentence with prices in the visitor's currency. `template` holds {price},
+ * {price2} and {currency} placeholders; `cad` / `cad2` are CAD list prices.
+ */
+export function V3Price({ lang, template, cad, cad2, w = "6ch" }: { lang: Locale; template: string; cad: number; cad2?: number; w?: string }) {
+  const m = useV3Money(lang);
+  if (!m.known) return <V3Skeleton w={w} />;
+  return <>{fmt(template, { price: m.money(cad), price2: cad2 != null ? m.money(cad2) : "", currency: m.currency })}</>;
+}
+
+/** "$599 <small>CAD / year</small>": the amount, then a smaller suffix with {currency}. */
+export function V3PriceParts({ lang, cad, suffix, w = "3.5ch" }: { lang: Locale; cad: number; suffix?: string; w?: string }) {
+  const m = useV3Money(lang);
+  if (!m.known) return <V3Skeleton w={w} />;
+  return <>{m.money(cad)}{suffix && <> <small>{fmt(suffix, { currency: m.currency })}</small></>}</>;
+}
+
+/* ------------------------------------------------------------------ founding bar */
+
+export function foundingLabel(t: V3ChromeMessages, left: number | null) {
+  const s = foundingScarcity(left);
+  if (s === "soldout") return null;
+  return s === "low" ? { d: t.founding.low, m: t.founding.lowShort } : { d: t.founding.limited, m: t.founding.limitedShort };
+}
+
+/* ------------------------------------------------------------------ header */
+
+export function V3Header({
   t,
   lang,
   foundingLeft,
   onJoin,
+  joinHref = V3H.joinTrade,
 }: {
-  t: T;
+  t: V3ChromeMessages;
   lang: Locale;
-  /** Founding 500 spots left; null when unknown. Only picks quiet / low / sold-out copy, never shown. */
+  /** Founding 500 spots left; null when the count can't be read. */
   foundingLeft: number | null;
-  /** The homepage opens its sign-up dialog instead of following the link. */
-  onJoin?: (e: MouseEvent<HTMLAnchorElement>) => void;
+  /** Homepage: "Join free" opens the early-access dialog instead of navigating. */
+  onJoin?: (e: MouseEvent) => void;
+  joinHref?: string;
 }) {
   const router = useRouter();
-  const path = stripLang(usePathname() ?? "/");
   const market = useVisitorMarket();
   const [menu, setMenu] = useState(false);
   const L = (p: string) => localizePath(p, lang);
-  const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
-
-  const scarcity = foundingScarcity(foundingLeft);
-  const showFounding = scarcity !== "soldout";
-  const spots = scarcity === "low" ? fmt(t.founding.spots, { n: num(FOUNDING_LOW_SPOTS) }) : null;
-
+  const path = (usePathname() ?? "/").replace(/^\/(fr|es)(?=\/|$)/, "") || "/";
+  const cur = (href: string) => (path === href || path.startsWith(`${href}/`) ? ("page" as const) : undefined);
+  const spots = foundingLabel(t, foundingLeft);
   const goMarket = (m: "CA" | "US") => {
     if (m === (market ?? "CA")) return;
     setMarket(m);
     router.refresh();
   };
-
   return (
     <div className="v3-top">
-      {showFounding && (
-        <a href={L(FOUNDING_PATH)} className="v3-found">
+      {spots && (
+        <a href={L(V3H.founding)} className="v3-found">
           <b><span className="d">{t.founding.bar}</span><span className="m">{t.founding.barShort}</span></b>
-          {spots && <span className="badge">{spots}</span>}
+          <span className="badge"><span className="d">{spots.d}</span><span className="m">{spots.m}</span></span>
           <span className="u">{t.founding.claim}</span>
         </a>
       )}
       <header>
         <div className="v3-hdr">
-          <a href={L("/")} aria-label={t.nav.home} className="v3-logo">
-            <Image src={MARK} alt="" width={32} height={32} />
+          <a href={L(V3H.home)} aria-label={t.nav.home} className="v3-logo">
+            <Image src={V3_MARK} alt="" width={32} height={32} />
             <span>pmrfp.com</span>
           </a>
           <nav id="v3-nav" aria-label={t.nav.main} className={`v3-nav${menu ? " open" : ""}`}>
             <div className="v3-nav-links">
-              {NAV.map(([k, href]) => (
-                <a key={k} href={L(href)} aria-current={path === href || path.startsWith(`${href}/`) ? "page" : undefined}>
-                  {t.nav[k]}
-                </a>
-              ))}
+              <a href={L(V3H.rfps)} aria-current={cur(V3H.rfps)}>{t.nav.rfps}</a>
+              <a href={L(V3H.directory)} aria-current={cur(V3H.directory)}>{t.nav.directory}</a>
+              <a href={L(V3H.winners)} aria-current={cur(V3H.winners)}>{t.nav.winners}</a>
+              <a href={L(V3H.jobs)} aria-current={cur(V3H.jobs)}>{t.nav.jobs}</a>
+              <a href={L(V3H.forum)} aria-current={cur(V3H.forum)}>{t.nav.forum}</a>
+              <a href={L(V3H.pricing)} aria-current={cur(V3H.pricing)}>{t.nav.pricing}</a>
             </div>
             <div role="group" aria-label={t.nav.market} className="v3-market">
               {(["CA", "US"] as const).map((m) => (
                 <button key={m} type="button" aria-pressed={(market ?? "CA") === m} onClick={() => goMarket(m)}>{m}</button>
               ))}
             </div>
-            <a href={L("/sign-in")}>{t.nav.signIn}</a>
+            <a href={L(V3H.signIn)}>{t.nav.signIn}</a>
           </nav>
-          <a href={L("/sign-up?role=trade")} onClick={onJoin} className="v3-join">
+          <a href={L(joinHref)} onClick={onJoin} className="v3-join">
             <span className="d">{t.nav.join}</span><span className="m">{t.nav.joinShort}</span>
           </a>
-          <button
-            type="button"
-            className="v3-burger"
-            aria-label={menu ? t.nav.closeMenu : t.nav.openMenu}
-            aria-expanded={menu}
-            aria-controls="v3-nav"
-            onClick={() => setMenu((m) => !m)}
-          >
+          <button type="button" className="v3-burger" aria-label={menu ? t.nav.closeMenu : t.nav.openMenu} aria-expanded={menu} aria-controls="v3-nav" onClick={() => setMenu((m) => !m)}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" aria-hidden><path d={menu ? "M5 5l14 14M19 5L5 19" : "M3 7h18M3 12h18M3 17h18"} /></svg>
           </button>
         </div>
@@ -111,21 +146,27 @@ export function V3Top({
   );
 }
 
-export function V3Footer({ t, lang }: { t: T; lang: Locale }) {
+/** Alias kept for pages written against the older name. */
+export const V3Top = V3Header;
+
+/* ------------------------------------------------------------------ footer */
+
+export function V3Footer({ t, lang }: { t: V3ChromeMessages; lang: Locale }) {
   const L = (p: string) => localizePath(p, lang);
+  const f = t.footer;
   const cols = [
-    [t.footer.find, [[t.footer.rfps, "/rfps"], [t.footer.directory, "/directory"], [t.footer.winners, "/contract-winners"], [t.footer.jobs, "/jobs"], [t.footer.marketplace, "/marketplace"], [t.footer.forum, "/forum"]]],
-    [t.footer.who, [[t.footer.trades, "/for/tradesmen"], [t.footer.pms, "/for-property-managers"], [t.footer.landlords, "/sign-up?role=landlord"], [t.footer.condos, "/for/condo-boards"], [t.footer.realEstate, "/for/real-estate"], [t.footer.suppliers, "/for/suppliers"], [t.footer.builders, "/for/builders"]]],
-    [t.footer.company, [[t.footer.about2, "/about"], [t.footer.advertise, "/advertise"], [t.footer.spotlight, "/spotlight"], [t.footer.contact, "/contact"], [t.footer.terms, "/terms"], [t.footer.privacy, "/privacy"]]],
+    [f.find, [[f.rfps, V3H.rfps], [f.directory, V3H.directory], [f.winners, V3H.winners], [f.jobs, V3H.jobs], [f.marketplace, V3H.marketplace], [f.forum, V3H.forum]]],
+    [f.who, [[f.trades, "/for/tradesmen"], [f.pms, "/for-property-managers"], [f.landlords, V3H.landlord], [f.condos, "/for/condo-boards"], [f.realEstate, V3H.forRealEstate], [f.suppliers, "/for/suppliers"], [f.builders, "/for/builders"]]],
+    [f.company, [[f.about2, "/about"], [f.advertise, V3H.advertise], [f.spotlight, "/spotlight"], [f.contact, "/contact"], [f.terms, "/terms"], [f.privacy, "/privacy"]]],
   ] as const;
   return (
     <footer className="v3-foot">
       <div className="v3-wrap v3-foot-in">
         <div className="v3-foot-grid">
           <div>
-            <div className="brand"><Image src={MARK} alt="" width={30} height={30} /><span>pmrfp.com</span></div>
-            <div className="txt">{t.footer.about}</div>
-            <div className="txt">{t.footer.address}</div>
+            <div className="brand"><Image src={V3_MARK} alt="" width={30} height={30} /><span>pmrfp.com</span></div>
+            <div className="txt">{f.about}</div>
+            <div className="txt">{f.address}</div>
           </div>
           {cols.map(([title, links]) => (
             <nav key={title} aria-label={title} className="v3-foot-col">
@@ -134,8 +175,22 @@ export function V3Footer({ t, lang }: { t: T; lang: Locale }) {
             </nav>
           ))}
         </div>
-        <div className="legal">{t.footer.legal}</div>
+        <div className="legal">{f.legal}</div>
       </div>
     </footer>
+  );
+}
+
+/* ------------------------------------------------------------------ page shell */
+
+/** Page frame for template pages: skip link, chrome, one <main>. */
+export function V3Frame({ t, lang, foundingLeft, joinHref, children }: { t: V3ChromeMessages; lang: Locale; foundingLeft: number | null; joinHref?: string; children: ReactNode }) {
+  return (
+    <div className="pmrfp-v3">
+      <a href="#main" className="v3-skip">{t.skip}</a>
+      <V3Header t={t} lang={lang} foundingLeft={foundingLeft} joinHref={joinHref} />
+      <main id="main" tabIndex={-1} style={{ outline: "none" }}>{children}</main>
+      <V3Footer t={t} lang={lang} />
+    </div>
   );
 }

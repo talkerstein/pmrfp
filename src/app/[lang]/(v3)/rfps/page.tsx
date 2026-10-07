@@ -68,7 +68,7 @@ export default async function RfpsPage({
 } & { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("board");
-  const v = getT("v3Pages").list;
+  const v = getT("v3Pages").board;
   const lang = getLang();
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));

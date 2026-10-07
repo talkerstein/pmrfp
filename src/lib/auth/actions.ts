@@ -21,6 +21,7 @@ import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { gcFormPath, parseAwardRef } from "@/lib/gc/packages";
+import { parsePrefSlugs } from "@/lib/auth/signup-prefs";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 
@@ -101,6 +102,12 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   const gcAward = isGc ? parseAwardRef(formData.get("award")?.toString()) : null;
   // Tradespeople looking for work skip company onboarding: straight to their profile.
   const isTalent = parsed.data.role === "talent";
+  // Trades / regions picked on the sign-up page: a pre-selection for onboarding.
+  const prefCategories = parsePrefSlugs(formData.getAll("pref_categories"));
+  const prefRegions = parsePrefSlugs(formData.getAll("pref_regions"));
+  const prefCompany = String(formData.get("pref_company") ?? "").trim().slice(0, 120);
+  // Chose Trade Pro on the sign-up page: the confirmation page offers checkout.
+  const wantsPro = formData.get("plan") === "pro";
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -112,6 +119,9 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
         primary_role: parsed.data.role,
         ...(isGc ? { org_kind: "builder", ...(gcAward ? { gc_award: gcAward } : {}) } : {}),
         ...(isLandlord ? { org_kind: "landlord" } : {}),
+        ...(prefCategories.length ? { pref_categories: prefCategories } : {}),
+        ...(prefRegions.length ? { pref_regions: prefRegions } : {}),
+        ...(prefCompany ? { pref_company: prefCompany } : {}),
       },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}${isTalent ? "/talent/edit" : "/onboarding"}`,
     },
@@ -136,7 +146,9 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   // instead of silently bouncing /onboarding → /sign-in (a dead end for
   // invited trades). The confirmation link itself carries them to /onboarding.
   if (!data.session) {
-    redirect(localizePath(`/check-email?email=${encodeURIComponent(parsed.data.email)}`, lang));
+    const done = new URLSearchParams({ email: parsed.data.email, role: isGc ? "general_contractor" : isLandlord ? "landlord" : parsed.data.role });
+    if (wantsPro) done.set("plan", "pro");
+    redirect(localizePath(`/check-email?${done.toString()}`, lang));
   }
   if (isTalent) redirect(localizePath("/talent/edit", lang));
   redirect(localizePath(next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding", lang));
