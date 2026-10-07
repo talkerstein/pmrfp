@@ -1,4 +1,4 @@
-/** Homepage (app/[lang]/(marketing)/page.tsx) and the match-email preview. */
+/** Homepage metadata (app/[lang]/(home)/page.tsx) and the match-email preview. The homepage copy itself lives in homeV3.ts. */
 const en = {
   meta: {
     title: "Commercial Property RFPs & Public Tenders in Canada and the US",
