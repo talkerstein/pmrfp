@@ -6,7 +6,7 @@
 
 export type UserRole = "trade" | "property_manager" | "admin" | "super_admin" | "visitor" | "supplier" | "real_estate_agent" | "talent";
 export type UserStatus = "active" | "suspended" | "deleted";
-export type OrgType = "trade_company" | "property_manager" | "builder" | "owner" | "admin" | "supplier";
+export type OrgType = "trade_company" | "property_manager" | "builder" | "owner" | "admin" | "supplier" | "landlord";
 export type ProfileStatus = "draft" | "pending_review" | "approved" | "rejected" | "suspended";
 export type ContactVisibility = "show_contact" | "request_intro" | "hide_contact";
 export type RfpStatus =

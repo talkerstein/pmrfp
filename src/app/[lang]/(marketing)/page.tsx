@@ -538,6 +538,12 @@ export default async function HomePage({ params }: { params: Promise<object> }) 
                 {t.pm.how}
               </Link>
             </div>
+            <p className="mt-5 max-w-lg text-sm leading-relaxed text-muted-foreground">
+              {t.pm.landlord}{" "}
+              <Link href="/sign-up?role=landlord" className="font-medium text-teal-700 hover:underline">
+                {t.pm.landlordCta}
+              </Link>
+            </p>
           </div>
         </Container>
       </section>

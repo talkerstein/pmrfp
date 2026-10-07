@@ -7,13 +7,14 @@ import { parseAwardRef } from "@/lib/gc/packages";
  * survives the email-confirmation round trip: they want a 'builder'
  * organization, and (maybe) which public award they came from.
  */
-export async function getSignupGcIntent(): Promise<{ builder: boolean; award: string | null }> {
-  if (!isSupabaseConfigured()) return { builder: false, award: null };
+export async function getSignupGcIntent(): Promise<{ builder: boolean; landlord: boolean; award: string | null }> {
+  if (!isSupabaseConfigured()) return { builder: false, landlord: false, award: null };
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   const meta = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
   return {
     builder: meta.org_kind === "builder",
+    landlord: meta.org_kind === "landlord",
     award: parseAwardRef(typeof meta.gc_award === "string" ? meta.gc_award : null),
   };
 }

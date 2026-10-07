@@ -110,6 +110,8 @@ const en = {
     body: "Answer four questions and get a complete RFP: scope, insurance and WSIB requirements, and bid scoring. Post it free and qualified trades in your region see it.",
     write: "Write an RFP",
     how: "How it works",
+    landlord: "Own your buildings? Landlords post repair and maintenance jobs free too.",
+    landlordCta: "Sign up as a landlord",
   },
   realtors: {
     alt: "Keys in the front door of a newly sold home",
@@ -278,6 +280,8 @@ const fr: typeof en = {
     body: "Répondez à quatre questions et obtenez un appel d'offres complet : portée des travaux, exigences d'assurance et de WSIB, et grille d'évaluation des soumissions. Publiez-le gratuitement et les entrepreneurs qualifiés de votre région le verront.",
     write: "Rédiger un appel d'offres",
     how: "Comment ça fonctionne",
+    landlord: "Propriétaire de vos immeubles? Les propriétaires bailleurs publient aussi gratuitement leurs travaux de réparation et d'entretien.",
+    landlordCta: "S'inscrire comme propriétaire",
   },
   realtors: {
     alt: "Clés dans la porte d'entrée d'une maison tout juste vendue",
@@ -449,6 +453,8 @@ const es: typeof en = {
     body: "Responda cuatro preguntas y obtenga una RFP completa: alcance, requisitos de seguro y de compensación laboral (WSIB), y criterios de evaluación de las ofertas. Publíquela gratis y los contratistas calificados de su región la verán.",
     write: "Redactar una RFP",
     how: "Cómo funciona",
+    landlord: "¿Es dueño de sus edificios? Los propietarios también publican gratis trabajos de reparación y mantenimiento.",
+    landlordCta: "Registrarse como propietario",
   },
   realtors: {
     alt: "Llaves en la puerta principal de una casa recién vendida",

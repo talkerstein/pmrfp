@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession, roleHome } from "@/lib/access/access";
+import { buyerTags, isCheckViolation, parseBuyerKind } from "@/lib/auth/org-kind";
 import { safeNextPath } from "@/lib/auth/next";
 import { DEFAULT_SIGNUP_ROLE, onboardingPath, resolveRolePick } from "@/lib/auth/oauth";
 import {
@@ -94,7 +95,9 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   // they post exactly like a PM) and get a 'builder' organization at
   // onboarding. The intent + award ride in auth metadata so they survive the
   // email-confirmation round trip.
-  const isGc = parsed.data.role === "property_manager" && formData.get("orgKind") === "builder";
+  const buyerKind = parsed.data.role === "property_manager" ? parseBuyerKind(formData.get("orgKind")) : null;
+  const isGc = buyerKind === "builder";
+  const isLandlord = buyerKind === "landlord";
   const gcAward = isGc ? parseAwardRef(formData.get("award")?.toString()) : null;
   // Tradespeople looking for work skip company onboarding: straight to their profile.
   const isTalent = parsed.data.role === "talent";
@@ -108,6 +111,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
         full_name: parsed.data.fullName,
         primary_role: parsed.data.role,
         ...(isGc ? { org_kind: "builder", ...(gcAward ? { gc_award: gcAward } : {}) } : {}),
+        ...(isLandlord ? { org_kind: "landlord" } : {}),
       },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}${isTalent ? "/talent/edit" : "/onboarding"}`,
     },
@@ -119,15 +123,15 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   }
   // No welcome email here: it goes out once onboarding completes.
   const next = safeNextPath(formData.get("next")?.toString());
-  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc });
-  await sendAdminNewSignup({ email: parsed.data.email, name: parsed.data.fullName, role: parsed.data.role, method: "email", gc: isGc });
+  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord });
+  await sendAdminNewSignup({ email: parsed.data.email, name: parsed.data.fullName, role: parsed.data.role, method: "email", gc: isGc, landlord: isLandlord });
   // Fire-and-forget GHL sync; no-ops if GHL_API_KEY unset.
   await syncPmrfpUserToGhl({
     email: parsed.data.email,
     fullName: parsed.data.fullName,
     role: parsed.data.role,
     subscriptionStatus: "none",
-  }, { extraTags: isGc ? ["pmrfp-signup", "pmrfp-gc"] : ["pmrfp-signup"] });
+  }, { extraTags: buyerTags("pmrfp-signup", buyerKind) });
   // Email confirmation required → no session yet. Land on an explanation page
   // instead of silently bouncing /onboarding → /sign-in (a dead end for
   // invited trades). The confirmation link itself carries them to /onboarding.
@@ -262,22 +266,28 @@ export async function chooseRoleAction(_prev: ActionState, formData: FormData): 
     user_metadata: {
       primary_role: pick.role,
       ...(pick.builder ? { org_kind: "builder", ...(award ? { gc_award: award } : {}) } : {}),
+      ...(pick.orgKind === "landlord" ? { org_kind: "landlord" } : {}),
     },
   });
   if (metaErr) return saveFailed;
 
   // What signUpAction does for an email sign-up (the welcome email goes out
   // when onboarding completes).
-  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: pick.role, hasNext: !!next, gc: pick.builder, method: "google" });
-  await sendAdminNewSignup({ email: session.profile.email, name: session.profile.full_name, role: pick.role, method: "google", gc: pick.builder });
+  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: pick.role, hasNext: !!next, gc: pick.builder, landlord: pick.orgKind === "landlord", method: "google" });
+  await sendAdminNewSignup({ email: session.profile.email, name: session.profile.full_name, role: pick.role, method: "google", gc: pick.builder, landlord: pick.orgKind === "landlord" });
   await syncPmrfpUserToGhl({
     email: session.profile.email,
     fullName: session.profile.full_name,
     role: pick.role,
     subscriptionStatus: "none",
-  }, { extraTags: pick.builder ? ["pmrfp-signup", "pmrfp-gc"] : ["pmrfp-signup"] });
+  }, { extraTags: buyerTags("pmrfp-signup", pick.orgKind) });
 
-  redirect(localizePath(onboardingPath({ role: pick.builder ? "general_contractor" : null, award, next }), lang));
+  redirect(
+    localizePath(
+      onboardingPath({ role: pick.builder ? "general_contractor" : pick.orgKind === "landlord" ? "landlord" : null, award, next }),
+      lang,
+    ),
+  );
 }
 
 /**
@@ -309,10 +319,15 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   const isListing = role === "trade" || isSupplier; // lists in a directory + needs categories/regions
   // "General contractor — hiring subs": a buyer like a PM (same role, same
   // posting rights, no trade access) whose organization is a 'builder'.
-  const isBuilder = role === "property_manager" && formData.get("orgKind") === "builder";
+  // Landlords (independent building owners) are the same kind of buyer with a
+  // 'landlord' organization; a company name is optional for them.
+  const buyerKind = role === "property_manager" ? parseBuyerKind(formData.get("orgKind")) : null;
+  const isBuilder = buyerKind === "builder";
+  const isLandlord = buyerKind === "landlord";
+  const rawName = formData.get("name")?.toString().trim() ?? "";
 
   const parsed = companyProfileSchema.safeParse({
-    name: formData.get("name"),
+    name: isLandlord && !rawName ? session.profile.full_name?.trim() || "Individual owner" : formData.get("name"),
     website: formData.get("website") ?? "",
     phone: formData.get("phone") ?? "",
     email: formData.get("email") ?? session.profile.email,
@@ -332,12 +347,11 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   // Create org
   const slug = `${slugify(data.name)}-${Math.random().toString(36).slice(2, 6)}`;
-  const { data: org, error: orgErr } = await admin
-    .from("organizations")
-    .insert({
+  const orgType = isSupplier ? "supplier" : isListing ? "trade_company" : isBuilder ? "builder" : isLandlord ? "landlord" : "property_manager";
+  const orgRow = {
       name: data.name,
       slug,
-      organization_type: isSupplier ? "supplier" : isListing ? "trade_company" : isBuilder ? "builder" : "property_manager",
+      organization_type: orgType,
       website: data.website || null,
       phone: data.phone || null,
       email: data.email,
@@ -358,9 +372,28 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
           ? "approved"
           : "pending_review"
         : "approved",
-    })
+  };
+  let { data: org, error: orgErr } = await admin
+    .from("organizations")
+    .insert(orgRow)
     .select("id")
     .single<{ id: string }>();
+  // Before migration 20261007000001_landlord.sql the CHECK constraint rejects
+  // 'landlord'. Never break sign-up over it: create a property_manager org
+  // (identical capabilities) and keep the landlord kind in auth metadata so
+  // the org can be re-typed once the migration runs.
+  if (orgErr && isLandlord && isCheckViolation(orgErr)) {
+    ({ data: org, error: orgErr } = await admin
+      .from("organizations")
+      .insert({ ...orgRow, organization_type: "property_manager" })
+      .select("id")
+      .single<{ id: string }>());
+    if (!orgErr && isServiceConfigured()) {
+      await createServiceClient().auth.admin.updateUserById(session.userId, {
+        user_metadata: { org_kind: "landlord", landlord_org_fallback: true },
+      });
+    }
+  }
   if (orgErr || !org) return { error: m.orgFailed };
 
   await admin.from("organization_members").insert({
@@ -385,12 +418,12 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   }
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
-  await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder });
+  await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord });
 
   // One welcome email per member, with the next step for their kind of account.
   await sendWelcomeEmail(session.profile.email, {
     name: session.profile.full_name,
-    kind: isBuilder ? "general_contractor" : isSupplier ? "supplier" : isListing ? "trade" : "property_manager",
+    kind: isBuilder ? "general_contractor" : isLandlord ? "landlord" : isSupplier ? "supplier" : isListing ? "trade" : "property_manager",
     companyName: data.name,
     profileSlug: isListing ? slug : null,
     live: isListing && categories.length > 0 && regions.length > 0,
@@ -410,7 +443,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     tradeCategory: isListing && categories.length > 0 ? categories[0] : null,
     subscriptionStatus: "none",
     profileCompletionPct: 50, // baseline after onboarding; will rise as they add logo/portfolio
-  }, { extraTags: isBuilder ? ["pmrfp-onboarded", "pmrfp-gc"] : ["pmrfp-onboarded"] });
+  }, { extraTags: buyerTags("pmrfp-onboarded", buyerKind) });
 
   if (next) redirect(localizePath(next, lang));
   // A GC lands straight on the package form (award prefilled if they came from one).

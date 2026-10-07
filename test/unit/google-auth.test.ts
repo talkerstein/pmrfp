@@ -48,10 +48,10 @@ describe("needsRolePick", () => {
 
 describe("resolveRolePick (the server action's guard)", () => {
   it("allows a fresh Google sign-up to pick a self-serve role", () => {
-    expect(resolveRolePick(fresh, "trade")).toEqual({ ok: true, role: "trade", builder: false });
-    expect(resolveRolePick(fresh, "property_manager")).toEqual({ ok: true, role: "property_manager", builder: false });
-    expect(resolveRolePick(fresh, "supplier")).toEqual({ ok: true, role: "supplier", builder: false });
-    expect(resolveRolePick(fresh, "general_contractor")).toEqual({ ok: true, role: "property_manager", builder: true });
+    expect(resolveRolePick(fresh, "trade")).toEqual({ ok: true, role: "trade", builder: false, orgKind: null });
+    expect(resolveRolePick(fresh, "property_manager")).toEqual({ ok: true, role: "property_manager", builder: false, orgKind: null });
+    expect(resolveRolePick(fresh, "supplier")).toEqual({ ok: true, role: "supplier", builder: false, orgKind: null });
+    expect(resolveRolePick(fresh, "general_contractor")).toEqual({ ok: true, role: "property_manager", builder: true, orgKind: "builder" });
   });
 
   it("never allows admin or other roles", () => {

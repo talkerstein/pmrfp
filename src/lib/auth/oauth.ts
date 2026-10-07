@@ -15,14 +15,23 @@ import { safeNextPath } from "@/lib/auth/next";
 /** What handle_new_user() assigns when auth metadata has no primary_role. */
 export const DEFAULT_SIGNUP_ROLE: UserRole = "trade";
 
-/** The roles someone can pick for themselves. A GC is a property_manager with a builder org. */
-export const ROLE_CHOICES = ["trade", "property_manager", "general_contractor", "supplier"] as const;
+/**
+ * The roles someone can pick for themselves. A GC is a property_manager with a
+ * builder org; a landlord is a property_manager with a landlord org.
+ */
+export const ROLE_CHOICES = ["trade", "property_manager", "landlord", "general_contractor", "supplier"] as const;
 export type RoleChoice = (typeof ROLE_CHOICES)[number];
 
-/** `?role=` → a pickable choice, or null. `?role=property_manager&kind=gc` means a GC. */
+/**
+ * `?role=` → a pickable choice, or null. `?role=property_manager&kind=gc` means
+ * a GC; `?role=property_manager&kind=landlord` (or `?role=landlord`) a landlord.
+ */
 export function parseRoleChoice(role: unknown, kind?: unknown): RoleChoice | null {
   if (role === "general_contractor" || (role === "property_manager" && kind === "gc")) {
     return "general_contractor";
+  }
+  if (role === "landlord" || (role === "property_manager" && kind === "landlord")) {
+    return "landlord";
   }
   return role === "trade" || role === "property_manager" || role === "supplier" ? role : null;
 }
@@ -44,7 +53,13 @@ export function needsRolePick(s: RolePickState): boolean {
 }
 
 export type RolePickResult =
-  | { ok: true; role: "trade" | "property_manager" | "supplier"; builder: boolean }
+  | {
+      ok: true;
+      role: "trade" | "property_manager" | "supplier";
+      builder: boolean;
+      /** The buyer org kind to remember in auth metadata (org_kind), or null for a plain PM / listing. */
+      orgKind: "builder" | "landlord" | null;
+    }
   | { ok: false; reason: "already_set" | "invalid_role" };
 
 /**
@@ -55,8 +70,9 @@ export function resolveRolePick(s: RolePickState, choice: unknown): RolePickResu
   if (!needsRolePick(s)) return { ok: false, reason: "already_set" };
   const picked = parseRoleChoice(choice);
   if (!picked) return { ok: false, reason: "invalid_role" };
-  if (picked === "general_contractor") return { ok: true, role: "property_manager", builder: true };
-  return { ok: true, role: picked, builder: false };
+  if (picked === "general_contractor") return { ok: true, role: "property_manager", builder: true, orgKind: "builder" };
+  if (picked === "landlord") return { ok: true, role: "property_manager", builder: false, orgKind: "landlord" };
+  return { ok: true, role: picked, builder: false, orgKind: null };
 }
 
 /** Where Google sends people back to, carrying a safe `next`. */

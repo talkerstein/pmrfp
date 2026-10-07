@@ -127,7 +127,7 @@ function layout(title: string, bodyHtml: string, footnote?: string, opts?: { ref
 const btn = (href: string, label: string) =>
   `<a class="btn-a" href="${href}" style="display:inline-block;background:#282B59;color:#FFFFFF;padding:14px 26px;border-radius:10px;text-decoration:none;font-family:${FONT};font-size:16px;line-height:20px;font-weight:600">${label}</a>`;
 
-export type WelcomeKind = "trade" | "supplier" | "property_manager" | "general_contractor";
+export type WelcomeKind = "trade" | "supplier" | "property_manager" | "general_contractor" | "landlord";
 
 /**
  * Sent once, when onboarding completes (not at sign-up: the account isn't
@@ -152,6 +152,10 @@ export async function sendWelcomeEmail(
   } else if (opts.kind === "general_contractor") {
     body = `<p>Post each sub-trade package for free, for example "Roofing package, quotes due Oct 10". Local trades in that trade see it in their morning email and send you quotes. Their profiles show photos of past work and reviews.</p>
        <p>${btn(`${BASE}/gc-packages/new`, "Post a sub-trade package")}</p>`;
+  } else if (opts.kind === "landlord") {
+    body = `<p>Need a roof patched, a boiler serviced, or a unit turned over? Post the job on PMRFP for free, once. Local trades in that trade see it in their morning email and send you interest, so you're not chasing quotes one call at a time.</p>
+       <p>${btn(`${BASE}/pm-dashboard/rfps/new`, "Post your first repair or maintenance job")}</p>
+       <p style="margin:16px 0 0">Not sure how to describe it? The <a href="${BASE}/rfp-writer" style="color:#282B59">free RFP writer</a> drafts one for you. You can also invite the trades you already use from your dashboard.</p>`;
   } else {
     body = `<p>Posting an RFP on PMRFP is free. Describe the job once, and local trades in that trade see it in their morning email and send you interest.</p>
        <p>${btn(`${BASE}/pm-dashboard/rfps/new`, "Post your first RFP")}</p>
@@ -598,8 +602,9 @@ export async function sendAdminNewSignup(p: {
   role: string;
   method: "email" | "google";
   gc?: boolean;
+  landlord?: boolean;
 }): Promise<void> {
-  const role = p.gc ? "General contractor" : SIGNUP_ROLE[p.role] ?? p.role;
+  const role = p.gc ? "General contractor" : p.landlord ? "Landlord" : SIGNUP_ROLE[p.role] ?? p.role;
   await send(
     SIGNUP_ALERT,
     `New PMRFP sign-up: ${role}`,
