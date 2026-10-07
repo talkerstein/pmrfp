@@ -6,7 +6,7 @@ import { useVisitorMarket } from "@/components/geo/use-visitor-market";
 import { useLang, useT } from "@/i18n/provider";
 import { localizePath } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
-import { useFoundingPriceLabel } from "./market-text";
+import { PriceSkeleton, useFoundingPriceLabel } from "./market-text";
 
 /** Starts the one-time Founding 500 checkout in the visitor's market currency. */
 export function FoundingBuyButton({ className }: { className?: string }) {
@@ -44,8 +44,8 @@ export function FoundingBuyButton({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <Button size="lg" onClick={go} disabled={busy}>
-        {busy ? t.busy : fmt(t.buy, { price })}
+      <Button size="lg" onClick={go} disabled={busy || price == null}>
+        {busy ? t.busy : price == null ? <>{t.buy.split("{price}")[0]}<PriceSkeleton width="4.5rem" /></> : fmt(t.buy, { price })}
       </Button>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
