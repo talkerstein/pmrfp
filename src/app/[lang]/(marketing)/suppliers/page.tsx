@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Link from "@/i18n/link";
 import { Container, Eyebrow } from "@/components/container";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { FilterBar } from "@/components/public/filter-bar";
 import { DirectoryCard } from "@/components/public/directory-card";
 import { EmptyState } from "@/components/public/empty-state";
@@ -58,6 +61,9 @@ export default async function SuppliersPage({
           <p className="mt-3 max-w-2xl text-muted-foreground">
             {t.body}
           </p>
+          <Link href="/become-a-supplier" className={cn(buttonVariants(), "mt-6")}>
+            {t.become}
+          </Link>
         </Container>
       </section>
 
@@ -96,7 +102,7 @@ export default async function SuppliersPage({
         description={fmt(t.ctaBody, { site: SITE.name })}
         primaryHref="/sign-up"
         primaryLabel={t.ctaPrimary}
-        secondaryHref="/for/suppliers"
+        secondaryHref="/become-a-supplier"
         secondaryLabel={t.ctaSecondary}
       />
     </>

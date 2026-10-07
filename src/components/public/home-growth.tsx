@@ -146,9 +146,14 @@ export async function HomeSuppliers() {
             <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-teal-700">{t.eyebrow}</p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{t.heading}</h2>
           </div>
-          <Link href="/suppliers" className="inline-flex items-center gap-1 text-sm font-medium text-teal-ink hover:underline">
-            {t.all} <ArrowRight className="size-4" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/become-a-supplier" className="text-sm font-medium text-teal-ink hover:underline">
+              {t.become}
+            </Link>
+            <Link href="/suppliers" className="inline-flex items-center gap-1 text-sm font-medium text-teal-ink hover:underline">
+              {t.all} <ArrowRight className="size-4" />
+            </Link>
+          </div>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {suppliers.map((v) => (

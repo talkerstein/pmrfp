@@ -161,6 +161,7 @@ const en = {
     eyebrow: "Suppliers",
     heading: "Material and equipment suppliers",
     all: "Browse suppliers",
+    become: "Become a supplier",
   },
   ancillary: {
     eyebrow: "Real estate & advertising",
@@ -334,6 +335,7 @@ const fr: typeof en = {
     eyebrow: "Fournisseurs",
     heading: "Fournisseurs de matériaux et d'équipement",
     all: "Voir les fournisseurs",
+    become: "Devenir fournisseur",
   },
   ancillary: {
     eyebrow: "Immobilier et publicité",
@@ -507,6 +509,7 @@ const es: typeof en = {
     eyebrow: "Proveedores",
     heading: "Proveedores de materiales y equipos",
     all: "Ver proveedores",
+    become: "Hágase proveedor",
   },
   ancillary: {
     eyebrow: "Bienes raíces y publicidad",

@@ -138,6 +138,7 @@ const en = {
     ctaBody: "Get listed where Canadian trades, builders, and property managers source products — {site} Pro.",
     ctaPrimary: "List your company",
     ctaSecondary: "How it works for suppliers",
+    become: "Become a supplier",
   },
   og: {
     eyebrow: "PMRFP Directory",
@@ -289,6 +290,7 @@ const fr: typeof en = {
       "Soyez présent là où les entrepreneurs, les constructeurs et les gestionnaires immobiliers du Canada s'approvisionnent, avec {site} Pro.",
     ctaPrimary: "Inscrire mon entreprise",
     ctaSecondary: "Comment ça fonctionne pour les fournisseurs",
+    become: "Devenir fournisseur",
   },
   og: {
     eyebrow: "Répertoire PMRFP",
@@ -438,6 +440,7 @@ const es: typeof en = {
     ctaBody: "Aparezca donde los contratistas, constructores y administradores de propiedades de Canadá compran sus productos, con {site} Pro.",
     ctaPrimary: "Registre su empresa",
     ctaSecondary: "Cómo funciona para proveedores",
+    become: "Hágase proveedor",
   },
   og: {
     eyebrow: "Directorio PMRFP",
