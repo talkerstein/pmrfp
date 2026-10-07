@@ -34,6 +34,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatNumber } from "@/i18n/format";
+import { FoundingBanner } from "@/components/founding/banner";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -184,6 +185,7 @@ export default async function ForTradesPage({ params }: { params: Promise<object
         <div className="grid items-center gap-8 rounded-xl border border-border bg-card p-8 sm:p-10 md:grid-cols-2">
           <div>
             <Eyebrow>{p.pricing.eyebrow}</Eyebrow>
+            <p className="mt-2 text-sm"><FoundingBanner variant="link" /></p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
               {fmt(p.pricing.title, { price: formatNumber(PRICING.proAnnual, lang), currency: PRICING.currency })}
             </h2>

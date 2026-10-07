@@ -8,6 +8,75 @@ import { SPOTLIGHT_PRODUCT } from "@/lib/spotlight/config";
 import { FEATURED_PRODUCT, nextFeaturedUntil } from "@/lib/marketplace/rules";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { verifyStripeEvent } from "@/lib/stripe/verify-event";
+import { sendAdminFoundingAlert, sendFoundingLifetimeEmail } from "@/lib/email/send";
+import { FOUNDING_PRODUCT } from "@/lib/founding/config";
+import { grantLifetime, isOrgLifetime } from "@/lib/founding/server";
+
+/**
+ * Founding 500 purchase. Never refuses: the cap was checked at checkout, and
+ * a race that oversells is still granted (money taken means access granted)
+ * with an admin alert. Throws on a failed grant so Stripe retries.
+ */
+async function handleFoundingCheckout(cs: Stripe.Checkout.Session, stripe: Stripe): Promise<void> {
+  if (cs.payment_status !== "paid") return;
+  const orgId = cs.metadata?.organization_id;
+  const email = cs.customer_details?.email ?? "(no email on file)";
+  if (!orgId) {
+    await sendAdminFoundingAlert({ reason: "paid checkout without an organization id", organizationId: "(none)", email, sessionId: cs.id });
+    return;
+  }
+  const cents = cs.amount_total;
+  const currency = (cs.currency || "cad").toUpperCase();
+  const result = await grantLifetime({
+    organizationId: orgId,
+    userId: cs.metadata?.user_id ?? null,
+    checkoutSessionId: cs.id,
+    stripeCustomerId: typeof cs.customer === "string" ? cs.customer : (cs.customer?.id ?? null),
+    amount: typeof cents === "number" ? cents / 100 : null,
+    currency,
+  });
+  if (!result.granted) {
+    await sendAdminFoundingAlert({ reason: `grant failed (${result.error ?? "unknown"}); Stripe will retry`, organizationId: orgId, email, sessionId: cs.id });
+    throw new Error(`founding grant failed: ${result.error}`);
+  }
+  if (result.duplicate) {
+    await sendAdminFoundingAlert({ reason: "org already had lifetime: second payment, refund it", organizationId: orgId, email, sessionId: cs.id });
+    return;
+  }
+
+  // An existing annual/monthly Trade Pro sub would otherwise keep renewing.
+  if (result.previousStripeSubscriptionId) {
+    try {
+      await stripe.subscriptions.update(result.previousStripeSubscriptionId, { cancel_at_period_end: true });
+    } catch (err) {
+      console.error("[founding] could not stop old subscription renewal", err);
+    }
+    await sendAdminFoundingAlert({
+      reason: `buyer had recurring sub ${result.previousStripeSubscriptionId}; set to not renew, consider refunding unused time`,
+      organizationId: orgId,
+      email,
+      sessionId: cs.id,
+    });
+  }
+  if (result.oversold) {
+    await sendAdminFoundingAlert({ reason: `oversold: ${result.sold} lifetime orgs (cap 500)`, organizationId: orgId, email, sessionId: cs.id });
+  }
+
+  await sendAdminNewSale({
+    company: cs.customer_details?.name ?? null,
+    email,
+    plan: "Founding 500 Lifetime",
+    interval: "one-time",
+    amountFormatted: typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—",
+  });
+  if (cs.customer_details?.email) {
+    await sendFoundingLifetimeEmail(cs.customer_details.email);
+    await syncPmrfpUserToGhl(
+      { email: cs.customer_details.email, fullName: cs.customer_details.name ?? null, role: "trade", subscriptionStatus: "active", profileCompletionPct: 100 },
+      { extraTags: ["pmrfp-pro-active", "pmrfp-founding-lifetime"] },
+    );
+  }
+}
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -64,6 +133,11 @@ export async function POST(request: Request) {
             amountFormatted: typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—",
           });
           if (cs.customer_details?.email) await sendSpotlightPaid(cs.customer_details.email, cs.id);
+          break;
+        }
+        // Founding 500: one-time payment for lifetime Trade Pro.
+        if (cs.mode === "payment" && cs.metadata?.product === FOUNDING_PRODUCT) {
+          await handleFoundingCheckout(cs, stripe);
           break;
         }
         // One-time Marketplace featured listing: extend featured_until by 14 days.
@@ -196,6 +270,10 @@ export async function POST(request: Request) {
         // promotion above, so an admin ban can't be silently undone by a
         // new Stripe event. Reactivating after billing is fixed is a
         // deliberate one-click admin action, same as lifting any other ban.
+        // A Founding 500 lifetime org whose old recurring sub ends keeps
+        // everything: no suspension, no "canceled" in GHL.
+        if (await isOrgLifetime(sub.metadata?.organization_id)) break;
+
         if (
           event.type === "customer.subscription.deleted" &&
           isServiceConfigured() &&
@@ -272,6 +350,11 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error("[stripe webhook] handler error", err);
+    // Release the idempotency claim so Stripe's retry actually reprocesses
+    // (otherwise the retry is acked as a duplicate and the work is lost).
+    if (isServiceConfigured()) {
+      await createServiceClient().from("stripe_webhook_events").delete().eq("id", event.id);
+    }
     return NextResponse.json({ error: "Handler error" }, { status: 500 });
   }
 

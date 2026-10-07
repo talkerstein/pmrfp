@@ -12,6 +12,7 @@ import { SaveTradeButton } from "@/components/trusted/save-trade-button";
 import { getRecommendedBy } from "@/lib/trusted/data";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
 import { getVendor, listVendors, retiredVendorRedirect } from "@/lib/data/directory";
+import { isOrgLifetime } from "@/lib/founding/server";
 import { listOrgProjects, listPublishedReviews } from "@/lib/data/projects";
 import { reviewStats } from "@/lib/projects/reviews";
 import { ProjectGrid, ReviewList, Stars, oneDecimal } from "@/components/projects/public";
@@ -95,6 +96,8 @@ export default async function VendorProfilePage({
 
   const initials = v.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const showContact = v.contactVisibility === "show_contact";
+  const founding = await isOrgLifetime(v.id);
+  const tf = getT("founding");
 
   // Projects + first-party reviews (empty before the Projects migration).
   const [projects, reviews, recommenders] = await Promise.all([
@@ -171,7 +174,12 @@ export default async function VendorProfilePage({
                 )}
               </span>
             </div>
-            {(v.verified || v.platinum || v.featured) && <div className="flex flex-wrap items-center gap-2 sm:pb-1">
+            {(v.verified || v.platinum || v.featured || founding) && <div className="flex flex-wrap items-center gap-2 sm:pb-1">
+              {founding && (
+                <span title={tf.directoryBadgeTooltip} className="rounded-md border border-teal-400/60 px-2.5 py-1 text-xs font-medium text-teal-ink">
+                  {tf.directoryBadge}
+                </span>
+              )}
               {v.verified && (
                 <span
                   title={t.badges.verifiedTooltip}

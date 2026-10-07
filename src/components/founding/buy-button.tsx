@@ -1,0 +1,52 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useVisitorMarket } from "@/components/geo/use-visitor-market";
+import { useLang, useT } from "@/i18n/provider";
+import { localizePath } from "@/i18n/config";
+import { fmt } from "@/i18n/format";
+import { FOUNDING } from "@/lib/founding/config";
+
+/** Starts the one-time Founding 500 checkout in the visitor's market currency. */
+export function FoundingBuyButton({ className }: { className?: string }) {
+  const t = useT("foundingClient");
+  const lang = useLang();
+  const market = useVisitorMarket() === "US" ? "US" : "CA";
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function go() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/founding/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ market }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      if (data.redirect) {
+        window.location.href = localizePath(data.redirect, lang);
+        return;
+      }
+      setError(data.error ?? t.failed);
+    } catch {
+      setError(t.failed);
+    }
+    setBusy(false);
+  }
+
+  return (
+    <div className={className}>
+      <Button size="lg" onClick={go} disabled={busy}>
+        {busy ? t.busy : fmt(t.buy, { price: market === "US" ? fmt(t.priceUs, { n: FOUNDING.priceUsd }) : fmt(t.priceCa, { n: FOUNDING.priceCad }) })}
+      </Button>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}

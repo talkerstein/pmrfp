@@ -10,6 +10,7 @@ import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { fmt, formatDate } from "@/i18n/format";
+import { isLifetimeSubscriptionId } from "@/lib/founding/config";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -22,6 +23,7 @@ interface SubRow {
   amount: number | null;
   currency: string | null;
   stripe_price_id: string | null;
+  stripe_subscription_id?: string | null;
 }
 
 /** The plan-intent price for this page's language (English keeps parsePlanIntent's label). */
@@ -52,13 +54,15 @@ export default async function BillingPage({
     const supabase = await createClient();
     const { data } = await supabase
       .from("subscriptions")
-      .select("status,current_period_end,amount,currency,stripe_price_id")
+      .select("status,current_period_end,amount,currency,stripe_price_id,stripe_subscription_id")
       .eq("organization_id", session.organization.id)
       .maybeSingle<SubRow>();
     sub = data ?? null;
   }
 
   const isActive = sub?.status === "active" || sub?.status === "comped";
+  const isLifetime = isLifetimeSubscriptionId(sub?.stripe_subscription_id);
+  const tf = getT("founding");
   const isFeatured =
     !!sub?.stripe_price_id &&
     sub.stripe_price_id === process.env.STRIPE_PRICE_FEATURED_ANNUAL;
@@ -66,7 +70,9 @@ export default async function BillingPage({
     !!sub?.stripe_price_id &&
     !!process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY &&
     sub.stripe_price_id === process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY;
-  const planName = isFeatured
+  const planName = isLifetime
+    ? tf.billingBadge
+    : isFeatured
     ? t.plans.featured
     : isMonthly
       ? t.plans.proMonthly
@@ -107,6 +113,9 @@ export default async function BillingPage({
               </div>
               <StatusBadge status={sub.status} />
             </div>
+            {isLifetime ? (
+              <p className="mt-4 text-sm text-muted-foreground">{tf.billingBody}</p>
+            ) : (<>
             {sub.current_period_end && (
               <p className="mt-4 text-sm text-muted-foreground">
                 {sub.status === "comped" ? t.comped : t.renews}{" "}
@@ -141,6 +150,7 @@ export default async function BillingPage({
             {sub.status === "active" && !isFeatured && (
               <p className="mt-3 text-xs text-muted-foreground">{t.featuredNote}</p>
             )}
+            </>)}
           </>
         ) : (
           <>

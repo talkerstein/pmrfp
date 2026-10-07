@@ -1143,3 +1143,37 @@ export async function sendAdminForumQueue(params: { reason: "held" | "reported";
     ),
   );
 }
+
+/** Founding 500: the buyer's confirmation (Stripe sends the actual receipt). */
+export async function sendFoundingLifetimeEmail(to: string): Promise<void> {
+  await send(
+    to,
+    "You're a PMRFP Founding member: lifetime Trade Pro is active",
+    layout(
+      "Welcome, Founding member",
+      `<p>Your one-time payment went through and your organization now has Trade Pro for life: full RFP access, matching alerts, saved opportunities and priority placement in the directory. There is nothing to renew and no card on file to charge.</p>
+       <p>${btn(`${BASE}/dashboard/rfps`, "Open the RFP board")}</p>
+       <p style="font-size:14px">Not happy? Email us within 30 days for a full refund. The Founding 500 terms are at <a href="${BASE}/terms#founding-500">${BASE}/terms#founding-500</a>.</p>`,
+      undefined,
+      { referralPs: false },
+    ),
+  );
+}
+
+/** Founding 500 problems that need a human: an oversold race, a double purchase, a failed grant. */
+export async function sendAdminFoundingAlert(p: { reason: string; organizationId: string; email: string; sessionId: string }): Promise<void> {
+  await sendToOwners(
+    `Founding 500 needs a look: ${p.reason}`,
+    layout(
+      "Founding 500 alert",
+      `<ul>
+        <li><strong>Reason:</strong> ${esc(p.reason)}</li>
+        <li><strong>Organization:</strong> ${esc(p.organizationId)}</li>
+        <li><strong>Customer:</strong> ${esc(p.email)}</li>
+        <li><strong>Checkout session:</strong> ${esc(p.sessionId)}</li>
+       </ul>
+       <p>Money taken means access granted, so act on refunds or follow-up by hand.</p>
+       <p>${btn(`${BASE}/admin/subscriptions`, "View in admin")}</p>`,
+    ),
+  );
+}
