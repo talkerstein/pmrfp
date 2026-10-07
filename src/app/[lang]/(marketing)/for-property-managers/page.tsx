@@ -81,6 +81,12 @@ export default async function ForPropertyManagersPage({ params }: { params: Prom
                 {p.writeRfp}
               </Link>
             </div>
+            <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {p.landlord.text}{" "}
+              <Link href="/sign-up?role=landlord" className="font-medium text-teal-700 hover:underline">
+                {p.landlord.cta}
+              </Link>
+            </p>
             <ReferBanner variant="subtle" className="mt-10 max-w-3xl" />
           </div>
           <figure className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-indigo lg:aspect-[4/5]">

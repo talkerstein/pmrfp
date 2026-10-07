@@ -2,7 +2,7 @@
 
 import Link from "@/i18n/link";
 import { useActionState, useState } from "react";
-import { Building2, Hammer, HardHat, Package, Search, Home, UserRound } from "lucide-react";
+import { Building2, Hammer, HardHat, KeyRound, Package, Search, Home, UserRound } from "lucide-react";
 import {
   forgotPasswordAction,
   resetPasswordAction,
@@ -69,6 +69,7 @@ const ROLES = [
   { value: "trade", icon: HardHat },
   { value: "supplier", icon: Package },
   { value: "property_manager", icon: Building2 },
+  { value: "landlord", icon: KeyRound },
   { value: "general_contractor", icon: Hammer },
   { value: "real_estate_agent", icon: Home },
   { value: "talent", icon: UserRound },
@@ -82,7 +83,7 @@ export function SignUpForm({
   award,
   google = false,
 }: {
-  initialRole?: "trade" | "supplier" | "property_manager" | "visitor" | "real_estate_agent" | "general_contractor" | "talent";
+  initialRole?: "trade" | "supplier" | "property_manager" | "visitor" | "real_estate_agent" | "general_contractor" | "landlord" | "talent";
   next?: string | null;
   /** Arrived from a paid-plan button: the role is decided, so don't show the picker. */
   lockRole?: boolean;
@@ -97,12 +98,15 @@ export function SignUpForm({
   // A GC is a buyer (same posting rights as a property manager) whose
   // organization is a 'builder'; the org type is set at onboarding.
   const isGc = role === "general_contractor";
+  // A landlord is the same kind of buyer with a 'landlord' organization.
+  const isLandlord = role === "landlord";
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
       <LangField />
-      <input type="hidden" name="role" value={isGc ? "property_manager" : role} />
+      <input type="hidden" name="role" value={isGc || isLandlord ? "property_manager" : role} />
       {isGc && <input type="hidden" name="orgKind" value="builder" />}
+      {isLandlord && <input type="hidden" name="orgKind" value="landlord" />}
       {isGc && award && <input type="hidden" name="award" value={award} />}
       {next && <input type="hidden" name="next" value={next} />}
       {!lockRole && (

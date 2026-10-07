@@ -237,6 +237,10 @@ const en = {
       after: ".",
     },
     postFree: "Post an RFP — free",
+    landlord: {
+      text: "Landlord or independent building owner? Same tools, same price (free): post repair and maintenance jobs for the buildings you own, compare the trades that respond, and invite the ones you already use.",
+      cta: "Sign up as a landlord",
+    },
     writeRfp: "Write my RFP — free tool",
     caption: "Retail, office, industrial, condo: post the work for any building you run.",
     how: {
@@ -513,6 +517,10 @@ const fr: typeof en = {
       after: ".",
     },
     postFree: "Publier un appel d'offres — gratuit",
+    landlord: {
+      text: "Propriétaire bailleur ou propriétaire indépendant d'immeubles? Mêmes outils, même prix (gratuit) : publiez les travaux de réparation et d'entretien de vos immeubles, comparez les entrepreneurs qui répondent et invitez ceux avec qui vous travaillez déjà.",
+      cta: "S'inscrire comme propriétaire",
+    },
     writeRfp: "Rédiger mon appel d'offres — outil gratuit",
     caption: "Commerce de détail, bureaux, industriel, copropriété : publiez les travaux de tout immeuble que vous gérez.",
     how: {
@@ -787,6 +795,10 @@ const es: typeof en = {
       after: ".",
     },
     postFree: "Publicar una RFP — gratis",
+    landlord: {
+      text: "¿Es arrendador o dueño independiente de edificios? Mismas herramientas, mismo precio (gratis): publique trabajos de reparación y mantenimiento para sus edificios, compare a los contratistas que responden e invite a los que ya usa.",
+      cta: "Registrarse como propietario",
+    },
     writeRfp: "Redactar mi RFP — herramienta gratuita",
     caption: "Comercios, oficinas, naves industriales, condominios: publique los trabajos de cualquier edificio que administre.",
     how: {

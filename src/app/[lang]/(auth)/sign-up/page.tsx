@@ -15,7 +15,7 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt } from "@/i18n/format";
 
-const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent", "general_contractor", "talent"] as const;
+const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent", "general_contractor", "landlord", "talent"] as const;
 type ValidRole = (typeof VALID_ROLES)[number];
 
 /** Role-aware share card — link previews (WhatsApp/iMessage/LinkedIn) fetch the
@@ -33,18 +33,23 @@ export async function generateMetadata({
   const trade = role === "trade" || role === "supplier";
   const pm = role === "property_manager" || role === "real_estate_agent";
   const gc = role === "general_contractor";
+  const landlord = role === "landlord";
   const title = trade
     ? t.tradeTitle
     : gc
       ? t.gcTitle
-      : pm
+      : landlord
+        ? t.landlordTitle
+        : pm
         ? t.pmTitle
         : t.defaultTitle;
   const description = trade
     ? t.tradeDescription
     : gc
       ? t.gcDescription
-      : pm
+      : landlord
+        ? t.landlordDescription
+        : pm
         ? t.pmDescription
         : t.defaultDescription;
   return {
@@ -96,7 +101,7 @@ export default async function SignUpPage({
   const [google, proof] = await Promise.all([isGoogleAuthEnabled(), getJoinProof()]);
   // Buyers (PMs, GCs, realtors) see how posting works; everyone else sees the live board.
   const audience =
-    !intent && (initialRole === "property_manager" || initialRole === "general_contractor" || initialRole === "real_estate_agent")
+    !intent && (initialRole === "property_manager" || initialRole === "general_contractor" || initialRole === "landlord" || initialRole === "real_estate_agent")
       ? "buyer"
       : "trade";
 

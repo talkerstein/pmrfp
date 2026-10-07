@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { completeOnboardingAction, type ActionState } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ export function OnboardingForm({
   /** Ticked to start — the visitor's own province/state. */
   preselectedRegions?: string[];
   /** Buyers only: which choice starts selected ("builder" = general contractor). */
-  orgKind?: "property_manager" | "builder";
+  orgKind?: "property_manager" | "builder" | "landlord";
   /** Award notice a GC came from — their first package gets it prefilled. */
   award?: string | null;
 }) {
@@ -35,6 +35,9 @@ export function OnboardingForm({
   const lang = useLang();
   const [state, action, pending] = useActionState(completeOnboardingAction, {} as ActionState);
   const isListing = role === "trade" || role === "supplier";
+  // Landlords may be individuals: company name optional (we use their name).
+  const [kind, setKind] = useState(orgKind);
+  const landlord = role === "property_manager" && kind === "landlord";
 
   if (role === "visitor") {
     return (
@@ -60,13 +63,13 @@ export function OnboardingForm({
       {role === "property_manager" && (
         <fieldset>
           <Label className="mb-2 block">{t.describes}</Label>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {(["property_manager", "builder"] as const).map((value) => (
+          <div className="grid gap-2 sm:grid-cols-3">
+            {(["property_manager", "landlord", "builder"] as const).map((value) => (
               <label
                 key={value}
                 className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-sm has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50"
               >
-                <input type="radio" name="orgKind" value={value} defaultChecked={orgKind === value} className="mt-0.5 size-4" />
+                <input type="radio" name="orgKind" value={value} defaultChecked={orgKind === value} onChange={() => setKind(value)} className="mt-0.5 size-4" />
                 <span>
                   <span className="block font-medium">{t.orgKinds[value].label}</span>
                   <span className="block text-xs text-muted-foreground">{t.orgKinds[value].hint}</span>
@@ -78,7 +81,11 @@ export function OnboardingForm({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t.companyName} required><Input name="name" required /></Field>
+        {landlord ? (
+          <Field label={t.landlordName}><Input name="name" placeholder={t.landlordNamePlaceholder} /></Field>
+        ) : (
+          <Field label={t.companyName} required><Input name="name" required /></Field>
+        )}
         <Field label={t.website}><Input name="website" placeholder="https://" /></Field>
         <Field label={t.phone}><Input name="phone" /></Field>
         <Field label={t.email}><Input name="email" type="email" /></Field>
@@ -87,7 +94,7 @@ export function OnboardingForm({
       </div>
 
       <Field label={t.shortDescription}>
-        <Textarea name="shortDescription" rows={2} maxLength={300} placeholder={t.shortDescriptionPlaceholder} />
+        <Textarea name="shortDescription" rows={2} maxLength={300} placeholder={landlord ? t.landlordDescriptionPlaceholder : t.shortDescriptionPlaceholder} />
       </Field>
 
       {isListing && (

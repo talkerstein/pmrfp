@@ -3,7 +3,7 @@ import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config
 import { displayTitle } from "@/lib/tenders/title";
 
 /** Organizations that post RFPs (the "bids" widget). Trades don't post. */
-const POSTER_TYPES = ["property_manager", "owner", "builder"];
+const POSTER_TYPES = ["property_manager", "owner", "builder", "landlord"];
 
 export interface EmbedOrg {
   id: string;

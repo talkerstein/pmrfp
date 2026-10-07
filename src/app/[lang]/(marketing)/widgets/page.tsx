@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return { title: t.title, description: t.description, alternates: alternatesFor(l, "/widgets") };
 }
 
-const POSTERS = new Set(["property_manager", "owner", "builder"]);
+const POSTERS = new Set(["property_manager", "owner", "builder", "landlord"]);
 const LISTED = new Set(["trade_company", "supplier"]);
 
 export default async function WidgetsPage({

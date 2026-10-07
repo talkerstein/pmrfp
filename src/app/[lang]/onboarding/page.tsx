@@ -59,8 +59,10 @@ export default async function OnboardingPage({
 
   // Buyers pick "property manager" or "general contractor"; a GC sign-up
   // (or ?kind=gc) starts on the contractor choice.
-  const gcIntent = role === "property_manager" ? await getSignupGcIntent() : { builder: false, award: null };
+  const gcIntent = role === "property_manager" ? await getSignupGcIntent() : { builder: false, landlord: false, award: null };
   const isGc = role === "property_manager" && (kind === "gc" || choice === "general_contractor" || gcIntent.builder);
+  // Landlords (independent building owners): from ?role=landlord or sign-up metadata.
+  const isLandlord = role === "property_manager" && !isGc && (choice === "landlord" || gcIntent.landlord);
   const award = parseAwardRef(awardParam) ?? gcIntent.award;
 
   const heading =
@@ -70,7 +72,9 @@ export default async function OnboardingPage({
         ? t.headings.supplier
         : isGc
           ? t.headings.gc
-          : role === "property_manager"
+          : isLandlord
+            ? t.headings.landlord
+            : role === "property_manager"
             ? t.headings.pm
             : t.headings.done;
 
@@ -82,7 +86,9 @@ export default async function OnboardingPage({
           ? t.intros.listing
           : isGc
             ? t.intros.gc
-            : t.intros.buyer
+            : isLandlord
+              ? t.intros.landlord
+              : t.intros.buyer
       }
     >
       <OnboardingForm
@@ -91,7 +97,7 @@ export default async function OnboardingPage({
         regions={regions}
         next={next}
         preselectedRegions={preselectedRegions}
-        orgKind={isGc ? "builder" : "property_manager"}
+        orgKind={isGc ? "builder" : isLandlord ? "landlord" : "property_manager"}
         award={award}
       />
     </Shell>

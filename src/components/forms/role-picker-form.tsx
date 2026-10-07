@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Building2, Hammer, HardHat, Package } from "lucide-react";
+import { Building2, Hammer, HardHat, KeyRound, Package } from "lucide-react";
 import { chooseRoleAction, type ActionState } from "@/lib/auth/actions";
 import type { RoleChoice } from "@/lib/auth/oauth";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useLang, useT } from "@/i18n/provider";
 const OPTIONS: { value: RoleChoice; icon: typeof HardHat }[] = [
   { value: "trade", icon: HardHat },
   { value: "property_manager", icon: Building2 },
+  { value: "landlord", icon: KeyRound },
   { value: "general_contractor", icon: Hammer },
   { value: "supplier", icon: Package },
 ];
