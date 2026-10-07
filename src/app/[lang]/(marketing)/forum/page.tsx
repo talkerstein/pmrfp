@@ -28,7 +28,8 @@ export default async function ForumIndexPage({ params }: { params: Promise<objec
   const t = getT("forum");
   const idx = await getForumIndex();
 
-  const section = (title: string, slugs: readonly string[], cats: ForumCategory[]) => (
+  // A channel with none of its categories present (e.g. not seeded yet) is hidden, not shown empty.
+  const section = (title: string, slugs: readonly string[], cats: ForumCategory[]) => !slugs.some((s) => cats.some((c) => c.slug === s)) ? null : (
     <section className="mt-10">
       <h2 className="text-lg font-bold tracking-tight">{title}</h2>
       <div className="mt-3 overflow-hidden rounded-xl border border-border">

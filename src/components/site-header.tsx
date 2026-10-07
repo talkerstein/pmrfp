@@ -16,6 +16,7 @@ const NAV_KEY = {
   "/directory": "directory",
   "/jobs": "jobs",
   "/forum": "forum",
+  "/marketplace": "marketplace",
   "/for-property-managers": "forPms",
   "/pricing": "pricing",
 } as const;

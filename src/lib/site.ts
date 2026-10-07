@@ -80,6 +80,7 @@ export const MAIN_NAV = [
   { href: "/directory", label: "Trade Directory" },
   { href: "/jobs", label: "Jobs" },
   { href: "/forum", label: "Forum" },
+  { href: "/marketplace", label: "Marketplace" },
   { href: "/for-property-managers", label: "For Property Managers" },
   { href: "/pricing", label: "Pricing" },
 ] as const;
@@ -100,6 +101,7 @@ export const TRADE_NAV = [
   // (linked from the Projects page), so one entry instead of two.
   { href: "/dashboard/projects", label: "Projects" },
   { href: "/jobs/manage", label: "Hiring" },
+  { href: "/dashboard/listings", label: "Marketplace" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/settings", label: "Settings" },
 ] as const;
@@ -131,6 +133,7 @@ export const ADMIN_NAV = [
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/sponsors", label: "Sponsors" },
   { href: "/admin/forum", label: "Forum" },
+  { href: "/admin/marketplace", label: "Marketplace" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/audit-logs", label: "Audit Logs" },
 ] as const;
@@ -146,6 +149,7 @@ export const FOOTER_COLS = [
       { label: "Trade Jobs", href: "/jobs" },
       { label: "Trade Forum", href: "/forum" },
       { label: "Find Tradespeople", href: "/talent" },
+      { label: "Equipment Marketplace", href: "/marketplace" },
       { label: "Contract Winners", href: "/contract-winners" },
       { label: "Public Contracts Report", href: "/reports/public-building-contracts" },
       { label: "Trades", href: "/trades" },

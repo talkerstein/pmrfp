@@ -15,6 +15,8 @@ import { RFP_TEMPLATES } from "@/lib/seo/rfp-templates";
 import { listOpenJobs } from "@/lib/jobs/data";
 import { listIndexableThreads } from "@/lib/forum/data";
 import { FORUM_CATEGORY_SLUGS, isFrenchForum } from "@/lib/forum/categories";
+import { listActiveListings } from "@/lib/marketplace/data";
+import { CATEGORIES, landingIndexable } from "@/lib/marketplace/rules";
 import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
 import { PROVINCES } from "@/lib/data/province-hub";
 
@@ -41,6 +43,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/rfps", priority: 0.8, freq: "daily" },
     { path: "/jobs", priority: 0.8, freq: "daily" },
     { path: "/talent", priority: 0.6, freq: "daily" },
+    { path: "/marketplace", priority: 0.7, freq: "daily" },
+    { path: "/marketplace/rules", priority: 0.3, freq: "yearly" },
     { path: "/pricing", priority: 0.9, freq: "monthly" },
     { path: "/resources", priority: 0.7, freq: "weekly" },
     { path: "/resources/how-to-post-a-quality-rfp", priority: 0.7, freq: "monthly" },
@@ -116,6 +120,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const t of RFP_TEMPLATES) entries.push({ url: `${base}/rfp-templates/${t.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
   // Open jobs (Google for Jobs reads the JobPosting markup on each page).
   for (const j of (await listOpenJobs()).jobs) entries.push({ url: `${base}/jobs/${j.slug}`, lastModified: new Date(j.createdAt), changeFrequency: "daily", priority: 0.6 });
+
+  // Marketplace: live listings, plus category / category×region landings that clear the
+  // LANDING_MIN_LISTINGS gate (thinner ones are noindexed on the page). Empty before the migration.
+  const { listings: market } = await listActiveListings();
+  for (const l of market) entries.push({ url: `${base}/marketplace/${l.slug}`, lastModified: new Date(l.updatedAt), changeFrequency: "weekly", priority: 0.5 });
+  for (const c of CATEGORIES) {
+    const inCat = market.filter((l) => l.category === c);
+    if (landingIndexable(inCat.length)) entries.push({ url: `${base}/marketplace/category/${c}`, lastModified: now, changeFrequency: "daily", priority: 0.6 });
+    for (const rg of new Set(inCat.map((l) => l.regionSlug).filter((s): s is string => Boolean(s)))) {
+      if (landingIndexable(inCat.filter((l) => l.regionSlug === rg).length)) {
+        entries.push({ url: `${base}/marketplace/category/${c}/${rg}`, lastModified: now, changeFrequency: "daily", priority: 0.5 });
+      }
+    }
+  }
 
   // Forum: the index, each category, and only threads that pass the indexing
   // gate (approved, answered or 2+ replies, 150+ words). lastmod = last reply.
