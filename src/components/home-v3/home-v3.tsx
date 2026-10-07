@@ -9,7 +9,7 @@ import { V3Footer, V3Header, foundingLabel } from "./chrome";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
-import { FOUNDING, FOUNDING_LOW_SPOTS, foundingScarcity } from "@/lib/founding/config";
+import { FOUNDING } from "@/lib/founding/config";
 import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";

@@ -45,8 +45,7 @@ describe("public scarcity copy", () => {
         expect(s).not.toMatch(/\{cap\}.*(left|restantes|lugares)/);
       }
       expect(f.counter).toContain("{low}");
-      expect(home[lang].founding.spots).not.toMatch(/500/);
-      expect(home[lang].founding.spotsShort).not.toMatch(/500/);
+      for (const s of Object.values(home[lang].founding)) expect(s).not.toMatch(/\d+ (of|sur|de) 500/);
     }
   });
 });
