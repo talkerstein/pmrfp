@@ -7,7 +7,7 @@ import { FoundingBuyButton } from "@/components/founding/buy-button";
 import { FoundingTermsList } from "@/components/founding/terms-list";
 import { FoundingPrice, FoundingRegularPrice } from "@/components/founding/market-text";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
-import { FOUNDING, FOUNDING_PATH, spotsLeft } from "@/lib/founding/config";
+import { FOUNDING, FOUNDING_LOW_SPOTS, FOUNDING_PATH, foundingScarcity, spotsLeft } from "@/lib/founding/config";
 import { cachedLifetimeCount } from "@/lib/founding/server";
 import { SITE } from "@/lib/site";
 import { getT, setLangFrom } from "@/i18n/server";
@@ -16,7 +16,7 @@ import { hasLocale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt } from "@/i18n/format";
 
-/** The spots-left counter refreshes about once a minute. */
+/** The availability state (quiet / fewer than 50 / sold out) refreshes about once a minute. */
 export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -51,7 +51,7 @@ export default async function FoundingPage({ params }: { params: Promise<object>
     brand: { "@type": "Brand", name: SITE.name },
     // One currency only (site default market, Canada); U.S. visitors see USD on the page.
     offers: [
-      { "@type": "Offer", price: FOUNDING.priceCad, priceCurrency: "CAD", availability, url: `${base}${FOUNDING_PATH}`, eligibleRegion: "CA", inventoryLevel: left == null ? undefined : { "@type": "QuantitativeValue", value: left } },
+      { "@type": "Offer", price: FOUNDING.priceCad, priceCurrency: "CAD", availability, url: `${base}${FOUNDING_PATH}`, eligibleRegion: "CA" },
     ],
   };
 
@@ -73,7 +73,7 @@ export default async function FoundingPage({ params }: { params: Promise<object>
       ) : (
         <div className="mt-8 rounded-lg border border-teal-400/60 bg-teal-100/30 p-6">
           <p className="text-sm font-medium text-teal-ink">
-            {left == null ? fmt(t.counterUnknown, vars) : fmt(t.counter, { ...vars, left })}
+            {foundingScarcity(left) === "low" ? fmt(t.counter, { ...vars, low: FOUNDING_LOW_SPOTS }) : fmt(t.counterUnknown, vars)}
           </p>
           <p className="mt-2 text-2xl font-semibold">
             <FoundingPrice />
