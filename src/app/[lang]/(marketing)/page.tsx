@@ -36,6 +36,7 @@ import { hasLocale, type Locale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatNumber, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
+import { FoundingBanner } from "@/components/founding/banner";
 
 // The RFP board refreshes daily from the public-tender feed; without this the
 // page was frozen at build time and showed stale open counts until a deploy.
@@ -239,6 +240,7 @@ export default async function HomePage({ params }: { params: Promise<object> }) 
               <span className="inline-flex size-2 rounded-full bg-teal-300" />
               {live ? t.hero.badgeLive : t.hero.badgeGta}
             </p>
+            <div className="mt-3"><FoundingBanner variant="badge" /></div>
             <h1 className="mt-6 text-balance text-4xl font-extrabold leading-[1.06] tracking-tight text-white md:text-5xl lg:text-[3.35rem] xl:text-[3.6rem]">
               {live ? (
                 <>

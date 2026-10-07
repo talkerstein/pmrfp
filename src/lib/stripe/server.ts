@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isLifetimeSubscriptionId } from "@/lib/founding/config";
 
 export function isStripeConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_TRADE_PRO_ANNUAL);
@@ -25,6 +26,17 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
   if (!orgId) return;
 
   const supabase = createServiceClient();
+
+  // Founding 500 lifetime orgs are never touched by recurring-subscription
+  // events: an old annual sub being canceled, a portal change or a late
+  // retry must not overwrite (downgrade) a paid-once lifetime row.
+  const { data: current } = await supabase
+    .from("subscriptions")
+    .select("stripe_subscription_id")
+    .eq("organization_id", orgId)
+    .maybeSingle<{ stripe_subscription_id: string | null }>();
+  if (shouldSkipSyncForLifetime(current?.stripe_subscription_id)) return;
+
   const item = sub.items.data[0];
   const priceId = item?.price.id ?? null;
   const status = mapStatus(sub.status);
@@ -73,6 +85,11 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
     const active = status === "active" || status === "trialing";
     await supabase.from("organizations").update({ featured: active }).eq("id", orgId);
   }
+}
+
+/** A lifetime row is final: Stripe subscription sync must never overwrite it. */
+export function shouldSkipSyncForLifetime(existingSubscriptionId: string | null | undefined): boolean {
+  return isLifetimeSubscriptionId(existingSubscriptionId);
 }
 
 /** True when the price id is the paid Featured placement plan. */

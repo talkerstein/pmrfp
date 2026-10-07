@@ -32,6 +32,10 @@ import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
+import { FoundingBanner } from "@/components/founding/banner";
+
+/** The spots-left counter refreshes about once a minute. */
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -98,6 +102,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
       </section>
 
       <Section>
+        <FoundingBanner className="mb-6" />
         <div className="mb-10 flex items-center gap-3 rounded-lg border border-teal-400/60 bg-teal-100/40 px-5 py-4">
           <Sparkles className="size-5 shrink-0 text-teal-600" />
           <p className="text-sm font-medium text-foreground">

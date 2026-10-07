@@ -7,6 +7,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate } from "@/i18n/format";
+import { FoundingTermsList } from "@/components/founding/terms-list";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -80,6 +81,12 @@ export default async function TermsPage({ params }: { params: Promise<object> })
           )}
           <p>{t.billing.free}</p>
         </LegalSection>
+
+        <div id="founding-500" className="scroll-mt-24">
+          <LegalSection title={getT("founding").termsSectionTitle}>
+            <FoundingTermsList />
+          </LegalSection>
+        </div>
 
         <LegalSection title={t.use.title}>
           <p>{t.use.body}</p>
