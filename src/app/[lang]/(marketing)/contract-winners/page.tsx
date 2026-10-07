@@ -4,7 +4,7 @@ import { ArrowRight, Trophy } from "lucide-react";
 import { Container } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
-import { listWinners } from "@/lib/data/winners";
+import { awardTotals, listWinners } from "@/lib/data/winners";
 import { compactDollars } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
@@ -31,8 +31,7 @@ export default async function ContractWinnersPage({ params }: { params: Promise<
   const t = getT("partners").winners;
   const crumbs = getT("partners").crumbs;
   const winners = await listWinners();
-  const contracts = winners.reduce((s, w) => s + w.awards.length, 0);
-  const value = winners.reduce((s, w) => s + w.totalValue, 0);
+  const { contracts, value } = awardTotals(winners);
 
   return (
     <>

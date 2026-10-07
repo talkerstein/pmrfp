@@ -186,7 +186,6 @@ const en = {
       seo: "SEO Listing",
     },
     featuredNote: PRICING.featuredNote as string,
-    earlyBirdNote: PRICING.earlyBirdNote as string,
     guaranteeNote: PRICING.guaranteeNote as string,
   },
   projects: {
@@ -503,7 +502,6 @@ const fr: typeof en = {
     },
     featuredNote:
       "Le forfait En vedette comprend tout ce qu'offre Trade Pro, plus un placement prioritaire en tête de vos catégories et de vos régions.",
-    earlyBirdNote: "Tarif de lancement : garantissez-vous 249 $/an — le prix passera à 399 $ dès que nous aurons 100 abonnés.",
     guaranteeNote:
       "Annulez en tout temps — votre accès se poursuit jusqu'à la fin de votre période de facturation. Les abonnements ne sont pas remboursables.",
   },
@@ -823,7 +821,6 @@ const es: typeof en = {
     },
     featuredNote:
       "Destacado incluye todo lo de Trade Pro, más una ubicación prioritaria en la parte superior de sus categorías y regiones.",
-    earlyBirdNote: "Precio de lanzamiento: asegure $249 al año; subirá a $399 cuando lleguemos a 100 suscriptores.",
     guaranteeNote:
       "Cancele cuando quiera: su acceso continúa hasta el final de su período de facturación. Las suscripciones no son reembolsables.",
   },

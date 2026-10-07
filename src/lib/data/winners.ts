@@ -128,3 +128,15 @@ export async function listWinners(): Promise<Winner[]> {
 export async function getWinner(slug: string): Promise<Winner | null> {
   return (await listWinners()).find((w) => w.slug === slug) ?? null;
 }
+
+/**
+ * The one award total shown site-wide (/contract-winners, the homepage, the RFP
+ * board and RFP pages): contracts and dollar value won by repeat winners.
+ */
+export function awardTotals(winners: Winner[]): { companies: number; contracts: number; value: number } {
+  return {
+    companies: winners.length,
+    contracts: winners.reduce((s, w) => s + w.awards.length, 0),
+    value: winners.reduce((s, w) => s + w.totalValue, 0),
+  };
+}

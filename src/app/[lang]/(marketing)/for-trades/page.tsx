@@ -192,9 +192,6 @@ export default async function ForTradesPage({ params }: { params: Promise<object
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
               {p.pricing.body}
             </p>
-            <p className="mt-4 text-sm font-medium text-teal-600">
-              {t.plans.earlyBird}
-            </p>
           </div>
           <div className="flex flex-wrap gap-3 md:justify-end">
             <Link href="/sign-up" className={buttonVariants({ size: "lg" })}>

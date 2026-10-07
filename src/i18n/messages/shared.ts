@@ -55,7 +55,6 @@ const en = {
     pricing: "See pricing",
     priceMonthly: "From ${monthly}/mo or ${annual}/yr · cancel any time",
     priceAnnual: "${annual}/yr · cancel any time",
-    earlyBird: "Early-bird: lock in $249/yr — rises to $399 once we hit 100 subscribers.",
   },
   refer: {
     eyebrow: "Referral program · two lanes",
@@ -164,7 +163,6 @@ const fr: typeof en = {
     pricing: "Voir les tarifs",
     priceMonthly: "À partir de {monthly} $/mois ou {annual} $/an · annulable en tout temps",
     priceAnnual: "{annual} $/an · annulable en tout temps",
-    earlyBird: "Tarif de lancement : bloquez 249 $/an — il passera à 399 $ quand nous atteindrons 100 abonnés.",
   },
   refer: {
     eyebrow: "Programme de recommandation · deux volets",
@@ -302,7 +300,6 @@ const es: typeof en = {
     pricing: "Ver precios",
     priceMonthly: "Desde ${monthly} al mes o ${annual} al año · cancele cuando quiera",
     priceAnnual: "${annual} al año · cancele cuando quiera",
-    earlyBird: "Precio de lanzamiento: asegure $249 al año — sube a $399 cuando lleguemos a 100 suscriptores.",
   },
   refer: {
     eyebrow: "Programa de referidos · dos modalidades",

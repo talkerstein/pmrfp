@@ -9,7 +9,7 @@ import { fmt } from "@/i18n/format";
 import { SITE } from "@/lib/site";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listAllRfpsCached, listQualifyingCombos } from "@/lib/data/trade-city";
-import { winnersFromRfps } from "@/lib/data/winners";
+import { awardTotals, winnersFromRfps } from "@/lib/data/winners";
 import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { rfpMarket } from "@/lib/visitor-geo";
@@ -217,8 +217,7 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; live: 
   // Contract winners: the same numbers as /contract-winners.
   const winners = winnersFromRfps(rfps);
   if (winners.length) {
-    const contracts = winners.reduce((s, w) => s + w.awards.length, 0);
-    const value = winners.reduce((s, w) => s + w.totalValue, 0);
+    const { contracts, value } = awardTotals(winners);
     const most = [...winners].sort((a, b) => b.awards.length - a.awards.length)[0];
     data.winners = {
       repeat: winners.length,

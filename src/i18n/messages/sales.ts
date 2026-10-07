@@ -11,7 +11,6 @@ const en = {
     retailAerial: "Aerial view of a suburban retail power centre and its parking lots",
   },
   plans: {
-    earlyBird: "Early-bird: lock in $249/yr — rises to $399 once we hit 100 subscribers.",
     guarantee: "Cancel anytime — your access runs to the end of your billing period. Subscriptions are non-refundable.",
     roi: "One won commercial RFP typically covers years of Trade Pro.",
   },
@@ -288,7 +287,6 @@ const fr: typeof en = {
     retailAerial: "Vue aérienne d'un mégacentre commercial de banlieue et de ses stationnements",
   },
   plans: {
-    earlyBird: "Tarif de lancement : bloquez 249 $/an — le prix passera à 399 $ dès que nous atteindrons 100 abonnés.",
     guarantee:
       "Annulez en tout temps — votre accès se poursuit jusqu'à la fin de votre période de facturation. Les abonnements ne sont pas remboursables.",
     roi: "Un seul appel d'offres commercial remporté couvre généralement plusieurs années de Trade Pro.",
@@ -568,7 +566,6 @@ const es: typeof en = {
     retailAerial: "Vista aérea de un gran centro comercial suburbano y sus estacionamientos",
   },
   plans: {
-    earlyBird: "Precio de lanzamiento: asegure $249 al año — sube a $399 cuando lleguemos a 100 suscriptores.",
     guarantee:
       "Cancele cuando quiera — su acceso dura hasta el final de su periodo de facturación. Las suscripciones no son reembolsables.",
     roi: "Una sola RFP comercial ganada suele cubrir varios años de Trade Pro.",
