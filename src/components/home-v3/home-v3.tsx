@@ -8,7 +8,7 @@ import { setMarket, useUsdPerCad, useVisitorMarket } from "@/components/geo/use-
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
-import { FOUNDING } from "@/lib/founding/config";
+import { FOUNDING, FOUNDING_LOW_SPOTS, foundingScarcity } from "@/lib/founding/config";
 import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
@@ -24,7 +24,7 @@ export interface V3Data {
   closing7: number;
   trades: number;
   regions: number;
-  /** Founding 500 spots left; null when the count can't be read. */
+  /** Founding 500 spots left; null when the count can't be read. Only used to pick quiet / low / sold-out copy, never displayed. */
   foundingLeft: number | null;
   big: V3Trade & { img: string };
   tiles: (V3Trade & { img: string })[];
@@ -276,8 +276,10 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
   const toastItem = data.toast.length ? data.toast[toastIdx % data.toast.length] : null;
   const showToast = toastOn && !toastOff && !modal && toastItem != null;
   const showFounding = data.foundingLeft !== 0;
-  const spots = data.foundingLeft == null ? null : fmt(t.founding.spots, { n: num(data.foundingLeft) });
-  const spotsShort = data.foundingLeft == null ? null : fmt(t.founding.spotsShort, { n: num(data.foundingLeft) });
+  // No remaining count is shown until fewer than FOUNDING_LOW_SPOTS remain, and then only "fewer than 50".
+  const lowSpots = foundingScarcity(data.foundingLeft) === "low";
+  const spots = lowSpots ? fmt(t.founding.spots, { n: num(FOUNDING_LOW_SPOTS) }) : null;
+  const spotsShort = lowSpots ? fmt(t.founding.spotsShort, { n: num(FOUNDING_LOW_SPOTS) }) : null;
   const w = data.winners;
   const top = w.top;
   const bigwords = [

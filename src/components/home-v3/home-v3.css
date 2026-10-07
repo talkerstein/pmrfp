@@ -54,10 +54,12 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 
 /* ------------------------------------------------------------ top / header */
 .v3-top { background: var(--ink); color: #FFFFFF; }
-.v3-found { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; background: var(--mint); color: var(--ink) !important; text-decoration: none; padding: 10px 32px; font-size: 14px; text-align: center; }
-.v3-found b { font-weight: 700; }
-.v3-found .badge { font-family: var(--fm); font-size: 12px; background: var(--ink); color: #FFFFFF; border-radius: 999px; padding: 3px 10px; }
-.v3-found .u { font-weight: 700; text-decoration: underline; }
+/* Founding 500 bar: deliberately quiet. Dark band, small muted text, no count, no animation. */
+.v3-found { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; background: transparent; color: rgba(255,255,255,.72) !important; text-decoration: none; padding: 6px 32px; font-size: 12.5px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.08); }
+.v3-found b { font-weight: 500; }
+.v3-found .badge { font-size: 12px; color: rgba(255,255,255,.72); }
+.v3-found .u { font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.v3-found:hover { color: #FFFFFF !important; }
 .v3-hdr { max-width: 1200px; margin: 0 auto; padding: 0 32px; min-height: 76px; display: flex; align-items: center; gap: 36px; }
 .v3-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF !important; }
 .v3-logo span { font-family: var(--fp); font-weight: 700; font-size: 22px; letter-spacing: -.01em; }
@@ -473,7 +475,7 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
   .v3-h2 { font-size: 34px; margin-top: 8px !important; }
   .v3-h3 { font-size: 26px; }
 
-  .v3-found { padding: 10px 16px; }
+  .v3-found { padding: 6px 16px; }
   .v3-hdr { min-height: 64px; padding: 0 16px; gap: 10px; flex-wrap: wrap; }
   .v3-logo { flex-grow: 1; gap: 8px; }
   .v3-logo img { width: 30px !important; height: 30px !important; }
