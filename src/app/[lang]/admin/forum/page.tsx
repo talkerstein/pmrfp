@@ -60,7 +60,7 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
       <PageHeader title="Forum" description="Mod queue, community moderators and staff threads." />
       {isDemoMode() && <DemoBanner />}
       {!ready ? (
-        <p className="text-sm text-muted-foreground">The forum tables aren&apos;t there yet. Apply supabase/migrations/20261006000001_forum.sql.</p>
+        <p className="text-sm text-muted-foreground">The forum tables aren&apos;t there yet. Apply supabase/migrations/20261006000002_forum.sql.</p>
       ) : (
         <>
           <section>
