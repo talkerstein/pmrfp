@@ -1,4 +1,4 @@
-import "@/components/home-v3/pages.css";
+import "@/components/v3-pages/directory.css";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound, permanentRedirect } from "next/navigation";

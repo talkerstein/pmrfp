@@ -3,7 +3,6 @@ import { after } from "next/server";
 import { notFound, permanentRedirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { CheckCircle2, Lock } from "lucide-react";
-import { Container } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { MemberName, OpeningSoon, Pager, PostBody, RatingBar, VerifyPanel } from "@/components/forum/parts";
 import { ModButtons, PostControls, RateThread, ReplyForm, ThreadReport } from "@/components/forum/forms";
@@ -13,14 +12,14 @@ import { createReadClient } from "@/lib/supabase/read";
 import { getThread, isCategoryMod, listPosts, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
 import { isFrenchForum, tradeForForum } from "@/lib/forum/categories";
 import { sessionCanPost } from "@/lib/forum/eligibility";
-import { isIndexableThread, pageCount } from "@/lib/forum/rules";
+import { RANKS, isIndexableThread, pageCount, rankFor } from "@/lib/forum/rules";
 import { excerpt, parseThreadParam } from "@/lib/forum/text";
 import { threadSchema } from "@/lib/forum/schema";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
-import { fmt, formatDate, plural } from "@/i18n/format";
+import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 
 async function load(category: string, param: string) {
@@ -73,7 +72,7 @@ function PostCard({
   const lang = getLang();
   const own = viewerId != null && p.author?.userId === viewerId;
   return (
-    <article id={`post-${p.id}`} className={cn("rounded-xl border p-5", highlight ? "border-teal-500 bg-teal-50/40 dark:bg-teal-500/5" : "border-border")}>
+    <article id={`post-${p.id}`} className={cn("f-card", highlight && "ok")}>
       <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <MemberName m={p.author} staff={p.isStaff} showRank />
         <span className="text-xs text-muted-foreground">
@@ -144,6 +143,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
   const trade = tradeForForum(thread.categorySlug);
   const answerWord = thread.type === "question" ? t.thread.answers : t.thread.replies;
   const op = thread.author?.userId === viewerId;
+  const v = getT("v3Pages").forum;
 
   return (
     <>
@@ -157,26 +157,31 @@ export async function ThreadView({ category, param, page }: { category: string; 
         ])}
       />
       <div lang={isFrenchForum(thread.categorySlug) ? "fr-CA" : undefined}>
-      <Container className="max-w-4xl py-8 pb-16">
-        <nav className="text-sm text-muted-foreground" aria-label="Breadcrumb">
-          <Link href="/forum" className="hover:underline">{t.forum}</Link>
-          {" / "}
-          <Link href={`/forum/${thread.categorySlug}`} className="hover:underline">{cat.name}</Link>
-        </nav>
-
-        <h1 className="mt-3 text-balance text-2xl font-extrabold tracking-tight md:text-3xl">{thread.title}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{thread.type === "question" ? t.category.question : t.category.discussion}</span>
-          <span>{plural(thread.replyCount, answerWord)}</span>
-          <span>{plural(thread.viewCount, t.thread.views)}</span>
-          <span>{fmt(t.thread.updated, { date: formatDate(thread.lastPostAt, lang) })}</span>
-          {thread.region && <span>{thread.region}</span>}
-          {thread.isLocked && <span className="inline-flex items-center gap-1"><Lock className="size-3.5" /> {t.category.locked}</span>}
+      <section className="f-band">
+        <div className="wrap f-band-in">
+          <nav className="f-crumbs" aria-label="Breadcrumb">
+            <Link href="/forum">{t.forum}</Link>
+            <span aria-hidden>/</span>
+            <Link href={`/forum/${thread.categorySlug}`}>{cat.name}</Link>
+          </nav>
+          <div className="meta">
+            <span className="on">{thread.type === "question" ? t.category.question : t.category.discussion}</span>
+            <span>{cat.name}</span>
+            {thread.hasAccepted && <span><CheckCircle2 className="size-3.5" /> {t.category.answered}</span>}
+            {thread.isLocked && <span><Lock className="size-3.5" /> {t.category.locked}</span>}
+          </div>
+          <h1>{thread.title}</h1>
+          <p className="lead" style={{ fontSize: 15 }}>
+            {[plural(thread.replyCount, answerWord), plural(thread.viewCount, t.thread.views), fmt(t.thread.updated, { date: formatDate(thread.lastPostAt, lang) }), thread.region].filter(Boolean).join(" · ")}
+          </p>
         </div>
-
+      </section>
+      <div className="wrap f-page">
+      <div className="f-cols">
+      <div className="main">
         {page === 1 && accepted && (
-          <section className="mt-6 rounded-xl border-2 border-teal-500 bg-teal-50/50 p-5 dark:bg-teal-500/5" aria-label={t.thread.bestAnswer}>
-            <h2 className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-teal-800 dark:text-teal-300">
+          <section className="f-card ok" aria-label={t.thread.bestAnswer}>
+            <h2 className="f-pill">
               <CheckCircle2 className="size-4" /> {t.thread.bestAnswer}
             </h2>
             <PostBody text={accepted.body} className="mt-2" />
@@ -187,7 +192,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
         )}
 
         {page === 1 && (
-          <article className="mt-6 rounded-xl border border-border p-5">
+          <article className="f-card op" style={{ marginTop: accepted ? 14 : 0 }}>
             <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <MemberName m={thread.author} staff={thread.isStaff} showRank />
               <time dateTime={thread.createdAt} className="text-xs text-muted-foreground">{fmt(t.thread.posted, { date: formatDate(thread.createdAt, lang) })}</time>
@@ -215,8 +220,8 @@ export async function ThreadView({ category, param, page }: { category: string; 
           </article>
         )}
 
-        <h2 className="mt-10 text-lg font-bold">{plural(thread.replyCount, answerWord)}</h2>
-        <div className="mt-4 space-y-4">
+        <h2 className="f-hd2" style={{ marginTop: 40 }}>{plural(thread.replyCount, answerWord)}</h2>
+        <div className="mt-4 space-y-3.5">
           {posts.length === 0 ? (
             <p className="text-muted-foreground">{t.thread.noReplies}</p>
           ) : (
@@ -227,7 +232,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
         </div>
         <Pager base={thread.path} page={page} total={pages} />
 
-        <section className="mt-10 rounded-xl border border-border bg-muted/30 p-5">
+        <section className="mt-10 rounded-3xl bg-[#F5F5FA] p-5 sm:p-6">
           {thread.isLocked && !isMod ? (
             <p className="text-sm text-muted-foreground">{t.thread.lockedNote}</p>
           ) : !canPost ? (
@@ -244,10 +249,29 @@ export async function ThreadView({ category, param, page }: { category: string; 
 
         {trade && (
           <p className="mt-8 text-sm">
-            <Link href={`/trades/${trade}`} className="text-primary hover:underline">{fmt(t.thread.findTrades, { trade: cat.name })}</Link>
+            <Link href={`/trades/${trade}`} className="font-bold">{fmt(t.thread.findTrades, { trade: cat.name })}</Link>
           </p>
         )}
-      </Container>
+      </div>
+      <aside>
+        {thread.author && (
+          <div className="f-side-mint">
+            <div className="lb">{v.authorCard}</div>
+            <div className="nm">{thread.author.displayName}</div>
+            <div className="bars" aria-hidden>
+              {[16, 26, 36, 46, 56].map((h, i) => <i key={h} className={i <= RANKS.findIndex((r) => r.slug === rankFor(thread.author!.reputation).rank) ? "on wave" : "wave"} style={{ height: h, animationDelay: `${i * 0.2}s` }} />)}
+            </div>
+            <div style={{ marginTop: 8, fontWeight: 700 }}>{fmt(v.rankPoints, { rank: t.ranks[rankFor(thread.author.reputation).rank], n: formatNumber(thread.author.reputation, lang) })}</div>
+            <Link href={`/forum/u/${thread.author.handle}`}>{v.viewProfile}</Link>
+          </div>
+        )}
+        <div className="f-side-ink">
+          <div className="h">{v.differentQuestion}</div>
+          <Link href={`/forum/${thread.categorySlug}/new`} className="btn mint">{t.category.newThread}</Link>
+        </div>
+      </aside>
+      </div>
+      </div>
       </div>
     </>
   );

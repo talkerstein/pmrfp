@@ -85,7 +85,6 @@ const FR: Record<string, VerticalCopy> = {
     positioning:
       "PMRFP est le répertoire canadien des entrepreneurs en immobilier commercial. Votre inscription à 249 $/an place votre entreprise devant les gestionnaires immobiliers, promoteurs et constructeurs qui cherchent activement votre corps de métier dans votre ville.",
     pains: [
-      "90 % du travail vient de 2 ou 3 relations : une période creuse, et les revenus s'effondrent",
       "Les plateformes d'appels d'offres gouvernementaux sont bureaucratiques et surtout axées sur le secteur public",
       "HomeStars et TrustedPros n'envoient que des demandes résidentielles : mauvais acheteur, mauvaise taille de contrat",
       "Solliciter les gestionnaires immobiliers à froid est lent et coûteux",

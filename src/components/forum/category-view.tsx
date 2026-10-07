@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { CheckCircle2, Lock, MessagesSquare, Pin, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/container";
-import { buttonVariants } from "@/components/ui/button";
 import { ForumHero, MemberName, OpeningSoon, Pager, RatingBar } from "@/components/forum/parts";
 import { getCategoryRow, listCategoryThreads, type ThreadSummary } from "@/lib/forum/data";
 import { isForumCategory } from "@/lib/forum/categories";
@@ -82,7 +81,7 @@ export async function CategoryView({ category, page }: { category: string; page:
   if (!res.ready) {
     return (
       <>
-        <ForumHero eyebrow={t.forum} title={c.name} lead={c.blurb} />
+        <ForumHero eyebrow={t.forum} title={c.name} lead={c.blurb} crumbs={[{ label: t.forum, href: "/forum" }, { label: c.name }]} />
         <OpeningSoon />
       </>
     );
@@ -95,41 +94,40 @@ export async function CategoryView({ category, page }: { category: string; page:
   return (
     <>
       <JsonLd data={breadcrumbSchema([{ name: "PMRFP", path: "/" }, { name: t.forum, path: "/forum" }, { name: c.name, path: base }])} />
-      <ForumHero eyebrow={t.forum} title={c.name} lead={c.blurb}>
-        <p className="mt-3 text-sm text-indigo-100/70">
-          {t.index.modsLabel}{" "}
-          {res.category.mods.length
-            ? res.category.mods.map((m, i) => (
-                <span key={m.handle}>
-                  {i > 0 && ", "}
-                  <Link href={`/forum/u/${m.handle}`} className="text-teal-300 hover:underline">{m.displayName}</Link>
-                </span>
-              ))
-            : <em>{t.index.modOpen}</em>}
-          {" · "}
-          {fmt(t.category.stats, { threads: res.category.threadCount, posts: res.category.postCount })}
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link href={`${base}/new`} className={cn(buttonVariants({ variant: "accent" }), "gap-2")}>
+      <ForumHero eyebrow={t.forum} title={c.name} lead={c.blurb} crumbs={[{ label: t.forum, href: "/forum" }, { label: c.name }]}>
+        <div className="meta">
+          <span>
+            {t.index.modsLabel}{" "}
+            {res.category.mods.length
+              ? res.category.mods.map((m, i) => (
+                  <span key={m.handle}>
+                    {i > 0 && ", "}
+                    <Link href={`/forum/u/${m.handle}`} style={{ color: "#91F2CF" }}>{m.displayName}</Link>
+                  </span>
+                ))
+              : t.index.modOpen}
+          </span>
+          <span className="on">{fmt(t.category.stats, { threads: res.category.threadCount, posts: res.category.postCount })}</span>
+        </div>
+        <div className="acts">
+          <Link href={`${base}/new`} className="btn mint">
             <MessagesSquare className="size-4" /> {t.category.newThread}
           </Link>
-          <Link href="/forum" className={cn(buttonVariants({ variant: "outline" }), "border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white")}>
-            {t.category.back}
-          </Link>
+          <Link href="/forum" className="btn ghost">{t.category.back}</Link>
         </div>
       </ForumHero>
-      <Container className="py-8 pb-16">
+      <Container className="f-page">
         {category === "client-talk" && (
-          <p className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50/60 px-4 py-3 text-sm dark:bg-amber-500/10">
+          <p className="mb-4 flex items-start gap-2 rounded-2xl border-2 border-amber-500/50 bg-amber-50/60 px-5 py-4 text-sm">
             <Pin className="mt-0.5 size-4 shrink-0 text-amber-600" /> {t.clientTalkRule}
           </p>
         )}
         {pinned.length + threads.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-muted-foreground">{t.category.empty}</p>
+          <p className="rounded-3xl border-2 border-dashed border-[#D5D7E6] px-6 py-14 text-center text-[#4B4F6B]">{t.category.empty}</p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border">
+          <div className="overflow-hidden rounded-3xl border-2 border-[#E3E4EE]">
             <table className="w-full text-sm">
-              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="bg-[#F5F5FA] text-left font-mono text-xs uppercase tracking-[0.08em] text-[#4B4F6B]">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">{t.category.colTopic}</th>
                   <th className="hidden px-3 py-2.5 font-medium md:table-cell">{t.category.colAuthor}</th>

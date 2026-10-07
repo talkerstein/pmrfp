@@ -1,4 +1,4 @@
-import "./pages.css";
+import "@/components/v3-pages/directory.css";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { localizePath, type Locale } from "@/i18n/config";

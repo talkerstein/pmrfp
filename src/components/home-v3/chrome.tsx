@@ -17,7 +17,7 @@ import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
 
-import { V3H, V3_MARK, type V3ChromeMessages } from "./chrome-shared";
+import { V3H, V3_MARK, type V3ChromeMessages, type V3Messages } from "./chrome-shared";
 
 /* ------------------------------------------------------------------ money */
 
@@ -156,7 +156,7 @@ export function V3Footer({ t, lang }: { t: V3ChromeMessages; lang: Locale }) {
   const f = t.footer;
   const cols = [
     [f.find, [[f.rfps, V3H.rfps], [f.directory, V3H.directory], [f.winners, V3H.winners], [f.jobs, V3H.jobs], [f.marketplace, V3H.marketplace], [f.forum, V3H.forum]]],
-    [f.who, [[f.trades, "/for/tradesmen"], [f.pms, "/for-property-managers"], [f.landlords, V3H.landlord], [f.condos, "/for/condo-boards"], [f.realEstate, V3H.forRealEstate], [f.suppliers, "/for/suppliers"], [f.builders, "/for/builders"]]],
+    [f.who, [[f.trades, "/for-trades"], [f.pms, "/for-property-managers"], [f.landlords, V3H.landlord], [f.condos, "/for/condo-boards"], [f.realEstate, V3H.forRealEstate], [f.suppliers, "/for/suppliers"], [f.builders, "/for/builders"]]],
     [f.company, [[f.about2, "/about"], [f.advertise, V3H.advertise], [f.spotlight, "/spotlight"], [f.contact, "/contact"], [f.terms, "/terms"], [f.privacy, "/privacy"]]],
   ] as const;
   return (
@@ -191,6 +191,28 @@ export function V3Frame({ t, lang, foundingLeft, joinHref, children }: { t: V3Ch
       <V3Header t={t} lang={lang} foundingLeft={foundingLeft} joinHref={joinHref} />
       <main id="main" tabIndex={-1} style={{ outline: "none" }}>{children}</main>
       <V3Footer t={t} lang={lang} />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ sticky board bar */
+
+/** Live board numbers only; renders nothing when the board can't be read. */
+export function V3Sticky({ t, lang, open, closing7 }: { t: Pick<V3Messages, "sticky" | "nav">; lang: Locale; open: number | null; closing7: number | null }) {
+  const L = (p: string) => localizePath(p, lang);
+  const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
+  if (open == null || closing7 == null || open <= 0) return null;
+  return (
+    <div className="v3-sticky">
+      <div className="v3-sticky-in">
+        <span className="v3-dot d" style={{ width: 10, height: 10 }} />
+        <div className="txt">
+          <b><span className="d">{fmt(t.sticky.open, { n: num(open) })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(open) })}</span></b>{" "}
+          <span className="c"><span className="d">{fmt(t.sticky.closing, { n: num(closing7) })}</span><span className="m">{fmt(t.sticky.closingShort, { n: num(closing7) })}</span></span>
+        </div>
+        <a href={L("/sign-up?role=property_manager")} className="v3-pill ghost">{t.sticky.post}</a>
+        <a href={L(V3H.joinTrade)} className="v3-pill mint">{t.nav.join} →</a>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import "@/components/v3-pages/v3-pages.css";
+import "@/components/v3-pages/landing.css";
 import { V3Shell } from "@/components/home-v3/shell";
 import { setLangFrom } from "@/i18n/server";
 
