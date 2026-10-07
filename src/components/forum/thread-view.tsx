@@ -5,13 +5,14 @@ import Link from "@/i18n/link";
 import { CheckCircle2, Lock } from "lucide-react";
 import { Container } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
-import { MemberName, OpeningSoon, Pager, PostBody, RatingBar } from "@/components/forum/parts";
+import { MemberName, OpeningSoon, Pager, PostBody, RatingBar, VerifyPanel } from "@/components/forum/parts";
 import { ModButtons, PostControls, RateThread, ReplyForm, ThreadReport } from "@/components/forum/forms";
 import { getSession, isAdminRole } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
 import { getThread, isCategoryMod, listPosts, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
-import { tradeForForum } from "@/lib/forum/categories";
+import { isFrenchForum, tradeForForum } from "@/lib/forum/categories";
+import { sessionCanPost } from "@/lib/forum/eligibility";
 import { isIndexableThread, pageCount } from "@/lib/forum/rules";
 import { excerpt, parseThreadParam } from "@/lib/forum/text";
 import { threadSchema } from "@/lib/forum/schema";
@@ -39,12 +40,13 @@ export async function threadMetadata(langParam: string, category: string, param:
   const th = res.thread;
   const t = getDictionary(l).forum;
   const path = page > 1 ? `${th.path}/page/${page}` : th.path;
-  const indexable = isIndexableThread({ status: th.status, type: th.type, replyCount: th.replyCount, wordsTotal: th.wordsTotal });
+  const indexable = isIndexableThread({ status: th.status, type: th.type, replyCount: th.replyCount, wordsTotal: th.wordsTotal, category: th.categorySlug });
   return {
     title: `${th.title}${page > 1 ? fmt(t.meta.pageSuffix, { n: page }) : ""} · ${t.categories[th.categorySlug].name}`,
     description: excerpt(th.body, 160),
-    // Member content is English-only: every language copy points at the English URL.
-    alternates: { canonical: path },
+    // Member content is English, so every language copy points at the English
+    // URL, except French-first forums (Québec), whose threads canonicalize to /fr.
+    alternates: { canonical: isFrenchForum(th.categorySlug) ? localizePath(path, "fr") : path },
     robots: indexable ? undefined : { index: false, follow: true },
     openGraph: { type: "article", title: th.title, description: excerpt(th.body, 200) },
   };
@@ -119,7 +121,14 @@ export async function ThreadView({ category, param, page }: { category: string; 
   const viewer = session
     ? await viewerState(await createClient(), session.userId, thread.id, posts.map((p) => p.id))
     : { rating: null, voted: new Set<string>() };
-  const canAccept = viewerId != null && (viewerId === thread.author?.userId || isMod);
+  let canPost = false;
+  if (session) {
+    const { data } = await (await createClient()).auth.getUser();
+    canPost = await sessionCanPost(session, data.user);
+  }
+  // Votes, ratings, reports and replies all need a verified member.
+  const actorId = canPost ? viewerId : null;
+  const canAccept = actorId != null && (actorId === thread.author?.userId || isMod);
 
   if (page === 1) {
     after(async () => {
@@ -138,7 +147,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
 
   return (
     <>
-      <JsonLd data={threadSchema(thread, posts, accepted)} />
+      <JsonLd data={{ ...threadSchema(thread, posts, accepted), ...(isFrenchForum(thread.categorySlug) ? { inLanguage: "fr" } : {}) }} />
       <JsonLd
         data={breadcrumbSchema([
           { name: "PMRFP", path: "/" },
@@ -147,6 +156,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
           { name: thread.title, path: thread.path },
         ])}
       />
+      <div lang={isFrenchForum(thread.categorySlug) ? "fr-CA" : undefined}>
       <Container className="max-w-4xl py-8 pb-16">
         <nav className="text-sm text-muted-foreground" aria-label="Breadcrumb">
           <Link href="/forum" className="hover:underline">{t.forum}</Link>
@@ -187,12 +197,12 @@ export async function ThreadView({ category, param, page }: { category: string; 
               <div>
                 <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t.thread.rateThis}</p>
                 <div className="flex items-center gap-4">
-                  <RateThread threadId={thread.id} current={viewer.rating} canRate={viewerId != null && !op} />
+                  <RateThread threadId={thread.id} current={viewer.rating} canRate={actorId != null && !op} />
                   <RatingBar avg={thread.ratingAvg} count={thread.ratingCount} />
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {viewerId && !op && <ThreadReport threadId={thread.id} />}
+                {actorId && !op && <ThreadReport threadId={thread.id} />}
                 {isMod && (
                   <ModButtons
                     type="thread"
@@ -211,7 +221,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
             <p className="text-muted-foreground">{t.thread.noReplies}</p>
           ) : (
             posts.map((p) => (
-              <PostCard key={p.id} p={p} thread={thread} viewerId={viewerId} voted={viewer.voted.has(p.id)} isMod={isMod} canAccept={canAccept} highlight={p.isAccepted} />
+              <PostCard key={p.id} p={p} thread={thread} viewerId={actorId} voted={viewer.voted.has(p.id)} isMod={isMod} canAccept={canAccept} highlight={p.isAccepted} />
             ))
           )}
         </div>
@@ -220,6 +230,8 @@ export async function ThreadView({ category, param, page }: { category: string; 
         <section className="mt-10 rounded-xl border border-border bg-muted/30 p-5">
           {thread.isLocked && !isMod ? (
             <p className="text-sm text-muted-foreground">{t.thread.lockedNote}</p>
+          ) : !canPost ? (
+            <VerifyPanel signedIn={Boolean(session)} next={thread.path} />
           ) : session ? (
             <ReplyForm threadId={thread.id} label={thread.type === "question" ? t.thread.yourAnswer : t.thread.yourReply} firstPost={(await viewerPostCount(session.userId)) === 0} />
           ) : (
@@ -236,6 +248,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
           </p>
         )}
       </Container>
+      </div>
     </>
   );
 }

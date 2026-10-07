@@ -16,10 +16,13 @@ import {
   ratingPoints,
   reputationFrom,
   shouldAutoHide,
+  canPost,
   type PostCheckInput,
 } from "@/lib/forum/rules";
 import { excerpt, handleFrom, normalizeBody, parseBody, parseThreadParam, safeHref, slugify, wordCount } from "@/lib/forum/text";
-import { forumForTrade, tradeForForum, FORUM_CATEGORY_SLUGS } from "@/lib/forum/categories";
+import { forumForTrade, tradeForForum, FORUM_CATEGORY_SLUGS, channelOf, defaultThreadType, isFrenchForum } from "@/lib/forum/categories";
+import { isGoogleUser } from "@/lib/forum/eligibility";
+import { previewSamplesOn, samplePosts, sampleProfile, sampleThread } from "@/lib/forum/preview-samples";
 import forumMessages from "@/i18n/messages/forum";
 
 const NOW = new Date("2026-10-06T12:00:00Z");
@@ -219,6 +222,69 @@ describe("sanitizer", () => {
     expect(handleFrom("jo@acme.ca")).toMatch(/^[a-z0-9_]{3,24}$/);
     expect(excerpt("**Short** answer")).toBe("Short answer");
     expect(excerpt("word ".repeat(100), 50).length).toBeLessThanOrEqual(50);
+  });
+});
+
+describe("posting gate (verified members only)", () => {
+  const none = { isAdmin: false, isMod: false, orgProfileStatus: null, google: false, emailVerified: false, onboarded: false };
+  it("lets approved companies, admins and mods post", () => {
+    expect(canPost(none)).toBe(false);
+    expect(canPost({ ...none, orgProfileStatus: "approved" })).toBe(true);
+    expect(canPost({ ...none, orgProfileStatus: "pending_review" })).toBe(false);
+    expect(canPost({ ...none, isAdmin: true })).toBe(true);
+    expect(canPost({ ...none, isMod: true })).toBe(true);
+  });
+  it("needs Google + verified email + onboarding together", () => {
+    expect(canPost({ ...none, google: true, emailVerified: true, onboarded: true })).toBe(true);
+    expect(canPost({ ...none, google: true, emailVerified: true })).toBe(false);
+    expect(canPost({ ...none, google: true, onboarded: true })).toBe(false);
+    expect(canPost({ ...none, emailVerified: true, onboarded: true })).toBe(false);
+  });
+  it("detects Google sign-ins", () => {
+    expect(isGoogleUser({ app_metadata: { provider: "google" }, identities: [] })).toBe(true);
+    expect(isGoogleUser({ app_metadata: { provider: "email", providers: ["email", "google"] }, identities: [] })).toBe(true);
+    expect(isGoogleUser({ app_metadata: { provider: "email" }, identities: [] })).toBe(false);
+    expect(isGoogleUser(null)).toBe(false);
+  });
+});
+
+describe("channels", () => {
+  it("defaults trades to Question and community channels to Discussion", () => {
+    expect(defaultThreadType("plumbing")).toBe("question");
+    expect(defaultThreadType("job-site-stories")).toBe("discussion");
+    expect(defaultThreadType("off-topic")).toBe("discussion");
+  });
+  it("never indexes Off the Clock", () => {
+    const t = { status: "approved" as const, type: "discussion" as const, replyCount: 5, wordsTotal: 900 };
+    expect(isIndexableThread({ ...t, category: "off-topic" })).toBe(false);
+    expect(isIndexableThread({ ...t, category: "job-site-stories" })).toBe(true);
+  });
+  it("puts every category in exactly one channel; Québec is French-first", () => {
+    expect(new Set(FORUM_CATEGORY_SLUGS).size).toBe(FORUM_CATEGORY_SLUGS.length);
+    expect(channelOf("quebec")).toBe("regional");
+    expect(isFrenchForum("quebec")).toBe(true);
+    expect(isFrenchForum("ontario")).toBe(false);
+  });
+});
+
+describe("preview samples", () => {
+  it("are off unless PREVIEW_SAMPLES=1", () => {
+    const prev = process.env.PREVIEW_SAMPLES;
+    delete process.env.PREVIEW_SAMPLES;
+    expect(previewSamplesOn()).toBe(false);
+    process.env.PREVIEW_SAMPLES = "true";
+    expect(previewSamplesOn()).toBe(false);
+    process.env.PREVIEW_SAMPLES = "1";
+    expect(previewSamplesOn()).toBe(true);
+    if (prev === undefined) delete process.env.PREVIEW_SAMPLES;
+    else process.env.PREVIEW_SAMPLES = prev;
+  });
+  it("include an answered question and community threads", () => {
+    const t = sampleThread("hv01rtu1");
+    expect(t?.type).toBe("question");
+    expect(samplePosts(t!).accepted).not.toBeNull();
+    expect(sampleThread("js01boil")?.categorySlug).toBe("job-site-stories");
+    expect(sampleProfile("dave_hvac")?.crew?.listed).toBe(true);
   });
 });
 

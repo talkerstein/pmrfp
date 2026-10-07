@@ -22,6 +22,7 @@ import {
   type ModOp,
 } from "@/lib/forum/actions";
 import { RATING_LABELS } from "@/lib/forum/rules";
+import { defaultThreadType } from "@/lib/forum/categories";
 import { cn } from "@/lib/utils";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -70,7 +71,7 @@ export function ThreadForm({
   const t = useT("forumClient").form;
   const lang = useLang();
   const [state, action, pending] = useActionState(createThreadAction, {} as ForumFormState);
-  const [type, setType] = useState<"question" | "discussion">("question");
+  const [type, setType] = useState<"question" | "discussion">(defaultThreadType(initialCategory ?? categories[0]?.slug ?? ""));
   if (state.held) return <ErrorLine state={state} />;
   return (
     <form action={action} className="relative space-y-5">
@@ -83,6 +84,7 @@ export function ThreadForm({
           id="forum-category"
           name="category"
           defaultValue={initialCategory}
+          onChange={(e) => setType(defaultThreadType(e.target.value))}
           required
           className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
         >

@@ -45,6 +45,16 @@ insert into public.forum_categories (slug, name, sort) values
   ('jobs-hiring', 'Jobs and Hiring', 140),
   ('marketplace-talk', 'Marketplace Talk', 150),
   ('codes-permits', 'Codes and Permits', 160),
+  ('job-site-stories', 'Job Site Stories', 1),
+  ('client-talk', 'Client Talk', 2),
+  ('business-pricing', 'Business & Pricing', 3),
+  ('tools-gear', 'Tools, Trucks & Gear', 5),
+  ('condo-boards', 'Condo Boards & Owners', 125),
+  ('quebec', 'Québec', 200),
+  ('ontario', 'Ontario', 210),
+  ('alberta', 'Alberta', 220),
+  ('british-columbia', 'British Columbia', 230),
+  ('united-states', 'United States', 240),
   ('off-topic', 'Off-topic', 170)
 on conflict (slug) do nothing;
 

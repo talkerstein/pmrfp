@@ -1,3 +1,5 @@
+import { NOINDEX_FORUMS } from "./categories";
+
 /**
  * Forum rules, kept pure so they can be unit tested: reputation points,
  * ranks, badges, thread rating labels, the indexing gate and spam limits.
@@ -120,6 +122,8 @@ export interface IndexableInput {
   replyCount: number;
   wordsTotal: number;
   flagged?: boolean;
+  /** Category slug: banter forums (Off the Clock) are never indexed. */
+  category?: string;
 }
 
 /**
@@ -129,6 +133,7 @@ export interface IndexableInput {
  */
 export function isIndexableThread(t: IndexableInput): boolean {
   if (t.status !== "approved" || t.flagged) return false;
+  if (t.category && (NOINDEX_FORUMS as readonly string[]).includes(t.category)) return false;
   const engaged = (t.type === "question" && t.replyCount >= 1) || t.replyCount >= 2;
   return engaged && t.wordsTotal >= MIN_INDEX_WORDS;
 }
@@ -206,6 +211,28 @@ export function checkPost(i: PostCheckInput): PostCheck {
   if (i.kind === "thread" && i.threadsToday >= lim.threadsPerDay) return { ok: false, reason: "daily-threads" };
   if (i.postsToday + i.threadsToday >= lim.postsPerDay) return { ok: false, reason: "daily-posts" };
   return { ok: true, hold: fresh && hasLink(i.body) };
+}
+
+// ── Who may post (threads, replies, votes, ratings, reports) ────────
+export interface PostingInput {
+  isAdmin: boolean;
+  isMod: boolean;
+  /** organizations.profile_status for the member's company, if any. */
+  orgProfileStatus: string | null | undefined;
+  /** Signed in with Google (auth provider or a linked google identity). */
+  google: boolean;
+  emailVerified: boolean;
+  onboarded: boolean;
+}
+
+/**
+ * Verified members only: an approved company profile, OR a Google sign-in
+ * with a verified email and a finished onboarding. Admins and mods always.
+ */
+export function canPost(i: PostingInput): boolean {
+  if (i.isAdmin || i.isMod) return true;
+  if (i.orgProfileStatus === "approved") return true;
+  return i.google && i.emailVerified && i.onboarded;
 }
 
 /** Auto-hide once enough distinct members have reported the same item. */

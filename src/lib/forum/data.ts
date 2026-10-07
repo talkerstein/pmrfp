@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { FORUM_CATEGORY_SLUGS, type ForumCategorySlug } from "./categories";
 import { PAGE_SIZE, isIndexableThread, ratingAverage } from "./rules";
+import { previewSamplesOn, sampleCategoryThreads, sampleIndex, samplePosts, sampleProfile, sampleThread } from "./preview-samples";
 
 /**
  * Forum reads. Public data goes through the cookieless read client, so it
@@ -153,6 +154,7 @@ async function modsByCategory(client: SupabaseClient): Promise<Map<string, { han
 }
 
 export async function getForumIndex(): Promise<Res<{ categories: ForumCategory[] }>> {
+  if (previewSamplesOn()) return { ready: true, categories: sampleIndex() };
   const client = db();
   if (!client) return { ready: false };
   const { data, error } = await client
@@ -205,6 +207,7 @@ export async function listCategoryThreads(
   categorySlug: string,
   page: number,
 ): Promise<{ threads: ThreadSummary[]; pinned: ThreadSummary[]; total: number }> {
+  if (previewSamplesOn()) return sampleCategoryThreads(categoryId);
   const client = db();
   if (!client) return { threads: [], pinned: [], total: 0 };
   const from = (page - 1) * PAGE_SIZE;
@@ -240,6 +243,7 @@ async function categorySlugFor(client: SupabaseClient, id: string): Promise<Foru
 
 /** One approved thread by short id (public read). */
 export async function getThread(sid: string): Promise<Res<{ thread: Thread | null }>> {
+  if (previewSamplesOn()) return { ready: true, thread: sampleThread(sid) };
   const client = db();
   if (!client) return { ready: false };
   const { data, error } = await client
@@ -288,6 +292,7 @@ function toPost(r: any): Post {
 const POST_COLS = `id,body,status,is_staff,is_accepted,upvote_count,created_at,edited_at,author:forum_profiles!forum_posts_author_fkey(${MEMBER_COLS})`;
 
 export async function listPosts(thread: Thread, page: number): Promise<{ posts: Post[]; accepted: Post | null }> {
+  if (previewSamplesOn()) return samplePosts(thread);
   const client = db();
   if (!client) return { posts: [], accepted: null };
   const from = (page - 1) * PAGE_SIZE;
@@ -333,6 +338,7 @@ export interface Profile {
 }
 
 export async function getProfile(handle: string): Promise<Res<{ profile: Profile | null }>> {
+  if (previewSamplesOn()) return { ready: true, profile: sampleProfile(handle) };
   const client = db();
   if (!client) return { ready: false };
   if (!/^[a-z0-9_]{3,30}$/.test(handle)) return { ready: true, profile: null };
@@ -407,6 +413,7 @@ export async function getProfile(handle: string): Promise<Res<{ profile: Profile
 
 /** Threads that pass the indexing gate, for the sitemap (lastmod = last reply). */
 export async function listIndexableThreads(): Promise<{ path: string; lastPostAt: string }[]> {
+  if (previewSamplesOn()) return [];
   const client = db();
   if (!client) return [];
   const [{ data, error }, { data: cats }] = await Promise.all([
@@ -423,7 +430,7 @@ export async function listIndexableThreads(): Promise<{ path: string; lastPostAt
   if (error || !data) return [];
   const slugById = new Map(((cats ?? []) as { id: string; slug: string }[]).map((c) => [c.id, c.slug]));
   return (data as any[])
-    .filter((t) => slugById.has(t.category_id) && isIndexableThread({ status: t.status, type: t.type, replyCount: t.reply_count, wordsTotal: t.words_total, flagged: false }))
+    .filter((t) => slugById.has(t.category_id) && isIndexableThread({ status: t.status, type: t.type, replyCount: t.reply_count, wordsTotal: t.words_total, flagged: false, category: slugById.get(t.category_id) }))
     .map((t) => ({ path: threadPath(slugById.get(t.category_id)!, t.slug, t.short_id), lastPostAt: t.last_post_at }));
 }
 

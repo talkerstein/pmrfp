@@ -95,7 +95,9 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
           <section className="max-w-2xl">
             <h2 className="text-lg font-semibold">Post a staff thread</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Posts under your account with a visible &quot;PMRFP Staff&quot; label. Use real questions only; never post as a fake persona.
+              Posts under your account with a visible &quot;PMRFP Staff&quot; label. This is a community, not a Q&amp;A board: seed a mix.
+              Start conversations in Shop Talk (a job-site story, a getting-paid thread in Client Talk, a tools thread, an Off the Clock
+              thread) next to real trade questions. Real topics only; never post as a fake persona, and never name private individuals.
             </p>
             <div className="mt-4"><ThreadForm categories={categories} firstPost={false} staffOption /></div>
           </section>

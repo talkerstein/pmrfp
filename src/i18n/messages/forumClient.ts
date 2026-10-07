@@ -21,6 +21,7 @@ const en = {
     forbidden: "You can't do that here.",
     own: "You can't do that on your own post.",
     failed: "Couldn't save that. Try again.",
+    unverified: "Posting is open to verified members. Finish your free company profile to get verified.",
   },
   form: {
     forum: "Forum",
@@ -86,6 +87,7 @@ const fr: typeof en = {
     forbidden: "Vous ne pouvez pas faire cela ici.",
     own: "Vous ne pouvez pas faire cela sur votre propre message.",
     failed: "Impossible d'enregistrer. Réessayez.",
+    unverified: "La publication est réservée aux membres vérifiés. Remplissez votre profil d'entreprise gratuit pour être vérifié.",
   },
   form: {
     forum: "Forum",
@@ -151,6 +153,7 @@ const es: typeof en = {
     forbidden: "No puede hacer eso aquí.",
     own: "No puede hacer eso en su propio mensaje.",
     failed: "No se pudo guardar. Inténtelo de nuevo.",
+    unverified: "Solo los miembros verificados pueden publicar. Complete su perfil de empresa gratuito para verificarse.",
   },
   form: {
     forum: "Foro",

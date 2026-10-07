@@ -122,6 +122,30 @@ export function OpeningSoon() {
   );
 }
 
+/** Shown to readers who can't post yet: how to get verified. */
+export function VerifyPanel({ signedIn, next }: { signedIn: boolean; next: string }) {
+  const t = getT("forum").verify;
+  return (
+    <div className="rounded-xl border border-teal-500/50 bg-teal-50/40 p-5 dark:bg-teal-500/5">
+      <h2 className="flex items-center gap-2 font-bold"><ShieldCheck className="size-5 text-teal-600" /> {t.title}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{t.body}</p>
+      <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">
+        {t.steps.map((s) => <li key={s}>{s}</li>)}
+      </ol>
+      <div className="mt-4 flex flex-wrap gap-3">
+        {signedIn ? (
+          <Link href="/onboarding" className={buttonVariants()}>{t.cta}</Link>
+        ) : (
+          <>
+            <Link href={`/sign-in?next=${encodeURIComponent(next)}`} className={buttonVariants()}>{t.signIn}</Link>
+            <Link href="/sign-up" className={buttonVariants({ variant: "outline" })}>{t.cta}</Link>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Pager({ base, page, total }: { base: string; page: number; total: number }) {
   const t = getT("forum").category;
   if (total <= 1) return null;

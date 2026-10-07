@@ -5,7 +5,7 @@ import { Container } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { ForumHero, OpeningSoon } from "@/components/forum/parts";
 import { getForumIndex, type ForumCategory } from "@/lib/forum/data";
-import { COMMUNITY_FORUMS, TRADE_FORUMS } from "@/lib/forum/categories";
+import { CHANNEL_ORDER, FORUM_CHANNELS } from "@/lib/forum/categories";
 import { RANKS } from "@/lib/forum/rules";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -96,7 +96,7 @@ export default async function ForumIndexPage({ params }: { params: Promise<objec
       <ForumHero eyebrow={t.index.eyebrow} title={t.index.title} lead={t.index.lead}>
         {idx.ready && (
           <div className="mt-6">
-            <Link href="/forum/off-topic/new" className={cn(buttonVariants({ variant: "accent" }), "gap-2")}>
+            <Link href="/forum/job-site-stories/new" className={cn(buttonVariants({ variant: "accent" }), "gap-2")}>
               <MessagesSquare className="size-4" /> {t.category.newThread}
             </Link>
           </div>
@@ -107,8 +107,9 @@ export default async function ForumIndexPage({ params }: { params: Promise<objec
       ) : (
         <Container className="grid gap-10 pb-16 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div>
-            {section(t.index.trades, TRADE_FORUMS, idx.categories)}
-            {section(t.index.community, COMMUNITY_FORUMS, idx.categories)}
+            {CHANNEL_ORDER.map((ch) => (
+              <div key={ch}>{section(t.channels[ch], FORUM_CHANNELS[ch], idx.categories)}</div>
+            ))}
           </div>
           <aside className="space-y-6 lg:mt-10">
             <div className="rounded-xl border border-border p-5">

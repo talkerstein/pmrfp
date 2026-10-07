@@ -119,6 +119,11 @@ export async function CategoryView({ category, page }: { category: string; page:
         </div>
       </ForumHero>
       <Container className="py-8 pb-16">
+        {category === "client-talk" && (
+          <p className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50/60 px-4 py-3 text-sm dark:bg-amber-500/10">
+            <Pin className="mt-0.5 size-4 shrink-0 text-amber-600" /> {t.clientTalkRule}
+          </p>
+        )}
         {pinned.length + threads.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-muted-foreground">{t.category.empty}</p>
         ) : (

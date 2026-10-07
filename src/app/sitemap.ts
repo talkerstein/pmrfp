@@ -14,7 +14,7 @@ import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { RFP_TEMPLATES } from "@/lib/seo/rfp-templates";
 import { listOpenJobs } from "@/lib/jobs/data";
 import { listIndexableThreads } from "@/lib/forum/data";
-import { FORUM_CATEGORY_SLUGS } from "@/lib/forum/categories";
+import { FORUM_CATEGORY_SLUGS, isFrenchForum } from "@/lib/forum/categories";
 import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
 import { PROVINCES } from "@/lib/data/province-hub";
 
@@ -123,7 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (forumThreads.length) {
     entries.push({ url: `${base}/forum`, lastModified: new Date(forumThreads[0].lastPostAt), changeFrequency: "daily", priority: 0.6 });
     for (const c of FORUM_CATEGORY_SLUGS.filter((c) => forumThreads.some((t) => t.path.startsWith(`/forum/${c}/`)))) entries.push({ url: `${base}/forum/${c}`, lastModified: now, changeFrequency: "daily", priority: 0.5 });
-    for (const t of forumThreads) entries.push({ url: `${base}${t.path}`, lastModified: new Date(t.lastPostAt), changeFrequency: "weekly", priority: 0.6 });
+    for (const t of forumThreads) entries.push({ url: `${base}${isFrenchForum(t.path.split("/")[2]) ? localizePath(t.path, "fr") : t.path}`, lastModified: new Date(t.lastPostAt), changeFrequency: "weekly", priority: 0.6 });
   }
 
   // Translated pages: list each language version and pair them with hreflang.

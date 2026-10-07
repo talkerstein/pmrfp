@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Container } from "@/components/container";
-import { ForumHero, OpeningSoon } from "@/components/forum/parts";
+import { ForumHero, OpeningSoon, VerifyPanel } from "@/components/forum/parts";
 import { ThreadForm } from "@/components/forum/forms";
 import { getSession } from "@/lib/access/access";
 import { getCategoryRow } from "@/lib/forum/data";
+import { sessionCanPost } from "@/lib/forum/eligibility";
+import { createClient } from "@/lib/supabase/server";
 import { FORUM_CATEGORY_SLUGS, isForumCategory } from "@/lib/forum/categories";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -34,11 +36,15 @@ export default async function NewThreadPage({ params }: { params: Promise<{ lang
     <>
       <ForumHero eyebrow={t.forum} title={t.meta.newTitle} />
       <Container className="max-w-2xl py-10 pb-16">
+        {!(await sessionCanPost(session, (await (await createClient()).auth.getUser()).data.user)) ? (
+          <VerifyPanel signedIn next={`/forum/${category}/new`} />
+        ) : (
         <ThreadForm
           categories={FORUM_CATEGORY_SLUGS.map((slug) => ({ slug, name: t.categories[slug].name }))}
           initialCategory={category}
           firstPost={firstPost}
         />
+        )}
       </Container>
     </>
   );

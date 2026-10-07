@@ -15,12 +15,13 @@ import { isMissingTable, threadPath } from "./data";
 import { POINTS, checkPost, ratingPoints, shouldAutoHide } from "./rules";
 import { handleFrom, normalizeBody, normalizeTitle, shortId, slugify, wordCount } from "./text";
 import { turnstileEnabled, verifyTurnstile } from "./turnstile";
+import { sessionCanPost } from "./eligibility";
 
 /** Error codes; the forms translate them (forumClient.errors). */
 export type ForumError =
   | "signin" | "verify" | "unavailable" | "banned" | "rate" | "cooldown" | "daily-threads" | "daily-posts"
   | "shortener" | "duplicate" | "honeypot" | "captcha" | "title" | "body" | "category" | "locked"
-  | "notfound" | "forbidden" | "own" | "failed";
+  | "notfound" | "forbidden" | "own" | "failed" | "unverified";
 
 export interface ForumFormState {
   error?: ForumError;
@@ -116,6 +117,7 @@ async function getActor(): Promise<{ actor: Actor } | { error: ForumError }> {
   const user = data.user;
   if (!user) return { error: "signin" };
   if (!user.email_confirmed_at) return { error: "verify" };
+  if (!(await sessionCanPost(session, user))) return { error: "unverified" };
   const admin = createServiceClient();
   const profile = await ensureProfile(admin, session, user.email ?? session.profile.email);
   if (profile === "missing") return { error: "unavailable" };

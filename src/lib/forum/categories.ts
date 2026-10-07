@@ -3,29 +3,44 @@
  * by the migration; names and blurbs live in the forum i18n namespace under
  * `categories[slug]` so they translate.
  */
-export const FORUM_CATEGORY_SLUGS = [
-  "electrical",
-  "hvac-mechanical",
-  "plumbing",
-  "roofing-envelope",
-  "painting-finishes",
-  "concrete-structure",
-  "landscaping-snow",
-  "cleaning-janitorial",
-  "general-contractors",
-  "property-managers",
-  "suppliers-equipment",
-  "jobs-hiring",
-  "marketplace-talk",
-  "codes-permits",
-  "off-topic",
-] as const;
+/**
+ * Channels, gamer.co.il style: the forum is a community first, Q&A second.
+ * Existing slugs are kept (off-topic is "Off the Clock", jobs-hiring is
+ * "Hiring & Crews") so no URL breaks.
+ */
+export const FORUM_CHANNELS = {
+  "shop-talk": ["job-site-stories", "client-talk", "business-pricing", "jobs-hiring", "tools-gear", "marketplace-talk", "codes-permits", "off-topic"],
+  trades: ["electrical", "hvac-mechanical", "plumbing", "roofing-envelope", "painting-finishes", "concrete-structure", "landscaping-snow", "cleaning-janitorial"],
+  property: ["property-managers", "condo-boards", "general-contractors", "suppliers-equipment"],
+  regional: ["quebec", "ontario", "alberta", "british-columbia", "united-states"],
+} as const;
 
-export type ForumCategorySlug = (typeof FORUM_CATEGORY_SLUGS)[number];
+export type ForumChannel = keyof typeof FORUM_CHANNELS;
+export const CHANNEL_ORDER: readonly ForumChannel[] = ["shop-talk", "trades", "property", "regional"];
 
-/** The first eight are trade forums; the rest are community forums. */
-export const TRADE_FORUMS: readonly ForumCategorySlug[] = FORUM_CATEGORY_SLUGS.slice(0, 8);
-export const COMMUNITY_FORUMS: readonly ForumCategorySlug[] = FORUM_CATEGORY_SLUGS.slice(8);
+export const FORUM_CATEGORY_SLUGS = CHANNEL_ORDER.flatMap((c) => FORUM_CHANNELS[c]) as readonly (typeof FORUM_CHANNELS)[ForumChannel][number][];
+
+export type ForumCategorySlug = (typeof FORUM_CHANNELS)[ForumChannel][number];
+
+export const TRADE_FORUMS: readonly ForumCategorySlug[] = FORUM_CHANNELS.trades;
+
+export function channelOf(slug: ForumCategorySlug): ForumChannel {
+  return CHANNEL_ORDER.find((c) => (FORUM_CHANNELS[c] as readonly string[]).includes(slug))!;
+}
+
+/** Trade forums default to Question; everything else to Discussion. */
+export function defaultThreadType(slug: string): "question" | "discussion" {
+  return (FORUM_CHANNELS.trades as readonly string[]).includes(slug) || slug === "codes-permits" ? "question" : "discussion";
+}
+
+/** Forums whose threads are never indexed (banter: low SEO value). */
+export const NOINDEX_FORUMS: readonly ForumCategorySlug[] = ["off-topic"];
+
+/** French-first forums: their threads are in French and keep their own canonical. */
+export const FRENCH_FORUMS: readonly ForumCategorySlug[] = ["quebec"];
+export function isFrenchForum(slug: string): boolean {
+  return (FRENCH_FORUMS as readonly string[]).includes(slug);
+}
 
 export function isForumCategory(v: unknown): v is ForumCategorySlug {
   return typeof v === "string" && (FORUM_CATEGORY_SLUGS as readonly string[]).includes(v);
