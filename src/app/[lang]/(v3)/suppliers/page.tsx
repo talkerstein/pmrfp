@@ -70,7 +70,7 @@ export default async function SuppliersPage({
         sub={t.sub}
         stats={[{ n: n(pool.length), l: t.stats.suppliers }]}
         search={{ q: sp.q ?? "", placeholder: t.searchPh, button: t.searchBtn, keep }}
-        ctas={[{ href: "/sign-up?role=supplier", label: t.cta1 }, { href: "/for/suppliers", label: t.cta2 }]}
+        ctas={[{ href: "/sign-up?role=supplier", label: t.cta1 }, { href: "/become-a-supplier", label: t.cta2 }]}
         tabs={{ trades: counts.trades, suppliers: pool.length, winners: counts.winners, jobs: counts.jobs, talent: counts.talent }}
         filters={[
           { name: "category", label: all.filters.category, value: sp.category ?? "", options: [{ value: "", label: all.filters.allCategories }, ...categories.map((c) => ({ value: c.slug, label: tradeName(c.name, lang) }))] },

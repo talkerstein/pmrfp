@@ -64,6 +64,8 @@ export interface AudienceContent {
   endImg: string;
   /** Extra page content (kept from the old page), shown before the closing band. */
   extra?: ReactNode;
+  /** Skip the Trade Pro / free-to-post price band (pages that show their own plans). */
+  hidePrice?: boolean;
 }
 
 const Check = () => (
@@ -266,7 +268,7 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
         </section>
       )}
 
-      <AudiencePrice t={t} lang={lang} side={c.side} sellerSub={c.sellerSub ?? ""} cta={c.cta} founding={founding} />
+      {!c.hidePrice && <AudiencePrice t={t} lang={lang} side={c.side} sellerSub={c.sellerSub ?? ""} cta={c.cta} founding={founding} />}
 
       {c.faq.length > 0 && (
         <section className="wrap a-faq">

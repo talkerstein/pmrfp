@@ -278,6 +278,122 @@ const en = {
       secondary: "Browse the directory",
     },
   },
+  becomeSupplier: {
+    meta: {
+      title: "Become a Supplier on PMRFP — Reach Commercial Trades & Property Managers",
+      description:
+        "List your supply house, distributorship, rental yard or rep agency free on PMRFP. Get in front of the trades and property managers bidding on commercial building work in Canada and the U.S.",
+    },
+    crumb: "Become a supplier",
+    eyebrow: "For suppliers",
+    title: "Become a PMRFP supplier",
+    lead: "Get in front of the trades and property managers bidding on commercial property work in your area. A supplier listing is free.",
+    primary: "List your company free",
+    secondary: "Advertise on PMRFP",
+    stats: {
+      open: "open RFPs and tenders on the board",
+      trades: "trade companies listed",
+      categories: "trade categories",
+    },
+    why: {
+      eyebrow: "Why list",
+      title: "Your customers are already here, bidding work.",
+      items: [
+        {
+          title: "Trades buying for jobs",
+          body: "Trades on PMRFP bid on roofing, HVAC, electrical, paving, cleaning and other building work. Every job they win needs materials, equipment or rentals.",
+        },
+        {
+          title: "Property managers buying direct",
+          body: "Property managers, owners and builders use the directory to find vendors, and some buy supplies and equipment directly rather than through a contractor.",
+        },
+        {
+          title: "Matched to the work",
+          body: "Your listing shows the trades you sell into and the regions you serve, so you turn up next to the jobs that use what you sell.",
+        },
+      ],
+    },
+    where: {
+      eyebrow: "Where you show up",
+      title: "Where your listing appears",
+      items: {
+        directory: { title: "Supplier Directory", body: "Searchable by trade, region and property type. Featured suppliers sort first." },
+        rfp: { title: "\"Who can do this job\" on RFP pages", body: "Each RFP and tender page lists matching trades, then suppliers that sell into that trade in that area." },
+        home: { title: "Homepage supplier strip", body: "The homepage shows material and equipment suppliers, featured listings first." },
+        digest: { title: "Weekly tender digest", body: "Listed suppliers get the weekly email of new tenders, so you see what your trade customers are about to price." },
+      },
+    },
+    busiest: {
+      title: "Open work by trade right now",
+      body: "Open RFPs and public tenders on PMRFP today, by trade. These are the jobs your trade customers are pricing.",
+    },
+    plans: {
+      eyebrow: "Free and paid",
+      title: "Start free. Pay only for more visibility.",
+      perYear: "/yr",
+      perMonth: "/mo",
+      oneTime: "one time",
+      from: "from",
+      free: { name: "Free listing", price: "$0", body: "Company profile in the Supplier Directory, the trades you sell into, your regions, and matching on RFP pages." },
+      seo: { name: "SEO Listing", body: "Your company on the trade and city pages property managers find on Google and in AI answers, plus an unlimited project photo gallery." },
+      featured: { name: "Featured", body: "Everything in Trade Pro, plus priority placement at the top of your categories and regions." },
+      sponsor: { name: "Trade Spotlight sponsorship", body: "One sponsor slot across a trade's pages, its RFP pages, member dashboards and match emails. Always labelled as sponsored." },
+      spotlight: { name: "Project Spotlight", body: "A reviewed, clearly labelled article about one finished project, with photos." },
+      marketplace: { name: "Equipment Marketplace", price: "Free", body: "List surplus or used equipment. No commission; buyers message you through PMRFP." },
+      currencyNote: "Prices in CAD. Project Spotlight is US${usd} in the U.S.",
+    },
+    refer: {
+      title: "Refer your trade customers",
+      body: "Your contractor customers win more work when they're on the board. Refer a trade and earn up to ${fee} when they activate an annual Trade Pro plan.",
+      cta: "Refer a trade",
+    },
+    who: {
+      eyebrow: "Who it's for",
+      title: "For the companies that supply building work",
+      list: [
+        "Electrical wholesalers",
+        "Plumbing & HVAC distributors",
+        "Roofing supply",
+        "Lumber & building materials",
+        "Janitorial & sanitation supply",
+        "Safety & PPE suppliers",
+        "Equipment rental yards",
+        "Paint & coatings",
+        "Flooring distributors",
+        "Landscape & snow supply",
+        "Manufacturers' reps",
+        "Fasteners & industrial supply",
+      ],
+    },
+    faqEyebrow: "FAQ",
+    faqTitle: "Supplier questions",
+    faq: [
+      {
+        q: "Is a supplier listing free?",
+        a: "Yes. A supplier account and directory listing are free. Paid options (SEO Listing, Featured, sponsorship, Project Spotlight) only add visibility.",
+      },
+      {
+        q: "Who sees my listing?",
+        a: "Trades, property managers, owners and builders browsing the Supplier Directory, plus anyone reading an RFP page where your trades and region match the job.",
+      },
+      {
+        q: "Can I list for both Canada and the U.S.?",
+        a: "Yes. PMRFP covers Canada and the United States. Set the regions you actually deliver to so you match the right jobs.",
+      },
+      {
+        q: "Do you take a cut of my sales?",
+        a: "No. PMRFP doesn't process payments between members and takes no commission, including on Marketplace equipment listings.",
+      },
+      {
+        q: "How is advertising different from Featured?",
+        a: "Featured moves your listing to the top of your categories and regions in the directory. A sponsorship puts a labelled sponsor unit on a trade's pages, its RFP pages, member dashboards and match emails.",
+      },
+    ],
+    cta: {
+      title: "Put your company in front of the trades bidding work near you.",
+      description: "Free listing. Takes a few minutes.",
+    },
+  },
 };
 
 const fr: typeof en = {
@@ -557,6 +673,122 @@ const fr: typeof en = {
       secondary: "Parcourir le répertoire",
     },
   },
+  becomeSupplier: {
+    meta: {
+      title: "Devenir fournisseur sur PMRFP — Rejoignez les entrepreneurs et gestionnaires immobiliers commerciaux",
+      description:
+        "Inscrivez gratuitement votre centre de distribution, comptoir, centre de location ou agence de représentants sur PMRFP. Présentez-vous aux entrepreneurs et gestionnaires immobiliers qui soumissionnent des travaux commerciaux au Canada et aux États-Unis.",
+    },
+    crumb: "Devenir fournisseur",
+    eyebrow: "Pour les fournisseurs",
+    title: "Devenez fournisseur PMRFP",
+    lead: "Présentez-vous aux entrepreneurs et aux gestionnaires immobiliers qui soumissionnent des travaux commerciaux dans votre région. L'inscription d'un fournisseur est gratuite.",
+    primary: "Inscrire votre entreprise gratuitement",
+    secondary: "Annoncer sur PMRFP",
+    stats: {
+      open: "appels d'offres ouverts sur le tableau",
+      trades: "entreprises de métiers inscrites",
+      categories: "catégories de métiers",
+    },
+    why: {
+      eyebrow: "Pourquoi s'inscrire",
+      title: "Vos clients sont déjà ici et soumissionnent.",
+      items: [
+        {
+          title: "Des entrepreneurs qui achètent pour leurs chantiers",
+          body: "Les entrepreneurs sur PMRFP soumissionnent en toiture, CVC, électricité, pavage, entretien ménager et autres travaux de bâtiment. Chaque contrat obtenu exige des matériaux, de l'équipement ou de la location.",
+        },
+        {
+          title: "Des gestionnaires qui achètent directement",
+          body: "Gestionnaires immobiliers, propriétaires et constructeurs utilisent le répertoire pour trouver des fournisseurs, et certains achètent fournitures et équipement directement plutôt que par un entrepreneur.",
+        },
+        {
+          title: "Jumelé aux travaux",
+          body: "Votre fiche indique les métiers que vous approvisionnez et les régions que vous desservez, pour apparaître à côté des travaux qui utilisent vos produits.",
+        },
+      ],
+    },
+    where: {
+      eyebrow: "Où vous apparaissez",
+      title: "Où votre fiche s'affiche",
+      items: {
+        directory: { title: "Répertoire des fournisseurs", body: "Recherche par métier, région et type de propriété. Les fournisseurs en vedette apparaissent en premier." },
+        rfp: { title: "« Qui peut faire ce travail » sur les pages d'appels d'offres", body: "Chaque page d'appel d'offres liste les entrepreneurs correspondants, puis les fournisseurs qui approvisionnent ce métier dans ce secteur." },
+        home: { title: "Bandeau fournisseurs de l'accueil", body: "La page d'accueil présente des fournisseurs de matériaux et d'équipement, les fiches en vedette d'abord." },
+        digest: { title: "Résumé hebdomadaire des appels d'offres", body: "Les fournisseurs inscrits reçoivent le courriel hebdomadaire des nouveaux appels d'offres, pour voir ce que vos clients s'apprêtent à chiffrer." },
+      },
+    },
+    busiest: {
+      title: "Travaux ouverts par métier en ce moment",
+      body: "Appels d'offres ouverts et appels publics sur PMRFP aujourd'hui, par métier. Ce sont les travaux que vos clients entrepreneurs chiffrent.",
+    },
+    plans: {
+      eyebrow: "Gratuit et payant",
+      title: "Commencez gratuitement. Payez seulement pour plus de visibilité.",
+      perYear: "/an",
+      perMonth: "/mois",
+      oneTime: "paiement unique",
+      from: "à partir de",
+      free: { name: "Fiche gratuite", price: "0 $", body: "Profil d'entreprise dans le répertoire des fournisseurs, les métiers que vous approvisionnez, vos régions et le jumelage sur les pages d'appels d'offres." },
+      seo: { name: "Fiche SEO", body: "Votre entreprise sur les pages métier et ville que les gestionnaires trouvent sur Google et dans les réponses d'IA, plus une galerie de photos de projets illimitée." },
+      featured: { name: "En vedette", body: "Tout ce qu'offre Trade Pro, plus un placement prioritaire en tête de vos catégories et régions." },
+      sponsor: { name: "Commandite Trade Spotlight", body: "Un emplacement de commanditaire sur les pages d'un métier, ses pages d'appels d'offres, les tableaux de bord des membres et les courriels de jumelage. Toujours identifié comme commandité." },
+      spotlight: { name: "Project Spotlight", body: "Un article révisé et clairement identifié sur un projet terminé, avec photos." },
+      marketplace: { name: "Marché d'équipement", price: "Gratuit", body: "Annoncez de l'équipement usagé ou excédentaire. Aucune commission; les acheteurs vous écrivent par PMRFP." },
+      currencyNote: "Prix en CAD. Project Spotlight coûte {usd} $ US aux États-Unis.",
+    },
+    refer: {
+      title: "Recommandez vos clients entrepreneurs",
+      body: "Vos clients entrepreneurs obtiennent plus de travaux quand ils sont sur le tableau. Recommandez un entrepreneur et gagnez jusqu'à {fee} $ lorsqu'il active un forfait Trade Pro annuel.",
+      cta: "Recommander un entrepreneur",
+    },
+    who: {
+      eyebrow: "Pour qui",
+      title: "Pour les entreprises qui approvisionnent les travaux de bâtiment",
+      list: [
+        "Grossistes en électricité",
+        "Distributeurs en plomberie et CVC",
+        "Fournitures de toiture",
+        "Bois et matériaux de construction",
+        "Produits d'entretien sanitaire",
+        "Fournisseurs de sécurité et d'EPI",
+        "Centres de location d'équipement",
+        "Peintures et revêtements",
+        "Distributeurs de revêtements de sol",
+        "Fournitures d'aménagement paysager et de déneigement",
+        "Agences de représentants de fabricants",
+        "Quincaillerie industrielle et fixations",
+      ],
+    },
+    faqEyebrow: "FAQ",
+    faqTitle: "Questions des fournisseurs",
+    faq: [
+      {
+        q: "La fiche fournisseur est-elle gratuite?",
+        a: "Oui. Le compte fournisseur et la fiche au répertoire sont gratuits. Les options payantes (Fiche SEO, En vedette, commandite, Project Spotlight) ajoutent seulement de la visibilité.",
+      },
+      {
+        q: "Qui voit ma fiche?",
+        a: "Les entrepreneurs, gestionnaires immobiliers, propriétaires et constructeurs qui consultent le répertoire des fournisseurs, ainsi que toute personne lisant une page d'appel d'offres où vos métiers et votre région correspondent au travail.",
+      },
+      {
+        q: "Puis-je m'inscrire pour le Canada et les États-Unis?",
+        a: "Oui. PMRFP couvre le Canada et les États-Unis. Indiquez les régions que vous desservez réellement pour être jumelé aux bons travaux.",
+      },
+      {
+        q: "Prenez-vous une part de mes ventes?",
+        a: "Non. PMRFP ne traite pas les paiements entre membres et ne prend aucune commission, y compris sur les annonces d'équipement du Marché.",
+      },
+      {
+        q: "Quelle différence entre la publicité et En vedette?",
+        a: "En vedette place votre fiche en tête de vos catégories et régions dans le répertoire. Une commandite ajoute un encart identifié comme commandité sur les pages d'un métier, ses pages d'appels d'offres, les tableaux de bord des membres et les courriels de jumelage.",
+      },
+    ],
+    cta: {
+      title: "Présentez votre entreprise aux entrepreneurs qui soumissionnent près de chez vous.",
+      description: "Fiche gratuite. Quelques minutes suffisent.",
+    },
+  },
 };
 
 const es: typeof en = {
@@ -832,6 +1064,122 @@ const es: typeof en = {
       title: "Encuentre a los proveedores adecuados para su próximo proyecto comercial.",
       description: "Publique su proyecto gratis. Los contratistas interesados vienen a usted.",
       secondary: "Explorar el directorio",
+    },
+  },
+  becomeSupplier: {
+    meta: {
+      title: "Hágase proveedor en PMRFP — Llegue a contratistas y administradores de propiedades comerciales",
+      description:
+        "Publique gratis su distribuidora, almacén, patio de renta de equipo o agencia de representantes en PMRFP. Preséntese ante los contratistas y administradores de propiedades que cotizan obra comercial en Canadá y EE. UU.",
+    },
+    crumb: "Hágase proveedor",
+    eyebrow: "Para proveedores",
+    title: "Hágase proveedor de PMRFP",
+    lead: "Preséntese ante los contratistas y administradores de propiedades que cotizan obra en propiedades comerciales de su zona. El perfil de proveedor es gratis.",
+    primary: "Publique su empresa gratis",
+    secondary: "Anúnciese en PMRFP",
+    stats: {
+      open: "RFP y licitaciones abiertas en el tablero",
+      trades: "empresas de oficios en el directorio",
+      categories: "categorías de oficios",
+    },
+    why: {
+      eyebrow: "Por qué publicar",
+      title: "Sus clientes ya están aquí, cotizando obra.",
+      items: [
+        {
+          title: "Contratistas que compran para sus obras",
+          body: "Los contratistas en PMRFP cotizan techado, HVAC, electricidad, pavimentación, limpieza y otras obras de edificios. Cada trabajo que ganan necesita materiales, equipo o renta.",
+        },
+        {
+          title: "Administradores que compran directo",
+          body: "Administradores de propiedades, dueños y constructores usan el directorio para encontrar proveedores, y algunos compran insumos y equipo directamente en lugar de hacerlo por medio de un contratista.",
+        },
+        {
+          title: "Conectado con la obra",
+          body: "Su perfil indica los oficios a los que vende y las regiones que atiende, para que aparezca junto a los trabajos que usan lo que usted vende.",
+        },
+      ],
+    },
+    where: {
+      eyebrow: "Dónde aparece",
+      title: "Dónde se muestra su perfil",
+      items: {
+        directory: { title: "Directorio de proveedores", body: "Búsqueda por oficio, región y tipo de propiedad. Los proveedores destacados aparecen primero." },
+        rfp: { title: "\"Quién puede hacer este trabajo\" en las páginas de RFP", body: "Cada página de RFP y licitación muestra los contratistas que coinciden y luego los proveedores que venden a ese oficio en esa zona." },
+        home: { title: "Franja de proveedores en la página de inicio", body: "La página de inicio muestra proveedores de materiales y equipo, primero los destacados." },
+        digest: { title: "Resumen semanal de licitaciones", body: "Los proveedores registrados reciben el correo semanal de nuevas licitaciones, para ver lo que sus clientes están por cotizar." },
+      },
+    },
+    busiest: {
+      title: "Obra abierta por oficio en este momento",
+      body: "RFP abiertas y licitaciones públicas en PMRFP hoy, por oficio. Son los trabajos que sus clientes contratistas están cotizando.",
+    },
+    plans: {
+      eyebrow: "Gratis y de pago",
+      title: "Empiece gratis. Pague solo por más visibilidad.",
+      perYear: "/año",
+      perMonth: "/mes",
+      oneTime: "pago único",
+      from: "desde",
+      free: { name: "Perfil gratis", price: "$0", body: "Perfil de empresa en el directorio de proveedores, los oficios a los que vende, sus regiones y la coincidencia en páginas de RFP." },
+      seo: { name: "Perfil SEO", body: "Su empresa en las páginas de oficio y ciudad que los administradores encuentran en Google y en respuestas de IA, más una galería ilimitada de fotos de proyectos." },
+      featured: { name: "Destacado", body: "Todo lo de Trade Pro, más ubicación prioritaria al inicio de sus categorías y regiones." },
+      sponsor: { name: "Patrocinio Trade Spotlight", body: "Un espacio de patrocinio en las páginas de un oficio, sus páginas de RFP, los paneles de los miembros y los correos de coincidencias. Siempre identificado como patrocinado." },
+      spotlight: { name: "Project Spotlight", body: "Un artículo revisado y claramente identificado sobre un proyecto terminado, con fotos." },
+      marketplace: { name: "Mercado de equipo", price: "Gratis", body: "Publique equipo usado o excedente. Sin comisión; los compradores le escriben por PMRFP." },
+      currencyNote: "Precios en CAD. Project Spotlight cuesta US${usd} en EE. UU.",
+    },
+    refer: {
+      title: "Recomiende a sus clientes contratistas",
+      body: "Sus clientes contratistas ganan más trabajo cuando están en el tablero. Recomiende a un contratista y gane hasta ${fee} cuando active un plan anual Trade Pro.",
+      cta: "Recomendar a un contratista",
+    },
+    who: {
+      eyebrow: "Para quién",
+      title: "Para las empresas que abastecen la obra de edificios",
+      list: [
+        "Mayoristas eléctricos",
+        "Distribuidores de plomería y HVAC",
+        "Suministros de techado",
+        "Madera y materiales de construcción",
+        "Suministros de limpieza y sanitarios",
+        "Proveedores de seguridad y EPP",
+        "Patios de renta de equipo",
+        "Pinturas y recubrimientos",
+        "Distribuidores de pisos",
+        "Suministros de jardinería y nieve",
+        "Representantes de fabricantes",
+        "Tornillería y suministro industrial",
+      ],
+    },
+    faqEyebrow: "Preguntas frecuentes",
+    faqTitle: "Preguntas de proveedores",
+    faq: [
+      {
+        q: "¿El perfil de proveedor es gratis?",
+        a: "Sí. La cuenta de proveedor y el perfil en el directorio son gratis. Las opciones de pago (Perfil SEO, Destacado, patrocinio, Project Spotlight) solo agregan visibilidad.",
+      },
+      {
+        q: "¿Quién ve mi perfil?",
+        a: "Contratistas, administradores de propiedades, dueños y constructores que consultan el directorio de proveedores, además de quien lea una página de RFP donde sus oficios y región coincidan con el trabajo.",
+      },
+      {
+        q: "¿Puedo registrarme para Canadá y EE. UU.?",
+        a: "Sí. PMRFP cubre Canadá y Estados Unidos. Indique las regiones que realmente atiende para coincidir con los trabajos correctos.",
+      },
+      {
+        q: "¿Se quedan con un porcentaje de mis ventas?",
+        a: "No. PMRFP no procesa pagos entre miembros ni cobra comisión, tampoco en las publicaciones de equipo del Mercado.",
+      },
+      {
+        q: "¿En qué se diferencia la publicidad de Destacado?",
+        a: "Destacado pone su perfil al inicio de sus categorías y regiones en el directorio. Un patrocinio coloca una unidad identificada como patrocinada en las páginas de un oficio, sus páginas de RFP, los paneles de los miembros y los correos de coincidencias.",
+      },
+    ],
+    cta: {
+      title: "Ponga su empresa frente a los contratistas que cotizan obra cerca de usted.",
+      description: "Perfil gratis. Toma unos minutos.",
     },
   },
 };

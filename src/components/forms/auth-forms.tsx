@@ -131,6 +131,11 @@ export function SignUpForm({
             </button>
           ))}
         </div>
+        {role === "supplier" && (
+          <Link href="/become-a-supplier" className="inline-block text-xs font-medium text-teal-700 hover:underline">
+            {t.supplierInfo}
+          </Link>
+        )}
       </div>
       )}
       {google && role !== "talent" && (

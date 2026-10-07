@@ -164,6 +164,7 @@ export const FOOTER_COLS = [
     links: [
       { label: "For Trades", href: "/for-trades" },
       { label: "For Property Managers", href: "/for-property-managers" },
+      { label: "Become a Supplier", href: "/become-a-supplier" },
       { label: "For Realtors", href: "/for/real-estate" },
       { label: "All Solutions", href: "/for" },
       { label: "Get Found (SEO & AI)", href: "/get-found" },
