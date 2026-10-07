@@ -54,6 +54,23 @@ export function isSoldOut(sold: number, cap: number = FOUNDING.cap): boolean {
   return spotsLeft(sold, cap) === 0;
 }
 
+/** At or below this many spots left the bar says so; above it, no count is shown. */
+export const FOUNDING_LOW_SPOTS = 50;
+
+export type FoundingScarcity = "limited" | "low" | "soldout";
+
+/**
+ * What the Founding 500 bar may say about spots left. Never an exact count
+ * while more than FOUNDING_LOW_SPOTS remain ("Limited to the first 500
+ * companies"), "Fewer than 50 spots left" once at or below it. An unknown
+ * count (the read failed) reads as "limited", which is always true.
+ */
+export function foundingScarcity(left: number | null | undefined): FoundingScarcity {
+  if (left == null) return "limited";
+  if (left <= 0) return "soldout";
+  return left <= FOUNDING_LOW_SPOTS ? "low" : "limited";
+}
+
 export type CheckoutRefusal = "signin" | "org" | "role" | "already" | "soldout" | null;
 
 /** Server-side gate for starting a Founding 500 checkout. Most actionable reason first. */

@@ -1,8 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   FOUNDING,
+  FOUNDING_LOW_SPOTS,
   checkoutRefusal,
   foundingPrice,
+  foundingScarcity,
   isLifetimeSubscriptionId,
   isSoldOut,
   lifetimeRow,
@@ -35,6 +37,19 @@ describe("cap", () => {
   it("refuses checkout when sold out", () => {
     expect(checkoutRefusal({ signedIn: true, organizationType: "trade_company", alreadyLifetime: false, sold: 500 })).toBe("soldout");
     expect(checkoutRefusal({ signedIn: true, organizationType: "trade_company", alreadyLifetime: false, sold: 499 })).toBeNull();
+  });
+});
+
+describe("scarcity label", () => {
+  it("never reveals a count while more than 50 spots are left", () => {
+    expect(foundingScarcity(500)).toBe("limited");
+    expect(foundingScarcity(FOUNDING_LOW_SPOTS + 1)).toBe("limited");
+    expect(foundingScarcity(null)).toBe("limited");
+  });
+  it("says fewer than 50 at or below the threshold, sold out at zero", () => {
+    expect(foundingScarcity(FOUNDING_LOW_SPOTS)).toBe("low");
+    expect(foundingScarcity(1)).toBe("low");
+    expect(foundingScarcity(0)).toBe("soldout");
   });
 });
 
