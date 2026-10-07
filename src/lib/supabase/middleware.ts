@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createAuthReadFetch } from "./read-retry";
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 
 /**
@@ -36,6 +37,7 @@ export async function updateSession(
   let response = pass();
 
   const supabase = createServerClient(url, anonKey, {
+    global: { fetch: createAuthReadFetch(url) },
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -53,7 +55,16 @@ export async function updateSession(
   });
 
   // Refresh tokens + read the current user.
-  const { data } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+  // A network/auth-service outage is not proof of an expired session. Keep
+  // private routes closed and let the visitor retry instead of redirecting
+  // to sign-in with a still-valid session.
+  if (isProtected && error && (error.name === "AuthRetryableFetchError" || (error.status ?? 0) >= 500)) {
+    return new NextResponse("Sign-in verification is temporarily unavailable. Please retry shortly.", {
+      status: 503,
+      headers: { "Retry-After": "5", "Cache-Control": "no-store" },
+    });
+  }
 
   // Protect authenticated areas. Page-level requireRole() enforces the
   // specific role; here we just bounce logged-out users to sign-in.

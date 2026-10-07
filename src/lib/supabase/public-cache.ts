@@ -1,3 +1,5 @@
+import { retryTableRead } from "./read-retry";
+
 /** Only the cookieless anonymous read client may use this policy. */
 export const PUBLIC_DATA_TAG = "supabase-public-data";
 export const PUBLIC_DATA_TTL = 300;
@@ -31,6 +33,6 @@ export function createPublicReadFetch(baseUrl: string, anonKey: string, transpor
     // Every render must invoke Next's patched fetch so its tags and TTL are
     // registered in that render's context. Let Next handle render-local fetch
     // memoization; do not bypass it with process-wide in-flight promises.
-    return transport(input, options);
+    return publicRead ? retryTableRead(input, options, transport) : transport(input, options);
   };
 }
