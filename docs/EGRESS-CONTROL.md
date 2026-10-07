@@ -29,3 +29,28 @@ Run unit/database tests, typecheck, targeted lint and a production build. Cache 
 After deploying, compare the next complete hour/day of Supabase PostgREST request counts and egress with the baseline (roughly 9.3k API Gateway requests in the inspected hour). Confirm no cache-size errors and check fresh content after moderation/imports. Old accumulated egress will not decrease; assess the rate of new usage. Set a Vercel Firewall rate rule if protection must run before application functions or cover excluded widget routes; that is separate from this code change.
 
 The existing Pro upgrade handles continuity while optimizing. It is not performed by this change. No schema migration or object/data deletion is required. Reverting the commit removes the code changes.
+
+## Transient connection recovery (October 7, 2026)
+
+Production request records showed ETIMEDOUT and UND_ERR_SOCKET on four requests
+in a 24-hour sample. Three returned HTTP 200 and one returned a 307 redirect;
+these status codes do not prove whether all page content was complete. Errors
+appeared in both middleware and page functions. This is connection-failure
+mitigation, not a confirmed diagnosis of the upstream/network cause.
+
+The anonymous table-read fetch and middleware's GET /auth/v1/user verification
+now make one fast retry for known transient network errors or HTTP 502/503/504.
+The recovery attempt waits 100–249 ms and has a five-second deadline. It uses a
+fresh signal to avoid reusing Next's rejected render-memoized fetch, while keeping
+Data Cache keys, tags and TTLs. No RPC, mutation, token refresh, sign-in, sign-out,
+storage or unrelated origin is replayed. Private auth verification is no-store.
+The SDK's existing table retries are retained; X-Retry-Count attempts receive no
+nested recovery retry and have five-second deadlines (at most five transports
+for an exhausted SDK table request). Caller cancellation is preserved.
+
+Protected routes return an uncached 503 with Retry-After when auth verification
+is temporarily unavailable, rather than treating downtime as an invalid session.
+Genuinely invalid sessions still redirect to sign-in. Recovery logs contain only
+endpoint paths, outcome and HTTP status, never tokens, query parameters or users.
+Persistent failures still surface; no empty-data success fallback is introduced.
+Measure actual egress separately: request reduction is not a byte-savings result.

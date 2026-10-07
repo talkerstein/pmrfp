@@ -12,7 +12,12 @@ vi.mock("@/lib/supabase/config", () => ({ isSupabaseConfigured: () => true }));
 class MemoryBackingStore {
   now = 0;
   entries = new Map<string, { value: { revalidate: number }; tags: string[]; expires: number }>();
-  async generateCacheKey(...args: unknown[]) { return JSON.stringify(args); }
+  async generateCacheKey(url: unknown, init: RequestInit = {}) {
+    // Match the inputs used by Next's IncrementalCache (no signal or tags).
+    return JSON.stringify([url, init.method, Object.fromEntries(new Headers(init.headers)),
+      init.mode, init.redirect, init.credentials, init.referrer, init.referrerPolicy,
+      init.integrity, init.cache, init.body]);
+  }
   async lock() { return () => {}; }
   async get(key: string) {
     const entry = this.entries.get(key);
@@ -52,6 +57,24 @@ function render<T>(route: string, run: () => Promise<T>) {
 }
 
 describe("Next framework cache regressions", () => {
+  it("caches a recovered read and retains render tags and TTL", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const error = new TypeError("fetch failed", { cause: Object.assign(new Error("socket closed"), { code: "UND_ERR_SOCKET" }) });
+    const upstream = vi.fn<typeof fetch>().mockRejectedValueOnce(error).mockResolvedValueOnce(new Response('[{"name":"Toronto"}]'));
+    const nextFetch = patched(upstream, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+    const read = createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch);
+    const query = () => read("https://fixture.supabase.co/rest/v1/regions?select=name", { headers: { apikey: "fixture-key", authorization: "Bearer fixture-key" } }).then((r) => r.json());
+    const first = await render("/regions", query);
+    const second = await render("/trades", query);
+    expect(first.result).toEqual([{ name: "Toronto" }]);
+    expect(second.result).toEqual(first.result);
+    expect(upstream).toHaveBeenCalledTimes(2);
+    for (const context of [first, second]) {
+      expect(context.renderUnit.tags).toContain(TAXONOMY_DATA_TAG);
+      expect(context.renderUnit.revalidate).toBe(3600);
+    }
+    vi.restoreAllMocks();
+  });
   it("persists numeric exact counts from HTTP206 across sequential renders and honors TTL/tag expiry", async () => {
     const transport = vi.fn(async () => new Response("[]", { status: 206, headers: { "Content-Type": "application/json", "Content-Range": "*/7" } }));
     fixture.client = createClient("https://fixture.supabase.co", "fixture-key", { auth: { persistSession: false }, global: { fetch: transport } });
