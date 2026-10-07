@@ -27,7 +27,8 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 
 type BucketName =
   | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
-  | "photo-upload" | "project-draft" | "project-publish" | "review" | "public-read";
+  | "photo-upload" | "project-draft" | "project-publish" | "review" | "public-read"
+  | "forum-post" | "forum-vote";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
@@ -46,6 +47,9 @@ const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${n
   "project-publish": { tokens: 10, window: "10 m" },
   review: { tokens: 5, window: "10 m" },
   "public-read": { tokens: 120, window: "60 s" },
+  // Forum: per-IP backstop on top of the per-account limits in lib/forum/rules.
+  "forum-post": { tokens: 10, window: "10 m" },
+  "forum-vote": { tokens: 60, window: "10 m" },
 };
 
 let _redis: Redis | null = null;

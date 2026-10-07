@@ -79,6 +79,7 @@ export const MAIN_NAV = [
   { href: "/rfps", label: "RFPs" },
   { href: "/directory", label: "Trade Directory" },
   { href: "/jobs", label: "Jobs" },
+  { href: "/forum", label: "Forum" },
   { href: "/for-property-managers", label: "For Property Managers" },
   { href: "/pricing", label: "Pricing" },
 ] as const;
@@ -129,6 +130,7 @@ export const ADMIN_NAV = [
   { href: "/admin/case-studies", label: "Case Studies" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/sponsors", label: "Sponsors" },
+  { href: "/admin/forum", label: "Forum" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/audit-logs", label: "Audit Logs" },
 ] as const;
@@ -142,6 +144,7 @@ export const FOOTER_COLS = [
     links: [
       { label: "Browse RFPs", href: "/rfps" },
       { label: "Trade Jobs", href: "/jobs" },
+      { label: "Trade Forum", href: "/forum" },
       { label: "Find Tradespeople", href: "/talent" },
       { label: "Contract Winners", href: "/contract-winners" },
       { label: "Public Contracts Report", href: "/reports/public-building-contracts" },

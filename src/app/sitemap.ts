@@ -13,6 +13,8 @@ import { VERTICALS } from "@/lib/seo/verticals";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
 import { RFP_TEMPLATES } from "@/lib/seo/rfp-templates";
 import { listOpenJobs } from "@/lib/jobs/data";
+import { listIndexableThreads } from "@/lib/forum/data";
+import { FORUM_CATEGORY_SLUGS } from "@/lib/forum/categories";
 import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
 import { PROVINCES } from "@/lib/data/province-hub";
 
@@ -114,6 +116,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const t of RFP_TEMPLATES) entries.push({ url: `${base}/rfp-templates/${t.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
   // Open jobs (Google for Jobs reads the JobPosting markup on each page).
   for (const j of (await listOpenJobs()).jobs) entries.push({ url: `${base}/jobs/${j.slug}`, lastModified: new Date(j.createdAt), changeFrequency: "daily", priority: 0.6 });
+
+  // Forum: the index, each category, and only threads that pass the indexing
+  // gate (approved, answered or 2+ replies, 150+ words). lastmod = last reply.
+  const forumThreads = await listIndexableThreads().catch(() => []);
+  if (forumThreads.length) {
+    entries.push({ url: `${base}/forum`, lastModified: new Date(forumThreads[0].lastPostAt), changeFrequency: "daily", priority: 0.6 });
+    for (const c of FORUM_CATEGORY_SLUGS.filter((c) => forumThreads.some((t) => t.path.startsWith(`/forum/${c}/`)))) entries.push({ url: `${base}/forum/${c}`, lastModified: now, changeFrequency: "daily", priority: 0.5 });
+    for (const t of forumThreads) entries.push({ url: `${base}${t.path}`, lastModified: new Date(t.lastPostAt), changeFrequency: "weekly", priority: 0.6 });
+  }
 
   // Translated pages: list each language version and pair them with hreflang.
   const localized: MetadataRoute.Sitemap = [];
