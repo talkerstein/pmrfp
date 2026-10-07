@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendSubscriptionActivatedEmail, sendAdminNewSale, sendSpotlightPaid } from "@/lib/email/send";
 import { SPOTLIGHT_PRODUCT } from "@/lib/spotlight/config";
+import { FEATURED_PRODUCT, nextFeaturedUntil } from "@/lib/marketplace/rules";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { verifyStripeEvent } from "@/lib/stripe/verify-event";
 
@@ -63,6 +64,36 @@ export async function POST(request: Request) {
             amountFormatted: typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—",
           });
           if (cs.customer_details?.email) await sendSpotlightPaid(cs.customer_details.email, cs.id);
+          break;
+        }
+        // One-time Marketplace featured listing: extend featured_until by 14 days.
+        if (cs.mode === "payment" && cs.metadata?.product === FEATURED_PRODUCT) {
+          const listingId = cs.metadata?.listing_id;
+          let title: string | null = null;
+          if (listingId && isServiceConfigured() && cs.payment_status === "paid") {
+            const svc = createServiceClient();
+            const { data: listing } = await svc
+              .from("marketplace_listings")
+              .select("id,title,featured_until")
+              .eq("id", listingId)
+              .maybeSingle<{ id: string; title: string; featured_until: string | null }>();
+            if (listing) {
+              title = listing.title;
+              const { error: featErr } = await svc
+                .from("marketplace_listings")
+                .update({ featured_until: nextFeaturedUntil(listing.featured_until).toISOString() })
+                .eq("id", listing.id);
+              if (featErr) console.error("[stripe webhook] featured update failed:", featErr.message);
+            }
+          }
+          const cents = cs.amount_total;
+          await sendAdminNewSale({
+            company: title ? `Listing: ${title}` : null,
+            email: cs.customer_details?.email ?? "(no email on file)",
+            plan: "Marketplace featured listing",
+            interval: "one-time",
+            amountFormatted: typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${(cs.currency || "cad").toUpperCase()}` : "—",
+          });
           break;
         }
         if (cs.subscription) {

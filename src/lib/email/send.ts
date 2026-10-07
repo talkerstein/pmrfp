@@ -1073,3 +1073,52 @@ export async function sendSpotlightReceived(to: string, title: string): Promise<
     { replyTo: SIGNUP_ALERT },
   );
 }
+
+// ── Marketplace ──────────────────────────────────────────────────────────
+
+/** A buyer's message to a marketplace seller (Reply-To the buyer; the seller's email stays private). */
+export async function sendMarketplaceContact(params: {
+  to: string;
+  listingTitle: string;
+  listingUrl: string;
+  buyer: { name: string; email: string };
+  message: string;
+}): Promise<void> {
+  await send(
+    params.to,
+    `Question about your listing: ${params.listingTitle}`,
+    layout(
+      "Someone is interested in your listing",
+      `<p>${escHtml(params.buyer.name)} sent a message about <a href="${params.listingUrl}">${escHtml(params.listingTitle)}</a>:</p>
+       <p style="margin:0 0 16px;padding:12px 14px;background:#F6F7FB;border-radius:10px;color:#1B1E45">${escHtml(params.message).replace(/\n/g, "<br>")}</p>
+       <p>Reply to this email to answer them directly. They don't see your email address unless you reply.</p>
+       <p style="font-size:13px;color:#64748b">PMRFP doesn't handle payment or delivery. Meet in a safe place, inspect before you pay, and never send a deposit to someone you haven't met.</p>`,
+      `Sent because you listed an item on the <a href="${BASE}/marketplace" style="color:#64748b">PMRFP Marketplace</a>. Mark it sold from your dashboard to stop messages.`,
+      { referralPs: false },
+    ),
+    undefined,
+    { replyTo: params.buyer.email },
+  );
+}
+
+/** Someone reported a marketplace listing. */
+export async function sendAdminMarketplaceReport(params: {
+  listingTitle: string;
+  listingUrl: string;
+  reason: string;
+  reporterEmail?: string | null;
+}): Promise<void> {
+  await sendToOwners(
+    `⚠️ Marketplace listing reported: ${params.listingTitle}`,
+    layout(
+      "A marketplace listing was reported",
+      `<ul>
+        <li><strong>Listing:</strong> <a href="${params.listingUrl}">${escHtml(params.listingTitle)}</a></li>
+        <li><strong>Reported by:</strong> ${params.reporterEmail ? escHtml(params.reporterEmail) : "(anonymous)"}</li>
+       </ul>
+       <p style="margin:0 0 16px;padding:12px 14px;background:#F6F7FB;border-radius:10px;color:#1B1E45">${escHtml(params.reason).replace(/\n/g, "<br>")}</p>
+       <p>${btn(`${BASE}/admin/marketplace`, "Review in admin")}</p>`,
+    ),
+    params.reporterEmail ? { replyTo: params.reporterEmail } : undefined,
+  );
+}
