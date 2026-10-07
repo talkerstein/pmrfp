@@ -3,6 +3,7 @@ import {
   FOUNDING,
   checkoutRefusal,
   foundingPrice,
+  foundingScarcity,
   isLifetimeSubscriptionId,
   isSoldOut,
   lifetimeRow,
@@ -97,5 +98,18 @@ describe("entitlement guard", () => {
     existingSubId = "sub_old";
     await syncSubscriptionFromStripe(sub as never);
     expect(upsert).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("foundingScarcity", () => {
+  it("never exposes a count above 50 left", () => {
+    expect(foundingScarcity(500)).toBe("limited");
+    expect(foundingScarcity(51)).toBe("limited");
+    expect(foundingScarcity(null)).toBe("limited");
+  });
+  it("says fewer than 50 at 50 or below, sold out at 0", () => {
+    expect(foundingScarcity(50)).toBe("low");
+    expect(foundingScarcity(1)).toBe("low");
+    expect(foundingScarcity(0)).toBe("soldout");
   });
 });

@@ -8,7 +8,7 @@ import { setMarket, useUsdPerCad, useVisitorMarket } from "@/components/geo/use-
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
-import { FOUNDING } from "@/lib/founding/config";
+import { FOUNDING, foundingScarcity } from "@/lib/founding/config";
 import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
@@ -276,8 +276,9 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
   const toastItem = data.toast.length ? data.toast[toastIdx % data.toast.length] : null;
   const showToast = toastOn && !toastOff && !modal && toastItem != null;
   const showFounding = data.foundingLeft !== 0;
-  const spots = data.foundingLeft == null ? null : fmt(t.founding.spots, { n: num(data.foundingLeft) });
-  const spotsShort = data.foundingLeft == null ? null : fmt(t.founding.spotsShort, { n: num(data.foundingLeft) });
+  // Never the exact count while more than FOUNDING_LOW_SPOTS remain.
+  const spots = foundingScarcity(data.foundingLeft) === "low" ? t.founding.low : t.founding.limited;
+  const spotsShort = spots;
   const w = data.winners;
   const top = w.top;
   const bigwords = [

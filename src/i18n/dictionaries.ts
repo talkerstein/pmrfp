@@ -38,6 +38,7 @@ import marketplace from "./messages/marketplace";
 import marketplaceClient from "./messages/marketplaceClient";
 import founding from "./messages/founding";
 import foundingClient from "./messages/foundingClient";
+import v3pages from "./messages/v3pages";
 
 const NAMESPACES = {
   common,
@@ -71,6 +72,7 @@ const NAMESPACES = {
   marketplaceClient,
   founding,
   foundingClient,
+  v3pages,
 };
 
 type Namespaces = typeof NAMESPACES;

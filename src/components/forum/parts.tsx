@@ -95,15 +95,41 @@ export function MemberName({ m, staff, showRank }: { m: MemberRef | null; staff?
   );
 }
 
-export function ForumHero({ eyebrow, title, lead, children }: { eyebrow: string; title: string; lead?: string; children?: React.ReactNode }) {
+/**
+ * The dark band at the top of every forum page (v3 design): breadcrumbs, a
+ * mint kicker, the page's one <h1>, an optional lead and actions.
+ */
+export function ForumHero({
+  eyebrow,
+  title,
+  lead,
+  crumbs,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  lead?: string;
+  crumbs?: { label: string; href?: string }[];
+  children?: React.ReactNode;
+}) {
   return (
-    <section className="grid-tex relative overflow-hidden bg-indigo text-white [--grid-color:rgba(145,242,207,0.06)]">
-      <Container className="relative py-10 md:py-12">
-        <p className="font-mono text-xs uppercase tracking-[0.16em] text-teal-300">{eyebrow}</p>
-        <h1 className="mt-2 max-w-3xl text-balance text-3xl font-extrabold tracking-tight text-white md:text-4xl">{title}</h1>
-        {lead && <p className="mt-3 max-w-2xl text-indigo-100/80">{lead}</p>}
+    <section className="f-band">
+      <div className="wrap f-band-in">
+        {crumbs && crumbs.length > 0 && (
+          <nav aria-label="Breadcrumb" className="f-crumbs">
+            {crumbs.map((c, i) => (
+              <span key={i} style={{ display: "contents" }}>
+                {i > 0 && <span aria-hidden>/</span>}
+                {c.href ? <Link href={c.href}>{c.label}</Link> : <span aria-current="page">{c.label}</span>}
+              </span>
+            ))}
+          </nav>
+        )}
+        <p className="kick"><span className="dot" />{eyebrow}</p>
+        <h1>{title}</h1>
+        {lead && <p className="lead">{lead}</p>}
         {children}
-      </Container>
+      </div>
     </section>
   );
 }
@@ -112,7 +138,7 @@ export function OpeningSoon() {
   const t = getT("forum").soon;
   return (
     <Container className="py-16">
-      <div className="mx-auto flex max-w-lg flex-col items-center rounded-xl border border-dashed border-border px-6 py-14 text-center">
+      <div className="mx-auto flex max-w-lg flex-col items-center rounded-3xl border-2 border-dashed border-border px-6 py-14 text-center">
         <HardHat className="size-10 text-teal-600" />
         <h2 className="mt-4 text-xl font-bold">{t.title}</h2>
         <p className="mt-2 text-muted-foreground">{t.body}</p>
@@ -126,7 +152,7 @@ export function OpeningSoon() {
 export function VerifyPanel({ signedIn, next }: { signedIn: boolean; next: string }) {
   const t = getT("forum").verify;
   return (
-    <div className="rounded-xl border border-teal-500/50 bg-teal-50/40 p-5 dark:bg-teal-500/5">
+    <div className="rounded-3xl border-2 border-[#91F2CF] bg-[#DDFBF0] p-6">
       <h2 className="flex items-center gap-2 font-bold"><ShieldCheck className="size-5 text-teal-600" /> {t.title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t.body}</p>
       <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { BadgeCheck, Building2 } from "lucide-react";
-import { Container } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { OpeningSoon, RankBar } from "@/components/forum/parts";
 import { getProfile } from "@/lib/forum/data";
@@ -67,30 +66,38 @@ export default async function ForumProfilePage({ params }: P) {
           mainEntity: { "@type": "Person", name: p.displayName, alternateName: `@${p.handle}`, ...(p.crew ? { worksFor: { "@type": "Organization", name: p.crew.name } } : {}) },
         }}
       />
-      <Container className="max-w-5xl py-10 pb-16">
-        <nav className="text-sm text-muted-foreground"><Link href="/forum" className="hover:underline">{t.forum}</Link></nav>
-        <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div>
-            <div className="flex items-center gap-4">
-              <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-indigo text-2xl font-bold text-white" aria-hidden>
-                {p.displayName.slice(0, 1).toUpperCase()}
-              </span>
-              <div>
-                <h1 className="flex flex-wrap items-center gap-2 text-2xl font-extrabold tracking-tight">
-                  {p.displayName}
-                  {p.verifiedBusiness && <BadgeCheck className="size-5 text-teal-600" aria-label={t.thread.verified} />}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  @{p.handle}
-                  {p.isStaff && ` · ${t.thread.staff}`}
-                  {p.trade && ` · ${p.trade}`}
-                  {p.region && ` · ${p.region}`}
-                </p>
-              </div>
+      <section className="f-band">
+        <div className="wrap f-band-in">
+          <nav className="f-crumbs" aria-label="Breadcrumb">
+            <Link href="/forum">{t.forum}</Link>
+            <span aria-hidden>/</span>
+            <span aria-current="page">@{p.handle}</span>
+          </nav>
+          <div style={{ marginTop: 22, display: "flex", alignItems: "center", gap: 18 }}>
+            <span aria-hidden style={{ width: 72, height: 72, flexShrink: 0, borderRadius: 999, background: "#282B59", border: "2px solid #91F2CF", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--fp)", fontWeight: 700, fontSize: 30, color: "#91F2CF" }}>
+              {p.displayName.slice(0, 1).toUpperCase()}
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ marginTop: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+                {p.displayName}
+                {p.verifiedBusiness && <BadgeCheck className="size-7 text-[#91F2CF]" aria-label={t.thread.verified} />}
+              </h1>
+              <p className="lead" style={{ marginTop: 6, fontSize: 16 }}>
+                @{p.handle}
+                {p.isStaff && ` · ${t.thread.staff}`}
+                {p.trade && ` · ${p.trade}`}
+                {p.region && ` · ${p.region}`}
+              </p>
             </div>
+          </div>
+        </div>
+      </section>
+      <div className="wrap f-page">
+        <div className="f-cols">
+          <div className="main">
             {p.bio && <p className="mt-4 whitespace-pre-line text-muted-foreground">{p.bio}</p>}
 
-            <div className="mt-6 rounded-xl border border-border p-5">
+            <div className="f-card mt-6">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t.profile.rank}</p>
               <div className="mt-2"><RankBar reputation={p.reputation} /></div>
               <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -108,14 +115,14 @@ export default async function ForumProfilePage({ params }: P) {
               )}
             </div>
 
-            <h2 className="mt-8 text-lg font-bold">{t.profile.latest}</h2>
+            <h2 className="f-hd2" style={{ marginTop: 40 }}>{t.profile.latest}</h2>
             {p.latest.length === 0 ? (
               <p className="mt-2 text-muted-foreground">{t.profile.noThreads}</p>
             ) : (
-              <ul className="mt-3 divide-y divide-border rounded-xl border border-border">
+              <ul className="mt-3 divide-y divide-[#E3E4EE] overflow-hidden rounded-3xl border-2 border-[#E3E4EE]">
                 {p.latest.map((th) => (
-                  <li key={th.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                    <Link href={th.path} className="font-medium hover:underline">{th.title}</Link>
+                  <li key={th.id} className="flex items-center justify-between gap-3 px-5 py-4 text-sm">
+                    <Link href={th.path} className="font-bold">{th.title}</Link>
                     <span className="shrink-0 text-xs text-muted-foreground">{formatDate(th.createdAt, lang)}</span>
                   </li>
                 ))}
@@ -123,16 +130,16 @@ export default async function ForumProfilePage({ params }: P) {
             )}
           </div>
 
-          <aside className="space-y-5">
+          <aside>
             {p.crew?.listed && (
-              <div className="rounded-xl border-2 border-teal-500 p-5">
-                <p className="flex items-center gap-1.5 text-sm font-bold text-teal-800 dark:text-teal-300"><Building2 className="size-4" /> {t.profile.listedTitle}</p>
+              <div className="f-side-mint">
+                <p className="flex items-center gap-1.5 text-sm font-bold"><Building2 className="size-4" /> {t.profile.listedTitle}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{fmt(t.profile.listedBody, { name: p.crew.name })}</p>
                 <Link href={`/directory/${p.crew.slug}`} className={buttonVariants({ size: "sm", className: "mt-3" })}>{t.profile.listedCta}</Link>
               </div>
             )}
 
-            <div className="rounded-xl border border-border p-5">
+            <div className="f-side-line">
               <h2 className="font-bold">{t.profile.badges}</h2>
               {badges.length === 0 ? (
                 <p className="mt-1 text-sm text-muted-foreground">{t.profile.noBadges}</p>
@@ -149,7 +156,7 @@ export default async function ForumProfilePage({ params }: P) {
             </div>
 
             {p.crew && (
-              <div className="rounded-xl border border-border p-5">
+              <div className="f-side-line">
                 <h2 className="font-bold">{t.profile.crews}</h2>
                 <table className="mt-2 w-full text-sm">
                   <thead className="text-left text-xs text-muted-foreground">
@@ -175,7 +182,7 @@ export default async function ForumProfilePage({ params }: P) {
             )}
           </aside>
         </div>
-      </Container>
+      </div>
     </>
   );
 }

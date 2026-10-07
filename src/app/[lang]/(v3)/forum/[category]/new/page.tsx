@@ -34,8 +34,8 @@ export default async function NewThreadPage({ params }: { params: Promise<{ lang
 
   return (
     <>
-      <ForumHero eyebrow={t.forum} title={t.meta.newTitle} />
-      <Container className="max-w-2xl py-10 pb-16">
+      <ForumHero eyebrow={t.forum} title={t.meta.newTitle} crumbs={[{ label: t.forum, href: "/forum" }, { label: t.categories[category].name, href: `/forum/${category}` }, { label: t.meta.newTitle }]} />
+      <Container className="max-w-2xl f-page">
         {!(await sessionCanPost(session, (await (await createClient()).auth.getUser()).data.user)) ? (
           <VerifyPanel signedIn next={`/forum/${category}/new`} />
         ) : (

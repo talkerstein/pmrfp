@@ -12,6 +12,8 @@ const en = {
     barShort: "Founding 500: lifetime Trade Pro, one payment.",
     spots: "{n} of 500 spots left",
     spotsShort: "{n} of 500 left",
+    limited: "Limited to the first 500 companies",
+    low: "Fewer than 50 spots left",
     claim: "Claim a spot →",
   },
   nav: {
@@ -311,6 +313,8 @@ const fr: typeof en = {
     barShort: "Fondateurs 500 : Trade Pro à vie, un seul paiement.",
     spots: "{n} places sur 500 restantes",
     spotsShort: "{n} sur 500 restantes",
+    limited: "Réservé aux 500 premières entreprises",
+    low: "Moins de 50 places restantes",
     claim: "Réserver une place →",
   },
   nav: {
@@ -609,6 +613,8 @@ const es: typeof en = {
     barShort: "Founding 500: Trade Pro de por vida, un solo pago.",
     spots: "Quedan {n} de 500 lugares",
     spotsShort: "Quedan {n} de 500",
+    limited: "Limitado a las primeras 500 empresas",
+    low: "Quedan menos de 50 lugares",
     claim: "Reservar un lugar →",
   },
   nav: {

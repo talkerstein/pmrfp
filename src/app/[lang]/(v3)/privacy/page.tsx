@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
-import { Container, Eyebrow } from "@/components/container";
+import { SH2, SimplePage } from "@/components/v3/simple";
 import { SITE } from "@/lib/site";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -18,21 +18,12 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 const LAST_UPDATED = "May 29, 2026";
 const LAST_UPDATED_ISO = "2026-05-29";
 
-function LegalSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+/** One numbered section of the legal text (wording unchanged, layout only). */
+function LegalSection({ no, title, children }: { no: number; title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-semibold tracking-tight text-foreground">
-        {title}
-      </h2>
-      <div className="mt-3 space-y-4 leading-relaxed text-muted-foreground">
-        {children}
-      </div>
+    <section>
+      <SH2 no={no} sm>{title}</SH2>
+      <div className="s-legal">{children}</div>
     </section>
   );
 }
@@ -46,41 +37,33 @@ export default async function PrivacyPage({ params }: { params: Promise<object> 
     lang === "en" ? LAST_UPDATED : formatDate(LAST_UPDATED_ISO, lang, { day: "numeric", month: "long", year: "numeric" });
   const [contactBefore, contactAfter] = t.contact.body.split("{email}");
   return (
-    <section className="bg-background">
-      <Container size="narrow" className="py-16 sm:py-24">
-        <Eyebrow>{m.legal.eyebrow}</Eyebrow>
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground">
-          {t.title}
-        </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          {fmt(m.legal.lastUpdated, { date: updated })}
-        </p>
+    <SimplePage lang={lang} current="privacy" group="legal" title={t.title} lead={fmt(m.legal.lastUpdated, { date: updated })}>
+        <p className="s-meta">{m.legal.eyebrow}</p>
         {m.legal.translationNote && (
-          <p className="mt-4 text-sm italic text-muted-foreground">{m.legal.translationNote}</p>
+          <p className="s-note">{m.legal.translationNote}</p>
         )}
-        <p className="mt-6 leading-relaxed text-muted-foreground">
+        <p className="muted">
           {t.intro}
         </p>
 
-        {t.sections.map((s) => (
-          <LegalSection key={s.title} title={s.title}>
+        {t.sections.map((s, i) => (
+          <LegalSection key={s.title} no={i + 1} title={s.title}>
             <p>{s.body}</p>
           </LegalSection>
         ))}
 
-        <LegalSection title={t.contact.title}>
+        <LegalSection no={t.sections.length + 1} title={t.contact.title}>
           <p>
             {contactBefore}
             <Link
               href={`mailto:${SITE.email}`}
-              className="font-medium text-teal-600 underline underline-offset-4"
+              
             >
               {SITE.email}
             </Link>
             {contactAfter}
           </p>
         </LegalSection>
-      </Container>
-    </section>
+    </SimplePage>
   );
 }

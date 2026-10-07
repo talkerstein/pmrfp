@@ -50,6 +50,20 @@ export function spotsLeft(sold: number, cap: number = FOUNDING.cap): number {
   return Math.max(0, cap - Math.max(0, sold));
 }
 
+/** At or below this many spots left, the public bar says "fewer than 50 left". */
+export const FOUNDING_LOW_SPOTS = 50;
+
+/**
+ * What the public may see about remaining spots. The exact count is never
+ * shown while more than FOUNDING_LOW_SPOTS remain; an unreadable count (null)
+ * reads as "limited", never as a number.
+ */
+export function foundingScarcity(left: number | null): "limited" | "low" | "soldout" {
+  if (left == null) return "limited";
+  if (left <= 0) return "soldout";
+  return left <= FOUNDING_LOW_SPOTS ? "low" : "limited";
+}
+
 export function isSoldOut(sold: number, cap: number = FOUNDING.cap): boolean {
   return spotsLeft(sold, cap) === 0;
 }
