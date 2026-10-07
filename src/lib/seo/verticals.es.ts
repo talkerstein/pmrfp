@@ -82,7 +82,6 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     positioning:
       "PMRFP es el directorio canadiense de contratistas comerciales: su ficha de $249 al año pone a su empresa frente a administradores de propiedades, promotores y constructores que buscan activamente su oficio en su ciudad.",
     pains: [
-      "El 90% del trabajo viene de 2 o 3 relaciones: una mala racha y los ingresos se desploman",
       "Las plataformas de licitaciones gubernamentales son burocráticas y casi todo es trabajo del sector público",
       "HomeStars y TrustedPros solo envían clientes potenciales residenciales: comprador equivocado, contrato del tamaño equivocado",
       "Llamar en frío a administradores de propiedades es lento y caro",
