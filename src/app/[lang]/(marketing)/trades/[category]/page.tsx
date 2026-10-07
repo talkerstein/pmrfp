@@ -33,6 +33,7 @@ import { VerticalSolutionBlock } from "@/components/public/vertical-solution";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { tradePhoto } from "@/lib/photos";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
+import { forumForTrade } from "@/lib/forum/categories";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
@@ -133,6 +134,8 @@ export default async function TradeCategoryPage({
   const templates = getTemplatesForTrade(cat.slug).map((tpl) => localizeRfpTemplate(tpl, lang));
   const costGuide = costGuidesFor(lang).find((g) => g.tradeSlug === cat.slug);
   const photo = tradePhoto(cat.slug);
+  const forum = forumForTrade(cat.slug);
+  const forumT = getT("forum");
 
   return (
     <>
@@ -281,6 +284,14 @@ export default async function TradeCategoryPage({
               </AccordionItem>
             ))}
           </Accordion>
+          {forum && (
+            <p className="mt-6 text-sm text-muted-foreground">
+              {forumT.tradeLinkLead}{" "}
+              <Link href={`/forum/${forum}`} className="font-medium text-primary hover:underline">
+                {fmt(forumT.tradeLink, { name: forumT.categories[forum].name })}
+              </Link>
+            </p>
+          )}
         </Container>
       </section>
 

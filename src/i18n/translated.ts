@@ -26,6 +26,8 @@ const PAGES: RegExp[] = [
   /^\/(rfp-templates|cost-guides)(\/[^/]+)?$/,
   /^\/resources(\/(grow|how-to-post-a-quality-rfp|how-to-write-a-commercial-property-maintenance-rfp))?$/,
   /^\/case-studies$/,
+  // Forum index and category pages (UI translated; member threads stay English).
+  /^\/forum(\/[a-z-]+)?$/,
 ];
 
 // French and Spanish cover the same pages.

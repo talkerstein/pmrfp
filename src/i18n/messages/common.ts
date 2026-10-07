@@ -11,6 +11,7 @@ const en = {
     rfps: "RFPs",
     directory: "Trade Directory",
     jobs: "Jobs",
+    forum: "Forum",
     marketplace: "Marketplace",
     forPms: "For Property Managers",
     pricing: "Pricing",
@@ -37,6 +38,7 @@ const en = {
     links: {
       rfps: "Browse RFPs",
       jobs: "Trade Jobs",
+      forum: "Trade Forum",
       talent: "Find Tradespeople",
       marketplace: "Equipment Marketplace",
       winners: "Contract Winners",
@@ -108,6 +110,7 @@ const fr: typeof en = {
     rfps: "Appels d'offres",
     directory: "Répertoire",
     jobs: "Emplois",
+    forum: "Forum",
     marketplace: "Marché",
     forPms: "Gestionnaires immobiliers",
     pricing: "Tarifs",
@@ -134,6 +137,7 @@ const fr: typeof en = {
     links: {
       rfps: "Parcourir les appels d'offres",
       jobs: "Emplois dans les métiers",
+      forum: "Forum des métiers",
       talent: "Trouver des gens de métier",
       marketplace: "Marché d'équipement",
       winners: "Adjudicataires",
@@ -205,6 +209,7 @@ const es: typeof en = {
     rfps: "Licitaciones",
     directory: "Directorio",
     jobs: "Empleos",
+    forum: "Foro",
     marketplace: "Mercado",
     forPms: "Administradores de propiedades",
     pricing: "Precios",
@@ -231,6 +236,7 @@ const es: typeof en = {
     links: {
       rfps: "Ver licitaciones",
       jobs: "Empleos en oficios",
+      forum: "Foro de oficios",
       talent: "Encontrar trabajadores de oficios",
       marketplace: "Mercado de equipos",
       winners: "Adjudicatarios",

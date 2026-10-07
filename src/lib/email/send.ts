@@ -1122,3 +1122,19 @@ export async function sendAdminMarketplaceReport(params: {
     params.reporterEmail ? { replyTo: params.reporterEmail } : undefined,
   );
 }
+
+/** Admin heads-up: a forum post is waiting in the mod queue (held link or auto-hidden by reports). */
+export async function sendAdminForumQueue(params: { reason: "held" | "reported"; title: string; author: string }): Promise<void> {
+  await send(
+    ADMIN,
+    `Forum ${params.reason === "held" ? "post held for review" : "post auto-hidden by reports"} · ${params.title.slice(0, 80)}`,
+    layout(
+      params.reason === "held" ? "Forum post held" : "Forum post auto-hidden",
+      `<ul>
+        <li><strong>Thread:</strong> ${esc(params.title)}</li>
+        <li><strong>Author:</strong> ${esc(params.author)}</li>
+       </ul>
+       <p>${btn(`${BASE}/admin/forum`, "Open the mod queue")}</p>`,
+    ),
+  );
+}
