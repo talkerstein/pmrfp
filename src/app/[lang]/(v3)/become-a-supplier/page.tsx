@@ -87,7 +87,7 @@ export default async function BecomeASupplierPage({ params }: { params: Promise<
           getLabel: p.where.eyebrow,
           getHead: p.where.title,
           tags: p.who.list,
-          features: where.map((x) => ({ t: x.title, d: x.body })),
+          features: [...where.map((x) => ({ t: x.title, d: x.body })), { t: getT("agencies").supplierLink.title, d: getT("agencies").supplierLink.body }],
           steps: p.why.items.map((x) => ({ t: x.title, d: x.body })),
           faq: p.faq,
           disclaimer: getT("common").disclaimer,

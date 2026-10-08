@@ -14,6 +14,7 @@ const PAGES: RegExp[] = [
   /^\/pricing$/,
   /^\/for-trades$/,
   /^\/for-property-managers$/,
+  /^\/for-agencies$/,
   /^\/become-a-supplier$/,
   /^\/rfp-writer$/,
   /^\/jobs(\/[^/]+)?$/,
@@ -25,7 +26,7 @@ const PAGES: RegExp[] = [
   /^\/trades(\/[^/]+){0,2}$/,
   /^\/(regions|for|vs)(\/[^/]+)?$/,
   /^\/(rfp-templates|cost-guides)(\/[^/]+)?$/,
-  /^\/resources(\/(grow|how-to-post-a-quality-rfp|how-to-write-a-commercial-property-maintenance-rfp))?$/,
+  /^\/resources(\/(grow|how-to-post-a-quality-rfp|how-to-write-a-commercial-property-maintenance-rfp|contractor-directories))?$/,
   /^\/case-studies$/,
   // Forum index and category pages (UI translated; member threads stay English).
   /^\/forum(\/[a-z-]+)?$/,

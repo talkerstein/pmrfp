@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { SITE } from "@/lib/site";
 import { getT } from "@/i18n/server";
 import { localizePath, type Locale } from "@/i18n/config";
@@ -41,6 +41,8 @@ export async function SimplePage({
   title,
   lead,
   aside = true,
+  crumbs,
+  tabs = true,
   children,
 }: {
   lang: Locale;
@@ -49,6 +51,10 @@ export async function SimplePage({
   title: string;
   lead?: ReactNode;
   aside?: boolean;
+  /** Middle breadcrumbs, replacing the Company/Legal crumb (pages outside those groups). */
+  crumbs?: { label: string; href?: string }[];
+  /** Company/legal page tabs in the hero; off for pages outside those groups. */
+  tabs?: boolean;
   children: ReactNode;
 }) {
   const t = getT("v3Pages").simple;
@@ -76,8 +82,12 @@ export async function SimplePage({
             <nav aria-label="Breadcrumb" className="s-crumbs">
               <a href={L("/")}>{t.home}</a>
               <span aria-hidden>/</span>
-              <span>{group === "company" ? t.company : t.legal}</span>
-              <span aria-hidden>/</span>
+              {(crumbs ?? [{ label: group === "company" ? t.company : t.legal }]).map((c) => (
+                <Fragment key={c.label}>
+                  {c.href ? <a href={L(c.href)}>{c.label}</a> : <span>{c.label}</span>}
+                  <span aria-hidden>/</span>
+                </Fragment>
+              ))}
               <span aria-current="page">{title}</span>
             </nav>
             <div className="s-hero-row">
@@ -85,11 +95,11 @@ export async function SimplePage({
                 <h1 className="s-h1">{title}</h1>
                 {lead && <p className="s-lead">{lead}</p>}
               </div>
-              <nav aria-label={t.pages} className="s-tabs">
+              {tabs && <nav aria-label={t.pages} className="s-tabs">
                 {TABS.map(([k, href]) => (
                   <a key={k} href={L(href)} aria-current={k === current ? "page" : undefined}>{tabName[k]}</a>
                 ))}
-              </nav>
+              </nav>}
             </div>
           </div>
         </section>
