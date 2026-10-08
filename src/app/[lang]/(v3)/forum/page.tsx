@@ -1,34 +1,41 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { headers } from "next/headers";
+import { ChevronDown, CircleHelp } from "lucide-react";
 import { OpeningSoon } from "@/components/forum/parts";
-import { getForumIndex, type ForumCategory } from "@/lib/forum/data";
-import { CHANNEL_ORDER, FORUM_CHANNELS, type ForumCategorySlug, type ForumChannel } from "@/lib/forum/categories";
+import { getForumIndex, listLatestThreads, listPinnedThreads, searchThreads, type ForumCategory, type ThreadWithCategory } from "@/lib/forum/data";
+import { ForumIcon, ForumSearch, ThreadList } from "@/components/forum/organize";
+import { cleanSearch } from "@/lib/forum/organize";
+import { checkRateLimitByIp } from "@/lib/rate-limit";
+import { CHANNEL_ORDER, FORUM_CHANNELS, type ForumCategorySlug } from "@/lib/forum/categories";
 import { RANKS } from "@/lib/forum/rules";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
-import { fmt, formatNumber } from "@/i18n/format";
+import { fmt, formatNumber, plural } from "@/i18n/format";
 import { V3Body } from "@/components/v3/body";
 
-export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+type SP = Promise<Record<string, string | string[] | undefined>>;
+
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: SP }): Promise<Metadata> {
   const { lang } = await params;
   const l = hasLocale(lang) ? lang : "en";
   const t = getDictionary(l).forum.meta;
-  return { title: t.indexTitle, description: t.indexDescription, alternates: alternatesFor(l, "/forum") };
+  // Search results (?q=) canonicalize to /forum and stay out of the index.
+  const searching = (await searchParams).q !== undefined;
+  return { title: t.indexTitle, description: t.indexDescription, alternates: alternatesFor(l, "/forum"), robots: searching ? { index: false, follow: true } : undefined };
 }
 
-/** Trade boards with a photo tile (the rest get the navy tile, as designed). */
-const TRADE_IMG: Partial<Record<ForumCategorySlug, string>> = {
-  electrical: "/images/home/trade-electrical.webp",
-  "hvac-mechanical": "/images/home/trade-hvac.webp",
-  "roofing-envelope": "/images/home/hero-roofing.webp",
-  "concrete-structure": "/images/photos/masonry-block-wall.webp",
-  "landscaping-snow": "/images/home/trade-snow.webp",
-  "cleaning-janitorial": "/images/home/trade-cleaning.webp",
-};
-const REGION_CODE: Partial<Record<ForumCategorySlug, string>> = { quebec: "QC", ontario: "ON", alberta: "AB", "british-columbia": "BC", "united-states": "US" };
+async function runSearch(raw: unknown): Promise<{ q: string | null; asked: boolean; limited: boolean; results: ThreadWithCategory[] }> {
+  const asked = raw !== undefined;
+  const q = cleanSearch(raw);
+  if (!q) return { q: null, asked, limited: false, results: [] };
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  if (await checkRateLimitByIp(ip, "forum-search")) return { q, asked, limited: true, results: [] };
+  return { q, asked, limited: false, results: await searchThreads(q) };
+}
 
 /** Floating board names in the hero: [board, left, top, font size, palette]. */
 const BUBBLES: [ForumCategorySlug, string, string, number, number][] = [
@@ -53,12 +60,14 @@ const RANK_LOOK: [number, string, string, string][] = [
   [400, "#1B1D3A", "#FFFFFF", "#91F2CF"],
 ];
 
-export default async function ForumIndexPage({ params }: { params: Promise<object> }) {
+export default async function ForumIndexPage({ params, searchParams }: { params: Promise<object>; searchParams: SP }) {
   await setLangFrom(params);
+  const rawQ = (await searchParams).q;
   const lang = getLang();
   const t = getT("forum");
   const v = getT("v3Pages").forum;
-  const idx = await getForumIndex();
+  const o = t.org;
+  const [idx, search, latestThreads, pinnedThreads] = await Promise.all([getForumIndex(), runSearch(rawQ), listLatestThreads(8), listPinnedThreads(3)]);
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => formatNumber(n, lang);
   const newThread = L("/forum/job-site-stories/new");
@@ -68,34 +77,23 @@ export default async function ForumIndexPage({ params }: { params: Promise<objec
   const channels = CHANNEL_ORDER.map((ch) => ({ ch, list: FORUM_CHANNELS[ch].map((s) => bySlug.get(s)).filter((c): c is ForumCategory => Boolean(c)) })).filter((x) => x.list.length > 0);
   const totalThreads = cats.reduce((s, c) => s + c.threadCount, 0);
   const latest = [...cats].filter((c) => c.lastThread && c.lastPostAt).sort((a, b) => (b.lastPostAt ?? "").localeCompare(a.lastPostAt ?? ""))[0];
-  const startIn = (slug: string) => L(`/forum/${slug}/new`);
 
-  const footer = (c: ForumCategory, dark: boolean) =>
-    c.threadCount > 0 && c.lastThread ? (
-      <>
-        <span className="last">{c.lastThread.title}</span>
-        {fmt(t.category.stats, { threads: c.threadCount, posts: c.postCount })}
-        {dark ? <> · <b>{v.open}</b></> : null}
-      </>
-    ) : dark ? (
-      <>{v.noThreads}. <b>{v.startFirst}</b></>
-    ) : (
-      v.noThreads
-    );
-  const mod = (c: ForumCategory) => (c.mods.length ? `${t.index.modsLabel} ${c.mods.map((m) => m.displayName).join(", ")}` : t.index.modOpen);
   const no = (i: number) => String(i).padStart(2, "0");
-  let counter = 0;
-  const sectionHead = (ch: ForumChannel, n: number, first = false) => (
-    <div className="f-sec-head">
-      <div className="l">
-        <div className="f-big" aria-hidden>{no(CHANNEL_ORDER.indexOf(ch) + 1)}</div>
-        <div>
-          <div className="eb">{fmt(v.nBoards, { n })}</div>
-          <h2 className="h2" id={`ch-${ch}`}>{t.channels[ch]}</h2>
-        </div>
-      </div>
-      <div className="r" style={first ? undefined : undefined}>{v.channelBlurbs[ch]}</div>
-    </div>
+  const pinnedIds = new Set(pinnedThreads.map((p) => p.id));
+  const activity = [...pinnedThreads, ...latestThreads.filter((x) => !pinnedIds.has(x.id))].map((th) => ({ th, forum: th.categorySlug }));
+
+  const forumRow = (c: ForumCategory) => (
+    <li key={c.slug}>
+      <a href={L(`/forum/${c.slug}`)} className="flex items-start gap-3 px-4 py-3 hover:bg-[#F5F5FA]" lang={c.slug === "quebec" ? "fr-CA" : undefined}>
+        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-[#EEEFF6] text-[#282B59]"><ForumIcon slug={c.slug} /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold text-[#1B1D3A]">{t.categories[c.slug].name}</span>
+          <span className="block truncate text-sm text-[#4B4F6B]">{t.categories[c.slug].blurb}</span>
+          {c.lastThread && <span className="mt-0.5 block truncate text-xs text-[#4B4F6B]">{v.latest}: <span className="font-medium text-[#282B59]">{c.lastThread.title}</span></span>}
+        </span>
+        <span className="shrink-0 text-right text-xs tabular-nums text-[#4B4F6B]">{plural(c.threadCount, o.threadsIn)}</span>
+      </a>
+    </li>
   );
 
   return (
@@ -159,6 +157,71 @@ export default async function ForumIndexPage({ params }: { params: Promise<objec
         <OpeningSoon />
       ) : (
         <>
+          <section className="wrap f-sec first" aria-labelledby="forum-latest">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+              <h2 className="h2" id="forum-latest">{search.asked ? (search.q ? fmt(o.searchTitle, { q: search.q }) : o.searchLabel) : o.latestTitle}</h2>
+              <ForumSearch action={L("/forum")} q={search.q} />
+            </div>
+            {search.asked ? (
+              <>
+                {search.limited ? (
+                  <p className="rounded-2xl border-2 border-amber-500/50 bg-amber-50/60 px-5 py-4 text-sm">{o.searchRate}</p>
+                ) : !search.q ? (
+                  <p className="text-sm text-[#4B4F6B]">{o.searchShort}</p>
+                ) : (
+                  <ThreadList items={search.results.map((th) => ({ th, forum: th.categorySlug }))} empty={fmt(o.searchNone, { q: search.q })} />
+                )}
+                <p className="mt-3 flex flex-wrap gap-4 text-sm">
+                  <a href={L("/forum")} className="font-bold">{o.searchClear}</a>
+                </p>
+              </>
+            ) : (
+              <>
+                {pinnedThreads.length > 0 && <p className="mb-2 font-mono text-xs uppercase tracking-[0.08em] text-[#4B4F6B]">{o.startHere}</p>}
+                <ThreadList items={activity} empty={o.latestEmpty} pinnedIds={pinnedIds} />
+              </>
+            )}
+          </section>
+
+          {channels.map(({ ch, list }) => {
+            const active = list.filter((c) => c.threadCount > 0);
+            const quiet = list.filter((c) => c.threadCount === 0);
+            const threads = list.reduce((n, c) => n + c.threadCount, 0);
+            return (
+              <section key={ch} className="wrap f-sec" aria-labelledby={`ch-${ch}`}>
+                <details open className="group overflow-hidden rounded-3xl border-2 border-[#E3E4EE] bg-white">
+                  <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+                    <span className="font-mono text-sm text-[#4B4F6B]" aria-hidden>{no(CHANNEL_ORDER.indexOf(ch) + 1)}</span>
+                    <span className="min-w-0 flex-1">
+                      <h2 className="text-xl font-extrabold text-[#1B1D3A]" id={`ch-${ch}`}>{t.channels[ch]}</h2>
+                      <span className="block text-sm text-[#4B4F6B]">{v.channelBlurbs[ch]}</span>
+                    </span>
+                    <span className="hidden shrink-0 text-xs text-[#4B4F6B] sm:block">{fmt(v.nBoards, { n: list.length })} · {plural(threads, o.threadsIn)}</span>
+                    <ChevronDown className="size-5 shrink-0 text-[#282B59] transition-transform group-open:rotate-180" aria-hidden />
+                  </summary>
+                  <div className="border-t-2 border-[#E3E4EE]">
+                    {active.length > 0 ? (
+                      <ul className="divide-y divide-[#E3E4EE]">{active.map(forumRow)}</ul>
+                    ) : (
+                      <p className="px-5 py-3 text-sm text-[#4B4F6B]">{o.allQuiet}</p>
+                    )}
+                    {quiet.length > 0 && (
+                      <details className="border-t-2 border-[#E3E4EE]">
+                        <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-[#282B59]">{plural(quiet.length, o.showAll)}</summary>
+                        <ul className="divide-y divide-[#E3E4EE] border-t border-[#E3E4EE]">{quiet.map(forumRow)}</ul>
+                      </details>
+                    )}
+                    <div className="flex flex-wrap gap-3 border-t-2 border-[#E3E4EE] px-5 py-3 text-sm">
+                      <a href={L(`/forum/${list[0].slug}/new?type=question`)} rel="nofollow" className="inline-flex items-center gap-1 font-bold text-[#282B59]">
+                        <CircleHelp className="size-4" aria-hidden /> {fmt(o.askIn, { name: t.categories[list[0].slug].name })}
+                      </a>
+                    </div>
+                  </div>
+                </details>
+              </section>
+            );
+          })}
+
           <section className="f-rep">
             <div className="wrap f-rep-in">
               <div className="f-rep-head">
@@ -184,87 +247,6 @@ export default async function ForumIndexPage({ params }: { params: Promise<objec
               </ol>
             </div>
           </section>
-
-          {channels.map(({ ch, list }, ci) => {
-            if (ch === "property")
-              return (
-                <section key={ch} className="wrap f-sec" aria-labelledby={`ch-${ch}`}>
-                  <div className="f-prop">
-                    <div className="f-prop-side">
-                      <div className="f-big" aria-hidden>{no(CHANNEL_ORDER.indexOf(ch) + 1)}</div>
-                      <div className="lb">{fmt(v.nBoards, { n: list.length })}</div>
-                      <h2 id={`ch-${ch}`}>{t.channels[ch]}</h2>
-                      <p>{v.channelBlurbs[ch]}</p>
-                      <a href={startIn(list[0].slug)} className="btn mint md">{t.category.newThread}</a>
-                    </div>
-                    <div className="f-prop-grid">
-                      {list.map((c) => (
-                        <a key={c.slug} href={L(`/forum/${c.slug}`)} className="f-p blk">
-                          <span className="top"><span className="no">{no(++counter)}</span><span className="mod">{mod(c)}</span></span>
-                          <h3 className="nm">{t.categories[c.slug].name}</h3>
-                          <span className="ds">{t.categories[c.slug].blurb}</span>
-                          <span className="ft">{footer(c, true)}</span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-              );
-            if (ch === "trades")
-              return (
-                <section key={ch} className="wrap f-sec" aria-labelledby={`ch-${ch}`}>
-                  {sectionHead(ch, list.length)}
-                  <div className="f-trades">
-                    {list.map((c, i) => {
-                      const img = TRADE_IMG[c.slug];
-                      return (
-                        <a key={c.slug} href={L(`/forum/${c.slug}`)} className="f-t zoom" style={{ background: img ? "#282B59" : i % 2 ? "#30335D" : "#3D416F" }}>
-                          {img && <Image src={img} alt="" fill sizes="(min-width: 1024px) 280px, 50vw" className="img-cover" />}
-                          <span className="shade" />
-                          <span className="no">{no(++counter)}</span>
-                          <h3 className="nm">{t.categories[c.slug].name}</h3>
-                          <span className="ds">{t.categories[c.slug].blurb}</span>
-                          <span className="ft">{footer(c, true)}</span>
-                        </a>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            if (ch === "regional")
-              return (
-                <section key={ch} className="wrap f-sec" aria-labelledby={`ch-${ch}`}>
-                  {sectionHead(ch, list.length)}
-                  <div className="f-regions">
-                    {list.map((c) => (
-                      <a key={c.slug} href={L(`/forum/${c.slug}`)} className={`f-r lift${c.slug === "quebec" ? " qc" : ""}`} lang={c.slug === "quebec" ? "fr-CA" : undefined}>
-                        <span className="code" aria-hidden>{REGION_CODE[c.slug] ?? ""}</span>
-                        <h3 className="nm">{t.categories[c.slug].name}</h3>
-                        <span className="ds">{t.categories[c.slug].blurb}</span>
-                        <span className="ft">{c.threadCount > 0 ? fmt(t.category.stats, { threads: c.threadCount, posts: c.postCount }) : v.noThreads}</span>
-                        <span className="go">{c.threadCount > 0 ? v.open : v.startFirst}</span>
-                      </a>
-                    ))}
-                  </div>
-                </section>
-              );
-            return (
-              <section key={ch} className={`wrap f-sec${ci === 0 ? " first" : ""}`} aria-labelledby={`ch-${ch}`}>
-                {sectionHead(ch, list.length, ci === 0)}
-                <div className="f-grid4">
-                  {list.map((c) => (
-                    <a key={c.slug} href={L(`/forum/${c.slug}`)} className="f-b lift">
-                      <span className="top"><span className="no">{no(++counter)}</span><span className="mod">{mod(c)}</span></span>
-                      <h3 className="nm">{t.categories[c.slug].name}</h3>
-                      <span className="ds">{t.categories[c.slug].blurb}</span>
-                      <span className="ft">{footer(c, false)}</span>
-                      <span className="go">{c.threadCount > 0 ? v.open : v.startFirst}</span>
-                    </a>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
 
           <section className="dots-bg f-rules">
             <div className="wrap f-rules-in">

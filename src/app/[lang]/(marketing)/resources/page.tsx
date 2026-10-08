@@ -26,6 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function ResourcesPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("content").resourcesIndex;
+  const dg = getT("agencies").resourcesCard;
   // Articles are database content (English); only the page around them is translated.
   const resources = await listResources();
   return (
@@ -79,6 +80,21 @@ export default async function ResourcesPage({ params }: { params: Promise<object
         </div>
         <span className="hidden shrink-0 items-center gap-1 text-sm font-medium text-teal-700 sm:flex">
           {t.seeGuides} <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </Link>
+
+      {/* Contractor directories guide */}
+      <Link
+        href="/resources/contractor-directories"
+        className="group mt-4 flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-6 transition-all hover:border-teal-400 hover:shadow-sm"
+      >
+        <div className="max-w-2xl">
+          <span className="eyebrow text-teal-600">{dg.eyebrow}</span>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight group-hover:text-teal-700">{dg.title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{dg.body}</p>
+        </div>
+        <span className="hidden shrink-0 items-center gap-1 text-sm font-medium text-teal-700 sm:flex">
+          {dg.cta} <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </span>
       </Link>
 

@@ -12,7 +12,7 @@ import type { Messages } from "@/i18n/dictionaries";
 import { useV3Money, V3Skeleton } from "./chrome";
 import { BigTick, ROLE_PHOTO, SignupAside, SignupFrame, SignupSticky, SignupTop, SmallTick, Stepper } from "./signup-ui";
 
-export type SignupCopy = Messages["v3Pages"]["signup"];
+export type SignupCopy = Messages["v3Pages"]["signup"] & { linkNote?: string };
 export const SIGNUP_ROLES = ["trade", "supplier", "property_manager", "landlord", "general_contractor", "real_estate_agent", "talent", "visitor"] as const;
 export type SignupRole = (typeof SIGNUP_ROLES)[number];
 
@@ -184,7 +184,7 @@ export function SignUpFlow(p: SignupProps) {
               {SIGNUP_ROLES.map((r) => (
                 <button key={r} type="button" role="radio" aria-checked={role === r} className="v3-su-role" onClick={() => setRole(r)}>
                   <span className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={ICON[r]} /></svg></span>
-                  <span className="tx"><span className="nm">{t.roles[r].name}</span><span className="ds">{t.roles[r].desc}</span></span>
+                  <span className="tx"><span className="nm">{t.roles[r].name}</span><span className="ds">{t.roles[r].desc}{SELLERS.includes(r) && t.linkNote ? <><br />✓ {t.linkNote}</> : null}</span></span>
                   <span className="tk"><SmallTick stroke="#FFFFFF" /></span>
                 </button>
               ))}

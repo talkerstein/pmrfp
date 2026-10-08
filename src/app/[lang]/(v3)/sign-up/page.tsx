@@ -83,7 +83,7 @@ export default async function SignUpPage({
   return (
     <SignUpFlow
       lang={lang}
-      t={t}
+      t={{ ...t, linkNote: getT("agencies").signupLinkNote }}
       initialRole={initialRole as SignupRole | undefined}
       intent={intent ? { plan: intent.plan, interval: intent.interval, name: ta.plans[intent.plan] } : null}
       next={next}

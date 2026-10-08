@@ -405,6 +405,7 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
                   )}
                   {v.phone && <a href={`tel:${v.phone}`}><PhoneIc stroke="#282B59" />{v.phone}</a>}
                 </div>
+                {v.website && <p style={{ marginTop: 8, fontSize: 13, color: "#4B4F6B" }}>{fmt(getT("agencies").linkNote, { company: v.name })}</p>}
               </>
             ) : (
               <>

@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
-import { CheckCircle2, Lock, MessagesSquare, Pin, ShieldCheck } from "lucide-react";
+import { CircleHelp, Lock, MapPin, MessagesSquare, Pin, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/container";
-import { AutoPostChip } from "@/components/forum/auto-chip";
 import { ForumHero, MemberName, OpeningSoon, Pager, RatingBar } from "@/components/forum/parts";
 import { getCategoryRow, listCategoryThreads, type ThreadSummary } from "@/lib/forum/data";
 import { isForumCategory } from "@/lib/forum/categories";
@@ -15,6 +14,8 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { alternatesFor } from "@/i18n/metadata";
 import { cn } from "@/lib/utils";
+import { ForumIcon, SortTabs, ThreadBadges } from "@/components/forum/organize";
+import { categoryQuery, timeAgo, type ThreadSort } from "@/lib/forum/organize";
 
 export function categoryMetadata(langParam: string, category: string, page: number): Metadata {
   const l = hasLocale(langParam) ? langParam : "en";
@@ -49,11 +50,8 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
           <Link href={th.path} className="font-semibold text-foreground hover:underline">{th.title}</Link>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span className="rounded bg-muted px-1.5 py-0.5">{th.type === "question" ? t.category.question : t.category.discussion}</span>
-          {th.hasAccepted && (
-            <span className="inline-flex items-center gap-0.5 text-teal-700"><CheckCircle2 className="size-3" /> {t.category.answered}</span>
-          )}
-          {th.isAuto && <AutoPostChip lang={lang} />}
+          <ThreadBadges th={th} />
+          {th.region && <span className="inline-flex items-center gap-0.5"><MapPin className="size-3" aria-hidden />{th.region}</span>}
           {th.isStaff && !th.isAuto && <span className="inline-flex items-center gap-0.5"><ShieldCheck className="size-3" /> {t.category.staff}</span>}
           {pages > 1 && (
             <span className="inline-flex gap-1">
@@ -65,7 +63,7 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
               )}
             </span>
           )}
-          <span className="md:hidden">· <MemberName m={th.author} /></span>
+          <span className="md:hidden">· <MemberName m={th.author} /> · {formatNumber(th.replyCount, lang)} · {timeAgo(th.lastPostAt, lang)}</span>
         </div>
       </td>
       <td className="hidden px-3 py-3 text-sm md:table-cell"><MemberName m={th.author} staff={th.isStaff} /></td>
@@ -74,13 +72,13 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
       <td className="hidden px-3 py-3 lg:table-cell"><RatingBar avg={th.ratingAvg} count={th.ratingCount} /></td>
       <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
         {th.lastUser && <Link href={`/forum/u/${th.lastUser.handle}`} className="block text-foreground hover:underline">{th.lastUser.displayName}</Link>}
-        {formatDate(th.lastPostAt, lang)}
+        <time dateTime={th.lastPostAt} title={formatDate(th.lastPostAt, lang)}>{timeAgo(th.lastPostAt, lang)}</time>
       </td>
     </tr>
   );
 }
 
-export async function CategoryView({ category, page, hideAuto = false }: { category: string; page: number; hideAuto?: boolean }) {
+export async function CategoryView({ category, page, sort = "latest", hideAuto = false }: { category: string; page: number; sort?: ThreadSort; hideAuto?: boolean }) {
   if (!isForumCategory(category)) notFound();
   const t = getT("forum");
   const lang = getLang();
@@ -94,15 +92,15 @@ export async function CategoryView({ category, page, hideAuto = false }: { categ
       </>
     );
   }
-  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page, { hideAuto });
+  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page, sort, { hideAuto });
   const pages = pageCount(total, PAGE_SIZE);
-  if (page > pages) notFound();
+  if (page > pages && !(page === 1 && sort !== "latest")) notFound();
   const base = `/forum/${category}`;
 
   return (
     <>
       <JsonLd data={breadcrumbSchema([{ name: "PMRFP", path: "/" }, { name: t.forum, path: "/forum" }, { name: c.name, path: base }])} />
-      <ForumHero eyebrow={t.forum} title={c.name} lead={c.blurb} crumbs={[{ label: t.forum, href: "/forum" }, { label: c.name }]}>
+      <ForumHero eyebrow={t.forum} title={c.name} lead={c.blurb} icon={<ForumIcon slug={category} className="size-5" />} crumbs={[{ label: t.forum, href: "/forum" }, { label: c.name }]}>
         <div className="meta">
           <span>
             {t.index.modsLabel}{" "}
@@ -118,7 +116,10 @@ export async function CategoryView({ category, page, hideAuto = false }: { categ
           <span className="on">{fmt(t.category.stats, { threads: res.category.threadCount, posts: res.category.postCount })}</span>
         </div>
         <div className="acts">
-          <Link href={`${base}/new`} className="btn mint">
+          <Link href={`${base}/new?type=question`} className="btn mint">
+            <CircleHelp className="size-4" /> {t.org.askQuestion}
+          </Link>
+          <Link href={`${base}/new?type=discussion`} className="btn ghost">
             <MessagesSquare className="size-4" /> {t.category.newThread}
           </Link>
           <Link href="/forum" className="btn ghost">{t.category.back}</Link>
@@ -130,13 +131,14 @@ export async function CategoryView({ category, page, hideAuto = false }: { categ
             <Pin className="mt-0.5 size-4 shrink-0 text-amber-600" /> {t.clientTalkRule}
           </p>
         )}
-        <p className="mb-3 text-right text-xs">
-          <Link href={hideAuto ? base : `${base}?auto=0`} rel="nofollow" className="text-[#4B4F6B] hover:underline">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          {res.category.threadCount > 0 ? <SortTabs base={base} current={sort} hideAuto={hideAuto} /> : <span />}
+          <Link href={`${base}${categoryQuery(sort, !hideAuto)}`} rel="nofollow" className="mb-4 text-xs text-[#4B4F6B] hover:underline">
             {hideAuto ? AUTO_TOGGLE[lang === "fr" ? "fr" : "en"].show : AUTO_TOGGLE[lang === "fr" ? "fr" : "en"].hide}
           </Link>
-        </p>
+        </div>
         {pinned.length + threads.length === 0 ? (
-          <p className="rounded-3xl border-2 border-dashed border-[#D5D7E6] px-6 py-14 text-center text-[#4B4F6B]">{t.category.empty}</p>
+          <p className="rounded-3xl border-2 border-dashed border-[#D5D7E6] px-6 py-14 text-center text-[#4B4F6B]">{sort === "latest" ? t.category.empty : t.org.tabEmpty}</p>
         ) : (
           <div className="overflow-hidden rounded-3xl border-2 border-[#E3E4EE]">
             <table className="w-full text-sm">
@@ -157,7 +159,7 @@ export async function CategoryView({ category, page, hideAuto = false }: { categ
             </table>
           </div>
         )}
-        <Pager base={base} page={page} total={pages} />
+        <Pager base={base} page={page} total={pages} query={categoryQuery(sort, hideAuto)} />
       </Container>
     </>
   );

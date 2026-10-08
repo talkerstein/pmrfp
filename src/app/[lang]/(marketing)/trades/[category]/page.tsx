@@ -287,8 +287,12 @@ export default async function TradeCategoryPage({
           {forum && (
             <p className="mt-6 text-sm text-muted-foreground">
               {forumT.tradeLinkLead}{" "}
-              <Link href={`/forum/${forum}`} className="font-medium text-primary hover:underline">
+              <Link href={`/forum/${forum}/new?type=question`} rel="nofollow" className="font-medium text-primary hover:underline">
                 {fmt(forumT.tradeLink, { name: forumT.categories[forum].name })}
+              </Link>{" "}
+              ·{" "}
+              <Link href={`/forum/${forum}`} className="font-medium text-primary hover:underline">
+                {fmt(forumT.org.browseForum, { name: forumT.categories[forum].name })}
               </Link>
             </p>
           )}
