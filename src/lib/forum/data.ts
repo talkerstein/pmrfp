@@ -4,7 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { FORUM_CATEGORY_SLUGS, type ForumCategorySlug } from "./categories";
 import { PAGE_SIZE, isIndexableThread, ratingAverage } from "./rules";
-import { previewSamplesOn, sampleCategoryThreads, sampleIndex, samplePosts, sampleProfile, sampleThread } from "./preview-samples";
+import { applyThreadSort, filterThreads, ilikePattern, type ThreadSort } from "./organize";
+import { previewSamplesOn, sampleAllThreads, sampleCategoryThreads, sampleIndex, samplePosts, sampleProfile, sampleThread } from "./preview-samples";
 
 /**
  * Forum reads. Public data goes through the cookieless read client, so it
@@ -53,6 +54,7 @@ export interface ThreadSummary {
   lastPostAt: string;
   author: MemberRef | null;
   lastUser: { handle: string; displayName: string } | null;
+  region: string | null;
 }
 
 export interface Thread extends ThreadSummary {
@@ -61,7 +63,6 @@ export interface Thread extends ThreadSummary {
   body: string;
   wordsTotal: number;
   flagCount: number;
-  region: string | null;
   acceptedPostId: string | null;
   updatedAt: string;
 }
@@ -82,7 +83,7 @@ type Res<T> = ({ ready: true } & T) | { ready: false };
 
 const MEMBER_COLS = "user_id,handle,display_name,reputation,is_staff,verified_business";
 const THREAD_COLS =
-  "id,short_id,slug,title,type,status,is_pinned,is_locked,is_staff,accepted_post_id,reply_count,view_count,rating_sum,rating_count,created_at,last_post_at," +
+  "id,short_id,slug,title,type,status,is_pinned,is_locked,is_staff,accepted_post_id,reply_count,view_count,rating_sum,rating_count,created_at,last_post_at,region," +
   `author:forum_profiles!forum_threads_author_fkey(${MEMBER_COLS}),last_user:forum_profiles!forum_threads_last_user_fkey(handle,display_name)`;
 
 /** Table missing (migration not applied) or schema cache not reloaded yet. */
@@ -137,6 +138,7 @@ function summary(r: any, categorySlug: string): ThreadSummary {
     lastPostAt: r.last_post_at,
     author: member(r.author),
     lastUser: lu ? { handle: lu.handle, displayName: lu.display_name } : null,
+    region: r.region ?? null,
   };
 }
 
@@ -206,29 +208,105 @@ export async function listCategoryThreads(
   categoryId: string,
   categorySlug: string,
   page: number,
+  sort: ThreadSort = "latest",
 ): Promise<{ threads: ThreadSummary[]; pinned: ThreadSummary[]; total: number }> {
-  if (previewSamplesOn()) return sampleCategoryThreads(categoryId);
+  if (previewSamplesOn()) {
+    const s = sampleCategoryThreads(categoryId);
+    if (sort === "latest") return s;
+    const threads = filterThreads(s.threads, sort);
+    return { pinned: [], threads, total: threads.length };
+  }
   const client = db();
   if (!client) return { threads: [], pinned: [], total: 0 };
   const from = (page - 1) * PAGE_SIZE;
   const [pinned, list] = await Promise.all([
-    page === 1
+    page === 1 && sort === "latest"
       ? client.from("forum_threads").select(THREAD_COLS).eq("category_id", categoryId).eq("status", "approved").eq("is_pinned", true).order("last_post_at", { ascending: false }).limit(10)
       : Promise.resolve({ data: [] as any[] }),
-    client
-      .from("forum_threads")
-      .select(THREAD_COLS, { count: "exact" })
-      .eq("category_id", categoryId)
-      .eq("status", "approved")
-      .eq("is_pinned", false)
-      .order("last_post_at", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1),
+    (() => {
+      // Pinned threads sit above the Latest tab; the other tabs include them.
+      let q = client.from("forum_threads").select(THREAD_COLS, { count: "exact" }).eq("category_id", categoryId).eq("status", "approved");
+      if (sort === "latest") q = q.eq("is_pinned", false);
+      return applyThreadSort(q, sort).range(from, from + PAGE_SIZE - 1);
+    })(),
   ]);
   return {
     pinned: ((pinned.data ?? []) as any[]).map((r) => summary(r, categorySlug)),
     threads: ((list.data ?? []) as any[]).map((r) => summary(r, categorySlug)),
     total: (list as { count?: number | null }).count ?? 0,
   };
+}
+
+async function slugMap(client: SupabaseClient): Promise<Map<string, ForumCategorySlug>> {
+  const { data } = await client.from("forum_categories").select("id,slug");
+  return new Map(((data ?? []) as { id: string; slug: ForumCategorySlug }[]).filter((c) => (FORUM_CATEGORY_SLUGS as readonly string[]).includes(c.slug)).map((c) => [c.id, c.slug]));
+}
+
+function withSlugs(rows: any[], slugs: Map<string, ForumCategorySlug>): (ThreadSummary & { categorySlug: ForumCategorySlug })[] {
+  return rows.flatMap((r) => {
+    const slug = slugs.get(r.category_id);
+    return slug ? [{ ...summary(r, slug), categorySlug: slug }] : [];
+  });
+}
+
+export type ThreadWithCategory = ThreadSummary & { categorySlug: ForumCategorySlug };
+
+/** Newest approved threads across every forum (the index "Latest activity"). */
+export async function listLatestThreads(limit = 8): Promise<ThreadWithCategory[]> {
+  if (previewSamplesOn()) return sampleAllThreads().sort((a, b) => b.lastPostAt.localeCompare(a.lastPostAt)).slice(0, limit);
+  const client = db();
+  if (!client) return [];
+  const [{ data, error }, slugs] = await Promise.all([
+    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").order("last_post_at", { ascending: false }).limit(limit),
+    slugMap(client),
+  ]);
+  if (error) return [];
+  return withSlugs((data ?? []) as any[], slugs);
+}
+
+/** Pinned threads across every forum (e.g. "Start here: how this forum works"). */
+export async function listPinnedThreads(limit = 3): Promise<ThreadWithCategory[]> {
+  if (previewSamplesOn()) return sampleAllThreads().filter((t) => t.isPinned).slice(0, limit);
+  const client = db();
+  if (!client) return [];
+  const [{ data, error }, slugs] = await Promise.all([
+    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").eq("is_pinned", true).order("created_at", { ascending: true }).limit(limit),
+    slugMap(client),
+  ]);
+  if (error) return [];
+  return withSlugs((data ?? []) as any[], slugs);
+}
+
+/** Title search (simple ILIKE). Callers rate-limit and clean the query first. */
+export async function searchThreads(q: string, limit = 30): Promise<ThreadWithCategory[]> {
+  if (previewSamplesOn()) {
+    const needle = q.toLowerCase();
+    return sampleAllThreads().filter((t) => t.title.toLowerCase().includes(needle)).slice(0, limit);
+  }
+  const client = db();
+  if (!client) return [];
+  const [{ data, error }, slugs] = await Promise.all([
+    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").ilike("title", ilikePattern(q)).order("last_post_at", { ascending: false }).limit(limit),
+    slugMap(client),
+  ]);
+  if (error) return [];
+  return withSlugs((data ?? []) as any[], slugs);
+}
+
+/** Other threads in the same forum, for the thread page sidebar. */
+export async function listRelatedThreads(categoryId: string, categorySlug: ForumCategorySlug, excludeId: string, limit = 5): Promise<ThreadSummary[]> {
+  if (previewSamplesOn()) return sampleAllThreads().filter((t) => t.categorySlug === categorySlug && t.id !== excludeId).slice(0, limit);
+  const client = db();
+  if (!client) return [];
+  const { data } = await client
+    .from("forum_threads")
+    .select(THREAD_COLS)
+    .eq("category_id", categoryId)
+    .eq("status", "approved")
+    .neq("id", excludeId)
+    .order("last_post_at", { ascending: false })
+    .limit(limit);
+  return ((data ?? []) as any[]).map((r) => summary(r, categorySlug));
 }
 
 const CATEGORY_BY_ID = new Map<string, ForumCategorySlug>();
@@ -268,7 +346,6 @@ export async function getThread(sid: string): Promise<Res<{ thread: Thread | nul
       body: r.body,
       wordsTotal: r.words_total ?? 0,
       flagCount: r.flag_count ?? 0,
-      region: r.region,
       acceptedPostId: r.accepted_post_id,
       updatedAt: r.updated_at,
     },
