@@ -94,7 +94,6 @@ export const VERTICALS: Vertical[] = [
     positioning:
       "PMRFP is Canada's commercial trade directory — your $249/yr listing puts your company in front of property managers, developers, and builders actively looking for your trade in your city.",
     pains: [
-      "90% of work comes from 2–3 relationships — one dry spell and revenue craters",
       "Government tender platforms are bureaucratic and mostly public-sector work",
       "HomeStars and TrustedPros only send residential leads — wrong buyer, wrong deal size",
       "Cold-calling property managers is slow and expensive",

@@ -28,7 +28,6 @@ export const PRICING = {
   seoNote:
     "SEO Listing: your company on the trade + city pages property managers find on Google and in AI answers, plus an unlimited project photo gallery. Directory placement only — RFP access is Trade Pro.",
   currency: "CAD",
-  earlyBirdNote: "Early-bird: lock in $249/yr — rises to $399 once we hit 100 subscribers.",
   featuredNote:
     "Featured includes everything in Trade Pro, plus priority placement at the top of your categories and regions.",
   monthlyNote: "Try us month-to-month at $29/mo. Switch to annual any time and save $99.",
@@ -165,6 +164,7 @@ export const FOOTER_COLS = [
     links: [
       { label: "For Trades", href: "/for-trades" },
       { label: "For Property Managers", href: "/for-property-managers" },
+      { label: "Become a Supplier", href: "/become-a-supplier" },
       { label: "For Realtors", href: "/for/real-estate" },
       { label: "All Solutions", href: "/for" },
       { label: "Get Found (SEO & AI)", href: "/get-found" },

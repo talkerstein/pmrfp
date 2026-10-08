@@ -4,7 +4,8 @@ import "./home-v3.css";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { setMarket, useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
+import { useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
+import { V3Footer, V3Header, foundingLabel } from "./chrome";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
@@ -16,7 +17,8 @@ import type { Messages } from "@/i18n/dictionaries";
 
 /* ------------------------------------------------------------------ data */
 
-export type V3Messages = Messages["homeV3"];
+export type { V3Messages } from "./chrome-shared";
+type V3Messages = Messages["homeV3"];
 export interface V3Closing { mon: string; day: string; tag: string; left: string; title: string; href: string; soon: boolean }
 export interface V3Trade { name: string; n: number; href: string }
 export interface V3Data {
@@ -24,7 +26,7 @@ export interface V3Data {
   closing7: number;
   trades: number;
   regions: number;
-  /** Founding 500 spots left; null when the count can't be read. */
+  /** Founding 500 spots left; null when the count can't be read. Only used to pick quiet / low / sold-out copy, never displayed. */
   foundingLeft: number | null;
   big: V3Trade & { img: string };
   tiles: (V3Trade & { img: string })[];
@@ -176,7 +178,6 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
   const [toastOn, setToastOn] = useState(false);
   const [toastOff, setToastOff] = useState(false);
   const [toastIdx, setToastIdx] = useState(0);
-  const [menu, setMenu] = useState(false);
 
   const openModal = useCallback(() => {
     seen.current = true;
@@ -275,9 +276,8 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
   const ticker = data.ticker.concat(data.ticker);
   const toastItem = data.toast.length ? data.toast[toastIdx % data.toast.length] : null;
   const showToast = toastOn && !toastOff && !modal && toastItem != null;
-  const showFounding = data.foundingLeft !== 0;
-  const spots = data.foundingLeft == null ? null : fmt(t.founding.spots, { n: num(data.foundingLeft) });
-  const spotsShort = data.foundingLeft == null ? null : fmt(t.founding.spotsShort, { n: num(data.foundingLeft) });
+  const spots = foundingLabel(t, data.foundingLeft);
+  const showFounding = spots != null;
   const w = data.winners;
   const top = w.top;
   const bigwords = [
@@ -331,12 +331,6 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
     });
   };
 
-  const goMarket = (m: "CA" | "US") => {
-    if (m === (market ?? "CA")) return;
-    setMarket(m);
-    router.refresh();
-  };
-
   const tradeSelect = (
     <select name="trade">
       {data.tradeOptions.map((o) => (
@@ -350,13 +344,6 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
         <option key={o.label} value={i}>{t.areas[o.label] ?? o.label}</option>
       ))}
     </select>
-  );
-  const marketSwitch = (
-    <div role="group" aria-label={t.nav.market} className="v3-market">
-      {(["CA", "US"] as const).map((m) => (
-        <button key={m} type="button" aria-pressed={(market ?? "CA") === m} onClick={() => goMarket(m)}>{m}</button>
-      ))}
-    </div>
   );
   const mark = (size: number) => <Image src={IMG.mark} alt="" width={size} height={size} />;
 
@@ -391,41 +378,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
     <div className="pmrfp-v3" data-live={dataSources?.live.join(",")} data-fallback={dataSources?.fallback.join(",")}>
       <a href="#main" className="v3-skip">{t.skip}</a>
 
-      <div className="v3-top">
-        {showFounding && (
-          <a href={L(H.founding)} className="v3-found">
-            <b><span className="d">{t.founding.bar}</span><span className="m">{t.founding.barShort}</span></b>
-            {spots && <span className="badge">{spots}</span>}
-            <span className="u">{t.founding.claim}</span>
-          </a>
-        )}
-        <header>
-          <div className="v3-hdr">
-            <a href={L(H.home)} aria-label={t.nav.home} className="v3-logo">
-              {mark(32)}
-              <span>pmrfp.com</span>
-            </a>
-            <nav id="v3-nav" aria-label={t.nav.main} className={`v3-nav${menu ? " open" : ""}`}>
-              <div className="v3-nav-links">
-                <a href={L(H.rfps)}>{t.nav.rfps}</a>
-                <a href={L(H.directory)}>{t.nav.directory}</a>
-                <a href={L(H.winners)}>{t.nav.winners}</a>
-                <a href={L(H.jobs)}>{t.nav.jobs}</a>
-                <a href={L(H.forum)}>{t.nav.forum}</a>
-                <a href={L(H.pricing)}>{t.nav.pricing}</a>
-              </div>
-              {marketSwitch}
-              <a href={L(H.signIn)}>{t.nav.signIn}</a>
-            </nav>
-            <a href={L(H.joinTrade)} onClick={openModalLink} className="v3-join">
-              <span className="d">{t.nav.join}</span><span className="m">{t.nav.joinShort}</span>
-            </a>
-            <button type="button" className="v3-burger" aria-label={menu ? t.nav.closeMenu : t.nav.openMenu} aria-expanded={menu} aria-controls="v3-nav" onClick={() => setMenu((m) => !m)}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" aria-hidden><path d={menu ? "M5 5l14 14M19 5L5 19" : "M3 7h18M3 12h18M3 17h18"} /></svg>
-            </button>
-          </div>
-        </header>
-      </div>
+      <V3Header t={t} lang={lang} foundingLeft={data.foundingLeft} onJoin={openModalLink} />
 
       <main id="main" tabIndex={-1} style={{ outline: "none" }}>
         <div className="v3-top">
@@ -855,7 +808,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
             {showFounding && (
               <div className="v3-f500">
                 <div><span className="t">{t.plans.founding}</span><span className="b">{known ? fmt(t.plans.foundingBody, { price: foundingMoney() }) : <Sk w="22em" />}</span></div>
-                <div className="r">{spots && <span className="mono"><span className="d">{spots}</span><span className="m">{spotsShort}</span></span>}<a href={L(H.founding)}>{t.plans.foundingCta}</a></div>
+                <div className="r">{spots && <span className="mono"><span className="d">{spots.d}</span><span className="m">{spots.m}</span></span>}<a href={L(H.founding)}>{t.plans.foundingCta}</a></div>
               </div>
             )}
           </div>
@@ -905,30 +858,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
         )}
       </main>
 
-      <footer className="v3-foot">
-        <div className="v3-wrap v3-foot-in">
-          <div className="v3-foot-grid">
-            <div>
-              <div className="brand">{mark(30)}<span>pmrfp.com</span></div>
-              <div className="txt">{t.footer.about}</div>
-              <div className="txt">{t.footer.address}</div>
-            </div>
-            {(
-              [
-                [t.footer.find, [[t.footer.rfps, H.rfps], [t.footer.directory, H.directory], [t.footer.winners, H.winners], [t.footer.jobs, H.jobs], [t.footer.marketplace, H.marketplace], [t.footer.forum, H.forum]]],
-                [t.footer.who, [[t.footer.trades, "/for/tradesmen"], [t.footer.pms, "/for-property-managers"], [t.footer.landlords, H.landlord], [t.footer.condos, "/for/condo-boards"], [t.footer.realEstate, H.forRealEstate], [t.footer.suppliers, "/for/suppliers"], [t.footer.builders, "/for/builders"]]],
-                [t.footer.company, [[t.footer.about2, "/about"], [t.footer.advertise, H.advertise], [t.footer.spotlight, "/spotlight"], [t.footer.contact, "/contact"], [t.footer.terms, "/terms"], [t.footer.privacy, "/privacy"]]],
-              ] as const
-            ).map(([title, links]) => (
-              <nav key={title} aria-label={title} className="v3-foot-col">
-                <h2>{title}</h2>
-                {links.map(([l, h]) => <a key={l} href={L(h)}>{l}</a>)}
-              </nav>
-            ))}
-          </div>
-          <div className="legal">{t.footer.legal}</div>
-        </div>
-      </footer>
+      <V3Footer t={t} lang={lang} />
 
       <div className="v3-sticky">
         <div className="v3-sticky-in">

@@ -3,13 +3,12 @@ import { Lock } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PRICING } from "@/lib/site";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
-import { getLang, getT } from "@/i18n/server";
+import { getT } from "@/i18n/server";
 import { fmt } from "@/i18n/format";
 
 /** Shown to visitors / unpaid trades in place of full RFP details (§9.2). */
 export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
   const t = getT("shared").locked;
-  const lang = getLang();
   // Only mention the monthly option when Stripe has it configured — otherwise
   // we'd promise a price the checkout API will refuse.
   const monthlyEnabled = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);
@@ -40,7 +39,6 @@ export function LockedContentPanel({ signedIn }: { signedIn?: boolean }) {
           ? fmt(t.priceMonthly, { monthly: PRICING.proMonthly, annual: PRICING.proAnnual })
           : fmt(t.priceAnnual, { annual: PRICING.proAnnual })}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">{lang === "en" ? PRICING.earlyBirdNote : t.earlyBird}</p>
     </div>
   );
 }

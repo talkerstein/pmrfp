@@ -1,8 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   FOUNDING,
+  FOUNDING_LOW_SPOTS,
   checkoutRefusal,
   foundingPrice,
+  foundingScarcity,
   isLifetimeSubscriptionId,
   isSoldOut,
   lifetimeRow,
@@ -22,6 +24,31 @@ vi.mock("@/lib/supabase/service", () => ({
     }),
   }),
 }));
+
+describe("public scarcity copy", () => {
+  it("stays quiet above 50 left, says 'fewer than 50' at or below, sold out at 0", () => {
+    expect(FOUNDING_LOW_SPOTS).toBe(50);
+    expect(foundingScarcity(null)).toBe("quiet");
+    expect(foundingScarcity(500)).toBe("quiet");
+    expect(foundingScarcity(51)).toBe("quiet");
+    expect(foundingScarcity(50)).toBe("low");
+    expect(foundingScarcity(1)).toBe("low");
+    expect(foundingScarcity(0)).toBe("soldout");
+  });
+  it("never puts an exact remaining count in any locale's copy", async () => {
+    const founding = (await import("@/i18n/messages/founding")).default;
+    const home = (await import("@/i18n/messages/homeV3")).default;
+    for (const lang of ["en", "fr", "es"] as const) {
+      const f = founding[lang];
+      for (const s of [f.counter, f.counterUnknown, f.pricingBanner, f.pricingBannerUnknown]) {
+        expect(s).not.toContain("{left}");
+        expect(s).not.toMatch(/\{cap\}.*(left|restantes|lugares)/);
+      }
+      expect(f.counter).toContain("{low}");
+      for (const s of Object.values(home[lang].founding)) expect(s).not.toMatch(/\d+ (of|sur|de) 500/);
+    }
+  });
+});
 
 describe("cap", () => {
   it("counts down and never goes negative", () => {

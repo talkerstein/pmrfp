@@ -1,7 +1,8 @@
 /**
  * Founding 500 (lifetime Trade Pro) page, its banners, and the legal terms
  * shown on both /founding-500 and /terms#founding-500.
- * Placeholders: {usd} {cad} {regular} {cap} {left} {days} {months}.
+ * Placeholders: {usd} {cad} {regular} {cap} {low} {days} {months}.
+ * No exact remaining count is ever shown: quiet copy above FOUNDING_LOW_SPOTS left, "fewer than {low}" at or below it.
  */
 const en = {
   meta: {
@@ -13,8 +14,8 @@ const en = {
   title: "Founding 500: lifetime Trade Pro for one payment",
   lead: "Trade Pro is normally billed every year. The first {cap} trade and supplier companies can pay once instead and keep Trade Pro for as long as PMRFP runs it.",
   plusTax: "Plus applicable taxes.",
-  counter: "{left} of {cap} spots left",
-  counterUnknown: "Limited to the first {cap} organizations",
+  counter: "Fewer than {low} spots left",
+  counterUnknown: "Limited to the first {cap} companies.",
   soldOutTitle: "All 500 Founding spots are taken",
   soldOutBody: "Thank you to every Founding member. Trade Pro is still available on the regular plan.",
   soldOutCta: "See Trade Pro pricing",
@@ -46,7 +47,7 @@ const en = {
   ],
   fullTerms: "Read the full Terms of Service",
   termsSectionTitle: "Founding 500 Lifetime Offer",
-  pricingBanner: "Founding 500: lifetime Trade Pro for one payment. {left} of {cap} spots left.",
+  pricingBanner: "Founding 500: lifetime Trade Pro for one payment. Fewer than {low} spots left.",
   pricingBannerUnknown: "Founding 500: lifetime Trade Pro for one payment, for the first {cap} organizations.",
   pricingBannerCta: "See the offer",
   heroBadge: "Founding 500: lifetime Trade Pro, one payment",
@@ -67,8 +68,8 @@ const fr: typeof en = {
   title: "Fondateurs 500 : Trade Pro à vie pour un seul paiement",
   lead: "Trade Pro est normalement facturé chaque année. Les {cap} premières entreprises de métiers et fournisseurs peuvent payer une seule fois et garder Trade Pro tant que PMRFP l'exploite.",
   plusTax: "Taxes applicables en sus.",
-  counter: "{left} places sur {cap} restantes",
-  counterUnknown: "Limité aux {cap} premières organisations",
+  counter: "Moins de {low} places restantes",
+  counterUnknown: "Limité aux {cap} premières entreprises.",
   soldOutTitle: "Les 500 places Fondateurs sont prises",
   soldOutBody: "Merci à tous nos membres fondateurs. Trade Pro reste offert au tarif habituel.",
   soldOutCta: "Voir les tarifs Trade Pro",
@@ -100,7 +101,7 @@ const fr: typeof en = {
   ],
   fullTerms: "Lire les Conditions d'utilisation complètes",
   termsSectionTitle: "Offre à vie Fondateurs 500",
-  pricingBanner: "Fondateurs 500 : Trade Pro à vie pour un seul paiement. {left} places sur {cap} restantes.",
+  pricingBanner: "Fondateurs 500 : Trade Pro à vie pour un seul paiement. Moins de {low} places restantes.",
   pricingBannerUnknown: "Fondateurs 500 : Trade Pro à vie pour un seul paiement, pour les {cap} premières organisations.",
   pricingBannerCta: "Voir l'offre",
   heroBadge: "Fondateurs 500 : Trade Pro à vie, un seul paiement",
@@ -121,8 +122,8 @@ const es: typeof en = {
   title: "Fundadores 500: Trade Pro de por vida con un solo pago",
   lead: "Trade Pro normalmente se cobra cada año. Las primeras {cap} empresas de oficios y proveedores pueden pagar una sola vez y conservar Trade Pro mientras PMRFP lo opere.",
   plusTax: "Más impuestos aplicables.",
-  counter: "Quedan {left} de {cap} lugares",
-  counterUnknown: "Limitado a las primeras {cap} organizaciones",
+  counter: "Quedan menos de {low} lugares",
+  counterUnknown: "Limitado a las primeras {cap} empresas.",
   soldOutTitle: "Los 500 lugares de Fundadores están ocupados",
   soldOutBody: "Gracias a todos los miembros fundadores. Trade Pro sigue disponible con el plan regular.",
   soldOutCta: "Ver precios de Trade Pro",
@@ -154,7 +155,7 @@ const es: typeof en = {
   ],
   fullTerms: "Leer los Términos de servicio completos",
   termsSectionTitle: "Oferta de por vida Fundadores 500",
-  pricingBanner: "Fundadores 500: Trade Pro de por vida con un solo pago. Quedan {left} de {cap} lugares.",
+  pricingBanner: "Fundadores 500: Trade Pro de por vida con un solo pago. Quedan menos de {low} lugares.",
   pricingBannerUnknown: "Fundadores 500: Trade Pro de por vida con un solo pago, para las primeras {cap} organizaciones.",
   pricingBannerCta: "Ver la oferta",
   heroBadge: "Fundadores 500: Trade Pro de por vida, un solo pago",

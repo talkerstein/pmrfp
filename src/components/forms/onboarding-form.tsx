@@ -17,6 +17,8 @@ export function OnboardingForm({
   regions,
   next,
   preselectedRegions = [],
+  preselectedCategories = [],
+  defaultName,
   orgKind = "property_manager",
   award,
 }: {
@@ -26,6 +28,10 @@ export function OnboardingForm({
   next?: string | null;
   /** Ticked to start — the visitor's own province/state. */
   preselectedRegions?: string[];
+  /** Trades picked on the sign-up page. */
+  preselectedCategories?: string[];
+  /** Company name typed on the sign-up page. */
+  defaultName?: string | null;
   /** Buyers only: which choice starts selected ("builder" = general contractor). */
   orgKind?: "property_manager" | "builder" | "landlord";
   /** Award notice a GC came from — their first package gets it prefilled. */
@@ -82,9 +88,9 @@ export function OnboardingForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         {landlord ? (
-          <Field label={t.landlordName}><Input name="name" placeholder={t.landlordNamePlaceholder} /></Field>
+          <Field label={t.landlordName}><Input name="name" placeholder={t.landlordNamePlaceholder} defaultValue={defaultName ?? undefined} /></Field>
         ) : (
-          <Field label={t.companyName} required><Input name="name" required /></Field>
+          <Field label={t.companyName} required><Input name="name" required defaultValue={defaultName ?? undefined} /></Field>
         )}
         <Field label={t.website}><Input name="website" placeholder="https://" /></Field>
         <Field label={t.phone}><Input name="phone" /></Field>
@@ -104,6 +110,7 @@ export function OnboardingForm({
             name="categories"
             options={categories.map((o) => ({ ...o, name: tradeName(o.name, lang) }))}
             required
+            preselected={preselectedCategories}
           />
           <CheckboxGroup
             label={t.regions}

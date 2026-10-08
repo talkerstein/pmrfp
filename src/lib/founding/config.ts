@@ -50,6 +50,22 @@ export function spotsLeft(sold: number, cap: number = FOUNDING.cap): number {
   return Math.max(0, cap - Math.max(0, sold));
 }
 
+/**
+ * Below this many spots left the public copy may say "fewer than N left".
+ * Above it no remaining-count is shown at all (Rishon, 2026-10-07: keep it
+ * inconspicuous). Display-only; the cap itself is enforced server-side.
+ */
+export const FOUNDING_LOW_SPOTS = 50;
+
+export type FoundingScarcity = "quiet" | "low" | "soldout";
+
+/** How the public UI should talk about remaining spots. Unknown count reads as quiet. */
+export function foundingScarcity(left: number | null | undefined, low: number = FOUNDING_LOW_SPOTS): FoundingScarcity {
+  if (left == null) return "quiet";
+  if (left <= 0) return "soldout";
+  return left <= low ? "low" : "quiet";
+}
+
 export function isSoldOut(sold: number, cap: number = FOUNDING.cap): boolean {
   return spotsLeft(sold, cap) === 0;
 }

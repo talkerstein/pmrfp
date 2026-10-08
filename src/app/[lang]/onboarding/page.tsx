@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "@/i18n/link";
 import { redirect } from "next/navigation";
 import { getVisitorGeo } from "@/lib/visitor-geo.server";
 import { visitorMarket, visitorRegionSlug } from "@/lib/visitor-geo";
@@ -7,13 +6,17 @@ import { OnboardingForm } from "@/components/forms/onboarding-form";
 import { RolePickerForm } from "@/components/forms/role-picker-form";
 import { requireUser } from "@/lib/access/access";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
-import { SITE } from "@/lib/site";
+import { getSignupPrefs } from "@/lib/auth/signup-prefs";
+import { V3Shell } from "@/components/home-v3/shell";
+import { SignupTop } from "@/components/home-v3/signup-ui";
+import type { Locale } from "@/i18n/config";
 import { safeNextPath } from "@/lib/auth/next";
 import { needsRolePick, parseRoleChoice } from "@/lib/auth/oauth";
 import { rolePickStateFor } from "@/lib/auth/google";
 import { getSignupGcIntent } from "@/lib/gc/intent";
 import { parseAwardRef } from "@/lib/gc/packages";
 import { getT, setLangFrom } from "@/i18n/server";
+import { getDictionary as dict } from "@/i18n/dictionaries";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
@@ -42,20 +45,23 @@ export default async function OnboardingPage({
   // Signed up with Google, so no role yet: ask that one question first.
   if (needsRolePick(await rolePickStateFor(session))) {
     return (
-      <Shell heading={t.rolePickHeading} intro={t.rolePickIntro}>
+      <Shell lang={lang} heading={t.rolePickHeading} intro={t.rolePickIntro}>
         <RolePickerForm initial={choice} next={next} award={parseAwardRef(awardParam)} />
       </Shell>
     );
   }
 
-  const [categories, allRegions, geo] = await Promise.all([getCategories(), getRegions(), getVisitorGeo()]);
+  const [categories, allRegions, geo, prefs] = await Promise.all([getCategories(), getRegions(), getVisitorGeo(), getSignupPrefs()]);
   // Visitors in the U.S. see the U.S. regions first (the list is long and
   // scrolls); everyone gets their own province/state ticked to start.
   const us = visitorMarket(geo) === "US";
   const isUsRegion = (r: { slug: string }) => r.slug === "united-states" || r.slug.startsWith("us-");
   const regions = us ? [...allRegions.filter(isUsRegion), ...allRegions.filter((r) => !isUsRegion(r))] : allRegions;
   const home = visitorRegionSlug(geo);
-  const preselectedRegions = home && regions.some((r) => r.slug === home) ? [home] : [];
+  // What they picked on the sign-up page wins; else their own province/state.
+  const pickedRegions = prefs.regions.filter((slug) => regions.some((r) => r.slug === slug));
+  const preselectedRegions = pickedRegions.length ? pickedRegions : home && regions.some((r) => r.slug === home) ? [home] : [];
+  const preselectedCategories = prefs.categories.filter((slug) => categories.some((c) => c.slug === slug));
 
   // Buyers pick "property manager" or "general contractor"; a GC sign-up
   // (or ?kind=gc) starts on the contractor choice.
@@ -80,6 +86,7 @@ export default async function OnboardingPage({
 
   return (
     <Shell
+      lang={lang}
       heading={heading}
       intro={
         role === "trade" || role === "supplier"
@@ -97,6 +104,8 @@ export default async function OnboardingPage({
         regions={regions}
         next={next}
         preselectedRegions={preselectedRegions}
+        preselectedCategories={preselectedCategories}
+        defaultName={prefs.company}
         orgKind={isGc ? "builder" : isLandlord ? "landlord" : "property_manager"}
         award={award}
       />
@@ -104,22 +113,25 @@ export default async function OnboardingPage({
   );
 }
 
-function Shell({ heading, intro, children }: { heading: string; intro: string; children: React.ReactNode }) {
+/** The sign-up template's card, inside the v3 header and footer. */
+function Shell({ lang, heading, intro, children }: { lang: Locale; heading: string; intro: string; children: React.ReactNode }) {
+  const t = dict(lang).v3Pages.signup;
   return (
-    <div className="min-h-screen bg-secondary/40">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex h-16 max-w-3xl items-center px-5">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-md bg-indigo text-[13px] font-bold text-background">PM</span>
-            <span className="text-lg font-semibold tracking-tight">{SITE.name}</span>
-          </Link>
+    <V3Shell lang={lang}>
+      <div className="v3-su-main">
+        <div className="v3-wrap" style={{ paddingTop: 28, paddingBottom: 96 }}>
+          <div className="v3-su-card" style={{ maxWidth: 880, margin: "0 auto" }}>
+            <SignupTop eyebrow={t.eyebrow} />
+            <div className="v3-su-pane">
+              <h1 className="v3-su-h1">{heading}</h1>
+              <p className="v3-su-sub">{intro}</p>
+            </div>
+            {/* The existing onboarding form (Tailwind), inside the design card. */}
+            <div className="v3-su-form v3-bb">{children}</div>
+            <div className="v3-su-foot"><div className="v3-su-legal" style={{ marginTop: 0 }}>{t.disclaimer}</div></div>
+          </div>
         </div>
-      </header>
-      <main className="mx-auto max-w-3xl px-5 py-10">
-        <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{intro}</p>
-        <div className="mt-8 rounded-xl border border-border bg-card p-6 sm:p-8">{children}</div>
-      </main>
-    </div>
+      </div>
+    </V3Shell>
   );
 }

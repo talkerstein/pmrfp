@@ -1,10 +1,10 @@
 import Link from "@/i18n/link";
-import { FOUNDING, FOUNDING_PATH, spotsLeft } from "@/lib/founding/config";
+import { FOUNDING, FOUNDING_LOW_SPOTS, FOUNDING_PATH, foundingScarcity, spotsLeft } from "@/lib/founding/config";
 import { cachedLifetimeCount } from "@/lib/founding/server";
 import { getT } from "@/i18n/server";
 import { fmt } from "@/i18n/format";
 
-/** Founding 500 call-out with the live spots-left count. Hidden once sold out. */
+/** Founding 500 call-out. Quiet copy (no count) until fewer than 50 spots remain. Hidden once sold out. */
 export async function FoundingBanner({ variant = "banner", className }: { variant?: "banner" | "badge" | "link"; className?: string }) {
   const t = getT("founding");
   const sold = await cachedLifetimeCount();
@@ -24,7 +24,7 @@ export async function FoundingBanner({ variant = "banner", className }: { varian
       </Link>
     );
   }
-  const text = left == null ? fmt(t.pricingBannerUnknown, { cap: FOUNDING.cap }) : fmt(t.pricingBanner, { cap: FOUNDING.cap, left });
+  const text = foundingScarcity(left) === "low" ? fmt(t.pricingBanner, { cap: FOUNDING.cap, low: FOUNDING_LOW_SPOTS }) : fmt(t.pricingBannerUnknown, { cap: FOUNDING.cap });
   return (
     <div className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-teal-500 bg-teal-100/50 px-5 py-4 ${className ?? ""}`}>
       <p className="text-sm font-semibold text-foreground">{text}</p>

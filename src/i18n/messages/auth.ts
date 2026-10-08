@@ -86,6 +86,7 @@ const en = {
     signingIn: "Signing in…",
     signIn: "Sign in",
     iAm: "I am…",
+    supplierInfo: "What suppliers get on PMRFP",
     roles: {
       trade: { label: "Trade or service company", hint: "Get listed in the directory and access live RFP opportunities" },
       supplier: { label: "Supplier or distributor", hint: "Reach the trades, builders, and property managers who buy what you sell" },
@@ -325,6 +326,7 @@ const fr: typeof en = {
     signingIn: "Connexion…",
     signIn: "Se connecter",
     iAm: "Je suis…",
+    supplierInfo: "Ce que PMRFP offre aux fournisseurs",
     roles: {
       trade: { label: "Une entreprise de métier ou de services", hint: "Inscrivez-vous au répertoire et accédez aux appels d'offres en cours" },
       supplier: { label: "Un fournisseur ou un distributeur", hint: "Joignez les entrepreneurs, les constructeurs et les gestionnaires immobiliers qui achètent ce que vous vendez" },
@@ -562,6 +564,7 @@ const es: typeof en = {
     signingIn: "Iniciando sesión…",
     signIn: "Iniciar sesión",
     iAm: "Soy…",
+    supplierInfo: "Lo que PMRFP ofrece a los proveedores",
     roles: {
       trade: { label: "Empresa de oficios o servicios", hint: "Aparezca en el directorio y acceda a oportunidades de RFP activas" },
       supplier: { label: "Proveedor o distribuidor", hint: "Llegue a los contratistas, constructores y administradores de propiedades que compran lo que usted vende" },

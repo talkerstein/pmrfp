@@ -40,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/for-property-managers", priority: 0.9, freq: "monthly" },
     { path: "/directory", priority: 0.8, freq: "weekly" },
     { path: "/suppliers", priority: 0.8, freq: "weekly" },
+    { path: "/become-a-supplier", priority: 0.8, freq: "monthly" },
     { path: "/rfps", priority: 0.8, freq: "daily" },
     { path: "/jobs", priority: 0.8, freq: "daily" },
     { path: "/talent", priority: 0.6, freq: "daily" },

@@ -14,6 +14,7 @@ const PAGES: RegExp[] = [
   /^\/pricing$/,
   /^\/for-trades$/,
   /^\/for-property-managers$/,
+  /^\/become-a-supplier$/,
   /^\/rfp-writer$/,
   /^\/jobs(\/[^/]+)?$/,
   /^\/talent(\/[^/]+)?$/,
