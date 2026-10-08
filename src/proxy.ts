@@ -19,7 +19,8 @@ const PASSTHROUGH = /^\/(api|embed|auth\/callback|go|app|_next)(\/|$)/;
 const PUBLIC_FILE = /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|mp4|webm|mp3|wav|pdf)$/i;
 // File-based metadata routes (/en/opengraph-image...) are requested by their internal URL.
 const METADATA_ROUTE = /\/(opengraph-image|twitter-image|icon|apple-icon)(?:[-/]|$)/;
-const BOT = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|embedly|preview|lighthouse|headless/i;
+const MONTHLY_REPORT_CSV = /^(?:\/(?:en|fr|es))?\/reports\/contract-winners\/(\d{4}-(?:0[1-9]|1[0-2]))\.csv$/;
+const BOT =/bot|crawl|spider|slurp|facebookexternalhit|whatsapp|embedly|preview|lighthouse|headless/i;
 const COOKIE_OPTS = { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" as const };
 
 function withGeo(request: NextRequest, response: NextResponse) {
@@ -55,6 +56,15 @@ export async function proxy(request: NextRequest) {
   if (isPublicPageRead(request.method, pathname)) {
     const blocked = await checkPublicReadLimit(request);
     if (blocked) return rateLimitResponse(blocked);
+  }
+
+  // A monthly report's CSV (/reports/contract-winners/2026-09.csv, any language
+  // prefix) can't share the [month] page segment, so it's served by an API route.
+  const reportCsv = pathname.match(MONTHLY_REPORT_CSV);
+  if (reportCsv) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/api/reports/contract-winners/${reportCsv[1]}`;
+    return NextResponse.rewrite(url);
   }
 
   if (PASSTHROUGH.test(pathname) || PUBLIC_FILE.test(pathname)) {

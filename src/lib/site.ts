@@ -151,6 +151,7 @@ export const FOOTER_COLS = [
       { label: "Equipment Marketplace", href: "/marketplace" },
       { label: "Contract Winners", href: "/contract-winners" },
       { label: "Public Contracts Report", href: "/reports/public-building-contracts" },
+      { label: "Monthly Contract Winners", href: "/reports/contract-winners" },
       { label: "Trades", href: "/trades" },
       { label: "Regions", href: "/regions" },
       { label: "Ontario RFPs", href: "/ontario" },

@@ -382,7 +382,7 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-browse .more { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 4px 20px; font-weight: 700; font-size: 15px; }
 .v3-foot { background: var(--ink); color: #FFFFFF; }
 .v3-foot-in { padding-top: 64px; padding-bottom: 40px; }
-.v3-foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; column-gap: 32px; }
+.v3-foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; column-gap: 32px; }
 .v3-foot .brand { display: flex; align-items: center; gap: 10px; }
 .v3-foot .brand span { font-family: var(--fp); font-weight: 700; font-size: 20px; }
 .v3-foot .txt { color: #C9CCE6; font-size: 15px; margin-top: 16px; max-width: 340px; }

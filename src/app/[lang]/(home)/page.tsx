@@ -10,6 +10,8 @@ import { SITE } from "@/lib/site";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listAllRfpsCached, listQualifyingCombos } from "@/lib/data/trade-city";
 import { awardTotals, winnersFromRfps } from "@/lib/data/winners";
+import { monthlyAwards, reportMonths } from "@/lib/data/monthly-winners";
+import { monthLabel, torontoToday } from "@/lib/data/monthly-winners-load";
 import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { rfpMarket } from "@/lib/visitor-geo";
@@ -233,6 +235,8 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; live: 
       })),
       most: { name: most.name, n: most.awards.length },
     };
+    const latest = reportMonths(monthlyAwards(rfps), torontoToday())[0];
+    if (latest) data.winners.report = { month: monthLabel(latest.month, lang), href: `/reports/contract-winners/${latest.month}` };
     live.push("winners");
   } else fallback.push("winners");
 

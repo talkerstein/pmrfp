@@ -45,6 +45,8 @@ export interface V3Data {
     value: string;
     top: { name: string; n: number; value: string; weight: number; href: string; most: boolean }[];
     most: { name: string; n: number };
+    /** Latest monthly report ("September 2026"), when one exists. */
+    report?: { month: string; href: string };
   };
   awards: { trade: string; value: string; title: string; buyer: string; winner: string; date: string; href: string }[];
   /** Crawlable links to trade × city pages and fresh tenders (SEO). */
@@ -614,7 +616,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
                 </div>
               </div>
             )}
-            <div className="v3-win-legend"><span>{t.winners.legend}</span><a href={L(H.winners)} className="mintlink">{t.winners.seeMost}</a></div>
+            <div className="v3-win-legend"><span>{t.winners.legend}</span><div>{w.report && <><a href={L(w.report.href)} className="mintlink">{fmt(t.winners.readReport, { month: w.report.month })}</a>{" · "}</>}<a href={L(H.winners)} className="mintlink">{t.winners.seeMost}</a></div></div>
 
             <div className="v3-callout">
               <p>{fmt(t.winners.callout, { name: w.most.name, n: num(w.most.n) })}</p>
