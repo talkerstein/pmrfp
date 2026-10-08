@@ -104,6 +104,7 @@ function summary(s: Seed): ThreadSummary {
     replyCount: s.replies.length, viewCount: s.views, ratingAvg: s.rating[1] ? s.rating[0] / s.rating[1] : null, ratingCount: s.rating[1],
     createdAt: day(s.age), lastPostAt: day(last ? last.age : s.age), author: s.author,
     lastUser: { handle: (last?.author ?? s.author).handle, displayName: (last?.author ?? s.author).displayName },
+    region: null,
   };
 }
 
@@ -130,13 +131,17 @@ export function sampleCategoryThreads(categoryId: string) {
   return { pinned: all.filter((t) => t.isPinned), threads: all.filter((t) => !t.isPinned), total: all.filter((t) => !t.isPinned).length };
 }
 
+export function sampleAllThreads(): (ThreadSummary & { categorySlug: ForumCategorySlug })[] {
+  return SEEDS.map((s) => ({ ...summary(s), categorySlug: s.cat }));
+}
+
 export function sampleThread(sid: string): Thread | null {
   const s = SEEDS.find((x) => x.sid === sid);
   if (!s) return null;
   const acc = s.replies.find((r) => r.accepted);
   return {
     ...summary(s), categoryId: CAT_IDS[s.cat]!, categorySlug: s.cat, body: s.body,
-    wordsTotal: words(s.body) + s.replies.reduce((n, r) => n + words(r.body), 0), flagCount: 0, region: null,
+    wordsTotal: words(s.body) + s.replies.reduce((n, r) => n + words(r.body), 0), flagCount: 0,
     acceptedPostId: acc ? acc.id : null, updatedAt: day(0),
   };
 }

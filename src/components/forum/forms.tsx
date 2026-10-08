@@ -60,9 +60,11 @@ function ErrorLine({ state }: { state: ForumFormState }) {
 export function ThreadForm({
   categories,
   initialCategory,
+  initialType,
   firstPost,
   staffOption,
 }: {
+  initialType?: "question" | "discussion";
   categories: { slug: string; name: string }[];
   initialCategory?: string;
   firstPost: boolean;
@@ -71,7 +73,7 @@ export function ThreadForm({
   const t = useT("forumClient").form;
   const lang = useLang();
   const [state, action, pending] = useActionState(createThreadAction, {} as ForumFormState);
-  const [type, setType] = useState<"question" | "discussion">(defaultThreadType(initialCategory ?? categories[0]?.slug ?? ""));
+  const [type, setType] = useState<"question" | "discussion">(initialType ?? defaultThreadType(initialCategory ?? categories[0]?.slug ?? ""));
   if (state.held) return <ErrorLine state={state} />;
   return (
     <form action={action} className="relative space-y-5">

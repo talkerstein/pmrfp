@@ -104,8 +104,10 @@ export function ForumHero({
   title,
   lead,
   crumbs,
+  icon,
   children,
 }: {
+  icon?: React.ReactNode;
   eyebrow: string;
   title: string;
   lead?: string;
@@ -125,7 +127,7 @@ export function ForumHero({
             ))}
           </nav>
         )}
-        <p className="kick"><span className="dot" />{eyebrow}</p>
+        <p className="kick">{icon ?? <span className="dot" />}{eyebrow}</p>
         <h1>{title}</h1>
         {lead && <p className="lead">{lead}</p>}
         {children}
@@ -172,10 +174,10 @@ export function VerifyPanel({ signedIn, next }: { signedIn: boolean; next: strin
   );
 }
 
-export function Pager({ base, page, total }: { base: string; page: number; total: number }) {
+export function Pager({ base, page, total, query = "" }: { base: string; page: number; total: number; query?: string }) {
   const t = getT("forum").category;
   if (total <= 1) return null;
-  const href = (n: number) => (n <= 1 ? base : `${base}/page/${n}`);
+  const href = (n: number) => (n <= 1 ? base : `${base}/page/${n}`) + query;
   return (
     <nav className="mt-6 flex items-center justify-between gap-3 text-sm" aria-label="Pagination">
       {page > 1 ? (

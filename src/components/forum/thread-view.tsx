@@ -9,7 +9,7 @@ import { ModButtons, PostControls, RateThread, ReplyForm, ThreadReport } from "@
 import { getSession, isAdminRole } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
-import { getThread, isCategoryMod, listPosts, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
+import { getThread, isCategoryMod, listPosts, listRelatedThreads, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
 import { isFrenchForum, tradeForForum } from "@/lib/forum/categories";
 import { sessionCanPost } from "@/lib/forum/eligibility";
 import { RANKS, isIndexableThread, pageCount, rankFor } from "@/lib/forum/rules";
@@ -21,6 +21,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { cn } from "@/lib/utils";
+import { ForumIcon, ThreadList } from "@/components/forum/organize";
 
 async function load(category: string, param: string) {
   const parsed = parseThreadParam(param);
@@ -116,7 +117,10 @@ export async function ThreadView({ category, param, page }: { category: string; 
   const session = await getSession();
   const viewerId = session?.userId ?? null;
   const isMod = session ? isAdminRole(session.profile.primary_role) || (await isCategoryMod(session.userId, thread.categoryId)) : false;
-  const { posts, accepted } = await listPosts(thread, page);
+  const [{ posts, accepted }, related] = await Promise.all([
+    listPosts(thread, page),
+    listRelatedThreads(thread.categoryId, thread.categorySlug, thread.id, 5),
+  ]);
   const viewer = session
     ? await viewerState(await createClient(), session.userId, thread.id, posts.map((p) => p.id))
     : { rating: null, voted: new Set<string>() };
@@ -162,7 +166,9 @@ export async function ThreadView({ category, param, page }: { category: string; 
           <nav className="f-crumbs" aria-label="Breadcrumb">
             <Link href="/forum">{t.forum}</Link>
             <span aria-hidden>/</span>
-            <Link href={`/forum/${thread.categorySlug}`}>{cat.name}</Link>
+            <Link href={`/forum/${thread.categorySlug}`} className="inline-flex items-center gap-1"><ForumIcon slug={thread.categorySlug} className="size-3.5" />{cat.name}</Link>
+            <span aria-hidden>/</span>
+            <span aria-current="page" className="max-w-[40ch] truncate">{thread.title}</span>
           </nav>
           <div className="meta">
             <span className="on">{thread.type === "question" ? t.category.question : t.category.discussion}</span>
@@ -247,6 +253,16 @@ export async function ThreadView({ category, param, page }: { category: string; 
           )}
         </section>
 
+        <section className="mt-10" aria-labelledby="related-threads">
+          <h2 id="related-threads" className="f-hd2">{t.org.related}</h2>
+          <div className="mt-4">
+            <ThreadList items={related.map((th) => ({ th }))} empty={t.org.relatedNone} />
+          </div>
+          <p className="mt-3 text-sm">
+            <Link href={`/forum/${thread.categorySlug}`} className="font-bold">{fmt(t.org.browseForum, { name: cat.name })} →</Link>
+          </p>
+        </section>
+
         {trade && (
           <p className="mt-8 text-sm">
             <Link href={`/trades/${trade}`} className="font-bold">{fmt(t.thread.findTrades, { trade: cat.name })}</Link>
@@ -267,7 +283,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
         )}
         <div className="f-side-ink">
           <div className="h">{v.differentQuestion}</div>
-          <Link href={`/forum/${thread.categorySlug}/new`} className="btn mint">{t.category.newThread}</Link>
+          <Link href={`/forum/${thread.categorySlug}/new?type=question`} className="btn mint">{t.org.askQuestion}</Link>
         </div>
       </aside>
       </div>
