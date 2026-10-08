@@ -19,6 +19,7 @@ export default async function ForumCategoryPagedPage({ params, searchParams }: P
   const { category, n } = await params;
   const page = parsePage(n);
   if (!page) notFound();
-  const sort = parseSort((await searchParams).sort);
-  return <V3Body><CategoryView category={category} page={page} sort={sort} /></V3Body>;
+  const sp = await searchParams;
+  const sort = parseSort(sp.sort);
+  return <V3Body><CategoryView category={category} page={page} sort={sort} hideAuto={sp.auto === "0"} /></V3Body>;
 }

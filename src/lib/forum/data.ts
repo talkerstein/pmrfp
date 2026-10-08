@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { FORUM_CATEGORY_SLUGS, type ForumCategorySlug } from "./categories";
 import { PAGE_SIZE, isIndexableThread, ratingAverage } from "./rules";
+import { SYSTEM_HANDLE } from "./auto-threads";
 import { applyThreadSort, filterThreads, ilikePattern, type ThreadSort } from "./organize";
 import { previewSamplesOn, sampleAllThreads, sampleCategoryThreads, sampleIndex, samplePosts, sampleProfile, sampleThread } from "./preview-samples";
 
@@ -45,6 +46,8 @@ export interface ThreadSummary {
   isPinned: boolean;
   isLocked: boolean;
   isStaff: boolean;
+  /** Automatic PMRFP Board post (auto-threads): labelled, noindex until a reply. */
+  isAuto: boolean;
   hasAccepted: boolean;
   replyCount: number;
   viewCount: number;
@@ -111,6 +114,20 @@ function member(r: MemberRow | MemberRow[] | null | undefined): MemberRef | null
   };
 }
 
+/** Threads by the PMRFP Board system profile are automatic posts. */
+function isSystemAuthor(a: { handle?: string } | { handle?: string }[] | null | undefined): boolean {
+  const m = Array.isArray(a) ? a[0] : a;
+  return m?.handle === SYSTEM_HANDLE;
+}
+
+let systemUserId: string | null | undefined;
+async function systemAuthorId(client: SupabaseClient): Promise<string | null> {
+  if (systemUserId) return systemUserId;
+  const { data } = await client.from("forum_profiles").select("user_id").eq("handle", SYSTEM_HANDLE).maybeSingle<{ user_id: string }>();
+  systemUserId = data?.user_id ?? null;
+  return systemUserId;
+}
+
 export function threadPath(category: string, slug: string, sid: string): string {
   return `/forum/${category}/${slug}-${sid}`;
 }
@@ -129,6 +146,7 @@ function summary(r: any, categorySlug: string): ThreadSummary {
     isPinned: r.is_pinned,
     isLocked: r.is_locked,
     isStaff: r.is_staff,
+    isAuto: isSystemAuthor(r.author),
     hasAccepted: Boolean(r.accepted_post_id),
     replyCount: r.reply_count ?? 0,
     viewCount: r.view_count ?? 0,
@@ -209,6 +227,7 @@ export async function listCategoryThreads(
   categorySlug: string,
   page: number,
   sort: ThreadSort = "latest",
+  opts: { hideAuto?: boolean } = {},
 ): Promise<{ threads: ThreadSummary[]; pinned: ThreadSummary[]; total: number }> {
   if (previewSamplesOn()) {
     const s = sampleCategoryThreads(categoryId);
@@ -219,6 +238,8 @@ export async function listCategoryThreads(
   const client = db();
   if (!client) return { threads: [], pinned: [], total: 0 };
   const from = (page - 1) * PAGE_SIZE;
+  // ?auto=0: hide automatic PMRFP Board posts.
+  const hideId = opts.hideAuto ? await systemAuthorId(client) : null;
   const [pinned, list] = await Promise.all([
     page === 1 && sort === "latest"
       ? client.from("forum_threads").select(THREAD_COLS).eq("category_id", categoryId).eq("status", "approved").eq("is_pinned", true).order("last_post_at", { ascending: false }).limit(10)
@@ -227,6 +248,7 @@ export async function listCategoryThreads(
       // Pinned threads sit above the Latest tab; the other tabs include them.
       let q = client.from("forum_threads").select(THREAD_COLS, { count: "exact" }).eq("category_id", categoryId).eq("status", "approved");
       if (sort === "latest") q = q.eq("is_pinned", false);
+      if (hideId) q = q.neq("author_id", hideId);
       return applyThreadSort(q, sort).range(from, from + PAGE_SIZE - 1);
     })(),
   ]);

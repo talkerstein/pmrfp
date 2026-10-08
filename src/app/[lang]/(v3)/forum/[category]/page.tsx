@@ -15,6 +15,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
 export default async function ForumCategoryPage({ params, searchParams }: P) {
   await setLangFrom(params);
   const { category } = await params;
-  const sort = parseSort((await searchParams).sort);
-  return <V3Body><CategoryView category={category} page={1} sort={sort} /></V3Body>;
+  const sp = await searchParams;
+  const sort = parseSort(sp.sort);
+  return <V3Body><CategoryView category={category} page={1} sort={sort} hideAuto={sp.auto === "0"} /></V3Body>;
 }

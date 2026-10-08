@@ -15,7 +15,7 @@ class Rec implements FilterableQuery<Rec> {
 
 const th = (p: Partial<ThreadSummary> & { id: string }): ThreadSummary => ({
   shortId: p.id, slug: p.id, path: `/forum/x/${p.id}`, title: p.id, type: "question", status: "approved", isPinned: false, isLocked: false,
-  isStaff: false, hasAccepted: false, replyCount: 0, viewCount: 0, ratingAvg: null, ratingCount: 0, createdAt: "2026-10-01T00:00:00Z",
+  isStaff: false, isAuto: false, hasAccepted: false, replyCount: 0, viewCount: 0, ratingAvg: null, ratingCount: 0, createdAt: "2026-10-01T00:00:00Z",
   lastPostAt: "2026-10-01T00:00:00Z", author: null, lastUser: null, region: null, ...p,
 });
 

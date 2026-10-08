@@ -19,6 +19,12 @@ export function sortQuery(sort: ThreadSort): string {
   return sort === "latest" ? "" : `?sort=${sort}`;
 }
 
+/** Category list query: ?sort= composed with ?auto=0 (hide automatic posts). */
+export function categoryQuery(sort: ThreadSort, hideAuto: boolean): string {
+  const parts = [sort === "latest" ? "" : `sort=${sort}`, hideAuto ? "auto=0" : ""].filter(Boolean);
+  return parts.length ? `?${parts.join("&")}` : "";
+}
+
 /** The subset of the PostgREST builder the tabs use. */
 export interface FilterableQuery<Q> {
   eq(col: string, v: unknown): Q;

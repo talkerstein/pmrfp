@@ -15,7 +15,7 @@ import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { alternatesFor } from "@/i18n/metadata";
 import { cn } from "@/lib/utils";
 import { ForumIcon, SortTabs, ThreadBadges } from "@/components/forum/organize";
-import { sortQuery, timeAgo, type ThreadSort } from "@/lib/forum/organize";
+import { categoryQuery, timeAgo, type ThreadSort } from "@/lib/forum/organize";
 
 export function categoryMetadata(langParam: string, category: string, page: number): Metadata {
   const l = hasLocale(langParam) ? langParam : "en";
@@ -32,6 +32,11 @@ export function categoryMetadata(langParam: string, category: string, page: numb
   };
 }
 
+const AUTO_TOGGLE = {
+  en: { hide: "Hide automatic posts", show: "Show automatic posts" },
+  fr: { hide: "Masquer les publications automatiques", show: "Afficher les publications automatiques" },
+} as const;
+
 function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
   const t = getT("forum");
   const lang = getLang();
@@ -47,7 +52,7 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <ThreadBadges th={th} />
           {th.region && <span className="inline-flex items-center gap-0.5"><MapPin className="size-3" aria-hidden />{th.region}</span>}
-          {th.isStaff && <span className="inline-flex items-center gap-0.5"><ShieldCheck className="size-3" /> {t.category.staff}</span>}
+          {th.isStaff && !th.isAuto && <span className="inline-flex items-center gap-0.5"><ShieldCheck className="size-3" /> {t.category.staff}</span>}
           {pages > 1 && (
             <span className="inline-flex gap-1">
               {Array.from({ length: Math.min(pages, 4) }, (_, i) => i + 1).map((n) => (
@@ -73,9 +78,10 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
   );
 }
 
-export async function CategoryView({ category, page, sort = "latest" }: { category: string; page: number; sort?: ThreadSort }) {
+export async function CategoryView({ category, page, sort = "latest", hideAuto = false }: { category: string; page: number; sort?: ThreadSort; hideAuto?: boolean }) {
   if (!isForumCategory(category)) notFound();
   const t = getT("forum");
+  const lang = getLang();
   const res = await getCategoryRow(category);
   const c = t.categories[category];
   if (!res.ready) {
@@ -86,7 +92,7 @@ export async function CategoryView({ category, page, sort = "latest" }: { catego
       </>
     );
   }
-  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page, sort);
+  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page, sort, { hideAuto });
   const pages = pageCount(total, PAGE_SIZE);
   if (page > pages && !(page === 1 && sort !== "latest")) notFound();
   const base = `/forum/${category}`;
@@ -125,7 +131,12 @@ export async function CategoryView({ category, page, sort = "latest" }: { catego
             <Pin className="mt-0.5 size-4 shrink-0 text-amber-600" /> {t.clientTalkRule}
           </p>
         )}
-        {res.category.threadCount > 0 && <SortTabs base={base} current={sort} />}
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          {res.category.threadCount > 0 ? <SortTabs base={base} current={sort} hideAuto={hideAuto} /> : <span />}
+          <Link href={`${base}${categoryQuery(sort, !hideAuto)}`} rel="nofollow" className="mb-4 text-xs text-[#4B4F6B] hover:underline">
+            {hideAuto ? AUTO_TOGGLE[lang === "fr" ? "fr" : "en"].show : AUTO_TOGGLE[lang === "fr" ? "fr" : "en"].hide}
+          </Link>
+        </div>
         {pinned.length + threads.length === 0 ? (
           <p className="rounded-3xl border-2 border-dashed border-[#D5D7E6] px-6 py-14 text-center text-[#4B4F6B]">{sort === "latest" ? t.category.empty : t.org.tabEmpty}</p>
         ) : (
@@ -148,7 +159,7 @@ export async function CategoryView({ category, page, sort = "latest" }: { catego
             </table>
           </div>
         )}
-        <Pager base={base} page={page} total={pages} query={sortQuery(sort)} />
+        <Pager base={base} page={page} total={pages} query={categoryQuery(sort, hideAuto)} />
       </Container>
     </>
   );

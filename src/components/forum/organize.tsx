@@ -6,8 +6,9 @@ import {
 } from "lucide-react";
 import type { ForumCategorySlug } from "@/lib/forum/categories";
 import type { ThreadSummary } from "@/lib/forum/data";
-import { THREAD_SORTS, sortQuery, timeAgo, type ThreadSort } from "@/lib/forum/organize";
+import { THREAD_SORTS, categoryQuery, timeAgo, type ThreadSort } from "@/lib/forum/organize";
 import { getLang, getT } from "@/i18n/server";
+import { AutoPostChip } from "@/components/forum/auto-chip";
 import { fmt, plural } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ export function ThreadBadges({ th }: { th: ThreadSummary }) {
         {th.type === "question" ? <CircleHelp className="size-3" aria-hidden /> : <MessagesSquare className="size-3" aria-hidden />}
         {th.type === "question" ? t.category.question : t.category.discussion}
       </span>
+      {th.isAuto && <AutoPostChip lang={getLang()} />}
       {th.hasAccepted ? (
         <span className="inline-flex items-center gap-1 rounded bg-[#DDFBF0] px-1.5 py-0.5 text-[11px] font-semibold text-teal-800">
           <CheckCircle2 className="size-3" aria-hidden /> {o.solved}
@@ -105,14 +107,14 @@ export function ThreadList({ items, empty, pinnedIds }: { items: { th: ThreadSum
 }
 
 /** Latest · Unanswered · Top rated · Solved (via ?sort=, canonical stays the base). */
-export function SortTabs({ base, current }: { base: string; current: ThreadSort }) {
+export function SortTabs({ base, current, hideAuto = false }: { base: string; current: ThreadSort; hideAuto?: boolean }) {
   const o = getT("forum").org;
   return (
     <nav aria-label={o.tabsLabel} className="mb-4 flex flex-wrap gap-2">
       {THREAD_SORTS.map((s) => (
         <Link
           key={s}
-          href={`${base}${sortQuery(s)}`}
+          href={`${base}${categoryQuery(s, hideAuto)}`}
           aria-current={s === current ? "page" : undefined}
           rel={s === "latest" ? undefined : "nofollow"}
           className={cn(

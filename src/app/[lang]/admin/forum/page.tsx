@@ -6,6 +6,7 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ModButtons, ThreadForm } from "@/components/forum/forms";
 import { AppointModForm } from "@/components/forum/admin-forms";
+import { AutoThreadImport } from "@/components/forum/auto-import";
 import { isMissingTable } from "@/lib/forum/data";
 import { FORUM_CATEGORY_SLUGS } from "@/lib/forum/categories";
 import { excerpt } from "@/lib/forum/text";
@@ -90,6 +91,17 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
             <h2 className="text-lg font-semibold">Community moderators</h2>
             <p className="mt-1 text-sm text-muted-foreground">Appoint a member (Foreman+ with a clean record, per the spec) to a category. They appear in the forum header.</p>
             <div className="mt-3"><AppointModForm categories={categories} /></div>
+          </section>
+
+          <section className="max-w-2xl">
+            <h2 className="text-lg font-semibold">Automatic posts from real tenders &amp; awards</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              One &quot;PMRFP Board · automatic post&quot; thread per real tender, RFP or contract award published in the last 90 days
+              (cap 400, trade forums first, out-of-scope work skipped). Dated on the real event date, built only from the record&apos;s
+              own fields, no replies, ratings or votes. Noindex until a member replies. New items are added daily by the tender
+              import (set FORUM_AUTO_THREADS=0 to stop). Preview first.
+            </p>
+            <div className="mt-3"><AutoThreadImport /></div>
           </section>
 
           <section className="max-w-2xl">

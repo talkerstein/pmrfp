@@ -17,6 +17,7 @@ import { excerpt, parseThreadParam } from "@/lib/forum/text";
 import { threadSchema } from "@/lib/forum/schema";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT } from "@/i18n/server";
+import { AutoPostChip } from "@/components/forum/auto-chip";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
@@ -40,7 +41,7 @@ export async function threadMetadata(langParam: string, category: string, param:
   const th = res.thread;
   const t = getDictionary(l).forum;
   const path = page > 1 ? `${th.path}/page/${page}` : th.path;
-  const indexable = isIndexableThread({ status: th.status, type: th.type, replyCount: th.replyCount, wordsTotal: th.wordsTotal, category: th.categorySlug });
+  const indexable = isIndexableThread({ status: th.status, type: th.type, replyCount: th.replyCount, wordsTotal: th.wordsTotal, category: th.categorySlug, auto: th.isAuto });
   return {
     title: `${th.title}${page > 1 ? fmt(t.meta.pageSuffix, { n: page }) : ""} · ${t.categories[th.categorySlug].name}`,
     description: excerpt(th.body, 160),
@@ -200,7 +201,10 @@ export async function ThreadView({ category, param, page }: { category: string; 
         {page === 1 && (
           <article className="f-card op" style={{ marginTop: accepted ? 14 : 0 }}>
             <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <MemberName m={thread.author} staff={thread.isStaff} showRank />
+              <span className="inline-flex flex-wrap items-center gap-2">
+                <MemberName m={thread.author} staff={thread.isStaff && !thread.isAuto} showRank={!thread.isAuto} />
+                {thread.isAuto && <AutoPostChip lang={lang} full />}
+              </span>
               <time dateTime={thread.createdAt} className="text-xs text-muted-foreground">{fmt(t.thread.posted, { date: formatDate(thread.createdAt, lang) })}</time>
             </header>
             <PostBody text={thread.body} className="mt-3" />
