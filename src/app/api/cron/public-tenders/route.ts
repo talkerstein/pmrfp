@@ -18,6 +18,8 @@ import {
 import { classifyNsAward, fetchNsAwards, nsAwardToRfpInsert } from "@/lib/tenders/nova-scotia";
 import { classifyYukon, fetchYukonOpenTenders, yukonToRfpInsert } from "@/lib/tenders/yukon";
 import { syncPublicSources, type Source } from "@/lib/tenders/sync";
+import { CRON_CAP, CRON_DAYS, autoThreadsEnabled } from "@/lib/forum/auto-threads";
+import { runAutoThreads } from "@/lib/forum/auto-threads-server";
 import { awardToRfpInsert, classifyAward, fetchAwards } from "@/lib/tenders/awards";
 import {
   classifySeao,
@@ -134,9 +136,22 @@ export async function GET(request: Request) {
   }
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 
-  const { status, body } = await syncPublicSources(createServiceClient(), SOURCES, {
+  const dry = new URL(request.url).searchParams.get("dry") === "1";
+  const db = createServiceClient();
+  const { status, body } = await syncPublicSources(db, SOURCES, {
     today: new Date().toISOString().slice(0, 10),
-    dry: new URL(request.url).searchParams.get("dry") === "1",
+    dry,
   });
-  return NextResponse.json(body, { status });
+  // New tenders/awards → one automatic "PMRFP Board" forum thread each
+  // (idempotent; no-ops until the auto-threads migration is applied).
+  let forum: unknown = "off";
+  if (status === 200 && autoThreadsEnabled()) {
+    forum = await runAutoThreads(db, { days: CRON_DAYS, cap: CRON_CAP, dry })
+      .then((r) => ({ ready: r.ready, planned: r.planned, created: r.created, failed: r.failed }))
+      .catch((err) => {
+        console.error("[public-tenders] forum auto-threads failed:", err);
+        return "error";
+      });
+  }
+  return NextResponse.json({ ...body, forum }, { status });
 }

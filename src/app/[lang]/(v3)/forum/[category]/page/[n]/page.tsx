@@ -13,10 +13,10 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   return page ? categoryMetadata(lang, category, page) : {};
 }
 
-export default async function ForumCategoryPagedPage({ params }: P) {
+export default async function ForumCategoryPagedPage({ params, searchParams }: P & { searchParams: Promise<{ auto?: string }> }) {
   await setLangFrom(params);
   const { category, n } = await params;
   const page = parsePage(n);
   if (!page) notFound();
-  return <V3Body><CategoryView category={category} page={page} /></V3Body>;
+  return <V3Body><CategoryView category={category} page={page} hideAuto={(await searchParams).auto === "0"} /></V3Body>;
 }

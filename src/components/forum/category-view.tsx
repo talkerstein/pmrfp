@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { CheckCircle2, Lock, MessagesSquare, Pin, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/container";
+import { AutoPostChip } from "@/components/forum/auto-chip";
 import { ForumHero, MemberName, OpeningSoon, Pager, RatingBar } from "@/components/forum/parts";
 import { getCategoryRow, listCategoryThreads, type ThreadSummary } from "@/lib/forum/data";
 import { isForumCategory } from "@/lib/forum/categories";
@@ -30,6 +31,11 @@ export function categoryMetadata(langParam: string, category: string, page: numb
   };
 }
 
+const AUTO_TOGGLE = {
+  en: { hide: "Hide automatic posts", show: "Show automatic posts" },
+  fr: { hide: "Masquer les publications automatiques", show: "Afficher les publications automatiques" },
+} as const;
+
 function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
   const t = getT("forum");
   const lang = getLang();
@@ -47,7 +53,8 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
           {th.hasAccepted && (
             <span className="inline-flex items-center gap-0.5 text-teal-700"><CheckCircle2 className="size-3" /> {t.category.answered}</span>
           )}
-          {th.isStaff && <span className="inline-flex items-center gap-0.5"><ShieldCheck className="size-3" /> {t.category.staff}</span>}
+          {th.isAuto && <AutoPostChip lang={lang} />}
+          {th.isStaff && !th.isAuto && <span className="inline-flex items-center gap-0.5"><ShieldCheck className="size-3" /> {t.category.staff}</span>}
           {pages > 1 && (
             <span className="inline-flex gap-1">
               {Array.from({ length: Math.min(pages, 4) }, (_, i) => i + 1).map((n) => (
@@ -73,9 +80,10 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
   );
 }
 
-export async function CategoryView({ category, page }: { category: string; page: number }) {
+export async function CategoryView({ category, page, hideAuto = false }: { category: string; page: number; hideAuto?: boolean }) {
   if (!isForumCategory(category)) notFound();
   const t = getT("forum");
+  const lang = getLang();
   const res = await getCategoryRow(category);
   const c = t.categories[category];
   if (!res.ready) {
@@ -86,7 +94,7 @@ export async function CategoryView({ category, page }: { category: string; page:
       </>
     );
   }
-  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page);
+  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page, { hideAuto });
   const pages = pageCount(total, PAGE_SIZE);
   if (page > pages) notFound();
   const base = `/forum/${category}`;
@@ -122,6 +130,11 @@ export async function CategoryView({ category, page }: { category: string; page:
             <Pin className="mt-0.5 size-4 shrink-0 text-amber-600" /> {t.clientTalkRule}
           </p>
         )}
+        <p className="mb-3 text-right text-xs">
+          <Link href={hideAuto ? base : `${base}?auto=0`} rel="nofollow" className="text-[#4B4F6B] hover:underline">
+            {hideAuto ? AUTO_TOGGLE[lang === "fr" ? "fr" : "en"].show : AUTO_TOGGLE[lang === "fr" ? "fr" : "en"].hide}
+          </Link>
+        </p>
         {pinned.length + threads.length === 0 ? (
           <p className="rounded-3xl border-2 border-dashed border-[#D5D7E6] px-6 py-14 text-center text-[#4B4F6B]">{t.category.empty}</p>
         ) : (

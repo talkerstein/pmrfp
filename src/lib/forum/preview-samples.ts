@@ -100,7 +100,7 @@ function summary(s: Seed): ThreadSummary {
   const last = s.replies[s.replies.length - 1];
   return {
     id: `t-${s.sid}`, shortId: s.sid, slug: s.slug, path: path(s), title: s.title, type: s.type, status: "approved",
-    isPinned: Boolean(s.pinned), isLocked: false, isStaff: false, hasAccepted: s.replies.some((r) => r.accepted),
+    isPinned: Boolean(s.pinned), isLocked: false, isStaff: false, isAuto: false, hasAccepted: s.replies.some((r) => r.accepted),
     replyCount: s.replies.length, viewCount: s.views, ratingAvg: s.rating[1] ? s.rating[0] / s.rating[1] : null, ratingCount: s.rating[1],
     createdAt: day(s.age), lastPostAt: day(last ? last.age : s.age), author: s.author,
     lastUser: { handle: (last?.author ?? s.author).handle, displayName: (last?.author ?? s.author).displayName },

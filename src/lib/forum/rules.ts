@@ -124,6 +124,8 @@ export interface IndexableInput {
   flagged?: boolean;
   /** Category slug: banter forums (Off the Clock) are never indexed. */
   category?: string;
+  /** An automatic PMRFP Board post (auto-threads). */
+  auto?: boolean;
 }
 
 /**
@@ -134,6 +136,8 @@ export interface IndexableInput {
 export function isIndexableThread(t: IndexableInput): boolean {
   if (t.status !== "approved" || t.flagged) return false;
   if (t.category && (NOINDEX_FORUMS as readonly string[]).includes(t.category)) return false;
+  // Automatic PMRFP Board posts stay noindex until a member replies.
+  if (t.auto && t.replyCount < 1) return false;
   const engaged = (t.type === "question" && t.replyCount >= 1) || t.replyCount >= 2;
   return engaged && t.wordsTotal >= MIN_INDEX_WORDS;
 }

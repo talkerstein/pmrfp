@@ -8,8 +8,15 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return categoryMetadata(lang, category, 1);
 }
 
-export default async function ForumCategoryPage({ params }: { params: Promise<{ lang: string; category: string }> }) {
+export default async function ForumCategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string; category: string }>;
+  searchParams: Promise<{ auto?: string }>;
+}) {
   await setLangFrom(params);
   const { category } = await params;
-  return <V3Body><CategoryView category={category} page={1} /></V3Body>;
+  const { auto } = await searchParams;
+  return <V3Body><CategoryView category={category} page={1} hideAuto={auto === "0"} /></V3Body>;
 }
