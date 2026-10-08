@@ -18,9 +18,9 @@ type GroupKey = keyof Dir["groups"];
 /** Grouped by use, not ranked. PMRFP sits with the B2B networks where it fits. */
 const GROUPS: [GroupKey, [ItemKey, string, string][]][] = [
   ["maps", [
-    ["gbp", "Google Business Profile", "https://www.google.com/business/"],
-    ["bing", "Bing Places for Business", "https://www.bingplaces.com/"],
-    ["apple", "Apple Business Connect", "https://businessconnect.apple.com/"],
+    ["gbp", "Google Business Profile", "https://business.google.com/business-profile/"],
+    ["bing", "Bing Places for Business", "https://www.bing.com/forbusiness/"],
+    ["apple", "Apple Business Connect", "https://business.apple.com/"],
   ]],
   ["local", [
     ["yelp", "Yelp for Business", "https://business.yelp.com/"],
@@ -35,7 +35,7 @@ const GROUPS: [GroupKey, [ItemKey, string, string][]][] = [
     ["thumbtack", "Thumbtack", "https://www.thumbtack.com/"],
   ]],
   ["b2b", [
-    ["buildingconnected", "BuildingConnected (Autodesk)", "https://www.buildingconnected.com/"],
+    ["buildingconnected", "BuildingConnected (Autodesk)", "https://construction.autodesk.com/products/buildingconnected/"],
     ["constructconnect", "ConstructConnect", "https://www.constructconnect.com/"],
     ["pmrfp", "PMRFP", "/directory"],
     ["associations", "Trade and construction associations", ""],
