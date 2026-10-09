@@ -155,7 +155,7 @@ export function V3Footer({ t, lang }: { t: V3ChromeMessages; lang: Locale }) {
   const L = (p: string) => localizePath(p, lang);
   const f = t.footer;
   const cols = [
-    [f.find, [[f.rfps, V3H.rfps], [f.directory, V3H.directory], [f.winners, V3H.winners], [f.jobs, V3H.jobs], [f.marketplace, V3H.marketplace], [f.forum, V3H.forum]]],
+    [f.find, [[f.rfps, V3H.rfps], [f.directory, V3H.directory], [f.winners, V3H.winners], [f.gcHub, "/gc-hub"], [f.jobs, V3H.jobs], [f.marketplace, V3H.marketplace], [f.forum, V3H.forum]]],
     [f.who, [[f.trades, "/for-trades"], [f.pms, "/for-property-managers"], [f.landlords, V3H.landlord], [f.condos, "/for/condo-boards"], [f.realEstate, V3H.forRealEstate], [f.suppliers, "/for/suppliers"], [f.builders, "/for/builders"], [f.agencies, "/for-agencies"]]],
     [f.resources, [[f.monthlyReports, "/reports/contract-winners"], [f.contractsReport, "/reports/public-building-contracts"], [f.directories, "/resources/contractor-directories"]]],
     [f.company, [[f.about2, "/about"], [f.advertise, V3H.advertise], [f.spotlight, "/spotlight"], [f.contact, "/contact"], [f.terms, "/terms"], [f.privacy, "/privacy"]]],

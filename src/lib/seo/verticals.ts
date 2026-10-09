@@ -81,7 +81,7 @@ export const VERTICALS: Vertical[] = [
       { q: "Does PMRFP guarantee quotes?", a: "No. PMRFP puts your package in front of trades in that trade and region. We can't promise how many will quote." },
     ],
     cta: { label: "Post a sub-trade package — free", href: "/gc-packages/new" },
-    secondaryCta: { label: "See who just won public work", href: "/contract-winners" },
+    secondaryCta: { label: "See who just won public work", href: "/gc-hub" },
     metaTitle: "Post Sub-Trade Packages Free — PMRFP for General Contractors",
     metaDescription:
       "General contractors: post a sub-trade package per trade, free, and get quotes from local trades with work photos and reviews. See who just won public contracts near you.",
