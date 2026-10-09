@@ -19,6 +19,8 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
+import { LevelBadge } from "@/components/karma/level-badge";
+import { packageLevels } from "@/lib/karma/data";
 
 export const revalidate = 3600;
 
@@ -108,6 +110,8 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
     officialNotices(w.awards.map((a) => a.slug)),
     listPackagesForAwardSlugs(w.awards.map((a) => a.slug)),
   ]);
+  // Reputation level of the company behind each package (level 2+, poster stays anonymous).
+  const pkgLevels = await packageLevels(packages.map((pk) => pk.slug));
   // Open work in the same trades — the "you could be bidding on this" hook.
   const open = rfps
     .filter((r) => r.status === "open" && (daysUntil(r.deadline) ?? 0) >= 0 && r.categories.some((c) => w.categories.includes(c)))
@@ -185,6 +189,7 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
                   <span className="code" aria-hidden>{pk.deadline ? Number(pk.deadline.slice(8, 10)) : "—"}</span>
                   <span>
                     <a className="nm" href={L(`/rfps/${pk.slug}`)}>{pk.title}</a>
+                    {pkgLevels.has(pk.slug) && <span style={{ display: "block", margin: "4px 0" }}><LevelBadge level={pkgLevels.get(pk.slug)} /></span>}
                     {pk.deadline && <span className="lic">{fmt(getT("gcHub").packages.quotesDue, { date: day(pk.deadline, lang) })}</span>}
                   </span>
                 </li>

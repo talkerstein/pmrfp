@@ -8,6 +8,8 @@ import {
   type DemoVendor,
 } from "@/lib/demo-data";
 import type { VendorDetail, VendorFilters, VendorListItem } from "@/lib/data/types";
+import { publicLevels } from "@/lib/karma/data";
+import { directorySortKey } from "@/lib/karma/perks";
 
 function demoToListItem(v: DemoVendor): VendorListItem {
   return {
@@ -143,7 +145,7 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     .eq("is_demo", false);
   if (filters.verified) query = query.eq("verified", true);
   if (filters.q) query = query.ilike("name", `%${filters.q}%`);
-  const [{ data }, platinum] = await Promise.all([query.limit(200), platinumSlugs(supabase)]);
+  const [{ data }, platinum, levels] = await Promise.all([query.limit(200), platinumSlugs(supabase), publicLevels()]);
   const rows = ((data as unknown as OrgRow[]) ?? []).filter((r) => {
     const cats = r.organization_categories.map((c) => c.trade_categories?.slug).filter(Boolean);
     const regs = r.organization_regions.map((c) => c.regions?.slug).filter(Boolean);
@@ -153,12 +155,13 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     if (filters.propertyType && !props.includes(filters.propertyType)) return false;
     return true;
   });
-  const out: VendorListItem[] = rows.map((r) => toListItem(r, platinum));
+  const out: VendorListItem[] = rows.map((r) => toListItem(r, platinum, levels));
   if (filters.sort === "alpha") return out.sort((a, b) => a.name.localeCompare(b.name));
-  return out.sort((a, b) => tierRank(b) - tierRank(a));
+  // Paid tier first; the company's reputation level only breaks ties inside a tier.
+  return out.sort((a, b) => directorySortKey(tierRank(b), b.level) - directorySortKey(tierRank(a), a.level));
 }
 
-function toListItem(r: OrgRow, platinum: Set<string>): VendorListItem {
+function toListItem(r: OrgRow, platinum: Set<string>, levels?: Map<string, number>): VendorListItem {
   return {
     slug: r.slug,
     name: r.name,
@@ -174,6 +177,7 @@ function toListItem(r: OrgRow, platinum: Set<string>): VendorListItem {
     wsibStatus: r.wsib_status,
     categories: r.organization_categories.map((c) => c.trade_categories?.name).filter(Boolean) as string[],
     regions: r.organization_regions.map((c) => c.regions?.name).filter(Boolean) as string[],
+    level: levels?.get(r.id) ?? null,
   };
 }
 
@@ -271,9 +275,10 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     googleRating = gr?.google_rating ?? null;
     googleReviewCount = gr?.google_review_count ?? null;
   }
-  const isPlatinum = (await platinumSlugs(supabase)).has(r.slug);
+  const [isPlatinum, levels] = await Promise.all([platinumSlugs(supabase).then((s) => s.has(r.slug)), publicLevels()]);
   return {
     id: r.id,
+    level: levels.get(r.id) ?? null,
     slug: r.slug,
     name: r.name,
     city: r.city,

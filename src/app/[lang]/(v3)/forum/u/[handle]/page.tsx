@@ -3,9 +3,12 @@ import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { BadgeCheck, Building2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { OpeningSoon, RankBar } from "@/components/forum/parts";
+import { OpeningSoon } from "@/components/forum/parts";
+import { LevelBadge } from "@/components/karma/level-badge";
+import { orgLevel } from "@/lib/karma/data";
+import { levelSlug } from "@/lib/karma/rules";
 import { getProfile } from "@/lib/forum/data";
-import { badgesFor, isIndexableProfile, rankFor } from "@/lib/forum/rules";
+import { badgesFor, isIndexableProfile } from "@/lib/forum/rules";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -22,9 +25,11 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   if (!res.ready || !res.profile) return { robots: { index: false, follow: true } };
   const p = res.profile;
   const t = getDictionary(l).forum;
+  const k = getDictionary(l).karma;
+  const level = await orgLevel(p.orgId);
   return {
     title: fmt(t.meta.profileTitle, { name: p.displayName, handle: p.handle }),
-    description: fmt(t.meta.profileDescription, { rank: t.ranks[rankFor(p.reputation).rank], posts: p.postCount, date: p.joinedAt.slice(0, 10) }),
+    description: fmt(t.meta.profileDescription, { rank: level ? fmt(k.badge.label, { n: level, name: k.levels[levelSlug(level)] }) : p.displayName, posts: p.postCount, date: p.joinedAt.slice(0, 10) }),
     alternates: { canonical: `/forum/u/${p.handle}` },
     robots: isIndexableProfile(p.postCount) ? undefined : { index: false, follow: true },
   };
@@ -48,8 +53,10 @@ export default async function ForumProfilePage({ params }: P) {
     joinedAt: p.joinedAt,
     isModerator: p.modOf.length > 0,
   });
+  const k = getT("karma");
+  // Member ranks were folded into company reputation: show the company's level.
+  const level = await orgLevel(p.orgId);
   const stats: [string, string][] = [
-    [t.profile.reputation, formatNumber(p.reputation, lang)],
     [t.profile.posts, formatNumber(p.postCount, lang)],
     [t.profile.answers, formatNumber(p.answers, lang)],
     [t.profile.accepted, formatNumber(p.accepted, lang)],
@@ -99,8 +106,11 @@ export default async function ForumProfilePage({ params }: P) {
             {p.bio && <p className="mt-4 whitespace-pre-line text-muted-foreground">{p.bio}</p>}
 
             <div className="f-card mt-6">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t.profile.rank}</p>
-              <div className="mt-2"><RankBar reputation={p.reputation} /></div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{k.forum.company}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+                {level != null ? <LevelBadge level={level} always /> : <span className="text-muted-foreground">{k.forum.none}</span>}
+                <Link href="/reputation" className="text-xs font-semibold">{k.forum.how}</Link>
+              </div>
               <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {stats.map(([k, v]) => (
                   <div key={k}>
@@ -167,7 +177,7 @@ export default async function ForumProfilePage({ params }: P) {
                     <tr className="border-t border-border">
                       <td className="py-1.5">{p.crew.listed ? <Link href={`/directory/${p.crew.slug}`} className="hover:underline">{p.crew.name}</Link> : p.crew.name}</td>
                       <td className="py-1.5">{t.profile.roleMember}</td>
-                      <td className="py-1.5 text-right tabular-nums">{formatNumber(p.crew.rank, lang)}</td>
+                      <td className="py-1.5 text-right">{level != null ? <LevelBadge level={level} short always /> : "–"}</td>
                       <td className="py-1.5 text-right tabular-nums">{p.crew.members.length}</td>
                     </tr>
                   </tbody>

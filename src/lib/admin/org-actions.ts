@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
+import { karmaSyncAfter } from "@/lib/karma/sync";
 
 /**
  * Admin: approve or reject a company waiting in pending_review. Only moves
@@ -22,6 +23,8 @@ export async function reviewOrganizationAction(formData: FormData): Promise<void
     .update({ profile_status: decision })
     .eq("id", id)
     .eq("profile_status", "pending_review");
+  // Approval is the first verifiable reputation event for a company.
+  await karmaSyncAfter({ orgIds: [id] });
 
   revalidatePath("/admin/organizations");
   revalidatePath("/directory");

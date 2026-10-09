@@ -6,6 +6,7 @@ import { formatNumber } from "@/i18n/format";
 import type { Messages } from "@/i18n/dictionaries";
 import { regionName, tradeName } from "@/i18n/terms";
 import type { VendorListItem } from "@/lib/data/types";
+import { LevelBadge } from "@/components/karma/level-badge";
 
 /**
  * "Directory list (5 list types)" template: one layout for the trade
@@ -35,6 +36,8 @@ export interface DLCard {
   metaL?: string | null;
   badge?: string | null;
   logo?: string | null;
+  /** Company reputation level (src/lib/karma); the badge shows from level 2. */
+  level?: number | null;
 }
 
 export interface DLLink { href: string; label: string }
@@ -131,6 +134,7 @@ function Card({ c, i, cta }: { c: DLCard; i: number; cta: string }) {
         )}
       </span>
       <span className="nm">{c.name}</span>
+      {c.level != null && c.level >= 2 && <span style={{ display: "block", marginTop: 6 }}><LevelBadge level={c.level} /></span>}
       {c.loc && <span className="lc">{c.loc}</span>}
       {c.tags && <span className="tg">{c.tags}</span>}
       <span className="ds">{c.desc}</span>
@@ -418,6 +422,7 @@ export function vendorCard(v: VendorListItem, lang: Locale, t: { verified: strin
     metaL: v.yearsInBusiness ? t.yrs : null,
     badge: v.platinum ? t.platinum : v.featured ? t.featured : v.verified ? t.verified : null,
     logo: v.logoUrl,
+    level: v.level ?? null,
   };
 }
 

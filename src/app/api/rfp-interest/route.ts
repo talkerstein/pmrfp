@@ -6,6 +6,7 @@ import { getSession } from "@/lib/access/access";
 import { sendAdminNewInterest, sendInterestConfirmation, sendPmNewInterest } from "@/lib/email/send";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { karmaSyncAfter } from "@/lib/karma/sync";
 
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "rfp-interest");
@@ -61,6 +62,10 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Could not submit interest" }, { status: 500 });
   }
+
+  // An RFP/package that draws interest from another company earns its poster
+  // reputation; re-sync that company after the response.
+  await karmaSyncAfter({ userIds: [rfp.posted_by_user_id] });
 
   // Look up the PM's email so we can notify them directly (Quest 1.7).
   // Falls back gracefully if the RFP was admin-seeded with no posted_by_user_id.

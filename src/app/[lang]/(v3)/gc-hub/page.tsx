@@ -18,6 +18,9 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
+import { LevelBadge } from "@/components/karma/level-badge";
+import { FeaturedContributors } from "@/components/karma/level-stairs";
+import { packageLevels } from "@/lib/karma/data";
 
 export const revalidate = 3600;
 
@@ -62,6 +65,7 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
   const [rfps, categories] = await Promise.all([listRfps().catch(() => []), getCategories().catch(() => [])]);
   const all = hubWins(rfps, winnersFromRfps(rfps, 1), { today: torontoToday() });
   const packages = openPackages(rfps);
+  const pkgLevels = await packageLevels(packages.slice(0, 20).map((p) => p.slug));
   const totals = hubTotals(all);
   const options = hubFilterOptions(all);
 
@@ -115,6 +119,7 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
                   <span className="code" aria-hidden>{p.deadline ? Number(p.deadline.slice(8, 10)) : "—"}</span>
                   <span>
                     <a className="nm" href={L(`/rfps/${p.slug}`)}>{p.title}</a>
+                    {pkgLevels.has(p.slug) && <span style={{ display: "block", margin: "4px 0" }}><LevelBadge level={pkgLevels.get(p.slug)} /></span>}
                     <span className="wt">
                       {[p.categories[0] ? tradeName(p.categories[0], lang) : null, p.regionName ? regionName(p.regionName, lang) : null, p.gcProjectName ? fmt(t.packages.project, { name: p.gcProjectName }) : null]
                         .filter(Boolean)
@@ -133,6 +138,8 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
             <p><a href={L(gcPostPath())}>{t.gc.cta} →</a></p>
           </div>
         )}
+        {/* Reputation perk: level 4-5 companies, rotated daily. Hidden until one exists. */}
+        <FeaturedContributors />
 
         <SH2 no={++no} id="wins">{t.sec.wins}</SH2>
         <p>{fmt(t.wins.intro, { days: HUB_DAYS })}</p>

@@ -10,6 +10,7 @@ import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ActivateButton } from "@/components/dashboard/billing-actions";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
+import { ReputationCard } from "@/components/karma/reputation-card";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
@@ -47,6 +48,8 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
           to do next." Replaces the previous trio (stat / checklist / recommended-
           action) which were spread across the page and visually inconsistent. */}
       <ProfileCompletionCard org={org} hasActiveSub={session.hasTradeAccess} />
+
+      {!demo && <ReputationCard orgId={org?.id} audience="trade" />}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
