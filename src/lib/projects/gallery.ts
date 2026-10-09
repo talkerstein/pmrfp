@@ -3,6 +3,7 @@
  * (only trades and regions that actually have public projects), paging, and
  * when a filtered view is too thin to be indexed.
  */
+import { countryOf } from "@/lib/visitor-geo";
 
 export interface GalleryItem {
   slug: string;
@@ -27,6 +28,14 @@ export interface GalleryFilters {
   trade?: string;
   region?: string;
   company?: string;
+  /** Country-first: only projects in this country (province/state, else a "us-" region). */
+  country?: "CA" | "US";
+}
+
+/** Which country a project is in. */
+export function galleryCountry(i: Pick<GalleryItem, "province" | "regionSlug">): "CA" | "US" {
+  if (countryOf({ province: i.province }) === "US") return "US";
+  return i.regionSlug && (i.regionSlug.startsWith("us-") || i.regionSlug === "united-states") ? "US" : "CA";
 }
 
 export const GALLERY_PER_PAGE = 24;
@@ -34,12 +43,14 @@ export const GALLERY_PER_PAGE = 24;
 /** A filtered view needs at least this many projects to be worth indexing. */
 export const GALLERY_MIN_INDEXED = 3;
 
+
 export function filterGallery(items: GalleryItem[], f: GalleryFilters): GalleryItem[] {
   return items.filter(
     (i) =>
       (!f.trade || i.categorySlug === f.trade) &&
       (!f.region || i.regionSlug === f.region) &&
-      (!f.company || i.orgSlug === f.company),
+      (!f.company || i.orgSlug === f.company) &&
+      (!f.country || galleryCountry(i) === f.country),
   );
 }
 

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { provinceFirst } from "@/lib/visitor-geo";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { BookOpen, CalendarClock, ChevronDown, CircleHelp } from "lucide-react";
 import { OpeningSoon } from "@/components/forum/parts";
 import { getForumIndex, listLatestThreads, listPinnedGuides, listRecentAutoThreads, searchThreads, type AutoThread, type ForumCategory, type ThreadWithCategory } from "@/lib/forum/data";
@@ -18,6 +20,15 @@ import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { V3Body } from "@/components/v3/body";
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
+
+/** The regional channel in the visitor's order: their own province/state's forum, then their country's, then the other country's. */
+function regionalFirst(ch: string, slugs: readonly ForumCategorySlug[], visitor: { country: "CA" | "US"; province: string | null }): ForumCategorySlug[] {
+  if (ch !== "regional") return [...slugs];
+  const own = (s: string) => (s === "united-states" ? "US" : "CA") === visitor.country;
+  const home = visitor.province ? visitor.province.toLowerCase().replace(/[^a-z]+/g, "-") : null;
+  const rank = (s: string) => (s === home ? 0 : own(s) ? 1 : 2);
+  return [...slugs].sort((a, b) => rank(a) - rank(b));
+}
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: SP }): Promise<Metadata> {
   const { lang } = await params;
@@ -60,13 +71,17 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
   const v = getT("v3Pages").forum;
   const k = getT("karma");
   const o = t.org;
-  const [idx, search, latestThreads, pinnedGuides, autoThreads] = await Promise.all([
+  const [idx, search, latestThreads, pinnedGuides, allAutoThreads, visitor] = await Promise.all([
     getForumIndex(),
     runSearch(rawQ),
     listLatestThreads(40),
     listPinnedGuides(),
     listRecentAutoThreads(),
+    getVisitorCountry(),
   ]);
+  // Country-first: tender strips only carry the visitor's country's listings,
+  // their own province/state's first; the regional channel leads with theirs.
+  const autoThreads = provinceFirst(allAutoThreads.filter((x) => x.country === visitor.country), visitor.province, (x) => x.region);
   const q = t.quiet;
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => formatNumber(n, lang);
@@ -74,7 +89,7 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
 
   const cats = idx.ready ? idx.categories : [];
   const bySlug = new Map(cats.map((c) => [c.slug, c]));
-  const channels = CHANNEL_ORDER.map((ch) => ({ ch, list: FORUM_CHANNELS[ch].map((s) => bySlug.get(s)).filter((c): c is ForumCategory => Boolean(c)) })).filter((x) => x.list.length > 0);
+  const channels = CHANNEL_ORDER.map((ch) => ({ ch, list: regionalFirst(ch, FORUM_CHANNELS[ch], visitor).map((s) => bySlug.get(s)).filter((c): c is ForumCategory => Boolean(c)) })).filter((x) => x.list.length > 0);
   const totalThreads = cats.reduce((s, c) => s + c.threadCount, 0);
   const latest = [...cats].filter((c) => c.lastThread && c.lastPostAt).sort((a, b) => (b.lastPostAt ?? "").localeCompare(a.lastPostAt ?? ""))[0];
 

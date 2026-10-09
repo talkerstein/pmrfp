@@ -21,6 +21,8 @@ import { SH2, SimplePage } from "@/components/v3/simple";
 import { LevelBadge } from "@/components/karma/level-badge";
 import { FeaturedContributors } from "@/components/karma/level-stairs";
 import { packageLevels } from "@/lib/karma/data";
+import { inCountry, parseCountryParam, provinceFirst } from "@/lib/visitor-geo";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
 
 export const revalidate = 3600;
 
@@ -62,9 +64,16 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
   const day = (d: string) => formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang, { month: "short", day: "numeric", year: "numeric" });
   const sp = await searchParams;
 
-  const [rfps, categories] = await Promise.all([listRfps().catch(() => []), getCategories().catch(() => [])]);
+  // Country-first: wins and GC packages from the visitor's country only
+  // (?country=ca|us views the other), their province/state's packages first.
+  const [board, categories, visitor] = await Promise.all([
+    listRfps().catch(() => []),
+    getCategories().catch(() => []),
+    getVisitorCountry({ param: sp.country }),
+  ]);
+  const rfps = inCountry(board, visitor.country);
   const all = hubWins(rfps, winnersFromRfps(rfps, 1), { today: torontoToday() });
-  const packages = openPackages(rfps);
+  const packages = provinceFirst(openPackages(rfps), visitor.province, (p) => p.province);
   const pkgLevels = await packageLevels(packages.slice(0, 20).map((p) => p.slug));
   const totals = hubTotals(all);
   const options = hubFilterOptions(all);
@@ -81,6 +90,7 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
     const q = new URLSearchParams();
     if (tradeCat) q.set("trade", tradeCat.slug);
     if (province) q.set("province", slugify(province));
+    if (parseCountryParam(sp.country)) q.set("country", sp.country!.toLowerCase());
     if (p > 1) q.set("page", String(p));
     const qs = q.toString();
     return L(qs ? `${PATH}?${qs}` : PATH);

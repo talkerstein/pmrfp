@@ -6,6 +6,7 @@ import { localizePath, type Locale } from "@/i18n/config";
 import { formatNumber } from "@/i18n/format";
 import { ContactFormV3 } from "./contact-form";
 import { loadV3Board } from "./data";
+import { ByMarket } from "@/components/geo/by-market";
 import { V3Body } from "@/components/v3/body";
 
 /**
@@ -73,7 +74,7 @@ export async function SimplePage({
     privacy: h.footer.privacy,
     disclaimer: t.disclaimer,
   };
-  const open = board.open;
+  const open = board.byCountry;
   return (
     <V3Body>
       <div className="dark">
@@ -139,9 +140,9 @@ export async function SimplePage({
                   <ContactFormV3 title={t.noteTitle} sub={t.noteBody} again={t.writeAnother} compact />
                 </div>
               )}
-              {open != null && open > 0 && (
+              {open && open.CA.open + open.US.open > 0 && (
                 <a className="s-open lift" href={L("/rfps")}>
-                  <span><span className="n">{lang === "en" ? String(open) : formatNumber(open, lang)}</span><span className="l">{t.openCard}</span></span>
+                  <span><span className="n"><ByMarket ca={lang === "en" ? String(open.CA.open) : formatNumber(open.CA.open, lang)} us={lang === "en" ? String(open.US.open) : formatNumber(open.US.open, lang)} /></span><span className="l">{t.openCard}</span></span>
                   <span className="go">{t.browse}</span>
                 </a>
               )}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { BigTick, ROLE_PHOTO, SignupAside, SignupFrame, SignupSticky, SignupTop, Stepper } from "@/components/home-v3/signup-ui";
-import { getListCounts } from "@/lib/data/list-counts";
+import { getVisitorListCounts } from "@/lib/data/list-counts";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { billingPathForIntent } from "@/lib/billing/plan-intent";
 import { getT, setLangFrom } from "@/i18n/server";
@@ -36,7 +36,7 @@ export default async function CheckEmailPage({
   const role: Role | null = rawRole && (ROLES as readonly string[]).includes(rawRole) ? (rawRole as Role) : null;
   const seller = role === "trade" || role === "supplier" || role === "talent" || role === null;
   const pro = (role === "trade" || role === "supplier") && plan === "pro";
-  const [counts, categories, regions] = await Promise.all([getListCounts(), getCategories(), getRegions()]);
+  const [counts, categories, regions] = await Promise.all([getVisitorListCounts(), getCategories(), getRegions()]);
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => formatNumber(n, lang);
   const checkout = `/sign-in?next=${encodeURIComponent(billingPathForIntent({ plan: "pro", interval: "annual", name: "Trade Pro", priceLabel: "" }))}`;

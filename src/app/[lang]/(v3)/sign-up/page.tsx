@@ -5,7 +5,9 @@ import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { billingPathForIntent, parsePlanIntent } from "@/lib/billing/plan-intent";
 import { parseAwardRef } from "@/lib/gc/packages";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
-import { getListCounts, getOpenCountsByName } from "@/lib/data/list-counts";
+import { getVisitorListCounts, getOpenCountsByName } from "@/lib/data/list-counts";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { regionCountry } from "@/lib/visitor-geo";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
@@ -64,20 +66,24 @@ export default async function SignUpPage({
   const next = safeNextPath(rawNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? billingPathForIntent(intent) : null));
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
 
+  const { country, province } = await getVisitorCountry();
   const [google, categories, regions, counts, open] = await Promise.all([
     isGoogleAuthEnabled(),
     getCategories(),
     getRegions(),
-    getListCounts(),
-    getOpenCountsByName(),
+    getVisitorListCounts(country),
+    getOpenCountsByName(country),
   ]);
   // Busiest trades and regions first: the chips show today's open contracts.
   const trades = categories
     .map((c) => ({ slug: c.slug, name: tradeName(c.name, lang), n: open.trades[c.name] ?? 0 }))
     .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+  // Country-first: the visitor's country's regions (their province/state first), then the other country's.
+  const rank = (r: { name: string; province: string | null; country: string }) =>
+    regionCountry(r) !== country ? 2 : province && (r.province === province || r.name === province) ? 0 : 1;
   const regionChips = regions
-    .map((r) => ({ slug: r.slug, name: regionName(r.name, lang), n: open.regions[r.name] ?? 0 }))
-    .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name))
+    .map((r) => ({ slug: r.slug, name: regionName(r.name, lang), n: open.regions[r.name] ?? 0, k: rank(r) }))
+    .sort((a, b) => a.k - b.k || b.n - a.n || a.name.localeCompare(b.name))
     .map(({ slug, name }) => ({ slug, name }));
 
   return (

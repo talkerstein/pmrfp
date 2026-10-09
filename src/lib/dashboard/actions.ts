@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession } from "@/lib/access/access";
+import { isUsState } from "@/lib/geo";
 import { companyProfileSchema, rfpPostSchema } from "@/lib/validations";
 import { sendAdminNewRfp } from "@/lib/email/send";
 import {
@@ -140,6 +141,8 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
       address_line_1: d.addressLine1 || null,
       city: d.city || null,
       province: d.province || null,
+      // Country-first: keep the country in step with the province/state.
+      ...(d.province ? { country: isUsState(d.province) ? "United States" : "Canada" } : {}),
       postal_code: d.postalCode || null,
       short_description: d.shortDescription || null,
       full_description: d.fullDescription || null,

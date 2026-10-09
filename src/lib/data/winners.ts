@@ -133,8 +133,9 @@ export function winnersFromRfps(rfps: RfpListItem[], minAwards = MIN_INDEXED_AWA
   return out.sort((a, b) => b.totalValue - a.totalValue || b.awards.length - a.awards.length);
 }
 
-export async function listWinners(): Promise<Winner[]> {
-  return winnersFromRfps(await listRfps());
+/** Repeat winners; with `country`, only from that country's award notices (country-first). */
+export async function listWinners(country?: "CA" | "US"): Promise<Winner[]> {
+  return winnersFromRfps(await listRfps(country ? { country } : {}));
 }
 
 export async function getWinner(slug: string): Promise<Winner | null> {

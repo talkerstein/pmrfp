@@ -20,10 +20,12 @@ import { hasLocale, localizePath, type Locale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatNumber, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
+import { provinceFirst, regionCountry } from "@/lib/visitor-geo";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
 
 export const revalidate = 3600;
 
-type SP = { trade?: string; region?: string; company?: string; page?: string };
+type SP = { trade?: string; region?: string; company?: string; page?: string; country?: string };
 
 const PATH = "/projects";
 
@@ -39,7 +41,12 @@ function href(f: GalleryFilters, page?: number): string {
 }
 
 async function load(sp: SP) {
-  const [items, categories, regions] = await Promise.all([listPublicProjects(), getCategories(), getRegions()]);
+  const [allItems, categories, regions, visitor] = await Promise.all([listPublicProjects(), getCategories(), getRegions(), getVisitorCountry({ param: sp.country })]);
+  // Country-first: one country's projects (a picked region decides it; a
+  // company's own view shows all of its work), the visitor's province first.
+  const picked = sp.region ? regions.find((r) => r.slug === sp.region) : undefined;
+  const country = picked ? regionCountry(picked) : visitor.country;
+  const items = sp.company ? allItems : filterGallery(allItems, { country });
   const filters = cleanFilters(
     { trade: sp.trade, region: sp.region, company: sp.company },
     {
@@ -48,7 +55,7 @@ async function load(sp: SP) {
       companies: new Set(items.map((i) => i.orgSlug)),
     },
   );
-  const matches = filterGallery(items, filters);
+  const matches = provinceFirst(filterGallery(items, filters), country === visitor.country ? visitor.province : null, (i) => i.province);
   const { page, pages, slice } = paginateGallery(matches, sp.page);
   return {
     items,

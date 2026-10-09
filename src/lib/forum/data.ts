@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createReadClient } from "@/lib/supabase/read";
+import { countryOf } from "@/lib/visitor-geo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { FORUM_CATEGORY_SLUGS, type ForumCategorySlug } from "./categories";
@@ -610,7 +611,13 @@ export async function listPinnedGuides(limit = 60): Promise<ThreadWithCategory[]
   return withSlugs((data ?? []) as any[], slugs);
 }
 
-export type AutoThread = ThreadWithCategory & { kind: string | null; rfpId: string | null; deadline: string | null };
+export type AutoThread = ThreadWithCategory & {
+  kind: string | null;
+  rfpId: string | null;
+  deadline: string | null;
+  /** Country-first: the listing's country (its province/state, else the thread's region). */
+  country: "CA" | "US";
+};
 
 /**
  * Newest automatic PMRFP Board threads (real tenders, RFPs and awards) with
@@ -632,15 +639,20 @@ export async function listRecentAutoThreads(limit = 250): Promise<AutoThread[]> 
   const rfpIdOf = (r: any): string | null => (typeof r.auto_source_key === "string" && r.auto_source_key.startsWith("rfp:") ? r.auto_source_key.slice(4) : null);
   const ids = [...new Set(rows.map(rfpIdOf).filter((x): x is string => Boolean(x)))];
   const deadlines = new Map<string, string | null>();
+  const provinces = new Map<string, string | null>();
   for (let i = 0; i < ids.length; i += 150) {
-    const { data: rf } = await client.from("rfp_public").select("id,deadline").in("id", ids.slice(i, i + 150));
-    for (const r of (rf ?? []) as { id: string; deadline: string | null }[]) deadlines.set(r.id, r.deadline);
+    const { data: rf } = await client.from("rfp_public").select("id,deadline,province").in("id", ids.slice(i, i + 150));
+    for (const r of (rf ?? []) as { id: string; deadline: string | null; province: string | null }[]) {
+      deadlines.set(r.id, r.deadline);
+      provinces.set(r.id, r.province);
+    }
   }
   const byId = new Map(rows.map((r) => [r.id, r]));
   return withSlugs(rows, slugs).map((th) => {
     const r = byId.get(th.id);
     const rfpId = rfpIdOf(r);
-    return { ...th, kind: r?.auto_source ?? null, rfpId, deadline: rfpId ? deadlines.get(rfpId) ?? null : null };
+    const province = (rfpId ? provinces.get(rfpId) : null) ?? th.region;
+    return { ...th, kind: r?.auto_source ?? null, rfpId, deadline: rfpId ? deadlines.get(rfpId) ?? null : null, country: countryOf({ province }) };
   });
 }
 

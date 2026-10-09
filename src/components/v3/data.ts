@@ -2,10 +2,10 @@ import "server-only";
 import { cache } from "react";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
-import { boardStats, daysUntil, isPastContract } from "@/lib/data/fomo";
+import { boardStatsByCountry, daysUntil, isPastContract } from "@/lib/data/fomo";
 import { spotsLeft } from "@/lib/founding/config";
 import { cachedLifetimeCount } from "@/lib/founding/server";
-import { rfpMarket } from "@/lib/visitor-geo";
+import { rfpMarket, type CountryCode } from "@/lib/visitor-geo";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { regionName, tradeName } from "@/i18n/terms";
 import { fmt, formatDate, formatNumber } from "@/i18n/format";
@@ -17,9 +17,19 @@ import type { RfpListItem } from "@/lib/data/types";
  * read, and the UI hides what is null: nothing here is ever a made-up number.
  * cache() dedupes the reads between the (v3) layout and the page.
  */
+/** One country's live board numbers. */
+export interface CountryBoard {
+  open: number;
+  closing7: number;
+}
+
 export interface V3Board {
-  open: number | null;
-  closing7: number | null;
+  /**
+   * Country-first: open / closing-this-week per country, never summed. The
+   * pages are cached (ISR), so both ship and the client shows the visitor's
+   * (ByMarket / V3Sticky). Null when the board can't be read.
+   */
+  byCountry: Record<CountryCode, CountryBoard> | null;
   trades: number | null;
   regions: number | null;
   foundingLeft: number | null;
@@ -29,10 +39,14 @@ export interface V3Board {
 export const loadV3Board = cache(async (): Promise<V3Board> => {
   const [rfpsR, catsR, regionsR, soldR] = await Promise.allSettled([listAllRfpsCached(), getCategories(), getRegions(), cachedLifetimeCount()]);
   const rfps = rfpsR.status === "fulfilled" ? rfpsR.value : [];
-  const stats = rfps.length ? boardStats(rfps) : null;
+  const stats = rfps.length ? boardStatsByCountry(rfps) : null;
   return {
-    open: stats ? stats.open : null,
-    closing7: stats ? stats.closingThisWeek : null,
+    byCountry: stats
+      ? {
+          CA: { open: stats.CA.open, closing7: stats.CA.closingThisWeek },
+          US: { open: stats.US.open, closing7: stats.US.closingThisWeek },
+        }
+      : null,
     trades: catsR.status === "fulfilled" && catsR.value.length ? catsR.value.length : null,
     regions: regionsR.status === "fulfilled" && regionsR.value.length ? regionsR.value.length : null,
     foundingLeft: soldR.status === "fulfilled" && soldR.value != null ? spotsLeft(soldR.value) : null,

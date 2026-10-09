@@ -1,4 +1,6 @@
 import Link from "@/i18n/link";
+import { provinceFirst } from "@/lib/visitor-geo";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { Lock } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { listRfps } from "@/lib/data/rfps";
@@ -21,7 +23,9 @@ export default async function RfpFeedPage({ params }: { params: Promise<object> 
   const t = getT("dash").rfps;
   const session = await requireRole(["trade"]);
   const demo = isDemoMode();
-  const rfps = await listRfps();
+  // Country-first: the company's country only, its own province/state first.
+  const { country, province } = await getVisitorCountry({ session });
+  const rfps = provinceFirst(await listRfps({ country }), province, (r) => r.province);
   const locked = !session.hasTradeAccess && !demo;
 
   return (

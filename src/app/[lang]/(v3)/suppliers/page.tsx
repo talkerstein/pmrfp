@@ -4,7 +4,9 @@ import { V3PriceParts } from "@/components/home-v3/chrome";
 import { JsonLd, itemListSchema } from "@/lib/seo/jsonld";
 import { listVendors } from "@/lib/data/directory";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
-import { getListCounts } from "@/lib/data/list-counts";
+import { getVisitorListCounts } from "@/lib/data/list-counts";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { provinceFirst, regionCountry, regionsInCountry } from "@/lib/visitor-geo";
 import { tradePhotoForName } from "@/lib/photos";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
@@ -35,19 +37,25 @@ export default async function SuppliersPage({
   const sp = await searchParams;
   const hasFilters = Boolean(sp.category || sp.region || sp.propertyType || sp.verified || sp.q);
   const sort = sp.sort === "alpha" ? "alpha" : "featured";
-  const [suppliers, allSuppliers, categories, regions, propertyTypes, counts] = await Promise.all([
-    listVendors({ orgType: "supplier", category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: Boolean(sp.verified), q: sp.q, sort }),
-    hasFilters ? listVendors({ orgType: "supplier" }) : Promise.resolve(null),
+  // Country-first: one country's suppliers (a picked region decides it), the visitor's province/state first.
+  const allRegions = await getRegions();
+  const pickedRegion = sp.region ? allRegions.find((r) => r.slug === sp.region) : undefined;
+  const where = await getVisitorCountry({ param: sp.country });
+  const country = pickedRegion ? regionCountry(pickedRegion) : where.country;
+  const regions = regionsInCountry(allRegions, country);
+  const [found, allSuppliers, categories, propertyTypes, counts] = await Promise.all([
+    listVendors({ orgType: "supplier", category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: Boolean(sp.verified), q: sp.q, sort, country }),
+    hasFilters ? listVendors({ orgType: "supplier", country }) : Promise.resolve(null),
     getCategories(),
-    getRegions(),
     getPropertyTypes(),
-    getListCounts(),
+    getVisitorListCounts(country),
   ]);
+  const suppliers = sort === "alpha" ? found : provinceFirst(found, country === where.country ? where.province : null, (v) => v.province);
   const pool = allSuppliers ?? suppliers;
   const feat = suppliers.find((v) => v.featured) ?? null;
   const rows = suppliers.filter((v) => v.slug !== feat?.slug);
   const { page, pages, slice } = paginate(rows, sp.page);
-  const keep = { category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: sp.verified, sort: sp.sort === "alpha" ? "alpha" : undefined };
+  const keep = { category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: sp.verified, sort: sp.sort === "alpha" ? "alpha" : undefined, country: sp.country };
   const n = (x: number) => formatNumber(x, lang);
   const serves = (regs: string[]) =>
     regs.length ? fmt(t.serves, { where: regs.length > 2 ? `${regionName(regs[0], lang)} + ${regs.length - 1}` : regs.map((r) => regionName(r, lang)).join(", ") }) : null;

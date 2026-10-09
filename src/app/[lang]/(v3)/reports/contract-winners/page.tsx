@@ -9,6 +9,7 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatNumber } from "@/i18n/format";
 import { SH2, SimplePage } from "@/components/v3/simple";
+import { ByMarket } from "@/components/geo/by-market";
 
 export const revalidate = 86400;
 
@@ -64,6 +65,8 @@ export default async function MonthlyReportsIndex({ params }: { params: Promise<
         lead={t.index.lead}
       >
         <SH2 no={1}>{t.crumbIndex}</SH2>
+        {/* Country-first: say plainly that these are Canadian reports to a U.S. visitor. */}
+        <ByMarket ca={null} us={<p className="s-note">{t.index.usNote}</p>} />
         {rows.length ? (
           <div className="s-dtw">
             <table className="s-dt">

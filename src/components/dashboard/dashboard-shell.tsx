@@ -4,6 +4,7 @@ import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { Logo } from "@/components/logo";
 import { InstallApp, type InstallAudience } from "@/components/pwa/install-app";
 import { signOutAction } from "@/lib/auth/actions";
+import { AccountCountrySync } from "@/components/geo/account-country-sync";
 import { SITE } from "@/lib/site";
 import { getDictionary, type Messages } from "@/i18n/dictionaries";
 import { getLang } from "@/i18n/server";
@@ -64,10 +65,13 @@ function audienceFor(nav: readonly NavItem[]): InstallAudience {
 export function DashboardShell({
   nav,
   area,
+  accountCountry = null,
   children,
 }: {
   nav: readonly NavItem[];
   area: string;
+  /** The company's location as the account cookie value ("CA-ON"), so public pages follow it. */
+  accountCountry?: string | null;
   children: React.ReactNode;
 }) {
   const audience = audienceFor(nav);
@@ -81,6 +85,7 @@ export function DashboardShell({
   if (lang !== "en") for (const [href, key] of Object.entries(TAB_KEY)) tabLabels[href] = t.tabs[key];
   return (
     <div className="flex min-h-screen bg-background">
+      <AccountCountrySync value={accountCountry} />
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar p-4 md:flex print:hidden">
         <Link href="/" className="mb-6 flex items-center px-2" aria-label={t.home}>
           <Logo className="text-teal-300" />

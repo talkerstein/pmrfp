@@ -7,6 +7,8 @@ import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
 import { buildDigests, digestSubject, type DigestRfp } from "@/lib/alerts/digest";
 import { displayTitle } from "@/lib/tenders/title";
 import { sponsorEmailBlock } from "@/lib/sponsors/email";
+import { listingCountry, orgCountries, regionCountryMap } from "@/lib/alerts/country";
+import type { CountryCode } from "@/lib/visitor-geo";
 import {
   awardLine,
   recentAwardsByUser,
@@ -25,6 +27,7 @@ interface RfpRow {
   summary: string | null;
   deadline: string | null;
   region_id: string | null;
+  province: string | null;
   rfp_categories: { category_id: string; trade_categories: { name: string } | null }[];
 }
 type Pair = Record<string, string>;
@@ -57,7 +60,7 @@ export async function GET(request: Request) {
 
   const { data: rfpRows } = await supabase
     .from("rfp_posts")
-    .select("id,title,slug,summary,deadline,region_id,source_type, rfp_categories(category_id, trade_categories(name))")
+    .select("id,title,slug,summary,deadline,region_id,province,source_type, rfp_categories(category_id, trade_categories(name))")
     .eq("status", "published")
     .gte("published_at", since)
     // Never alert on something already closed — incl. past public contracts,
@@ -75,13 +78,14 @@ export async function GET(request: Request) {
     supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", paidOrgIds),
     supabase.from("organization_regions").select("organization_id,region_id").in("organization_id", paidOrgIds),
     supabase.from("organization_members").select("organization_id,user_id").in("organization_id", paidOrgIds),
-    supabase.from("regions").select("id,name,parent_id"),
+    supabase.from("regions").select("id,name,parent_id,country"),
     // Plain-English summaries from the bid checklist, when they exist (an
     // error here — e.g. the table isn't migrated yet — just means none).
     supabase.from("rfp_bid_checks").select("rfp_id,result").in("rfp_id", rows.map((r) => r.id)).not("result", "is", null),
   ]);
 
-  const tree = (regionRows ?? []) as (RegionNode & { name: string })[];
+  const tree = (regionRows ?? []) as (RegionNode & { name: string; country: string | null })[];
+  const countryByRegion = regionCountryMap(tree);
   const regionName = new Map(tree.map((r) => [r.id, r.name]));
   const plain = new Map(
     ((checks ?? []) as { rfp_id: string; result: { plainSummary?: string } | null }[]).map((c) => [
@@ -99,6 +103,7 @@ export async function GET(request: Request) {
     categoryIds: r.rfp_categories.map((c) => c.category_id),
     categoryNames: r.rfp_categories.map((c) => c.trade_categories?.name ?? ""),
     summary: plain.get(r.id) ?? r.summary,
+    country: listingCountry(r, countryByRegion),
   }));
 
   const userIds = [...new Set(((members ?? []) as Pair[]).map((m) => m.user_id))];
@@ -114,6 +119,7 @@ export async function GET(request: Request) {
       .in("user_id", ids),
   ]);
 
+  const ownRegions = group((orgRegs ?? []) as Pair[], "organization_id", "region_id");
   const membership = {
     paidOrgIds,
     catsByOrg: group((orgCats ?? []) as Pair[], "organization_id", "category_id"),
@@ -124,6 +130,10 @@ export async function GET(request: Request) {
       ]),
     ),
     usersByOrg: group((members ?? []) as Pair[], "organization_id", "user_id"),
+    // Country-first: a company only gets listings from the countries it serves.
+    countriesByOrg: new Map(
+      paidOrgIds.map((org) => [org, orgCountries({}, ownRegions.get(org) ?? [], countryByRegion)]),
+    ),
   };
   const digests = buildDigests({
     rfps,
@@ -148,7 +158,7 @@ export async function GET(request: Request) {
   // "Recently awarded near you": award notices that landed in the same window.
   // Only rides along with a digest that's going out anyway — never its own email.
   const awardsByUser = digests.length
-    ? await recentAwards(supabase, { since, today, ...membership })
+    ? await recentAwards(supabase, { since, today, countryByRegion, ...membership })
     : new Map<string, DigestAward[]>();
 
   if (dry) {
@@ -213,11 +223,13 @@ async function recentAwards(
     catsByOrg: Map<string, Set<string>>;
     regionsByOrg: Map<string, Set<string>>;
     usersByOrg: Map<string, Set<string>>;
+    countriesByOrg: Map<string, Set<CountryCode>>;
+    countryByRegion: Map<string, CountryCode>;
   },
 ): Promise<Map<string, DigestAward[]>> {
   const { data, error } = await supabase
     .from("rfp_posts")
-    .select("id,title,slug,summary,deadline,region_id,source_type, rfp_categories(category_id, trade_categories(slug))")
+    .select("id,title,slug,summary,deadline,region_id,province,source_type, rfp_categories(category_id, trade_categories(slug))")
     .eq("status", "published")
     .eq("source_type", "public_source")
     .gte("created_at", opts.since)
@@ -228,12 +240,13 @@ async function recentAwards(
     rfp_categories: { category_id: string; trade_categories: { slug: string } | null }[];
   })[];
   const awards = rows
-    .map((r) =>
-      toDigestAward(
+    .map((r): DigestAward | null => {
+      const a = toDigestAward(
         { ...r, categories: r.rfp_categories.map((c) => ({ id: c.category_id, slug: c.trade_categories?.slug ?? "" })) },
         opts.today,
-      ),
-    )
+      );
+      return a ? { ...a, country: listingCountry(r as { region_id: string | null; province?: string | null }, opts.countryByRegion) } : null;
+    })
     .filter((a): a is DigestAward => a !== null);
   return recentAwardsByUser({ awards, ...opts });
 }

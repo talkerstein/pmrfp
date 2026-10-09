@@ -20,6 +20,8 @@ export interface VendorListItem {
   regions: string[]; // display names
   /** Public company reputation level (1-5), null when unknown. Never the score. */
   level?: number | null;
+  /** Countries the company works in (its province/state + its service regions). Country-first lists filter on it. */
+  countries?: ("CA" | "US")[];
 }
 
 export interface VendorDetail extends VendorListItem {
@@ -113,9 +115,13 @@ export interface VendorFilters {
   sort?: "featured" | "recent" | "alpha";
   /** Which listing type to return. Defaults to trade companies. */
   orgType?: "trade_company" | "supplier";
+  /** Country-first: only companies that work in this country. */
+  country?: "CA" | "US";
 }
 
 export interface RfpFilters {
+  /** Country-first: only listings in this country (from the province/state). */
+  country?: "CA" | "US";
   category?: string;
   region?: string;
   propertyType?: string;

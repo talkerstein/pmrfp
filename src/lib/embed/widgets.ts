@@ -145,3 +145,11 @@ export function outLink(base: string, path: string, kind: WidgetKind): string {
   url.searchParams.set("utm_campaign", kind);
   return url.toString();
 }
+
+/** Feed widget region segment → a whole country ("all" / "canada" / "ca" → CA, "united-states" / "us" → US), or null for a region slug. */
+export function embedFeedCountry(region: string): "CA" | "US" | null {
+  const r = region.toLowerCase();
+  if (r === "all" || r === "canada" || r === "ca") return "CA";
+  if (r === "united-states" || r === "us" || r === "usa") return "US";
+  return null;
+}

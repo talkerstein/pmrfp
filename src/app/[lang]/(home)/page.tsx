@@ -14,7 +14,7 @@ import { monthlyAwards, reportMonths } from "@/lib/data/monthly-winners";
 import { monthLabel, torontoToday } from "@/lib/data/monthly-winners-load";
 import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
-import { rfpMarket } from "@/lib/visitor-geo";
+import { inCountry, regionCountry, type CountryCode } from "@/lib/visitor-geo";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { spotsLeft } from "@/lib/founding/config";
 import { cachedLifetimeCount } from "@/lib/founding/server";
@@ -75,9 +75,11 @@ function dollars(n: number, lang: Locale): string {
   return lang === "fr" ? `${s} $` : `$${s}`;
 }
 
-async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; live: string[]; fallback: string[] }> {
+async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs: V3Data | null; live: string[]; fallback: string[] }> {
   const live: string[] = [];
   const fallback: string[] = [];
+  const liveOut = live;
+  const fallbackOut = fallback;
   const data: V3Data = structuredClone(V3_FALLBACK);
   const trade = (name: string) => tradeName(name, lang);
   const region = (name: string) => regionName(name, lang);
@@ -138,156 +140,183 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; live: 
   // Homepage links to trade × city pages and fresh tenders, so Google discovers
   // them from the strongest page instead of only via the sitemap.
   const combos = combosR.status === "fulfilled" ? combosR.value : [];
-  data.browse.combos = combos
-    .filter((c) => c.open.length > 0)
-    .sort((a, b) => b.open.length - a.open.length || a.category.name.localeCompare(b.category.name))
-    .slice(0, 16)
-    .map((c) => ({ href: `/trades/${c.category.slug}/${c.region.slug}`, label: `${trade(c.category.name)} · ${region(c.region.name)}`, n: c.open.length }));
 
-  const rfps = rfpsR.status === "fulfilled" ? rfpsR.value : null;
-  if (!rfps?.length) {
+  const all = rfpsR.status === "fulfilled" ? rfpsR.value : null;
+  if (!all?.length) {
     fallback.push("board");
-    return { data, live, fallback };
+    data.browse.combos = browseCombos("CA");
+    return { data, dataUs: null, live, fallback };
   }
 
-  data.browse.newest = rfps
-    .filter((r) => isIndexableRfp(r) && (daysUntil(r.deadline) ?? -1) >= 1 && !isFrench(r))
-    // No posted date on list items; the latest deadlines are the freshest notices.
-    .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? ""))
-    .slice(0, 10)
-    .map((r) => ({ href: `/rfps/${r.slug}`, title: r.title, city: r.city }));
+  // Country-first: the page is cached (ISR), so it ships one complete board per
+  // country and the client shows the visitor's (account > CA|US switch > IP).
+  // Nothing on it ever adds Canada and the U.S. together. The U.S. board has no
+  // design fallback: a block with no U.S. data is left empty (and hidden).
+  const dataUs: V3Data = structuredClone(data);
+  Object.assign(dataUs, {
+    open: 0, closing7: 0, closingCa: [], closingUs: [], ticker: [], toast: [], alerts: [], awards: [],
+    winners: { ...dataUs.winners, repeat: 0, contracts: 0, value: "", top: [], most: { name: "", n: 0 }, report: undefined },
+    browse: { combos: [], newest: [] },
+  });
+  dataUs.big = { ...dataUs.big, n: 0 };
+  dataUs.tiles = dataUs.tiles.map((x) => ({ ...x, n: 0 }));
+  dataUs.chips = [];
+  fillBoard(data, inCountry(all, "CA"), "CA");
+  fillBoard(dataUs, inCountry(all, "US"), "US");
+  return { data, dataUs, live, fallback };
 
-  const stats = boardStats(rfps);
-  data.open = stats.open;
-  data.closing7 = stats.closingThisWeek;
-  live.push("board");
-
-  // Open counts per trade (by display name, as the board labels them).
-  const openRfps = rfps.filter((r) => r.status === "open");
-  const counts = new Map<string, number>();
-  for (const r of openRfps) for (const c of r.categories) counts.set(c, (counts.get(c) ?? 0) + 1);
-  const slugOf = new Map((cats ?? []).map((c) => [c.name, c.slug]));
-  const tradeHref = (name: string) => (slugOf.get(name) ? `/trades/${slugOf.get(name)}` : "/trades");
-  data.big = { name: trade(BIG.name), n: counts.get(BIG.name) ?? 0, img: BIG.img, href: tradeHref(BIG.name) };
-  data.tiles = TILES.map((x) => ({ ...x, name: trade(x.name), n: counts.get(x.name) ?? 0, href: tradeHref(x.name) }));
-  const shown = new Set([BIG.name, ...TILES.map((x) => x.name)]);
-  data.chips = [...counts]
-    .filter(([name, n]) => !shown.has(name) && n > 0)
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, 9)
-    .map(([name, n]) => ({ name: trade(name), n, href: tradeHref(name) }));
-  if (cats?.length) {
-    data.tradeOptions = [...cats]
-      .sort((a, b) => (counts.get(b.name) ?? 0) - (counts.get(a.name) ?? 0) || a.name.localeCompare(b.name))
-      .map((c) => ({ value: c.slug, label: trade(c.name) }));
-  }
-  if (regions?.length) {
-    const has = new Set(regions.map((r) => r.slug));
-    data.areaOptions = data.areaOptions.filter((o) => !o.region || has.has(o.region));
+  function browseCombos(country: CountryCode) {
+    return combos
+      .filter((c) => c.open.length > 0 && regionCountry(c.region) === country)
+      .sort((a, b) => b.open.length - a.open.length || a.category.name.localeCompare(b.category.name))
+      .slice(0, 16)
+      .map((c) => ({ href: `/trades/${c.category.slug}/${c.region.slug}`, label: `${trade(c.category.name)} · ${region(c.region.name)}`, n: c.open.length }));
   }
 
-  // Still biddable (closes tomorrow or later), soonest first, English ahead of
-  // SEAO's French notices, spread across regions.
-  const closingSoon = spread(
-    openRfps
-      .filter((r) => (daysUntil(r.deadline) ?? -1) >= 1)
-      .sort((a, b) => Number(isFrench(a)) - Number(isFrench(b)) || (a.deadline ?? "").localeCompare(b.deadline ?? "")),
-    (r) => r.regionName ?? "",
-  );
-  const ca = closingSoon.filter((r) => rfpMarket(r) === "CA");
-  const us = closingSoon.filter((r) => rfpMarket(r) === "US");
-  if (ca.length) data.closingCa = ca.slice(0, 4).map(closingCard);
-  data.closingUs = us.slice(0, 4).map(closingCard);
-  const tickerPool = closingSoon.filter((r) => !isFrench(r)).slice(0, 7);
-  if (tickerPool.length) {
-    data.ticker = tickerPool.map((r) => ({ tag: tag(r), title: r.title, when: fmt(t.closing.closes, { date: short(r.deadline) }), href: `/rfps/${r.slug}` }));
-  }
+  /** One country's board into `data`; Canada's run also reports live/fallback. */
+  function fillBoard(data: V3Data, rfps: RfpListItem[], country: CountryCode) {
+    const primary = country === "CA";
+    const live: string[] = primary ? liveOut : [];
+    const fallback: string[] = primary ? fallbackOut : [];
+    data.browse.combos = browseCombos(country);
+    if (!rfps.length) return;
 
-  // Trade Pro example: the busiest trade's next three closers.
-  const pool = closingSoon.filter((r) => !isFrench(r) && r.categories[0]);
-  const byTrade = new Map<string, number>();
-  for (const r of pool) byTrade.set(r.categories[0], (byTrade.get(r.categories[0]) ?? 0) + 1);
-  const busiest = [...byTrade].sort((a, b) => b[1] - a[1])[0]?.[0];
-  if (busiest) {
-    const rows = pool.filter((r) => r.categories[0] === busiest).slice(0, 3);
-    if (rows.length) {
-      data.alertTrade = trade(busiest);
-      data.alerts = rows.map((r) => ({ where: `${trade(busiest)} · ${place(r)}`, title: r.title, href: `/rfps/${r.slug}` }));
+    data.browse.newest = rfps
+      .filter((r) => isIndexableRfp(r) && (daysUntil(r.deadline) ?? -1) >= 1 && !isFrench(r))
+      // No posted date on list items; the latest deadlines are the freshest notices.
+      .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? ""))
+      .slice(0, 10)
+      .map((r) => ({ href: `/rfps/${r.slug}`, title: r.title, city: r.city }));
+
+    const stats = boardStats(rfps);
+    data.open = stats.open;
+    data.closing7 = stats.closingThisWeek;
+    live.push("board");
+
+    // Open counts per trade (by display name, as the board labels them).
+    const openRfps = rfps.filter((r) => r.status === "open");
+    const counts = new Map<string, number>();
+    for (const r of openRfps) for (const c of r.categories) counts.set(c, (counts.get(c) ?? 0) + 1);
+    const slugOf = new Map((cats ?? []).map((c) => [c.name, c.slug]));
+    const tradeHref = (name: string) => (slugOf.get(name) ? `/trades/${slugOf.get(name)}` : "/trades");
+    data.big = { name: trade(BIG.name), n: counts.get(BIG.name) ?? 0, img: BIG.img, href: tradeHref(BIG.name) };
+    data.tiles = TILES.map((x) => ({ ...x, name: trade(x.name), n: counts.get(x.name) ?? 0, href: tradeHref(x.name) }));
+    const shown = new Set([BIG.name, ...TILES.map((x) => x.name)]);
+    data.chips = [...counts]
+      .filter(([name, n]) => !shown.has(name) && n > 0)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 9)
+      .map(([name, n]) => ({ name: trade(name), n, href: tradeHref(name) }));
+    if (cats?.length) {
+      data.tradeOptions = [...cats]
+        .sort((a, b) => (counts.get(b.name) ?? 0) - (counts.get(a.name) ?? 0) || a.name.localeCompare(b.name))
+        .map((c) => ({ value: c.slug, label: trade(c.name) }));
     }
-  }
+    if (regions?.length) {
+      const has = new Set(regions.map((r) => r.slug));
+      data.areaOptions = data.areaOptions.filter((o) => !o.region || has.has(o.region));
+    }
 
-  // Contract winners: the same numbers as /contract-winners.
-  const winners = winnersFromRfps(rfps);
-  if (winners.length) {
-    const { contracts, value } = awardTotals(winners);
-    const most = [...winners].sort((a, b) => b.awards.length - a.awards.length)[0];
-    data.winners = {
-      repeat: winners.length,
-      contracts,
-      value: compactDollars(value, lang),
-      top: winners.slice(0, 8).map((w) => ({
-        name: w.name,
-        n: w.awards.length,
-        value: compactDollars(w.totalValue, lang),
-        weight: Math.max(1, w.totalValue / 1e6),
-        href: `/contract-winners/${w.slug}`,
-        most: w.slug === most.slug,
-      })),
-      most: { name: most.name, n: most.awards.length },
-    };
-    const latest = reportMonths(monthlyAwards(rfps), torontoToday())[0];
-    if (latest) data.winners.report = { month: monthLabel(latest.month, lang), href: `/reports/contract-winners/${latest.month}` };
-    live.push("winners");
-  } else fallback.push("winners");
+    // Still biddable (closes tomorrow or later), soonest first, English ahead of
+    // SEAO's French notices, spread across regions.
+    const closingSoon = spread(
+      openRfps
+        .filter((r) => (daysUntil(r.deadline) ?? -1) >= 1)
+        .sort((a, b) => Number(isFrench(a)) - Number(isFrench(b)) || (a.deadline ?? "").localeCompare(b.deadline ?? "")),
+      (r) => r.regionName ?? "",
+    );
+    // closingCa / closingUs both hold this country's cards (the component picks by market).
+    if (closingSoon.length || !primary) data.closingCa = closingSoon.slice(0, 4).map(closingCard);
+    data.closingUs = closingSoon.slice(0, 4).map(closingCard);
+    const tickerPool = closingSoon.filter((r) => !isFrench(r)).slice(0, 7);
+    if (tickerPool.length) {
+      data.ticker = tickerPool.map((r) => ({ tag: tag(r), title: r.title, when: fmt(t.closing.closes, { date: short(r.deadline) }), href: `/rfps/${r.slug}` }));
+    }
 
-  // Just awarded: most recent award notices with a winner and an amount, one per source.
-  const awards = spread(
-    rfps
-      .filter((r) => {
-        if (!isPastContract(r)) return false;
-        const a = parseAward(r.summary);
-        return Boolean(a.winner && a.amount);
-      })
-      .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? "")),
-    (r) => r.slug.match(/-(cba|tora|nsa|qca)-/)?.[1] ?? "",
-  ).slice(0, 3);
-  if (awards.length) {
-    data.awards = awards.map((r) => {
-      const a = parseAward(r.summary);
-      return {
-        trade: r.categories[0] ? trade(r.categories[0]) : "",
-        value: dollars(a.amount ?? 0, lang),
-        title: r.title,
-        buyer: publicTenderSource(r.slug).badge.replace(/^Past public contract · /, ""),
-        winner: a.winner ?? "",
-        date: short(r.deadline),
-        href: `/rfps/${r.slug}`,
+    // Trade Pro example: the busiest trade's next three closers.
+    const pool = closingSoon.filter((r) => !isFrench(r) && r.categories[0]);
+    const byTrade = new Map<string, number>();
+    for (const r of pool) byTrade.set(r.categories[0], (byTrade.get(r.categories[0]) ?? 0) + 1);
+    const busiest = [...byTrade].sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (busiest) {
+      const rows = pool.filter((r) => r.categories[0] === busiest).slice(0, 3);
+      if (rows.length) {
+        data.alertTrade = trade(busiest);
+        data.alerts = rows.map((r) => ({ where: `${trade(busiest)} · ${place(r)}`, title: r.title, href: `/rfps/${r.slug}` }));
+      }
+    }
+
+    // Contract winners: the same numbers as /contract-winners.
+    const winners = winnersFromRfps(rfps);
+    if (winners.length) {
+      const { contracts, value } = awardTotals(winners);
+      const most = [...winners].sort((a, b) => b.awards.length - a.awards.length)[0];
+      data.winners = {
+        repeat: winners.length,
+        contracts,
+        value: compactDollars(value, lang),
+        top: winners.slice(0, 8).map((w) => ({
+          name: w.name,
+          n: w.awards.length,
+          value: compactDollars(w.totalValue, lang),
+          weight: Math.max(1, w.totalValue / 1e6),
+          href: `/contract-winners/${w.slug}`,
+          most: w.slug === most.slug,
+        })),
+        most: { name: most.name, n: most.awards.length },
       };
-    });
-    live.push("awards");
-  } else fallback.push("awards");
+      const latest = reportMonths(monthlyAwards(rfps), torontoToday())[0];
+      if (latest) data.winners.report = { month: monthLabel(latest.month, lang), href: `/reports/contract-winners/${latest.month}` };
+      live.push("winners");
+    } else fallback.push("winners");
 
-  // Toast: next closer, another open tender, latest award.
-  const toast: V3Data["toast"] = [];
-  const first = ca[0] ?? closingSoon[0];
-  if (first) {
-    const d = daysUntil(first.deadline) ?? 0;
-    toast.push({ tag: d <= 1 ? t.toastTags.closesTomorrow : fmt(t.toastTags.closesOn, { date: short(first.deadline) }), color: "#8A3F06", title: `${first.title} · ${place(first)}` });
-  }
-  const second = tickerPool.find((r) => r.slug !== first?.slug);
-  if (second) toast.push({ tag: fmt(t.toastTags.openNow, { date: short(second.deadline) }), color: "#15803D", title: `${second.title} · ${place(second)}` });
-  if (data.awards[0] && awards.length) {
-    const w = data.awards[0];
-    toast.push({ tag: fmt(t.toastTags.awarded, { date: w.date, value: w.value }), color: "#282B59", title: fmt(t.toastTags.wonBy, { title: w.title, winner: w.winner }) });
-  }
-  if (toast.length) data.toast = toast;
+    // Just awarded: most recent award notices with a winner and an amount, one per source.
+    const awards = spread(
+      rfps
+        .filter((r) => {
+          if (!isPastContract(r)) return false;
+          const a = parseAward(r.summary);
+          return Boolean(a.winner && a.amount);
+        })
+        .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? "")),
+      (r) => r.slug.match(/-(cba|tora|nsa|qca)-/)?.[1] ?? "",
+    ).slice(0, 3);
+    if (awards.length) {
+      data.awards = awards.map((r) => {
+        const a = parseAward(r.summary);
+        return {
+          trade: r.categories[0] ? trade(r.categories[0]) : "",
+          value: dollars(a.amount ?? 0, lang),
+          title: r.title,
+          buyer: publicTenderSource(r.slug).badge.replace(/^Past public contract · /, ""),
+          winner: a.winner ?? "",
+          date: short(r.deadline),
+          href: `/rfps/${r.slug}`,
+        };
+      });
+      live.push("awards");
+    } else fallback.push("awards");
 
-  return { data, live, fallback };
+    // Toast: next closer, another open tender, latest award.
+    const toast: V3Data["toast"] = [];
+    const first = closingSoon[0];
+    if (first) {
+      const d = daysUntil(first.deadline) ?? 0;
+      toast.push({ tag: d <= 1 ? t.toastTags.closesTomorrow : fmt(t.toastTags.closesOn, { date: short(first.deadline) }), color: "#8A3F06", title: `${first.title} · ${place(first)}` });
+    }
+    const second = tickerPool.find((r) => r.slug !== first?.slug);
+    if (second) toast.push({ tag: fmt(t.toastTags.openNow, { date: short(second.deadline) }), color: "#15803D", title: `${second.title} · ${place(second)}` });
+    if (data.awards[0] && awards.length) {
+      const w = data.awards[0];
+      toast.push({ tag: fmt(t.toastTags.awarded, { date: w.date, value: w.value }), color: "#282B59", title: fmt(t.toastTags.wonBy, { title: w.title, winner: w.winner }) });
+    }
+    if (toast.length) data.toast = toast;
+  }
 }
 
 export default async function HomePage({ params }: { params: Promise<object> }) {
   const lang = await setLangFrom(params);
   const t = getT("homeV3");
-  const { data, live, fallback } = await load(lang, t);
-  return <HomeV3 data={data} t={t} lang={lang} dataSources={{ live, fallback }} />;
+  const { data, dataUs, live, fallback } = await load(lang, t);
+  return <HomeV3 data={data} dataUs={dataUs} where={getT("common").market.where} t={t} lang={lang} dataSources={{ live, fallback }} />;
 }

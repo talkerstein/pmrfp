@@ -5,7 +5,9 @@ import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { awardTotals, listWinners } from "@/lib/data/winners";
 import { compactDollars } from "@/lib/data/fomo";
 import { getCategories } from "@/lib/data/taxonomy";
-import { getListCounts } from "@/lib/data/list-counts";
+import { getVisitorListCounts } from "@/lib/data/list-counts";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { parseCountryParam } from "@/lib/visitor-geo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
 import { getT, setLangFrom } from "@/i18n/server";
@@ -38,7 +40,10 @@ export default async function ContractWinnersPage({
   const t = all.winners;
   const crumbs = getT("partners").crumbs;
   const sp = await searchParams;
-  const [winners, categories, counts] = await Promise.all([listWinners(), getCategories(), getListCounts()]);
+  // Country-first: winners from the visitor's country's award notices only
+  // (Canadian notices today, so a U.S. visitor sees the empty state, never Canada's).
+  const { country } = await getVisitorCountry({ param: sp.country });
+  const [winners, categories, counts] = await Promise.all([listWinners(country), getCategories(), getVisitorListCounts(country)]);
   const { contracts, value } = awardTotals(winners);
 
   const sort: Sort = sp.sort === "contracts" || sp.sort === "recent" ? sp.sort : "value";
@@ -61,7 +66,7 @@ export default async function ContractWinnersPage({
   // Rank is by total value, as on the board, whatever the sort.
   const rank = new Map(winners.map((w, i) => [w.slug, i + 1]));
   const { page, pages, slice } = paginate(filtered, sp.page);
-  const keep = { trade: sp.trade, sort: sort === "value" ? undefined : sort };
+  const keep = { trade: sp.trade, sort: sort === "value" ? undefined : sort, country: parseCountryParam(sp.country) ? sp.country : undefined };
   const n = (x: number) => formatNumber(x, lang);
   const filteredView = Boolean(trade || q);
   const proHref = signUpHrefForPlan("pro", "monthly");

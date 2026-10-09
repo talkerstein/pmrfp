@@ -12,6 +12,7 @@ import {
 import type { RfpDetail, RfpFilters, RfpListItem } from "@/lib/data/types";
 import { displayTitle } from "@/lib/tenders/title";
 import { getTaxonomyRows } from "./taxonomy";
+import { countryOf } from "@/lib/visitor-geo";
 
 function demoToList(r: DemoRfp): RfpListItem {
   const today = new Date().toISOString().slice(0, 10);
@@ -56,6 +57,7 @@ function demoToDetail(r: DemoRfp): RfpDetail {
 export async function listRfps(filters: RfpFilters = {}, options: { photos?: boolean } = {}): Promise<RfpListItem[]> {
   if (!isSupabaseConfigured()) {
     let out = [...DEMO_RFPS];
+    if (filters.country) out = out.filter((r) => countryOf(r) === filters.country);
     if (filters.category) out = out.filter((r) => r.category === filters.category);
     if (filters.region) out = out.filter((r) => r.region === filters.region);
     if (filters.propertyType) out = out.filter((r) => r.propertyType === filters.propertyType);
@@ -109,6 +111,7 @@ export async function listRfps(filters: RfpFilters = {}, options: { photos?: boo
     gcProjectName: r.gc_project_name ?? null,
     awardedRfpId: r.awarded_rfp_id ?? null,
   }));
+  if (filters.country) mapped = mapped.filter((r) => countryOf(r) === filters.country);
   if (filters.region) {
     const name = regionSlugName.get(filters.region);
     mapped = mapped.filter((r) => r.regionName === name);

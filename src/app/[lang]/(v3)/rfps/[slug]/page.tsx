@@ -134,7 +134,8 @@ export default async function RfpDetailPage({
   let regionMatchCount = 0;
   let totalOpenCount = 0;
   if (!showFull) {
-    const counts = await getOpenRfpCounts(teaser.regionName, teaser.slug);
+    // Country-first: "N other open contracts" counts the listing's own country only.
+    const counts = await getOpenRfpCounts(teaser.regionName, teaser.slug, rfpMarket(teaser));
     totalOpenCount = counts.totalOpen;
     regionMatchCount = counts.regionMatchCount;
   }
@@ -169,11 +170,13 @@ export default async function RfpDetailPage({
     <BidChecklist check={bidCheck} locked={!showFull} proHref={upgradeHref} translated={isPublicTender && tenderSource.key === "seao"} />
   ) : null;
   // The board (cached): "the next one" on award pages, similar open RFPs everywhere.
-  const [boardRfps, categories, regions] = await Promise.all([
+  const [wholeBoard, categories, regions] = await Promise.all([
     listAllRfpsCached().catch(() => [] as RfpListItem[]),
     getCategories().catch(() => []),
     getRegions().catch(() => []),
   ]);
+  // Country-first: similar listings, winners and counts from the listing's own country only.
+  const boardRfps = wholeBoard.filter((r) => rfpMarket(r) === rfpMarket(teaser));
   const sameTrade = (r: RfpListItem) => teaser.categories.some((c) => r.categories.includes(c));
   const similarOpen = boardRfps.filter((r) => r.status === "open" && sameTrade(r)).length;
   const similar = boardRfps

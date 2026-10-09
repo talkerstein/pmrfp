@@ -6,6 +6,7 @@ import { sendTenderDigest } from "@/lib/email/send";
 import { unsubscribeUrl } from "@/lib/email/unsubscribe";
 import { displayTitle } from "@/lib/tenders/title";
 import { sponsorEmailBlock } from "@/lib/sponsors/email";
+import { freeDigestMatches, orgCountries, regionCountryMap } from "@/lib/alerts/country";
 
 export const maxDuration = 60;
 
@@ -26,6 +27,8 @@ export const maxDuration = 60;
  *  - Skips anyone with notification_preferences new_rfps='off' or email off,
  *    and every org with an active/comped subscription.
  *  - Caps recipients per run.
+ *  - Country-first: a company only hears about tenders in the country it
+ *    works in (lib/alerts/country), never the other side of the border.
  * `?dry=1` reports who would get what without sending or writing.
  */
 const MAX_RECIPIENTS = 300;
@@ -53,7 +56,7 @@ export async function GET(request: Request) {
   const [{ data: rfps }, { data: orgs }, { data: subs }, { data: regions }] = await Promise.all([
     supabase
       .from("rfp_posts")
-      .select("id,title,slug,deadline,region_id,published_at,source_type, rfp_categories(category_id, trade_categories(name))")
+      .select("id,title,slug,deadline,region_id,province,published_at,source_type, rfp_categories(category_id, trade_categories(name))")
       .eq("status", "published")
       .eq("is_demo", false)
       .gte("published_at", weekAgo)
@@ -61,12 +64,12 @@ export async function GET(request: Request) {
       .limit(500),
     supabase
       .from("organizations")
-      .select("id,name")
+      .select("id,name,province,country")
       .in("organization_type", ["trade_company", "supplier"])
       .eq("is_demo", false)
       .eq("status", "active"),
     supabase.from("subscriptions").select("organization_id,status"),
-    supabase.from("regions").select("id,slug,parent_id"),
+    supabase.from("regions").select("id,slug,parent_id,country"),
   ]);
 
   const weekAhead = new Date(now + 7 * 86_400_000).toISOString().slice(0, 10);
@@ -80,10 +83,13 @@ export async function GET(request: Request) {
       .filter((s) => s.status === "active" || s.status === "comped")
       .map((s) => s.organization_id),
   );
-  const freeOrgs = ((orgs ?? []) as { id: string; name: string }[]).filter((o) => !paid.has(o.id));
+  const freeOrgs = ((orgs ?? []) as { id: string; name: string; province: string | null; country: string | null }[]).filter((o) => !paid.has(o.id));
   const orgIds = freeOrgs.map((o) => o.id);
   if (!orgIds.length) return NextResponse.json({ sent: 0, reason: "no free trades" });
-  const nationalId = ((regions ?? []) as { id: string; slug: string }[]).find((r) => r.slug === "canada")?.id;
+  const regionRows = (regions ?? []) as { id: string; slug: string; country: string | null }[];
+  // Listings filed under a whole country reach every company in that country (the country check below keeps them there).
+  const nationalIds = new Set(regionRows.filter((r) => r.slug === "canada" || r.slug === "united-states").map((r) => r.id));
+  const countryByRegion = regionCountryMap(regionRows);
 
   const [{ data: orgCats }, { data: orgRegs }, { data: members }] = await Promise.all([
     supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", orgIds),
@@ -97,6 +103,7 @@ export async function GET(request: Request) {
     [...group((orgRegs ?? []) as Pair[], "organization_id", "region_id")].map(([org, ids]) => [org, expandRegionIds(ids, tree)]),
   );
   const usersByOrg = group((members ?? []) as Pair[], "organization_id", "user_id");
+  const ownRegsByOrg = group((orgRegs ?? []) as Pair[], "organization_id", "region_id");
 
   const userIds = [...new Set(((members ?? []) as Pair[]).map((m) => m.user_id as string))];
   const [{ data: profiles }, { data: prefs }, { data: recent }] = await Promise.all([
@@ -126,12 +133,9 @@ export async function GET(request: Request) {
   for (const org of freeOrgs) {
     const cats = catsByOrg.get(org.id);
     if (!cats?.size) continue;
-    const regs = regsByOrg.get(org.id) ?? new Set();
-    const matches = openRfps.filter(
-      (r) =>
-        r.rfp_categories.some((c) => cats.has(c.category_id)) &&
-        (!r.region_id || r.region_id === nationalId || regs.has(r.region_id)),
-    );
+    const regs = regsByOrg.get(org.id) ?? new Set<string>();
+    const countries = orgCountries(org, ownRegsByOrg.get(org.id) ?? [], countryByRegion);
+    const matches = freeDigestMatches(openRfps, { categories: cats, regions: regs, countries }, nationalIds, countryByRegion);
     if (!matches.length) continue;
 
     // Label by the trade that matched most often ("snow removal tenders").
@@ -189,6 +193,7 @@ interface RfpRow {
   slug: string;
   deadline: string | null;
   region_id: string | null;
+  province: string | null;
   rfp_categories: { category_id: string; trade_categories: { name: string } | null }[];
 }
 
