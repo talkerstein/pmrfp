@@ -81,3 +81,34 @@ export async function listPackagesForAward(awardSlug: string): Promise<AwardPack
     .limit(20);
   return error || !data ? [] : (data as AwardPackage[]);
 }
+
+export interface AwardSlugPackage extends AwardPackage {
+  /** Slug of the award notice the package was posted against. */
+  awardSlug: string;
+}
+
+/**
+ * Published sub-trade packages posted against any of these award notices —
+ * for a contractor's profile, which lists several awards. Empty on any error.
+ */
+export async function listPackagesForAwardSlugs(awardSlugs: string[]): Promise<AwardSlugPackage[]> {
+  if (!awardSlugs.length || !isSupabaseConfigured()) return [];
+  const supabase = createReadClient();
+  const { data: awards, error } = await supabase.from("rfp_public").select("id,slug").in("slug", awardSlugs.slice(0, 150));
+  if (error || !awards?.length) return [];
+  const slugById = new Map((awards as { id: string; slug: string }[]).map((a) => [a.id, a.slug]));
+  const { data, error: pkgErr } = await supabase
+    .from("rfp_public")
+    .select("slug,title,deadline,awarded_rfp_id")
+    .eq("source_type", GC_PACKAGE)
+    .in("awarded_rfp_id", [...slugById.keys()])
+    .order("deadline", { ascending: true })
+    .limit(50);
+  if (pkgErr || !data) return [];
+  return (data as (AwardPackage & { awarded_rfp_id: string })[]).map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    deadline: p.deadline,
+    awardSlug: slugById.get(p.awarded_rfp_id) ?? "",
+  }));
+}

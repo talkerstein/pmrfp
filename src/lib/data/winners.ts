@@ -70,8 +70,15 @@ function displayName(variants: Map<string, number>): string {
 
 const uniq = <T,>(xs: T[]) => [...new Set(xs)];
 
+/**
+ * Every company with a published award has a profile (winnersFromRfps(rfps, 1));
+ * only repeat winners are indexed, listed on /contract-winners and in the
+ * sitemap — a one-award page is thin.
+ */
+export const MIN_INDEXED_AWARDS = 2;
+
 /** Group the board's past contracts by winning company. Pure — for pages that already have listRfps(). */
-export function winnersFromRfps(rfps: RfpListItem[], minAwards = 2): Winner[] {
+export function winnersFromRfps(rfps: RfpListItem[], minAwards = MIN_INDEXED_AWARDS): Winner[] {
   const groups = new Map<string, { variants: Map<string, number>; awards: WinnerAward[] }>();
   for (const r of rfps) {
     if (!isPastContract(r)) continue;
@@ -98,12 +105,17 @@ export function winnersFromRfps(rfps: RfpListItem[], minAwards = 2): Winner[] {
 
   const out: Winner[] = [];
   const usedSlugs = new Set<string>();
-  for (const g of groups.values()) {
-    if (g.awards.length < minAwards) continue;
+  // Repeat winners claim their slugs first, so giving one-award companies a
+  // page (minAwards = 1) never moves an existing, indexed /contract-winners URL.
+  const ordered = [...groups.values()]
+    .filter((g) => g.awards.length >= minAwards)
+    .sort((a, b) => Number(b.awards.length >= 2) - Number(a.awards.length >= 2));
+  for (const g of ordered) {
     const name = displayName(g.variants);
     let slug = slugify(name).slice(0, 80);
     if (!slug) continue;
     if (usedSlugs.has(slug)) slug = `${slug}-${g.awards.length}`;
+    for (let i = 2; usedSlugs.has(slug); i++) slug = `${slugify(name).slice(0, 80)}-${g.awards.length}-${i}`;
     usedSlugs.add(slug);
     const awards = [...g.awards].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     out.push({

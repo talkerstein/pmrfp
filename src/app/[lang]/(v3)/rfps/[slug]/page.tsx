@@ -174,7 +174,8 @@ export default async function RfpDetailPage({
     .filter((r) => r.status === "open" && r.slug !== teaser.slug && sameTrade(r))
     .sort((a, b) => Number(b.regionName === teaser.regionName) - Number(a.regionName === teaser.regionName) || (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"))
     .slice(0, 4);
-  const winnerPage = award?.winner ? winnersFromRfps(boardRfps).find((w) => winnerKey(w.name) === winnerKey(award.winner!)) : undefined;
+  // Every named winner has a profile now (one-award ones are noindexed there).
+  const winnerPage = award?.winner ? winnersFromRfps(boardRfps, 1).find((w) => winnerKey(w.name) === winnerKey(award.winner!)) : undefined;
   const isGc = isGcPackage(teaser);
   const [gcAward, awardPackages] = await Promise.all([
     isGc ? getAwardById(teaser.awardedRfpId) : Promise.resolve(null),
@@ -395,7 +396,7 @@ export default async function RfpDetailPage({
                     {winnerPage ? <a href={L(`/contract-winners/${winnerPage.slug}`)}>{award.winner}</a> : award.winner}
                   </div>
                   {award.value && <div className="val">{money(award.value)}</div>}
-                  {winnerPage && <a href={L(`/contract-winners/${winnerPage.slug}`)} className="all">{fill(t.award.allWins, { n: num(winnerPage.awards.length) })} →</a>}
+                  {winnerPage && winnerPage.awards.length > 1 && <a href={L(`/contract-winners/${winnerPage.slug}`)} className="all">{fill(t.award.allWins, { n: num(winnerPage.awards.length) })} →</a>}
                 </div>
               )}
               {awardPackages.length > 0 && (

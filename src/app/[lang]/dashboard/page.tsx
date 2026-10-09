@@ -4,16 +4,20 @@ import { requireRole, isDemoMode } from "@/lib/access/access";
 import { projectsReady } from "@/lib/projects/server";
 import { buttonVariants } from "@/components/ui/button";
 import { listRfps } from "@/lib/data/rfps";
+import { getCategories } from "@/lib/data/taxonomy";
+import { HUB_DAYS, filterWins, hubWins } from "@/lib/gc/hub";
+import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ActivateButton } from "@/components/dashboard/billing-actions";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
-import { getT, setLangFrom } from "@/i18n/server";
+import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
-import { fmt } from "@/i18n/format";
+import { fmt, formatNumber } from "@/i18n/format";
+import { tradeName } from "@/i18n/terms";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -28,6 +32,8 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
   const org = session.organization;
   const [rfps, photoProjects, tradeSlugs] = await Promise.all([listRfps(), projectsReady(), orgTradeSlugs(org?.id ?? null, demo)]);
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
+  const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
+  const lang = getLang();
 
   return (
     <div>
@@ -54,6 +60,23 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
         <StatCard label={t.interests} value={0} href="/dashboard/interests" />
         <StatCard label={t.views} value={demo ? 42 : 0} hint={t.last30} />
       </div>
+
+      {recentWins.n > 0 && (
+        <Link
+          href={recentWins.trade ? `/gc-hub?trade=${recentWins.trade.slug}` : "/gc-hub"}
+          className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-6 transition-colors hover:border-teal-300"
+        >
+          <div>
+            <h2 className="text-base font-semibold">
+              {recentWins.trade ? fmt(t.gcTitle, { trade: tradeName(recentWins.trade.name, lang) }) : t.gcTitleAny}
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              {fmt(recentWins.trade ? t.gcBody : t.gcBodyAny, { n: formatNumber(recentWins.n, lang), days: HUB_DAYS })}
+            </p>
+          </div>
+          <span className={buttonVariants({ variant: "outline" })}>{t.gcCta}</span>
+        </Link>
+      )}
 
       {photoProjects && (
         <Link
@@ -108,6 +131,23 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
       />
     </div>
   );
+}
+
+/**
+ * Public contracts awarded in the last HUB_DAYS days — in this company's busiest
+ * listed trade when it has any, else all of them — for the GC Hub card.
+ */
+async function gcWinsForTrades(
+  rfps: Awaited<ReturnType<typeof listRfps>>,
+  tradeSlugs: string[],
+): Promise<{ n: number; trade: { slug: string; name: string } | null }> {
+  const wins = hubWins(rfps, [], { today: torontoToday() });
+  const categories = tradeSlugs.length ? await getCategories().catch(() => []) : [];
+  const best = categories
+    .filter((c) => tradeSlugs.includes(c.slug))
+    .map((c) => ({ trade: { slug: c.slug, name: c.name }, n: filterWins(wins, { trade: c.name }).length }))
+    .sort((a, b) => b.n - a.n)[0];
+  return best && best.n > 0 ? best : { n: wins.length, trade: null };
 }
 
 /** The trades this company lists under, for picking a relevant sponsor. */

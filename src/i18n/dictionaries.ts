@@ -41,6 +41,7 @@ import marketplaceClient from "./messages/marketplaceClient";
 import founding from "./messages/founding";
 import foundingClient from "./messages/foundingClient";
 import reports from "./messages/reports";
+import gcHub from "./messages/gcHub";
 
 const NAMESPACES = {
   common,
@@ -77,6 +78,7 @@ const NAMESPACES = {
   founding,
   foundingClient,
   reports,
+  gcHub,
 };
 
 type Namespaces = typeof NAMESPACES;

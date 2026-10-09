@@ -97,6 +97,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   entries.push({ url: `${base}/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
+  entries.push({ url: `${base}/gc-hub`, lastModified: now, changeFrequency: "daily", priority: 0.7 });
   entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   // Monthly contract-winner reports: only months that have a page (complete, 10+ awards).
   entries.push({ url: `${base}/reports/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });

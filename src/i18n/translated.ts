@@ -23,6 +23,7 @@ const PAGES: RegExp[] = [
   /^\/(about|contact|terms|privacy|disclaimer|refer|refer-a-trade|refer-a-project|get-found|services-for-trades)$/,
   /^\/(advertise|widgets|badge|reports\/public-building-contracts)$/,
   /^\/contract-winners(\/[^/]+)?$/,
+  /^\/gc-hub$/,
   /^\/trades(\/[^/]+){0,2}$/,
   /^\/(regions|for|vs)(\/[^/]+)?$/,
   /^\/(rfp-templates|cost-guides)(\/[^/]+)?$/,
