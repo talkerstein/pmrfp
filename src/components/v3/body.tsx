@@ -12,10 +12,11 @@ export async function V3Body({ children }: { children: ReactNode }) {
   const lang = getLang();
   const board = await loadV3Board();
   const h = getT("homeV3");
+  const where = getT("common").market.where;
   return (
     <>
       <div className="v3p">{children}</div>
-      <V3Sticky t={{ sticky: h.sticky, nav: h.nav }} lang={lang} open={board.open} closing7={board.closing7} />
+      <V3Sticky t={{ sticky: h.sticky, nav: h.nav }} lang={lang} counts={board.byCountry} where={where} />
     </>
   );
 }

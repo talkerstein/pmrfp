@@ -27,6 +27,8 @@ export interface DigestAward {
   regionId: string;
   categoryIds: string[];
   categorySlugs: string[];
+  /** Country-first: the award's country; a member never gets the other country's awards. */
+  country?: "CA" | "US";
 }
 
 export interface AwardRow {
@@ -71,13 +73,14 @@ export function toDigestAward(row: AwardRow, today: string, maxAgeDays = RECENT_
  */
 export function recentAwardsFor(
   awards: DigestAward[],
-  member: { cats: Set<string>; regions: Set<string> },
+  member: { cats: Set<string>; regions: Set<string>; countries?: Set<"CA" | "US"> },
   max = RECENT_AWARD_MAX,
 ): DigestAward[] {
   return awards
     .filter(
       (a) =>
         member.regions.has(a.regionId) &&
+        (!member.countries || member.countries.has(a.country ?? "CA")) &&
         (a.categorySlugs.includes(GC_CATEGORY_SLUG) || a.categoryIds.some((c) => member.cats.has(c))),
     )
     .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0) || b.date.localeCompare(a.date))
@@ -92,17 +95,24 @@ export function recentAwardsByUser(
     catsByOrg: Map<string, Set<string>>;
     regionsByOrg: Map<string, Set<string>>;
     usersByOrg: Map<string, Set<string>>;
+    /** Countries each company works in (lib/alerts/country orgCountries); missing = no country filter. */
+    countriesByOrg?: Map<string, Set<"CA" | "US">>;
   },
   max = RECENT_AWARD_MAX,
 ): Map<string, DigestAward[]> {
-  const byUser = new Map<string, { cats: Set<string>; regions: Set<string> }>();
+  const byUser = new Map<string, { cats: Set<string>; regions: Set<string>; countries?: Set<"CA" | "US"> }>();
   for (const orgId of input.paidOrgIds) {
     const cats = input.catsByOrg.get(orgId) ?? new Set<string>();
     const regions = input.regionsByOrg.get(orgId) ?? new Set<string>();
+    const countries = input.countriesByOrg ? input.countriesByOrg.get(orgId) ?? new Set<"CA" | "US">(["CA"]) : null;
     for (const userId of input.usersByOrg.get(orgId) ?? []) {
       const m = byUser.get(userId) ?? { cats: new Set<string>(), regions: new Set<string>() };
       cats.forEach((c) => m.cats.add(c));
       regions.forEach((r) => m.regions.add(r));
+      if (countries) {
+        m.countries ??= new Set();
+        countries.forEach((c) => m.countries!.add(c));
+      }
       byUser.set(userId, m);
     }
   }

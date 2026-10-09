@@ -1,4 +1,5 @@
 import type { RfpListItem } from "@/lib/data/types";
+import { inCountry, type CountryCode } from "@/lib/visitor-geo";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import type { Locale } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
@@ -62,6 +63,14 @@ export function boardStats(rfps: RfpListItem[]): BoardStats {
     }
   }
   return { open, closingThisWeek, pastContracts, awardedValue };
+}
+
+/**
+ * Country-first headline numbers: the board's stats for Canada and for the
+ * U.S. separately. Never add them together on a page; show the visitor's.
+ */
+export function boardStatsByCountry(rfps: RfpListItem[]): Record<CountryCode, BoardStats> {
+  return { CA: boardStats(inCountry(rfps, "CA")), US: boardStats(inCountry(rfps, "US")) };
 }
 
 /**

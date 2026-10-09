@@ -27,6 +27,8 @@ const en = {
     label: "Country and currency",
     CA: "Canada · prices in CAD",
     US: "United States · prices in USD",
+    /** Country-first counts: "{n} contracts open in Canada". */
+    where: { CA: "in Canada", US: "in the U.S." },
   },
   footer: {
     sister: "From the team behind {brand}.",
@@ -128,6 +130,7 @@ const fr: typeof en = {
     label: "Pays et devise",
     CA: "Canada · prix en CAD",
     US: "États-Unis · prix en USD",
+    where: { CA: "au Canada", US: "aux États-Unis" },
   },
   footer: {
     sister: "Par l'équipe derrière {brand}.",
@@ -229,6 +232,7 @@ const es: typeof en = {
     label: "País y moneda",
     CA: "Canadá · precios en CAD",
     US: "Estados Unidos · precios en USD",
+    where: { CA: "en Canadá", US: "en EE. UU." },
   },
   footer: {
     sister: "Del equipo detrás de {brand}.",

@@ -3,7 +3,9 @@ import { DirectoryList, LIST_PATH, PER_PAGE, listHref, paginate } from "@/compon
 import { listOpenJobs } from "@/lib/jobs/data";
 import { EMPLOYMENT_TYPES, FREE_JOB_LIMIT } from "@/lib/jobs/rules";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
-import { getListCounts } from "@/lib/data/list-counts";
+import { getVisitorListCounts } from "@/lib/data/list-counts";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { provinceFirst, regionCountry, regionsInCountry } from "@/lib/visitor-geo";
 import { gcFormPath } from "@/lib/gc/packages";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -25,7 +27,7 @@ export default async function JobsPage({
   searchParams,
   params,
 }: {
-  searchParams: Promise<{ trade?: string; region?: string; type?: string; page?: string }>;
+  searchParams: Promise<{ trade?: string; region?: string; type?: string; page?: string; country?: string }>;
   params: Promise<object>;
 }) {
   const lang = await setLangFrom(params);
@@ -34,17 +36,24 @@ export default async function JobsPage({
   const labels = getT("jobsClient");
   const sp = await searchParams;
   const filtered = Boolean(sp.trade || sp.region || sp.type);
-  const [{ ready, jobs }, unfiltered, trades, regions, counts] = await Promise.all([
+  // Country-first: one country's jobs (a picked region decides it), the visitor's province/state first.
+  const allRegions = await getRegions();
+  const pickedRegion = sp.region ? allRegions.find((r) => r.slug === sp.region) : undefined;
+  const where = await getVisitorCountry({ param: sp.country });
+  const country = pickedRegion ? regionCountry(pickedRegion) : where.country;
+  const regions = regionsInCountry(allRegions, country);
+  const [found, unfiltered, trades, counts] = await Promise.all([
     listOpenJobs({ trade: sp.trade, region: sp.region, type: sp.type }),
     filtered ? listOpenJobs() : Promise.resolve(null),
     getCategories(),
-    getRegions(),
-    getListCounts(),
+    getVisitorListCounts(country),
   ]);
-  const pool = unfiltered?.jobs ?? jobs;
+  const ready = found.ready;
+  const jobs = provinceFirst(found.jobs.filter((j) => j.country === country), country === where.country ? where.province : null, (j) => j.province);
+  const pool = unfiltered ? unfiltered.jobs.filter((j) => j.country === country) : jobs;
   const n = (x: number) => formatNumber(x, lang);
   const { page, pages, slice } = paginate(jobs, sp.page);
-  const keep = { trade: sp.trade, region: sp.region, type: sp.type };
+  const keep = { trade: sp.trade, region: sp.region, type: sp.type, country: sp.country };
   const byType = new Map<string, number>();
   for (const j of pool) byType.set(j.employmentType, (byType.get(j.employmentType) ?? 0) + 1);
   const free = lang === "fr" ? "0 $" : "$0";

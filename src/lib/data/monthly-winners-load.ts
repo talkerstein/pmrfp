@@ -10,9 +10,15 @@ export const REPORTS_PATH = "/reports/contract-winners";
 /** Today in Toronto (where the month boundary is judged). */
 export const torontoToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
 
-/** Every award + the months that get a report, once per request (page, metadata, OG image). */
+/**
+ * Every award + the months that get a report, once per request (page,
+ * metadata, OG image, CSV). Country-first: these reports are Canada's (every
+ * award notice source is Canadian today), so U.S. rows can never leak into
+ * them; U.S. reports get their own pages once U.S. award notices exist.
+ */
+export const REPORT_COUNTRY = "CA" as const;
 export const loadMonthly = cache(async () => {
-  const awards = monthlyAwards(await listRfps().catch(() => []));
+  const awards = monthlyAwards(await listRfps({ country: REPORT_COUNTRY }).catch(() => []));
   return { awards, months: reportMonths(awards, torontoToday()) };
 });
 

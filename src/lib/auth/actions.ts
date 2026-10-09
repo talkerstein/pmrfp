@@ -1,7 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { ACCOUNT_COOKIE } from "@/lib/visitor-geo";
+import { isUsState } from "@/lib/geo";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
@@ -186,6 +188,8 @@ export async function signOutAction(): Promise<void> {
     const supabase = await createClient();
     await supabase.auth.signOut();
   }
+  // The company's country stops ruling public pages once signed out.
+  (await cookies()).delete(ACCOUNT_COOKIE);
   redirect("/");
 }
 
@@ -369,6 +373,8 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
       email: data.email,
       city: data.city || null,
       province: data.province || null,
+      // Country-first: the column defaults to Canada, so U.S. companies need it said.
+      country: isUsState(data.province) ? "United States" : "Canada",
       short_description: data.shortDescription || null,
       public_contact_visibility: data.publicContactVisibility,
       // Listings auto-approve once they say what they do and where (at least

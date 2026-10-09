@@ -2,6 +2,7 @@
  * Facts for an automatic tender thread, from real board data only (pure;
  * tested in test/forum-quiet.test.ts). The server loader is tender-context.ts.
  */
+import { countryOf } from "@/lib/visitor-geo";
 
 export interface PastAward {
   slug: string;
@@ -17,9 +18,9 @@ export interface PastAward {
 }
 
 /**
- * Up to `n` past awards in the listing's trade: same province first, then
- * the rest of the market, newest first. Only awards with a publishable
- * winner are used. Never the listing itself.
+ * Up to `n` past awards in the listing's trade and COUNTRY (never across the
+ * border): same province first, then the rest of that country, newest first.
+ * Only awards with a publishable winner are used. Never the listing itself.
  */
 export function similarAwards(
   target: { slug: string; categories: string[]; province: string | null },
@@ -28,7 +29,8 @@ export function similarAwards(
 ): PastAward[] {
   const trade = target.categories[0];
   if (!trade) return [];
-  const pool = awards.filter((a) => a.slug !== target.slug && a.winner && a.categories.includes(trade));
+  const country = countryOf(target);
+  const pool = awards.filter((a) => a.slug !== target.slug && a.winner && a.categories.includes(trade) && countryOf(a) === country);
   const local = (a: PastAward) => (target.province && a.province === target.province ? 0 : 1);
   return [...pool].sort((a, b) => local(a) - local(b) || (b.date ?? "").localeCompare(a.date ?? "")).slice(0, n);
 }

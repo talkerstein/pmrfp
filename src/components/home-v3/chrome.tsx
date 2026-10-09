@@ -198,17 +198,34 @@ export function V3Frame({ t, lang, foundingLeft, joinHref, children }: { t: V3Ch
 
 /* ------------------------------------------------------------------ sticky board bar */
 
-/** Live board numbers only; renders nothing when the board can't be read. */
-export function V3Sticky({ t, lang, open, closing7 }: { t: Pick<V3Messages, "sticky" | "nav">; lang: Locale; open: number | null; closing7: number | null }) {
+/**
+ * Live board numbers for the visitor's country only (country-first); renders
+ * nothing when the board can't be read or until the market is known.
+ */
+export function V3Sticky({
+  t,
+  lang,
+  counts,
+  where,
+}: {
+  t: Pick<V3Messages, "sticky" | "nav">;
+  lang: Locale;
+  counts: Record<"CA" | "US", { open: number; closing7: number }> | null;
+  /** common.market.where: "in Canada" / "in the U.S.". */
+  where: Record<"CA" | "US", string>;
+}) {
+  const market = useVisitorMarket();
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
-  if (open == null || closing7 == null || open <= 0) return null;
+  if (!counts || market == null) return null;
+  const { open, closing7 } = counts[market];
+  if (open <= 0) return null;
   return (
     <div className="v3-sticky">
       <div className="v3-sticky-in">
         <span className="v3-dot d" style={{ width: 10, height: 10 }} />
         <div className="txt">
-          <b><span className="d">{fmt(t.sticky.open, { n: num(open) })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(open) })}</span></b>{" "}
+          <b><span className="d">{fmt(t.sticky.open, { n: num(open), where: where[market] })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(open), where: where[market] })}</span></b>{" "}
           <span className="c"><span className="d">{fmt(t.sticky.closing, { n: num(closing7) })}</span><span className="m">{fmt(t.sticky.closingShort, { n: num(closing7) })}</span></span>
         </div>
         <a href={L("/sign-up?role=property_manager")} className="v3-pill ghost">{t.sticky.post}</a>

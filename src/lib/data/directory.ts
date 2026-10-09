@@ -10,6 +10,16 @@ import {
 import type { VendorDetail, VendorFilters, VendorListItem } from "@/lib/data/types";
 import { publicLevels } from "@/lib/karma/data";
 import { directorySortKey } from "@/lib/karma/perks";
+import { accountGeo, regionCountry, type CountryCode } from "@/lib/visitor-geo";
+
+/** Countries a company works in: its own province/state plus its service regions' countries (Canada when nothing says). */
+export function vendorCountries(org: { province: string | null }, regions: readonly { country?: string | null }[]): CountryCode[] {
+  const out = new Set<CountryCode>(regions.map(regionCountry));
+  const own = accountGeo({ province: org.province })?.country;
+  if (own === "CA" || own === "US") out.add(own);
+  if (!out.size) out.add("CA");
+  return [...out].sort();
+}
 
 function demoToListItem(v: DemoVendor): VendorListItem {
   return {
@@ -26,6 +36,7 @@ function demoToListItem(v: DemoVendor): VendorListItem {
     wsibStatus: v.wsibStatus,
     categories: v.categories.map(categoryName),
     regions: v.regions.map(regionName),
+    countries: vendorCountries(v, []),
   };
 }
 
@@ -35,6 +46,7 @@ function applyDemoFilters(list: DemoVendor[], f: VendorFilters): DemoVendor[] {
   if (f.region) out = out.filter((v) => v.regions.includes(f.region!));
   if (f.propertyType) out = out.filter((v) => v.propertyTypes.includes(f.propertyType!));
   if (f.verified) out = out.filter((v) => v.verified);
+  if (f.country) out = out.filter((v) => vendorCountries(v, []).includes(f.country!));
   if (f.q) {
     const q = f.q.toLowerCase();
     out = out.filter(
@@ -70,7 +82,7 @@ interface OrgRow {
   email: string | null;
   phone: string | null;
   organization_categories: { trade_categories: { name: string; slug: string } | null }[];
-  organization_regions: { regions: { name: string; slug: string } | null }[];
+  organization_regions: { regions: { name: string; slug: string; country?: string | null } | null }[];
   organization_property_types: { property_types: { name: string; slug: string } | null }[];
 }
 
@@ -84,7 +96,7 @@ const ORG_SELECT =
 const ORG_LIST_SELECT =
   "id,slug,name,city,province,short_description,logo_url,verified,featured,years_in_business,insurance_status,wsib_status," +
   "organization_categories(trade_categories(name,slug))," +
-  "organization_regions(regions(name,slug))," +
+  "organization_regions(regions(name,slug,country))," +
   "organization_property_types(property_types(name,slug))";
 
 /**
@@ -153,6 +165,7 @@ export async function listVendors(filters: VendorFilters = {}): Promise<VendorLi
     if (filters.category && !cats.includes(filters.category)) return false;
     if (filters.region && !regs.includes(filters.region)) return false;
     if (filters.propertyType && !props.includes(filters.propertyType)) return false;
+    if (filters.country && !vendorCountries(r, r.organization_regions.flatMap((c) => (c.regions ? [c.regions] : []))).includes(filters.country)) return false;
     return true;
   });
   const out: VendorListItem[] = rows.map((r) => toListItem(r, platinum, levels));
@@ -178,6 +191,7 @@ function toListItem(r: OrgRow, platinum: Set<string>, levels?: Map<string, numbe
     categories: r.organization_categories.map((c) => c.trade_categories?.name).filter(Boolean) as string[],
     regions: r.organization_regions.map((c) => c.regions?.name).filter(Boolean) as string[],
     level: levels?.get(r.id) ?? null,
+    countries: vendorCountries(r, r.organization_regions.flatMap((c) => (c.regions ? [c.regions] : []))),
   };
 }
 

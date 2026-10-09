@@ -20,6 +20,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
 import { tradeName } from "@/i18n/terms";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -32,7 +33,9 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
   const session = await requireRole(["trade"]);
   const demo = isDemoMode();
   const org = session.organization;
-  const [rfps, photoProjects, tradeSlugs] = await Promise.all([listRfps(), projectsReady(), orgTradeSlugs(org?.id ?? null, demo)]);
+  // Country-first: the company's own country (its profile, else the CA|US switch / IP).
+  const { country } = await getVisitorCountry({ session });
+  const [rfps, photoProjects, tradeSlugs] = await Promise.all([listRfps({ country }), projectsReady(), orgTradeSlugs(org?.id ?? null, demo)]);
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
   const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
   const lang = getLang();

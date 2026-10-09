@@ -15,9 +15,13 @@
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DEMO_RFPS } from "@/lib/demo-data";
+import { US_STATE_NAMES } from "@/lib/geo";
+import { inCountry } from "@/lib/visitor-geo";
 
 export interface PlatformStats {
   rfpsPostedLast30Days: number;
+  /** Country-first: the same count per country (U.S. = filed under a U.S. state; Canada = the rest). Show the visitor's, never the sum. */
+  rfpsPostedLast30DaysByCountry?: { CA: number; US: number };
   tradesListed: number;
 }
 
@@ -25,6 +29,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   if (!isSupabaseConfigured()) {
     return {
       rfpsPostedLast30Days: DEMO_RFPS.length,
+      rfpsPostedLast30DaysByCountry: { CA: inCountry(DEMO_RFPS, "CA").length, US: inCountry(DEMO_RFPS, "US").length },
       tradesListed: 12,
     };
   }
@@ -37,7 +42,9 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   // safe. is_demo=false filter on the RFP counter keeps the public number
   // honest — sample/seed RFPs don't count toward the "last 30 days" social
   // proof number that visitors see on /rfps + /pricing.
-  const [rfpCount, tradeCount] = await Promise.all([
+  // Past public contracts (award notices) were never "posted" as work: every
+  // award feed's slug marker (CanadaBuys, SEAO, Toronto, Nova Scotia).
+  const posted = () =>
     supabase
       .from("rfp_public")
       .select("*", { count: "exact", head: true })
@@ -45,9 +52,13 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       // published_at, not created_at: imported public tenders carry the
       // issuer's real posting date, so a backlog import can't inflate this.
       .gte("published_at", since)
-      // Past public contracts (award notices) were never "posted" as work.
       .not("slug", "like", "%-cba-%")
-      .not("slug", "like", "%-qca-%"),
+      .not("slug", "like", "%-qca-%")
+      .not("slug", "like", "%-tora-%")
+      .not("slug", "like", "%-nsa-%");
+  const [rfpCount, usCount, tradeCount] = await Promise.all([
+    posted(),
+    posted().in("province", US_STATE_NAMES),
     supabase
       .from("organizations")
       .select("*", { count: "exact", head: true })
@@ -56,8 +67,11 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       .eq("is_demo", false),
   ]);
 
+  const total = rfpCount.count ?? 0;
+  const us = Math.min(total, usCount.count ?? 0);
   return {
-    rfpsPostedLast30Days: rfpCount.count ?? 0,
+    rfpsPostedLast30Days: total,
+    rfpsPostedLast30DaysByCountry: { CA: total - us, US: us },
     tradesListed: tradeCount.count ?? 0,
   };
 }

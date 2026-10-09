@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import type { ReactNode } from "react";
+import { ByMarket } from "@/components/geo/by-market";
 import { PricingPlans } from "@/components/v3-pages/pricing-plans";
 import { FaqTabs } from "@/components/v3-pages/faq-tabs";
 import { PriceLine } from "@/components/v3-pages/price";
-import { getPlatformStats } from "@/lib/data/stats";
+import { getPlatformStats, type PlatformStats } from "@/lib/data/stats";
 import { getCategories } from "@/lib/data/taxonomy";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
-import { boardStats, daysUntil, isPastContract } from "@/lib/data/fomo";
+import { boardStatsByCountry, daysUntil, isPastContract } from "@/lib/data/fomo";
 import { rfpMarket } from "@/lib/visitor-geo";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
@@ -35,10 +37,10 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   };
 }
 
-/** Three real open tenders from the busiest trade, for the email preview. */
-function previewItems(rfps: RfpListItem[]): { items: RfpListItem[]; trade: string } | null {
+/** Three real open tenders from the busiest trade in one country, for the email preview. */
+function previewItems(rfps: RfpListItem[], country: "CA" | "US"): { items: RfpListItem[]; trade: string } | null {
   const openCa = rfps.filter(
-    (r) => r.status === "open" && !isPastContract(r) && rfpMarket(r) === "CA" && (daysUntil(r.deadline) ?? 99) >= 3,
+    (r) => r.status === "open" && !isPastContract(r) && rfpMarket(r) === country && (daysUntil(r.deadline) ?? 99) >= 3,
   );
   // English notices first: a French SEAO sample is the wrong first impression
   // for most buyers of this page. Fall back to everything if that's all there is.
@@ -73,13 +75,54 @@ export default async function PricingPage({ params }: { params: Promise<object> 
   const founding = getT("founding");
   const v = getT("v3Pages").pricing;
   const [stats, rfps, categories, sold] = await Promise.all([
-    getPlatformStats().catch(() => ({ rfpsPostedLast30Days: 0, tradesListed: 0 })),
+    getPlatformStats().catch((): PlatformStats => ({ rfpsPostedLast30Days: 0, tradesListed: 0 })),
     listAllRfpsCached().catch(() => [] as RfpListItem[]),
     getCategories().catch(() => []),
     cachedLifetimeCount().catch(() => null),
   ]);
-  const board = boardStats(rfps);
-  const preview = previewItems(rfps);
+  // Country-first: the page is cached, so each country's numbers and preview
+  // ship and the visitor's shows (ByMarket). Never the two added together.
+  const boards = boardStatsByCountry(rfps);
+  const previews = { CA: previewItems(rfps, "CA"), US: previewItems(rfps, "US") };
+  const posted = stats.rfpsPostedLast30DaysByCountry ?? null;
+  const byMarket = (f: (c: "CA" | "US") => ReactNode) => <ByMarket ca={f("CA")} us={f("US")} />;
+  const mailPreview = (preview: NonNullable<(typeof previews)["CA"]>) => (
+        <section className="v3-wrap vp-mail">
+          <div className="vp-mail-l">
+            <div className="v3-eyebrow">{v.mail.eyebrow}</div>
+            <h2 className="vp-h2">{sales.pricing.preview.title}</h2>
+            <p className="vp-lead dark">{sales.pricing.preview.description}</p>
+            <div className="ctas">
+              <a href={proHref} className="v3-pill navy">{v.mail.cta}</a>
+              <span><PriceLine tpl={proMonthly ? v.lineAnnualFirst : v.lineAnnual} cad={{ monthly: PRICING.proMonthly, annual: PRICING.proAnnual }} lang={lang} /></span>
+            </div>
+          </div>
+          <div className="vp-mail-r">
+            <div className="dot" aria-hidden />
+            <div className="box">
+              <div className="hd">
+                <Image src="/brand/mark-white.svg" alt="" width={28} height={28} />
+                <div className="t">
+                  <b>{plural(preview.items.length, sales.email.subject, { n: num(preview.items.length), trade: tradeName(preview.trade, lang), site: SITE.name })}</b>
+                  <span>{v.mail.from}</span>
+                </div>
+                <span className="ib">{v.mail.inbox}</span>
+              </div>
+              <p className="intro">{sales.email.intro}</p>
+              {preview.items.map((r) => (
+                <a key={r.slug} href={L(`/rfps/${r.slug}`)} className="it">
+                  <span className="mt">
+                    <span>{tradeName(preview.trade, lang)} · {regionName(r.city ?? r.regionName ?? r.province ?? "", lang)}</span>
+                    <span>{r.deadline ? fmt(sales.email.closes, { date: formatDate(r.deadline, lang) }) : sales.email.noDeadline}</span>
+                  </span>
+                  <span className="ti">{r.title}</span>
+                </a>
+              ))}
+              <div className="ft"><span className="v3-pill mint">{sales.email.cta}</span></div>
+            </div>
+          </div>
+        </section>
+  );
   const scarcity = foundingScarcity(sold == null ? null : spotsLeft(sold));
   const seoMonthly = Boolean(process.env.STRIPE_PRICE_SEO_MONTHLY);
   const proMonthly = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);
@@ -117,8 +160,8 @@ export default async function PricingPage({ params }: { params: Promise<object> 
             <p className="vp-lead">{sales.pricing.lead}</p>
           </div>
           <dl className="vp-pstats">
-            {stats.rfpsPostedLast30Days > 0 && (
-              <div><dd>{num(stats.rfpsPostedLast30Days)}</dd><dt>{v.stats.rfps}</dt></div>
+            {posted && posted.CA + posted.US > 0 && (
+              <div><dd>{byMarket((c) => num(posted[c]))}</dd><dt>{v.stats.rfps}</dt></div>
             )}
             <div><dd>{sales.stats.daily}</dd><dt>{sales.stats.dailyLabel}</dt></div>
             {categories.length > 0 && (
@@ -209,43 +252,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
         </div>
       </section>
 
-      {preview && (
-        <section className="v3-wrap vp-mail">
-          <div className="vp-mail-l">
-            <div className="v3-eyebrow">{v.mail.eyebrow}</div>
-            <h2 className="vp-h2">{sales.pricing.preview.title}</h2>
-            <p className="vp-lead dark">{sales.pricing.preview.description}</p>
-            <div className="ctas">
-              <a href={proHref} className="v3-pill navy">{v.mail.cta}</a>
-              <span><PriceLine tpl={proMonthly ? v.lineAnnualFirst : v.lineAnnual} cad={{ monthly: PRICING.proMonthly, annual: PRICING.proAnnual }} lang={lang} /></span>
-            </div>
-          </div>
-          <div className="vp-mail-r">
-            <div className="dot" aria-hidden />
-            <div className="box">
-              <div className="hd">
-                <Image src="/brand/mark-white.svg" alt="" width={28} height={28} />
-                <div className="t">
-                  <b>{plural(preview.items.length, sales.email.subject, { n: num(preview.items.length), trade: tradeName(preview.trade, lang), site: SITE.name })}</b>
-                  <span>{v.mail.from}</span>
-                </div>
-                <span className="ib">{v.mail.inbox}</span>
-              </div>
-              <p className="intro">{sales.email.intro}</p>
-              {preview.items.map((r) => (
-                <a key={r.slug} href={L(`/rfps/${r.slug}`)} className="it">
-                  <span className="mt">
-                    <span>{tradeName(preview.trade, lang)} · {regionName(r.city ?? r.regionName ?? r.province ?? "", lang)}</span>
-                    <span>{r.deadline ? fmt(sales.email.closes, { date: formatDate(r.deadline, lang) }) : sales.email.noDeadline}</span>
-                  </span>
-                  <span className="ti">{r.title}</span>
-                </a>
-              ))}
-              <div className="ft"><span className="v3-pill mint">{sales.email.cta}</span></div>
-            </div>
-          </div>
-        </section>
-      )}
+      {byMarket((c) => (previews[c] ? mailPreview(previews[c]!) : null))}
 
       <section className="vp-f500">
         <div className="v3-wrap vp-f500-in">
@@ -312,9 +319,9 @@ export default async function PricingPage({ params }: { params: Promise<object> 
 
       <section className="vp-mint">
         <div className="v3-wrap vp-mint-in">
-          <div className="big">{num(board.open)}</div>
+          <div className="big">{byMarket((c) => num(boards[c].open))}</div>
           <div>
-            <h2 className="h">{plural(board.open, v.mint.open)}<br />{fmt(v.mint.closing, { n: num(board.closingThisWeek) })}</h2>
+            <h2 className="h">{byMarket((c) => <>{plural(boards[c].open, v.mint.open)}<br />{fmt(v.mint.closing, { n: num(boards[c].closingThisWeek) })}</>)}</h2>
             <p className="b">{v.mint.body}</p>
           </div>
           <div className="ctas">
@@ -331,7 +338,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
           <span className="v3-dot d" style={{ width: 10, height: 10 }} />
           <div className="txt">
             <b>Trade Pro: <PriceLine tpl={proMonthly ? v.lineAnnualFirst : v.lineAnnual} cad={{ monthly: PRICING.proMonthly, annual: PRICING.proAnnual }} lang={lang} /></b>{" "}
-            <span className="c">{fmt(v.sticky, { n: num(board.open) })}</span>
+            <span className="c">{byMarket((c) => fmt(v.sticky, { n: num(boards[c].open) }))}</span>
           </div>
           <a href={L("/sign-up?role=trade")} className="v3-pill ghost">{v.mint.join}</a>
           <a href={proHref} className="v3-pill mint">{v.sticky2}</a>

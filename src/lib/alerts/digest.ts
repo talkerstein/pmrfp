@@ -17,6 +17,8 @@ export interface DigestRfp {
   categoryNames: string[];
   /** Plain-English summary (bid checklist) or the notice summary. */
   summary: string | null;
+  /** The listing's country (lib/alerts/country listingCountry). */
+  country?: "CA" | "US";
 }
 
 export interface DigestInput {
@@ -26,6 +28,12 @@ export interface DigestInput {
   /** Already expanded to descendants (a trade serving Ontario serves Toronto). */
   regionsByOrg: Map<string, Set<string>>;
   usersByOrg: Map<string, Set<string>>;
+  /**
+   * Country-first: the countries each company works in (lib/alerts/country
+   * orgCountries). A company missing here is treated as Canadian; a listing
+   * without a country as Canadian.
+   */
+  countriesByOrg?: Map<string, Set<"CA" | "US">>;
   emailByUser: Map<string, string>;
   /** Users who turned opportunity emails off. */
   optedOut: Set<string>;
@@ -48,8 +56,12 @@ export function buildDigests(input: DigestInput): Digest[] {
     const cats = input.catsByOrg.get(orgId);
     if (!cats?.size) continue;
     const regions = input.regionsByOrg.get(orgId) ?? new Set<string>();
+    const countries = input.countriesByOrg?.get(orgId) ?? new Set(["CA" as const]);
     const matches = input.rfps.filter(
-      (r) => r.categoryIds.some((c) => cats.has(c)) && (!r.regionId || regions.has(r.regionId)),
+      (r) =>
+        r.categoryIds.some((c) => cats.has(c)) &&
+        countries.has(r.country ?? "CA") &&
+        (!r.regionId || regions.has(r.regionId)),
     );
     if (!matches.length) continue;
 

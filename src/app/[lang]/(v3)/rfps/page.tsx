@@ -14,8 +14,8 @@ import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { isGcPackage } from "@/lib/gc/packages";
-import { rfpMarket } from "@/lib/visitor-geo";
-import { getVisitorMarket } from "@/lib/visitor-geo.server";
+import { provinceFirst, regionCountry, rfpMarket } from "@/lib/visitor-geo";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { buyerFromSummary } from "@/lib/seo/rfp-meta";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
@@ -37,7 +37,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang: raw } = await params;
   const lang: Locale = hasLocale(raw) ? raw : "en";
   const t = getDictionary(lang).board.meta;
-  const open = (await getOpenRfpCounts().catch(() => ({ totalOpen: 0 }))).totalOpen;
+  const { country } = await getVisitorCountry();
+  const open = (await getOpenRfpCounts(null, undefined, country).catch(() => ({ totalOpen: 0 }))).totalOpen;
   return {
     // Live count + "free" in the title: searchers compare boards on volume and price.
     title: open > 0 ? plural(open, t.titleCount, { n: lang === "en" ? String(open) : formatNumber(open, lang) }) : t.title,
@@ -74,7 +75,7 @@ export default async function RfpsPage({
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
   const trade = (name: string) => tradeName(name, lang);
   const sp = await searchParams;
-  const [allRfps, board, categories, regions, propertyTypes, access, market] = await Promise.all([
+  const [allRfps, board, categories, allRegions, propertyTypes, access, visitor] = await Promise.all([
     listRfps(
       {
         category: sp.category,
@@ -90,8 +91,9 @@ export default async function RfpsPage({
     getRegions(),
     getPropertyTypes(),
     hasActiveTradeAccess(),
-    getVisitorMarket(),
+    getVisitorCountry(),
   ]);
+  const market = visitor.country;
 
   // Country: the visitor's market by default (U.S. visitors see U.S. work
   // first, Canadians Canadian), switchable with the tabs. A region filter
@@ -122,8 +124,14 @@ export default async function RfpsPage({
   // same one /contract-winners shows.
   const locked = isSupabaseConfigured() ? !access : false;
   const stats = boardStats(rfps);
-  const awards = awardTotals(winnersFromRfps(board));
-  const open = rfps.filter((r) => r.status === "open");
+  // Award totals for this country only (never Canada + U.S. added together).
+  const awards = awardTotals(winnersFromRfps(country === "all" ? board : board.filter(inCountry(country))));
+  // Country-first, then province/state-first: the visitor's own province leads
+  // ("Ontario first, then the rest of Canada") unless they picked a region.
+  const localProvince = !sp.region && country !== "all" && (country === "us") === (market === "US") ? visitor.province : null;
+  const open = provinceFirst(rfps.filter((r) => r.status === "open"), localProvince, (r) => r.province);
+  // Region pickers list the chosen country's regions.
+  const regions = country === "all" ? allRegions : allRegions.filter((r) => (regionCountry(r) === "US") === (country === "us"));
   const past = rfps.filter((r) => r.status !== "open" && isPastContract(r));
   const otherClosed = rfps.filter((r) => r.status !== "open" && !isPastContract(r));
   const showAwarded = sp.view === "awarded";

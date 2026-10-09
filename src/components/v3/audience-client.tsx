@@ -39,16 +39,19 @@ export function AudienceFaq({ items }: { items: { q: string; a: string }[] }) {
   );
 }
 
-/** The visitor's market's next three closers (Canada until we know). */
-export function AudienceOpen({ cards, t, total, lang }: { cards: { CA: V3OpenCard[]; US: V3OpenCard[] }; t: A; total: string; lang: Locale }) {
-  const market = useVisitorMarket();
-  const list = market === "US" && cards.US.length === 3 ? cards.US : cards.CA;
-  if (list.length < 3) return null;
+/**
+ * The visitor's country's next closers (Canada until we know). Country-first:
+ * a U.S. visitor with few U.S. tenders sees those, never Canadian ones.
+ */
+export function AudienceOpen({ cards, t, total, lang }: { cards: { CA: V3OpenCard[]; US: V3OpenCard[] }; t: A; total: { CA: string; US: string }; lang: Locale }) {
+  const market = useVisitorMarket() ?? "CA";
+  const list = cards[market];
+  if (!list.length) return null;
   return (
     <>
       <div className="a-open-head">
         <h2>{t.openTitle}</h2>
-        <a href={localizePath("/rfps", lang)}>{fmt(t.seeAll, { n: total })}</a>
+        <a href={localizePath("/rfps", lang)}>{fmt(t.seeAll, { n: total[market] })}</a>
       </div>
       <div className="a-open">
         {list.map((r) => (

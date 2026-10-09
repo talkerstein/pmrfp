@@ -6,6 +6,7 @@ import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
 import { AudienceFaq, AudienceOpen, AudiencePrice } from "./audience-client";
 import { loadV3Board, openCards } from "./data";
+import { ByMarket } from "@/components/geo/by-market";
 import { V3Body } from "@/components/v3/body";
 
 /**
@@ -95,12 +96,17 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
       : null;
   const feats = c.features.slice(0, 5);
   const sp = spans(feats.length, Boolean(c.today));
-  const bigNum = c.side === "seller" ? board.open : board.trades;
-  const nums = [
-    [board.closing7, t.liveClosing],
+  // Country-first: every board number is the visitor's country's (both ship; ByMarket picks).
+  const bc = board.byCountry;
+  const open = bc && bc.CA.open + bc.US.open > 0 ? bc : null;
+  const perCountry = (f: (c: { open: number; closing7: number }) => number) =>
+    bc ? <ByMarket ca={num(f(bc.CA))} us={num(f(bc.US))} /> : null;
+  const bigNum: ReactNode = c.side === "seller" ? (bc ? perCountry((x) => x.open) : null) : board.trades != null ? num(board.trades) : null;
+  const nums: [ReactNode, string][] = ([
+    [bc ? perCountry((c) => c.closing7) : null, t.liveClosing],
     [board.trades, t.liveTrades],
     [board.regions, t.liveRegions],
-  ].filter((x): x is [number, string] => x[0] != null);
+  ] as [ReactNode, string][]).filter((x) => x[0] != null);
 
   return (
     <V3Body>
@@ -128,9 +134,9 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
                   <text fontFamily="IBM Plex Mono, monospace" fontSize="10.5" letterSpacing="2.2" fill="#91F2CF"><textPath href="#a-circ">{c.side === "seller" ? t.stampSeller : t.stampBuyer}</textPath></text>
                 </svg>
               </span>
-              {board.open != null && board.open > 0 && (
+              {open && (
                 <div className="stat">
-                  <div className="big">{num(board.open)}</div>
+                  <div className="big">{perCountry((c) => c.open)}</div>
                   <div className="cap">
                     <span>{t.heroStat}</span>
                     <span className="pingw" aria-hidden><span className="ping" /><span /></span>
@@ -194,7 +200,7 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
                 <div key={f.t} className="a-f mint" style={style}>
                   <span className="no">{bigNum != null ? `${no} · ${c.side === "seller" ? t.openNow : t.tradesCovered}` : no}</span>
                   <span>
-                    {bigNum != null && <span className="big">{num(bigNum)}</span>}
+                    {bigNum != null && <span className="big">{bigNum}</span>}
                     <h3 className="t" style={{ margin: 0 }}>{f.t}</h3>
                     <span className="d">{f.d}</span>
                   </span>
@@ -255,15 +261,15 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
       )}
 
       {/* Live on the board: hidden entirely when the board can't be read. */}
-      {board.open != null && board.open > 0 && (
+      {open && (
         <section className="dark">
           <div className="wrap a-live">
             <div className="a-live-k"><span className="pingw" aria-hidden><span className="ping" /><span /></span>{t.live}</div>
             <div className="a-nums">
-              <div><div className="n1">{num(board.open)}</div><div className="l1">{t.liveOpen}</div></div>
-              {nums.map(([n, l]) => <div key={l}><div className="n">{num(n)}</div><div className="l">{l}</div></div>)}
+              <div><div className="n1">{perCountry((c) => c.open)}</div><div className="l1">{t.liveOpen}</div></div>
+              {nums.map(([n, l]) => <div key={l}><div className="n">{typeof n === "number" ? num(n) : n}</div><div className="l">{l}</div></div>)}
             </div>
-            {c.side === "seller" && <AudienceOpen cards={cards} t={t} total={num(board.open)} lang={lang} />}
+            {c.side === "seller" && <AudienceOpen cards={cards} t={t} total={{ CA: num(open.CA.open), US: num(open.US.open) }} lang={lang} />}
           </div>
         </section>
       )}

@@ -6,7 +6,9 @@ import { JsonLd, itemListSchema } from "@/lib/seo/jsonld";
 import { listVendors } from "@/lib/data/directory";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { getRegionLiquidityBySlug } from "@/lib/data/liquidity";
-import { getListCounts } from "@/lib/data/list-counts";
+import { getVisitorListCounts } from "@/lib/data/list-counts";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { provinceFirst, regionCountry, regionsInCountry } from "@/lib/visitor-geo";
 import { tradePhotoForName } from "@/lib/photos";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
@@ -44,15 +46,22 @@ export default async function DirectoryPage({
   const hasFilters = Boolean(sp.category || sp.region || sp.propertyType || sp.verified || sp.q);
   const sort = sp.sort === "alpha" ? "alpha" : "featured";
 
-  const [vendors, allVendors, categories, regions, propertyTypes, counts] = await Promise.all([
-    listVendors({ category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: Boolean(sp.verified), q: sp.q, sort }),
+  // Country-first: one country's companies (a picked region decides it, else
+  // ?country=, else the visitor's), the visitor's province/state first.
+  const allRegions = await getRegions();
+  const pickedRegion = sp.region ? allRegions.find((r) => r.slug === sp.region) : undefined;
+  const where = await getVisitorCountry({ param: sp.country });
+  const country = pickedRegion ? regionCountry(pickedRegion) : where.country;
+  const regions = regionsInCountry(allRegions, country);
+  const [found, allVendors, categories, propertyTypes, counts] = await Promise.all([
+    listVendors({ category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: Boolean(sp.verified), q: sp.q, sort, country }),
     // Unfiltered pool: hero stats and chip counts stay stable while the list filters.
-    hasFilters ? listVendors({}) : Promise.resolve(null),
+    hasFilters ? listVendors({ country }) : Promise.resolve(null),
     getCategories(),
-    getRegions(),
     getPropertyTypes(),
-    getListCounts(),
+    getVisitorListCounts(country),
   ]);
+  const vendors = sort === "alpha" ? found : provinceFirst(found, country === where.country ? where.province : null, (v) => v.province);
   const pool = allVendors ?? vendors;
 
   const activeRegion = sp.region ? regions.find((r) => r.slug === sp.region) ?? null : null;
@@ -72,7 +81,7 @@ export default async function DirectoryPage({
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count);
 
-  const keep = { category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: sp.verified, sort: sp.sort === "alpha" ? "alpha" : undefined };
+  const keep = { category: sp.category, region: sp.region, propertyType: sp.propertyType, verified: sp.verified, sort: sp.sort === "alpha" ? "alpha" : undefined, country: sp.country };
   const n = (x: number) => formatNumber(x, lang);
   const featCard = feat
     ? {

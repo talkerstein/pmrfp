@@ -10,7 +10,7 @@ const en = {
   index: {
     metaTitle: "Who won public property contracts, month by month | PMRFP",
     metaDescription:
-      "Monthly reports on who won public property and building-maintenance contracts in Canada and the U.S., from official award notices: totals, top winners, trades, buyers and the largest contracts.",
+      "Monthly reports on who won public property and building-maintenance contracts in Canada, from official award notices: totals, top winners, trades, buyers and the largest contracts.",
     title: "Who won public property contracts, month by month",
     lead: "One report per month, built only from official award notices. Totals, top winners, trades, buyers and the largest contracts, with a CSV for each month.",
     colMonth: "Month",
@@ -21,6 +21,8 @@ const en = {
     empty: "No month has enough award notices for a report yet.",
     rule: "A month gets a report once it is over and has at least {n} relevant award notices.",
     allTime: "All-time report: who wins public building contracts",
+    /** Shown to U.S. visitors: the reports are Canadian until U.S. award notices are on the board. */
+    usNote: "These monthly reports cover Canadian public award notices. U.S. reports start once U.S. award notices are on the board.",
   },
   meta: {
     title: "Who won public property contracts in {country} — {month} | PMRFP",
@@ -117,7 +119,7 @@ const fr: typeof en = {
   index: {
     metaTitle: "Qui a remporté les contrats publics immobiliers, mois par mois | PMRFP",
     metaDescription:
-      "Rapports mensuels sur les gagnants des contrats publics d'entretien et de travaux immobiliers au Canada et aux États-Unis, d'après les avis d'adjudication officiels : totaux, principaux gagnants, métiers, acheteurs et plus gros contrats.",
+      "Rapports mensuels sur les gagnants des contrats publics d'entretien et de travaux immobiliers au Canada, d'après les avis d'adjudication officiels : totaux, principaux gagnants, métiers, acheteurs et plus gros contrats.",
     title: "Qui a remporté les contrats publics immobiliers, mois par mois",
     lead: "Un rapport par mois, établi uniquement à partir des avis d'adjudication officiels. Totaux, principaux gagnants, métiers, acheteurs et plus gros contrats, avec un CSV pour chaque mois.",
     colMonth: "Mois",
@@ -128,6 +130,7 @@ const fr: typeof en = {
     empty: "Aucun mois ne compte encore assez d'avis d'adjudication pour un rapport.",
     rule: "Un mois obtient un rapport une fois terminé, s'il compte au moins {n} avis d'adjudication pertinents.",
     allTime: "Rapport global : qui remporte les contrats publics de bâtiment",
+    usNote: "Ces rapports mensuels portent sur les avis d'adjudication publics canadiens. Les rapports américains commenceront dès que des avis d'adjudication américains seront sur le tableau.",
   },
   meta: {
     title: "Qui a remporté les contrats publics immobiliers au {country} — {month} | PMRFP",
@@ -224,7 +227,7 @@ const es: typeof en = {
   index: {
     metaTitle: "Quién ganó los contratos públicos de inmuebles, mes a mes | PMRFP",
     metaDescription:
-      "Informes mensuales sobre quién ganó contratos públicos de mantenimiento y obras en inmuebles en Canadá y EE. UU., a partir de avisos oficiales de adjudicación: totales, principales ganadores, oficios, compradores y los contratos más grandes.",
+      "Informes mensuales sobre quién ganó contratos públicos de mantenimiento y obras en inmuebles en Canadá, a partir de avisos oficiales de adjudicación: totales, principales ganadores, oficios, compradores y los contratos más grandes.",
     title: "Quién ganó los contratos públicos de inmuebles, mes a mes",
     lead: "Un informe por mes, hecho solo con avisos oficiales de adjudicación. Totales, principales ganadores, oficios, compradores y los contratos más grandes, con un CSV por mes.",
     colMonth: "Mes",
@@ -235,6 +238,7 @@ const es: typeof en = {
     empty: "Todavía ningún mes tiene suficientes avisos de adjudicación para un informe.",
     rule: "Un mes tiene informe cuando ya terminó y suma al menos {n} avisos de adjudicación relevantes.",
     allTime: "Informe general: quién gana los contratos públicos de edificios",
+    usNote: "Estos informes mensuales cubren avisos de adjudicación públicos de Canadá. Los informes de EE. UU. empezarán cuando haya avisos de adjudicación de EE. UU. en el tablero.",
   },
   meta: {
     title: "Quién ganó los contratos públicos de inmuebles en {country} — {month} | PMRFP",

@@ -146,9 +146,29 @@ const Sk = ({ w }: { w: string }) => <span className="v3-sk" aria-hidden style={
 
 /* ------------------------------------------------------------------ component */
 
-export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Messages; lang: Locale; dataSources?: { live: string[]; fallback: string[] } }) {
+export function HomeV3({
+  data: dataCa,
+  dataUs,
+  where,
+  t,
+  lang,
+  dataSources,
+}: {
+  /** Canada's board (also what crawlers and the first paint see). */
+  data: V3Data;
+  /** The U.S. board; null when the board can't be read. Never mixed with Canada's. */
+  dataUs?: V3Data | null;
+  /** common.market.where: "in Canada" / "in the U.S.". */
+  where: Record<"CA" | "US", string>;
+  t: V3Messages;
+  lang: Locale;
+  dataSources?: { live: string[]; fallback: string[] };
+}) {
   const router = useRouter();
   const market = useVisitorMarket();
+  // Country-first: one country's numbers, lists and awards at a time.
+  const data = market === "US" && dataUs ? dataUs : dataCa;
+  const here = where[market === "US" && dataUs ? "US" : "CA"];
   const rate = useUsdPerCad();
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
@@ -286,7 +306,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
     fmt(t.platform.bigwords.open, { n: num(data.open) }),
     fmt(t.platform.bigwords.trades, { n: num(data.trades) }),
     fmt(t.platform.bigwords.regions, { n: num(data.regions) }),
-    fmt(t.platform.bigwords.awarded, { value: w.value }),
+    ...(top.length ? [fmt(t.platform.bigwords.awarded, { value: w.value })] : []),
   ];
   const cards = DECK.map((img, i) => {
     const slot = (i - deck + 4) % 4;
@@ -389,8 +409,8 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
               <div className="v3-hero-main">
                 <div className="v3-hero-eyebrow">
                   <span className="v3-dot" />
-                  <span className="d">{fmt(t.hero.eyebrow, { n: num(data.open) })}</span>
-                  <span className="m">{fmt(t.hero.eyebrowShort, { n: num(data.open) })}</span>
+                  <span className="d">{fmt(t.hero.eyebrow, { n: num(data.open), where: here })}</span>
+                  <span className="m">{fmt(t.hero.eyebrowShort, { n: num(data.open), where: here })}</span>
                 </div>
                 <h1 className="v3-h1">
                   {t.hero.title} <span key={tick} className={`w ${swapClass}`} aria-live="off">{word}.</span>
@@ -574,6 +594,8 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
           </div>
         </section>
 
+        {/* Contract winners come from public award notices (Canadian today): hidden when the visitor's country has none. */}
+        {top.length > 0 && (
         <section className="v3-win">
           <div className="v3-wrap v3-win-in">
             <div className="v3-win-head">
@@ -635,6 +657,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
             </div>
           </div>
         </section>
+        )}
 
         <section className="v3-plat">
           <div className="v3-wrap v3-plat-in">
@@ -866,7 +889,7 @@ export function HomeV3({ data, t, lang, dataSources }: { data: V3Data; t: V3Mess
         <div className="v3-sticky-in">
           <span className="v3-dot d" style={{ width: 10, height: 10 }} />
           <div className="txt">
-            <b><span className="d">{fmt(t.sticky.open, { n: num(data.open) })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(data.open) })}</span></b>{" "}
+            <b><span className="d">{fmt(t.sticky.open, { n: num(data.open), where: here })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(data.open), where: here })}</span></b>{" "}
             <span className="c"><span className="d">{fmt(t.sticky.closing, { n: num(data.closing7) })}</span><span className="m">{fmt(t.sticky.closingShort, { n: num(data.closing7) })}</span></span>
           </div>
           <a href={L(H.postRfp)} className="v3-pill ghost">{t.sticky.post}</a>

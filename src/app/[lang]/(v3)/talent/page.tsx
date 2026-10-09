@@ -3,7 +3,7 @@ import { DirectoryList, LIST_PATH, PER_PAGE, listHref, paginate } from "@/compon
 import { listTalent } from "@/lib/talent/data";
 import { AVAILABILITY, FREE_CONTACTS_PER_MONTH } from "@/lib/talent/rules";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
-import { getListCounts } from "@/lib/data/list-counts";
+import { getVisitorListCounts } from "@/lib/data/list-counts";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
@@ -36,7 +36,7 @@ export default async function TalentPage({
     filtered ? listTalent() : Promise.resolve(null),
     getCategories(),
     getRegions(),
-    getListCounts(),
+    getVisitorListCounts(),
   ]);
   const pool = unfiltered?.people ?? people;
   const n = (x: number) => formatNumber(x, lang);

@@ -42,6 +42,8 @@ import { regionName, tradeName } from "@/i18n/terms";
 import { frIn, frTradeOf } from "@/lib/seo/phrases.fr";
 import { esIn, esTradeOf } from "@/lib/seo/phrases.es";
 import { photoAlt } from "@/lib/seo/photos.fr";
+import { ByMarket } from "@/components/geo/by-market";
+import { inCountry, type CountryCode } from "@/lib/visitor-geo";
 
 export const revalidate = 3600;
 
@@ -136,6 +138,26 @@ export default async function TradeCategoryPage({
   const photo = tradePhoto(cat.slug);
   const forum = forumForTrade(cat.slug);
   const forumT = getT("forum");
+  const rfpGrid = (c: CountryCode) => {
+    const list = inCountry(rfps, c);
+    return list.length === 0 ? (
+      <div className="mt-4"><EmptyState title={fmt(t.emptyRfps.title, vars)} description={t.emptyRfps.description} /></div>
+    ) : (
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {list.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
+      </div>
+    );
+  };
+  const vendorGrid = (c: CountryCode) => {
+    const list = vendors.filter((v) => (v.countries ?? ["CA"]).includes(c));
+    return list.length === 0 ? (
+      <div className="mt-4"><EmptyState title={fmt(t.emptyVendors.title, vars)} description={t.emptyVendors.description} /></div>
+    ) : (
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {list.slice(0, 6).map((v) => <DirectoryCard key={v.slug} vendor={v} />)}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -193,13 +215,8 @@ export default async function TradeCategoryPage({
           <h2 className="text-2xl font-semibold tracking-tight">{fmt(t.openTitle, vars)}</h2>
           <Link href={`/rfps?category=${cat.slug}`} className="text-sm text-teal-700 hover:underline">{seo.viewAll}</Link>
         </div>
-        {rfps.length === 0 ? (
-          <div className="mt-4"><EmptyState title={fmt(t.emptyRfps.title, vars)} description={t.emptyRfps.description} /></div>
-        ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
-          </div>
-        )}
+        {/* Country-first: the page is cached, so both countries' cards ship and the visitor's shows. */}
+        <ByMarket ca={rfpGrid("CA")} us={rfpGrid("US")} />
       </Container>
 
       <section className="bg-secondary/30">
@@ -208,13 +225,7 @@ export default async function TradeCategoryPage({
             <h2 className="text-2xl font-semibold tracking-tight">{fmt(t.companiesTitle, vars)}</h2>
             <Link href={`/directory?category=${cat.slug}`} className="text-sm text-teal-700 hover:underline">{seo.browseAll}</Link>
           </div>
-          {vendors.length === 0 ? (
-            <div className="mt-4"><EmptyState title={fmt(t.emptyVendors.title, vars)} description={t.emptyVendors.description} /></div>
-          ) : (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {vendors.slice(0, 6).map((v) => <DirectoryCard key={v.slug} vendor={v} />)}
-            </div>
-          )}
+          <ByMarket ca={vendorGrid("CA")} us={vendorGrid("US")} />
         </Container>
       </section>
 
