@@ -52,7 +52,12 @@ const PUBLIC_BODY =
 
 export function isGiantOrPublicBody(name: string): boolean {
   const key = winnerKey(name);
-  return GIANTS.test(key) || PUBLIC_BODY.test(name.toLowerCase());
+  return GIANTS.test(key) || isPublicBody(name);
+}
+
+/** A city, ministry, school board… named as the "winner" of inter-agency work. */
+export function isPublicBody(name: string): boolean {
+  return PUBLIC_BODY.test(name.toLowerCase());
 }
 
 const uniq = <T,>(xs: T[]) => [...new Set(xs)];

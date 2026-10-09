@@ -82,7 +82,7 @@ export default async function ContractWinnersPage({
         h1={t.h1}
         h1Size={56}
         sub={t.sub}
-        links={[{ href: "/reports/contract-winners", label: t.monthly }, { href: "/reports/public-building-contracts", label: t.reports }, { href: "/toronto-contracts", label: t.toronto }]}
+        links={[{ href: "/gc-hub", label: `${getT("gcHub").links.hub} →` }, { href: "/reports/contract-winners", label: t.monthly }, { href: "/reports/public-building-contracts", label: t.reports }, { href: "/toronto-contracts", label: t.toronto }]}
         stats={
           winners.length
             ? [

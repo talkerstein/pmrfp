@@ -8,6 +8,8 @@ import type { PublicTenderSource } from "./sources";
 
 export const FL_VBS_ATTRIBUTION =
   "Source: Florida Vendor Bid System, MyFloridaMarketPlace — State of Florida public solicitation notice.";
+export const DELAWARE_ATTRIBUTION =
+  "Source: State of Delaware Open Data — Open Bids (data.delaware.gov), public solicitation notice.";
 export const LA_COUNTY_ATTRIBUTION =
   "Source: Los Angeles County open solicitations list (camisvr.co.la.ca.us/LACoBids) — public solicitation notice.";
 
@@ -25,4 +27,5 @@ export const US_STATE_SOURCES: [suffix: RegExp, source: PublicTenderSource][] = 
   [/-lacr-\d+$/, { key: "la-city", past: false, badge: "Public tender · City of Los Angeles", issuer: "a City of Los Angeles agency", portal: "RAMP LA", bidLabel: "Open on RAMP LA", attribution: LA_CITY_ATTRIBUTION }],
   [/-flvbs-\d+$/, { key: "florida-vbs", past: false, badge: "Public tender · State of Florida", issuer: "a Florida state agency", portal: "the Florida Vendor Bid System", bidLabel: "Open on Florida VBS", attribution: FL_VBS_ATTRIBUTION }],
   [/-lacb-\d+$/, { key: "la-county", past: false, badge: "Public tender · Los Angeles County", issuer: "Los Angeles County", portal: "the LA County bid site", bidLabel: "Open on LA County bids", attribution: LA_COUNTY_ATTRIBUTION }],
+  [/-debid-\d+$/, { key: "delaware", past: false, badge: "Public tender · State of Delaware", issuer: "a State of Delaware agency", portal: "the Delaware MyMarketplace bid site", bidLabel: "Open on Delaware MyMarketplace", attribution: DELAWARE_ATTRIBUTION }],
 ];

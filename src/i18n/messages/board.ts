@@ -513,6 +513,13 @@ const fr: typeof en = {
         attribution:
           "Source : données ouvertes de la Ville de Los Angeles (data.lacity.org) — RAMP Open Bid Opportunities, domaine public CC0 1.0.",
       },
+      delaware: {
+        issuer: "un organisme de l'État du Delaware",
+        portal: "le site d'appels d'offres MyMarketplace du Delaware",
+        bidLabel: "Ouvrir sur Delaware MyMarketplace",
+        attribution:
+          "Source : données ouvertes de l'État du Delaware — Open Bids (data.delaware.gov), avis d'appel d'offres public.",
+      },
     },
   },
 
@@ -817,6 +824,13 @@ const es: typeof en = {
         bidLabel: "Abrir en RAMP LA",
         attribution:
           "Fuente: datos abiertos de la Ciudad de Los Ángeles (data.lacity.org) — RAMP Open Bid Opportunities, dominio público CC0 1.0.",
+      },
+      delaware: {
+        issuer: "una agencia del estado de Delaware",
+        portal: "el sitio de licitaciones MyMarketplace de Delaware",
+        bidLabel: "Abrir en Delaware MyMarketplace",
+        attribution:
+          "Fuente: datos abiertos del estado de Delaware — Open Bids (data.delaware.gov), aviso de licitación pública.",
       },
     },
   },
