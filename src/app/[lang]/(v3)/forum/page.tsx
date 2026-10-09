@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { ChevronDown, CircleHelp } from "lucide-react";
+import { BookOpen, CalendarClock, ChevronDown, CircleHelp } from "lucide-react";
 import { OpeningSoon } from "@/components/forum/parts";
-import { getForumIndex, listLatestThreads, listPinnedThreads, searchThreads, type ForumCategory, type ThreadWithCategory } from "@/lib/forum/data";
+import { getForumIndex, listLatestThreads, listPinnedGuides, listRecentAutoThreads, searchThreads, type AutoThread, type ForumCategory, type ThreadWithCategory } from "@/lib/forum/data";
+import { newestPerForum, openTenderStrip, partitionForums, pickStartHere, shownCount, torontoToday } from "@/lib/forum/quiet";
 import { ForumIcon, ForumSearch, ThreadList } from "@/components/forum/organize";
 import { cleanSearch } from "@/lib/forum/organize";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
@@ -13,7 +14,7 @@ import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
-import { fmt, formatNumber, plural } from "@/i18n/format";
+import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { V3Body } from "@/components/v3/body";
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
@@ -67,7 +68,14 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
   const t = getT("forum");
   const v = getT("v3Pages").forum;
   const o = t.org;
-  const [idx, search, latestThreads, pinnedThreads] = await Promise.all([getForumIndex(), runSearch(rawQ), listLatestThreads(8), listPinnedThreads(3)]);
+  const [idx, search, latestThreads, pinnedGuides, autoThreads] = await Promise.all([
+    getForumIndex(),
+    runSearch(rawQ),
+    listLatestThreads(40),
+    listPinnedGuides(),
+    listRecentAutoThreads(),
+  ]);
+  const q = t.quiet;
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => formatNumber(n, lang);
   const newThread = L("/forum/job-site-stories/new");
@@ -79,8 +87,16 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
   const latest = [...cats].filter((c) => c.lastThread && c.lastPostAt).sort((a, b) => (b.lastPostAt ?? "").localeCompare(a.lastPostAt ?? ""))[0];
 
   const no = (i: number) => String(i).padStart(2, "0");
-  const pinnedIds = new Set(pinnedThreads.map((p) => p.id));
-  const activity = [...pinnedThreads, ...latestThreads.filter((x) => !pinnedIds.has(x.id))].map((th) => ({ th, forum: th.categorySlug }));
+  // Lead with what is really there: pinned PMRFP Team guides, then real
+  // tenders (each with its own automatic thread). No invented activity.
+  const startHere = pickStartHere(pinnedGuides, 6);
+  const now = new Date();
+  const tenders = openTenderStrip(autoThreads, { today: torontoToday(now), now, days: 7, limit: 8 });
+  const byForum = newestPerForum(autoThreads, { per: 2, forums: 6, skip: new Set(tenders.map((x) => x.id)) });
+  const shownIds = new Set([...startHere, ...tenders].map((x) => x.id));
+  // Latest activity: member and staff threads (tenders have their own rows above).
+  const activity = latestThreads.filter((x) => !x.isAuto && !shownIds.has(x.id)).slice(0, 8).map((th) => ({ th, forum: th.categorySlug }));
+  const closes = (th: AutoThread) => (th.deadline ? fmt(q.closes, { date: formatDate(th.deadline, lang, { month: "short", day: "numeric" }) }) : null);
 
   const forumRow = (c: ForumCategory) => (
     <li key={c.slug}>
@@ -91,7 +107,7 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
           <span className="block truncate text-sm text-[#4B4F6B]">{t.categories[c.slug].blurb}</span>
           {c.lastThread && <span className="mt-0.5 block truncate text-xs text-[#4B4F6B]">{v.latest}: <span className="font-medium text-[#282B59]">{c.lastThread.title}</span></span>}
         </span>
-        <span className="shrink-0 text-right text-xs tabular-nums text-[#4B4F6B]">{plural(c.threadCount, o.threadsIn)}</span>
+        {shownCount(c.threadCount) != null && <span className="shrink-0 text-right text-xs tabular-nums text-[#4B4F6B]">{plural(c.threadCount, o.threadsIn)}</span>}
       </a>
     </li>
   );
@@ -157,9 +173,80 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
         <OpeningSoon />
       ) : (
         <>
-          <section className="wrap f-sec first" aria-labelledby="forum-latest">
+          {!search.asked && startHere.length > 0 && (
+            <section className="wrap f-sec first" aria-labelledby="forum-start">
+              <h2 className="h2" id="forum-start">{q.startHereTitle}</h2>
+              <p className="mt-1 max-w-2xl text-sm text-[#4B4F6B]">{q.startHereLead}</p>
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {startHere.map((g) => (
+                  <li key={g.id}>
+                    <a href={L(g.path)} className="flex h-full flex-col gap-2 rounded-2xl border-2 border-[#E3E4EE] bg-white p-4 hover:border-[#282B59]" lang={g.categorySlug === "quebec" ? "fr-CA" : undefined}>
+                      <span className="inline-flex w-fit items-center gap-1 rounded bg-[#282B59] px-1.5 py-0.5 text-[11px] font-semibold text-white"><BookOpen className="size-3" aria-hidden /> {q.guide}</span>
+                      <span className="font-bold leading-snug text-[#1B1D3A]">{g.title}</span>
+                      <span className="mt-auto inline-flex items-center gap-1 text-xs text-[#4B4F6B]"><ForumIcon slug={g.categorySlug} className="size-3" /> {t.categories[g.categorySlug].name}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {!search.asked && tenders.length > 0 && (
+            <section className="wrap f-sec" aria-labelledby="forum-tenders">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="h2" id="forum-tenders">{q.tendersTitle}</h2>
+                  <p className="mt-1 max-w-2xl text-sm text-[#4B4F6B]">{q.tendersLead}</p>
+                </div>
+                <a href={L("/rfps")} className="text-sm font-bold">{q.tendersAll} →</a>
+              </div>
+              <ul className="-mx-4 mt-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+                {tenders.map((th) => (
+                  <li key={th.id} className="w-[78%] shrink-0 snap-start sm:w-auto">
+                    <a href={L(th.path)} className="flex h-full flex-col gap-2 rounded-2xl border-2 border-[#E3E4EE] bg-white p-4 hover:border-[#282B59]" lang={th.categorySlug === "quebec" ? "fr-CA" : undefined}>
+                      <span className="inline-flex w-fit items-center gap-1 rounded bg-[#DDFBF0] px-1.5 py-0.5 text-[11px] font-semibold text-teal-800"><CalendarClock className="size-3" aria-hidden /> {closes(th)}</span>
+                      <span className="line-clamp-3 font-semibold leading-snug text-[#1B1D3A]">{th.title}</span>
+                      <span className="mt-auto inline-flex flex-wrap items-center gap-1 text-xs text-[#4B4F6B]"><ForumIcon slug={th.categorySlug} className="size-3" /> {t.categories[th.categorySlug].name}{th.region && <> · {th.region}</>}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {!search.asked && byForum.length > 0 && (
+            <section className="wrap f-sec" aria-labelledby="forum-byforum">
+              <h2 className="h2" id="forum-byforum">{q.byForumTitle}</h2>
+              <p className="mt-1 max-w-2xl text-sm text-[#4B4F6B]">{q.byForumLead}</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {byForum.map(({ forum, threads }) => {
+                  const slug = forum as ForumCategorySlug;
+                  return (
+                    <div key={forum} className="rounded-2xl border-2 border-[#E3E4EE] bg-white">
+                      <a href={L(`/forum/${slug}`)} className="flex items-center gap-2 border-b-2 border-[#E3E4EE] px-4 py-2.5 font-bold text-[#1B1D3A] hover:bg-[#F5F5FA]">
+                        <span className="grid size-7 place-items-center rounded-lg bg-[#EEEFF6] text-[#282B59]"><ForumIcon slug={slug} /></span>
+                        {t.categories[slug].name}
+                      </a>
+                      <ul className="divide-y divide-[#E3E4EE]">
+                        {threads.map((th) => (
+                          <li key={th.id}>
+                            <a href={L(th.path)} className="block px-4 py-2.5 hover:bg-[#F5F5FA]" lang={slug === "quebec" ? "fr-CA" : undefined}>
+                              <span className="line-clamp-2 text-sm font-semibold text-[#1B1D3A]">{th.title}</span>
+                              {closes(th) && <span className="text-xs text-[#4B4F6B]">{closes(th)}</span>}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <section className={`wrap f-sec${search.asked || (startHere.length === 0 && tenders.length === 0 && byForum.length === 0) ? " first" : ""}`} aria-labelledby="forum-latest">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-              <h2 className="h2" id="forum-latest">{search.asked ? (search.q ? fmt(o.searchTitle, { q: search.q }) : o.searchLabel) : o.latestTitle}</h2>
+              <h2 className="h2" id="forum-latest">{search.asked ? (search.q ? fmt(o.searchTitle, { q: search.q }) : o.searchLabel) : activity.length > 0 ? o.latestTitle : o.searchLabel}</h2>
               <ForumSearch action={L("/forum")} q={search.q} />
             </div>
             {search.asked ? (
@@ -176,36 +263,32 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
                 </p>
               </>
             ) : (
-              <>
-                {pinnedThreads.length > 0 && <p className="mb-2 font-mono text-xs uppercase tracking-[0.08em] text-[#4B4F6B]">{o.startHere}</p>}
-                <ThreadList items={activity} empty={o.latestEmpty} pinnedIds={pinnedIds} />
-              </>
+              activity.length > 0 && <ThreadList items={activity} empty={o.latestEmpty} />
             )}
           </section>
 
           {channels.map(({ ch, list }) => {
-            const active = list.filter((c) => c.threadCount > 0);
-            const quiet = list.filter((c) => c.threadCount === 0);
+            const { active, quiet } = partitionForums(list);
             const threads = list.reduce((n, c) => n + c.threadCount, 0);
             return (
               <section key={ch} className="wrap f-sec" aria-labelledby={`ch-${ch}`}>
-                <details open className="group overflow-hidden rounded-3xl border-2 border-[#E3E4EE] bg-white">
+                <details open={active.length > 0} className="group overflow-hidden rounded-3xl border-2 border-[#E3E4EE] bg-white">
                   <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
                     <span className="font-mono text-sm text-[#4B4F6B]" aria-hidden>{no(CHANNEL_ORDER.indexOf(ch) + 1)}</span>
                     <span className="min-w-0 flex-1">
                       <h2 className="text-xl font-extrabold text-[#1B1D3A]" id={`ch-${ch}`}>{t.channels[ch]}</h2>
                       <span className="block text-sm text-[#4B4F6B]">{v.channelBlurbs[ch]}</span>
                     </span>
-                    <span className="hidden shrink-0 text-xs text-[#4B4F6B] sm:block">{fmt(v.nBoards, { n: list.length })} · {plural(threads, o.threadsIn)}</span>
+                    <span className="hidden shrink-0 text-xs text-[#4B4F6B] sm:block">{fmt(v.nBoards, { n: list.length })}{shownCount(threads) != null && <> · {plural(threads, o.threadsIn)}</>}</span>
                     <ChevronDown className="size-5 shrink-0 text-[#282B59] transition-transform group-open:rotate-180" aria-hidden />
                   </summary>
                   <div className="border-t-2 border-[#E3E4EE]">
                     {active.length > 0 ? (
                       <ul className="divide-y divide-[#E3E4EE]">{active.map(forumRow)}</ul>
                     ) : (
-                      <p className="px-5 py-3 text-sm text-[#4B4F6B]">{o.allQuiet}</p>
+                      <ul className="divide-y divide-[#E3E4EE]">{quiet.map(forumRow)}</ul>
                     )}
-                    {quiet.length > 0 && (
+                    {active.length > 0 && quiet.length > 0 && (
                       <details className="border-t-2 border-[#E3E4EE]">
                         <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-[#282B59]">{plural(quiet.length, o.showAll)}</summary>
                         <ul className="divide-y divide-[#E3E4EE] border-t border-[#E3E4EE]">{quiet.map(forumRow)}</ul>

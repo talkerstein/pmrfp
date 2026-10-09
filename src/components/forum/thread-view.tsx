@@ -22,7 +22,10 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { cn } from "@/lib/utils";
-import { ForumIcon, ThreadList } from "@/components/forum/organize";
+import { ForumIcon, GuideChip, ThreadList } from "@/components/forum/organize";
+import { TenderCard } from "@/components/forum/tender-card";
+import { getTenderContext } from "@/lib/forum/tender-context";
+import { firstReplyPrompt, shownCount } from "@/lib/forum/quiet";
 
 async function load(category: string, param: string) {
   const parsed = parseThreadParam(param);
@@ -118,9 +121,11 @@ export async function ThreadView({ category, param, page }: { category: string; 
   const session = await getSession();
   const viewerId = session?.userId ?? null;
   const isMod = session ? isAdminRole(session.profile.primary_role) || (await isCategoryMod(session.userId, thread.categoryId)) : false;
-  const [{ posts, accepted }, related] = await Promise.all([
+  const [{ posts, accepted }, related, tender] = await Promise.all([
     listPosts(thread, page),
     listRelatedThreads(thread.categoryId, thread.categorySlug, thread.id, 5),
+    // Automatic tender threads: the real listing's facts + similar past awards.
+    thread.isAuto && page === 1 ? getTenderContext(thread.id) : Promise.resolve(null),
   ]);
   const viewer = session
     ? await viewerState(await createClient(), session.userId, thread.id, posts.map((p) => p.id))
@@ -149,6 +154,8 @@ export async function ThreadView({ category, param, page }: { category: string; 
   const answerWord = thread.type === "question" ? t.thread.answers : t.thread.replies;
   const op = thread.author?.userId === viewerId;
   const v = getT("v3Pages").forum;
+  const q = t.quiet;
+  const firstPrompt = firstReplyPrompt(thread);
 
   return (
     <>
@@ -179,7 +186,12 @@ export async function ThreadView({ category, param, page }: { category: string; 
           </div>
           <h1>{thread.title}</h1>
           <p className="lead" style={{ fontSize: 15 }}>
-            {[plural(thread.replyCount, answerWord), plural(thread.viewCount, t.thread.views), fmt(t.thread.updated, { date: formatDate(thread.lastPostAt, lang) }), thread.region].filter(Boolean).join(" · ")}
+            {[
+              shownCount(thread.replyCount) != null ? plural(thread.replyCount, answerWord) : null,
+              shownCount(thread.viewCount) != null ? plural(thread.viewCount, t.thread.views) : null,
+              fmt(t.thread.updated, { date: formatDate(thread.lastPostAt, lang) }),
+              thread.region,
+            ].filter(Boolean).join(" · ")}
           </p>
         </div>
       </section>
@@ -202,8 +214,9 @@ export async function ThreadView({ category, param, page }: { category: string; 
           <article className="f-card op" style={{ marginTop: accepted ? 14 : 0 }}>
             <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="inline-flex flex-wrap items-center gap-2">
-                <MemberName m={thread.author} staff={thread.isStaff && !thread.isAuto} showRank={!thread.isAuto} />
+                <MemberName m={thread.author} staff={thread.isStaff && !thread.isAuto} showRank={!thread.isAuto && !thread.isGuide} />
                 {thread.isAuto && <AutoPostChip lang={lang} full />}
+                {thread.isGuide && <GuideChip />}
               </span>
               <time dateTime={thread.createdAt} className="text-xs text-muted-foreground">{fmt(t.thread.posted, { date: formatDate(thread.createdAt, lang) })}</time>
             </header>
@@ -213,7 +226,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
                 <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t.thread.rateThis}</p>
                 <div className="flex items-center gap-4">
                   <RateThread threadId={thread.id} current={viewer.rating} canRate={actorId != null && !op} />
-                  <RatingBar avg={thread.ratingAvg} count={thread.ratingCount} />
+                  {thread.ratingCount > 0 && <RatingBar avg={thread.ratingAvg} count={thread.ratingCount} />}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -230,19 +243,32 @@ export async function ThreadView({ category, param, page }: { category: string; 
           </article>
         )}
 
-        <h2 className="f-hd2" style={{ marginTop: 40 }}>{plural(thread.replyCount, answerWord)}</h2>
-        <div className="mt-4 space-y-3.5">
-          {posts.length === 0 ? (
-            <p className="text-muted-foreground">{t.thread.noReplies}</p>
-          ) : (
-            posts.map((p) => (
-              <PostCard key={p.id} p={p} thread={thread} viewerId={actorId} voted={viewer.voted.has(p.id)} isMod={isMod} canAccept={canAccept} highlight={p.isAccepted} />
-            ))
-          )}
-        </div>
+        {page === 1 && tender && <TenderCard ctx={tender} />}
+
+        {/* No "0 replies" header on an empty thread: the reply box below invites the first one. */}
+        {!firstPrompt && (
+          <>
+            <h2 className="f-hd2" style={{ marginTop: 40 }}>{plural(thread.replyCount, answerWord)}</h2>
+            <div className="mt-4 space-y-3.5">
+              {posts.length === 0 ? (
+                <p className="text-muted-foreground">{t.thread.noReplies}</p>
+              ) : (
+                posts.map((p) => (
+                  <PostCard key={p.id} p={p} thread={thread} viewerId={actorId} voted={viewer.voted.has(p.id)} isMod={isMod} canAccept={canAccept} highlight={p.isAccepted} />
+                ))
+              )}
+            </div>
+          </>
+        )}
         <Pager base={thread.path} page={page} total={pages} />
 
-        <section className="mt-10 rounded-3xl bg-[#F5F5FA] p-5 sm:p-6">
+        <section id="reply" className="mt-10 rounded-3xl bg-[#F5F5FA] p-5 sm:p-6">
+          {firstPrompt && (
+            <div className="mb-4">
+              <h2 className="f-hd2">{firstPrompt === "answer" ? q.firstAnswer : q.firstReply}</h2>
+              <p className="mt-1 text-sm text-[#4B4F6B]">{thread.isGuide ? q.firstGuideLead : q.firstLead}</p>
+            </div>
+          )}
           {thread.isLocked && !isMod ? (
             <p className="text-sm text-muted-foreground">{t.thread.lockedNote}</p>
           ) : !canPost ? (
@@ -274,7 +300,14 @@ export async function ThreadView({ category, param, page }: { category: string; 
         )}
       </div>
       <aside>
-        {thread.author && (
+        {thread.isGuide && (
+          <div className="f-side-mint">
+            <div className="lb">{q.guide}</div>
+            <div className="nm">{thread.author?.displayName}</div>
+            <p style={{ marginTop: 8, fontSize: 14 }}>{q.guideNote}</p>
+          </div>
+        )}
+        {thread.author && !thread.isAuto && !thread.isGuide && (
           <div className="f-side-mint">
             <div className="lb">{v.authorCard}</div>
             <div className="nm">{thread.author.displayName}</div>

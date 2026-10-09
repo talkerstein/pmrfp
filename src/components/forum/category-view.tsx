@@ -11,11 +11,12 @@ import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
-import { fmt, formatDate, formatNumber } from "@/i18n/format";
+import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { alternatesFor } from "@/i18n/metadata";
 import { cn } from "@/lib/utils";
 import { ForumIcon, SortTabs, ThreadBadges } from "@/components/forum/organize";
 import { categoryQuery, timeAgo, type ThreadSort } from "@/lib/forum/organize";
+import { shownCount } from "@/lib/forum/quiet";
 
 export function categoryMetadata(langParam: string, category: string, page: number): Metadata {
   const l = hasLocale(langParam) ? langParam : "en";
@@ -52,7 +53,7 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <ThreadBadges th={th} />
           {th.region && <span className="inline-flex items-center gap-0.5"><MapPin className="size-3" aria-hidden />{th.region}</span>}
-          {th.isStaff && !th.isAuto && <span className="inline-flex items-center gap-0.5"><ShieldCheck className="size-3" /> {t.category.staff}</span>}
+          {th.isStaff && !th.isAuto && !th.isGuide && <span className="inline-flex items-center gap-0.5"><ShieldCheck className="size-3" /> {t.category.staff}</span>}
           {pages > 1 && (
             <span className="inline-flex gap-1">
               {Array.from({ length: Math.min(pages, 4) }, (_, i) => i + 1).map((n) => (
@@ -63,13 +64,14 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
               )}
             </span>
           )}
-          <span className="md:hidden">· <MemberName m={th.author} /> · {formatNumber(th.replyCount, lang)} · {timeAgo(th.lastPostAt, lang)}</span>
+          <span className="md:hidden">· <MemberName m={th.author} />{shownCount(th.replyCount) != null && <> · {plural(th.replyCount, t.org.replies)}</>} · {timeAgo(th.lastPostAt, lang)}</span>
         </div>
       </td>
       <td className="hidden px-3 py-3 text-sm md:table-cell"><MemberName m={th.author} staff={th.isStaff} /></td>
-      <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">{formatNumber(th.replyCount, lang)}</td>
-      <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">{formatNumber(th.viewCount, lang)}</td>
-      <td className="hidden px-3 py-3 lg:table-cell"><RatingBar avg={th.ratingAvg} count={th.ratingCount} /></td>
+      {/* Real counts only where there is something to count (src/lib/forum/quiet.ts). */}
+      <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">{shownCount(th.replyCount) != null && formatNumber(th.replyCount, lang)}</td>
+      <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">{shownCount(th.viewCount) != null && formatNumber(th.viewCount, lang)}</td>
+      <td className="hidden px-3 py-3 lg:table-cell">{th.ratingCount > 0 && <RatingBar avg={th.ratingAvg} count={th.ratingCount} />}</td>
       <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
         {th.lastUser && <Link href={`/forum/u/${th.lastUser.handle}`} className="block text-foreground hover:underline">{th.lastUser.displayName}</Link>}
         <time dateTime={th.lastPostAt} title={formatDate(th.lastPostAt, lang)}>{timeAgo(th.lastPostAt, lang)}</time>
@@ -113,7 +115,11 @@ export async function CategoryView({ category, page, sort = "latest", hideAuto =
                 ))
               : t.index.modOpen}
           </span>
-          <span className="on">{fmt(t.category.stats, { threads: res.category.threadCount, posts: res.category.postCount })}</span>
+          {shownCount(res.category.threadCount) != null && (
+            <span className="on">
+              {[plural(res.category.threadCount, t.org.threadsIn), shownCount(res.category.postCount) != null ? plural(res.category.postCount, t.quiet.postsN) : null].filter(Boolean).join(" · ")}
+            </span>
+          )}
         </div>
         <div className="acts">
           <Link href={`${base}/new?type=question`} className="btn mint">
@@ -138,7 +144,17 @@ export async function CategoryView({ category, page, sort = "latest", hideAuto =
           </Link>
         </div>
         {pinned.length + threads.length === 0 ? (
-          <p className="rounded-3xl border-2 border-dashed border-[#D5D7E6] px-6 py-14 text-center text-[#4B4F6B]">{sort === "latest" ? t.category.empty : t.org.tabEmpty}</p>
+          sort === "latest" ? (
+            <div className="rounded-3xl border-2 border-[#E3E4EE] bg-[#F5F5FA] px-6 py-10 text-center text-[#4B4F6B]">
+              <p>{fmt(t.quiet.newForum, { name: c.name })}</p>
+              <p className="mt-3 flex flex-wrap justify-center gap-4 text-sm font-bold">
+                <Link href="/forum">{t.quiet.readGuides} →</Link>
+                <Link href="/rfps">{t.quiet.tendersAll} →</Link>
+              </p>
+            </div>
+          ) : (
+            <p className="rounded-3xl border-2 border-dashed border-[#D5D7E6] px-6 py-14 text-center text-[#4B4F6B]">{t.org.tabEmpty}</p>
+          )
         ) : (
           <div className="overflow-hidden rounded-3xl border-2 border-[#E3E4EE]">
             <table className="w-full text-sm">
