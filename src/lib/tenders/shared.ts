@@ -61,6 +61,36 @@ export function repairFeedText(s: string): string {
 }
 
 
+/**
+ * Building work the trade RULES miss because the title names the building,
+ * not the trade: "Fire Station #2 New Construction", "Storage Building
+ * Replacement", "Classroom Upfit". Read as general contracting.
+ */
+export const BUILDING_WORK =
+  /new construction|construction of (?:an? |the )?(?:new )?[a-z#0-9' -]{0,40}\b(?:building|station|center|facility|school|shelter|hall|housing|gym|library|clinic)|(?:building|facility|school|station|hall) (?:replacement|addition|expansion|upgrades?)|(?:housing|building|facility|station|center|clinic|school) construction|\bup-?fit\b|balcony|bathroom|restroom|interior (?:finish|improvement)|exterior envelope|envelope (?:repair|restoration)|tenant improvement/;
+
+/** Trade slugs for a title: the shared RULES, else BUILDING_WORK → general contracting. */
+export function tradesFor(title: string): string[] {
+  const byRule = [...new Set(RULES.filter(([, p]) => p.test(title)).map(([slug]) => slug))];
+  if (byRule.length) return byRule.slice(0, 3);
+  return BUILDING_WORK.test(title) ? ["general-contracting"] : [];
+}
+
+/**
+ * When a tender was published, as an rfp_posts timestamp. Anything from
+ * yesterday on counts as today, so a fresh notice reaches the alerts cron.
+ */
+export function publishedAt(posted: string | null | undefined, today: string): string {
+  const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  const day = (posted ?? "").slice(0, 10);
+  return !/^\d{4}-\d{2}-\d{2}$/.test(day) || day >= yesterday ? `${today}T00:00:00Z` : `${day}T00:00:00Z`;
+}
+
+/** "Some long title…" capped for cards. */
+export function cap(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s;
+}
+
 /** Public-works infrastructure — not work a building trade bids on. */
 export const CIVIL =
   /culvert|bridge|watermain|sewer|road (re)?construction|resurfacing|transit|pedestrian bridge|creek|trenchless|pipe lining|red light camera|highway|ditching|dredg|runway|student transportation|transportation of students|school bus|roadway|overpass|shoulder gravel|paving of roads|repairs to roads|\broute \d+|\btrunk \d+|\bbr\d{3,}/i;
