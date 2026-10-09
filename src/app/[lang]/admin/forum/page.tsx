@@ -7,6 +7,7 @@ import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ModButtons, ThreadForm } from "@/components/forum/forms";
 import { AppointModForm } from "@/components/forum/admin-forms";
 import { AutoThreadImport } from "@/components/forum/auto-import";
+import { StaffGuideImport } from "@/components/forum/staff-guide-import";
 import { isMissingTable } from "@/lib/forum/data";
 import { FORUM_CATEGORY_SLUGS } from "@/lib/forum/categories";
 import { excerpt } from "@/lib/forum/text";
@@ -91,6 +92,17 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
             <h2 className="text-lg font-semibold">Community moderators</h2>
             <p className="mt-1 text-sm text-muted-foreground">Appoint a member (Foreman+ with a clean record, per the spec) to a category. They appear in the forum header.</p>
             <div className="mt-3"><AppointModForm categories={categories} /></div>
+          </section>
+
+          <section className="max-w-2xl">
+            <h2 className="text-lg font-semibold">Import staff guides</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Reference guides (payment deadlines, liens, bonding, WSIB/WCB clearances, tender portals, licensing) written by the
+              PMRFP Team, each with linked official sources. Posted under the &quot;PMRFP Team&quot; staff account with the staff badge,
+              dated the moment you import (nothing is backdated), up to 3 pinned per forum. Threads only: no replies, votes or ratings.
+              Safe to run twice; the same set can be loaded with briefs/ops/2026-10-09-forum-staff-guides.sql instead. Preview first.
+            </p>
+            <div className="mt-3"><StaffGuideImport /></div>
           </section>
 
           <section className="max-w-2xl">

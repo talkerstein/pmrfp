@@ -1,0 +1,2167 @@
+[
+  {
+    "key": "A1",
+    "category": "ontario",
+    "title": "Ontario Construction Act: holdback, lien and prompt payment deadlines in one place",
+    "verification": [
+      {
+        "claim": "Consolidation current to October 6, 2026; last amendment 2025, c. 14, Sched. 2",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "e-Laws header shows consolidation period January 1, 2026 to e-Laws currency date October 6, 2026."
+      },
+      {
+        "claim": "10% holdback on price of services or materials as supplied",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 22(1): each payer retains holdback equal to 10 per cent of the price of services or materials actually supplied."
+      },
+      {
+        "claim": "Annual holdback release: notice within 14 days after anniversary; payment 60 to 74 days after notice unless lien preserved/perfected; contractor pays subs within 14 days; remaining holdback 14 days per tier",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 26(2) to (5) and (8)."
+      },
+      {
+        "claim": "Transition rule for contracts before annual release took effect",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 87.4(4): first anniversary that counts is the second anniversary after the amending section came into force."
+      },
+      {
+        "claim": "Proper invoice contents and 7-day deficiency notice",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.1(1) lists items 1 to 7 incl. 6.1 accounts payable info; s. 6.1(2) invoice deemed proper unless owner notifies of deficiency within 7 days."
+      },
+      {
+        "claim": "Monthly invoicing; pre-certification condition of no effect; testing and commissioning exception",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.3(1), (2), (4)."
+      },
+      {
+        "claim": "Owner pays in 28 days; notice of non-payment within 14 days",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.4(1) and (2)."
+      },
+      {
+        "claim": "Contractor pays subs within 7 days; 35-day rule; undertaking to adjudicate within 21 days",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.5(1), (4), (5)."
+      },
+      {
+        "claim": "Interest at prejudgment rate or higher contract rate",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.9."
+      },
+      {
+        "claim": "Lien preservation by registration; Crown/municipal premises by giving copy to owner",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 16(1) lien does not attach to Crown or municipality interest; s. 34(1)(a) and (b)."
+      },
+      {
+        "claim": "60-day lien expiry periods for contractor and others",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 31(2) and 31(3)."
+      },
+      {
+        "claim": "Perfection within 90 days",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 36(2) and (3)."
+      },
+      {
+        "claim": "Adjudication: 90-day window, 30-day determination, pay within 15 days, suspension right",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 13.5(3), (3.1); s. 13.13(1); s. 13.19(2) and (5)."
+      },
+      {
+        "claim": "ODACC is the Authorized Nominating Authority",
+        "url": "https://odacc.ca/",
+        "evidence": "ODACC site states it is the ANA under the Construction Act."
+      },
+      {
+        "claim": "Contracts deemed amended to conform; waiver void",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 5(1) and s. 4."
+      }
+    ]
+  },
+  {
+    "key": "A2",
+    "category": "alberta",
+    "title": "Alberta Prompt Payment and Construction Lien Act: payment, holdback and lien deadlines",
+    "verification": [
+      {
+        "claim": "Consolidation current as of April 1, 2025",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "Cover page: Current as of April 1, 2025, Office Consolidation."
+      },
+      {
+        "claim": "New contracts must follow the Act since August 29, 2022",
+        "url": "https://www.alberta.ca/prompt-payment-rules-for-construction-industry",
+        "evidence": "alberta.ca: all new construction contracts must follow the PPCLA as of August 29, 2022."
+      },
+      {
+        "claim": "Provincial government projects under Public Works Act",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 1.1(1.1): except as provided in the Public Works Act, the Act does not apply to a public work; alberta.ca says Government of Alberta project contracts fall under the Public Works Act."
+      },
+      {
+        "claim": "Proper invoice contents incl. statement intended to be a proper invoice; 31-day invoicing; pre-certification no effect",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 32.1(1)(a) to (h), (3), (4), (6)."
+      },
+      {
+        "claim": "28-day owner payment; 14-day notice of dispute",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 32.2(1) and (2)."
+      },
+      {
+        "claim": "Contractor pays subs within 7 days; 35-day rule; 21-day adjudication undertaking",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 32.3(1), (4), (5)."
+      },
+      {
+        "claim": "Sub to sub 7 days or 42 days",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 32.5(1) and (5)."
+      },
+      {
+        "claim": "Interest at prescribed rates",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 32.6."
+      },
+      {
+        "claim": "10% major lien fund held 60 days; 90 days for oil/gas well and concrete; minor lien fund",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 18(1), (1.1), (1.2); s. 23(1)."
+      },
+      {
+        "claim": "Annual/phased holdback release on larger contracts; $10 million and 12 months",
+        "url": "https://www.alberta.ca/prompt-payment-rules-for-construction-industry",
+        "evidence": "s. 24.1 conditions in Act; alberta.ca holdback section states minimum contract value of $10 million and duration over 12 months."
+      },
+      {
+        "claim": "Lien registration 60 days, 90 for concrete and oil/gas; unregistered lien ceases; 180 days for action and lis pendens",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 41(1) to (4); s. 42; s. 43(1)."
+      },
+      {
+        "claim": "Nominating Authorities ARCANA (AB) and ADACC",
+        "url": "https://www.alberta.ca/prompt-payment-rules-for-construction-industry",
+        "evidence": "alberta.ca lists ARCANA (AB) and ADACC as the two Nominating Authorities operating in Alberta."
+      },
+      {
+        "claim": "Adjudication within 30 days after final payment; binding unless court/arbitration/written agreement",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 33.4(2); s. 33.6(5)."
+      },
+      {
+        "claim": "APC: Government of Alberta e-tendering site; public sector entities post; no registration needed to view; account to download documents",
+        "url": "https://www.alberta.ca/find-and-compete-for-government-contracts",
+        "evidence": "alberta.ca find-and-compete page: registration is not required to view opportunities; supplier account lets you download bid documents."
+      },
+      {
+        "claim": "Agreement that Act does not apply is void",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 5(1)."
+      }
+    ]
+  },
+  {
+    "key": "A3",
+    "category": "british-columbia",
+    "title": "BC Builders Lien Act: 10% holdback, holdback account, 45-day lien deadline and prompt payment status",
+    "verification": [
+      {
+        "claim": "Act current to September 22, 2026",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "BC Laws header: This Act is current to September 22, 2026."
+      },
+      {
+        "claim": "10% holdback of greater of value provided or payment made",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 4(1) and (2)."
+      },
+      {
+        "claim": "Holdback account rules, trust, joint administration, 10-day suspension, exemptions for government and under $100,000",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 5(1), (2), (7), (8)."
+      },
+      {
+        "claim": "Certificate of completion: 10 days to decide; 7 days to deliver and post; court order; written request",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 7(2) to (6)."
+      },
+      {
+        "claim": "45-day filing deadline from certificate or completion/abandonment/termination",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 20(1) and (2)."
+      },
+      {
+        "claim": "Deemed abandonment after 30 days without work with exceptions",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 1(5)."
+      },
+      {
+        "claim": "Lien extinguished if not filed; no claim under $200; one-year action and CPL; 21-day notice",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 22; s. 17; s. 33(1) and (2)."
+      },
+      {
+        "claim": "Holdback period 55 days",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 8(1), (2), (4)."
+      },
+      {
+        "claim": "Highway exemptions",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 1.1(a) to (b)."
+      },
+      {
+        "claim": "Construction Prompt Payment Act: Royal Assent Nov 27, 2025, not yet in force; regulations and adjudication authority pending; page updated Aug 20, 2026",
+        "url": "https://www2.gov.bc.ca/gov/content/governments/infrastructure/prompt-payment-legislation",
+        "evidence": "gov.bc.ca page states the Act received Royal Assent November 27, 2025 and is not yet in force; feedback closed July 7, 2026."
+      },
+      {
+        "claim": "Consultation May 26 to July 7, 2026 to inform regulations that bring the act into force",
+        "url": "https://news.gov.bc.ca/releases/2026INF0031-000593",
+        "evidence": "News release 2026INF0031-000593."
+      }
+    ]
+  },
+  {
+    "key": "A4",
+    "category": "general-contractors",
+    "title": "Federal prompt payment for construction: which contracts it covers, the 28/35/42-day clock and adjudication",
+    "verification": [
+      {
+        "claim": "In force December 9, 2023",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "Enacted by s. 387 of S.C. 2019, c. 29, in force December 9, 2023 (SI/2023-77). Act current to 2026-09-21."
+      },
+      {
+        "claim": "Scope: federal real property/immovables; definition of construction project and capital repair",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 2 definitions; s. 5 application."
+      },
+      {
+        "claim": "One-year transition for pre-existing contracts",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 25."
+      },
+      {
+        "claim": "Duty to inform",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 8(1) and (2)."
+      },
+      {
+        "claim": "Payment: 28 days; non-payment notice 21 days; contractor pays subs by day 35, notice by day 28; subs by day 42, then 7-day increments",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 9(2), 9(3), 10(1), 10(3), 11(1), 11(3), 11(4)."
+      },
+      {
+        "claim": "Right to info on invoice receipt date",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 9(5)."
+      },
+      {
+        "claim": "Excluded days",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2023-269/FullText.html",
+        "evidence": "Regulations s. 3: holidays, Saturdays, nine-day period from December 24 to January 1, provincial construction holidays."
+      },
+      {
+        "claim": "Notice contents",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 13."
+      },
+      {
+        "claim": "Holdback limits",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 12(1) to (3)."
+      },
+      {
+        "claim": "Interest: average bank rate plus 3% simple, or contract rate if higher",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2023-269/FullText.html",
+        "evidence": "Regulations s. 4; Act s. 14(2)."
+      },
+      {
+        "claim": "Adjudication triggers, 21-day notice, joint appointment, 10-day payment, suspension, filing within two years, costs",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 16(1), (2); s. 17; s. 19; s. 20."
+      },
+      {
+        "claim": "ADR Chambers contracted for adjudication services",
+        "url": "https://www.canada.ca/en/public-services-procurement/news/2023/12/new-federal-prompt-payment-legislation-to-protect-construction-workers.html",
+        "evidence": "PSPC release: in August 2023 Canada awarded a contract to ADR Chambers Inc. to provide adjudication services."
+      },
+      {
+        "claim": "Designated provinces Ontario, Saskatchewan, Alberta; effect of designation; straddling projects",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2023-270/FullText.html",
+        "evidence": "Order current to 2026-09-21 designates Ontario, Saskatchewan and Alberta; Act s. 6(2) and (3)."
+      }
+    ]
+  },
+  {
+    "key": "A5",
+    "category": "quebec",
+    "title": "Paiement rapide au Québec : le projet pilote est terminé, voici le règlement en vigueur depuis 2025",
+    "verification": [
+      {
+        "claim": "Projet pilote du 2 août 2018 au 1er août 2021; formulaires seulement pour contrats encore assujettis",
+        "url": "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/gestion-contrats-gouvernementaux/reglements-paiements-rapides-differends-travaux-construction",
+        "evidence": "Québec.ca : projet pilote débuté le 2 août 2018, terminé le 1er août 2021; formulaires offerts seulement pour contrats encore assujettis."
+      },
+      {
+        "claim": "Règlement en vigueur le 8 septembre 2025",
+        "url": "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/gestion-contrats-gouvernementaux/reglements-paiements-rapides-differends-travaux-construction",
+        "evidence": "Québec.ca et guide, art. 94 : le règlement entre en vigueur le 8 septembre 2025."
+      },
+      {
+        "claim": "Application progressive par seuils (bâtiment 750 000 $ / 75 000 $; génie civil 2,5 M$ / 675 000 $; dates 2026 et 2027)",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 94 et tableau explicatif."
+      },
+      {
+        "claim": "Contrats en cours et appels d'offres lancés avant exclus",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 90."
+      },
+      {
+        "claim": "Exclusion contrats d'urgence",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 32."
+      },
+      {
+        "claim": "Dates de demande de paiement (1er du mois; 25 du mois)",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 5."
+      },
+      {
+        "claim": "Délais de refus (21 du mois; fin du mois; veille) et contenu de l'avis",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 10 et 11."
+      },
+      {
+        "claim": "Délai pour payer et exemple 31 mai / 5 juin / 10 juin; +5 jours par niveau",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 15 et exemple."
+      },
+      {
+        "claim": "Changement non évalué ne justifie pas à lui seul un refus",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 12."
+      },
+      {
+        "claim": "Intérêts : le plus élevé du taux légal et du taux convenu",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 3."
+      },
+      {
+        "claim": "Tiers décideur : tentative amiable, 90 jours, registre du ministre de la Justice, 50 jours + 15, paiement 20 jours puis 5 jours",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 34, 35, 63, 67; Québec.ca sur le registre tenu par le ministre de la Justice."
+      },
+      {
+        "claim": "Exclusion des réclamations de perte de profits/productivité",
+        "url": "https://www.tresor.gouv.qc.ca/fileadmin/PDF/faire_affaire_avec_etat/marches_publics/paiement-reglement-differends-construction-guide.pdf",
+        "evidence": "Guide, art. 33."
+      }
+    ]
+  },
+  {
+    "key": "A6",
+    "category": "suppliers-equipment",
+    "title": "Material suppliers and lien rights in Ontario, Alberta and BC: who qualifies and the deadlines",
+    "verification": [
+      {
+        "claim": "ON: lien for anyone supplying services or materials; supplier under contractor is a subcontractor",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 14(1); s. 1 definition of subcontractor: person who supplies services or materials under agreement with contractor or another subcontractor."
+      },
+      {
+        "claim": "ON: materials includes equipment rented without operator; services includes rental with operator",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 1 definitions of materials (b) and supply of services (a)."
+      },
+      {
+        "claim": "ON: lien arises on first supply; 60-day expiry; 90-day perfection",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 15; s. 31(3); s. 36(2)."
+      },
+      {
+        "claim": "ON: Crown/municipal premises; give claim to owner",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 16(1); s. 34(1)(b), (3), (3.1)."
+      },
+      {
+        "claim": "ON: info request answered within reasonable time not exceeding 21 days",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 39(1)."
+      },
+      {
+        "claim": "AB: lien for person furnishing material; furnished when delivered on land or designated nearby place; incorporated material",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 6(1); s. 9(1) and (2)."
+      },
+      {
+        "claim": "AB: 60 days from last material, 90 for concrete and oil/gas; correction does not extend; 180 days",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 41(1), (5); s. 43(1)."
+      },
+      {
+        "claim": "AB: subcontractor definition excludes person engaged only in furnishing materials",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 1(n)(ii)."
+      },
+      {
+        "claim": "BC: material supplier definition; lien for supplying material; no lien for supplying to a material supplier; material definition",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 1 definitions; s. 2(1) and (2)."
+      },
+      {
+        "claim": "BC: 45-day filing; $200 minimum",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01",
+        "evidence": "s. 20(1), (2); s. 17."
+      }
+    ]
+  },
+  {
+    "key": "A7",
+    "category": "business-pricing",
+    "title": "Getting paid on commercial work: contract terms vs what prompt payment law guarantees (ON, AB, federal)",
+    "verification": [
+      {
+        "claim": "28-day owner deadline ON and AB; federal 28 days",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "ON s. 6.4(1); AB s. 32.2(1) (King's Printer PDF); federal s. 9(2)."
+      },
+      {
+        "claim": "Dispute notice 14 days ON and AB; 21 days federal",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "ON s. 6.4(2); AB s. 32.2(2); federal s. 9(3)."
+      },
+      {
+        "claim": "Flow-down 7 days ON and AB; federal day 35",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "ON s. 6.5(1); AB s. 32.3(1); federal s. 10(1)."
+      },
+      {
+        "claim": "No contracting out: ON s. 4 and 5; AB s. 5(1)",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "ON s. 4 agreement that Act does not apply is void; s. 5(1) contracts deemed amended; AB s. 5(1) similar."
+      },
+      {
+        "claim": "Holdback applies: ON s. 6.2; AB s. 32.1(2); federal s. 12",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "Federal s. 12(2) limit to provincial amount."
+      },
+      {
+        "claim": "Ontario proper invoice items and 7-day deemed rule",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.1(1) and (2)."
+      },
+      {
+        "claim": "Alberta proper invoice statement",
+        "url": "https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf",
+        "evidence": "s. 32.1(1)(g)."
+      },
+      {
+        "claim": "Interest rules ON, AB, federal",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2023-269/FullText.html",
+        "evidence": "ON s. 6.9; AB s. 32.6; federal Act s. 14(2) and Regulations s. 4 average bank rate plus 3%."
+      },
+      {
+        "claim": "Federal subs can ask for invoice receipt date",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html",
+        "evidence": "s. 9(5)."
+      },
+      {
+        "claim": "BC prompt payment law passed but not in force",
+        "url": "https://www2.gov.bc.ca/gov/content/governments/infrastructure/prompt-payment-legislation",
+        "evidence": "gov.bc.ca: Royal Assent November 27, 2025; not yet in force."
+      },
+      {
+        "claim": "Revised invoice keeps its date only if owner agrees in advance",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.3(5)(a) and (b): proper invoice may be revised if owner agrees in advance and the date is not changed."
+      }
+    ]
+  },
+  {
+    "key": "A8",
+    "category": "client-talk",
+    "title": "Change orders that hold up: a written process, plus Ontario's 10% estimate rule for consumers",
+    "verification": [
+      {
+        "claim": "CPA s. 10(1)-(3): no more than 10% over estimate; consumer may require estimated price; parties may amend for additional/different goods or services",
+        "url": "https://www.ontario.ca/laws/statute/02c30",
+        "evidence": "e-Laws s. 10(1), (2), (3)."
+      },
+      {
+        "claim": "Consumer = individual acting for personal, family or household purposes, not business",
+        "url": "https://www.ontario.ca/laws/statute/02c30",
+        "evidence": "s. 1 definition of consumer."
+      },
+      {
+        "claim": "2002 Act current to Oct 6, 2026, to be repealed on proclamation by 2023 Act",
+        "url": "https://www.ontario.ca/laws/statute/02c30",
+        "evidence": "e-Laws note: This Act is repealed on a day to be named by proclamation (2023, c. 23, Sched. 1, s. 110); currency date October 6, 2026."
+      },
+      {
+        "claim": "CCDC 2 has GC 6.2 Change Order and GC 6.3 Change Directive",
+        "url": "https://www.ccdc.org/wp-content/uploads/2023/01/TOCccdc2e.pdf",
+        "evidence": "CCDC 2 table of contents lists Part 6 Changes in the Work: GC 6.1 to 6.6. Content of the clauses (agreed vs proceed-now) is paraphrased at a general level; check the purchased form."
+      },
+      {
+        "claim": "Ontario proper invoice identifies the contract or authorization",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "s. 6.1(1) item 3."
+      }
+    ]
+  },
+  {
+    "key": "A9",
+    "category": "job-site-stories",
+    "title": "It was behind the wall: concealed conditions in standard contracts and what to put in your quote",
+    "verification": [
+      {
+        "claim": "CCDC 2 2020 is the standard prime contract between owner and prime contractor, stipulated price",
+        "url": "https://www.ccdc.org/document/ccdc-2/",
+        "evidence": "ccdc.org document page: industry standard prime contract between Owner and prime Contractor; single predetermined fixed price."
+      },
+      {
+        "claim": "GC 6.4 Concealed or Unknown Conditions in Part 6 alongside GC 6.2, 6.3, 6.5, 6.6",
+        "url": "https://www.ccdc.org/wp-content/uploads/2023/01/TOCccdc2e.pdf",
+        "evidence": "CCDC 2 TOC PDF lists Part 6 Changes in the Work with these GC titles. Clause wording not verified (paywalled), so the guide does not describe its test or notice period."
+      },
+      {
+        "claim": "CCDC forms must be purchased",
+        "url": "https://www.ccdc.org/document/ccdc-2/",
+        "evidence": "ccdc.org: documents purchased through authorized outlets; free preview is the table of contents."
+      },
+      {
+        "claim": "City of Waterloo supplementary conditions amend GC 6.2, 6.3, 6.5, 6.6",
+        "url": "https://www.waterloo.ca/media/4vhdtwz1/supplementary-conditions-to-ccdc-2-2020-stipulated-price-contract.pdf",
+        "evidence": "PDF headings 3.16 GC 6.2 Change Order, 3.17 GC 6.3 Change Directive, 3.18 GC 6.5 Delays, 3.19 GC 6.6 Claims for Change in Contract Price."
+      },
+      {
+        "claim": "OHSA s. 30 designated substances list, tender package, liability",
+        "url": "https://www.ontario.ca/laws/statute/90o01",
+        "evidence": "s. 30(1) to (6)."
+      },
+      {
+        "claim": "CPA s. 10 estimate cap 10%",
+        "url": "https://www.ontario.ca/laws/statute/02c30",
+        "evidence": "s. 10(1) to (3)."
+      }
+    ]
+  },
+  {
+    "key": "B1",
+    "category": "marketplace-talk",
+    "title": "How to read a public tender before you price it: a 9-point pre-bid checklist",
+    "verification": [
+      {
+        "claim": "Each tender notice states the delivery method you must use",
+        "url": "https://canadabuys.canada.ca/en/getting-started/preparing-sell-government/how-bid-tender-opportunities",
+        "evidence": "Page says each notice clearly indicates the bid delivery method."
+      },
+      {
+        "claim": "Contracting officer is the only point of contact; Q&A issued as amendment to all bidders",
+        "url": "https://canadabuys.canada.ca/en/support/checklist-preparing-bid",
+        "evidence": "Checklist says contracting officer is only contact and compiles questions and answers into an amendment."
+      },
+      {
+        "claim": "Mandatory criteria are usually pass/fail; failing makes bid non-responsive",
+        "url": "https://canadabuys.canada.ca/en/support/checklist-preparing-bid",
+        "evidence": "Checklist: if a bid fails a mandatory criterion it will be considered non-responsive."
+      },
+      {
+        "claim": "Evaluation methods: lowest price, best overall value (lowest cost per point), highest technical within budget; award before bid validity expiry",
+        "url": "https://canadabuys.canada.ca/en/how-procurement-works/procurement-process/bidding-and-contract-award",
+        "evidence": "Page lists these selection methods and says award must occur before the bid validity expiry date; debrief can be requested after award."
+      },
+      {
+        "claim": "Missed mandatory site visit = no alternate appointment and bid declared non-responsive; enquiries 10 calendar days before closing",
+        "url": "https://canadabuys.canada.ca/sites/default/files/webform/tender_notice/8134/23-58049_rfp_landscapinggroundsmaintenancesnowremoval.pdf",
+        "evidence": "NRC solicitation 23-58049 sections 2.2 and 2.7."
+      },
+      {
+        "claim": "Alberta: late bids automatically rejected, mandatory failure = disqualification, include WCB coverage, debrief within 10 days",
+        "url": "https://www.alberta.ca/find-and-compete-for-government-contracts",
+        "evidence": "Alberta page lists these bidding tips."
+      },
+      {
+        "claim": "Toronto extends closing by at least three days for late addenda",
+        "url": "https://www.toronto.ca/business-economy/doing-business-with-the-city/searching-bidding-on-city-contracts/bidding-on-solicitations/",
+        "evidence": "Page refers to a minimum three-day extension."
+      },
+      {
+        "claim": "BC Bid: if an opportunity is amended, previously submitted bids are rejected",
+        "url": "https://www2.gov.bc.ca/gov/content/bc-procurement-resources/bc-bid-resources/bc-bid-for-suppliers/bc-bid-supplier-guide/step-4",
+        "evidence": "Step 4 page states this directly."
+      },
+      {
+        "claim": "Ontario BPS: closing date must be on a normal working day",
+        "url": "https://www.ontario.ca/files/2026-03/bps-procurement-directive-en-2026-04-13.pdf",
+        "evidence": "Mandatory Requirement #8 Bid Receipt."
+      },
+      {
+        "claim": "Federal bid bond 10% capped at $2M; performance and L&M bonds 50% each",
+        "url": "https://www.canada.ca/en/public-services-procurement/services/acquisitions/forms/bid-bond-504.html",
+        "evidence": "Form 504 text."
+      },
+      {
+        "claim": "Ontario WSIB clearance must be in place before construction work begins and for its duration",
+        "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate-construction",
+        "evidence": "Policy 14-02-19."
+      }
+    ]
+  },
+  {
+    "key": "B2",
+    "category": "marketplace-talk",
+    "title": "Registering to bid on federal tenders: CanadaBuys, SAP Business Network and your business number",
+    "verification": [
+      {
+        "claim": "Registration is through SAP Business Network; CanadaBuys calls it a free account; CRA business number needed; non-resident BN for foreign firms; no mention of PBN",
+        "url": "https://canadabuys.canada.ca/en/getting-started/preparing-sell-government/how-register-your-business",
+        "evidence": "How to register page."
+      },
+      {
+        "claim": "Questions 3 to 8 required to bid; Q9 for full registration; no BN needed to bid, required before award",
+        "url": "https://canadabuys.canada.ca/en/support/registering-sap-ariba-guide-businesses",
+        "evidence": "Guide quotes: must fill in questions 3 to 8 to submit a bid; business number required only prior to contract award."
+      },
+      {
+        "claim": "Duplicate accounts flagged; existing account holders complete profile",
+        "url": "https://canadabuys.canada.ca/en/getting-started/preparing-sell-government/how-register-your-business",
+        "evidence": "Page notes system flags duplicates after form submission."
+      },
+      {
+        "claim": "Viewer account needed to view documents in SAP Business Network Discovery; questionnaire still required",
+        "url": "https://canadabuys.canada.ca/en/support/registering-sap-ariba-viewer",
+        "evidence": "Viewer guide."
+      },
+      {
+        "claim": "Search by keyword, category, closing date, UNSPSC; alerts, bookmarks, RSS; notices and amendments published daily",
+        "url": "https://canadabuys.canada.ca/en/getting-started/preparing-sell-government/how-find-tender-opportunities",
+        "evidence": "How to find page."
+      },
+      {
+        "claim": "Federal tenders posted directly to CanadaBuys have documents on Bidding details tab",
+        "url": "https://canadabuys.canada.ca/en/getting-started/preparing-sell-government/how-bid-tender-opportunities",
+        "evidence": "How to bid page."
+      },
+      {
+        "claim": "Respond, accept prerequisites, Compose Message, Submit Entire Response, no autosave, Revise Response, do not submit another bid",
+        "url": "https://canadabuys.canada.ca/en/support/responding-tender-opportunities-ariba-discovery",
+        "evidence": "Responding guide."
+      }
+    ]
+  },
+  {
+    "key": "B3",
+    "category": "quebec",
+    "title": "S'inscrire au SEAO et obtenir les documents d'appel d'offres : étapes, rôles et frais",
+    "verification": [
+      {
+        "claim": "Inscription au SEAO gratuite",
+        "url": "https://seao.gouv.qc.ca/centre-aide/foire-aux-questions",
+        "evidence": "FAQ : l'inscription sur le SEAO est gratuite."
+      },
+      {
+        "claim": "Compte professionnel au Service d'authentification gouvernementale; courriel professionnel; jamais de courriel personnel; coordonnateur gère les profils",
+        "url": "https://seao.gouv.qc.ca/centre-aide/aide-en-ligne/connecter",
+        "evidence": "Page Connexion au nouveau SEAO."
+      },
+      {
+        "claim": "Rôles Coordonnateur, Comptabilité, Spécialiste, Lecteur, STVE et leurs permissions",
+        "url": "https://seao.gouv.qc.ca/centre-aide/aide-en-ligne/se-connecter-role-et-permission",
+        "evidence": "Tableau des rôles et permissions."
+      },
+      {
+        "claim": "Tarifs : 0,03 $/page, 5,50 $ préparation, 20 $ commande occasionnelle, abonnements 6,95 $ et 3,00 $; addendas antérieurs payants, postérieurs gratuits; STVE 20 $ / 30 $; papier accepté sauf exigence; retrait sans frais",
+        "url": "https://seao.gouv.qc.ca/service-accompagnement/grille-tarifs",
+        "evidence": "Grille des tarifs SEAO (fournisseurs)."
+      },
+      {
+        "claim": "SEAO regroupe ministères, organismes, sociétés d'État et municipalités; répertoire des fournisseurs; veille; questionnaire de non-participation",
+        "url": "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/preparer-marches-publics/occasions-affaires",
+        "evidence": "Page Trouver les occasions d'affaires."
+      },
+      {
+        "claim": "Cocher la case pour recevoir les addendas; ils font partie intégrante des documents",
+        "url": "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/preparer-marches-publics/appel-offres",
+        "evidence": "Page Répondre à un appel d'offres."
+      },
+      {
+        "claim": "Exigences préalables incluent attestation RQ, autorisation AMP, déclaration de lobbyisme",
+        "url": "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/preparer-marches-publics/exigences",
+        "evidence": "Page Exigences."
+      }
+    ]
+  },
+  {
+    "key": "B4",
+    "category": "quebec",
+    "title": "Contrats publics au Québec : attestation de Revenu Québec (25 000 $) et autorisation de l'AMP (1 M$ et 5 M$)",
+    "verification": [
+      {
+        "claim": "Attestation RQ pour contrats de 25 000 $ et plus; confirme déclarations produites et aucun compte en souffrance",
+        "url": "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/preparer-marches-publics/exigences",
+        "evidence": "Page Exigences : seuil 25 000 $ et plus."
+      },
+      {
+        "claim": "Art. 40.1 seuil 25 000 $ construction; art. 40.2 conditions; art. 40.3 validité 3 mois et délivrance avant l'heure limite, condition d'admissibilité; art. 40.8 exceptions",
+        "url": "https://www.legisquebec.gouv.qc.ca/fr/document/rc/C-65.1,%20r.%205",
+        "evidence": "Texte consolidé lu sur LégisQuébec."
+      },
+      {
+        "claim": "Seuils AMP 5 M$ construction/PPP et 1 M$ services, options incluses; Montréal anciens seuils abolis avril 2024",
+        "url": "https://www.amp.quebec/en/seuils-et-categories-de-contrats-publics",
+        "evidence": "Page Seuils et catégories."
+      },
+      {
+        "claim": "Détenir à la date du dépôt (AO) ou conclusion (gré à gré); validité indéterminée depuis le 2 avril 2026; mise à jour annuelle obligatoire, suspension et SAP possibles; REA",
+        "url": "https://www.amp.quebec/autorisation-de-contracter",
+        "evidence": "Page Quand faut-il détenir une autorisation."
+      },
+      {
+        "claim": "Règle de la date du dépôt annoncée le 6 octobre 2022, s'applique aux sous-contrats",
+        "url": "https://www.amp.quebec/actualites/autorisation-contracter-date-depot",
+        "evidence": "Actualité AMP."
+      },
+      {
+        "claim": "Documents de la demande : attestation RQ, états financiers audités, organigramme, gouvernance",
+        "url": "https://www.amp.quebec/actualites/demande-autorisation-contracter",
+        "evidence": "Actualité AMP Demande d'autorisation."
+      },
+      {
+        "claim": "RENA, OQLF 25 employés, PAE 100 employés ou 100 000 $, lobbyisme, RBQ",
+        "url": "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/preparer-marches-publics/exigences",
+        "evidence": "Page Exigences."
+      }
+    ]
+  },
+  {
+    "key": "B5",
+    "category": "ontario",
+    "title": "Bidding on City of Toronto contracts: SAP Business Network registration, TO Bids and submission rules",
+    "verification": [
+      {
+        "claim": "Call types; posted through SAP Ariba Sourcing; bids must be received through the online tool; contact only named person; no contact with Council/staff; Fair Wage Policy; monthly info sessions; CPE form",
+        "url": "https://www.toronto.ca/business-economy/doing-business-with-the-city/understanding-the-procurement-process/",
+        "evidence": "Understanding the procurement process page."
+      },
+      {
+        "claim": "Check for existing account; Suspended & Disqualified list; registration form; no fee for standard account; three-day processing; commodity alerts",
+        "url": "https://www.toronto.ca/business-economy/doing-business-with-the-city/searching-bidding-on-city-contracts/how-to-register-as-a-supplier-with-the-city/",
+        "evidence": "How to register page."
+      },
+      {
+        "claim": "TO Bids portal links to SAP Business Network; documents downloadable for free",
+        "url": "https://www.toronto.ca/business-economy/doing-business-with-the-city/searching-bidding-on-city-contracts/",
+        "evidence": "Searching & bidding page."
+      },
+      {
+        "claim": "Training guide and mock events; cooperative buying groups; Chapter 195; minimum three-day extension for late addenda; withdrawal letter via Event Messaging Board",
+        "url": "https://www.toronto.ca/business-economy/doing-business-with-the-city/searching-bidding-on-city-contracts/bidding-on-solicitations/",
+        "evidence": "Bidding on solicitations page."
+      }
+    ]
+  },
+  {
+    "key": "B6",
+    "category": "alberta",
+    "title": "Finding public tenders in Alberta: how to use Alberta Purchasing Connection (APC)",
+    "verification": [
+      {
+        "claim": "APC is Alberta's official electronic tendering site; GoA and municipalities, school boards, health entities post; registration lets you download, bookmark, express interest, save filters, notifications; express interest behaviour; 1GX help 780-643-0150; bidding tips",
+        "url": "https://www.alberta.ca/find-and-compete-for-government-contracts",
+        "evidence": "Alberta.ca page."
+      },
+      {
+        "claim": "Public can browse without account; account required for documents",
+        "url": "https://purchasing.alberta.ca/",
+        "evidence": "APC home page Public Browse section."
+      },
+      {
+        "claim": "User verification required; one email for Supplier or Buyer, not both",
+        "url": "https://purchasing.alberta.ca/supplier-login",
+        "evidence": "APC Suppliers page."
+      },
+      {
+        "claim": "1GX notices link to Ariba; free registration; no cost to suppliers in Ariba (2020 guide)",
+        "url": "https://www.alberta.ca/system/files/custom_downloaded_images/sa-find-1gx-opportunities-in-apc.pdf",
+        "evidence": "Guide published November 2020."
+      }
+    ]
+  },
+  {
+    "key": "B7",
+    "category": "british-columbia",
+    "title": "BC Bid: how to register, find opportunities and submit (Business BCeID, fees and e-Bidding)",
+    "verification": [
+      {
+        "claim": "No charge to register as a supplier; Business BCeID required; help desk hours and contacts; Access Denied from incomplete registration",
+        "url": "https://www.bcbid.gov.bc.ca",
+        "evidence": "BC Bid home page."
+      },
+      {
+        "claim": "First registrant becomes Supplier Admin; UNSPSC but not all codes; Business BCeID for out-of-province suppliers too",
+        "url": "https://www2.gov.bc.ca/gov/content?id=943F3B2E15604916B567E5BB8ED16530",
+        "evidence": "Important steps page."
+      },
+      {
+        "claim": "e-Bidding $150/year, Notifications $100/year, per user, not auto-renewed, renew within 30 days",
+        "url": "https://www2.gov.bc.ca/gov/content/bc-procurement-resources/bc-bid-resources/bc-bid-for-suppliers/bc-bid-supplier-guide/account-management",
+        "evidence": "Account management page."
+      },
+      {
+        "claim": "Search under Sourcing; status defaults to Open; commodity code recommended; contract awards and unverified bid results",
+        "url": "https://www2.gov.bc.ca/gov/content/bc-procurement-resources/bc-bid-resources/bc-bid-for-suppliers/bc-bid-supplier-guide/explore-opportinities",
+        "evidence": "Explore opportunities page."
+      },
+      {
+        "claim": "Start Submission sets default contact; e-Bidding steps; offline submission referencing Opportunity ID",
+        "url": "https://www2.gov.bc.ca/gov/content/bc-procurement-resources/bc-bid-resources/bc-bid-for-suppliers/bc-bid-supplier-guide/step-3",
+        "evidence": "Step 3 page."
+      },
+      {
+        "claim": "Amendment rejects earlier bids; addenda update or replace",
+        "url": "https://www2.gov.bc.ca/gov/content/bc-procurement-resources/bc-bid-resources/bc-bid-for-suppliers/bc-bid-supplier-guide/step-4",
+        "evidence": "Step 4 page."
+      }
+    ]
+  },
+  {
+    "key": "B8",
+    "category": "united-states",
+    "title": "Bidding on US federal work: free SAM.gov registration, the UEI, NAICS codes and the 365-day renewal",
+    "verification": [
+      {
+        "claim": "SAM.gov is free; no charge to get UEI, register, maintain",
+        "url": "https://sam.gov/sites/default/files/2024-11/entity-checklist.pdf",
+        "evidence": "Checklist page 1."
+      },
+      {
+        "claim": "Don't need to pay a third party; choose NAICS codes; maintain registration, UEI, CAGE for life of contract; searchable once active",
+        "url": "https://www.gsa.gov/small-business/find-opportunities/register-your-business",
+        "evidence": "GSA Register your business page."
+      },
+      {
+        "claim": "UEI only needs legal name and address and cannot apply directly for awards; renew every 365 days; update any time",
+        "url": "https://sam.gov/content/entity-registration",
+        "evidence": "SAM.gov entity registration page."
+      },
+      {
+        "claim": "Checklist items: no PO box, incorporation date/state, TIN, EFT optional for non-US, NAICS, PSC optional, size metrics, POCs, CAGE assigned, NCAGE needed before starting for non-US",
+        "url": "https://sam.gov/sites/default/files/2024-11/entity-checklist.pdf",
+        "evidence": "Checklist sections."
+      },
+      {
+        "claim": "Allow at least ten business days to become active; TIN/CAGE validation emails",
+        "url": "https://sam.gov/sites/default/files/2024-11/entity-checklist.pdf",
+        "evidence": "Checklist FAQ section."
+      },
+      {
+        "claim": "Solicitations posted to SAM.gov; subcontracting sources",
+        "url": "https://www.gsa.gov/small-business/find-opportunities",
+        "evidence": "GSA Find opportunities page."
+      }
+    ]
+  },
+  {
+    "key": "B9",
+    "category": "general-contractors",
+    "title": "Bid bonds, performance bonds and labour and material payment bonds: what each covers and typical amounts",
+    "verification": [
+      {
+        "claim": "CCDC 220/221/222 descriptions",
+        "url": "https://www.ccdc.org/document/ccdc-220-221-222-2024-bond-forms/",
+        "evidence": "CCDC document page wording."
+      },
+      {
+        "claim": "Federal bid bond 10% max $2M; 50% performance and 50% L&M on acceptance; covers difference if contract costs more",
+        "url": "https://www.canada.ca/en/public-services-procurement/services/acquisitions/forms/bid-bond-504.html",
+        "evidence": "Form 504."
+      },
+      {
+        "claim": "Performance bond surety options on default",
+        "url": "https://www.canada.ca/en/public-services-procurement/services/acquisitions/forms/performance-bond-505.html",
+        "evidence": "Form 505."
+      },
+      {
+        "claim": "L&M bond claimant definition, 90 days, 120-day notice, 1-year suit limit",
+        "url": "https://www.canada.ca/en/public-services-procurement/services/acquisitions/forms/labour-material-payment-bond-506.html",
+        "evidence": "Form 506."
+      },
+      {
+        "claim": "Ontario s. 85.1 requires L&M and performance bonds on public contracts; owner may require other security",
+        "url": "https://www.ontario.ca/laws/statute/90c30",
+        "evidence": "Construction Act s. 85.1(4),(5),(7)."
+      },
+      {
+        "claim": "Applies at $500,000 or more; 50% minimum; over $500M owner sets at least $250M",
+        "url": "https://www.ontario.ca/laws/regulation/180304",
+        "evidence": "O. Reg. 304/18 ss. 12, 12.1."
+      },
+      {
+        "claim": "Yukon depository 10% bid bond at $1M or more; disqualification for missing/incorrect bond",
+        "url": "https://yukoncontractors.ca/wp-content/uploads/2025/03/rules-of-procedures-2023-fnl-march-1-2023.pdf",
+        "evidence": "Rule III 3.E."
+      }
+    ]
+  },
+  {
+    "key": "B10",
+    "category": "general-contractors",
+    "title": "How sub-trade bid depositories work: closing times, envelopes, bonds, withdrawals and GC rules",
+    "verification": [
+      {
+        "claim": "Purpose of bid depository: secured bids, firm written quotes, adequate time for GCs",
+        "url": "https://yukoncontractors.ca/wp-content/uploads/2025/03/rules-of-procedures-2023-fnl-march-1-2023.pdf",
+        "evidence": "Rule II.1 Purpose."
+      },
+      {
+        "claim": "Closing at least two working days before GC closing before 3 pm; late bids disqualified; 24-hour notice of intent",
+        "url": "https://yukoncontractors.ca/wp-content/uploads/2025/03/rules-of-procedures-2023-fnl-march-1-2023.pdf",
+        "evidence": "Rule III.1(ii), III.3.A.1, III.3.A."
+      },
+      {
+        "claim": "White/pink/grey envelope definitions",
+        "url": "https://yukoncontractors.ca/wp-content/uploads/2025/03/rules-of-procedures-2023-fnl-march-1-2023.pdf",
+        "evidence": "Definitions section."
+      },
+      {
+        "claim": "10% bid bond at $1M or more; affidavit below; pickup 30 min to 2 hours; withdrawal until 3 pm one working day before GC closing; fees $500 doubling",
+        "url": "https://yukoncontractors.ca/wp-content/uploads/2025/03/rules-of-procedures-2023-fnl-march-1-2023.pdf",
+        "evidence": "Rules III.3.D, III.3.E, III.3.F, Schedule D."
+      },
+      {
+        "claim": "Single/no bid handling; no altered bids; must contract with selected bidder unless owner approves; deemed lowest compliant; CCA-1 subcontract; retain pink envelopes 1 year",
+        "url": "https://yukoncontractors.ca/wp-content/uploads/2025/03/rules-of-procedures-2023-fnl-march-1-2023.pdf",
+        "evidence": "Rules III.3.C(x), III.4."
+      },
+      {
+        "claim": "BC standard created mostly by trade contractors, supported by every construction association in BC, standard industry contract",
+        "url": "https://bccassn.com/portfolio-item/construction-file-procuring-trade-contractor-bids/",
+        "evidence": "BCCA Construction File."
+      }
+    ]
+  },
+  {
+    "key": "B11",
+    "category": "general-contractors",
+    "title": "Prequalification: what CCDC 11 (Contractor's Qualification Statement) asks for, plus a checklist to keep ready",
+    "verification": [
+      {
+        "claim": "CCDC 11 purpose; sections: legal structure, financial reference, contract security reference, insurance reference, H&S, current year projected and past four years actual value; personnel; 5 projects x 3 categories; statutory declarations; registration number; CCDC 29 reference",
+        "url": "https://www.ccdc.org/document/ccdc11/",
+        "evidence": "CCDC 11 document page."
+      },
+      {
+        "claim": "CCDC 29 covers types (unlimited, short-listing, source list), RFQ checklist, evaluation, interviews, debriefing",
+        "url": "https://www.ccdc.org/document/ccdc29/",
+        "evidence": "CCDC 29 document page."
+      },
+      {
+        "claim": "Ontario WSIB clearance before construction begins; up to 90 days",
+        "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate-construction",
+        "evidence": "Policy 14-02-19."
+      },
+      {
+        "claim": "RFSQ must disclaim obligation to call on pre-qualified suppliers",
+        "url": "https://www.ontario.ca/files/2026-03/bps-procurement-directive-en-2026-04-13.pdf",
+        "evidence": "Mandatory Requirement #5."
+      }
+    ]
+  },
+  {
+    "key": "B12",
+    "category": "property-managers",
+    "title": "Writing an RFP contractors will actually bid on: an 8-part checklist for property managers and condo boards",
+    "verification": [
+      {
+        "claim": "Clearance required before construction work begins and for the duration; valid up to 90 days, renewable",
+        "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate-construction",
+        "evidence": "Policy 14-02-19."
+      },
+      {
+        "claim": "Without clearance, principal may be liable for unpaid premiums up to labour portion of the contract",
+        "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate",
+        "evidence": "Policy 14-02-04, effective Sept 22, 2025."
+      },
+      {
+        "claim": "15 calendar days for $139,000 to $368,000; consider 30 days; closing on a normal working day",
+        "url": "https://www.ontario.ca/files/2026-03/bps-procurement-directive-en-2026-04-13.pdf",
+        "evidence": "Mandatory Requirements #7 and #8."
+      },
+      {
+        "claim": "Contracting officer compiles Q&A and issues amendment to all bidders",
+        "url": "https://canadabuys.canada.ca/en/support/checklist-preparing-bid",
+        "evidence": "Checklist page."
+      },
+      {
+        "claim": "Lowest price and best value (lowest cost per point) methods",
+        "url": "https://canadabuys.canada.ca/en/how-procurement-works/procurement-process/bidding-and-contract-award",
+        "evidence": "Bidding and contract award page."
+      },
+      {
+        "claim": "Public buyers reject bidders who miss mandatory site visits",
+        "url": "https://canadabuys.canada.ca/sites/default/files/webform/tender_notice/8134/23-58049_rfp_landscapinggroundsmaintenancesnowremoval.pdf",
+        "evidence": "NRC solicitation section 2.2."
+      }
+    ]
+  },
+  {
+    "key": "B13",
+    "category": "property-managers",
+    "title": "How many quotes is enough? Public procurement thresholds (Ontario BPS, CFTA 2026-2027) as a benchmark",
+    "verification": [
+      {
+        "claim": "Directive effective April 13, 2026; applies to designated BPS organizations (hospitals, school boards, universities, colleges, CASs)",
+        "url": "https://www.ontario.ca/files/2026-03/bps-procurement-directive-en-2026-04-13.pdf",
+        "evidence": "Preamble, s.2 and appendix definitions."
+      },
+      {
+        "claim": "Threshold table: petty cash, P-card, PO, invitational min 3 suppliers $10,000 to under $139,000, open competitive required at $139,000+; consulting at any value; no splitting; 15 days for $139,000 to $368,000",
+        "url": "https://www.ontario.ca/files/2026-03/bps-procurement-directive-en-2026-04-13.pdf",
+        "evidence": "Mandatory Requirements #3 and #7."
+      },
+      {
+        "claim": "CFTA 2026-2027 thresholds by entity type",
+        "url": "https://www.cfta-alec.ca/wp-content/uploads/2025/11/Article-504.3-Covered-Procurement-Thresholds-Effective-January-1-2026.pdf",
+        "evidence": "Article 504.3 PDF text."
+      },
+      {
+        "claim": "Federal department CFTA values confirmed",
+        "url": "https://www.canada.ca/en/treasury-board-secretariat/services/policy-notice/2025-8.html",
+        "evidence": "TBS notice 2025-8 table."
+      },
+      {
+        "claim": "Thresholds adjusted using IPPI, page last updated Nov 2025, past sets for 2018-2024",
+        "url": "https://www.cfta-alec.ca/procurement/covered-procurement-thresholds/",
+        "evidence": "CFTA thresholds page."
+      },
+      {
+        "claim": "Toronto closings follow Chapter 195 Purchasing Bylaw",
+        "url": "https://www.toronto.ca/business-economy/doing-business-with-the-city/searching-bidding-on-city-contracts/bidding-on-solicitations/",
+        "evidence": "Bidding on solicitations page."
+      }
+    ]
+  },
+  {
+    "key": "C1",
+    "category": "property-managers",
+    "title": "Workers' comp clearances by province: how to check a contractor in Ontario, Alberta, B.C. and Québec",
+    "verification": [
+      {
+        "claim": "WSIB quick access clearances: find, view, download clearances without login; clearance valid up to 90 days",
+        "url": "https://www.wsib.ca/en/clearances",
+        "evidence": "Page says no login is required for quick access clearances and that the clearance number is valid for up to 90 days."
+      },
+      {
+        "claim": "Clearance valid up to 90 calendar days depending on issue date; WSIB waives right to hold principal liable during validity; otherwise liability up to labour portion of contract",
+        "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate",
+        "evidence": "Policy states validity up to 90 calendar days and principal liability capped at the labour portion of the contract(s)."
+      },
+      {
+        "claim": "Construction: obtain before work begins, renew if expired/revoked, keep records 3 years, offence not to obtain",
+        "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate-construction",
+        "evidence": "Policy lists principal duties and that failing them is an offence under WSIA."
+      },
+      {
+        "claim": "WCB-Alberta clearance letter shows who is covered, industry, good standing; check before, during, before final payment; paying contractor with outstanding balance can make you responsible",
+        "url": "https://wcb.ab.ca/insurance-and-premiums/types-of-coverage/coverage-for-contractors-and-subcontractors.html",
+        "evidence": "Page describes clearance letter contents, timing and premium responsibility risk."
+      },
+      {
+        "claim": "WorkSafeBC: may be liable for unpaid premiums; letter addressed to you; get before and after",
+        "url": "https://www.worksafebc.com/en/insurance/why-clearance-letter",
+        "evidence": "Page states liability risk, addressed-to-you rule and before/after timing."
+      },
+      {
+        "claim": "WorkSafeBC online app: search by account number or exact name, up to 150 firms; prime contractor letter must be addressed to you; Clearance Alert",
+        "url": "https://www.worksafebc.com/en/insurance/why-clearance-letter/get-clearance-letter",
+        "evidence": "Page describes the clearance letter application and alerts."
+      },
+      {
+        "claim": "CNESST three services; only attestation releases donneur d'ouvrage; contractor 14 days to approve/object; via MonEspace",
+        "url": "https://www.cnesst.gouv.qc.ca/fr/demarches-formulaires/employeurs/assurance-sante-securite-travail/gestion-dossier-dassurance/conformite/services-verification-conformite",
+        "evidence": "Page lists validation, suivi, attestation and their effects and the 14-day validation by contractor."
+      },
+      {
+        "claim": "Amount owed calculated from labour cost of the contract",
+        "url": "https://www.cnesst.gouv.qc.ca/fr/demarches-formulaires/employeurs/dossier-dassurance-lemployeur/conformite/paiement-cotisation-due-autre-employeur",
+        "evidence": "Page says the amount is calculated from the labour cost of the contract between the parties."
+      },
+      {
+        "claim": "Validation does not release the donneur d'ouvrage (s. 316 LATMP)",
+        "url": "https://www.cnesst.gouv.qc.ca/sites/default/files/documents/validation-conformite_0.pdf",
+        "evidence": "Form says the response will not release a donneur d'ouvrage from paying the contractor's contribution."
+      }
+    ]
+  },
+  {
+    "key": "C2",
+    "category": "condo-boards",
+    "title": "Condo boards: a 5-step check before you sign a contractor (Ontario)",
+    "verification": [
+      {
+        "claim": "s. 37(1): directors act honestly and in good faith and exercise care, diligence and skill of a reasonably prudent person",
+        "url": "https://www.ontario.ca/laws/statute/98c19",
+        "evidence": "Text of s. 37(1) read from the current e-Laws consolidation (Word download of the same statute)."
+      },
+      {
+        "claim": "CMRAO advises prequalification collecting licences, certifications, permits, insurance, bonding; WSIB proof; past projects; client references",
+        "url": "https://www.cmrao.ca/wp-content/uploads/2025/08/Procurement-and-Contractor-Oversight-Practice-Guide.pdf",
+        "evidence": "Guide p.17-18 lists these items in the vendor prequalification application."
+      },
+      {
+        "claim": "CMRAO 5 tips; at least three quotes; sole-source decision documented in board minutes",
+        "url": "https://www.cmrao.ca/wp-content/uploads/2025/08/Procurement-and-Contractor-Oversight-Practice-Guide.pdf",
+        "evidence": "Guide p.18-19 lists 5 tips and minute-recording advice."
+      },
+      {
+        "claim": "ESA: hire LEC; most electrical work needs a notification even with an electrician on staff",
+        "url": "https://esasafe.com/business-and-property-owners/property-owner-obligations/",
+        "evidence": "Property owner obligations page."
+      },
+      {
+        "claim": "TSSA lookup of registered fuels contractors",
+        "url": "https://www.tssa.org/fuels-contractor",
+        "evidence": "Lookup tool page."
+      },
+      {
+        "claim": "STO public register confirms who can legally work in a compulsory trade",
+        "url": "https://www.skilledtradesontario.ca/public-register/",
+        "evidence": "Register page."
+      },
+      {
+        "claim": "WSIB clearance validity, construction duties, liability cap",
+        "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate-construction",
+        "evidence": "Policy text."
+      }
+    ]
+  },
+  {
+    "key": "C3",
+    "category": "jobs-hiring",
+    "title": "Checking a tradesperson's ticket: compulsory trades, the STO public register and Red Seal",
+    "verification": [
+      {
+        "claim": "s. 6: individual may practise compulsory trade only if registered apprentice, C of Q/provisional, or exempt; s. 7: no person shall employ or otherwise engage unless same",
+        "url": "https://www.ontario.ca/laws/statute/21b28",
+        "evidence": "Text of ss. 6 and 7 read from current e-Laws consolidation (Word download)."
+      },
+      {
+        "claim": "List of 23 compulsory trades incl. electricians, plumber, RAC mechanic, residential AC, sheet metal, sprinkler, steamfitter, hoisting engineers",
+        "url": "https://www.ontario.ca/laws/regulation/210876",
+        "evidence": "O. Reg. 876/21 s. 2 list read from e-Laws Word download."
+      },
+      {
+        "claim": "23 of 144 trades compulsory; verify via STO register; exempt persons may not appear; exemptions in O. Reg. 877/21; carry proof; enforcement tools",
+        "url": "https://ontario.ca/page/compulsory-trades-and-enforcement",
+        "evidence": "Ontario page summary."
+      },
+      {
+        "claim": "Register confirms who can legally work in a compulsory trade; search by name or STO ID",
+        "url": "https://www.skilledtradesontario.ca/public-register/",
+        "evidence": "STO public register page."
+      },
+      {
+        "claim": "Red Seal endorsement shows exam passed; facilitates mobility; does not itself permit practice; verify with issuing authority",
+        "url": "https://red-seal.ca/eng/about/program.shtml",
+        "evidence": "Red Seal program page."
+      },
+      {
+        "claim": "Alberta compulsory certification trades include electrician, plumber, gasfitter, RAC mechanic, sheet metal worker, steamfitter-pipefitter",
+        "url": "https://tradesecrets.alberta.ca/trades-in-alberta/compulsory-certification-trades",
+        "evidence": "Tradesecrets list."
+      }
+    ]
+  },
+  {
+    "key": "C4",
+    "category": "electrical",
+    "title": "Electrical work in Ontario: LEC licence, Master Electrician and who files the ESA notification",
+    "verification": [
+      {
+        "claim": "s. 3 no person shall operate electrical contracting business without licence; s. 4(2) designate master electrician; s. 6 ME responsibilities; s. 7 ME employed and one contractor at a time",
+        "url": "https://www.ontario.ca/laws/regulation/050570",
+        "evidence": "Text read from current e-Laws consolidation (Word download)."
+      },
+      {
+        "claim": "s. 2 exemptions: industrial establishment (incl. office building, shop) owner/operator/employee; plug-in equipment maintenance without alteration",
+        "url": "https://www.ontario.ca/laws/regulation/050570",
+        "evidence": "s. 2 paras 2 and 8 and s. 1 definition of industrial establishment."
+      },
+      {
+        "claim": "Must hire LEC; most work needs notification regardless who does it; before or within 48 hours; even with electrician on staff",
+        "url": "https://esasafe.com/business-and-property-owners/property-owner-obligations/",
+        "evidence": "ESA property owner page."
+      },
+      {
+        "claim": "Person doing work files; LEC files when hired; never on someone else's behalf; not same as building permit; Certificate of Acceptance to filer",
+        "url": "https://esasafe.com/notifications-and-inspections/",
+        "evidence": "ESA notifications page."
+      },
+      {
+        "claim": "Lookup tool searchable by location/contractor, status filters, warning icon for penalty or conviction",
+        "url": "https://licensing.esasafe.com/contractor-locator-tool/",
+        "evidence": "Contractor Locator Tool page."
+      },
+      {
+        "claim": "Electrician trades are compulsory",
+        "url": "https://www.ontario.ca/laws/regulation/210876",
+        "evidence": "O. Reg. 876/21 s. 2 items 6 and 7."
+      }
+    ]
+  },
+  {
+    "key": "C5",
+    "category": "hvac-mechanical",
+    "title": "Refrigerant work in Canada: federal halocarbon rules vs Ontario's ODP certificate",
+    "verification": [
+      {
+        "claim": "2003 regulations repealed by SOR/2022-110 on 2022-05-20",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2003-289/FullText.html",
+        "evidence": "Justice Laws page shows repeal notice."
+      },
+      {
+        "claim": "2022 regs apply to federal Crown, boards, agencies, Crown corps, federal works/undertakings, systems on federal or Aboriginal lands (s. 2)",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2022-110/FullText.html",
+        "evidence": "s. 2(1)."
+      },
+      {
+        "claim": "Only certified person may install, service or recover halocarbon (s. 14); certified person defined as holding provincial environmental awareness course certificate (s. 1)",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2022-110/FullText.html",
+        "evidence": "ss. 1 and 14."
+      },
+      {
+        "claim": "Leak test large systems annually, no more than 15 months apart (s. 17); >10 kg large; inventory, logs; 5-year records (s. 26); 100 kg 24 h + 30 days written; 10-100 kg semi-annual",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2022-110/FullText.html",
+        "evidence": "ss. 1, 17, 22-26."
+      },
+      {
+        "claim": "No person shall service or test refrigeration equipment unless certified under s. 34 and owns/has contract for recovery equipment (s. 22); certificate valid 5 years (s. 34(7)); leak test notice with certificate number and expiry (s. 23(3))",
+        "url": "https://www.ontario.ca/laws/regulation/100463",
+        "evidence": "Text read from current e-Laws consolidation (Word download)."
+      },
+      {
+        "claim": "ODP card from one-day approved course by HRAI and partners; valid 5 years; does not allow repair, need C of Q",
+        "url": "https://www.ontario.ca/page/certificate-handle-refrigerants",
+        "evidence": "Ontario page."
+      },
+      {
+        "claim": "RAC systems mechanic is compulsory trade",
+        "url": "https://www.ontario.ca/laws/regulation/210876",
+        "evidence": "s. 2 item 15."
+      }
+    ]
+  },
+  {
+    "key": "C6",
+    "category": "hvac-mechanical",
+    "title": "Gas work in Ontario: TSSA contractor registration and G1, G2, G3 certificates",
+    "verification": [
+      {
+        "claim": "s. 21(1) no person shall act as contractor unless registered; (3) expires one year after issue; contractor definition; s. 6(1) certificate required, s. 6(3) presence exception; s. 15 owner maintain safe condition",
+        "url": "https://www.ontario.ca/laws/regulation/010212",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "G1 any BTU (s. 20); G2 <=400,000 Btuh, G1 work under direct supervision (s. 21); G3 listed tasks under general supervision with sign-off, no initial activation (s. 22)",
+        "url": "https://www.ontario.ca/laws/regulation/010215",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "Lookup by name, authorization number FS-R-#####, city/postal code, fuel type; updated monthly; not an endorsement",
+        "url": "https://www.tssa.org/fuels-contractor",
+        "evidence": "TSSA lookup page."
+      },
+      {
+        "claim": "Only TSSA-registered contractors and certified technicians may install, service, maintain fuel-burning appliances; report to fuels_technical_services@tssa.org",
+        "url": "https://www.tssa.org/protecting-ontarians-fraudulent-fuels-workers",
+        "evidence": "TSSA page."
+      }
+    ]
+  },
+  {
+    "key": "C7",
+    "category": "roofing-envelope",
+    "title": "Working at heights training in Ontario: who needs it, the 3-year rule and how to verify it",
+    "verification": [
+      {
+        "claim": "s. 6 fall protection methods trigger; s. 7 approved program and CPO-approved provider; s. 8 valid 3 years; s. 10 records incl. name, provider, date, program; available to inspector",
+        "url": "https://www.ontario.ca/laws/regulation/130297",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "s. 26 hazards list incl. >3 m, >1.2 m wheelbarrow path, etc.; s. 26.1 guardrail first then ranking",
+        "url": "https://www.ontario.ca/laws/regulation/910213",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "In addition to equipment training; refresher extends 3 years; eligibility checker; verify via certification management system with consent; employer keeps proof",
+        "url": "https://www.ontario.ca/page/training-working-heights",
+        "evidence": "Ontario training page."
+      },
+      {
+        "claim": "Fraudulent cards warning; not accepted; verify provider and worker in CMS",
+        "url": "https://www.ontario.ca/page/alert-fraudulent-working-heights-training-cards",
+        "evidence": "Ontario alert page."
+      }
+    ]
+  },
+  {
+    "key": "C8",
+    "category": "concrete-structure",
+    "title": "Designated substances in Ontario: the owner's list before tendering and the asbestos report",
+    "verification": [
+      {
+        "claim": "s. 30(1)-(4) owner determines and lists; tender includes copy; constructor receives before contract; constructor passes to contractors/subs; (5)-(6) liability",
+        "url": "https://www.ontario.ca/laws/statute/90o01",
+        "evidence": "Text of s. 30 read from e-Laws Word download."
+      },
+      {
+        "claim": "11 designated substances list",
+        "url": "https://www.ontario.ca/laws/regulation/090490",
+        "evidence": "O. Reg. 490/09 s. 2 read from e-Laws Word download."
+      },
+      {
+        "claim": "s. 10(1)-(6) examination, report contents, give to prospective constructor and down chain; (7)-(8) notify inspector, owner, contractor, JHSC",
+        "url": "https://www.ontario.ca/laws/regulation/050278",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "Ministry guide summary of owner responsibilities before tendering",
+        "url": "https://www.ontario.ca/document/guide-regulation-respecting-asbestos-construction-projects-and-buildings-and-repair-5",
+        "evidence": "Ontario guide page."
+      },
+      {
+        "claim": "Owner must determine lead presence and inform potential contractors in bidding (s. 30)",
+        "url": "https://www.ontario.ca/document/lead-construction-projects/legal-requirements",
+        "evidence": "Ontario lead guideline legal requirements page."
+      }
+    ]
+  },
+  {
+    "key": "C9",
+    "category": "cleaning-janitorial",
+    "title": "WHMIS for cleaning crews: supplier labels, decanted bottles, SDS access and training",
+    "verification": [
+      {
+        "claim": "Four elements; supplier/employer/worker responsibilities; consumer products excluded but training still needed; provincial OHS enforcement",
+        "url": "https://www.ccohs.ca/oshanswers/chemicals/whmis_ghs/general.html",
+        "evidence": "CCOHS general page."
+      },
+      {
+        "claim": "Workplace label when decanting or label illegible; contents; decanted container still identified by product name",
+        "url": "https://www.ccohs.ca/oshanswers/chemicals/whmis_ghs/labels.html",
+        "evidence": "CCOHS labels page."
+      },
+      {
+        "claim": "Reg. 860 s. 7 instruction topics and effectiveness; s. 8 supplier labels; s. 10 decanted products and portable container exception; s. 17 obtain supplier SDS; workplace label definition",
+        "url": "https://www.ontario.ca/laws/regulation/900860",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "s. 38(1) SDS available in workplace; (1.1) readily available to exposed workers; (5) electronic counts",
+        "url": "https://www.ontario.ca/laws/statute/90o01",
+        "evidence": "Text read from e-Laws Word download."
+      }
+    ]
+  },
+  {
+    "key": "C10",
+    "category": "quebec",
+    "title": "Licence RBQ : vérifier la licence et les sous-catégories au registre avant de signer",
+    "verification": [
+      {
+        "claim": "Saisir le numéro au Registre; contenu de la fiche (NEQ, sous-catégories, caution, réclamations, restriction contrats publics, répondants)",
+        "url": "https://www.rbq.gouv.qc.ca/vous-etes/citoyen/verifier-la-licence-dun-entrepreneur/",
+        "evidence": "Page RBQ citoyen."
+      },
+      {
+        "claim": "Same record contents in English version",
+        "url": "https://www.rbq.gouv.qc.ca/en/you-are/citizen/check-a-contractors-licence/",
+        "evidence": "RBQ English page."
+      },
+      {
+        "claim": "Montants 40 000 $ / 20 000 $; couverture acomptes, travaux non parachevés, malfaçons, vices dans l'année; exception 1.1.1/1.1.2",
+        "url": "https://www.rbq.gouv.qc.ca/vous-etes/entrepreneur/foire-aux-questions-faq/cautionnement/",
+        "evidence": "FAQ cautionnement RBQ."
+      },
+      {
+        "claim": "Conditions: licence valide, montant versé, 12 mois pour malfaçon; prorata; épuisement",
+        "url": "https://www.rbq.gouv.qc.ca/vous-etes/citoyen/problemes-avec-un-entrepreneur/effectuer-une-reclamation/",
+        "evidence": "Page réclamation RBQ."
+      },
+      {
+        "claim": "Projet 2026: 30 000 $ / 60 000 $, publié pour commentaires, non adopté dans le communiqué",
+        "url": "https://www.rbq.gouv.qc.ca/salle-de-presse/les-nouvelles/nouvelles-detail/item/2026-02-25-qualification-professionnelle-des-entrepreneurs-publication-pour-commentaires-de-deux-projets-de-reglement/",
+        "evidence": "Communiqué RBQ 25 février 2026."
+      }
+    ]
+  },
+  {
+    "key": "C11",
+    "category": "quebec",
+    "title": "CCQ et Loi R-20 : vos travaux sont-ils assujettis? Repères pour gestionnaires et syndicats",
+    "verification": [
+      {
+        "claim": "Champ d'application: bâtiments et génie civil sur le chantier; fondation, érection, démolition, entretien, rénovation, réparation, modification; 4 secteurs; machinerie sous conditions",
+        "url": "https://www.ccq.org/fr-CA/loi-r20/application",
+        "evidence": "Page CCQ champ d'application."
+      },
+      {
+        "claim": "Exclusions art. 19: salariés permanents entretien/réparation; personne physique logement qu'elle habite; entrepreneur autonome un seul à la fois; bénévoles",
+        "url": "https://www.ccq.org/fr-CA/loi-r20/application/exclusions",
+        "evidence": "Page CCQ exclusions."
+      },
+      {
+        "claim": "Compétence attestée par certificat; licence RBQ lorsque requise; inscription CCQ",
+        "url": "https://www.ccq.org/loi-r20",
+        "evidence": "Page CCQ application Loi R-20."
+      },
+      {
+        "claim": "Employeur vérifie validité du droit de travail; apprenti tâches de son métier; exemptions limitées",
+        "url": "https://www.ccq.org/fr-CA/loi-r20/etre-employeur/regles",
+        "evidence": "Page CCQ règles."
+      },
+      {
+        "claim": "CCQ inspecte les chantiers et examine les livres comptables",
+        "url": "https://www.ccq.org/fr-CA/loi-r20/etre-employeur/loi-R20-conventions-collectives",
+        "evidence": "Page CCQ obligations employeurs."
+      }
+    ]
+  },
+  {
+    "key": "C12",
+    "category": "united-states",
+    "title": "Verifying a US contractor license: state lookups in California, Florida and Texas",
+    "verification": [
+      {
+        "claim": "CSLB Check a License search by license number, business name, personnel name; digits only",
+        "url": "https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx",
+        "evidence": "CSLB tool page."
+      },
+      {
+        "claim": "License required if permit, employees, or $1,000+ labor and materials",
+        "url": "https://www.cslb.ca.gov/consumers/hire_a_contractor/What_Kind_Of_Contractor.aspx",
+        "evidence": "CSLB consumer page."
+      },
+      {
+        "claim": "$25,000 bond often not enough; employees require workers' comp; ask for certificate of insurance; license number does not mean valid",
+        "url": "https://www.cslb.ca.gov/consumers/hire_a_contractor/finding_the_right_contractor.aspx",
+        "evidence": "CSLB consumer page."
+      },
+      {
+        "claim": "C-8, C-20, C-22, C-39, D-49 must have workers' comp certificate on file regardless of employees",
+        "url": "https://www.cslb.ca.gov/about_us/Public_Info_FAQ.aspx",
+        "evidence": "CSLB FAQ."
+      },
+      {
+        "claim": "DBPR search by name, license number, city/county, license type",
+        "url": "https://www.myfloridalicense.com/wl11.asp?mode=0&SID=",
+        "evidence": "DBPR search page."
+      },
+      {
+        "claim": "Certified contractor may contract anywhere in state; registered contractor limited to jurisdiction",
+        "url": "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0400-0499/0489/Sections/0489.105.html",
+        "evidence": "s. 489.105(8) and (10)."
+      },
+      {
+        "claim": "Anyone performing electrical work in Texas must be licensed; contractor holds or employs Master Electrician of Record; state license statewide, city license local; search by name or number",
+        "url": "https://www.tdlr.texas.gov/electricians/elecfaq.htm",
+        "evidence": "TDLR electrical FAQ."
+      }
+    ]
+  },
+  {
+    "key": "C13",
+    "category": "codes-permits",
+    "title": "Who pulls the permit in Ontario: building permits vs ESA electrical notifications",
+    "verification": [
+      {
+        "claim": "s. 8(1) no person shall construct or demolish without permit; s. 8(1.1) application by person specified by regulation",
+        "url": "https://www.ontario.ca/laws/statute/92b23",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "Provincial form: applicant is owner or authorized agent; corporation authority to bind; effective Feb 16, 2026",
+        "url": "https://www.ontario.ca/files/2026-01/mmah-building-development-application-for-a-permit-to-construct-or-demolish-2026-en-2026-01-27.pdf",
+        "evidence": "Form section C and declaration."
+      },
+      {
+        "claim": "Previous code Div C 1.3.1.2: owner or authorized agent; owner includes registered owner, lessee, mortgagee in possession",
+        "url": "https://www.ontario.ca/laws/regulation/120332",
+        "evidence": "Text read from e-Laws Word download. Note 2024 Code admin provisions are in the Ontario amendments document, not verified directly."
+      },
+      {
+        "claim": "When permits needed; apply to municipality; permit holder requests inspections",
+        "url": "https://www.ontario.ca/document/citizens-guide-land-use-planning/building-permits",
+        "evidence": "Ontario citizen's guide page."
+      },
+      {
+        "claim": "ESA: person doing work files, LEC files, not same as building permit, Certificate of Acceptance",
+        "url": "https://esasafe.com/notifications-and-inspections/",
+        "evidence": "ESA notifications page."
+      },
+      {
+        "claim": "Most electrical work needs notification regardless who does it",
+        "url": "https://esasafe.com/business-and-property-owners/property-owner-obligations/",
+        "evidence": "ESA property owner page."
+      }
+    ]
+  },
+  {
+    "key": "C14",
+    "category": "painting-finishes",
+    "title": "Lead paint in older buildings: what to check before sanding or stripping (Ontario)",
+    "verification": [
+      {
+        "claim": "Pre-1960 probably lead; 1960-1990 exterior may; test via lab or X-ray contractor; do not use sanders, heat guns, blowlamps; sealed container labelled Hazardous Waste; keep children and pregnant women away",
+        "url": "https://www.canada.ca/en/health-canada/services/home-safety/lead-based-paint.html",
+        "evidence": "Health Canada page."
+      },
+      {
+        "claim": "Owner duty to determine and inform bidders; liability; employer duty every precaution reasonable",
+        "url": "https://www.ontario.ca/document/lead-construction-projects/legal-requirements",
+        "evidence": "Ontario guideline legal requirements."
+      },
+      {
+        "claim": "Type classifications for sanding, scraping, chemical gel, burning, abrasive blasting",
+        "url": "https://www.ontario.ca/document/lead-construction-projects/classification-work",
+        "evidence": "Ontario guideline classification page."
+      },
+      {
+        "claim": "Controls: engineering, work/hygiene practices, PPE, training; wet methods, dust collection, HEPA, no compressed air/dry sweeping, no eating in contaminated areas",
+        "url": "https://www.ontario.ca/document/lead-construction-projects/controlling-lead-hazard",
+        "evidence": "Ontario guideline controlling the lead hazard page."
+      },
+      {
+        "claim": "s. 30 owner list, tender, constructor, subcontractors",
+        "url": "https://www.ontario.ca/laws/statute/90o01",
+        "evidence": "Text of s. 30 read from e-Laws Word download."
+      }
+    ]
+  },
+  {
+    "key": "C15",
+    "category": "plumbing",
+    "title": "Plumbing is a compulsory trade in Ontario: who can legally do the work and how to check",
+    "verification": [
+      {
+        "claim": "Plumber in compulsory trades list",
+        "url": "https://www.ontario.ca/laws/regulation/210876",
+        "evidence": "O. Reg. 876/21 s. 2 item 14."
+      },
+      {
+        "claim": "Plumber scope inclusions and exclusions (s. 103)",
+        "url": "https://www.ontario.ca/laws/regulation/210875",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "ss. 6 and 7 practice and engagement prohibitions",
+        "url": "https://www.ontario.ca/laws/statute/21b28",
+        "evidence": "Text read from e-Laws Word download."
+      },
+      {
+        "claim": "Carry proof; inspectors; compliance orders; notices of contravention with AMPs",
+        "url": "https://ontario.ca/page/compulsory-trades-and-enforcement",
+        "evidence": "Ontario page."
+      },
+      {
+        "claim": "Register confirms legal authorization in compulsory trade",
+        "url": "https://www.skilledtradesontario.ca/public-register/",
+        "evidence": "STO page."
+      },
+      {
+        "claim": "Plumber trade code 306A",
+        "url": "https://www.skilledtradesontario.ca/wp-content/uploads/2025/05/plumber-306A_2024_en_TradeReport.html",
+        "evidence": "STO trade report for Plumber (306A)."
+      },
+      {
+        "claim": "Gas certificate required for appliance/equipment work",
+        "url": "https://www.ontario.ca/laws/regulation/010212",
+        "evidence": "s. 6(1)."
+      },
+      {
+        "claim": "Alberta plumber compulsory; who can perform restricted activities",
+        "url": "https://tradesecrets.alberta.ca/trades-in-alberta/compulsory-certification-trades",
+        "evidence": "Tradesecrets page."
+      }
+    ]
+  },
+  {
+    "key": "D1",
+    "category": "electrical",
+    "title": "EV chargers in Ontario condos: the owner application process under O. Reg. 48/01",
+    "verification": [
+      {
+        "claim": "Application must be in writing, signed, identify owner and address for service, and include relevant drawings/specs including location",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.5(2)(a) to (d)"
+      },
+      {
+        "claim": "Electronic delivery only if board approved by resolution; mail/courier/mailbox to corporation or manager",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.5(3)"
+      },
+      {
+        "claim": "Board must respond in writing within 60 days to a complete application; deemed non-rejection if it does not",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.5(5) and (16)"
+      },
+      {
+        "claim": "Grounds for rejection limited to report stating contrary to law incl. Electrical Safety Code, structural integrity, or serious risk",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.5(8), (10), (11)"
+      },
+      {
+        "claim": "Board may require alternative manner/location without unreasonable added cost; general bans do not count",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.5(12), (13)"
+      },
+      {
+        "claim": "Agreement within 90 days, required terms, registered on title before taking effect",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.6(1), (3), (5)"
+      },
+      {
+        "claim": "Owner pays all installation costs (own contractor) or all reasonable costs (corporation contractor) unless agreed otherwise; each side bears own application costs",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.6(4); s. 24.5(17)"
+      },
+      {
+        "claim": "Mediation/arbitration; deemed abandoned if not submitted within six months",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 24.7(1), (4)"
+      }
+    ]
+  },
+  {
+    "key": "D2",
+    "category": "electrical",
+    "title": "LED retrofits in Canada: what to do with old fluorescent ballasts (PCBs) and mercury lamps",
+    "verification": [
+      {
+        "claim": "Ballasts made before the 1980s usually contain high PCB concentrations; identifiers include date, nameplate, Attention PCB labels",
+        "url": "https://www.canada.ca/en/environment-climate-change/services/pollutants/pcb-in-environment/regulations-how-they-apply-to-you.html",
+        "evidence": "Page (modified 2026-01-06) lists these identifiers and advises checking with manufacturer"
+      },
+      {
+        "claim": "Ballasts made before 1980 typically contain PCBs; separate PCB from non-PCB ballasts; only non-PCB ballasts may be recycled untreated; contractors should not transport/store/dispose; owner responsible, ownership cannot be transferred",
+        "url": "https://www.canada.ca/en/environment-climate-change/services/pollutants/pcb-in-environment/electrical-contractors-regulations.html",
+        "evidence": "Electrical contractors guidance page"
+      },
+      {
+        "claim": "End of use December 31, 2026 for light ballasts >= 50 mg/kg in use on Sept 5, 2008; extensions up to five years; notice within 120 days for those in use Jan 1, 2026",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2008-273/page-2.html",
+        "evidence": "ss. 16(2)(a), 16(4), 17.1(4) and (6); consolidation current to 2026-09-21"
+      },
+      {
+        "claim": "30 days to send to destruction or put in storage; storage thresholds 100 L / 100 kg / 1 kg pure PCBs",
+        "url": "https://www.canada.ca/en/environment-climate-change/services/pollutants/pcb-in-environment/storage.html",
+        "evidence": "PCB storage factsheet"
+      },
+      {
+        "claim": "Mercury lamp code of practice in effect Feb 11, 2017; lamp types covered; recommendations on best practices, tracking, training",
+        "url": "https://www.canada.ca/en/environment-climate-change/services/pollution-prevention/environmental-risk-management-instruments/codes-of-practice/list/mercury-lamps-overview.html",
+        "evidence": "Code of practice overview page"
+      }
+    ]
+  },
+  {
+    "key": "D3",
+    "category": "hvac-mechanical",
+    "title": "Commercial HVAC maintenance contracts: using ASHRAE/ACCA Standard 180 to define the PM scope",
+    "verification": [
+      {
+        "claim": "Title, ASHRAE/ACCA collaboration, purpose (thermal comfort, energy efficiency, IAQ), addresses inconsistent practices, whole-system maintenance, 2018 edition",
+        "url": "https://www.ashrae.org/file%20library/about/government%20affairs/public%20policy%20resources/standards-180_211-fact-sheet.pdf",
+        "evidence": "Fact sheet text extracted from PDF"
+      },
+      {
+        "claim": "Standard applies to residential-type HVAC in structures higher than 3 storeys; scope excludes houses and multifamily of 3 or fewer storeys",
+        "url": "https://www.ashrae.org/file%20library/technical%20resources/standards%20and%20guidelines/standards%20intepretations/ic180-2018-1.pdf",
+        "evidence": "IC 180-2018-1 approved Feb 8, 2021, answer: Yes"
+      },
+      {
+        "claim": "Scope exclusions incl. process HVAC; owner responsible and may designate others; maintenance program with inventory and written plan; performance objectives, condition indicators, tasks, frequencies, documentation; 2 bad / 3 good inspections rule; tables 5-1 to 5-25; does not supersede manufacturer instructions; voluntary unless jurisdiction mandates",
+        "url": "https://shop.iccsafe.org/media/wysiwyg/material/8950P823-sample.pdf",
+        "evidence": "Sections 2, 4, 5 and special note of Standard 180-2012 sample pages"
+      }
+    ]
+  },
+  {
+    "key": "D4",
+    "category": "plumbing",
+    "title": "Backflow preventer testing in Toronto: who must test, how often, who can test and how to file",
+    "verification": [
+      {
+        "claim": "Mandatory for ICI, Part 3 residential, construction sites; Schedule 5; device location after meter; DCVA moderate / RP severe; RP not below grade",
+        "url": "https://www.toronto.ca/services-payments/water-environment/water-sewer-related-permits-and-bylaws/water-supply-by-law/backflow-prevention-program/",
+        "evidence": "City program page"
+      },
+      {
+        "claim": "Part 9 residential exempt unless auxiliary supply or otherwise required",
+        "url": "https://www.toronto.ca/legdocs/municode/1184_851.pdf",
+        "evidence": "s. 851-8D(5)"
+      },
+      {
+        "claim": "Testing on install, within 72 hours after service, on relocation, annually, as required; CSA B64 series and AWWA procedures; B64.10 / B64.10.1 definition",
+        "url": "https://www.toronto.ca/legdocs/municode/1184_851.pdf",
+        "evidence": "s. 851-8D(3), (11)(c); definitions"
+      },
+      {
+        "claim": "Testers: CCC-certified plumbers, engineers, sprinkler fitters; register first; OWWA 5 yr, ASSE 3 yr, gauge calibration 1 yr",
+        "url": "https://www.toronto.ca/services-payments/water-environment/water-sewer-related-permits-and-bylaws/water-supply-by-law/backflow-prevention-program/",
+        "evidence": "City program page"
+      },
+      {
+        "claim": "Report within seven days; repair failed device within 48 hours; test tag contents; calibration at least every 12 months",
+        "url": "https://www.toronto.ca/legdocs/municode/1184_851.pdf",
+        "evidence": "s. 851-8D(12), (13), (15), (20)(d); consolidation dated April 1, 2019, so flagged to confirm"
+      },
+      {
+        "claim": "Online submission with email confirmation; keep records seven years; surveys within 30 days and updated every five years; permit needed",
+        "url": "https://www.toronto.ca/services-payments/water-environment/water-sewer-related-permits-and-bylaws/water-supply-by-law/backflow-prevention-program/",
+        "evidence": "City program page"
+      }
+    ]
+  },
+  {
+    "key": "D5",
+    "category": "plumbing",
+    "title": "Frozen or burst pipe in your building: the first 15 minutes for building staff",
+    "verification": [
+      {
+        "claim": "Know where main shut-off is; if a pipe breaks shut off water right away; insulate pipes; seal air leaks; commercial customers wrap fire lines",
+        "url": "https://www.toronto.ca/services-payments/water-environment/your-water-pipes-meter/water-related-help-advice/prevent-or-thaw-frozen-pipes/",
+        "evidence": "Toronto Water frozen pipes page"
+      },
+      {
+        "claim": "Thaw with hair dryer, heating pad, space heater or warm towel; one to six hours; no torch/open flame, kerosene, propane, charcoal; do not leave electrical devices unattended; turn water on slowly",
+        "url": "https://www.toronto.ca/services-payments/water-environment/your-water-pipes-meter/water-related-help-advice/prevent-or-thaw-frozen-pipes/",
+        "evidence": "Toronto Water frozen pipes page"
+      },
+      {
+        "claim": "Do not enter flooded basement if water above outlets, baseboard heaters, furnace or near panel until utility disconnects; licensed electrical contractor assessment; do not reuse flood-exposed products",
+        "url": "https://esasafe.com/newsroom-2023/electrical-safety-authority-warns-of-electrical-hazards-posed-by-expected-flooding-in-northern-ontario/",
+        "evidence": "ESA 2023 flooding advisory"
+      },
+      {
+        "claim": "Keep photographing impacted areas, damaged items, discarded materials; keep receipts; keep notes; verify contractors",
+        "url": "https://a.storyblok.com/f/339220/x/70aef04f94/ibc-flood-recovery-checklist.pdf",
+        "evidence": "IBC Your Recovery Checklist (PDF hosted on IBC site CDN)"
+      }
+    ]
+  },
+  {
+    "key": "D6",
+    "category": "roofing-envelope",
+    "title": "Ice dams on townhouse and low-rise condo roofs: what causes them and which fixes last",
+    "verification": [
+      {
+        "claim": "Mechanism: snow insulates, warm attic melts snow, water refreezes at cold overhang",
+        "url": "https://natural-resources.canada.ca/sites/www.nrcan.gc.ca/files/energy/pdf/housing/Keeping%20the%20Heat%20In_e%20.pdf",
+        "evidence": "Section 5.5 Ice dams"
+      },
+      {
+        "claim": "Well-sealed and insulated attic generally has no ice dams; complex roofs and large overhangs more prone; dark siding convection",
+        "url": "https://natural-resources.canada.ca/sites/www.nrcan.gc.ca/files/energy/pdf/housing/Keeping%20the%20Heat%20In_e%20.pdf",
+        "evidence": "Sections 5.5 and 5.5.1"
+      },
+      {
+        "claim": "Look for first melt spots; common locations; best prevention is to seal attic air leaks and insulate thoroughly",
+        "url": "https://natural-resources.canada.ca/sites/www.nrcan.gc.ca/files/energy/pdf/housing/Keeping%20the%20Heat%20In_e%20.pdf",
+        "evidence": "Section 5.5.2"
+      },
+      {
+        "claim": "About 100 mm left for insulation at baffles promotes ice damming; continuous insulation over wall tops",
+        "url": "https://natural-resources.canada.ca/sites/www.nrcan.gc.ca/files/energy/pdf/housing/Keeping%20the%20Heat%20In_e%20.pdf",
+        "evidence": "Section 5.5 text"
+      },
+      {
+        "claim": "Ventilation is second line of defence after air sealing",
+        "url": "https://natural-resources.canada.ca/sites/www.nrcan.gc.ca/files/energy/pdf/housing/Keeping%20the%20Heat%20In_e%20.pdf",
+        "evidence": "Attic ventilation paragraph"
+      },
+      {
+        "claim": "Membranes required on lower roof in new houses, do not stop dams; chopping damages roof; removal not always safe; cathedral ceilings dense-pack or re-roofing",
+        "url": "https://natural-resources.canada.ca/sites/www.nrcan.gc.ca/files/energy/pdf/housing/Keeping%20the%20Heat%20In_e%20.pdf",
+        "evidence": "Section 5.5 text"
+      }
+    ]
+  },
+  {
+    "key": "D7",
+    "category": "roofing-envelope",
+    "title": "Window and curtain wall leaks: ASTM E1105, AAMA 501.2 and how a leak diagnosis is scoped",
+    "verification": [
+      {
+        "claim": "E1105 title, edition E1105-15(2023) active",
+        "url": "https://store.astm.org/e1105-15r23.html",
+        "evidence": "ASTM store page, last updated Feb 06, 2023"
+      },
+      {
+        "claim": "Water applied with higher outdoor pressure; interior chamber and calibrated spray rack; for compliance and joints to adjacent construction",
+        "url": "https://store.astm.org/e1105-15r23.html",
+        "evidence": "Scope 1.1, 1.2; Significance 5.6"
+      },
+      {
+        "claim": "Can be done at installation or in service; curtain wall access limits; 10% gust limit; does not identify unobservable water; consider pressure before specifying",
+        "url": "https://store.astm.org/e1105-15r23.html",
+        "evidence": "Significance 5.1 to 5.5, Note 2"
+      },
+      {
+        "claim": "AAMA 501.2 title; not intended to test rated performance; AAMA 503 is proper method; 501.2-25 active",
+        "url": "https://store.fgiaonline.org/AAMA-501.2-03/",
+        "evidence": "FGIA store listing and version selector"
+      }
+    ]
+  },
+  {
+    "key": "D8",
+    "category": "painting-finishes",
+    "title": "VOC limits for architectural coatings in Canada (SOR/2009-264): what painters and buyers need to know",
+    "verification": [
+      {
+        "claim": "Current to 2026-09-21, last amended 2019-06-17",
+        "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2009-264/index.html",
+        "evidence": "Justice Laws index page"
+      },
+      {
+        "claim": "Prohibitions on manufacture/import and sale over limit with dilution and permit exceptions",
+        "url": "https://laws-lois.justice.gc.ca/PDF/SOR-2009-264.pdf",
+        "evidence": "ss. 3 and 5"
+      },
+      {
+        "claim": "Application exclusions: factory/shop application, research, lab, export; non-application to adhesives, aerosols, antifouling",
+        "url": "https://laws-lois.justice.gc.ca/PDF/SOR-2009-264.pdf",
+        "evidence": "s. 2(1)(a) to (d), s. 2(2)"
+      },
+      {
+        "claim": "Schedule limits: flat 100, non-flat 150, high-gloss 250, other primers 200, opaque floor 250, concrete curing 350, traffic marking 450; 53 items",
+        "url": "https://laws-lois.justice.gc.ca/PDF/SOR-2009-264.pdf",
+        "evidence": "Schedule items 9, 18/19, 42, 50, 51, 52, 53"
+      },
+      {
+        "claim": "Traffic marking over 150 g/L not used May 1 to Oct 15",
+        "url": "https://laws-lois.justice.gc.ca/PDF/SOR-2009-264.pdf",
+        "evidence": "s. 4(1)"
+      },
+      {
+        "claim": "Label requirements and seller duty",
+        "url": "https://laws-lois.justice.gc.ca/PDF/SOR-2009-264.pdf",
+        "evidence": "s. 17(1)(a) to (i), (1.1)"
+      },
+      {
+        "claim": "Dilution cannot exceed limit; multi-component; most restrictive limit",
+        "url": "https://laws-lois.justice.gc.ca/PDF/SOR-2009-264.pdf",
+        "evidence": "ss. 6, 7, 8"
+      },
+      {
+        "claim": "Amendments at consultation stage, comments before Jan 13, 2023, nothing published in Gazette",
+        "url": "https://www.canada.ca/en/environment-climate-change/services/managing-pollution/sources-industry/volatile-organic-compounds-consumer-commercial/consultation-architectural-coatings-regulations.html",
+        "evidence": "ECCC consultation page"
+      }
+    ]
+  },
+  {
+    "key": "D9",
+    "category": "concrete-structure",
+    "title": "Cold-weather concreting: the temperatures, protection times and checks that the guidance gives",
+    "verification": [
+      {
+        "claim": "Cold weather definition: >3 days avg below 5°C and air not above 10°C for more than half of 24 h",
+        "url": "https://www.nrmca.org/wp-content/uploads/2021/01/27pr.pdf",
+        "evidence": "CIP 27 WHAT is Cold Weather"
+      },
+      {
+        "claim": "Freezes about -4°C; >50% strength loss; protect to 3.5 MPa about two days; air entrain and protect to 24.0 MPa; 10°C drop doubles set time",
+        "url": "https://www.nrmca.org/wp-content/uploads/2021/01/27pr.pdf",
+        "evidence": "CIP 27 WHY Consider Cold Weather"
+      },
+      {
+        "claim": "Placement temperatures 13/10/7°C by section size; not exceed by more than 10°C",
+        "url": "https://www.nrmca.org/wp-content/uploads/2021/01/27pr.pdf",
+        "evidence": "CIP 27 table"
+      },
+      {
+        "claim": "CaCl max 2% by weight of cement; non-chloride for prestressed; accelerators do not prevent freezing; lowest practical slump",
+        "url": "https://www.nrmca.org/wp-content/uploads/2021/01/27pr.pdf",
+        "evidence": "CIP 27 HOW section"
+      },
+      {
+        "claim": "No water curing when freezing imminent; thermal cracking >20°C difference; forms 1 to 7 days; field-cured cylinders; ASTM C31 16 to 27°C first 24 to 48 h; vent heaters",
+        "url": "https://www.nrmca.org/wp-content/uploads/2021/01/27pr.pdf",
+        "evidence": "CIP 27 text"
+      }
+    ]
+  },
+  {
+    "key": "D10",
+    "category": "landscaping-snow",
+    "title": "Ontario snow and ice slip claims: the 60-day notice rule and what to put in your snow contract",
+    "verification": [
+      {
+        "claim": "60-day written notice incl. date, time, location; personally served or registered mail; to occupier or snow contractor",
+        "url": "https://www.ontario.ca/laws/statute/90o02",
+        "evidence": "s. 6.1(1), (2)"
+      },
+      {
+        "claim": "Copy duties on occupier and contractor",
+        "url": "https://www.ontario.ca/laws/statute/90o02",
+        "evidence": "s. 6.1(3), (4)"
+      },
+      {
+        "claim": "Exceptions: death; reasonable excuse and no prejudice",
+        "url": "https://www.ontario.ca/laws/statute/90o02",
+        "evidence": "s. 6.1(5), (6)"
+      },
+      {
+        "claim": "Notice to any listed person effective against all",
+        "url": "https://www.ontario.ca/laws/statute/90o02",
+        "evidence": "s. 6.1(7)"
+      },
+      {
+        "claim": "Added by S.O. 2020, c. 33",
+        "url": "https://www.ontario.ca/laws/statute/90o02",
+        "evidence": "Source note \"2020, c. 33, s. 1\" on each subsection"
+      }
+    ]
+  },
+  {
+    "key": "D11",
+    "category": "landscaping-snow",
+    "title": "Salt use on commercial lots: the federal road salt code, Smart About Salt certification and record-keeping",
+    "verification": [
+      {
+        "claim": "Applies to organizations using >500 tonnes/yr (5-yr rolling average) or with vulnerable areas; not domestic, private or institutional use; preface excludes parking lots and private properties",
+        "url": "https://www.canada.ca/en/environment-climate-change/services/pollutants/road-salts/code-practice-environmental-management.html",
+        "evidence": "Section 2 Application and Preface (modified 2022-08-02)"
+      },
+      {
+        "claim": "Salt management plan elements; records kept 7 years; yearly review; contractors to comply",
+        "url": "https://www.canada.ca/en/environment-climate-change/services/pollutants/road-salts/code-practice-environmental-management.html",
+        "evidence": "Salt management plan and implementation sections"
+      },
+      {
+        "claim": "Certified Contractor and Certified Site; eligible site types; Essentials training within five years; application and self-assessment; annual report; random verifications; Trained Operator distinction; benefits listed",
+        "url": "https://smartaboutsalt.com/certification/",
+        "evidence": "SASC Certification page"
+      }
+    ]
+  },
+  {
+    "key": "D12",
+    "category": "cleaning-janitorial",
+    "title": "Ontario contract cleaning bids: building services provider rules under the Employment Standards Act",
+    "verification": [
+      {
+        "claim": "Definitions of building services and building services provider including owner or manager",
+        "url": "https://www.ontario.ca/laws/statute/00e41",
+        "evidence": "s. 1(1)"
+      },
+      {
+        "claim": "Property management, parking and concession services can qualify",
+        "url": "https://www.ontario.ca/document/your-guide-employment-standards-act-0/building-services-providers",
+        "evidence": "ESA guide building services providers"
+      },
+      {
+        "claim": "New provider must comply with Part XV for employees not hired; exceptions",
+        "url": "https://www.ontario.ca/laws/statute/00e41",
+        "evidence": "s. 75(2) to (4)"
+      },
+      {
+        "claim": "List of exceptions (13-week tests, refusal of reasonable offer) and previous provider liability",
+        "url": "https://www.ontario.ca/document/your-guide-employment-standards-act-0/building-services-providers",
+        "evidence": "ESA guide"
+      },
+      {
+        "claim": "Continuity unless hired more than 13 weeks later",
+        "url": "https://www.ontario.ca/laws/statute/00e41",
+        "evidence": "s. 10(2), (3)"
+      },
+      {
+        "claim": "Vacation pay within later of 7 days or next pay day",
+        "url": "https://www.ontario.ca/laws/statute/00e41",
+        "evidence": "s. 76"
+      },
+      {
+        "claim": "Owner/manager must provide prescribed information on request; may get it from provider; use and confidentiality limits",
+        "url": "https://www.ontario.ca/laws/statute/00e41",
+        "evidence": "ss. 77, 78"
+      },
+      {
+        "claim": "Itemized prescribed information; names only to the new provider",
+        "url": "https://www.ontario.ca/document/your-guide-employment-standards-act-0/building-services-providers",
+        "evidence": "ESA guide"
+      }
+    ]
+  },
+  {
+    "key": "D13",
+    "category": "condo-boards",
+    "title": "Ontario condo reserve fund studies: types, the 3-year cycle, who can do them, and the notice to owners",
+    "verification": [
+      {
+        "claim": "Three classes of study",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 28"
+      },
+      {
+        "claim": "First study comprehensive within year after registration; then within every three years; alternating classes",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 31(2), (3), (4); Act s. 94(4)"
+      },
+      {
+        "claim": "Component inventory 30 years, $500 threshold; physical and financial analysis; 30-year plan; site inspection reviews",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "ss. 27, 29, 30"
+      },
+      {
+        "claim": "Prescribed classes of preparers, independence, insurance $1M/$2M, $3,500 deductible, three years",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 32(1), (2), (4), (5)"
+      },
+      {
+        "claim": "Cost common expense chargeable to reserve; 120 days to review and propose plan; 15 days to notify owners and auditor; implement after 30 days",
+        "url": "https://www.ontario.ca/laws/statute/98c19",
+        "evidence": "s. 94(7) to (10)"
+      },
+      {
+        "claim": "Notice in CAO form; prescribed period fiscal year following study completion",
+        "url": "https://www.ontario.ca/laws/regulation/010048",
+        "evidence": "s. 33(1), (3)"
+      }
+    ]
+  },
+  {
+    "key": "D14",
+    "category": "tools-gear",
+    "title": "Writing off tools, equipment and trucks: the CRA capital cost allowance classes trades use most",
+    "verification": [
+      {
+        "claim": "Class 12 100%: tools under $500 acquired on/after May 2, 2006; most not subject to half-year rule; $500+ to Class 8",
+        "url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/sole-proprietorships-partnerships/report-business-income-expenses/claiming-capital-cost-allowance/classes-depreciable-property.html",
+        "evidence": "Class 12 section"
+      },
+      {
+        "claim": "Class 8 20% property not in another class",
+        "url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/sole-proprietorships-partnerships/report-business-income-expenses/claiming-capital-cost-allowance/classes-depreciable-property.html",
+        "evidence": "Class 8 section"
+      },
+      {
+        "claim": "Class 10 30% motor vehicles and passenger vehicles not meeting 10.1; Class 10.1 30% for 2025 purchases over $38,000 before tax, listed separately, capped",
+        "url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/sole-proprietorships-partnerships/report-business-income-expenses/claiming-capital-cost-allowance/classes-depreciable-property.html",
+        "evidence": "Class 10 and 10.1 sections"
+      },
+      {
+        "claim": "Class 16 40% includes freight trucks above 11,788 kg, taxis, rental",
+        "url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/sole-proprietorships-partnerships/report-business-income-expenses/claiming-capital-cost-allowance/classes-depreciable-property.html",
+        "evidence": "Class 16 section"
+      },
+      {
+        "claim": "Class 54 30% ZEVs after March 18, 2019; $61,000 plus tax limit after 2022; enhanced first-year deduction varies and proposals described; Class 55 40%",
+        "url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/sole-proprietorships-partnerships/report-business-income-expenses/claiming-capital-cost-allowance/classes-depreciable-property.html",
+        "evidence": "Class 54 and 55 sections"
+      },
+      {
+        "claim": "Class 50 55% after March 18, 2007",
+        "url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/sole-proprietorships-partnerships/report-business-income-expenses/claiming-capital-cost-allowance/classes-depreciable-property.html",
+        "evidence": "Class 50 section"
+      }
+    ]
+  },
+  {
+    "key": "D15",
+    "category": "marketplace-talk",
+    "title": "Buying used equipment or a truck privately: search for registered liens first (Ontario, Alberta, BC)",
+    "verification": [
+      {
+        "claim": "PPSR records liens and repair/storage claims; search before buying used goods; lender could seize; $8 online and $8 certificate; steps if lien found",
+        "url": "https://www.ontario.ca/home-and-community/register-or-search-online-access-now",
+        "evidence": "Ontario Access Now page"
+      },
+      {
+        "claim": "Alberta: search before purchasing; serial-number goods list; name searches; registry agents; result types; no fee listed",
+        "url": "https://www.alberta.ca/find-personal-property-registration",
+        "evidence": "Alberta find a registration page"
+      },
+      {
+        "claim": "BC: search before buying; Service BC, third party, mail; online for professionals with premium accounts; $7 plus $1.50 operator fee and GST, $10 staff, $10 mail",
+        "url": "https://www2.gov.bc.ca/gov/content/employment-business/business/managing-a-business/bc-registry-services-personal-property-registry",
+        "evidence": "BC Registry PPR page"
+      }
+    ]
+  },
+  {
+    "key": "D16",
+    "category": "codes-permits",
+    "title": "Which building code applies where: NBC 2020 and the Ontario, BC, Alberta and Québec codes in force",
+    "verification": [
+      {
+        "claim": "NBC 2020 scope; developed by CCBFC, published by NRC; check with local authority for edition",
+        "url": "https://nrc.canada.ca/en/certifications-evaluations-standards/codes-canada/codes-canada-publications/national-building-code-canada-2020",
+        "evidence": "NRC NBC 2020 page"
+      },
+      {
+        "claim": "Provinces adopt or publish own codes based on national models; Ontario, Québec, Alberta, BC province-wide codes",
+        "url": "https://nrc.canada.ca/en/certifications-evaluations-standards/codes-canada/model-code-adoption-across-canada",
+        "evidence": "Archived NRC adoption page (modified 2022-10-24)"
+      },
+      {
+        "claim": "OBC 2024 effective Jan 1, 2025; adopts NBC 2020 with Ontario Amendment Document; transition to April 1, 2025; not on e-Laws; compendium",
+        "url": "https://www.ontario.ca/page/2024-ontario-building-code",
+        "evidence": "Ontario 2024 OBC page (archived on ontario.ca)"
+      },
+      {
+        "claim": "BCBC 2024 effective March 8, 2024; mostly NBC 2020; not applicable in City of Vancouver",
+        "url": "https://www2.gov.bc.ca/gov/content/industry/construction-industry/building-codes-standards/bc-codes/2024-bc-codes",
+        "evidence": "BC 2024 codes page"
+      },
+      {
+        "claim": "NBC 2023 AE 1st printing in force May 1, 2024; 2nd printing Aug 17, 2026; NECB 2020 in force May 1, 2024",
+        "url": "https://www.alberta.ca/building-codes-and-standards",
+        "evidence": "Alberta codes in force page"
+      },
+      {
+        "claim": "Québec Chapter I is NBC 2015 amended, in effect Jan 8, 2022; Chapter I.1 NECB 2020 since July 13, 2024",
+        "url": "https://www.rbq.gouv.qc.ca/en/laws-regulations-and-codes/construction-code-and-safety-code/construction-code/",
+        "evidence": "RBQ Construction Code page"
+      }
+    ]
+  },
+  {
+    "key": "D17",
+    "category": "business-pricing",
+    "title": "Pricing after-hours and emergency calls in Ontario: overtime basics and common rate structures",
+    "verification": [
+      {
+        "claim": "Overtime after 44 hours at 1.5x; weekly not daily; averaging 2 to 4 weeks; time off in lieu at 1.5; managers exempt",
+        "url": "https://www.ontario.ca/document/your-guide-employment-standards-act-0/overtime-pay",
+        "evidence": "ESA guide overtime page"
+      },
+      {
+        "claim": "Road construction/maintenance incl. snow ploughing 55 h (streets, highways, parking lots) and 50 h (structures); sewer and watermain 50 h; construction exemptions from hours of work",
+        "url": "https://www.ontario.ca/document/industries-and-jobs-exemptions-or-special-rules/manufacturing-construction-and-mining",
+        "evidence": "Special rules page, manufacturing, construction and mining"
+      }
+    ]
+  },
+  {
+    "key": "D18",
+    "category": "client-talk",
+    "title": "When your price is higher: walking a client through a line-by-line scope comparison",
+    "verification": [
+      {
+        "claim": "WSIB clearance shows business registered and up to date incl. premiums and reporting; valid up to 90 days; quick access lookup without login",
+        "url": "https://www.wsib.ca/en/clearances",
+        "evidence": "WSIB clearances page"
+      }
+    ]
+  }
+]

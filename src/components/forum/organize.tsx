@@ -1,12 +1,13 @@
 import Link from "@/i18n/link";
 import {
-  Briefcase, Building2, Calculator, CheckCircle2, CircleHelp, Coffee, Droplets, Fan, FileCheck, Flag, HardHat, Landmark,
+  BookOpen, Briefcase, Building2, Calculator, CheckCircle2, CircleHelp, Coffee, Droplets, Fan, FileCheck, Flag, HardHat, Landmark,
   Lock, MapPin, MessageSquare, MessagesSquare, Mountain, PaintRoller, Pin, Search, Sparkles, Store, Trees, Truck, Users,
   Wrench, Zap, type LucideIcon,
 } from "lucide-react";
 import type { ForumCategorySlug } from "@/lib/forum/categories";
 import type { ThreadSummary } from "@/lib/forum/data";
 import { THREAD_SORTS, categoryQuery, timeAgo, type ThreadSort } from "@/lib/forum/organize";
+import { listStatus, shownCount } from "@/lib/forum/quiet";
 import { getLang, getT } from "@/i18n/server";
 import { AutoPostChip } from "@/components/forum/auto-chip";
 import { fmt, plural } from "@/i18n/format";
@@ -45,23 +46,42 @@ export function ForumIcon({ slug, className }: { slug: ForumCategorySlug; classN
   return <Icon className={cn("size-4 shrink-0", className)} aria-hidden />;
 }
 
-/** Type badge + answered/solved state for a thread. */
+/** "PMRFP Team guide" chip: a staff reference post, signed by the real staff account. */
+export function GuideChip() {
+  const q = getT("forum").quiet;
+  return (
+    <span className="inline-flex items-center gap-1 rounded bg-[#282B59] px-1.5 py-0.5 text-[11px] font-semibold text-white">
+      <BookOpen className="size-3" aria-hidden /> {q.guide}
+    </span>
+  );
+}
+
+/**
+ * Type badge + solved/open state for a thread. Lists never advertise an
+ * empty thread ("Unanswered", "0 replies"): that invitation lives on the
+ * thread page (src/lib/forum/quiet.ts).
+ */
 export function ThreadBadges({ th }: { th: ThreadSummary }) {
   const t = getT("forum");
   const o = t.org;
+  const status = listStatus(th);
   return (
     <>
-      <span className="inline-flex items-center gap-1 rounded bg-[#EEEFF6] px-1.5 py-0.5 text-[11px] font-semibold text-[#282B59]">
-        {th.type === "question" ? <CircleHelp className="size-3" aria-hidden /> : <MessagesSquare className="size-3" aria-hidden />}
-        {th.type === "question" ? t.category.question : t.category.discussion}
-      </span>
+      {th.isGuide ? (
+        <GuideChip />
+      ) : (
+        <span className="inline-flex items-center gap-1 rounded bg-[#EEEFF6] px-1.5 py-0.5 text-[11px] font-semibold text-[#282B59]">
+          {th.type === "question" ? <CircleHelp className="size-3" aria-hidden /> : <MessagesSquare className="size-3" aria-hidden />}
+          {th.type === "question" ? t.category.question : t.category.discussion}
+        </span>
+      )}
       {th.isAuto && <AutoPostChip lang={getLang()} />}
-      {th.hasAccepted ? (
+      {status === "solved" ? (
         <span className="inline-flex items-center gap-1 rounded bg-[#DDFBF0] px-1.5 py-0.5 text-[11px] font-semibold text-teal-800">
           <CheckCircle2 className="size-3" aria-hidden /> {o.solved}
         </span>
-      ) : th.type === "question" ? (
-        <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">{th.replyCount === 0 ? o.unanswered : o.open}</span>
+      ) : status === "open" ? (
+        <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">{o.open}</span>
       ) : null}
       {th.isLocked && <Lock className="size-3 text-muted-foreground" aria-label={t.category.locked} />}
     </>
@@ -90,7 +110,7 @@ export function ThreadLine({ th, forum, pinned }: { th: ThreadSummary; forum?: F
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3 text-xs text-[#4B4F6B] tabular-nums">
-        <span>{plural(th.replyCount, t.org.replies)}</span>
+        {shownCount(th.replyCount) != null && <span>{plural(th.replyCount, t.org.replies)}</span>}
         <time dateTime={th.lastPostAt}>{fmt(t.org.lastActivity, { ago: timeAgo(th.lastPostAt, lang) })}</time>
       </div>
     </li>

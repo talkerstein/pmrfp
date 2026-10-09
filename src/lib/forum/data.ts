@@ -5,6 +5,7 @@ import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config
 import { FORUM_CATEGORY_SLUGS, type ForumCategorySlug } from "./categories";
 import { PAGE_SIZE, isIndexableThread, ratingAverage } from "./rules";
 import { SYSTEM_HANDLE } from "./auto-threads";
+import { TEAM_HANDLE } from "./staff-guides";
 import { applyThreadSort, filterThreads, ilikePattern, type ThreadSort } from "./organize";
 import { previewSamplesOn, sampleAllThreads, sampleCategoryThreads, sampleIndex, samplePosts, sampleProfile, sampleThread } from "./preview-samples";
 
@@ -51,6 +52,8 @@ export interface ThreadSummary {
   isStaff: boolean;
   /** Automatic PMRFP Board post (auto-threads): labelled, noindex until a reply. */
   isAuto: boolean;
+  /** Reference guide by the PMRFP Team staff account (staff-guides). */
+  isGuide?: boolean;
   hasAccepted: boolean;
   replyCount: number;
   viewCount: number;
@@ -124,6 +127,12 @@ function isSystemAuthor(a: { handle?: string } | { handle?: string }[] | null | 
   return m?.handle === SYSTEM_HANDLE;
 }
 
+/** Threads by the PMRFP Team staff profile are staff reference guides. */
+function isTeamAuthor(a: { handle?: string } | { handle?: string }[] | null | undefined): boolean {
+  const m = Array.isArray(a) ? a[0] : a;
+  return m?.handle === TEAM_HANDLE;
+}
+
 let systemUserId: string | null | undefined;
 async function systemAuthorId(client: SupabaseClient): Promise<string | null> {
   if (systemUserId) return systemUserId;
@@ -151,6 +160,7 @@ function summary(r: any, categorySlug: string): ThreadSummary {
     isLocked: r.is_locked,
     isStaff: r.is_staff,
     isAuto: isSystemAuthor(r.author),
+    isGuide: isTeamAuthor(r.author),
     hasAccepted: Boolean(r.accepted_post_id),
     replyCount: r.reply_count ?? 0,
     viewCount: r.view_count ?? 0,
@@ -574,3 +584,74 @@ export async function viewerPostCount(userId: string): Promise<number> {
   const { data } = await createServiceClient().from("forum_profiles").select("post_count").eq("user_id", userId).maybeSingle<{ post_count: number }>();
   return data?.post_count ?? 0;
 }
+
+// ── Quiet-forum home and tender threads (src/lib/forum/quiet.ts) ──────
+/* eslint-disable @typescript-eslint/no-explicit-any */
+let teamUserId: string | null | undefined;
+async function teamAuthorId(client: SupabaseClient): Promise<string | null> {
+  if (teamUserId) return teamUserId;
+  const { data } = await client.from("forum_profiles").select("user_id").eq("handle", TEAM_HANDLE).maybeSingle<{ user_id: string }>();
+  teamUserId = data?.user_id ?? null;
+  return teamUserId;
+}
+
+/** Pinned PMRFP Team guides across every forum, oldest import first (content order). */
+export async function listPinnedGuides(limit = 60): Promise<ThreadWithCategory[]> {
+  if (previewSamplesOn()) return [];
+  const client = db();
+  if (!client) return [];
+  const teamId = await teamAuthorId(client);
+  if (!teamId) return [];
+  const [{ data, error }, slugs] = await Promise.all([
+    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").eq("is_pinned", true).eq("author_id", teamId).order("created_at", { ascending: true }).limit(limit),
+    slugMap(client),
+  ]);
+  if (error) return [];
+  return withSlugs((data ?? []) as any[], slugs);
+}
+
+export type AutoThread = ThreadWithCategory & { kind: string | null; rfpId: string | null; deadline: string | null };
+
+/**
+ * Newest automatic PMRFP Board threads (real tenders, RFPs and awards) with
+ * each listing's real closing date. Empty until the auto-threads migration
+ * is applied.
+ */
+export async function listRecentAutoThreads(limit = 250): Promise<AutoThread[]> {
+  if (previewSamplesOn()) return [];
+  const client = db();
+  if (!client) return [];
+  const boardId = await systemAuthorId(client);
+  if (!boardId) return [];
+  const [{ data, error }, slugs] = await Promise.all([
+    client.from("forum_threads").select(`${THREAD_COLS},category_id,auto_source,auto_source_key`).eq("status", "approved").eq("author_id", boardId).order("created_at", { ascending: false }).limit(limit),
+    slugMap(client),
+  ]);
+  if (error || !data) return [];
+  const rows = data as any[];
+  const rfpIdOf = (r: any): string | null => (typeof r.auto_source_key === "string" && r.auto_source_key.startsWith("rfp:") ? r.auto_source_key.slice(4) : null);
+  const ids = [...new Set(rows.map(rfpIdOf).filter((x): x is string => Boolean(x)))];
+  const deadlines = new Map<string, string | null>();
+  for (let i = 0; i < ids.length; i += 150) {
+    const { data: rf } = await client.from("rfp_public").select("id,deadline").in("id", ids.slice(i, i + 150));
+    for (const r of (rf ?? []) as { id: string; deadline: string | null }[]) deadlines.set(r.id, r.deadline);
+  }
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return withSlugs(rows, slugs).map((th) => {
+    const r = byId.get(th.id);
+    const rfpId = rfpIdOf(r);
+    return { ...th, kind: r?.auto_source ?? null, rfpId, deadline: rfpId ? deadlines.get(rfpId) ?? null : null };
+  });
+}
+
+/** The real listing behind an automatic thread ("rfp:<id>"), as its public slug. */
+export async function autoThreadListingSlug(threadId: string): Promise<{ kind: string | null; slug: string } | null> {
+  if (previewSamplesOn()) return null;
+  const client = db();
+  if (!client) return null;
+  const { data, error } = await client.from("forum_threads").select("auto_source,auto_source_key").eq("id", threadId).maybeSingle<{ auto_source: string | null; auto_source_key: string | null }>();
+  if (error || !data?.auto_source_key?.startsWith("rfp:")) return null;
+  const { data: rfp } = await client.from("rfp_public").select("slug").eq("id", data.auto_source_key.slice(4)).maybeSingle<{ slug: string }>();
+  return rfp ? { kind: data.auto_source, slug: rfp.slug } : null;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
