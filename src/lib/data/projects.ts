@@ -3,6 +3,7 @@ import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isOwnPhotoUrl, pickHero, sanitizePhotos, type ProjectPhoto } from "@/lib/projects/photos";
 import { reviewStats, type PublicReview } from "@/lib/projects/reviews";
+import { isSchemaMissing } from "@/lib/projects/compat";
 
 /**
  * Review count + average per case-study slug, for list cards. Only slugs with
@@ -77,18 +78,29 @@ export const getProjectExtras = cache(async function getProjectExtras(caseStudyI
       .eq("id", caseStudyId)
       .maybeSingle();
     if (error || !data) return NO_EXTRAS;
-    const r = data as { photos: unknown; hero_url: string | null; source: string | null; summary: string | null };
-    const photos = sanitizePhotos(r.photos, supabaseUrl());
-    return {
-      photos,
-      heroUrl: safeHero(r.hero_url, photos),
-      source: r.source === "capture" ? "capture" : "form",
-      summary: r.summary?.trim() || null,
-    };
+    return toExtras(data as ExtrasRow);
   } catch {
     return NO_EXTRAS;
   }
 });
+
+export interface ExtrasRow {
+  photos: unknown;
+  hero_url: string | null;
+  source: string | null;
+  summary: string | null;
+}
+
+/** Stored photo columns → what the page may render (own-bucket URLs only). */
+export function toExtras(r: ExtrasRow): ProjectExtras {
+  const photos = sanitizePhotos(r.photos, supabaseUrl());
+  return {
+    photos,
+    heroUrl: safeHero(r.hero_url, photos),
+    source: r.source === "capture" ? "capture" : "form",
+    summary: r.summary?.trim() || null,
+  };
+}
 
 export interface ProjectCard {
   slug: string;
@@ -97,6 +109,8 @@ export interface ProjectCard {
   province: string | null;
   heroUrl: string | null;
   publishedAt: string | null;
+  /** Filled in through the case-study builder (client type + scope). */
+  isCaseStudy: boolean;
 }
 
 interface CardRow {
@@ -106,25 +120,30 @@ interface CardRow {
   province: string | null;
   published_at: string | null;
   hero_url?: string | null;
+  client_type?: string | null;
+  scope?: string | null;
 }
 
-/** Published projects for one company's profile, newest first. */
+/**
+ * PUBLIC published projects for one company's profile, newest first.
+ * Unlisted and private projects never show here. Each fallback drops the
+ * columns of one migration (portfolio 20261009000002, then projects
+ * 20260924000001) so the profile keeps working before either is applied.
+ */
 export async function listOrgProjects(organizationId: string, limit = 12): Promise<ProjectCard[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = createReadClient();
   const base = "slug,title,city,province,published_at";
-  const run = (cols: string) =>
-    supabase
-      .from("case_studies")
-      .select(cols)
-      .eq("organization_id", organizationId)
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-      .limit(limit);
+  const run = (cols: string, publicOnly: boolean) => {
+    let q = supabase.from("case_studies").select(cols).eq("organization_id", organizationId).eq("status", "published");
+    if (publicOnly) q = q.eq("visibility", "public");
+    return q.order("published_at", { ascending: false }).limit(limit);
+  };
   try {
-    let { data, error } = await run(`${base},hero_url`);
-    // Pre-migration: no hero_url column yet. Text-only studies still list.
-    if (error) ({ data, error } = await run(base));
+    let { data, error } = await run(`${base},hero_url,client_type,scope`, true);
+    if (isSchemaMissing(error)) ({ data, error } = await run(`${base},hero_url`, false));
+    // Pre-projects-migration: no hero_url column yet. Text-only studies still list.
+    if (isSchemaMissing(error)) ({ data, error } = await run(base, false));
     if (error || !data) return [];
     return (data as unknown as CardRow[]).map((r) => ({
       slug: r.slug,
@@ -133,6 +152,7 @@ export async function listOrgProjects(organizationId: string, limit = 12): Promi
       province: r.province,
       publishedAt: r.published_at,
       heroUrl: r.hero_url && isOwnPhotoUrl(r.hero_url, supabaseUrl()) ? r.hero_url : null,
+      isCaseStudy: Boolean(r.client_type && r.scope?.trim()),
     }));
   } catch {
     return [];

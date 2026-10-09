@@ -27,6 +27,15 @@ export interface Source {
   minMatchesToArchive: number;
   /** Region used when a candidate's slug doesn't exist yet. */
   fallbackRegion?: string;
+  /**
+   * A closed-tender archive (real notices that have closed). Its rows share
+   * official notice URLs with the open feed's old, archived rows, so it keeps
+   * its own identity: it matches only its own rows, never inserts a notice
+   * that another source still has published, and never shields an open-feed
+   * row from archiving. Its summaries are refreshed too (an award can land
+   * after the tender closed).
+   */
+  history?: boolean;
   collect: (today: string) => Promise<Candidate[]>;
 }
 
@@ -58,26 +67,36 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
   // Unknown slug (e.g. a region not created yet) → the source's country, not blank.
   const resolveRegion = (slug: string, fallback = "canada"): string | null =>
     regionId.get(slug) ?? regionId.get(fallback) ?? null;
-  const bySource = new Map(existing.filter((e) => e.source_url).map((e) => [e.source_url as string, e]));
+  const historyKeys = new Set(sources.filter((s) => s.history).map((s) => s.key));
+  const byUrl = new Map<string, ExistingRow[]>();
+  for (const e of existing) {
+    if (!e.source_url) continue;
+    byUrl.set(e.source_url, [...(byUrl.get(e.source_url) ?? []), e]);
+  }
 
   const toInsert: (TenderInsert & { region_id: string | null })[] = [];
   const categoriesBySource = new Map<string, string[]>();
   const openSources = new Set<string>();
+  // Per history source: the URLs it still lists (its own archive scope).
+  const historySeen = new Map<string, Set<string>>();
   const updates: { id: string; patch: Record<string, unknown> }[] = [];
   const matchedBySource = new Map<string, number>();
 
   for (const { src, candidates, ok } of results) {
     if (!ok) continue;
     let matched = 0;
+    const seen = src.history ? historySeen.set(src.key, new Set()).get(src.key)! : openSources;
     for (const { insert: ins, categories: slugs, regionSlug } of candidates) {
       // A feed can list one tender twice (amendment rows) — a duplicate in
       // the batch would trip the slug unique index and fail the whole insert.
-      if (openSources.has(ins.source_url)) continue;
-      openSources.add(ins.source_url);
+      if (seen.has(ins.source_url)) continue;
+      seen.add(ins.source_url);
       matched++;
 
       const region = resolveRegion(regionSlug, src.fallbackRegion);
-      const prior = bySource.get(ins.source_url);
+      const decision = priorFor(byUrl.get(ins.source_url) ?? [], src, historyKeys);
+      if (decision === "skip") continue;
+      const prior = decision;
       if (prior) {
         // Amendments move closing dates; region mapping improves. Only write
         // rows that actually changed — one UPDATE per unchanged row blew the
@@ -86,6 +105,7 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
           const changed =
             prior.title !== ins.title ||
             (prior.deadline ?? null) !== (ins.deadline ?? null) ||
+            (src.history && prior.summary !== ins.summary) ||
             (!!region && prior.region_id !== region);
           if (changed) {
             updates.push({
@@ -121,7 +141,11 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
   );
   const archiveRows = existing
     .filter((e) => e.status === "published" && archivable.has(publicTenderSource(e.slug).key))
-    .filter((e) => !e.source_url || !openSources.has(e.source_url));
+    .filter((e) => {
+      const key = publicTenderSource(e.slug).key;
+      const still = historySeen.get(key) ?? openSources;
+      return !e.source_url || !still.has(e.source_url);
+    });
   const toArchive = archiveRows.map((e) => e.id);
 
   const matched = Object.fromEntries(matchedBySource);
@@ -187,9 +211,31 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
   return { status: 200, body: { matched, failed, inserted, refreshed, archived } };
 }
 
-interface ExistingRow {
+/**
+ * Which existing row a candidate is (or "skip"). Open feeds keep their
+ * long-standing rule — any row with the same official URL — but ignore closed-
+ * archive rows. A history source matches only its own rows, and skips a
+ * notice another source still has published (no duplicate on the board).
+ */
+export function priorFor(
+  rows: ExistingRow[],
+  src: Pick<Source, "key" | "history">,
+  historyKeys: Set<string>,
+): ExistingRow | null | "skip" {
+  const keyOf = (e: ExistingRow) => publicTenderSource(e.slug).key;
+  if (src.history) {
+    const own = rows.filter((e) => keyOf(e) === src.key);
+    if (own.length) return own[own.length - 1];
+    return rows.some((e) => e.status === "published") ? "skip" : null;
+  }
+  const open = rows.filter((e) => !historyKeys.has(keyOf(e)) && !publicTenderSource(e.slug).closedArchive);
+  return open.length ? open[open.length - 1] : null;
+}
+
+export interface ExistingRow {
   id: string;
   title: string;
+  summary?: string | null;
   region_id: string | null;
   slug: string;
   source_url: string | null;
@@ -208,7 +254,7 @@ async function allExistingPublic(supabase: Service): Promise<ExistingRow[]> {
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from("rfp_posts")
-      .select("id,slug,source_url,status,deadline,title,region_id")
+      .select("id,slug,source_url,status,deadline,title,summary,region_id")
       .eq("source_type", "public_source")
       .order("id")
       .range(from, from + PAGE - 1);

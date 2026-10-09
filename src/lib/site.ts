@@ -182,7 +182,7 @@ export const FOOTER_COLS = [
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
       { label: "Guides", href: "/resources" },
-      { label: "Case Studies", href: "/case-studies" },
+      { label: "Case Studies", href: "/projects" },
       { label: "Compare", href: "/vs" },
       { label: "Vendor Badge", href: "/badge" },
       { label: "Website Widgets", href: "/widgets" },

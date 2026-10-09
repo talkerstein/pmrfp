@@ -18,6 +18,10 @@
       "schedule": "30 12 * * *"
     },
     {
+"path": "/api/cron/closed-tenders",
+      "schedule": "0 11 * * 1"
+    },
+    {
       "path": "/api/cron/us-local-tenders",
       "schedule": "40 12 * * *"
     },

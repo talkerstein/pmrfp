@@ -7,6 +7,8 @@ import { sendAdminNewInterest, sendInterestConfirmation, sendPmNewInterest } fro
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { karmaSyncAfter } from "@/lib/karma/sync";
+import { validAttachments } from "@/lib/projects/attach";
+import { isSchemaMissing } from "@/lib/projects/compat";
 
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "rfp-interest");
@@ -46,7 +48,17 @@ export async function POST(request: Request) {
     .maybeSingle<{ id: string; title: string; posted_by_user_id: string | null }>();
   if (!rfp) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
 
-  const { error } = await supabase.from("rfp_interests").insert({
+  // Projects the trade chose to show this buyer: only its own published ones
+  // (private ones get a share link so the PM can open them).
+  const caseStudyIds = data.caseStudyIds?.length
+    ? await validAttachments({
+        organizationId: session.organization.id,
+        userId: session.userId,
+        ids: data.caseStudyIds,
+        label: `Interest: ${rfp.title}`,
+      })
+    : [];
+  const row = {
     rfp_id: rfp.id,
     trade_organization_id: session.organization.id,
     submitted_by_user_id: session.userId,
@@ -54,7 +66,13 @@ export async function POST(request: Request) {
     relevant_experience: data.relevantExperience ?? null,
     availability: data.availability ?? null,
     attachment_url: data.attachmentUrl ?? null,
-  });
+  };
+  const withProjects: typeof row & { case_study_ids?: string[] } = caseStudyIds.length ? { ...row, case_study_ids: caseStudyIds } : row;
+  let { error } = await supabase.from("rfp_interests").insert(withProjects);
+  // Before the portfolio migration there's no case_study_ids column: send the interest without them.
+  if (error && caseStudyIds.length && isSchemaMissing(error)) {
+    ({ error } = await supabase.from("rfp_interests").insert(row));
+  }
 
   if (error) {
     if (error.code === "23505") {

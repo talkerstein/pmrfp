@@ -127,7 +127,7 @@ export default async function GetFoundPage({ params }: { params: Promise<object>
         description={t.ctaBody}
         primaryHref="/sign-up"
         primaryLabel={t.listFree}
-        secondaryHref="/case-studies"
+        secondaryHref="/projects"
         secondaryLabel={t.ctaSecondary}
       />
     </>

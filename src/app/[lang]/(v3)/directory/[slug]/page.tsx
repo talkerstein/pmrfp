@@ -268,6 +268,12 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
                     <span><span className="t">{p.title}</span></span>
                   </a>
                 ))}
+                {projects.length > 1 && (
+                  <a className="lift" href={L(`/projects?company=${encodeURIComponent(v.slug)}`)}>
+                    <span className="k" aria-hidden>→</span>
+                    <span><span className="t">{getT("portfolio").profile.allProjects}</span></span>
+                  </a>
+                )}
                 <a className="add lift" href={L("/dashboard/projects")}>
                   <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#91F2CF" strokeWidth="3" style={{ alignSelf: "flex-end" }} aria-hidden><path d="M15 5v20M5 15h20" /></svg>
                   <span><span className="t">{t.addProject}</span><span className="s">{t.addProjectBody}</span></span>

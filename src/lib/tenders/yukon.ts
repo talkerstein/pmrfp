@@ -32,13 +32,20 @@ export function classifyYukon(r: YukonRow, today: string): string[] {
   return RULES.filter(([, p]) => p.test(text.slice(0, 400))).map(([slug]) => slug).slice(0, 3);
 }
 
-export function yukonToRfpInsert(r: YukonRow, today: string): TenderInsert | null {
-  const number = clean(r["Project Number"] ?? "");
-  const description = clean(r["Project Description"] ?? "");
-  if (!number || !description) return null;
-  // "The Facilities Management Branch intends to form a Standing Offer
-  // Arrangement with qualified contractors for generator repair services,
-  // including …" → "Standing offer: Generator repair services".
+/**
+ * "The Facilities Management Branch intends to form a Standing Offer
+ * Arrangement with qualified contractors for generator repair services,
+ * including …" → "Standing offer: Generator repair services".
+ */
+export function yukonTitle(raw: string): string {
+  // Many notices open with "Community: Carmacks Traditional Territory: Little
+  // Salmon/Carmacks First Nation This project consists of the removal of …".
+  // The place header and "This project consists of" aren't the work.
+  const description = raw
+    .replace(/&amp;/g, "&")
+    .replace(/^[Cc]ommunity(?: where work will occur)?:[\s\S]*?[Tt]raditional (?:[Tt]erritory|[Ll]ocation)(?: where work will occur)?:[\s\S]*?(?=\b(?:This|The|To|Yukon|Government|Supply|Provide)\b)/, "")
+    .replace(/^(?:this (?:project|scope of this project) (?:consists of|is to)|the scope of work includes|the contractor is to|the work consists of|to)\s+(?:the\s+)?/i, "")
+    .trim() || raw;
   const so = description.match(/standing offer arrangement with qualified\s+contractors\s+(?:for|to provide)\s+(.+)/i);
   const work = (so ? so[1] : description)
     .split(/,\s*including|(?<=[a-z0-9)])\.\s|\s+community:/i)[0]
@@ -46,7 +53,14 @@ export function yukonToRfpInsert(r: YukonRow, today: string): TenderInsert | nul
     .trim();
   const core = work.charAt(0).toUpperCase() + work.slice(1);
   const full = so ? `Standing offer: ${core}` : core;
-  const title = full.length > 140 ? `${full.slice(0, 137).trimEnd()}…` : full;
+  return full.length > 140 ? `${full.slice(0, 137).trimEnd()}…` : full;
+}
+
+export function yukonToRfpInsert(r: YukonRow, today: string): TenderInsert | null {
+  const number = clean(r["Project Number"] ?? "");
+  const description = clean(r["Project Description"] ?? "");
+  if (!number || !description) return null;
+  const title = yukonTitle(description);
   const department = clean(r["Department"] ?? "") || "Government of Yukon";
   const published = date10(r["Published Date"]);
   const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);

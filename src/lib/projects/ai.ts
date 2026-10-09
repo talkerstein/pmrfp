@@ -65,7 +65,7 @@ async function defaultFetchImage(url: string): Promise<{ data: string; mimeType:
   }
 }
 
-function defaultGenerate(): Generate | null {
+export function defaultGenerate(): Generate | null {
   const ai = geminiClient();
   if (!ai) return null;
   return async ({ model, system, parts, schema }) => {

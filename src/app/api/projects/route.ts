@@ -43,6 +43,9 @@ export async function GET(request: Request) {
         hero_url: p.heroUrl,
         slug: p.slug,
         created_at: p.createdAt,
+        visibility: p.visibility,
+        case_study: p.progress.complete,
+        case_study_steps: { done: p.progress.done, total: p.progress.total },
       })),
       plan: {
         ready,
@@ -50,6 +53,7 @@ export async function GET(request: Request) {
         autoPublish: willAutoPublish(session),
         photoLimit: photoLimit(paid),
         canAddProject: canAddProject(paid, existing),
+        canUsePrivate: paid,
       },
     },
     { headers: { "Cache-Control": "private, no-store" } },

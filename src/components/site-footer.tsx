@@ -14,7 +14,7 @@ const LINK_KEY: Record<string, FooterKey> = {
   "/for-trades": "forTrades", "/for-property-managers": "forPms", "/become-a-supplier": "becomeSupplier", "/for/real-estate": "forRealtors", "/for": "solutions",
   "/get-found": "getFound", "/pricing": "pricing", "/advertise": "advertise",
   "/rfp-writer": "writer", "/rfp-templates": "templates", "/cost-guides": "costGuides", "/resources": "guides",
-  "/case-studies": "caseStudies", "/vs": "compare", "/badge": "badge", "/widgets": "widgets",
+  "/projects": "caseStudies", "/vs": "compare", "/badge": "badge", "/widgets": "widgets",
   "/services-for-trades": "services", "/refer-a-trade": "refer",
   "/about": "about", "/contact": "contact", "/terms": "terms", "/privacy": "privacy", "/disclaimer": "disclaimer",
 };

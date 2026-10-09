@@ -22,6 +22,7 @@ import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardNoticeUrl } from "@/lib/tenders/awards";
+import { closedArchiveAward, closedArchiveNoticeUrl } from "@/lib/tenders/closed-archive";
 import { daysUntil, parseAward } from "@/lib/data/fomo";
 import { tradePhotoForName } from "@/lib/photos";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
@@ -155,6 +156,11 @@ export default async function RfpDetailPage({
   const award = isAward ? parseAward(teaser.summary) : null;
   // Past its deadline but not an award notice: say so plainly and point at what's open.
   const isClosed = !isAward && !teaserIsOpen;
+  // A real closed tender from the buyer's historical open data: official
+  // notice for everyone (nothing to bid on), plus the real award if one exists.
+  const closedArchive = isClosed && isPublicTender && Boolean(tenderSource.closedArchive);
+  const closedNotice = closedArchive ? closedArchiveNoticeUrl(teaser.slug) : null;
+  const closedAward = closedArchive ? closedArchiveAward(teaser.summary) : null;
   const locked = !isAward && !isClosed && !(showFull && full);
   const bidCheck = !isAward && !isClosed ? await getBidCheckBySlug(teaser.slug) : null;
   const upgradeHref = session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly");
@@ -175,7 +181,9 @@ export default async function RfpDetailPage({
     .sort((a, b) => Number(b.regionName === teaser.regionName) - Number(a.regionName === teaser.regionName) || (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"))
     .slice(0, 4);
   // Every named winner has a profile now (one-award ones are noindexed there).
-  const winnerPage = award?.winner ? winnersFromRfps(boardRfps, 1).find((w) => winnerKey(w.name) === winnerKey(award.winner!)) : undefined;
+  const winnerName = award?.winner ?? closedAward?.winner ?? null;
+  const winnerPage = winnerName ? winnersFromRfps(boardRfps, 1).find((w) => winnerKey(w.name) === winnerKey(winnerName)) : undefined;
+  const closedAwardListing = closedAward ? boardRfps.find((r) => r.slug.endsWith(closedAward.listingSuffix)) : undefined;
   const isGc = isGcPackage(teaser);
   const [gcAward, awardPackages] = await Promise.all([
     isGc ? getAwardById(teaser.awardedRfpId) : Promise.resolve(null),
@@ -286,6 +294,8 @@ export default async function RfpDetailPage({
               <div className="vp-dctas">
                 {isAward ? (
                   awardUrl ? <a href={awardUrl} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{t.award.official} ↗</a> : <a href={L(annualHref)} className="v3-pill mint vp-big">{t.award.cta}</a>
+                ) : closedNotice ? (
+                  <a href={closedNotice} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{t.closedArchive.official} ↗</a>
                 ) : isClosed ? (
                   <a href={L(annualHref)} className="v3-pill mint vp-big">{t.closed.cta}</a>
                 ) : locked ? (
@@ -430,6 +440,32 @@ export default async function RfpDetailPage({
               </div>
               <p className="vp-attr">{source.attribution}</p>
             </div>
+          ) : closedArchive ? (
+            <div className="vp-closedbox">
+              <h2 className="vp-h3">{fill(t.closed.title, { date: fmt(teaser.deadline, lang) })}</h2>
+              {closedAward ? (
+                <div className="vp-winner">
+                  <div className="v3-label">{t.closedArchive.awardedTo}</div>
+                  <div className="nm">
+                    {winnerPage ? <a href={L(`/contract-winners/${winnerPage.slug}`)}>{closedAward.winner}</a> : closedAward.winner}
+                  </div>
+                  {closedAward.value && <div className="val">{money(closedAward.value)}</div>}
+                  <div className="vp-row-btns">
+                    <a href={closedAward.noticeUrl} target="_blank" rel="noopener noreferrer" className="vp-textlink">{t.closedArchive.awardNotice} ↗</a>
+                    {closedAwardListing && <a href={L(`/rfps/${closedAwardListing.slug}`)} className="vp-textlink">{t.closedArchive.awardListing} →</a>}
+                  </div>
+                </div>
+              ) : (
+                <p className="vp-p">{t.closedArchive.noAward}</p>
+              )}
+              <p className="vp-p">{t.closed.body}</p>
+              <div className="vp-row-btns">
+                {closedNotice && <a href={closedNotice} target="_blank" rel="noopener noreferrer" className="v3-pill navy">{t.closedArchive.official} ↗</a>}
+                <a href={L(annualHref)} className="vp-textlink">{t.closed.cta} →</a>
+                <a href={L("/rfps")} className="vp-textlink">{t.closed.seeOpen} →</a>
+              </div>
+              <p className="vp-attr">{source.attribution}</p>
+            </div>
           ) : showFull && full ? (
             <div className="vp-full">
               {(bidChecklist || intelCard) && (
@@ -532,6 +568,8 @@ export default async function RfpDetailPage({
               <div>
                 {isAward ? (
                   <><b>{t.publicNote.pastTitle}</b> {fill(t.publicNote.pastBody, { issuer: source.issuer })}</>
+                ) : closedArchive ? (
+                  <><b>{t.closedArchive.noteTitle}</b> {fill(t.closedArchive.noteBody, { issuer: source.issuer })}</>
                 ) : (
                   <><b>{t.publicNote.openTitle}</b> {fill(t.publicNote.openBody, { issuer: source.issuer, portal: source.portal })}</>
                 )}{" "}
@@ -550,6 +588,11 @@ export default async function RfpDetailPage({
             <div className="dt">{teaser.deadline ? fmt(teaser.deadline, lang) : t.facts.ongoing}</div>
             {isAward ? (
               awardUrl && <a href={awardUrl} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{t.award.official} ↗</a>
+            ) : closedArchive ? (
+              <>
+                {closedNotice && <a href={closedNotice} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{t.closedArchive.official} ↗</a>}
+                <p className="nt">{t.side.closedNote}</p>
+              </>
             ) : showFull && full ? (
               <div className="vp-tw-col">
                 {isPublicTender ? (
