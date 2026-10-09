@@ -1,0 +1,66 @@
+{
+ "created": "2026-10-09",
+ "template": "briefs/outreach/2026-10-08-buyer-permission-email.md (portal-operator variant, same as 2026-10-09-portal-permission-queue.json)",
+ "rules": [
+  "Drafts only. Do not send without Rishon's explicit go-ahead.",
+  "Send from info@pmrfp.com, signed R. Talkar, max 50/day.",
+  "Log every reply (yes/no + reply text + date) in briefs/outreach/buyer-permissions.csv before importing anything.",
+  "Dedupe checked against briefs/outbound-queue/2026-10-08-buyer-permission-sent.json, briefs/outreach/2026-10-08-buyer-permission-sent.json, briefs/outreach/2026-10-09-feed-permission-sent.json and briefs/outreach/2026-10-09-portal-permission-queue.json (SaskTenders, Nova Scotia, NBON already queued there): no overlap.",
+  "Each source is YELLOW in briefs/strategy/feed-map/canada-depth-2026-10-09.csv: public listings exist, but robots, a bot wall or the site's terms stop us from reusing them without asking."
+ ],
+ "count": 4,
+ "emails": [
+  {
+   "id": "perm-ca-2026-10-09-01",
+   "status": "draft — NOT SENT (needs Rishon's go-ahead)",
+   "priority": 1,
+   "buyer": "Province of British Columbia — Procurement Services Branch (BC Bid)",
+   "portal_url": "https://www.bcbid.gov.bc.ca/page.aspx/en/rfp/request_browse_public",
+   "from": "info@pmrfp.com",
+   "to": "BCBid@gov.bc.ca",
+   "contact_verified_at": "https://www2.gov.bc.ca/assets/gov/bc-procurement-resources/bc-bid-guides/pdf-guides/supplier_demo_slides.pdf (BC Bid Help Desk address in the Province's own supplier guide; the Help Desk is run by the Procurement Services Branch)",
+   "why_asking": "Largest Canadian portal we can't use: BC Bid robots.txt is a blanket Disallow, and the BC Data Catalogue's contract-award file is 'Access Only' (no reuse licence). Covers ministries, health authorities, school districts, municipalities and BC Housing.",
+   "subject": "Free extra distribution for facilities tenders on BC Bid",
+   "body": "Hello BC Bid team,\n\nPMRFP (pmrfp.com) is a free board where commercial roofing, HVAC, electrical, plumbing, janitorial, landscaping, snow and general contractors in Canada and the U.S. look for building and maintenance work.\n\nWe'd like to list the facilities and construction opportunities posted on BC Bid — ministries, health authorities, school districts, municipalities and BC Housing — on PMRFP, at no cost to you, the posting organizations or bidders, so they reach more local contractors.\n\nWhat we would show: the opportunity title, a short summary, closing date, the buyer contact and a link back to the official posting on BC Bid. BC Bid stays the official source. We don't copy documents, bidders register and submit through BC Bid as usual, and we update or remove any listing on request.\n\nBC Bid's robots.txt asks automated tools not to read the site, so we haven't, and we'd only proceed with your agreement. If that's acceptable, a reply saying so is enough. If you'd prefer, you can point us to a feed or export you're happy for us to use, or tell us whether the BC Bid award summaries in the BC Data Catalogue can be reused under the Open Government Licence – British Columbia.\n\nThank you,\n\nR. Talkar\nPMRFP · pmrfp.com · info@pmrfp.com\nTalkerstein Consulting Group, 5050 Dufferin St., Toronto, ON M3H 5T5\nIf you'd rather not hear from us again, reply \"unsubscribe\"."
+  },
+  {
+   "id": "perm-ca-2026-10-09-02",
+   "status": "draft — NOT SENT (needs Rishon's go-ahead)",
+   "priority": 2,
+   "buyer": "Government of the Northwest Territories — Procurement Shared Services (Contract Event Opportunities)",
+   "portal_url": "https://contracts.fin.gov.nt.ca/psp/fsprdsp/SUPPLIER/ERP/c/GNT_SS.GNT_LOGIN.GBL",
+   "from": "info@pmrfp.com",
+   "to": "Procurement_Questions@gov.nt.ca",
+   "contact_verified_at": "https://www.fin.gov.nt.ca/en/services/3-help/frequently-asked-questions (\"If you have any procurement-related questions you are encouraged to email: Procurement_Questions@gov.nt.ca\")",
+   "why_asking": "gov.nt.ca terms: material \"may not be used or reproduced for commercial purposes without the prior written consent\" — so written consent is exactly what unlocks it. Covers GNWT departments and Housing NWT repair/maintenance tenders across the territory. The quarterly contracts report on opendata.gov.nt.ca is months behind, so it isn't a substitute.",
+   "subject": "Free extra distribution for GNWT facilities tenders",
+   "body": "Hello Procurement Shared Services team,\n\nPMRFP (pmrfp.com) is a free board where commercial roofing, HVAC, electrical, plumbing, janitorial, landscaping, snow and general contractors in Canada and the U.S. look for building and maintenance work.\n\nWe'd like to list the GNWT's public facilities and construction tenders, including Housing NWT repair and maintenance work, on PMRFP, at no cost to you or to bidders, so they reach more northern and southern contractors.\n\nWhat we would show: the tender title, a short summary, closing date, your procurement contact and a link back to the official posting on Contract Event Opportunities. Your portal stays the official source. We don't copy documents, bidders register and submit through your system as usual, and we update or remove any listing on request.\n\nThe gov.nt.ca terms ask for prior written consent before material is used commercially, so we're asking first. If that's acceptable, a reply saying so is enough. If you'd prefer, you can copy notices@pmrfp.com on the notices you already send, or point us to a feed you're happy for us to use.\n\nThank you,\n\nR. Talkar\nPMRFP · pmrfp.com · info@pmrfp.com\nTalkerstein Consulting Group, 5050 Dufferin St., Toronto, ON M3H 5T5\nIf you'd rather not hear from us again, reply \"unsubscribe\"."
+  },
+  {
+   "id": "perm-ca-2026-10-09-03",
+   "status": "draft — NOT SENT (needs Rishon's go-ahead)",
+   "priority": 2,
+   "buyer": "Government of Prince Edward Island — Procurement Services",
+   "portal_url": "https://www.princeedwardisland.ca/en/tenders",
+   "from": "info@pmrfp.com",
+   "to": "procurementservices@gov.pe.ca",
+   "contact_verified_at": "PEI's Suppliers Guide to Procurement (authoringweb.gpei.ca/sites/default/files/publications/suppliers_guide_to_procurement.pdf) and the 'Instructions - Bid Submission Email' publication on princeedwardisland.ca. VERIFY before sending: princeedwardisland.ca pages are behind a Radware browser check, so this was read from search results and the PDF, not the live HTML.",
+   "why_asking": "PEI's tender pages sit behind a Radware bot wall, which we don't get around. Covers provincial departments, Health PEI, the Public Schools Branch and PEI Housing; some provincial notices also appear on CanadaBuys (already imported), most don't.",
+   "subject": "Free extra distribution for PEI facilities tenders",
+   "body": "Hello Procurement Services team,\n\nPMRFP (pmrfp.com) is a free board where commercial roofing, HVAC, electrical, plumbing, janitorial, landscaping, snow and general contractors in Canada and the U.S. look for building and maintenance work.\n\nWe'd like to list the Province's public facilities and construction tenders on PMRFP, at no cost to you or to bidders, to reach more Island and Atlantic contractors.\n\nWhat we would show: the tender title, a short summary, closing date, your procurement contact and a link back to the official posting on princeedwardisland.ca. Your site stays the official source. We don't copy documents, bidders submit to you as usual, and we update or remove any listing on request.\n\nYour tender pages use a browser check that blocks automated tools, so we haven't read them and would only do so with your agreement. If that's acceptable, a reply saying so is enough. If you'd prefer, you can copy notices@pmrfp.com on the notices you already send, or point us to a feed you're happy for us to use.\n\nThank you,\n\nR. Talkar\nPMRFP · pmrfp.com · info@pmrfp.com\nTalkerstein Consulting Group, 5050 Dufferin St., Toronto, ON M3H 5T5\nIf you'd rather not hear from us again, reply \"unsubscribe\"."
+  },
+  {
+   "id": "perm-ca-2026-10-09-04",
+   "status": "draft — NOT SENT (needs Rishon's go-ahead)",
+   "priority": 3,
+   "buyer": "City of Charlottetown — Finance Department (Purchasing)",
+   "portal_url": "https://www.charlottetown.ca/tenders",
+   "from": "info@pmrfp.com",
+   "to": "tenders@charlottetown.ca",
+   "contact_verified_at": "https://www.charlottetown.ca/tenders (tender-notification 'send an email' link; Cloudflare-obfuscated on the page, decodes to tenders@charlottetown.ca, the same address the City's tender documents give for enquiries)",
+   "why_asking": "Self-hosted tender page (not MERX/Bids&Tenders) with 4 open calls on 2026-10-09, 2 of them building work (2026-051 Police Station Upgrades, closes Oct 16; 2026-054 Snow Clearing of Water & Sewer Utility Properties and Fire Hydrants, closes Oct 23). Footer says 'All Rights Reserved' and there are no reuse terms, so asking first. Small volume; the main value is the capital-city foothold on PEI.",
+   "subject": "Free extra distribution for Charlottetown's facilities tenders",
+   "body": "Hello City of Charlottetown procurement team,\n\nPMRFP (pmrfp.com) is a free board where commercial roofing, HVAC, electrical, plumbing, janitorial, landscaping, snow and general contractors in Canada and the U.S. look for building and maintenance work.\n\nWe'd like to list the City of Charlottetown's public facilities and construction tenders on PMRFP, at no cost to you or to bidders, to reach more local contractors.\n\nWhat we would show: the tender title, a short summary, closing date, your procurement contact and a link back to your official posting. Your website stays the official source. We don't copy documents, bidders submit to you as usual, and we update or remove any listing on request.\n\nIf that's acceptable, a reply saying so is enough. If you'd prefer, you can copy notices@pmrfp.com on the notices you already send, or point us to a feed you're happy for us to use.\n\nThank you,\n\nR. Talkar\nPMRFP · pmrfp.com · info@pmrfp.com\nTalkerstein Consulting Group, 5050 Dufferin St., Toronto, ON M3H 5T5\nIf you'd rather not hear from us again, reply \"unsubscribe\"."
+  }
+ ]
+}

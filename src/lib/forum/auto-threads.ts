@@ -136,6 +136,8 @@ export const PROMPTS = {
 /** Build the thread, or null when the record is out of scope / unusable. */
 export function buildAutoThread(r: AutoSourceRecord): AutoThreadDraft | null {
   if (r.isDemo || r.status !== "published") return null;
+  // Closed-archive tenders already closed — "bidding on this?" would be wrong.
+  if (r.sourceType === "public_source" && publicTenderSource(r.slug).closedArchive) return null;
   const rawTitle = normalizeTitle(r.title ?? "");
   if (rawTitle.length < 4 || isOutOfScope(r)) return null;
 

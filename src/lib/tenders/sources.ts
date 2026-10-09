@@ -37,11 +37,21 @@ export interface PublicTenderSource {
   /** Member CTA on open tenders. */
   bidLabel: string;
   attribution: string;
+  /**
+   * Real tender that has CLOSED, imported from the buyer's historical open
+   * data (never shown as open, never alerted, excluded from open counts —
+   * its deadline is the real closing date, always in the past).
+   */
+  closedArchive?: boolean;
 }
 
 // Slug suffix → source. Every suffix is distinct ("-tora-" never matches
 // "-tor-<digits>"), so order is for readability only.
 const SOURCES: [suffix: RegExp, source: PublicTenderSource][] = [
+  // Closed archives first: their suffix ends in a strict reference format, and
+  // a looser open-feed pattern ("-qc-…") must never claim them.
+  [/-cbc-(?:cb-\d+-\d+|ws\d+-doc\d+|mx-\d+)$/, { key: "canadabuys-closed", past: false, closedArchive: true, badge: "Closed public tender · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Open the notice on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
+  [/-ykc-[a-z0-9-]+$/, { key: "yukon-closed", past: false, closedArchive: true, badge: "Closed public tender · Yukon", issuer: "the Government of Yukon", portal: "Yukon's bids&tenders portal", bidLabel: "Open Yukon's portal", attribution: OGL_YUKON_ATTRIBUTION }],
   ...US_STATE_SOURCES,
   [/-cba-[a-z0-9-]+$/, { key: "awards", past: true, badge: "Past public contract · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Bid on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
   [/-qca-[a-z0-9-]+$/, { key: "seao", past: true, badge: "Past public contract · Quebec (SEAO)", issuer: "a Quebec public body", portal: "SEAO", bidLabel: "Bid on SEAO", attribution: SEAO_ATTRIBUTION }],

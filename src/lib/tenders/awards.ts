@@ -52,7 +52,7 @@ const COL = {
 
 // Consulting/IT/social work that slips past the trade rules, and civil
 // infrastructure (bridges, highways, roads) that isn't building-trade work.
-const NOT_TRADE =
+export const NOT_TRADE =
   /analyst|\bit security|cyber|advisory|software|consult|construction admin|reintegration|elder|vehicle|bridge|highway|\broad\b|ditching|culvert|civil work|dredg|runway|sediment|abrasives|power engineers|laundry|\bmv\b|vessel|transportation upgrades|prequalification/i;
 
 export function classifyAward(r: AwardRow, today: string): string[] {
@@ -79,7 +79,7 @@ function money(r: AwardRow): string | null {
   return `$${Math.round(v).toLocaleString("en-CA")} ${(r[COL.currency] || "CAD").trim()}`;
 }
 
-function fmtDate(iso: string): string {
+export function fmtDate(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
