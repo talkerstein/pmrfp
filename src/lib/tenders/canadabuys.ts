@@ -61,13 +61,42 @@ export function classifyTender(r: TenderRow, today: string): string[] {
   if (EXCLUDE.test(title)) return [];
 
   const head = `${title} ${codes}`;
-  return RULES.filter(([, p]) => p.test(head)).map(([slug]) => slug).slice(0, 3);
+  const matched = RULES.filter(([, p]) => p.test(head)).map(([slug]) => slug).slice(0, 3);
+  if (matched.length || !/CNST/.test(r[COL.category] ?? "")) return matched;
+  return classifyConstructionTitle(title);
+}
+
+/**
+ * Construction notices whose titles name a building, not a trade keyword —
+ * Defence Construction Canada's open contractor source lists (how quick-
+ * response base work is tendered), housing, accommodation and HQ buildings,
+ * air handlers, steam plants. Measured 2026-10-09: ~45 open notices the
+ * keyword rules missed. Construction category only, title only.
+ */
+const CNST_RULES: [slug: string, pattern: RegExp][] = [
+  ["hvac", /mechanical contractors|\bahu\b|air handling|steam production|steam plant/],
+  ["plumbing", /mechanical contractors/],
+  ["electrical", /electrical contractors|solar microgrid|charging stations?/],
+  [
+    "general-contracting",
+    /construction source list|general construction .*source list|quick response tenders?|apartments|rowhouses|accommodations? buildings?|housing construction|(administration|company|headquarters|hq) building|facilities at|new facility|interior redevelopment|modular office|detachment .*upgrades/,
+  ],
+];
+
+/** Advance notices, information requests and marine/civil works aren't bids a building trade can place. */
+const CNST_NOT_BIDS =
+  /\bapn(?:\b|_)|advance procurement notice|\brfi\b|request for information|industry day|dredg|wharf|harbour|marine|airfield|airport|runway|bridge|shore protection|slipway|cathodic|fuel storage|civil contractors|underground civil|\bdesign$/;
+
+export function classifyConstructionTitle(title: string): string[] {
+  const t = title.toLowerCase();
+  if (CNST_NOT_BIDS.test(t) || EXCLUDE.test(t)) return [];
+  return [...new Set(CNST_RULES.filter(([, p]) => p.test(t)).map(([slug]) => slug))].slice(0, 3);
 }
 
 const FOREIGN = /germany|world|united states|mexico|europe|asia|africa|\bindia\b|china|japan|united kingdom/i;
 const CANADIAN = /canada|ontario|quebec|british columbia|alberta|manitoba|saskatchewan|nova scotia|new brunswick|newfoundland|prince edward|yukon|northwest|nunavut|national capital|ncr/i;
 
-function deliversInCanada(delivery: string): boolean {
+export function deliversInCanada(delivery: string): boolean {
   // Blank delivery = unstated (CanadaBuys omits it for many domestic notices).
   if (!delivery.trim()) return true;
   if (CANADIAN.test(delivery)) return true;

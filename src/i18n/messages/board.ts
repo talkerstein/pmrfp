@@ -112,6 +112,18 @@ const en = {
     daysLeft: { today: "today", tomorrow: "tomorrow", n: "{n} days left" },
     /** Under the date in the sidebar. */
     closesIn: { today: "Closes today", tomorrow: "Closes tomorrow", n: "Closes in {n} days" },
+    closedArchive: {
+      official: "Official notice",
+      awardedTo: "Contract awarded to",
+      awardedOn: "Awarded {date}",
+      awardNotice: "Official award notice",
+      awardListing: "Award details on PMRFP",
+      noAward:
+        "The buyer's open data doesn't show an award for this notice yet. The official notice has the documents and any result.",
+      noteTitle: "Closed public tender.",
+      noteBody:
+        "Taken from {issuer}'s open data after it closed, for reference only. It can't be bid on, and it did not go through PMRFP.",
+    },
     publicNote: {
       pastTitle: "Past public contract.",
       pastBody:
@@ -350,6 +362,18 @@ const fr: typeof en = {
     },
     daysLeft: { today: "aujourd'hui", tomorrow: "demain", n: "{n} jours restants" },
     closesIn: { today: "Clôture aujourd'hui", tomorrow: "Clôture demain", n: "Clôture dans {n} jours" },
+    closedArchive: {
+      official: "Avis officiel",
+      awardedTo: "Contrat octroyé à",
+      awardedOn: "Octroyé le {date}",
+      awardNotice: "Avis d'attribution officiel",
+      awardListing: "Détails de l'attribution sur PMRFP",
+      noAward:
+        "Les données ouvertes de l'acheteur n'indiquent pas encore d'attribution pour cet avis. L'avis officiel contient les documents et le résultat, s'il y a lieu.",
+      noteTitle: "Appel d'offres public fermé.",
+      noteBody:
+        "Tiré des données ouvertes de {issuer} après sa fermeture, à titre de référence seulement. On ne peut plus y soumissionner, et il n'est pas passé par PMRFP.",
+    },
     publicNote: {
       pastTitle: "Contrat public passé.",
       pastBody:
@@ -450,6 +474,7 @@ const fr: typeof en = {
     sources: {
       canadabuys: CANADA_FR,
       awards: CANADA_FR,
+      "canadabuys-closed": { ...CANADA_FR, bidLabel: "Ouvrir l'avis sur AchatsCanada" },
       seao: SEAO_FR,
       toronto: TORONTO_FR,
       "toronto-awards": TORONTO_FR,
@@ -463,6 +488,12 @@ const fr: typeof en = {
         issuer: "le gouvernement du Yukon",
         portal: "le portail bids&tenders du Yukon",
         bidLabel: "Soumissionner sur le portail du Yukon",
+        attribution: OGL_FR("Yukon"),
+      },
+      "yukon-closed": {
+        issuer: "le gouvernement du Yukon",
+        portal: "le portail bids&tenders du Yukon",
+        bidLabel: "Ouvrir le portail du Yukon",
         attribution: OGL_FR("Yukon"),
       },
       sam: {
@@ -641,6 +672,18 @@ const es: typeof en = {
     },
     daysLeft: { today: "hoy", tomorrow: "mañana", n: "quedan {n} días" },
     closesIn: { today: "Cierra hoy", tomorrow: "Cierra mañana", n: "Cierra en {n} días" },
+    closedArchive: {
+      official: "Aviso oficial",
+      awardedTo: "Contrato adjudicado a",
+      awardedOn: "Adjudicado el {date}",
+      awardNotice: "Aviso oficial de adjudicación",
+      awardListing: "Detalles de la adjudicación en PMRFP",
+      noAward:
+        "Los datos abiertos del comprador aún no muestran una adjudicación para este aviso. El aviso oficial tiene los documentos y el resultado, si lo hay.",
+      noteTitle: "Licitación pública cerrada.",
+      noteBody:
+        "Tomada de los datos abiertos de {issuer} después de cerrar, solo como referencia. Ya no admite ofertas y no pasó por PMRFP.",
+    },
     publicNote: {
       pastTitle: "Contrato público anterior.",
       pastBody:
@@ -741,6 +784,7 @@ const es: typeof en = {
     sources: {
       canadabuys: CANADA_ES,
       awards: CANADA_ES,
+      "canadabuys-closed": { ...CANADA_ES, bidLabel: "Abrir el aviso en CanadaBuys" },
       seao: SEAO_ES,
       toronto: TORONTO_ES,
       "toronto-awards": TORONTO_ES,
@@ -754,6 +798,12 @@ const es: typeof en = {
         issuer: "el Gobierno de Yukón",
         portal: "el portal bids&tenders de Yukón",
         bidLabel: "Presentar una oferta en el portal de Yukón",
+        attribution: OGL_ES("Yukon"),
+      },
+      "yukon-closed": {
+        issuer: "el Gobierno de Yukón",
+        portal: "el portal bids&tenders de Yukón",
+        bidLabel: "Abrir el portal de Yukón",
         attribution: OGL_ES("Yukon"),
       },
       sam: {
