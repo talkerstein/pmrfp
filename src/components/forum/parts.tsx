@@ -154,9 +154,11 @@ export function OpeningSoon() {
 export function VerifyPanel({ signedIn, next }: { signedIn: boolean; next: string }) {
   const t = getT("forum").verify;
   return (
-    <div className="rounded-3xl border-2 border-[#91F2CF] bg-[#DDFBF0] p-6">
-      <h2 className="flex items-center gap-2 font-bold"><ShieldCheck className="size-5 text-teal-600" /> {t.title}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{t.body}</p>
+    // The panel is always light mint, so its text colours are pinned rather
+    // than theme tokens (muted-foreground turns pale inside a .dark band).
+    <div className="rounded-3xl border-2 border-[#91F2CF] bg-[#DDFBF0] p-6 text-[#1B1D3A]">
+      <h2 className="flex items-center gap-2 font-bold"><ShieldCheck className="size-5 text-teal-700" /> {t.title}</h2>
+      <p className="mt-1 text-sm text-[#4B4F6B]">{t.body}</p>
       <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">
         {t.steps.map((s) => <li key={s}>{s}</li>)}
       </ol>

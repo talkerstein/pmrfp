@@ -10,8 +10,15 @@
   --ink: #1B1D3A; --navy: #282B59; --mint: #91F2CF; --sub: #4B4F6B; --rule: #E3E4EE; --line: #D5D7E6; --soft: #F5F5FA;
   display: block; outline: none; background: #FFFFFF; color: var(--ink); font-family: var(--fl); font-size: 16px; line-height: 1.5;
 }
-.v3p a { color: var(--navy); }
-.v3p a:hover { color: #14163A; }
+/* Default link colour lives in the base cascade layer on purpose. Unlayered
+   CSS beats every Tailwind utility regardless of specificity, so an unlayered
+   `.v3p a` painted shadcn button links (bg-primary + text-primary-foreground)
+   navy on navy and their labels vanished. In @layer base, plain links still
+   get navy, and any link that sets its own text-* utility keeps it. */
+@layer base {
+  .v3p a { color: var(--navy); }
+  .v3p a:hover { color: #14163A; }
+}
 .v3p .nu, .v3p .nu:hover { text-decoration: none; }
 .v3p a:focus-visible, .v3p button:focus-visible, .v3p input:focus-visible, .v3p select:focus-visible, .v3p textarea:focus-visible { outline: 3px solid #5FD3AC; outline-offset: 2px; }
 .v3p h1, .v3p h2, .v3p h3 { margin: 0; }
