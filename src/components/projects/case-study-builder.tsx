@@ -26,6 +26,7 @@ import { PHOTO_KINDS, type PhotoKind, type ProjectPhoto } from "@/lib/projects/p
 import { POLISH_FIELDS, type PolishField } from "@/lib/projects/polish-fields";
 import { VISIBILITIES, type Visibility } from "@/lib/projects/visibility";
 import { shrink, upload } from "@/components/projects/project-capture";
+import { useProjectMessage } from "@/components/projects/server-messages";
 import { cn } from "@/lib/utils";
 import { useLang, useT } from "@/i18n/provider";
 import { localizePath } from "@/i18n/config";
@@ -86,6 +87,7 @@ export function CaseStudyBuilder({
   const t = useT("portfolioClient");
   const b = t.builder;
   const capture = useT("dashClient").capture;
+  const say = useProjectMessage();
   const lang = useLang();
   const published = project.status === "published";
 
@@ -209,7 +211,7 @@ export function CaseStudyBuilder({
           const r = await upload(await shrink(f), () => undefined, capture);
           setPhotos((prev) => [...prev, { ...r, kind }]);
         } catch (err) {
-          setPhotoError(err instanceof Error ? err.message : capture.uploadFailed);
+          setPhotoError(err instanceof Error ? say(err.message) : capture.uploadFailed);
         } finally {
           setUploading((n) => n - 1);
         }
@@ -244,7 +246,7 @@ export function CaseStudyBuilder({
         aiUsed,
         aiChecked,
       });
-      if (res?.error) setError(res.error);
+      if (res?.error) setError(say(res.error));
     });
   }
 

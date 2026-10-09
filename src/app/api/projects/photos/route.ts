@@ -6,7 +6,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { countActiveProjects, getProjectSessionFromRequest } from "@/lib/projects/server";
 import { canAddProject } from "@/lib/projects/limits";
 import { MAX_UPLOAD_BYTES, processPhoto, UnreadableImageError } from "@/lib/projects/image";
-import { PROJECT_PHOTO_BUCKET, photoPath } from "@/lib/projects/photos";
+import { PRIVATE_PHOTO_BUCKET, PROJECT_PHOTO_BUCKET, photoPath } from "@/lib/projects/photos";
+import { ensurePrivateBucket, SIGNED_URL_TTL, supabasePhotoStore } from "@/lib/projects/photo-storage";
 
 export const maxDuration = 30;
 
@@ -14,8 +15,10 @@ export const maxDuration = 30;
  * POST /api/projects/photos — one image per request (multipart, field
  * "file"). The capture page already shrinks photos in the browser; this is
  * the trust boundary: re-encode with sharp (upright, ≤1920px, JPEG, all
- * metadata incl. GPS stripped), then store at project-photos/{orgId}/{uuid}.jpg
- * with the service role. There is no client-side upload path to this bucket.
+ * metadata incl. GPS stripped), then store at
+ * project-photos-private/{orgId}/{uuid}.jpg with the service role and answer
+ * with a signed URL for the preview. There is no client-side upload path to
+ * either photo bucket.
  * The mobile app calls this too, with a bearer token instead of cookies.
  */
 export async function POST(request: Request) {
@@ -68,17 +71,37 @@ export async function POST(request: Request) {
   }
 
   const path = photoPath(session.organization.id, randomUUID());
-  const storage = createServiceClient().storage.from(PROJECT_PHOTO_BUCKET);
-  const { error } = await storage.upload(path, processed.data, {
+  const service = createServiceClient();
+  const opts = {
     contentType: "image/jpeg",
-    // Content-addressed (uuid) path, so it can be cached for good.
-    cacheControl: "31536000",
+    // An hour, not a year: if the project later goes private, a cached
+    // public copy (CDN, browser) must not outlive the move by much.
+    cacheControl: "3600",
     upsert: false,
-  });
-  if (error) {
-    console.error("[projects/photos] upload failed", error.message);
+  };
+  // Private by default: nothing is public until a public project is saved
+  // (syncProjectPhotos moves it then). The private bucket is created on
+  // first use if the migration couldn't; only if that fails too does the
+  // photo go to the public bucket as before (the save still sorts it out).
+  const priv = service.storage.from(PRIVATE_PHOTO_BUCKET);
+  let { error } = await priv.upload(path, processed.data, opts);
+  if (error && /not found/i.test(error.message) && (await ensurePrivateBucket(service))) {
+    ({ error } = await priv.upload(path, processed.data, opts));
+  }
+  if (!error) {
+    const signed = await supabasePhotoStore(service).sign([path], SIGNED_URL_TTL);
+    const url = signed.get(path);
+    if (url) return NextResponse.json({ url, path, width: processed.width, height: processed.height });
+    console.error("[projects/photos] couldn't sign the new upload");
     return NextResponse.json({ error: "Couldn't save that photo. Try again in a minute." }, { status: 502 });
   }
-  const { data } = storage.getPublicUrl(path);
+  console.error("[projects/photos] private upload failed", error.message);
+  const pub = service.storage.from(PROJECT_PHOTO_BUCKET);
+  const res = await pub.upload(path, processed.data, opts);
+  if (res.error) {
+    console.error("[projects/photos] upload failed", res.error.message);
+    return NextResponse.json({ error: "Couldn't save that photo. Try again in a minute." }, { status: 502 });
+  }
+  const { data } = pub.getPublicUrl(path);
   return NextResponse.json({ url: data.publicUrl, path, width: processed.width, height: processed.height });
 }

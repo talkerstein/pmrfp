@@ -8,7 +8,8 @@ import { checkRateLimitByIp } from "@/lib/rate-limit";
 import type { ProjectSession } from "./server";
 import { willAutoPublish } from "./publish";
 import { photoLimit } from "./limits";
-import { isOwnPhotoUrl, pickHero, sanitizePhotos, type ProjectPhoto } from "./photos";
+import { canonicalizePhotos, pickHero, sanitizePhotos, type ProjectPhoto } from "./photos";
+import { photosForViewer, syncProjectPhotos } from "./photo-storage";
 import {
   caseStudyInputSchema,
   contentChanged,
@@ -140,10 +141,18 @@ async function readProjectRow(
   return { row: error ? null : ((data as unknown as ProjectRow | null) ?? null), ready };
 }
 
-function toEditable(r: ProjectRow, orgId: string): EditableProject {
+/** Row → builder data, with photos signed for this company's member. */
+async function toEditable(r: ProjectRow, orgId: string): Promise<EditableProject> {
   const sb = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const band = valueBandKey(r.budget_band);
-  const photos = sanitizePhotos(r.photos, sb, orgId);
+  const stored = sanitizePhotos(r.photos, sb, orgId, { includePrivate: true });
+  const storedHero = r.hero_url && stored.some((p) => p.url === r.hero_url) ? r.hero_url : (pickHero(stored)?.url ?? null);
+  const { photos, heroUrl } = await photosForViewer(
+    { id: r.id, organizationId: r.organization_id, visibility: r.visibility, status: r.status },
+    { kind: "member", organizationId: orgId },
+    stored,
+    storedHero,
+  );
   return {
     id: r.id,
     slug: r.slug,
@@ -167,7 +176,7 @@ function toEditable(r: ProjectRow, orgId: string): EditableProject {
     legacyBudget: band ? null : r.budget_band?.trim() || null,
     timeline: r.timeline,
     photos,
-    heroUrl: r.hero_url && photos.some((p) => p.url === r.hero_url) ? r.hero_url : (pickHero(photos)?.url ?? null),
+    heroUrl,
     aiAssisted: Boolean(r.ai_assisted),
   };
 }
@@ -182,7 +191,7 @@ export async function loadMyProject(
 ): Promise<{ project: EditableProject | null; ready: boolean }> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return { project: null, ready: true };
   const { row, ready } = await readProjectRow(await createClient(), id, session.organization.id);
-  return { project: row ? toEditable(row, session.organization.id) : null, ready };
+  return { project: row ? await toEditable(row, session.organization.id) : null, ready };
 }
 
 // ── Saving the builder ───────────────────────────────────────────────
@@ -213,10 +222,13 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
   }
 
   const sb = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  if (d.photos.some((p) => !isOwnPhotoUrl(p.url, sb, org.id) || !p.url.endsWith(`/${p.path}`))) {
+  const prevPhotos = sanitizePhotos(prev.photos, sb, org.id, { includePrivate: true });
+  // The builder sends back the (signed) URLs it was shown. Identity is the
+  // path; the stored URL is the canonical one we already have for it.
+  const photos = canonicalizePhotos(d.photos, sb, org.id, prevPhotos);
+  if (!photos) {
     return { ok: false, error: "One of those photos isn't from this project. Remove it and try again." };
   }
-  const prevPhotos = sanitizePhotos(prev.photos, sb, org.id);
   const max = photoLimit(paid);
   // A plan that shrank (Pro lapsed) keeps the photos it has; it just can't add more.
   if (d.photos.length > max && d.photos.length > prevPhotos.length) {
@@ -249,7 +261,8 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
       approach: prev.approach,
       outcome: prev.outcome,
       results: sanitizeResults(prev.results),
-      photoUrls: prevPhotos.map((p) => p.url),
+      // Compared by storage path: a photo moving bucket isn't a content change.
+      photoUrls: prevPhotos.map((p) => p.path),
     },
     {
       title: d.title,
@@ -259,11 +272,12 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
       approach: d.approach,
       outcome: d.outcome,
       results: d.results,
-      photoUrls: d.photos.map((p) => p.url),
+      photoUrls: photos.map((p) => p.path),
     },
   );
   const status = nextStatus({ prevStatus: prev.status, autoPublish: willAutoPublish(session), changed });
-  const hero = d.photos.find((p) => p.url === d.heroUrl) ?? pickHero(d.photos);
+  const heroIndex = d.photos.findIndex((p) => p.url === d.heroUrl);
+  const hero = (heroIndex >= 0 ? photos[heroIndex] : null) ?? pickHero(photos);
   const prevBand = valueBandKey(prev.budget_band);
 
   const update = {
@@ -285,7 +299,7 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
     completed_on: monthToDate(d.completedOn),
     // An old free-text budget stays until the trade picks a range.
     budget_band: d.valueBand || (prevBand ? null : prev.budget_band),
-    photos: d.photos,
+    photos,
     hero_url: hero?.url ?? null,
     visibility: d.visibility,
     ai_assisted: Boolean(prev.ai_assisted) || d.aiUsed,
@@ -299,9 +313,14 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
     console.error("[projects/save]", error.message);
     return { ok: false, error: isSchemaMissing(error) ? NOT_READY : "Couldn't save. Try again in a minute." };
   }
+  const sync = await syncProjectPhotos(prev.id, { db });
   revalidateProject(prev.slug, org.slug);
+  if (!sync.ok) return { ok: false, error: PHOTOS_PENDING };
   return { ok: true, slug: prev.slug, status, visibility: d.visibility };
 }
+
+/** Saved, but a photo is still in the old bucket. Saving again retries the move. */
+const PHOTOS_PENDING = "Saved, but some photos are still moving. Try again in a minute to finish.";
 
 /**
  * Purge every cached copy a visibility or content change affects. Pages
@@ -341,14 +360,19 @@ export async function setProjectVisibility(
     .eq("id", id)
     .eq("organization_id", org.id)
     .neq("status", "archived")
-    .select("slug")
+    .select("id,slug")
     .maybeSingle();
   if (error) {
     console.error("[projects/visibility]", error.message);
     return { ok: false, error: isSchemaMissing(error) ? NOT_READY : "Couldn't save. Try again in a minute." };
   }
   if (!data) return { ok: false, error: "That project isn't on your account." };
-  revalidateProject((data as { slug: string }).slug, org.slug);
+  const row = data as { id: string; slug: string };
+  // Public → unlisted/private moves the photos into the private bucket (the
+  // old public URLs stop working); back to public moves them out again.
+  const sync = await syncProjectPhotos(row.id, { db });
+  revalidateProject(row.slug, org.slug);
+  if (!sync.ok) return { ok: false, error: PHOTOS_PENDING };
   return { ok: true, visibility };
 }
 

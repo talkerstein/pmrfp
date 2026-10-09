@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isOwnPhotoUrl, pickHero, sanitizePhotos, type ProjectPhoto } from "@/lib/projects/photos";
+import { proxiedPhotos } from "@/lib/projects/photo-storage";
 import { reviewStats, type PublicReview } from "@/lib/projects/reviews";
 import { isSchemaMissing } from "@/lib/projects/compat";
 
@@ -64,11 +65,17 @@ export interface ProjectExtras {
 export const NO_EXTRAS: ProjectExtras = { photos: [], heroUrl: null, source: "form", summary: null };
 
 function safeHero(heroUrl: unknown, photos: ProjectPhoto[]): string | null {
-  if (typeof heroUrl === "string" && isOwnPhotoUrl(heroUrl, supabaseUrl())) return heroUrl;
+  if (typeof heroUrl === "string" && (isOwnPhotoUrl(heroUrl, supabaseUrl()) || photos.some((p) => p.url === heroUrl))) return heroUrl;
   return pickHero(photos)?.url ?? null;
 }
 
-/** Photos, hero, source and summary for one case study (deduped per request). */
+/**
+ * Photos, hero, source and summary for one case study on its public page
+ * (deduped per request). The anon client only ever returns published
+ * public/unlisted rows. An unlisted project's photos are in the private
+ * bucket: they're pointed at the redirect that checks the project again on
+ * every request (the page itself is cached, so no signed URL goes in it).
+ */
 export const getProjectExtras = cache(async function getProjectExtras(caseStudyId: string): Promise<ProjectExtras> {
   if (!isSupabaseConfigured()) return NO_EXTRAS;
   try {
@@ -78,7 +85,8 @@ export const getProjectExtras = cache(async function getProjectExtras(caseStudyI
       .eq("id", caseStudyId)
       .maybeSingle();
     if (error || !data) return NO_EXTRAS;
-    return toExtras(data as ExtrasRow);
+    const extras = toExtras(data as ExtrasRow, { includePrivate: true });
+    return { ...extras, ...proxiedPhotos(caseStudyId, extras.photos, extras.heroUrl) };
   } catch {
     return NO_EXTRAS;
   }
@@ -91,9 +99,13 @@ export interface ExtrasRow {
   summary: string | null;
 }
 
-/** Stored photo columns → what the page may render (own-bucket URLs only). */
-export function toExtras(r: ExtrasRow): ProjectExtras {
-  const photos = sanitizePhotos(r.photos, supabaseUrl());
+/**
+ * Stored photo columns → what the page may render (own-bucket URLs only).
+ * `includePrivate` keeps private-bucket references; the caller must sign or
+ * proxy them before they reach a page.
+ */
+export function toExtras(r: ExtrasRow, opts: { includePrivate?: boolean } = {}): ProjectExtras {
+  const photos = sanitizePhotos(r.photos, supabaseUrl(), undefined, opts);
   return {
     photos,
     heroUrl: safeHero(r.hero_url, photos),

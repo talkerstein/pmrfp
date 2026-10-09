@@ -8,7 +8,8 @@ import { sendReviewRequest } from "@/lib/email/send";
 import { countActiveProjects, type ProjectSession } from "./server";
 import { publishLimitError } from "./limits";
 import { anyPrivacyFlag, privacySchema } from "./draft";
-import { isOwnPhotoUrl, pickHero, projectPhotoSchema } from "./photos";
+import { canonicalizePhotos, pickHero, projectPhotoSchema } from "./photos";
+import { syncProjectPhotos } from "./photo-storage";
 import { projectSlug } from "./slug";
 import { generateReviewToken, hashReviewToken } from "./tokens";
 import { isOwnEmail } from "./reviews";
@@ -70,7 +71,9 @@ export async function publishProject(
   const paid = session.hasTradeAccess;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  if (d.photos.some((p) => !isOwnPhotoUrl(p.url, supabaseUrl, org.id) || !p.url.endsWith(`/${p.path}`))) {
+  // The form sends back the (signed) URLs it showed; store canonical ones.
+  const photos = canonicalizePhotos(d.photos, supabaseUrl, org.id);
+  if (!photos) {
     return { ok: false, error: "One of those photos isn't from this project. Remove it and try again." };
   }
   if (anyPrivacyFlag(d.privacy) && !d.photosChecked) {
@@ -114,8 +117,8 @@ export async function publishProject(
     challenge: d.challenge,
     approach: d.approach,
     outcome: d.outcome,
-    photos: d.photos,
-    hero_url: pickHero(d.photos)?.url ?? null,
+    photos,
+    hero_url: pickHero(photos)?.url ?? null,
     source: "capture",
     client_approved: d.clientApproved,
     status,
@@ -148,6 +151,14 @@ export async function publishProject(
     }
   }
   if (!saved) return { ok: false, error: "Couldn't save the project. Try again in a minute." };
+
+  // New projects are public: move the uploads out of the private bucket.
+  // A failure leaves them private (signed for the owner, missing on public
+  // pages) until the next save or the backfill retries; never the reverse.
+  if (id) {
+    const sync = await syncProjectPhotos(id, { db: service });
+    if (!sync.ok) console.error("[projects/publish] photo sync", id, sync.failed.length);
+  }
 
   revalidatePath("/dashboard/projects");
   if (live) {

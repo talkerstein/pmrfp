@@ -71,12 +71,12 @@ Why the builder and sheet stay free: the free plan already stops at one project,
 
 ## What's left for a follow-up
 
-- **Photos of private projects are still files in the public bucket.** Their URLs are random and never listed, but anyone holding a photo URL can open it. Moving private photos to signed URLs is the next privacy step.
+- ~~**Photos of private projects are still files in the public bucket.**~~ Fixed in `fix/portfolio-gaps`: unlisted and private projects' photos live in the private `project-photos-private` bucket, viewers get signed URLs, and a visibility change moves the files (migration `20261009000003`, backfill `/api/projects/photo-backfill`).
 - **Mobile app parity**: the app lists projects and their visibility (the API now returns it) but has no builder, visibility switch or share links.
-- **Server error messages are English** in French and Spanish (same as the existing capture flow).
+- ~~**Server error messages are English** in French and Spanish.~~ Fixed in `fix/portfolio-gaps` (project flows: capture, builder, visibility, share links, review requests).
 - **Translations of the old "content" strings** for the retired `/case-studies` index can be deleted.
-- **The profile "Add a project" tile** shows to every visitor; consider moving it behind a client-side check of the signed-in company.
-- **Attach after the fact**: a trade can attach projects only when first expressing interest, not to an interest already sent.
+- ~~**The profile "Add a project" tile** shows to every visitor.~~ Fixed in `fix/portfolio-gaps`: shown only after a server check that the viewer is a member of that company.
+- **Attach after the fact**: a trade can attach projects only when first expressing interest, not to an interest already sent. Still open: trades can't edit an interest at all today (RLS gives them no update on `rfp_interests`, and there's no edit screen), so this needs its own small feature: a service-role "attach projects" action on the trade's interests page that re-runs `validAttachments`, plus a decision on whether the PM is notified.
 - **Revalidation in other languages**: this PR purges `/en`, `/fr` and `/es` copies when a project changes; the rest of the site only purges the unprefixed path.
 
 ---

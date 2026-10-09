@@ -34,6 +34,7 @@ import { localizePath } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 import type { ClientMessages } from "@/i18n/dictionaries";
+import { useProjectMessage } from "./server-messages";
 
 type Strings = ClientMessages["dashClient"]["capture"];
 
@@ -155,6 +156,7 @@ export function ProjectCapture({
   regions: RegionOption[];
 }) {
   const t = useT("dashClient").capture;
+  const say = useProjectMessage();
   const lang = useLang();
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const blobs = useRef(new Map<string, Blob>());
@@ -205,7 +207,7 @@ export function ProjectCapture({
       patch(id, { status: "done", progress: 1, result });
       blobs.current.delete(id);
     } catch (err) {
-      patch(id, { status: "error", error: err instanceof Error ? err.message : t.uploadFailed });
+      patch(id, { status: "error", error: err instanceof Error ? say(err.message) : t.uploadFailed });
     }
   }
 
@@ -261,7 +263,7 @@ export function ProjectCapture({
       });
       const body = (await res.json().catch(() => ({}))) as { draft?: ProjectDraft; error?: string };
       if (!res.ok || !body.draft) {
-        setDraftMsg({ tone: "error", text: body.error ?? t.draftFailed });
+        setDraftMsg({ tone: "error", text: say(body.error) || t.draftFailed });
         return;
       }
       const d = body.draft;
@@ -305,7 +307,7 @@ export function ProjectCapture({
         photosChecked,
         clientApproved,
       });
-      if (res?.error) setPublishError(res.error);
+      if (res?.error) setPublishError(say(res.error));
     });
   }
 
