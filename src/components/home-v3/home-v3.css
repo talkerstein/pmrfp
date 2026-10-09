@@ -10,8 +10,12 @@
   background: #FFFFFF; color: var(--ink); font-family: var(--fl); font-size: 16px; line-height: 1.5;
 }
 .pmrfp-v3, .pmrfp-v3 *, .pmrfp-v3 *::before, .pmrfp-v3 *::after { box-sizing: content-box; }
-.pmrfp-v3 a { color: var(--navy); }
-.pmrfp-v3 a:hover { color: #14163A; }
+/* In @layer base so Tailwind text-* utilities on a link (shadcn buttons) win;
+   see the matching note in v3-pages/landing.css. */
+@layer base {
+  .pmrfp-v3 a { color: var(--navy); }
+  .pmrfp-v3 a:hover { color: #14163A; }
+}
 .pmrfp-v3 .nu, .pmrfp-v3 .nu:hover { text-decoration: none; }
 .pmrfp-v3 button:focus-visible, .pmrfp-v3 a:focus-visible, .pmrfp-v3 select:focus-visible, .pmrfp-v3 input:focus-visible { outline: 3px solid #5FD3AC; outline-offset: 2px; }
 :where(.pmrfp-v3) :where(h1, h2, h3) { margin: 0; font: inherit; }
