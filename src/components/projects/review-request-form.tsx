@@ -4,10 +4,12 @@ import { startTransition, useActionState, useEffect, useRef } from "react";
 import { Loader2, Send } from "lucide-react";
 import { requestReviewAction, type InviteState } from "@/lib/projects/actions";
 import { useT } from "@/i18n/provider";
+import { useProjectMessage } from "./server-messages";
 
 /** "Ask for a review": client name + email → one-time review link by email. */
 export function ReviewRequestForm({ caseStudyId }: { caseStudyId: string }) {
   const t = useT("dashClient").reviewRequest;
+  const say = useProjectMessage();
   const [state, action, pending] = useActionState(requestReviewAction, {} as InviteState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -45,8 +47,8 @@ export function ReviewRequestForm({ caseStudyId }: { caseStudyId: string }) {
           {t.ask}
         </button>
       </div>
-      {state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}
-      {state.success && <p role="status" className="text-sm text-teal-ink">{state.success}</p>}
+      {state.error && <p role="alert" className="text-sm text-red-700">{say(state.error)}</p>}
+      {state.success && <p role="status" className="text-sm text-teal-ink">{say(state.success)}</p>}
     </form>
   );
 }

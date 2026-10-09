@@ -10,6 +10,7 @@ import {
 } from "@/lib/projects/actions";
 import { VISIBILITIES, type Visibility } from "@/lib/projects/visibility";
 import { useLang, useT } from "@/i18n/provider";
+import { useProjectMessage } from "./server-messages";
 import { localizePath } from "@/i18n/config";
 import { formatDate, plural } from "@/i18n/format";
 
@@ -23,6 +24,7 @@ const ICON: Record<Visibility, typeof Eye> = { public: Eye, unlisted: Link2, pri
 
 export function VisibilityControl({ id, value, paid }: { id: string; value: Visibility; paid: boolean }) {
   const t = useT("portfolioClient").visibility;
+  const say = useProjectMessage();
   const [state, action, pending] = useActionState(setVisibilityAction, {} as ControlState);
   const [picked, setPicked] = useState<Visibility>(value);
   const [shown, setShown] = useState(false);
@@ -68,7 +70,7 @@ export function VisibilityControl({ id, value, paid }: { id: string; value: Visi
         )}
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-      {state.error && <p role="alert" className="mt-1 text-xs text-red-700">{state.error}</p>}
+      {state.error && <p role="alert" className="mt-1 text-xs text-red-700">{say(state.error)}</p>}
     </div>
   );
 }
@@ -118,6 +120,7 @@ export function ShareLinks({
   siteBase: string;
 }) {
   const t = useT("portfolioClient").share;
+  const say = useProjectMessage();
   const lang = useLang();
   const [createState, create, creating] = useActionState(createShareLinkAction, {} as ControlState);
   const [, revoke, revoking] = useActionState(revokeShareLinkAction, {} as ControlState);
@@ -215,7 +218,7 @@ export function ShareLinks({
               {creating ? t.creating : t.create}
             </button>
           </form>
-          {createState.error && <p role="alert" className="mt-2 text-xs text-red-700">{createState.error}</p>}
+          {createState.error && <p role="alert" className="mt-2 text-xs text-red-700">{say(createState.error)}</p>}
         </>
       )}
     </div>

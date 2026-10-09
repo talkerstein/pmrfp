@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Container } from "@/components/container";
 import { ReviewForm } from "@/components/projects/review-form";
 import { lookupInvite } from "@/lib/reviews/invite";
+import { isOptimizablePhoto } from "@/lib/projects/photos";
 import { SITE } from "@/lib/site";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -72,7 +73,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
         <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
           {invite.heroUrl && (
             <div className="relative aspect-[16/9] bg-secondary">
-              <Image src={invite.heroUrl} alt={invite.projectTitle} fill sizes="(min-width: 640px) 576px, 100vw" className="object-cover" priority />
+              <Image src={invite.heroUrl} alt={invite.projectTitle} fill sizes="(min-width: 640px) 576px, 100vw" className="object-cover" priority unoptimized={!isOptimizablePhoto(invite.heroUrl)} />
             </div>
           )}
           <div className="p-4">

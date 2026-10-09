@@ -5,6 +5,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
 import { SaveTradeButton } from "@/components/trusted/save-trade-button";
 import { ProjectDeck } from "@/components/home-v3/project-deck";
+import { AddProjectTile } from "@/components/projects/add-project-tile";
 import { monogram } from "@/components/home-v3/directory-list";
 import { getRecommendedBy } from "@/lib/trusted/data";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
@@ -270,10 +271,8 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
                     <span><span className="t">{getT("portfolio").profile.allProjects}</span></span>
                   </a>
                 )}
-                <a className="add lift" href={L("/dashboard/projects")}>
-                  <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#91F2CF" strokeWidth="3" style={{ alignSelf: "flex-end" }} aria-hidden><path d="M15 5v20M5 15h20" /></svg>
-                  <span><span className="t">{t.addProject}</span><span className="s">{t.addProjectBody}</span></span>
-                </a>
+                {/* Only the company's own members see this (checked server-side after load). */}
+                <AddProjectTile organizationId={v.id} href={L("/dashboard/projects")} title={t.addProject} body={t.addProjectBody} />
               </div>
             </section>
           )}
