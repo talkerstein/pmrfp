@@ -18,6 +18,8 @@ export interface VendorListItem {
   wsibStatus?: string | null;
   categories: string[]; // display names
   regions: string[]; // display names
+  /** Public company reputation level (1-5), null when unknown. Never the score. */
+  level?: number | null;
 }
 
 export interface VendorDetail extends VendorListItem {
