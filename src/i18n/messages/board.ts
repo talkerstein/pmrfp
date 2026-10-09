@@ -492,6 +492,27 @@ const fr: typeof en = {
         attribution:
           "Source : liste des appels d'offres ouverts du comté de Los Angeles (camisvr.co.la.ca.us/LACoBids) — avis d'appel d'offres public.",
       },
+      "nc-evp": {
+        issuer: "un organisme public de la Caroline du Nord",
+        portal: "le portail NC eVP",
+        bidLabel: "Ouvrir sur NC eVP",
+        attribution:
+          "Source : North Carolina electronic Vendor Portal (eVP), département de l'Administration de la Caroline du Nord — avis d'appel d'offres public.",
+      },
+      scbo: {
+        issuer: "un organisme public de la Caroline du Sud",
+        portal: "SC Business Opportunities",
+        bidLabel: "Ouvrir l'annonce SCBO",
+        attribution:
+          "Source : South Carolina Business Opportunities (SCBO), Division of Procurement Services de la Caroline du Sud — annonce publique.",
+      },
+      "la-city": {
+        issuer: "un service de la Ville de Los Angeles",
+        portal: "RAMP LA",
+        bidLabel: "Ouvrir sur RAMP LA",
+        attribution:
+          "Source : données ouvertes de la Ville de Los Angeles (data.lacity.org) — RAMP Open Bid Opportunities, domaine public CC0 1.0.",
+      },
     },
   },
 
@@ -775,6 +796,27 @@ const es: typeof en = {
         bidLabel: "Abrir en el sitio del Condado de LA",
         attribution:
           "Fuente: lista de licitaciones abiertas del Condado de Los Ángeles (camisvr.co.la.ca.us/LACoBids) — aviso de licitación pública.",
+      },
+      "nc-evp": {
+        issuer: "un organismo público de Carolina del Norte",
+        portal: "el portal NC eVP",
+        bidLabel: "Abrir en NC eVP",
+        attribution:
+          "Fuente: North Carolina electronic Vendor Portal (eVP), Departamento de Administración de Carolina del Norte — aviso de licitación pública.",
+      },
+      scbo: {
+        issuer: "un organismo público de Carolina del Sur",
+        portal: "SC Business Opportunities",
+        bidLabel: "Abrir el anuncio de SCBO",
+        attribution:
+          "Fuente: South Carolina Business Opportunities (SCBO), Division of Procurement Services de Carolina del Sur — anuncio público.",
+      },
+      "la-city": {
+        issuer: "un departamento de la Ciudad de Los Ángeles",
+        portal: "RAMP LA",
+        bidLabel: "Abrir en RAMP LA",
+        attribution:
+          "Fuente: datos abiertos de la Ciudad de Los Ángeles (data.lacity.org) — RAMP Open Bid Opportunities, dominio público CC0 1.0.",
       },
     },
   },
