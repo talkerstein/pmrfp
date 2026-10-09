@@ -6,7 +6,8 @@ import { createReadClient } from "@/lib/supabase/read";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Organization } from "@/types/db";
-import { isOwnPhotoUrl, sanitizePhotos } from "./photos";
+import { sanitizePhotos } from "./photos";
+import { resolvePhotoUrls } from "./photo-storage";
 import { isSchemaMissing } from "./compat";
 import { normalizeVisibility, type Visibility } from "./visibility";
 import { caseStudyProgress, sanitizeResults, type Progress } from "./case-study";
@@ -118,7 +119,15 @@ export async function listMyProjects(organizationId: string, db?: SupabaseClient
   const rows = data as unknown as MyProjectRow[];
   const reviewCounts = await reviewCountsByProject(rows.map((r) => r.id));
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  return rows.map((r) => ({
+  // The company's own list: heroes of unlisted/private projects are signed for this member.
+  const heroes = await resolvePhotoUrls(
+    rows.map((r) => ({
+      project: { id: r.id, organizationId, visibility: r.visibility, status: r.status },
+      url: r.hero_url,
+    })),
+    { kind: "member", organizationId },
+  );
+  return rows.map((r, i) => ({
     id: r.id,
     slug: r.slug,
     title: r.title,
@@ -126,7 +135,7 @@ export async function listMyProjects(organizationId: string, db?: SupabaseClient
     city: r.city,
     province: r.province,
     createdAt: r.created_at,
-    heroUrl: r.hero_url && isOwnPhotoUrl(r.hero_url, supabaseUrl) ? r.hero_url : null,
+    heroUrl: heroes[i],
     visibility: normalizeVisibility(r.visibility),
     progress: caseStudyProgress({
       clientType: r.client_type ?? null,
@@ -139,7 +148,7 @@ export async function listMyProjects(organizationId: string, db?: SupabaseClient
       approach: r.approach,
       outcome: r.outcome,
       results: sanitizeResults(r.results),
-      photos: sanitizePhotos(r.photos, supabaseUrl, organizationId),
+      photos: sanitizePhotos(r.photos, supabaseUrl, organizationId, { includePrivate: true }),
       reviewCount: reviewCounts.get(r.id) ?? 0,
     }),
   }));
@@ -309,8 +318,15 @@ export async function listReferenceSheet(organizationId: string, select: string[
     byProject.set(r.case_study_id, list);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  return projects.map((p) => {
+  // The company's own document: unlisted/private heroes are signed for its member.
+  const heroes = await resolvePhotoUrls(
+    projects.map((p) => ({
+      project: { id: p.id, organizationId, visibility: p.visibility, status: "published" },
+      url: p.hero_url,
+    })),
+    { kind: "member", organizationId },
+  );
+  return projects.map((p, i) => {
     const text = (p.summary?.trim() || p.challenge).trim();
     const scope = p.scope?.trim() || null;
     return {
@@ -320,7 +336,7 @@ export async function listReferenceSheet(organizationId: string, select: string[
       place: [p.city, p.province].filter(Boolean).join(", "),
       publishedAt: p.published_at,
       summary: text.length > 280 ? `${text.slice(0, 277).trimEnd()}…` : text,
-      heroUrl: p.hero_url && isOwnPhotoUrl(p.hero_url, supabaseUrl) ? p.hero_url : null,
+      heroUrl: heroes[i],
       visibility: normalizeVisibility(p.visibility),
       clientType: p.client_type ?? null,
       tradeName: p.trade_categories?.name ?? null,

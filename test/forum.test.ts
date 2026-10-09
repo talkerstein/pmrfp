@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  POINTS,
   badgesFor,
   checkPost,
   hasLink,
@@ -11,10 +10,7 @@ import {
   isNewMember,
   pageCount,
   parsePage,
-  rankFor,
   ratingLabel,
-  ratingPoints,
-  reputationFrom,
   shouldAutoHide,
   canPost,
   type PostCheckInput,
@@ -28,33 +24,9 @@ import forumMessages from "@/i18n/messages/forum";
 const NOW = new Date("2026-10-06T12:00:00Z");
 const OLD = "2026-01-01T00:00:00Z";
 
-describe("reputation and ranks", () => {
-  it("sums the ledger and never shows negative reputation", () => {
-    expect(reputationFrom([{ points: POINTS.post }, { points: POINTS.acceptedAnswer }, { points: POINTS.answerUpvoted }])).toBe(21);
-    expect(reputationFrom([{ points: POINTS.post }, { points: POINTS.contentRemoved }])).toBe(0);
-  });
-
-  it("awards rating points only for Sharp and Gold", () => {
-    expect([1, 2, 3, 4, 5].map(ratingPoints)).toEqual([0, 0, 0, 5, 10]);
-  });
-
-  it("maps thresholds to ranks", () => {
-    expect(rankFor(0).rank).toBe("apprentice");
-    expect(rankFor(99).rank).toBe("apprentice");
-    expect(rankFor(100).rank).toBe("journeyman");
-    expect(rankFor(399).rank).toBe("journeyman");
-    expect(rankFor(400).rank).toBe("foreman");
-    expect(rankFor(1000).rank).toBe("site-super");
-    expect(rankFor(2500).rank).toBe("master");
-    expect(rankFor(-50).rank).toBe("apprentice");
-  });
-
-  it("reports progress to the next rank", () => {
-    expect(rankFor(50)).toEqual({ rank: "apprentice", next: "journeyman", toNext: 50, percent: 50 });
-    expect(rankFor(700)).toMatchObject({ rank: "foreman", next: "site-super", toNext: 300, percent: 50 });
-    expect(rankFor(9999)).toEqual({ rank: "master", next: null, toNext: 0, percent: 100 });
-  });
-
+// Reputation points and member ranks moved to company reputation:
+// see test/unit/karma-rules.test.ts.
+describe("badges", () => {
   it("computes badges", () => {
     expect(badgesFor({ answers: 0, accepted: 0, verifiedBusiness: false, bestThreadAverage: null, joinedAt: NOW, isModerator: false, now: NOW })).toEqual([]);
     expect(

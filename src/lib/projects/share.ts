@@ -4,6 +4,7 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { BUILDER_COLS, toDetail, type CaseStudyDetail } from "@/lib/data/case-studies";
 import { toExtras, type ExtrasRow, type ProjectExtras } from "@/lib/data/projects";
 import { isWellFormedToken } from "./tokens";
+import { photosForViewer } from "./photo-storage";
 import { reviewerDisplayName, type PublicReview } from "./reviews";
 
 /**
@@ -71,9 +72,20 @@ export const getSharedProject = cache(async function getSharedProject(token: str
         () => undefined,
       );
 
+    // Private (and unlisted) photos are in the private bucket: sign them for
+    // this link holder. The page is dynamic, so the hour-long URLs are fresh.
+    const project = toDetail(row);
+    const stored = toExtras(row, { includePrivate: true });
+    const shown = await photosForViewer(
+      { id: project.id, organizationId: l.organization_id, visibility: project.visibility, status: "published" },
+      { kind: "share", caseStudyId: l.case_study_id },
+      stored.photos,
+      stored.heroUrl,
+    );
+
     return {
-      project: toDetail(row),
-      extras: toExtras(row),
+      project,
+      extras: { ...stored, ...shown },
       orgListed: row.organizations?.profile_status === "approved",
       reviews: (
         (reviews ?? []) as {

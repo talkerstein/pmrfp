@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendPmRfpPublished } from "@/lib/email/send";
+import { karmaSyncAfter } from "@/lib/karma/sync";
 
 /**
  * Admin: publish or reject an RFP or GC package waiting for review. Property
@@ -39,6 +40,8 @@ export async function reviewRfpAction(formData: FormData): Promise<void> {
     }
     if (to) await sendPmRfpPublished(to, { title: rfp.title, slug: rfp.slug });
   }
+  // A package posted from a public award earns its poster reputation once published.
+  if (rfp) await karmaSyncAfter({ userIds: [rfp.posted_by_user_id] });
 
   revalidatePath("/rfps");
   revalidatePath("/admin/rfps");

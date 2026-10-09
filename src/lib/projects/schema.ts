@@ -1,6 +1,7 @@
 import type { CaseStudyDetail } from "@/lib/data/case-studies";
 import type { ProjectExtras } from "@/lib/data/projects";
 import { SITE } from "@/lib/site";
+import { isOptimizablePhoto } from "./photos";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
 
@@ -20,7 +21,8 @@ export function caseStudySchema(cs: CaseStudyDetail, extras: ProjectExtras, orgU
     "@type": "Article",
     headline: cs.title.slice(0, 110),
     description: (extras.summary ?? cs.challenge).slice(0, 300),
-    image: extras.photos.length ? extras.photos.map((p) => p.url) : undefined,
+    // Public photos only: a redirected (non-public) photo never goes into structured data.
+    image: extras.photos.some((p) => isOptimizablePhoto(p.url)) ? extras.photos.filter((p) => isOptimizablePhoto(p.url)).map((p) => p.url) : undefined,
     datePublished: cs.publishedAt ?? undefined,
     dateModified: cs.updatedAt ?? cs.publishedAt ?? undefined,
     author,

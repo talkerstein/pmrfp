@@ -12,8 +12,8 @@ export function previewSamplesOn(): boolean {
 
 const day = (n: number) => new Date(Date.UTC(2026, 9, 6) - n * 86_400_000).toISOString();
 
-const dave: MemberRef = { userId: "u-dave", handle: "dave_hvac", displayName: "Dave R. (sample)", reputation: 520, isStaff: false, verifiedBusiness: true };
-const marie: MemberRef = { userId: "u-marie", handle: "marie_toit", displayName: "Marie L. (exemple)", reputation: 140, isStaff: false, verifiedBusiness: false };
+const dave: MemberRef = { userId: "u-dave", handle: "dave_hvac", displayName: "Dave R. (sample)", reputation: 520, isStaff: false, verifiedBusiness: true, orgId: null };
+const marie: MemberRef = { userId: "u-marie", handle: "marie_toit", displayName: "Marie L. (exemple)", reputation: 140, isStaff: false, verifiedBusiness: false, orgId: null };
 
 const CAT_IDS: Partial<Record<ForumCategorySlug, string>> = {
   "job-site-stories": "c-jss",
@@ -163,13 +163,13 @@ export function sampleProfile(handle: string): Profile | null {
   return {
     userId: m.userId, handle: m.handle, displayName: m.displayName, trade: isDave ? "HVAC" : "Toiture", region: isDave ? "Ontario" : "Québec",
     bio: isDave ? "Sample profile for local preview." : "Profil d'exemple pour l'aperçu local.",
-    reputation: m.reputation, postCount: isDave ? 48 : 12, verifiedBusiness: m.verifiedBusiness, isStaff: false,
+    reputation: m.reputation, orgId: null, postCount: isDave ? 48 : 12, verifiedBusiness: m.verifiedBusiness, isStaff: false,
     joinedAt: isDave ? "2025-09-01T00:00:00Z" : "2026-08-15T00:00:00Z", lastSeenAt: day(0),
     answers: isDave ? 21 : 3, accepted: isDave ? 11 : 0, bestThreadAverage: isDave ? 4.6 : 4.25,
     modOf: isDave ? ["hvac-mechanical"] : [],
     latest: SEEDS.filter((s) => s.author === m).map(summary),
     crew: isDave
-      ? { name: "Northline Mechanical (sample)", slug: "sample-northline-mechanical", listed: true, rank: 520, members: [
+      ? { name: "Northline Mechanical (sample)", slug: "sample-northline-mechanical", listed: true, members: [
           { handle: dave.handle, displayName: dave.displayName, reputation: 520 },
         ] }
       : null,

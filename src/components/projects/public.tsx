@@ -1,7 +1,7 @@
 import Link from "@/i18n/link";
 import Image from "next/image";
 import { BadgeCheck, Camera, ImageIcon } from "lucide-react";
-import { groupPhotos, type ProjectPhoto } from "@/lib/projects/photos";
+import { groupPhotos, isOptimizablePhoto, type ProjectPhoto } from "@/lib/projects/photos";
 import { reviewStats, type PublicReview } from "@/lib/projects/reviews";
 import type { ProjectCard } from "@/lib/data/projects";
 import { getLang, getT } from "@/i18n/server";
@@ -48,6 +48,7 @@ export function ProjectGallery({
           fill
           priority
           sizes="(min-width: 1024px) 832px, 100vw"
+          unoptimized={!isOptimizablePhoto(hero.url)}
           className="object-cover"
         />
       </a>
@@ -68,6 +69,7 @@ export function ProjectGallery({
                   alt={fmt(t.photoAlt, { title, kind: t.kindWords[g.kind], n: i + 1 })}
                   fill
                   sizes="(min-width: 640px) 280px, 50vw"
+                  unoptimized={!isOptimizablePhoto(p.url)}
                   className="object-cover transition-transform hover:scale-[1.02]"
                 />
               </a>

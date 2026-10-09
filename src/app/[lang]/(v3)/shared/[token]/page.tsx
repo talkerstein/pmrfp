@@ -1,6 +1,7 @@
 import "@/components/v3-pages/portfolio.css";
 import type { Metadata } from "next";
 import { Lock } from "lucide-react";
+import { isOptimizablePhoto } from "@/lib/projects/photos";
 import { SimplePage } from "@/components/v3/simple";
 import { CaseStudyBody } from "@/components/projects/case-study-view";
 import { getSharedProject } from "@/lib/projects/share";
@@ -65,7 +66,7 @@ export default async function SharedProjectPage({ params }: { params: Promise<{ 
       aside={false}
       title={cs.title}
       lead={extras.summary ? <>{extras.summary}<br /><small>{lead}</small></> : lead}
-      heroImage={extras.heroUrl ? { src: extras.heroUrl, alt: "" } : null}
+      heroImage={extras.heroUrl ? { src: extras.heroUrl, alt: "", unoptimized: !isOptimizablePhoto(extras.heroUrl) } : null}
     >
       <CaseStudyBody
         cs={cs}

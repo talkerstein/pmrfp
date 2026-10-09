@@ -12,7 +12,8 @@ import { sendAdminForumQueue } from "@/lib/email/send";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath } from "@/i18n/config";
 import { isForumCategory } from "./categories";
 import { isMissingTable, threadPath } from "./data";
-import { POINTS, checkPost, ratingPoints, shouldAutoHide } from "./rules";
+import { checkPost, shouldAutoHide } from "./rules";
+import { karmaSyncAfter } from "@/lib/karma/sync";
 import { handleFrom, normalizeBody, normalizeTitle, shortId, slugify, wordCount } from "./text";
 import { turnstileEnabled, verifyTurnstile } from "./turnstile";
 import { sessionCanPost } from "./eligibility";
@@ -65,16 +66,15 @@ function hostOf(url: string | null | undefined): string | null {
   }
 }
 
-async function award(admin: SupabaseClient, userId: string, event: keyof typeof POINTS | "rating", points: number, refType: string, refId: string) {
-  if (!points) return;
-  await admin.from("forum_reputation_events").upsert(
-    { user_id: userId, event, points, ref_type: refType, ref_id: refId },
-    { onConflict: "user_id,event,ref_type,ref_id", ignoreDuplicates: true },
-  );
-}
-
-async function unaward(admin: SupabaseClient, userId: string, event: string, refType: string, refId: string) {
-  await admin.from("forum_reputation_events").delete().eq("user_id", userId).eq("event", event).eq("ref_type", refType).eq("ref_id", refId);
+/**
+ * Reputation is per company now (src/lib/karma), derived from the votes,
+ * ratings, accepted answers and moderator removals themselves. The old
+ * per-member ledger (forum_reputation_events) is no longer written. After
+ * an action that can change it, re-sync the companies of the members
+ * involved; it runs after the response and never fails the action.
+ */
+function rescore(...userIds: (string | null | undefined)[]): Promise<void> {
+  return karmaSyncAfter({ userIds });
 }
 
 /** The forum profile for this session, created on first use. */
@@ -99,10 +99,7 @@ async function ensureProfile(admin: SupabaseClient, session: SessionContext, ema
       verified_business: verified,
     };
     const { data: created, error: e } = await admin.from("forum_profiles").insert(row).select(PROFILE_COLS).single<ProfileRow>();
-    if (created) {
-      if (verified) await award(admin, session.userId, "verifiedBusiness", POINTS.verifiedBusiness, "org", org!.id);
-      return created;
-    }
+    if (created) return created;
     if (e && e.code !== "23505") return "missing";
   }
   return "missing";
@@ -234,7 +231,7 @@ export async function createThreadAction(_prev: ForumFormState, formData: FormDa
     await sendAdminForumQueue({ reason: "held", title, author: a.profile.handle }).catch(() => undefined);
     return { ok: true, held: true };
   }
-  await award(a.admin, a.userId, "post", POINTS.post, "thread", insertedId);
+  // Posting by itself earns no reputation (only what others confirm counts).
   redirect(langPath(formData, threadPath(category, slug, sid)));
 }
 
@@ -269,7 +266,6 @@ export async function createReplyAction(_prev: ForumFormState, formData: FormDat
     await sendAdminForumQueue({ reason: "held", title: t.title, author: a.profile.handle }).catch(() => undefined);
     return { ok: true, held: true };
   }
-  await award(a.admin, a.userId, "post", POINTS.post, "post", post.id);
   return { ok: true };
 }
 
@@ -285,9 +281,7 @@ export async function rateThreadAction(threadId: string, score: number): Promise
   if (t.author_id === a.userId) return { error: "own" };
   const { error } = await a.admin.from("forum_thread_ratings").upsert({ thread_id: t.id, user_id: a.userId, score }, { onConflict: "thread_id,user_id" });
   if (error) return { error: "failed" };
-  const ref = `${t.id}:${a.userId}`;
-  await unaward(a.admin, t.author_id, "rating", "rating", ref);
-  await award(a.admin, t.author_id, "rating", ratingPoints(score), "rating", ref);
+  await rescore(t.author_id);
   return { ok: true };
 }
 
@@ -299,16 +293,14 @@ export async function upvotePostAction(postId: string): Promise<ForumFormState> 
   const { data: p } = await a.admin.from("forum_posts").select("id,author_id,status").eq("id", postId).maybeSingle<{ id: string; author_id: string; status: string }>();
   if (!p || p.status !== "approved") return { error: "notfound" };
   if (p.author_id === a.userId) return { error: "own" };
-  const ref = `${p.id}:${a.userId}`;
   const { data: existing } = await a.admin.from("forum_post_votes").select("post_id").eq("post_id", p.id).eq("user_id", a.userId).maybeSingle();
   if (existing) {
     await a.admin.from("forum_post_votes").delete().eq("post_id", p.id).eq("user_id", a.userId);
-    await unaward(a.admin, p.author_id, "answerUpvoted", "vote", ref);
   } else {
     const { error } = await a.admin.from("forum_post_votes").insert({ post_id: p.id, user_id: a.userId, value: 1 });
     if (error) return { error: "failed" };
-    await award(a.admin, p.author_id, "answerUpvoted", POINTS.answerUpvoted, "vote", ref);
   }
+  await rescore(p.author_id);
   return { ok: true };
 }
 
@@ -326,17 +318,16 @@ export async function acceptAnswerAction(postId: string): Promise<ForumFormState
   if (!t || t.type !== "question") return { error: "notfound" };
   if (t.author_id !== a.userId && !(await isMod(a, t.category_id))) return { error: "forbidden" };
 
+  let prevAuthor: string | null = null;
   if (t.accepted_post_id) {
     const { data: prev } = await a.admin.from("forum_posts").select("id,author_id").eq("id", t.accepted_post_id).maybeSingle<{ id: string; author_id: string }>();
     await a.admin.from("forum_posts").update({ is_accepted: false }).eq("id", t.accepted_post_id);
-    if (prev) await unaward(a.admin, prev.author_id, "acceptedAnswer", "post", prev.id);
+    prevAuthor = prev?.author_id ?? null;
   }
   const unaccept = t.accepted_post_id === p.id;
   await a.admin.from("forum_threads").update({ accepted_post_id: unaccept ? null : p.id }).eq("id", t.id);
-  if (!unaccept) {
-    await a.admin.from("forum_posts").update({ is_accepted: true }).eq("id", p.id);
-    if (p.author_id !== t.author_id) await award(a.admin, p.author_id, "acceptedAnswer", POINTS.acceptedAnswer, "post", p.id);
-  }
+  if (!unaccept) await a.admin.from("forum_posts").update({ is_accepted: true }).eq("id", p.id);
+  await rescore(p.author_id, prevAuthor);
   return { ok: true };
 }
 
@@ -392,19 +383,15 @@ export async function modAction(type: Target, id: string, op: ModOp, reason?: st
   if (!target) return { error: "notfound" };
   if (!(await isMod(a, target.category_id))) return { error: "forbidden" };
   const table = type === "thread" ? "forum_threads" : "forum_posts";
-  const ref = type === "thread" ? "thread" : "post";
 
   switch (op) {
     case "hide":
       await a.admin.from(table).update({ status: "hidden" }).eq("id", id);
-      await award(a.admin, target.author_id, "contentRemoved", POINTS.contentRemoved, ref, id);
       await a.admin.from("forum_reports").update({ status: "resolved", resolved_by: a.userId }).eq("target_type", type).eq("target_id", id).eq("status", "open");
       break;
     case "unhide":
     case "approve":
       await a.admin.from(table).update({ status: "approved", ...(op === "unhide" ? { flag_count: 0 } : {}) }).eq("id", id);
-      await unaward(a.admin, target.author_id, "contentRemoved", ref, id);
-      await award(a.admin, target.author_id, "post", POINTS.post, ref, id);
       await a.admin.from("forum_reports").update({ status: "dismissed", resolved_by: a.userId }).eq("target_type", type).eq("target_id", id).eq("status", "open");
       break;
     case "lock":
@@ -421,6 +408,8 @@ export async function modAction(type: Target, id: string, op: ModOp, reason?: st
       return { error: "failed" };
   }
   await a.admin.from("forum_mod_log").insert({ mod_id: a.userId, action: op, target_type: type, target_id: id, reason: reason?.slice(0, 300) || null });
+  // A removal costs the author's company; un-hiding gives it back.
+  if (op === "hide" || op === "unhide" || op === "approve") await rescore(target.author_id);
   return { ok: true };
 }
 

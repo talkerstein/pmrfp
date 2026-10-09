@@ -6,6 +6,7 @@ import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-ca
 import { buttonVariants } from "@/components/ui/button";
 import { gcFormPath } from "@/lib/gc/packages";
 import { getMyTrustedList } from "@/lib/trusted/data";
+import { ReputationCard } from "@/components/karma/reputation-card";
 import type { Metadata } from "next";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -67,6 +68,8 @@ export default async function PmDashboardHome({ params }: { params: Promise<obje
         <StatCard label={t.stats.interested} value={interestedVendors} href="/pm-dashboard/rfps" />
         <StatCard label={t.stats.trusted} value={trusted?.trades.length ?? 0} href="/pm-dashboard/saved-vendors" />
       </div>
+
+      {!demo && <ReputationCard orgId={session.organization?.id} audience={gc ? "trade" : "pm"} />}
 
       {/* Realtors' first win is their shareable page, not an RFP. */}
       {realtor && trusted?.ready && (

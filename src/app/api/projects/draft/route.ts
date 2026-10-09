@@ -3,7 +3,8 @@ import { z } from "zod";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getProjectSessionFromRequest } from "@/lib/projects/server";
 import { draftProject } from "@/lib/projects/ai";
-import { isOwnPhotoUrl, PHOTO_KINDS } from "@/lib/projects/photos";
+import { PHOTO_KINDS, photoLocation, storedPhotoUrl } from "@/lib/projects/photos";
+import { supabasePhotoStore } from "@/lib/projects/photo-storage";
 import { getCategories, getPropertyTypes } from "@/lib/data/taxonomy";
 
 // Reading photos + writing takes a while on a busy model.
@@ -11,7 +12,7 @@ export const maxDuration = 60;
 
 const bodySchema = z.object({
   photos: z
-    .array(z.object({ url: z.string().max(500), kind: z.enum(PHOTO_KINDS) }))
+    .array(z.object({ url: z.string().max(1200), kind: z.enum(PHOTO_KINDS) }))
     .max(24)
     .default([]),
   notes: z.string().max(3000).default(""),
@@ -45,18 +46,31 @@ export async function POST(request: Request) {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  if (body.photos.some((p) => !isOwnPhotoUrl(p.url, supabaseUrl, session.organization.id))) {
+  const locs = body.photos.map((p) => photoLocation(p.url, supabaseUrl, session.organization.id));
+  if (locs.some((l) => !l)) {
     return NextResponse.json({ error: "One of those photos isn't from this project." }, { status: 400 });
   }
   if (!body.notes.trim() && body.photos.length === 0) {
     return NextResponse.json({ error: "Add a photo or a line about the job first." }, { status: 400 });
   }
 
+  // Fetch from our own buckets only: public URLs as they are, private ones
+  // through a fresh short-lived signature (never the URL the client sent).
+  const privatePaths = locs.filter((l) => l!.bucket === "private").map((l) => l!.path);
+  const signed = privatePaths.length ? await supabasePhotoStore().sign(privatePaths, 300) : new Map<string, string>();
+  const photos = body.photos
+    .map((p, i) => {
+      const l = locs[i]!;
+      const url = l.bucket === "public" ? storedPhotoUrl(supabaseUrl, "public", l.path) : signed.get(l.path);
+      return url ? { url, kind: p.kind } : null;
+    })
+    .filter((p): p is { url: string; kind: (typeof PHOTO_KINDS)[number] } => p !== null);
+
   const [categories, propertyTypes] = await Promise.all([getCategories(), getPropertyTypes()]);
   const result = await draftProject({
     notes: body.notes,
     // After photos first: they carry the result, and only the first few are sent.
-    photos: [...body.photos].sort((a, b) => kindRank(a.kind) - kindRank(b.kind)),
+    photos: photos.sort((a, b) => kindRank(a.kind) - kindRank(b.kind)),
     categories: categories.map((c) => ({ slug: c.slug, name: c.name })),
     propertyTypes,
   });

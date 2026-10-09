@@ -8,7 +8,7 @@ import { ForumIcon, ForumSearch, ThreadList } from "@/components/forum/organize"
 import { cleanSearch } from "@/lib/forum/organize";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { CHANNEL_ORDER, FORUM_CHANNELS, type ForumCategorySlug } from "@/lib/forum/categories";
-import { RANKS } from "@/lib/forum/rules";
+import { FeaturedContributors, LevelStairs } from "@/components/karma/level-stairs";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -52,21 +52,13 @@ const BUBBLES: [ForumCategorySlug, string, string, number, number][] = [
   ["ontario", "60%", "60%", 17, 0],
 ];
 const PAL = [["#91F2CF", "#1B1D3A"], ["#282B59", "#FFFFFF"], ["#4A4E85", "#FFFFFF"], ["#FFFFFF", "#1B1D3A"]];
-/** Rank staircase: height, background, text, accent. */
-const RANK_LOOK: [number, string, string, string][] = [
-  [190, "#FFFFFF", "#1B1D3A", "#282B59"],
-  [240, "#5FD3AC", "#1B1D3A", "#1B1D3A"],
-  [290, "#3E9F85", "#FFFFFF", "#FFFFFF"],
-  [340, "#282B59", "#FFFFFF", "#91F2CF"],
-  [400, "#1B1D3A", "#FFFFFF", "#91F2CF"],
-];
-
 export default async function ForumIndexPage({ params, searchParams }: { params: Promise<object>; searchParams: SP }) {
   await setLangFrom(params);
   const rawQ = (await searchParams).q;
   const lang = getLang();
   const t = getT("forum");
   const v = getT("v3Pages").forum;
+  const k = getT("karma");
   const o = t.org;
   const [idx, search, latestThreads, pinnedGuides, autoThreads] = await Promise.all([
     getForumIndex(),
@@ -310,24 +302,13 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
               <div className="f-rep-head">
                 <div>
                   <div className="eb" style={{ color: "inherit" }}>{v.reputation}</div>
-                  <h2 className="h2">{v.repTitle}</h2>
+                  <h2 className="h2">{k.forum.repTitle}</h2>
                 </div>
-                <p>{v.repBody} {t.index.ranksLead}</p>
+                <p>{k.forum.repBody} <a href={L("/reputation")} style={{ fontWeight: 700, textDecoration: "underline" }}>{k.forum.how} →</a></p>
               </div>
-              <ol className="f-ranks">
-                {RANKS.map((r, i) => {
-                  const [h, bg, fg, accent] = RANK_LOOK[i];
-                  return (
-                    <li key={r.slug} className="f-rank step" style={{ height: h, background: bg, color: fg }}>
-                      <div className="top" style={{ color: accent }}><span>{fmt(v.rank, { n: no(i + 1) })}</span><span>{no(i + 1)}/{no(RANKS.length)}</span></div>
-                      <div>
-                        <div className="nm">{t.ranks[r.slug]}</div>
-                        <div className="pts"><b style={{ color: accent }}>{num(r.min)}</b><span>{v.points}</span></div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
+              {/* Forum ranks were folded into company reputation (src/lib/karma). */}
+              <LevelStairs />
+              <FeaturedContributors />
             </div>
           </section>
 

@@ -1,6 +1,7 @@
 import "@/components/v3-pages/portfolio.css";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { isOptimizablePhoto } from "@/lib/projects/photos";
 import { SimplePage } from "@/components/v3/simple";
 import { CaseStudyBody } from "@/components/projects/case-study-view";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
@@ -48,7 +49,8 @@ export async function generateMetadata({
     title: fmt(t.metaTitle, { title: cs.title }),
     description,
     ...(indexable ? { alternates: { canonical: `/case-studies/${cs.slug}` } } : { robots: { index: false, follow: false } }),
-    ...(extras.heroUrl ? { openGraph: { images: [{ url: extras.heroUrl }] } } : {}),
+    // Only a public photo goes in link previews (unlisted ones are behind a redirect).
+    ...(extras.heroUrl && isOptimizablePhoto(extras.heroUrl) ? { openGraph: { images: [{ url: extras.heroUrl }] } } : {}),
   };
 }
 
@@ -111,7 +113,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         aside={false}
         title={cs.title}
         lead={extras.summary ? <>{extras.summary}<br /><small>{lead}</small></> : lead}
-        heroImage={extras.heroUrl ? { src: extras.heroUrl, alt: "" } : null}
+        heroImage={extras.heroUrl ? { src: extras.heroUrl, alt: "", unoptimized: !isOptimizablePhoto(extras.heroUrl) } : null}
       >
         <CaseStudyBody cs={cs} extras={extras} reviews={reviews} orgLinked={orgLinked} more={more} />
       </SimplePage>

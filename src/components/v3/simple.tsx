@@ -57,7 +57,8 @@ export async function SimplePage({
   /** Company/legal page tabs in the hero; off for pages outside those groups. */
   tabs?: boolean;
   /** Replaces the default skyline photo on the right of the hero (e.g. a project's cover). */
-  heroImage?: { src: string; alt: string } | null;
+  /** `unoptimized`: a signed or redirected photo that must not enter the next/image cache. */
+  heroImage?: { src: string; alt: string; unoptimized?: boolean } | null;
   children: ReactNode;
 }) {
   const t = getT("v3Pages").simple;
@@ -78,7 +79,7 @@ export async function SimplePage({
       <div className="dark">
         <section className="s-hero">
           <div className="s-hero-ph" aria-hidden>
-            <Image src={heroImage?.src ?? "/images/photos/toronto-flatiron.webp"} alt={heroImage?.alt ?? ""} fill priority sizes="46vw" className="img-cover kb" />
+            <Image src={heroImage?.src ?? "/images/photos/toronto-flatiron.webp"} alt={heroImage?.alt ?? ""} fill priority sizes="46vw" className="img-cover kb" unoptimized={heroImage?.unoptimized} />
             <div className="shade" />
           </div>
           <div className="wrap s-hero-in">

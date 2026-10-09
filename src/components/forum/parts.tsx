@@ -3,7 +3,9 @@ import { BadgeCheck, ChevronLeft, ChevronRight, HardHat, ShieldCheck } from "luc
 import { Container } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { parseBody, type Inline } from "@/lib/forum/text";
-import { rankFor, ratingLabel } from "@/lib/forum/rules";
+import { ratingLabel } from "@/lib/forum/rules";
+import { orgLevel } from "@/lib/karma/data";
+import { LevelBadge } from "@/components/karma/level-badge";
 import type { MemberRef } from "@/lib/forum/data";
 import { getT } from "@/i18n/server";
 import { fmt } from "@/i18n/format";
@@ -58,27 +60,15 @@ export function RatingBar({ avg, count }: { avg: number | null; count: number })
   );
 }
 
-export function RankBar({ reputation }: { reputation: number }) {
-  const t = getT("forum");
-  const r = rankFor(reputation);
-  return (
-    <div>
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold">{t.ranks[r.rank]}</span>
-        <span className="text-xs text-muted-foreground">
-          {r.next ? fmt(t.profile.toNext, { n: r.toNext, rank: t.ranks[r.next] }) : t.profile.topRank}
-        </span>
-      </div>
-      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={r.percent} aria-valuemin={0} aria-valuemax={100}>
-        <div className="h-full rounded-full bg-teal-500" style={{ width: `${r.percent}%` }} />
-      </div>
-    </div>
-  );
-}
-
-export function MemberName({ m, staff, showRank }: { m: MemberRef | null; staff?: boolean; showRank?: boolean }) {
+/**
+ * A member's name, staff/verified marks and (with showLevel) their
+ * company's reputation level. Forum ranks were folded into company
+ * reputation (src/lib/karma): the level shown is the company's.
+ */
+export async function MemberName({ m, staff, showLevel }: { m: MemberRef | null; staff?: boolean; showLevel?: boolean }) {
   const t = getT("forum");
   if (!m) return <span className="text-muted-foreground">–</span>;
+  const level = showLevel ? await orgLevel(m.orgId) : null;
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <Link href={`/forum/u/${m.handle}`} className="font-medium text-foreground hover:underline">
@@ -90,7 +80,7 @@ export function MemberName({ m, staff, showRank }: { m: MemberRef | null; staff?
         </span>
       )}
       {m.verifiedBusiness && <BadgeCheck className="size-4 text-teal-600" aria-label={t.thread.verified} />}
-      {showRank && <span className="text-xs text-muted-foreground">{t.ranks[rankFor(m.reputation).rank]}</span>}
+      {level != null && <LevelBadge level={level} short />}
     </span>
   );
 }
