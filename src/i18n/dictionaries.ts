@@ -42,6 +42,8 @@ import founding from "./messages/founding";
 import foundingClient from "./messages/foundingClient";
 import reports from "./messages/reports";
 import gcHub from "./messages/gcHub";
+import portfolio from "./messages/portfolio";
+import portfolioClient from "./messages/portfolioClient";
 
 const NAMESPACES = {
   common,
@@ -79,13 +81,15 @@ const NAMESPACES = {
   foundingClient,
   reports,
   gcHub,
+  portfolio,
+  portfolioClient,
 };
 
 type Namespaces = typeof NAMESPACES;
 export type Messages = { [K in keyof Namespaces]: Namespaces[K]["en"] };
 
 /** Namespaces shipped to the browser for client components. */
-export const CLIENT_NAMESPACES = ["common", "sharedClient", "boardClient", "directoryClient", "salesClient", "writer", "auth", "dashClient", "pmClient", "jobsClient", "miscClient", "partnersClient", "marketplaceClient", "forumClient", "foundingClient"] as const satisfies readonly (keyof Messages)[];
+export const CLIENT_NAMESPACES = ["common", "sharedClient", "boardClient", "directoryClient", "salesClient", "writer", "auth", "dashClient", "pmClient", "jobsClient", "miscClient", "partnersClient", "marketplaceClient", "forumClient", "foundingClient", "portfolioClient"] as const satisfies readonly (keyof Messages)[];
 export type ClientMessages = Pick<Messages, (typeof CLIENT_NAMESPACES)[number]>;
 
 export function getDictionary(lang: Locale): Messages {

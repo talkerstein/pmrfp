@@ -80,7 +80,7 @@ export async function HomeRecentProjects() {
             <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-teal-700">{t.eyebrow}</p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight">{t.heading}</h2>
           </div>
-          <Link href="/case-studies" className="inline-flex items-center gap-1 text-sm font-medium text-teal-ink hover:underline">
+          <Link href="/projects" className="inline-flex items-center gap-1 text-sm font-medium text-teal-ink hover:underline">
             {t.all} <ArrowRight className="size-4" />
           </Link>
         </div>

@@ -1,0 +1,66 @@
+/* Portfolio pages on the v3 simple-page template: the public case study,
+   the private share page and the /projects gallery. Scoped under .v3p and
+   built from the same tokens as landing.css (navy, mint, soft, line). */
+
+.v3p .pf-banner { margin-top: 0; display: flex; gap: 12px; align-items: flex-start; border: 2px solid var(--navy); background: #DDFBF0; border-radius: 18px; padding: 16px 20px; font-size: 16px; line-height: 1.45; color: var(--ink); }
+.v3p .pf-banner b { font-weight: 700; }
+
+.v3p .pf-facts { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.v3p .pf-facts > div { background: var(--soft); border-radius: 18px; padding: 16px 18px; min-width: 0; }
+.v3p .pf-facts .k { font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
+.v3p .pf-facts .v { margin-top: 6px; font-family: var(--fp); font-weight: 700; font-size: 18px; line-height: 1.25; letter-spacing: -.01em; color: var(--navy); overflow-wrap: break-word; hyphens: auto; }
+
+.v3p .pf-gallery { margin-top: 28px; }
+.v3p .pf-gallery h2 { font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
+
+.v3p .pf-nums { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.v3p .pf-nums > div { border: 2px solid var(--navy); border-radius: 20px; padding: 18px 20px; }
+.v3p .pf-nums .n { font-family: var(--fp); font-weight: 700; font-size: 30px; line-height: 1.1; letter-spacing: -.02em; color: var(--navy); overflow-wrap: break-word; }
+.v3p .pf-nums .l { margin-top: 6px; font-size: 15px; line-height: 1.35; color: var(--sub); }
+
+.v3p .pf-reviews { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.v3p .pf-reviews li { background: var(--soft); border-radius: 20px; padding: 18px 20px; font-size: 16px; }
+.v3p .pf-reviews .st { color: #E0A100; letter-spacing: 1px; }
+.v3p .pf-reviews .st .off { color: #C9CBDA; }
+.v3p .pf-reviews p { margin: 8px 0 0 !important; white-space: pre-line; }
+.v3p .pf-reviews .by { margin-top: 10px; font-size: 14px; color: var(--sub); }
+.v3p .pf-reviews .rp { margin-top: 10px; border-left: 3px solid var(--mint); padding-left: 12px; font-size: 14px; color: var(--sub); }
+
+.v3p .pf-ai { margin-top: 28px !important; font-size: 14px !important; color: var(--sub); font-style: italic; }
+
+.v3p .pf-org { margin-top: 48px; background: var(--ink); color: #FFFFFF; border-radius: 28px; padding: 28px 30px; }
+.v3p .pf-org .eb { font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--mint); }
+.v3p .pf-org .hd { margin-top: 8px; font-family: var(--fp); font-weight: 700; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; }
+.v3p .pf-org p { margin: 10px 0 0 !important; font-size: 16px; color: #D9DBEE; }
+.v3p .pf-org .acts { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.v3p .pf-org a.lnk { color: var(--mint); font-weight: 700; }
+.v3p .pf-org a.lnk:hover { color: #FFFFFF; }
+
+/* Gallery */
+.v3p .pf-count { margin-top: 18px; font-family: var(--fm); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--sub); }
+.v3p .pf-grid { margin: 16px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.v3p .pf-card { display: flex; flex-direction: column; height: 100%; border: 2px solid var(--line); border-radius: 22px; overflow: hidden; background: #FFFFFF; text-decoration: none; color: var(--ink); transition: border-color .15s ease, transform .15s ease; }
+.v3p .pf-card:hover { border-color: var(--navy); color: var(--ink); transform: translateY(-2px); }
+.v3p .pf-card .ph { position: relative; aspect-ratio: 16 / 10; background: var(--soft); }
+.v3p .pf-card .ph .none { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
+.v3p .pf-card .bd { display: flex; flex-direction: column; flex: 1; padding: 16px 18px 18px; }
+.v3p .pf-card .tg { font-family: var(--fm); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--sub); }
+.v3p .pf-card .ti { margin-top: 6px; font-family: var(--fp); font-weight: 700; font-size: 19px; line-height: 1.25; letter-spacing: -.015em; color: var(--navy); }
+.v3p .pf-card .sm { margin-top: 6px; font-size: 15px; line-height: 1.45; color: var(--sub); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.v3p .pf-card .by { margin-top: auto; padding-top: 12px; font-size: 14px; font-weight: 700; color: var(--ink); }
+.v3p .pf-badge { position: absolute; left: 12px; top: 12px; z-index: 1; background: var(--mint); color: var(--ink); border-radius: 999px; padding: 4px 10px; font-family: var(--fm); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+
+.v3p .pf-empty { margin-top: 22px; border: 2px dashed var(--line); border-radius: 22px; padding: 28px 26px; }
+.v3p .pf-empty .hd { font-family: var(--fp); font-weight: 700; font-size: 22px; letter-spacing: -.015em; color: var(--navy); }
+.v3p .pf-empty p { margin: 8px 0 0 !important; font-size: 16px; color: var(--sub); }
+
+@media (max-width: 1023px) {
+  .v3p .pf-org { padding: 24px 20px; border-radius: 22px; }
+}
+@media (max-width: 640px) {
+  .v3p .pf-grid { grid-template-columns: 1fr; }
+  .v3p .pf-nums .n { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v3p .pf-card, .v3p .pf-card:hover { transition: none; transform: none; }
+}

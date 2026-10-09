@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { reviewCaseStudyAction } from "@/lib/case-studies/actions";
+import { isSchemaMissing } from "@/lib/projects/compat";
 import { setLangFrom } from "@/i18n/server";
 
 export const metadata: Metadata = { title: "Case Studies · Admin · PMRFP" };
@@ -21,6 +22,9 @@ interface Row {
   province: string | null;
   created_at: string;
   organizations: { name: string; slug: string } | null;
+  visibility?: string | null;
+  scope?: string | null;
+  results?: { value: string; label: string }[] | null;
 }
 
 export default async function AdminCaseStudiesPage({ params }: { params: Promise<object> }) {
@@ -30,11 +34,11 @@ export default async function AdminCaseStudiesPage({ params }: { params: Promise
   let rows: Row[] = [];
   if (!isDemoMode()) {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("case_studies")
-      .select("id,title,slug,status,challenge,approach,outcome,city,province,created_at,organizations(name,slug)")
-      .order("created_at", { ascending: false })
-      .limit(100);
+    const base = "id,title,slug,status,challenge,approach,outcome,city,province,created_at,organizations(name,slug)";
+    const run = (cols: string) => supabase.from("case_studies").select(cols).order("created_at", { ascending: false }).limit(100);
+    let { data, error } = await run(`${base},visibility,scope,results`);
+    // Before the portfolio migration there are no visibility / builder columns.
+    if (isSchemaMissing(error)) ({ data, error } = await run(base));
     rows = (data as unknown as Row[]) ?? [];
   }
 
@@ -68,6 +72,7 @@ export default async function AdminCaseStudiesPage({ params }: { params: Promise
                           {r.organizations?.name ?? "Unknown org"} ·{" "}
                           {[r.city, r.province].filter(Boolean).join(", ") || "no location"} ·{" "}
                           {new Date(r.created_at).toLocaleDateString("en-CA")}
+                          {r.visibility && r.visibility !== "public" && <> · <strong>{r.visibility}</strong> (not listed publicly)</>}
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -90,9 +95,13 @@ export default async function AdminCaseStudiesPage({ params }: { params: Promise
                     <details className="mt-3 text-sm">
                       <summary className="cursor-pointer text-teal-ink">Read full submission</summary>
                       <div className="mt-2 space-y-3 text-foreground/90">
+                        {r.scope && <p><strong>Scope:</strong> {r.scope}</p>}
                         <p><strong>Challenge:</strong> {r.challenge}</p>
                         <p><strong>Approach:</strong> {r.approach}</p>
                         <p><strong>Outcome:</strong> {r.outcome}</p>
+                        {Array.isArray(r.results) && r.results.length > 0 && (
+                          <p><strong>Figures:</strong> {r.results.map((x) => `${x.value} ${x.label}`).join(" · ")}</p>
+                        )}
                       </div>
                     </details>
                   </div>
@@ -112,8 +121,11 @@ export default async function AdminCaseStudiesPage({ params }: { params: Promise
                       <span className="text-xs text-muted-foreground">({r.organizations?.name})</span>
                     </span>
                     <span className="flex items-center gap-3">
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground">{r.status}</span>
-                      {r.status === "published" && (
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                        {r.status}
+                        {r.visibility && r.visibility !== "public" ? ` · ${r.visibility}` : ""}
+                      </span>
+                      {r.status === "published" && r.visibility !== "private" && (
                         <Link href={`/case-studies/${r.slug}`} className="text-xs text-teal-ink hover:underline">
                           View →
                         </Link>

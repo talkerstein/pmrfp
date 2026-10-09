@@ -78,6 +78,11 @@ const nextConfig: NextConfig = {
       // The homepage design was previewed here before it became the homepage.
       { source: "/home-preview", destination: "/" },
       { source: "/:lang(en|fr|es)/home-preview", destination: "/:lang" },
+      // The case-study index became the filterable /projects gallery (same
+      // public projects, plus trade and region filters). Each study keeps its
+      // own /case-studies/<slug> URL.
+      { source: "/case-studies", destination: "/projects", permanent: true },
+      { source: "/:lang(en|fr|es)/case-studies", destination: "/:lang/projects", permanent: true },
     ].map((r) => ({ ...r, permanent: true }));
   },
   images: {

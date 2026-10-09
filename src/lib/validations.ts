@@ -95,6 +95,8 @@ export const interestSchema = z.object({
   relevantExperience: z.string().max(2000).optional(),
   availability: z.string().max(500).optional(),
   attachmentUrl: z.string().optional(),
+  /** Up to three of the company's published projects to show the PM. */
+  caseStudyIds: z.array(z.string().uuid()).max(3, "Attach up to three projects").optional(),
   acceptDisclaimer: z.literal(true, {
     message: "Please confirm you understand PMRFP does not guarantee the job",
   }),

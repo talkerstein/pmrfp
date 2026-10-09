@@ -43,6 +43,7 @@ export async function SimplePage({
   aside = true,
   crumbs,
   tabs = true,
+  heroImage,
   children,
 }: {
   lang: Locale;
@@ -55,6 +56,8 @@ export async function SimplePage({
   crumbs?: { label: string; href?: string }[];
   /** Company/legal page tabs in the hero; off for pages outside those groups. */
   tabs?: boolean;
+  /** Replaces the default skyline photo on the right of the hero (e.g. a project's cover). */
+  heroImage?: { src: string; alt: string } | null;
   children: ReactNode;
 }) {
   const t = getT("v3Pages").simple;
@@ -75,7 +78,7 @@ export async function SimplePage({
       <div className="dark">
         <section className="s-hero">
           <div className="s-hero-ph" aria-hidden>
-            <Image src="/images/photos/toronto-flatiron.webp" alt="" fill priority sizes="46vw" className="img-cover kb" />
+            <Image src={heroImage?.src ?? "/images/photos/toronto-flatiron.webp"} alt={heroImage?.alt ?? ""} fill priority sizes="46vw" className="img-cover kb" />
             <div className="shade" />
           </div>
           <div className="wrap s-hero-in">
