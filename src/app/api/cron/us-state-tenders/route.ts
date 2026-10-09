@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { classifyFloridaVbs, fetchFloridaVbsOpenBids, floridaVbsToRfpInsert } from "@/lib/tenders/florida-vbs";
+import { classifyDelaware, delawareToRfpInsert, fetchDelawareOpenBids } from "@/lib/tenders/delaware";
 import { classifyLaCounty, fetchLaCountyOpenBids, laCountyToRfpInsert } from "@/lib/tenders/la-county";
 import { syncPublicSources, type Candidate, type Source } from "@/lib/tenders/sync";
 
@@ -44,6 +45,21 @@ const SOURCES: Source[] = [
           const categories = classifyLaCounty(bid, today);
           const insert = categories.length ? laCountyToRfpInsert(bid, today) : null;
           return insert ? [{ insert, categories, regionSlug: "us-california" }] : [];
+        }),
+      ),
+  },
+  {
+    // State of Delaware open bids (data.delaware.gov Socrata dataset 2hnj-zwix).
+    // Small feed (~50 open bids), so a single match is enough to trust it.
+    key: "delaware",
+    minMatchesToArchive: 1,
+    fallbackRegion: "united-states",
+    collect: async (today) =>
+      withBudget("delaware", async (signal) =>
+        (await fetchDelawareOpenBids(signal)).flatMap((bid): Candidate[] => {
+          const categories = classifyDelaware(bid, today);
+          const insert = categories.length ? delawareToRfpInsert(bid, today) : null;
+          return insert ? [{ insert, categories, regionSlug: "us-delaware" }] : [];
         }),
       ),
   },
