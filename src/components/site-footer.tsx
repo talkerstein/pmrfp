@@ -10,7 +10,7 @@ import type { Locale } from "@/i18n/config";
 type FooterKey = keyof ReturnType<typeof getDictionary>["common"]["footer"]["links"];
 const LINK_KEY: Record<string, FooterKey> = {
   "/rfps": "rfps", "/jobs": "jobs", "/forum": "forum", "/talent": "talent", "/marketplace": "marketplace", "/contract-winners": "winners",
-  "/reports/public-building-contracts": "report", "/trades": "trades", "/regions": "regions", "/ontario": "ontario", "/alberta": "alberta", "/toronto-contracts": "toronto", "/suppliers": "suppliers",
+  "/reports/public-building-contracts": "report", "/reports/contract-winners": "monthly", "/trades": "trades", "/regions": "regions", "/ontario": "ontario", "/alberta": "alberta", "/toronto-contracts": "toronto", "/suppliers": "suppliers",
   "/for-trades": "forTrades", "/for-property-managers": "forPms", "/become-a-supplier": "becomeSupplier", "/for/real-estate": "forRealtors", "/for": "solutions",
   "/get-found": "getFound", "/pricing": "pricing", "/advertise": "advertise",
   "/rfp-writer": "writer", "/rfp-templates": "templates", "/cost-guides": "costGuides", "/resources": "guides",

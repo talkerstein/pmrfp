@@ -3,6 +3,8 @@ import { SITE } from "@/lib/site";
 import { listRfps } from "@/lib/data/rfps";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { winnersFromRfps } from "@/lib/data/winners";
+import { monthlyAwards, reportMonths } from "@/lib/data/monthly-winners";
+import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { listVendors } from "@/lib/data/directory";
 import { listResources } from "@/lib/data/resources";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
@@ -96,6 +98,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   entries.push({ url: `${base}/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
+  // Monthly contract-winner reports: only months that have a page (complete, 10+ awards).
+  entries.push({ url: `${base}/reports/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  for (const m of reportMonths(monthlyAwards(rfps), torontoToday()))
+    entries.push({ url: `${base}/reports/contract-winners/${m.month}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const w of winnersFromRfps(rfps)) entries.push({ url: `${base}/contract-winners/${w.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
   // City of Toronto suppliers: thin ones (one small award) are noindexed, so they stay out.
   for (const s of toronto.suppliers.filter((x) => x.indexable).slice(0, TORONTO_SITEMAP_LIMIT))
