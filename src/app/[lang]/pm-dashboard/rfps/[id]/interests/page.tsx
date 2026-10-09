@@ -19,6 +19,8 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { formatDate } from "@/i18n/format";
 import { regionName } from "@/i18n/terms";
+import { attachedProjectsFor, type AttachedProject } from "@/lib/projects/attach";
+import { isSchemaMissing } from "@/lib/projects/compat";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -33,6 +35,8 @@ interface InterestRow {
   message: string | null;
   created_at: string;
   contact_revealed: boolean;
+  trade_organization_id: string;
+  case_study_ids?: string[] | null;
   organizations: OrgRel | OrgRel[] | null;
 }
 
@@ -47,24 +51,35 @@ export default async function RfpInterestsPage({
   await requireRole(["property_manager", "real_estate_agent"]);
   const { id } = await params;
 
+  const tp = getT("portfolio").interests;
   let interests: InterestRow[] = [];
   let rfpStatus: string | null = null;
+  let attached = new Map<string, AttachedProject[]>();
   if (!isDemoMode()) {
     const supabase = await createClient();
-    const [{ data: ints }, { data: rfp }] = await Promise.all([
+    const cols = "id,status,message,created_at,contact_revealed,trade_organization_id, organizations(name,slug,city,province)";
+    const readInterests = (withProjects: boolean) =>
       supabase
         .from("rfp_interests")
-        .select("id,status,message,created_at,contact_revealed, organizations(name,slug,city,province)")
+        .select(withProjects ? `${cols},case_study_ids` : cols)
         .eq("rfp_id", id)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false });
+    const [first, { data: rfp }] = await Promise.all([
+      readInterests(true),
       supabase
         .from("rfp_posts")
         .select("status")
         .eq("id", id)
         .maybeSingle<{ status: string }>(),
     ]);
-    interests = (ints as InterestRow[] | null) ?? [];
+    // Before the portfolio migration there's no case_study_ids column.
+    const { data: ints } = isSchemaMissing(first.error) ? await readInterests(false) : first;
+    interests = (ints as unknown as InterestRow[] | null) ?? [];
     rfpStatus = rfp?.status ?? null;
+    // Only interests this PM can read (RLS above) get their projects resolved.
+    attached = await attachedProjectsFor(
+      interests.map((i) => ({ id: i.id, organizationId: i.trade_organization_id, caseStudyIds: i.case_study_ids ?? [] })),
+    );
   }
 
   const closed =
@@ -123,6 +138,16 @@ export default async function RfpInterestsPage({
                     </TableCell>
                     <TableCell className="max-w-xs whitespace-normal text-muted-foreground">
                       {it.message ?? "—"}
+                      {(attached.get(it.id) ?? []).length > 0 && (
+                        <span className="mt-2 block">
+                          <span className="block text-xs font-semibold uppercase tracking-wide text-foreground">{tp.attached}</span>
+                          {attached.get(it.id)!.map((p) => (
+                            <Link key={p.id} href={p.href} className="mt-0.5 block text-sm font-medium text-teal-ink hover:underline" target="_blank">
+                              {p.title}
+                            </Link>
+                          ))}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={it.status} />

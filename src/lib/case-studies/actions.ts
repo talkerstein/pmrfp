@@ -6,6 +6,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession, requireRole } from "@/lib/access/access";
+import { countActiveProjects } from "@/lib/projects/server";
+import { canAddProject } from "@/lib/projects/limits";
 
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "project";
@@ -52,6 +54,13 @@ export async function submitCaseStudyAction(formData: FormData): Promise<void> {
     redirect(`/dashboard/case-studies/new?error=${encodeURIComponent(msg)}`);
   }
   const d = parsed.data;
+
+  // Same plan limit as photo projects: the typed form used to skip it.
+  if (!canAddProject(session.hasTradeAccess, await countActiveProjects(session.organization.id))) {
+    redirect(
+      `/dashboard/case-studies/new?error=${encodeURIComponent("The free plan includes one project. Upgrade to Trade Pro to add more.")}`,
+    );
+  }
 
   const supabase = await createClient();
   const [{ data: cat }, { data: reg }] = await Promise.all([

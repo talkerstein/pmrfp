@@ -28,7 +28,7 @@ const PAGES: RegExp[] = [
   /^\/(regions|for|vs)(\/[^/]+)?$/,
   /^\/(rfp-templates|cost-guides)(\/[^/]+)?$/,
   /^\/resources(\/(grow|how-to-post-a-quality-rfp|how-to-write-a-commercial-property-maintenance-rfp|contractor-directories))?$/,
-  /^\/case-studies$/,
+  /^\/projects$/,
   // Forum index and category pages (UI translated; member threads stay English).
   /^\/forum(\/[a-z-]+)?$/,
 ];

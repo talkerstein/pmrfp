@@ -1,7 +1,8 @@
 import Link from "@/i18n/link";
-import { Camera } from "lucide-react";
+import { Camera, FileText } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { projectsReady } from "@/lib/projects/server";
+import { listMyProjects, projectsReady } from "@/lib/projects/server";
+import { portfolioReady } from "@/lib/projects/manage";
 import { buttonVariants } from "@/components/ui/button";
 import { listRfps } from "@/lib/data/rfps";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -34,6 +35,8 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
   const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
   const lang = getLang();
+  const tp = getT("portfolio").home;
+  const nudge = photoProjects && org && !demo ? await projectNudge(org.id) : null;
 
   return (
     <div>
@@ -78,7 +81,39 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
         </Link>
       )}
 
-      {photoProjects && (
+      {photoProjects && nudge?.kind === "build" && (
+        <Link
+          href={`/dashboard/projects/${nudge.project.id}/case-study`}
+          className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-teal-300 bg-teal-50/60 p-6 transition-colors hover:bg-teal-50"
+        >
+          <div className="flex items-start gap-4">
+            <FileText className="mt-0.5 size-6 shrink-0 text-teal-600" />
+            <div>
+              <h2 className="text-base font-semibold">{fmt(tp.buildTitle, { title: nudge.project.title })}</h2>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">{tp.buildBody}</p>
+            </div>
+          </div>
+          <span className={buttonVariants()}>{tp.buildCta}</span>
+        </Link>
+      )}
+
+      {photoProjects && nudge?.kind === "sheet" && (
+        <Link
+          href="/dashboard/projects/capability-sheet"
+          className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-6 transition-colors hover:border-teal-300"
+        >
+          <div className="flex items-start gap-4">
+            <FileText className="mt-0.5 size-6 shrink-0 text-teal-600" />
+            <div>
+              <h2 className="text-base font-semibold">{tp.sheetTitle}</h2>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">{tp.sheetBody}</p>
+            </div>
+          </div>
+          <span className={buttonVariants({ variant: "outline" })}>{tp.sheetCta}</span>
+        </Link>
+      )}
+
+      {photoProjects && !nudge && (
         <Link
           href="/dashboard/projects/new"
           className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-teal-300 bg-teal-50/60 p-6 transition-colors hover:bg-teal-50"
@@ -148,6 +183,22 @@ async function gcWinsForTrades(
     .map((c) => ({ trade: { slug: c.slug, name: c.name }, n: filterWins(wins, { trade: c.name }).length }))
     .sort((a, b) => b.n - a.n)[0];
   return best && best.n > 0 ? best : { n: wins.length, trade: null };
+}
+
+/**
+ * The next portfolio step for a company that already has projects: finish
+ * the newest project's case study, or (all done) print a capability sheet.
+ * Null = no projects yet, which keeps the "Add a project" card.
+ */
+async function projectNudge(
+  orgId: string,
+): Promise<{ kind: "build"; project: { id: string; title: string } } | { kind: "sheet" } | null> {
+  const [projects, ready] = await Promise.all([listMyProjects(orgId), portfolioReady()]);
+  const live = projects.filter((p) => p.status !== "rejected" && p.status !== "archived");
+  if (live.length === 0) return null;
+  const todo = ready ? live.find((p) => !p.progress.complete) : undefined;
+  if (todo) return { kind: "build", project: { id: todo.id, title: todo.title } };
+  return live.some((p) => p.status === "published") ? { kind: "sheet" } : null;
 }
 
 /** The trades this company lists under, for picking a relevant sponsor. */

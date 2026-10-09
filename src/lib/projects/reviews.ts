@@ -17,6 +17,16 @@ export interface PublicReview {
   createdAt: string;
 }
 
+/**
+ * The name a review shows under, same rule as the vendor_reviews_public
+ * view: full name with consent, otherwise first name + last initial. Used
+ * where a server reads the base table directly (private share pages).
+ */
+export function reviewerDisplayName(name: string, showBuilding: boolean): string {
+  const n = name.trim();
+  return showBuilding ? n : n.replace(/^(\S+)\s+(\S)[\s\S]*$/, "$1 $2.");
+}
+
 /** Count + average (1 decimal) for display and schema.org aggregateRating. */
 export function reviewStats(reviews: { rating: number }[]): { count: number; average: number } {
   const valid = reviews.filter((r) => Number.isInteger(r.rating) && r.rating >= 1 && r.rating <= 5);

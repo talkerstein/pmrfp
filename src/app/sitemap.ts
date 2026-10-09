@@ -69,7 +69,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/cost-guides", priority: 0.7, freq: "monthly" },
     { path: "/rfp-templates", priority: 0.8, freq: "monthly" },
     { path: "/rfp-writer", priority: 0.9, freq: "monthly" },
-    { path: "/case-studies", priority: 0.7, freq: "weekly" },
     { path: "/get-found", priority: 0.8, freq: "monthly" },
     { path: "/refer-a-project", priority: 0.9, freq: "monthly" },
     { path: "/contact", priority: 0.5, freq: "yearly" },
@@ -123,6 +122,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Trade×city pages exist only for combos that clear the vendor gate, so the
   // sitemap stays in lockstep with what actually renders.
   for (const tc of tradeCityCombos) entries.push({ url: `${base}/trades/${tc.category.slug}/${tc.region.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  // Public projects only (listCaseStudies drops unlisted and private). The
+  // /projects gallery is noindexed while it's empty, so it's listed only then.
+  if (caseStudies.length > 0) entries.push({ url: `${base}/projects`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const cs of caseStudies) entries.push({ url: `${base}/case-studies/${cs.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const c of COMPETITORS) entries.push({ url: `${base}/vs/${c.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const v of VERTICALS) entries.push({ url: `${base}/for/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });

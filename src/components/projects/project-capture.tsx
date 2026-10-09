@@ -80,7 +80,7 @@ async function decode(file: File): Promise<ImageBitmap | HTMLImageElement> {
 }
 
 /** Shrink to ≤2000px JPEG to save data on site. Falls back to the original file. */
-async function shrink(file: File): Promise<Blob> {
+export async function shrink(file: File): Promise<Blob> {
   try {
     const img = await decode(file);
     const w0 = "naturalWidth" in img ? img.naturalWidth : img.width;
@@ -100,7 +100,7 @@ async function shrink(file: File): Promise<Blob> {
   }
 }
 
-function upload(
+export function upload(
   blob: Blob,
   onProgress: (p: number) => void,
   t: Pick<Strings, "tooBig" | "uploadFailed" | "offline">,
