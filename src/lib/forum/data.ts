@@ -20,9 +20,12 @@ export interface MemberRef {
   userId: string;
   handle: string;
   displayName: string;
+  /** Legacy forum points, frozen since company reputation took over (src/lib/karma). */
   reputation: number;
   isStaff: boolean;
   verifiedBusiness: boolean;
+  /** The member's company: its reputation level shows next to their name. */
+  orgId: string | null;
 }
 
 export interface ForumCategory {
@@ -84,7 +87,7 @@ export interface Post {
 
 type Res<T> = ({ ready: true } & T) | { ready: false };
 
-const MEMBER_COLS = "user_id,handle,display_name,reputation,is_staff,verified_business";
+const MEMBER_COLS = "user_id,handle,display_name,reputation,is_staff,verified_business,organization_id";
 const THREAD_COLS =
   "id,short_id,slug,title,type,status,is_pinned,is_locked,is_staff,accepted_post_id,reply_count,view_count,rating_sum,rating_count,created_at,last_post_at,region," +
   `author:forum_profiles!forum_threads_author_fkey(${MEMBER_COLS}),last_user:forum_profiles!forum_threads_last_user_fkey(handle,display_name)`;
@@ -99,7 +102,7 @@ function db(): SupabaseClient | null {
   return isSupabaseConfigured() ? createReadClient() : null;
 }
 
-type MemberRow = { user_id: string; handle: string; display_name: string; reputation: number; is_staff: boolean; verified_business: boolean };
+type MemberRow = { user_id: string; handle: string; display_name: string; reputation: number; is_staff: boolean; verified_business: boolean; organization_id?: string | null };
 
 function member(r: MemberRow | MemberRow[] | null | undefined): MemberRef | null {
   const m = Array.isArray(r) ? r[0] : r;
@@ -111,6 +114,7 @@ function member(r: MemberRow | MemberRow[] | null | undefined): MemberRef | null
     reputation: m.reputation ?? 0,
     isStaff: m.is_staff,
     verifiedBusiness: m.verified_business,
+    orgId: m.organization_id ?? null,
   };
 }
 
@@ -417,6 +421,8 @@ export interface Profile {
   region: string | null;
   bio: string | null;
   reputation: number;
+  /** The member's company (its reputation level is shown, not member points). */
+  orgId: string | null;
   postCount: number;
   verifiedBusiness: boolean;
   isStaff: boolean;
@@ -432,7 +438,6 @@ export interface Profile {
     slug: string;
     listed: boolean;
     members: { handle: string; displayName: string; reputation: number }[];
-    rank: number;
   } | null;
 }
 
@@ -478,7 +483,6 @@ export async function getProfile(handle: string): Promise<Res<{ profile: Profile
         slug: o.slug,
         listed: o.profile_status === "approved" && o.status === "active" && ["trade_company", "supplier"].includes(o.organization_type),
         members,
-        rank: members.reduce((s, m) => s + m.reputation, 0),
       };
     }
   }
@@ -493,6 +497,7 @@ export async function getProfile(handle: string): Promise<Res<{ profile: Profile
       region: p.region,
       bio: p.bio,
       reputation: p.reputation ?? 0,
+      orgId: p.organization_id ?? null,
       postCount: p.post_count ?? 0,
       verifiedBusiness: p.verified_business,
       isStaff: p.is_staff,

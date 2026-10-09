@@ -1,76 +1,14 @@
 import { NOINDEX_FORUMS } from "./categories";
 
 /**
- * Forum rules, kept pure so they can be unit tested: reputation points,
- * ranks, badges, thread rating labels, the indexing gate and spam limits.
- * Values follow the spec (briefs/strategy/2026-10-06-forum-spec.md 2.3, 2.7, 2.8).
+ * Forum rules, kept pure so they can be unit tested: badges, thread rating
+ * labels, the indexing gate and spam limits. Values follow the spec
+ * (briefs/strategy/2026-10-06-forum-spec.md 2.3, 2.7, 2.8).
+ *
+ * Reputation points and the Apprentice→Master member ranks were folded into
+ * company reputation (src/lib/karma/rules.ts) on 2026-10-10: one system, per
+ * company, counting only what other companies confirm.
  */
-
-// ── Reputation (spec 2.3) ───────────────────────────────────────────
-export const POINTS = {
-  post: 1,
-  answerUpvoted: 5,
-  acceptedAnswer: 15,
-  threadRatedSharp: 5,
-  threadRatedGold: 10,
-  contentRemoved: -20,
-  verifiedBusiness: 50,
-} as const;
-
-export type ReputationEvent = keyof typeof POINTS;
-
-/** Points a thread author earns for one member's rating (1-5). */
-export function ratingPoints(score: number): number {
-  if (score === 5) return POINTS.threadRatedGold;
-  if (score === 4) return POINTS.threadRatedSharp;
-  return 0;
-}
-
-/** Reputation from ledger rows. Never below zero on display. */
-export function reputationFrom(events: { points: number }[]): number {
-  return Math.max(0, events.reduce((s, e) => s + e.points, 0));
-}
-
-// ── Ranks ───────────────────────────────────────────────────────────
-export const RANKS = [
-  { slug: "apprentice", min: 0 },
-  { slug: "journeyman", min: 100 },
-  { slug: "foreman", min: 400 },
-  { slug: "site-super", min: 1000 },
-  { slug: "master", min: 2500 },
-] as const;
-
-export type RankSlug = (typeof RANKS)[number]["slug"];
-
-export interface RankProgress {
-  rank: RankSlug;
-  next: RankSlug | null;
-  /** Points still needed for the next rank (0 at Master). */
-  toNext: number;
-  /** 0-100 progress inside the current rank band (100 at Master). */
-  percent: number;
-}
-
-export function rankFor(reputation: number): RankProgress {
-  const rep = Math.max(0, Math.floor(reputation || 0));
-  let i = 0;
-  for (let k = 0; k < RANKS.length; k++) if (rep >= RANKS[k].min) i = k;
-  const cur = RANKS[i];
-  const nxt = RANKS[i + 1];
-  if (!nxt) return { rank: cur.slug, next: null, toNext: 0, percent: 100 };
-  const span = nxt.min - cur.min;
-  return {
-    rank: cur.slug,
-    next: nxt.slug,
-    toNext: nxt.min - rep,
-    percent: Math.min(100, Math.floor(((rep - cur.min) / span) * 100)),
-  };
-}
-
-export function rankAtLeast(reputation: number, slug: RankSlug): boolean {
-  const need = RANKS.find((r) => r.slug === slug)?.min ?? 0;
-  return reputation >= need;
-}
 
 // ── Badges (spec 2.3, v1: 6) ────────────────────────────────────────
 export type BadgeSlug = "first-answer" | "accepted-10" | "verified-business" | "sharp-thread" | "year-one" | "moderator";

@@ -7,6 +7,7 @@ import { SaveTradeButton } from "@/components/trusted/save-trade-button";
 import { ProjectDeck } from "@/components/home-v3/project-deck";
 import { AddProjectTile } from "@/components/projects/add-project-tile";
 import { monogram } from "@/components/home-v3/directory-list";
+import { LevelBadge } from "@/components/karma/level-badge";
 import { getRecommendedBy } from "@/lib/trusted/data";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
 import { getVendor, listVendors, retiredVendorRedirect } from "@/lib/data/directory";
@@ -190,6 +191,9 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
                   </div>
                 )}
                 <h1 className="v3-cp-h1">{v.name}</h1>
+                {v.level != null && v.level >= 2 && (
+                  <a href={L("/reputation")} style={{ display: "inline-block", marginTop: 10 }}><LevelBadge level={v.level} tone="dark" /></a>
+                )}
                 <div className="v3-cp-meta">
                   {place && (
                     <span className="city">

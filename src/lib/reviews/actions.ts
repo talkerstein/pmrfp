@@ -10,6 +10,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { sendAdminNewReview } from "@/lib/email/send";
+import { karmaSyncAfter } from "@/lib/karma/sync";
 import { hashReviewToken, isWellFormedToken } from "@/lib/projects/tokens";
 
 async function ip(): Promise<string> {
@@ -118,11 +119,13 @@ export async function moderateReviewAction(formData: FormData): Promise<void> {
     .from("vendor_reviews")
     .update({ status: decision })
     .eq("id", id)
-    .select("organizations(slug),case_studies(slug)")
+    .select("organization_id,organizations(slug),case_studies(slug)")
     .maybeSingle();
 
   // The profile and the project page show this review (and the star average).
-  const r = data as unknown as { organizations: { slug: string } | null; case_studies: { slug: string } | null } | null;
+  const r = data as unknown as { organization_id: string | null; organizations: { slug: string } | null; case_studies: { slug: string } | null } | null;
+  // A published (or rejected) verified client review adds (or claws back) reputation.
+  await karmaSyncAfter({ orgIds: [r?.organization_id] });
   if (r?.organizations?.slug) revalidatePath(`/directory/${r.organizations.slug}`);
   if (r?.case_studies?.slug) revalidatePath(`/case-studies/${r.case_studies.slug}`);
   revalidatePath("/admin/reviews");

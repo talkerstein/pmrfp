@@ -12,7 +12,9 @@ import { createReadClient } from "@/lib/supabase/read";
 import { getThread, isCategoryMod, listPosts, listRelatedThreads, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
 import { isFrenchForum, tradeForForum } from "@/lib/forum/categories";
 import { sessionCanPost } from "@/lib/forum/eligibility";
-import { RANKS, isIndexableThread, pageCount, rankFor } from "@/lib/forum/rules";
+import { isIndexableThread, pageCount } from "@/lib/forum/rules";
+import { orgLevel } from "@/lib/karma/data";
+import { levelSlug } from "@/lib/karma/rules";
 import { excerpt, parseThreadParam } from "@/lib/forum/text";
 import { threadSchema } from "@/lib/forum/schema";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
@@ -20,7 +22,7 @@ import { getLang, getT } from "@/i18n/server";
 import { AutoPostChip } from "@/components/forum/auto-chip";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
-import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
+import { fmt, formatDate, plural } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 import { ForumIcon, ThreadList } from "@/components/forum/organize";
 
@@ -76,7 +78,7 @@ function PostCard({
   return (
     <article id={`post-${p.id}`} className={cn("f-card", highlight && "ok")}>
       <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <MemberName m={p.author} staff={p.isStaff} showRank />
+        <MemberName m={p.author} staff={p.isStaff} showLevel />
         <span className="text-xs text-muted-foreground">
           {p.isAccepted && (
             <span className="mr-2 inline-flex items-center gap-1 font-semibold text-teal-700">
@@ -149,6 +151,9 @@ export async function ThreadView({ category, param, page }: { category: string; 
   const answerWord = thread.type === "question" ? t.thread.answers : t.thread.replies;
   const op = thread.author?.userId === viewerId;
   const v = getT("v3Pages").forum;
+  const k = getT("karma");
+  // Forum ranks were folded into company reputation: show the company's level.
+  const authorLevel = thread.author && !thread.isAuto ? await orgLevel(thread.author.orgId) : null;
 
   return (
     <>
@@ -202,7 +207,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
           <article className="f-card op" style={{ marginTop: accepted ? 14 : 0 }}>
             <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="inline-flex flex-wrap items-center gap-2">
-                <MemberName m={thread.author} staff={thread.isStaff && !thread.isAuto} showRank={!thread.isAuto} />
+                <MemberName m={thread.author} staff={thread.isStaff && !thread.isAuto} showLevel={!thread.isAuto} />
                 {thread.isAuto && <AutoPostChip lang={lang} full />}
               </span>
               <time dateTime={thread.createdAt} className="text-xs text-muted-foreground">{fmt(t.thread.posted, { date: formatDate(thread.createdAt, lang) })}</time>
@@ -279,9 +284,14 @@ export async function ThreadView({ category, param, page }: { category: string; 
             <div className="lb">{v.authorCard}</div>
             <div className="nm">{thread.author.displayName}</div>
             <div className="bars" aria-hidden>
-              {[16, 26, 36, 46, 56].map((h, i) => <i key={h} className={i <= RANKS.findIndex((r) => r.slug === rankFor(thread.author!.reputation).rank) ? "on wave" : "wave"} style={{ height: h, animationDelay: `${i * 0.2}s` }} />)}
+              {[16, 26, 36, 46, 56].map((h, i) => <i key={h} className={authorLevel != null && i < authorLevel ? "on wave" : "wave"} style={{ height: h, animationDelay: `${i * 0.2}s` }} />)}
             </div>
-            <div style={{ marginTop: 8, fontWeight: 700 }}>{fmt(v.rankPoints, { rank: t.ranks[rankFor(thread.author.reputation).rank], n: formatNumber(thread.author.reputation, lang) })}</div>
+            <div style={{ marginTop: 8, fontWeight: 700 }}>
+              {authorLevel != null
+                ? `${k.forum.company}: ${fmt(k.badge.label, { n: authorLevel, name: k.levels[levelSlug(authorLevel)] })}`
+                : k.forum.none}
+            </div>
+            <Link href="/reputation" style={{ display: "block", fontSize: 13, marginTop: 4 }}>{k.forum.how}</Link>
             <Link href={`/forum/u/${thread.author.handle}`}>{v.viewProfile}</Link>
           </div>
         )}
