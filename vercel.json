@@ -10,8 +10,16 @@
       "schedule": "15 12 * * *"
     },
     {
+      "path": "/api/cron/sc-tenders",
+      "schedule": "20 12 * * *"
+    },
+    {
       "path": "/api/cron/us-state-tenders",
       "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/cron/us-local-tenders",
+      "schedule": "40 12 * * *"
     },
     {
       "path": "/api/cron/rfp-alerts",
