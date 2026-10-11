@@ -42,7 +42,8 @@ export function createPublicReadFetch(baseUrl: string, anonKey: string, transpor
     // Safety net (incident 2026-10-09): fail fast while the database is
     // struggling, and never let one read hold a render for minutes.
     if (isCircuitOpen()) return Promise.reject(new CircuitOpenError());
-    return withDeadline(retryTableRead(input, options, transport), PUBLIC_READ_TIMEOUT_MS).then(
+    // Explicit caller deadlines (snapshot pages) are single-attempt reads.
+    return withDeadline(retryTableRead(input, options, transport, !init?.signal), PUBLIC_READ_TIMEOUT_MS).then(
       (response) => {
         if (isServerFailure(response.status)) recordReadFailure();
         else recordReadSuccess();

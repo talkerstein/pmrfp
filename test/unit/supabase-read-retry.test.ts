@@ -76,6 +76,12 @@ describe("transient public table read recovery", () => {
     for (const call of transport.mock.calls.slice(2)) expect(call[1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it("does not retry a caller-bounded snapshot read", async () => {
+    const transport = vi.fn<typeof fetch>().mockRejectedValue(failure("ETIMEDOUT"));
+    await expect(createPublicReadFetch(base, "anon", transport)(url, { headers, signal: AbortSignal.timeout(1000) })).rejects.toThrow();
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
   it("respects caller cancellation instead of retrying", async () => {
     const controller = new AbortController();
     controller.abort();
