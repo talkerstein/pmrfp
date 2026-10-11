@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prebuildSlice } from "@/lib/build/prebuild";
 import Link from "@/i18n/link";
 import { notFound } from "next/navigation";
 import { Container, Eyebrow } from "@/components/container";
@@ -18,7 +19,7 @@ import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getRegionLiquidityBySlug } from "@/lib/data/liquidity";
 import { FoundingRegionNotice } from "@/components/public/founding-region-notice";
 import { listVendors } from "@/lib/data/directory";
-import { listRfps } from "@/lib/data/rfps";
+import { listRfps, withPublicRfpPhotos } from "@/lib/data/rfps";
 import { listTradesForRegion } from "@/lib/data/trade-city";
 import { SITE } from "@/lib/site";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -33,12 +34,12 @@ import { esIn, esPlace, esTradeOf } from "@/lib/seo/phrases.es";
 export const revalidate = 3600;
 
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // English is prebuilt in full; French and Spanish get a few and render the rest
-  // on first visit, then cache (ISR). Prebuilding every language tripled the build.
+  // A few pages are prebuilt (lib/build/prebuild); the rest render
+  // on first visit, then cache (ISR), so deploys do not stampede the database.
   // (An empty list for any language switches prebuilding off for the whole route.)
   const regions = await getRegions();
   const all = regions.map((r) => ({ slug: r.slug }));
-  return params.lang === "en" ? all : all.slice(0, 3);
+  return prebuildSlice(all, params.lang);
 }
 
 async function getRegion(slug: string) {
@@ -124,6 +125,8 @@ export default async function RegionPage({
   ].slice(0, Math.max(18, liveTrades.length));
   // listRfps() includes closed RFPs — only status === "open" may be called open.
   const openRfps = rfps.filter((r) => r.status === "open");
+  // Photos only for the six cards shown (one small query, not the whole board).
+  const cardRfps = await withPublicRfpPhotos(rfps.slice(0, 6)).catch(() => rfps.slice(0, 6));
 
   const regionLiq = await getRegionLiquidityBySlug(region.slug);
   const showFounding = regionLiq ? regionLiq.tier !== "active" : false;
@@ -189,7 +192,7 @@ export default async function RegionPage({
               </p>
             )}
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {rfps.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
+              {cardRfps.map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
             </div>
           </>
         )}

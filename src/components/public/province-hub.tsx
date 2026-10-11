@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
 import { getProvinceHub, type ProvinceDef, type ProvinceHubData } from "@/lib/data/province-hub";
+import { withPublicRfpPhotos } from "@/lib/data/rfps";
 import { getTorontoIndexSafe, type TorontoIndex } from "@/lib/data/toronto-awards";
 import { compactDollars } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
@@ -79,6 +80,8 @@ function faqs(def: ProvinceDef, hub: ProvinceHubData, toronto: TorontoIndex | nu
 
 export async function ProvinceHub({ def }: { def: ProvinceDef }) {
   const { hub, toronto } = await load(def);
+  // Photos only for the nine cards shown.
+  const openCards = await withPublicRfpPhotos(hub.open.slice(0, 9)).catch(() => hub.open.slice(0, 9));
   const qa = faqs(def, hub, toronto);
   const torontoTop = toronto?.suppliers.filter((s) => s.indexable).slice(0, 8) ?? [];
 
@@ -138,7 +141,7 @@ export async function ProvinceHub({ def }: { def: ProvinceDef }) {
           </h2>
           {hub.open.length > 0 ? (
             <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {hub.open.slice(0, 9).map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
+              {openCards.map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
             </div>
           ) : (
             <p className="mt-3 text-muted-foreground">New tenders import daily. Set an alert to hear about the next one first.</p>

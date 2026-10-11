@@ -1,5 +1,5 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { getRfpTeaser, listRfps } from "@/lib/data/rfps";
 import { isPastContract, parseAward } from "@/lib/data/fomo";
 import { isPublishableWinner, winnerKey, winnersFromRfps } from "@/lib/data/winners";
@@ -23,8 +23,9 @@ export interface TenderContext {
   similar: PastAward[];
 }
 
-async function pastAwards(): Promise<PastAward[]> {
-  const rfps = await listRfps({}, { photos: false });
+/** Past awards from the shared board snapshot, once per request. */
+const pastAwards = cache(async (): Promise<PastAward[]> => {
+  const rfps = await listRfps();
   const pages = new Map(winnersFromRfps(rfps).map((w) => [winnerKey(w.name), w.slug]));
   return rfps.filter(isPastContract).map((r) => {
     const { winner, amount } = parseAward(r.summary);
@@ -41,14 +42,16 @@ async function pastAwards(): Promise<PastAward[]> {
       winnerSlug: name ? pages.get(winnerKey(name)) ?? null : null,
     };
   });
-}
+});
 
-/** Similar awards per trade + province, cached hourly (a few rows per key, not the whole archive). */
-const similarFor = unstable_cache(
-  async (trade: string, province: string | null): Promise<PastAward[]> => similarAwards({ slug: "", categories: [trade], province }, await pastAwards(), 6),
-  ["forum-similar-awards"],
-  { revalidate: 3600 },
-);
+/**
+ * Similar awards per trade + province, computed in memory from the snapshot.
+ * (Was unstable_cache per trade+province: inside it the board read bypassed
+ * every cache, so each new key re-read the whole board from the database.)
+ */
+async function similarFor(trade: string, province: string | null): Promise<PastAward[]> {
+  return similarAwards({ slug: "", categories: [trade], province }, await pastAwards(), 6);
+}
 
 export async function getTenderContext(threadId: string): Promise<TenderContext | null> {
   try {

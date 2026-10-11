@@ -76,16 +76,13 @@ export default async function RfpsPage({
   const trade = (name: string) => tradeName(name, lang);
   const sp = await searchParams;
   const [allRfps, board, categories, allRegions, propertyTypes, access, visitor] = await Promise.all([
-    listRfps(
-      {
-        category: sp.category,
-        region: sp.region,
-        propertyType: sp.propertyType,
-        q: sp.q,
-        sort: (sp.sort as "closing" | "newest") ?? "closing",
-      },
-      { photos: false },
-    ),
+    listRfps({
+      category: sp.category,
+      region: sp.region,
+      propertyType: sp.propertyType,
+      q: sp.q,
+      sort: (sp.sort as "closing" | "newest") ?? "closing",
+    }),
     listAllRfpsCached().catch(() => [] as RfpListItem[]),
     getCategories(),
     getRegions(),

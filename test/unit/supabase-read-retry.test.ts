@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPublicReadFetch } from "@/lib/supabase/public-cache";
+import { resetCircuit } from "@/lib/supabase/circuit";
 
 const base = "https://fixture.supabase.co";
 const headers = { apikey: "anon", authorization: "Bearer anon" };
@@ -8,6 +9,8 @@ const url = `${base}/rest/v1/regions?select=id,name`;
 const failure = (code: string) => new TypeError("fetch failed", { cause: Object.assign(new Error("connection"), { code }) });
 
 afterEach(() => vi.restoreAllMocks());
+// Each case starts with a closed breaker (failures in one case must not open it for the next).
+beforeEach(() => resetCircuit());
 
 describe("transient public table read recovery", () => {
   it.each(["ETIMEDOUT", "UND_ERR_SOCKET", "ECONNRESET", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT"])("recovers once from %s with the same cache dependencies", async (code) => {

@@ -3,7 +3,7 @@ import { provinceFirst } from "@/lib/visitor-geo";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { Lock } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { listRfps } from "@/lib/data/rfps";
+import { listRfps, withPublicRfpPhotos } from "@/lib/data/rfps";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { RfpCard } from "@/components/public/rfp-card";
 import { EmptyState } from "@/components/public/empty-state";
@@ -25,7 +25,9 @@ export default async function RfpFeedPage({ params }: { params: Promise<object> 
   const demo = isDemoMode();
   // Country-first: the company's country only, its own province/state first.
   const { country, province } = await getVisitorCountry({ session });
-  const rfps = provinceFirst(await listRfps({ country }), province, (r) => r.province);
+  const listed = provinceFirst(await listRfps({ country }), province, (r) => r.province);
+  // Photos: only PMRFP-posted listings can have them, so this stays one small query.
+  const rfps = await withPublicRfpPhotos(listed).catch(() => listed);
   const locked = !session.hasTradeAccess && !demo;
 
   return (

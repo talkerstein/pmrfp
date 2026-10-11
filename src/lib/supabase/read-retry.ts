@@ -5,7 +5,7 @@ const TRANSIENT_CODES = new Set([
 ]);
 const TRANSIENT_STATUSES = new Set([502, 503, 504]);
 
-function transientNetworkError(error: unknown): boolean {
+export function transientNetworkError(error: unknown): boolean {
   let current = error;
   for (let depth = 0; depth < 4 && current && typeof current === "object"; depth++) {
     const item = current as { code?: string; cause?: unknown };

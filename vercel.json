@@ -18,7 +18,7 @@
       "schedule": "30 12 * * *"
     },
     {
-"path": "/api/cron/closed-tenders",
+      "path": "/api/cron/closed-tenders",
       "schedule": "0 11 * * 1"
     },
     {
@@ -35,7 +35,7 @@
     },
     {
       "path": "/api/cron/saved-rfp-alerts",
-      "schedule": "45 13 * * *"
+      "schedule": "52 13 * * *"
     },
     {
       "path": "/api/cron/rfp-expiry",
@@ -47,11 +47,11 @@
     },
     {
       "path": "/api/cron/admin-weekly",
-      "schedule": "30 12 * * 1"
+      "schedule": "50 12 * * 1"
     },
     {
       "path": "/api/cron/bid-checks",
-      "schedule": "*/15 * * * *"
+      "schedule": "7,22,37,52 * * * *"
     },
     {
       "path": "/api/cron/karma",

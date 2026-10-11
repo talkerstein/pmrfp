@@ -1,4 +1,5 @@
 import "@/components/v3-pages/portfolio.css";
+import { prebuildSlice } from "@/lib/build/prebuild";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isOptimizablePhoto } from "@/lib/projects/photos";
@@ -22,12 +23,12 @@ export const revalidate = 3600;
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
 
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // English is prebuilt in full; French and Spanish get a few and render the rest
+  // A few pages are prebuilt (lib/build/prebuild); the rest render
   // on first visit, then cache (ISR). Only PUBLIC studies are prebuilt; an
   // unlisted one renders on first visit (noindexed).
   const studies = await listCaseStudies();
   const all = studies.map((s) => ({ slug: s.slug }));
-  return params.lang === "en" ? all : all.slice(0, 3);
+  return prebuildSlice(all, params.lang);
 }
 
 export async function generateMetadata({

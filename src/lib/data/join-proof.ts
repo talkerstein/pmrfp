@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { listRfps } from "@/lib/data/rfps";
 import { boardStats, daysUntil } from "@/lib/data/fomo";
 import type { RfpListItem } from "@/lib/data/types";
@@ -16,10 +16,10 @@ export interface JoinProof {
 
 /**
  * Live board numbers for the sign-up page. The page is dynamic (it reads
- * ?role, ?plan …), so the board read is cached here instead, hourly like the
- * home page.
+ * ?role, ?plan …); the board comes from the shared snapshot, so this is just
+ * computed in memory once per request.
  */
-export const getJoinProof = unstable_cache(
+export const getJoinProof = cache(
   async (): Promise<JoinProof> => {
     const rfps = await listRfps();
     const { open, awardedValue, pastContracts } = boardStats(rfps);
@@ -41,6 +41,4 @@ export const getJoinProof = unstable_cache(
     }
     return { open, awardedValue, pastContracts, rows };
   },
-  ["join-proof"],
-  { revalidate: 3600 },
 );

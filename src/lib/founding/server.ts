@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { FOUNDING, LIFETIME_SUB_PREFIX, isLifetimeSubscriptionId, lifetimeRow } from "./config";
@@ -15,15 +16,31 @@ export async function countLifetimeOrgs(): Promise<number> {
 }
 
 let cached: { at: number; sold: number } | null = null;
+let failedAt = 0;
 
-/** The public counter: cached ~60s per server instance; null when the count can't be read. */
+/**
+ * Shared across instances for a minute. Also keeps the uncached service-role
+ * read out of the page's own fetch scope: called directly, it switched ISR
+ * pages (every /contract-winners/* page) from static to dynamic at runtime and
+ * made them error on each visit.
+ */
+const sharedLifetimeCount = unstable_cache(async () => countLifetimeOrgs(), ["founding-lifetime-count-v1"], {
+  revalidate: 60,
+  tags: ["founding"],
+});
+
+/** The public counter: cached ~60s; null when the count can't be read. */
 export async function cachedLifetimeCount(): Promise<number | null> {
   if (cached && Date.now() - cached.at < 60_000) return cached.sold;
+  // After a failure, don't retry on every render for 30 s (it fired on every
+  // board request during the 2026-10-09 outage).
+  if (Date.now() - failedAt < 30_000) return cached?.sold ?? null;
   try {
-    const sold = await countLifetimeOrgs();
+    const sold = await sharedLifetimeCount();
     cached = { at: Date.now(), sold };
     return sold;
   } catch (err) {
+    failedAt = Date.now();
     console.error("[founding] count failed:", err instanceof Error ? err.message : err);
     return cached?.sold ?? null;
   }
