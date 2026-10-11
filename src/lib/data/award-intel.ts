@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { listRfps } from "@/lib/data/rfps";
 import { isPastContract, parseAward } from "@/lib/data/fomo";
 import { isPublishableWinner, winnerKey, winnersFromRfps } from "@/lib/data/winners";
@@ -34,12 +34,12 @@ export interface AwardIntel {
   winners: { name: string; wins: number; slug: string | null }[];
 }
 
-/** Past contracts, compacted and cached hourly (the tender page itself is dynamic). */
-export const getAwardIndex = unstable_cache(
-  async (): Promise<AwardRow[]> => buildAwardIndex(await listRfps()),
-  ["award-index"],
-  { revalidate: 3600 },
-);
+/**
+ * Past contracts, compacted once per request from the shared board snapshot.
+ * (Was unstable_cache around listRfps(): Next bypasses the snapshot's own
+ * cache inside another unstable_cache, so every refresh re-read the board.)
+ */
+export const getAwardIndex = cache(async (): Promise<AwardRow[]> => buildAwardIndex(await listRfps()));
 
 export function buildAwardIndex(rfps: RfpListItem[]): AwardRow[] {
   const pages = new Map(winnersFromRfps(rfps).map((w) => [winnerKey(w.name), w.slug]));

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prebuildSlice } from "@/lib/build/prebuild";
 import Image from "next/image";
 import Link from "@/i18n/link";
 import { notFound } from "next/navigation";
@@ -22,7 +23,7 @@ import {
 } from "@/lib/seo/jsonld";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listVendors } from "@/lib/data/directory";
-import { listRfps } from "@/lib/data/rfps";
+import { listRfps, withPublicRfpPhotos } from "@/lib/data/rfps";
 import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
 import { localizeRfpTemplate } from "@/lib/seo/rfp-templates.fr";
 import { listCitiesForTrade } from "@/lib/data/trade-city";
@@ -48,12 +49,12 @@ import { inCountry, type CountryCode } from "@/lib/visitor-geo";
 export const revalidate = 3600;
 
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // English is prebuilt in full; French and Spanish get a few and render the rest
-  // on first visit, then cache (ISR). Prebuilding every language tripled the build.
+  // A few pages are prebuilt (lib/build/prebuild); the rest render
+  // on first visit, then cache (ISR), so deploys do not stampede the database.
   // (An empty list for any language switches prebuilding off for the whole route.)
   const cats = await getCategories();
   const all = cats.map((c) => ({ category: c.slug }));
-  return params.lang === "en" ? all : all.slice(0, 3);
+  return prebuildSlice(all, params.lang);
 }
 
 async function getCategory(slug: string) {
@@ -138,13 +139,16 @@ export default async function TradeCategoryPage({
   const photo = tradePhoto(cat.slug);
   const forum = forumForTrade(cat.slug);
   const forumT = getT("forum");
+  // Photos only for the cards shown (six per country), one small query.
+  const shownCards = [...inCountry(rfps, "CA").slice(0, 6), ...inCountry(rfps, "US").slice(0, 6)];
+  const withPhotos = new Map((await withPublicRfpPhotos(shownCards).catch(() => shownCards)).map((r) => [r.slug, r]));
   const rfpGrid = (c: CountryCode) => {
     const list = inCountry(rfps, c);
     return list.length === 0 ? (
       <div className="mt-4"><EmptyState title={fmt(t.emptyRfps.title, vars)} description={t.emptyRfps.description} /></div>
     ) : (
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {list.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
+        {list.slice(0, 6).map((r) => <RfpCard key={r.slug} rfp={withPhotos.get(r.slug) ?? r} locked />)}
       </div>
     );
   };

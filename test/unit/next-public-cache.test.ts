@@ -1,7 +1,8 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { createPublicReadFetch, PUBLIC_DATA_TAG, TAXONOMY_DATA_TAG } from "@/lib/supabase/public-cache";
+import { createPublicReadFetch, RFPS_TAG, TAXONOMY_DATA_TAG } from "@/lib/supabase/public-cache";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createFakePostgrest, uuidFor } from "./fixtures/fake-postgrest";
 
 const fixture = vi.hoisted(() => ({ client: null as unknown as SupabaseClient }));
 vi.mock("@/lib/supabase/read", () => ({ createReadClient: () => fixture.client }));
@@ -34,6 +35,7 @@ let work: typeof import("next/dist/server/app-render/work-async-storage.external
 let unit: typeof import("next/dist/server/app-render/work-unit-async-storage.external").workUnitAsyncStorage;
 let patched: typeof import("next/dist/server/lib/patch-fetch").createPatchedFetcher;
 let counts: typeof import("@/lib/data/rfp-counts").getOpenRfpCounts;
+let listRfps: typeof import("@/lib/data/rfps").listRfps;
 let backing: MemoryBackingStore;
 
 beforeAll(async () => {
@@ -43,6 +45,7 @@ beforeAll(async () => {
   unit = (await import("next/dist/server/app-render/work-unit-async-storage.external")).workUnitAsyncStorage;
   patched = (await import("next/dist/server/lib/patch-fetch")).createPatchedFetcher;
   counts = (await import("@/lib/data/rfp-counts")).getOpenRfpCounts;
+  listRfps = (await import("@/lib/data/rfps")).listRfps;
 });
 beforeEach(() => { backing = new MemoryBackingStore(); });
 
@@ -75,24 +78,39 @@ describe("Next framework cache regressions", () => {
     }
     vi.restoreAllMocks();
   });
-  it("persists numeric exact counts from HTTP206 across sequential renders and honors TTL/tag expiry", async () => {
-    const transport = vi.fn(async () => new Response("[]", { status: 206, headers: { "Content-Type": "application/json", "Content-Range": "*/7" } }));
-    fixture.client = createClient("https://fixture.supabase.co", "fixture-key", { auth: { persistSession: false }, global: { fetch: transport } });
-    const first = await render("/rfps", () => counts());
-    const second = await render("/rfps/example", () => counts());
-    expect(first.result.totalOpen).toBe(7);
-    expect(second.result.totalOpen).toBe(7);
-    expect(transport).toHaveBeenCalledTimes(1);
+  it("loads the board snapshot once for every caller and render, honoring TTL and the rfps tag", async () => {
+    const rows = Array.from({ length: 40 }, (_, i) => ({
+      id: uuidFor(i), slug: `s${i}`, title: "Roof", summary: null, region_id: null, property_type_id: null, city: null,
+      province: i % 4 === 0 ? "Texas" : "Ontario", deadline: "2099-01-01", is_demo: false, source_type: "public_source",
+      gc_project_name: null, awarded_rfp_id: null,
+    }));
+    const db = createFakePostgrest({ rfp_public: rows, rfp_categories: [], regions: [], property_types: [], trade_categories: [] });
+    fixture.client = createClient("https://fixture.supabase.co", "fixture-key", { auth: { persistSession: false }, global: { fetch: db.fetch } });
+    const boardReads = () => db.count("rfp_public") + db.count("rfp_categories");
+    // Several callers in one render (board + whole-board list + counts), concurrently.
+    const page = () => Promise.all([listRfps({ country: "US" }), listRfps(), counts(null, undefined, "CA")]);
+    const first = await render("/rfps", page);
+    expect(first.result[0]).toHaveLength(10);
+    expect(first.result[1]).toHaveLength(40);
+    expect(first.result[2].totalOpen).toBe(30);
+    // 16 shards, each non-empty shard read once (rfp_public + rfp_categories).
+    const cold = boardReads();
+    expect(db.count("rfp_public")).toBe(16);
+    expect(cold).toBeLessThanOrEqual(32);
+    // Another page, another render: all from the data cache.
+    const second = await render("/rfps/s1", page);
+    expect(second.result[1]).toHaveLength(40);
+    expect(boardReads()).toBe(cold);
     for (const context of [first, second]) {
-      expect(context.renderUnit.tags).toContain(PUBLIC_DATA_TAG);
-      expect(context.renderUnit.revalidate).toBe(300);
+      expect(context.renderUnit.tags).toContain(RFPS_TAG);
+      expect(context.renderUnit.revalidate).toBe(600);
     }
-    backing.expireTag(PUBLIC_DATA_TAG);
-    await render("/rfps", () => counts());
-    expect(transport).toHaveBeenCalledTimes(2);
-    backing.now += 301000;
-    await render("/rfps", () => counts());
-    expect(transport).toHaveBeenCalledTimes(3);
+    backing.expireTag(RFPS_TAG);
+    await render("/rfps", page);
+    expect(db.count("rfp_public")).toBe(32);
+    backing.now += 601000;
+    await render("/rfps", page);
+    expect(db.count("rfp_public")).toBe(48);
   });
 
   it("registers taxonomy dependencies in each overlapping render and refreshes after tag expiry", async () => {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prebuildSlice } from "@/lib/build/prebuild";
 import Link from "@/i18n/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -23,6 +24,7 @@ import {
   type TradeCityCombo,
 } from "@/lib/data/trade-city";
 import { listVendors } from "@/lib/data/directory";
+import { withPublicRfpPhotos } from "@/lib/data/rfps";
 import { parseAward } from "@/lib/data/fomo";
 import { isPublishableWinner, winnerKey, winnersFromRfps } from "@/lib/data/winners";
 import { publicTenderSource } from "@/lib/tenders/sources";
@@ -54,12 +56,12 @@ export const revalidate = 3600;
  * first visit.
  */
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // English is prebuilt in full; French and Spanish get a few and render the rest
-  // on first visit, then cache (ISR). Prebuilding every language tripled the build.
+  // A few pages are prebuilt (lib/build/prebuild); the rest render
+  // on first visit, then cache (ISR), so deploys do not stampede the database.
   // (An empty list for any language switches prebuilding off for the whole route.)
   const combos = await listQualifyingCombos();
-  const all = combos.slice(0, 40).map((c) => ({ category: c.category.slug, city: c.region.slug }));
-  return params.lang === "en" ? all : all.slice(0, 3);
+  const all = combos.map((c) => ({ category: c.category.slug, city: c.region.slug }));
+  return prebuildSlice(all, params.lang);
 }
 
 const hasListings = (c: TradeCityCombo) => c.open.length + c.past.length > 0;
@@ -172,7 +174,11 @@ export default async function TradeCityPage({
     listCitiesForTrade(cat.slug),
     listTradesForRegion(region.slug),
   ]);
-  const heroes = await heroUrlsBySlug(caseStudies.map((cs) => cs.slug));
+  const [heroes, openCards] = await Promise.all([
+    heroUrlsBySlug(caseStudies.map((cs) => cs.slug)),
+    // Photos only for the cards shown, one small query.
+    withPublicRfpPhotos(open.slice(0, 12)).catch(() => open.slice(0, 12)),
+  ]);
   // A vendor-only page whose approvals were just revoked: don't render a hollow page.
   if (!hasListings(combo) && vendors.length === 0) notFound();
 
@@ -362,7 +368,7 @@ export default async function TradeCityPage({
             </Link>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {open.slice(0, 12).map((r) => (
+            {openCards.map((r) => (
               <RfpCard key={r.slug} rfp={r} locked />
             ))}
           </div>

@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createPublicReadFetch, PUBLIC_DATA_TAG, TAXONOMY_DATA_TAG } from "@/lib/supabase/public-cache";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createPublicReadFetch, PUBLIC_DATA_TAG, PUBLIC_READ_TIMEOUT_MS, RFPS_TAG, TAXONOMY_DATA_TAG } from "@/lib/supabase/public-cache";
+import { isCircuitOpen, resetCircuit } from "@/lib/supabase/circuit";
+import { createLimiter, createSingleFlight, mapLimit } from "@/lib/concurrency";
 import { createWriteFetch } from "@/lib/supabase/write-fetch";
 import { isPublicPageRead } from "@/lib/public-read-policy";
 import { revalidateTag } from "next/cache";
@@ -61,12 +63,20 @@ describe("public Supabase read caching", () => {
 
 describe("public cache invalidation", () => {
   beforeEach(() => vi.mocked(revalidateTag).mockClear());
-  it("invalidates after successful moderation writes without caching authenticated reads", async () => {
+  it("marks the board stale (stale-while-revalidate) after RFP writes instead of expiring it", async () => {
     const transport = vi.fn(async () => new Response(null, { status: 204 }));
     const write = createWriteFetch(base, transport);
     await write(`${base}/rest/v1/rfp_posts?id=eq.example`, { method: "PATCH" });
-    expect(revalidateTag).toHaveBeenCalledWith(PUBLIC_DATA_TAG, { expire: 0 });
+    expect(revalidateTag).toHaveBeenCalledWith(RFPS_TAG, "max");
+    expect(revalidateTag).toHaveBeenCalledWith(PUBLIC_DATA_TAG, "max");
+    expect(revalidateTag).not.toHaveBeenCalledWith(PUBLIC_DATA_TAG, { expire: 0 });
     expect(transport).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ cache: "no-store" }));
+  });
+  it("still expires public reads immediately after directory writes", async () => {
+    const write = createWriteFetch(base, vi.fn(async () => new Response(null, { status: 204 })));
+    await write(`${base}/rest/v1/organizations?id=eq.example`, { method: "PATCH" });
+    expect(revalidateTag).toHaveBeenCalledWith(PUBLIC_DATA_TAG, { expire: 0 });
+    expect(revalidateTag).not.toHaveBeenCalledWith(RFPS_TAG, expect.anything());
   });
   it("does not flush public caches on reads, failed writes or rate-limit counters", async () => {
     const write = createWriteFetch(base, vi.fn(async () => new Response(null, { status: 403 })));
@@ -93,5 +103,79 @@ describe("public browsing limiter scope", () => {
   });
   it("does not throttle POST server actions in the public browsing bucket", () => {
     expect(isPublicPageRead("POST", "/rfps")).toBe(false);
+  });
+});
+
+describe("database safety net", () => {
+  beforeEach(() => resetCircuit());
+  it("opens the circuit after repeated 5xx and then fails fast without touching the database", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const transport = vi.fn(async () => new Response("<html>522</html>", { status: 522 }));
+    const read = createPublicReadFetch(base, key, transport);
+    for (let i = 0; i < 5; i++) expect((await read(`${base}/rest/v1/rfp_public`, { headers })).status).toBe(522);
+    expect(isCircuitOpen()).toBe(true);
+    const calls = transport.mock.calls.length;
+    await expect(read(`${base}/rest/v1/rfp_public`, { headers })).rejects.toMatchObject({ name: "AbortError" });
+    expect(transport.mock.calls.length).toBe(calls);
+    // Private/auth reads are never blocked by the public breaker.
+    await read(`${base}/rest/v1/rfp_posts`, { headers: { ...headers, Authorization: "Bearer user" } });
+    expect(transport.mock.calls.length).toBe(calls + 1);
+    vi.restoreAllMocks();
+  });
+  it("gives up on a hung read after the deadline instead of holding the render for minutes", async () => {
+    vi.useFakeTimers();
+    const read = createPublicReadFetch(base, key, () => new Promise<Response>(() => {}));
+    const pending = read(`${base}/rest/v1/rfp_public`, { headers });
+    const assertion = expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    await vi.advanceTimersByTimeAsync(PUBLIC_READ_TIMEOUT_MS + 1);
+    await assertion;
+    vi.useRealTimers();
+  });
+  it("a timed-out read returns an error once; supabase-js does not retry it 3 more times", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const client = createClient(base, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: createPublicReadFetch(base, key, () => { calls++; return new Promise<Response>(() => {}); }) },
+    });
+    // postgrest builders are lazy: start the request before moving the clock.
+    const result = client.from("rfp_public").select("id").then((r) => r);
+    await vi.advanceTimersByTimeAsync(PUBLIC_READ_TIMEOUT_MS * 5);
+    const { error } = await result;
+    expect(error).not.toBeNull();
+    expect(calls).toBe(1);
+  });
+  afterEach(() => vi.useRealTimers());
+});
+
+describe("bounded fan-out", () => {
+  it("never runs more than the limit at once and keeps result order", async () => {
+    let active = 0;
+    let peak = 0;
+    const work = async (n: number) => {
+      active++;
+      peak = Math.max(peak, active);
+      await new Promise((r) => setTimeout(r, 2));
+      active--;
+      return n * 2;
+    };
+    expect(await mapLimit([1, 2, 3, 4, 5, 6, 7, 8, 9], 4, work)).toEqual([2, 4, 6, 8, 10, 12, 14, 16, 18]);
+    expect(peak).toBe(4);
+    peak = 0;
+    const limit = createLimiter(4);
+    await Promise.all(Array.from({ length: 20 }, (_, i) => limit(() => work(i))));
+    expect(peak).toBe(4);
+  });
+  it("shares one in-flight load between concurrent callers", async () => {
+    const flight = createSingleFlight();
+    const task = vi.fn(async () => {
+      await new Promise((r) => setTimeout(r, 2));
+      return 7;
+    });
+    expect(await Promise.all([flight("k", task), flight("k", task), flight("k", task)])).toEqual([7, 7, 7]);
+    expect(task).toHaveBeenCalledTimes(1);
+    await flight("k", task);
+    expect(task).toHaveBeenCalledTimes(2);
   });
 });

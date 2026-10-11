@@ -1,4 +1,5 @@
 import "@/components/v3-pages/directory.css";
+import { prebuildSlice } from "@/lib/build/prebuild";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -27,12 +28,12 @@ import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 export const revalidate = 3600;
 
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // English is prebuilt in full; French and Spanish get a few and render the rest
-  // on first visit, then cache (ISR). Prebuilding every language tripled the build.
+  // A few pages are prebuilt (lib/build/prebuild); the rest render
+  // on first visit, then cache (ISR), so deploys do not stampede the database.
   // (An empty list for any language switches prebuilding off for the whole route.)
   const [trades, suppliers] = await Promise.all([listVendors(), listVendors({ orgType: "supplier" })]);
   const all = [...trades, ...suppliers].map((v) => ({ slug: v.slug }));
-  return params.lang === "en" ? all : all.slice(0, 3);
+  return prebuildSlice(all, params.lang);
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }): Promise<Metadata> {

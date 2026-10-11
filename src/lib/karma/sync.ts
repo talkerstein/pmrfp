@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { mapLimit } from "@/lib/concurrency";
 import { SYSTEM_HANDLE } from "@/lib/forum/auto-threads";
 import {
   SYNC_REVERSAL,
@@ -72,27 +73,30 @@ function one<T>(v: T | T[] | null | undefined): T | null {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function loadSnapshot(db: SupabaseClient, warnings: string[]): Promise<KarmaSnapshot> {
-  const [orgs, members, profiles, votes, ratings, accepted, hideLog, hiddenThreads, hiddenPosts, caseStudies, reviews, rfps, interests] = await Promise.all([
-    readAll<any>("organizations", warnings, (a, b) => db.from("organizations").select("id,website,email,profile_status,status,is_demo,verified,created_at").order("id").range(a, b)),
-    readAll<any>("organization_members", warnings, (a, b) => db.from("organization_members").select("user_id,organization_id,users_profile(email)").order("id").range(a, b)),
-    readAll<any>("forum_profiles", warnings, (a, b) => db.from("forum_profiles").select("user_id,organization_id,banned,handle").order("user_id").range(a, b)),
-    readAll<any>("forum_post_votes", warnings, (a, b) =>
+  // Three tables at a time (was all 13 at once): this also runs after forum votes and reviews.
+  const reads: (() => Promise<any[]>)[] = [
+    () => readAll<any>("organizations", warnings, (a, b) => db.from("organizations").select("id,website,email,profile_status,status,is_demo,verified,created_at").order("id").range(a, b)),
+    () => readAll<any>("organization_members", warnings, (a, b) => db.from("organization_members").select("user_id,organization_id,users_profile(email)").order("id").range(a, b)),
+    () => readAll<any>("forum_profiles", warnings, (a, b) => db.from("forum_profiles").select("user_id,organization_id,banned,handle").order("user_id").range(a, b)),
+    () => readAll<any>("forum_post_votes", warnings, (a, b) =>
       db.from("forum_post_votes").select("post_id,user_id,created_at,forum_posts(author_id,status,forum_threads(status))").order("created_at").range(a, b)),
-    readAll<any>("forum_thread_ratings", warnings, (a, b) =>
+    () => readAll<any>("forum_thread_ratings", warnings, (a, b) =>
       db.from("forum_thread_ratings").select("thread_id,user_id,score,created_at,forum_threads(author_id,status)").order("created_at").range(a, b)),
-    readAll<any>("accepted answers", warnings, (a, b) =>
+    () => readAll<any>("accepted answers", warnings, (a, b) =>
       db.from("forum_posts").select("id,author_id,status,created_at,forum_threads(author_id,status)").eq("is_accepted", true).order("id").range(a, b)),
-    readAll<any>("forum_mod_log", warnings, (a, b) => db.from("forum_mod_log").select("target_type,target_id,created_at").eq("action", "hide").order("created_at").range(a, b)),
-    readAll<any>("hidden threads", warnings, (a, b) => db.from("forum_threads").select("id,author_id").eq("status", "hidden").order("id").range(a, b)),
-    readAll<any>("hidden posts", warnings, (a, b) => db.from("forum_posts").select("id,author_id").eq("status", "hidden").order("id").range(a, b)),
-    readAll<any>("case_studies", warnings, (a, b) => db.from("case_studies").select("id,organization_id,status,published_at,created_at").eq("status", "published").order("id").range(a, b)),
-    readAll<any>("vendor_reviews", warnings, (a, b) =>
+    () => readAll<any>("forum_mod_log", warnings, (a, b) => db.from("forum_mod_log").select("target_type,target_id,created_at").eq("action", "hide").order("created_at").range(a, b)),
+    () => readAll<any>("hidden threads", warnings, (a, b) => db.from("forum_threads").select("id,author_id").eq("status", "hidden").order("id").range(a, b)),
+    () => readAll<any>("hidden posts", warnings, (a, b) => db.from("forum_posts").select("id,author_id").eq("status", "hidden").order("id").range(a, b)),
+    () => readAll<any>("case_studies", warnings, (a, b) => db.from("case_studies").select("id,organization_id,status,published_at,created_at").eq("status", "published").order("id").range(a, b)),
+    () => readAll<any>("vendor_reviews", warnings, (a, b) =>
       db.from("vendor_reviews").select("id,organization_id,case_study_id,status,verified_via,reviewer_email,reviewer_user_id,created_at").not("case_study_id", "is", null).order("id").range(a, b)),
-    readAll<any>("rfp_posts", warnings, (a, b) =>
+    () => readAll<any>("rfp_posts", warnings, (a, b) =>
       db.from("rfp_posts").select("id,posted_by_organization_id,source_type,status,published_at,awarded_rfp_id,is_demo,created_at")
         .in("source_type", ["property_manager_direct", "gc_package"]).not("posted_by_organization_id", "is", null).order("id").range(a, b)),
-    readAll<any>("rfp_interests", warnings, (a, b) => db.from("rfp_interests").select("rfp_id,trade_organization_id,created_at").order("id").range(a, b)),
-  ]);
+    () => readAll<any>("rfp_interests", warnings, (a, b) => db.from("rfp_interests").select("rfp_id,trade_organization_id,created_at").order("id").range(a, b)),
+  ];
+  const [orgs, members, profiles, votes, ratings, accepted, hideLog, hiddenThreads, hiddenPosts, caseStudies, reviews, rfps, interests] =
+    await mapLimit(reads, 3, (read) => read());
 
   const hidden = new Map<string, { type: "thread" | "post"; authorId: string }>();
   for (const t of hiddenThreads) hidden.set(`thread:${t.id}`, { type: "thread", authorId: t.author_id });
@@ -276,6 +280,26 @@ async function linkForumProfiles(db: SupabaseClient, snap: KarmaSnapshot, warnin
   return n;
 }
 
+// A scoped sync still reads every source table (the ledger is derived from all
+// of them). Coalesce: one sync at a time per server instance; scopes that
+// arrive meanwhile are merged and synced once when it finishes, so a burst of
+// forum votes costs one or two syncs instead of one per vote.
+let pending: { orgIds: Set<string>; userIds: Set<string> } | null = null;
+let draining: Promise<void> | null = null;
+
+function drainKarmaSyncs(): Promise<void> {
+  draining ??= (async () => {
+    while (pending) {
+      const scope = pending;
+      pending = null;
+      await syncKarma({ orgIds: [...scope.orgIds], userIds: [...scope.userIds] }).catch(() => undefined);
+    }
+  })().finally(() => {
+    draining = null;
+  });
+  return draining;
+}
+
 /**
  * Fire-and-forget scoped sync after a scoring action. Runs after the
  * response with after(); outside a request (tests, scripts) it just runs.
@@ -285,7 +309,10 @@ export async function karmaSyncAfter(scope: { orgIds?: (string | null | undefine
   const orgIds = (scope.orgIds ?? []).filter((x): x is string => Boolean(x));
   const userIds = (scope.userIds ?? []).filter((x): x is string => Boolean(x));
   if (!orgIds.length && !userIds.length) return;
-  const run = () => syncKarma({ orgIds, userIds }).then(() => undefined, () => undefined);
+  pending ??= { orgIds: new Set(), userIds: new Set() };
+  for (const id of orgIds) pending.orgIds.add(id);
+  for (const id of userIds) pending.userIds.add(id);
+  const run = () => drainKarmaSyncs();
   try {
     const { after } = await import("next/server");
     after(run);

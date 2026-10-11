@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prebuildSlice } from "@/lib/build/prebuild";
 import Link from "@/i18n/link";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/container";
@@ -12,12 +13,12 @@ import { LOCALE_TAG, hasLocale } from "@/i18n/config";
 export const revalidate = 3600;
 
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // English is prebuilt in full; French and Spanish get a few and render the rest
-  // on first visit, then cache (ISR). Prebuilding every language tripled the build.
+  // A few pages are prebuilt (lib/build/prebuild); the rest render
+  // on first visit, then cache (ISR), so deploys do not stampede the database.
   // (An empty list for any language switches prebuilding off for the whole route.)
   const resources = await listResources();
   const all = resources.map((r) => ({ slug: r.slug }));
-  return params.lang === "en" ? all : all.slice(0, 3);
+  return prebuildSlice(all, params.lang);
 }
 
 export async function generateMetadata({
