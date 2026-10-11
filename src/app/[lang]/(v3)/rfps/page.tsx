@@ -6,6 +6,7 @@ import { DigestBand } from "@/components/v3-pages/digest";
 import { PriceLine } from "@/components/v3-pages/price";
 import { SubmitSelect } from "@/components/v3-pages/submit-select";
 import { listRfps, withPublicRfpPhotos } from "@/lib/data/rfps";
+import { resolveBoardCountry, type BoardCountry } from "@/lib/data/board-country";
 import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
@@ -33,12 +34,14 @@ const AWARDED_PREVIEW = 9;
 const SIDEBAR_TRADES = 11;
 const HERO_IMG = "/images/photos/site-crew-deck.webp";
 
-export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | undefined>> }): Promise<Metadata> {
   const { lang: raw } = await params;
   const lang: Locale = hasLocale(raw) ? raw : "en";
   const t = getDictionary(lang).board.meta;
-  const { country } = await getVisitorCountry();
-  const open = (await getOpenRfpCounts(null, undefined, country).catch(() => ({ totalOpen: 0 }))).totalOpen;
+  const [visitor, filters] = await Promise.all([getVisitorCountry(), searchParams]);
+  const country = resolveBoardCountry(filters, visitor.country);
+  const countCountry = country === "all" ? null : country === "us" ? "US" : "CA";
+  const open = (await getOpenRfpCounts(null, undefined, countCountry).catch(() => ({ totalOpen: 0 }))).totalOpen;
   return {
     // Live count + "free" in the title: searchers compare boards on volume and price.
     title: open > 0 ? plural(open, t.titleCount, { n: lang === "en" ? String(open) : formatNumber(open, lang) }) : t.title,
@@ -47,7 +50,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   };
 }
 
-type Country = "ca" | "us" | "all";
+type Country = BoardCountry;
 type Closing = "all" | "today" | "tomorrow" | "week" | "later";
 type Source = "all" | "public" | "pm";
 
@@ -95,12 +98,7 @@ export default async function RfpsPage({
   // Country: the visitor's market by default (U.S. visitors see U.S. work
   // first, Canadians Canadian), switchable with the tabs. A region filter
   // already picks a place, so it shows every country.
-  const country: Country =
-    sp.country === "ca" || sp.country === "us" || sp.country === "all"
-      ? sp.country
-      : sp.region
-        ? "all"
-        : market === "US" ? "us" : "ca";
+  const country = resolveBoardCountry(sp, market);
   const closing: Closing = (["today", "tomorrow", "week", "later"] as const).find((c) => c === sp.closing) ?? "all";
   const source: Source = sp.source === "public" || sp.source === "pm" ? sp.source : "all";
   const inCountry = (c: Country) => (r: RfpListItem) => c === "all" || (rfpMarket(r) === "US") === (c === "us");

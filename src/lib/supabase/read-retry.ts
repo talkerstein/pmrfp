@@ -19,10 +19,12 @@ export async function retryTableRead(
   input: Parameters<typeof fetch>[0],
   init: RequestInit,
   transport: typeof fetch,
+  retryEnabled = true,
 ): Promise<Response> {
   const request = input instanceof Request ? input : null;
   const signal = init.signal ?? request?.signal;
   const path = new URL(request?.url ?? String(input)).pathname;
+  if (!retryEnabled) return transport(input, init);
   const sdkRetry = Number(new Headers(init.headers).get("x-retry-count") ?? "0");
   if (sdkRetry > 0) {
     // supabase-js already retries up to three times. Do not nest our retry

@@ -54,3 +54,25 @@ Genuinely invalid sessions still redirect to sign-in. Recovery logs contain only
 endpoint paths, outcome and HTTP status, never tokens, query parameters or users.
 Persistent failures still surface; no empty-data success fallback is introduced.
 Measure actual egress separately: request reduction is not a byte-savings result.
+
+### October 11 follow-up
+
+Supabase was still on Nano after the organization upgraded to Pro. Applied the
+same-price Micro upgrade (+$0/month in the dashboard review), doubling memory
+from up to 0.5 GB to 1 GB. Restart completed and the primary returned online.
+The disk I/O budget warning is historical/ongoing; a short healthy sample does
+not establish sustained recovery or measured bandwidth savings.
+
+Bound the shared founding-header count to a three-second cancellation signal,
+disabled SDK retries for that count, and coalesced concurrent cold loads inside
+its Next cache boundary. Checkout continues to fail closed when its exact count
+cannot be verified. Explicitly deadline-bound public reads, including board
+snapshot pages, now bypass the wrapper's extra retry as well as the SDK retries
+already disabled by those callers. The rest of the read cache policy is retained.
+
+RFP metadata and the board now resolve the same country filter: an explicit
+United States tab uses the U.S. count even when the visitor's market is Canada.
+The previously deployed shared snapshot/count and founding-cache changes from
+PR #136 remain in place. Post-upgrade query diagnostics showed 99.38% database
+cache hits and sampled snapshot queries averaging 3–5 ms; these are a short
+window, not proof of the original incident's sole cause.

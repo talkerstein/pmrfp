@@ -1,4 +1,5 @@
 import "server-only";
+import { createSingleFlight } from "@/lib/concurrency";
 import { unstable_cache } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -10,7 +11,9 @@ export async function countLifetimeOrgs(): Promise<number> {
   const { count, error } = await createServiceClient()
     .from("subscriptions")
     .select("id", { count: "exact", head: true })
-    .like("stripe_subscription_id", `${LIFETIME_SUB_PREFIX}%`);
+    .like("stripe_subscription_id", `${LIFETIME_SUB_PREFIX}%`)
+    .abortSignal(AbortSignal.timeout(3000))
+    .retry(false);
   if (error) throw new Error(error.message);
   return count ?? 0;
 }
@@ -24,7 +27,8 @@ let failedAt = 0;
  * pages (every /contract-winners/* page) from static to dynamic at runtime and
  * made them error on each visit.
  */
-const sharedLifetimeCount = unstable_cache(async () => countLifetimeOrgs(), ["founding-lifetime-count-v1"], {
+const oneCount = createSingleFlight();
+const sharedLifetimeCount = unstable_cache(async (_projectUrl: string) => oneCount(`founding:${_projectUrl}`, countLifetimeOrgs), ["founding-lifetime-count-v1"], {
   revalidate: 60,
   tags: ["founding"],
 });
@@ -36,7 +40,7 @@ export async function cachedLifetimeCount(): Promise<number | null> {
   // board request during the 2026-10-09 outage).
   if (Date.now() - failedAt < 30_000) return cached?.sold ?? null;
   try {
-    const sold = await sharedLifetimeCount();
+    const sold = await sharedLifetimeCount(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
     cached = { at: Date.now(), sold };
     return sold;
   } catch (err) {
