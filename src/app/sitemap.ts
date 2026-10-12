@@ -10,6 +10,7 @@ import { listResources } from "@/lib/data/resources";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listQualifyingCombos } from "@/lib/data/trade-city";
 import { listCaseStudies } from "@/lib/data/case-studies";
+import { benchmarkAwards, benchmarkCombos, provinceSlug } from "@/lib/data/price-benchmarks";
 import { COMPETITORS } from "@/lib/seo/competitors";
 import { VERTICALS } from "@/lib/seo/verticals";
 import { COST_GUIDES } from "@/lib/seo/cost-guides";
@@ -123,6 +124,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Trade×city pages exist only for combos that clear the vendor gate, so the
   // sitemap stays in lockstep with what actually renders.
   for (const tc of tradeCityCombos) entries.push({ url: `${base}/trades/${tc.category.slug}/${tc.region.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  // Price benchmarks: only trade × province pages with a real range (5+ valued
+  // awards) — the same rule that keeps the others noindexed.
+  const benchCombos = benchmarkCombos(benchmarkAwards(rfps, { regionProvince: new Map(regions.map((rg) => [rg.name, rg.province] as const)) }), torontoToday()).filter((c) => c.enough);
+  if (benchCombos.length) entries.push({ url: `${base}/benchmarks`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  for (const c of benchCombos) {
+    const slug = categories.find((cat) => cat.name === c.trade)?.slug;
+    if (slug) entries.push({ url: `${base}/benchmarks/${slug}/${provinceSlug(c.province)}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
+  }
   // Public projects only (listCaseStudies drops unlisted and private). The
   // /projects gallery is noindexed while it's empty, so it's listed only then.
   if (caseStudies.length > 0) entries.push({ url: `${base}/projects`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });

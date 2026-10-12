@@ -34,6 +34,9 @@ import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
 import { isGcPackage, sourceTypeLabel, tradeWords } from "@/lib/gc/packages";
 import { getAwardById, listPackagesForAward } from "@/lib/gc/data";
 import { getAwardIndex, intelFor } from "@/lib/data/award-intel";
+import { benchmarkView } from "@/lib/data/price-benchmarks";
+import { benchmarkForListing, benchmarkPath } from "@/lib/data/price-benchmarks-load";
+import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
 import { pickSponsor, type SponsorContext } from "@/lib/sponsors/registry";
 import { rfpMarket } from "@/lib/visitor-geo";
 import { PRICING } from "@/lib/site";
@@ -194,11 +197,25 @@ export default async function RfpDetailPage({
   ]);
   const closesLabel = isGc ? t.facts.quotesDue : t.facts.closes;
   const dateLabel = isAward ? t.facts.awarded : isClosed ? t.facts.closed : closesLabel;
+  // "What similar contracts sold for": the trade × province price benchmark
+  // (last 24 months, range from 5 valued awards). Numbers for members only.
+  const bench = await benchmarkForListing(teaser).catch(() => null);
+  const benchCard = bench ? (
+    <PriceBenchmarkCard
+      view={benchmarkView(bench.benchmark, showFull)}
+      href={benchmarkPath(bench.tradeSlug, bench.benchmark.province)}
+      upgradeHref={upgradeHref}
+    />
+  ) : null;
   // "What this job is worth": open tenders only; the numbers render for members only.
-  const intel = !isAward && !isClosed ? intelFor(teaser, await getAwardIndex()) : null;
-  const intelCard = intel ? (
+  // When the province benchmark has a real range it takes this slot (same
+  // question, stricter rules, links to the full benchmark).
+  const intel = !isAward && !isClosed && !bench?.benchmark.enough ? intelFor(teaser, await getAwardIndex()) : null;
+  const intelCard = !isAward && !isClosed && bench?.benchmark.enough ? benchCard : intel ? (
     <AwardIntelCard intel={showFull ? intel : { scope: intel.scope, trade: intel.trade, count: intel.count }} locked={!showFull} upgradeHref={upgradeHref} />
   ) : null;
+  // Award and closed pages: the benchmark sits in the side column.
+  const asideBenchCard = (isAward || isClosed) && bench ? benchCard : null;
 
   const firstTrade = teaser.categories[0];
   const tradeSlug = firstTrade ? categories.find((c) => c.name === firstTrade)?.slug : undefined;
@@ -653,6 +670,7 @@ export default async function RfpDetailPage({
             </div>
           )}
 
+          {asideBenchCard && <div className="v3-tw">{asideBenchCard}</div>}
           {isAward && award?.winner && <div className="v3-tw"><GcPackageCta awardSlug={teaser.slug} /></div>}
           <div className="v3-tw"><SponsorSlot ctx={sponsorCtx} /></div>
           {!isAward && (

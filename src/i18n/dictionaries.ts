@@ -21,6 +21,7 @@ import directoryClient from "./messages/directoryClient";
 import sales from "./messages/sales";
 import salesClient from "./messages/salesClient";
 import writer from "./messages/writer";
+import benchmarks from "./messages/benchmarks";
 import auth from "./messages/auth";
 import dash from "./messages/dash";
 import dashClient from "./messages/dashClient";
@@ -61,6 +62,7 @@ const NAMESPACES = {
   sales,
   salesClient,
   writer,
+  benchmarks,
   auth,
   dash,
   dashClient,
