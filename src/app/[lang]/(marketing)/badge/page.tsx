@@ -93,6 +93,14 @@ export default async function BadgePage({
         <BadgeEmbed base={base} slug={slug} profileUrl={profileUrl} />
       </div>
 
+      {!isSample && (
+        <p className="mt-6 text-sm">
+          <Link href={`/badges/company/${slug}`} className="font-medium text-teal-700 hover:underline">
+            {fmt(getT("growth").badges.kit, { name: linked?.name ?? session?.organization?.name ?? "" })} →
+          </Link>
+        </p>
+      )}
+
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-5">
         <div>
           <h2 className="text-base font-semibold">{t.more.title}</h2>

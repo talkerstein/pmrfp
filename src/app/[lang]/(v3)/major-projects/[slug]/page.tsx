@@ -17,6 +17,8 @@ import { fmt, formatDate } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { FreeGate } from "@/components/growth/free-gate";
+import { majorProjectView } from "@/lib/growth/gate";
 
 export const revalidate = 3600;
 
@@ -83,8 +85,12 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
       isOpen: r.status === "open",
       isAward: isPastContract(r),
     }));
-  const related = relatedWork(p, candidates);
+  const related = session ? relatedWork(p, candidates) : { open: [], awards: [] };
   const trades = p.tradesNeeded.map((s) => nameBySlug.get(s)).filter((x): x is string => Boolean(x));
+  // Free-account gate: signed-out visitors (crawlers included) get the summary only;
+  // the details below are rendered from `member`, which is null for them.
+  const { member } = majorProjectView(p, { trades, open: related.open, awards: related.awards }, Boolean(session));
+  const here = `/major-projects/${p.slug}`;
   const sourceName = m.sourceNames[p.source] ?? p.source;
   const place = [p.city, p.province ? regionName(p.province, lang) : null].filter(Boolean).join(", ");
   let no = 0;
@@ -127,22 +133,23 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
               <tr>
                 <th scope="row">{t.facts.status}</th>
                 <td>
-                  {p.statusDate ? fmt(t.statusAsOf, { status: m.statuses[p.status], date: day(p.statusDate, lang) }) : m.statuses[p.status]}
-                  {p.statusRaw && p.statusRaw.toLowerCase() !== m.statuses[p.status].toLowerCase() && <span className="sub"> {fmt(t.sourceWording, { text: p.statusRaw })}</span>}
+                  {member?.statusDate ? fmt(t.statusAsOf, { status: m.statuses[p.status], date: day(member.statusDate, lang) }) : m.statuses[p.status]}
+                  {member?.statusRaw && member.statusRaw.toLowerCase() !== m.statuses[p.status].toLowerCase() && <span className="sub"> {fmt(t.sourceWording, { text: member.statusRaw })}</span>}
                 </td>
               </tr>
-              {p.size && <tr><th scope="row">{t.size}</th><td>{p.size}</td></tr>}
-              {p.timeline && <tr><th scope="row">{t.timeline}</th><td>{p.timeline}</td></tr>}
-              {p.evidence && <tr><th scope="row">{t.evidenceLabel}</th><td data-evidence={p.evidence}>{t.evidence[p.evidence]}</td></tr>}
+              {member?.size && <tr><th scope="row">{t.size}</th><td>{member.size}</td></tr>}
+              {member?.timeline && <tr><th scope="row">{t.timeline}</th><td>{member.timeline}</td></tr>}
+              {member?.evidence && <tr><th scope="row">{t.evidenceLabel}</th><td data-evidence={member.evidence}>{t.evidence[member.evidence]}</td></tr>}
             </tbody>
           </table>
         </div>
-        {p.caveats && <p className="small muted"><b>{t.caveats}:</b> {p.caveats}</p>}
+        {member?.caveats && <p className="small muted"><b>{t.caveats}:</b> {member.caveats}</p>}
+        {!member && <FreeGate kind="project" path={here} />}
 
-        {trades.length > 0 && (
+        {member && member.trades.length > 0 && (
           <>
             <SH2 no={++no} id="trades">{t.trades}</SH2>
-            <p>{trades.map((n) => tradeName(n, lang)).join(" · ")}</p>
+            <p>{member.trades.map((n) => tradeName(n, lang)).join(" · ")}</p>
             <p className="small muted">{t.tradesNote}</p>
           </>
         )}
@@ -174,10 +181,12 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
           </div>
         )}
 
+        {member && (
+        <>
         <SH2 no={++no} id="open">{t.openTitle}</SH2>
-        {related.open.length ? (
+        {member.open.length ? (
           <ul className="s-table" data-list="open">
-            {related.open.map((r) => (
+            {member.open.map((r) => (
               <li key={r.slug}>
                 <span className="code" aria-hidden>{r.deadline ? Number(r.deadline.slice(8, 10)) : "—"}</span>
                 <span>
@@ -191,12 +200,12 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
           <p className="muted">{t.openNone}</p>
         )}
 
-        {related.awards.length > 0 && (
+        {member.awards.length > 0 && (
           <>
             <SH2 no={++no} id="awards">{t.awardsTitle}</SH2>
             <p className="small muted">{t.awardsBody}</p>
             <ul className="s-table" data-list="awards">
-              {related.awards.map((r) => (
+              {member.awards.map((r) => (
                 <li key={r.slug}>
                   <span className="code" aria-hidden>{r.deadline ? Number(r.deadline.slice(8, 10)) : "—"}</span>
                   <span>
@@ -207,6 +216,8 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
               ))}
             </ul>
           </>
+        )}
+        </>
         )}
 
         <div className="g-cta">

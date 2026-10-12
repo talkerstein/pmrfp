@@ -18,6 +18,7 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { V3Body } from "@/components/v3/body";
+import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
@@ -350,6 +351,8 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
               </ol>
             </div>
           </section>
+
+          <div className="wrap"><DigestSignupBlock source="forum" /></div>
 
           <section className="f-end">
             <div className="wrap f-end-in">

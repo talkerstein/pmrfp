@@ -1,0 +1,89 @@
+/** Client strings for the growth pack (the weekly email sign-up form). Placeholders: {email} {n}. */
+const en = {
+  digest: {
+    email: "Email",
+    country: "Country",
+    canada: "Canada",
+    us: "United States",
+    province: "Province",
+    state: "State",
+    pick: "Choose…",
+    trades: "Your trades (up to 5)",
+    tradesHint: "Leave empty to get every trade.",
+    consent: "Yes, email me the free weekly PMRFP digest. I can unsubscribe at any time.",
+    submit: "Get the weekly email",
+    sending: "Sending…",
+    sentTitle: "Check your inbox",
+    sentBody: "If {email} isn't already subscribed, a confirmation link is on its way. The weekly email starts after you click it.",
+    again: "Use a different email",
+    errors: {
+      email: "Enter a valid email address.",
+      province: "Choose your province or state.",
+      consent: "Tick the box to confirm you want the email.",
+      trades: "Choose 5 trades or fewer.",
+      rate: "Too many sign-ups from here. Wait a minute and try again.",
+      off: "The weekly email isn't open yet.",
+      failed: "Something went wrong. Please try again.",
+    },
+  },
+};
+
+const fr: typeof en = {
+  digest: {
+    email: "Courriel",
+    country: "Pays",
+    canada: "Canada",
+    us: "États-Unis",
+    province: "Province",
+    state: "État",
+    pick: "Choisir…",
+    trades: "Vos corps de métier (jusqu'à 5)",
+    tradesHint: "Laissez vide pour recevoir tous les corps de métier.",
+    consent: "Oui, envoyez-moi le résumé hebdomadaire gratuit de PMRFP. Je peux me désabonner en tout temps.",
+    submit: "Recevoir le courriel hebdomadaire",
+    sending: "Envoi…",
+    sentTitle: "Vérifiez votre boîte de réception",
+    sentBody: "Si {email} n'est pas déjà abonné, un lien de confirmation s'en vient. Le courriel hebdomadaire commence après que vous aurez cliqué dessus.",
+    again: "Utiliser un autre courriel",
+    errors: {
+      email: "Entrez une adresse courriel valide.",
+      province: "Choisissez votre province ou État.",
+      consent: "Cochez la case pour confirmer que vous voulez le courriel.",
+      trades: "Choisissez 5 corps de métier ou moins.",
+      rate: "Trop d'inscriptions d'ici. Attendez une minute et réessayez.",
+      off: "Le courriel hebdomadaire n'est pas encore ouvert.",
+      failed: "Une erreur s'est produite. Veuillez réessayer.",
+    },
+  },
+};
+
+const es: typeof en = {
+  digest: {
+    email: "Correo electrónico",
+    country: "País",
+    canada: "Canadá",
+    us: "Estados Unidos",
+    province: "Provincia",
+    state: "Estado",
+    pick: "Elegir…",
+    trades: "Sus oficios (hasta 5)",
+    tradesHint: "Déjelo vacío para recibir todos los oficios.",
+    consent: "Sí, envíenme el resumen semanal gratuito de PMRFP. Puedo cancelar la suscripción en cualquier momento.",
+    submit: "Recibir el correo semanal",
+    sending: "Enviando…",
+    sentTitle: "Revise su bandeja de entrada",
+    sentBody: "Si {email} no está suscrito todavía, le enviamos un enlace de confirmación. El correo semanal empieza cuando haga clic en él.",
+    again: "Usar otro correo",
+    errors: {
+      email: "Ingrese un correo electrónico válido.",
+      province: "Elija su provincia o estado.",
+      consent: "Marque la casilla para confirmar que quiere el correo.",
+      trades: "Elija 5 oficios o menos.",
+      rate: "Demasiadas suscripciones desde aquí. Espere un minuto e inténtelo de nuevo.",
+      off: "El correo semanal todavía no está abierto.",
+      failed: "Algo salió mal. Inténtelo de nuevo.",
+    },
+  },
+};
+
+export default { en, fr, es };

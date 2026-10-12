@@ -17,6 +17,9 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { FreeGate } from "@/components/growth/free-gate";
+import { gateBenchmarkView } from "@/lib/growth/gate";
 
 type Params = Promise<{ lang: string; trade: string; province: string }>;
 type SP = Promise<Record<string, string | undefined>>;
@@ -68,11 +71,13 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
   const province = regionName(r.province, lang);
   const countryName = t.country[b.country];
 
-  // Trade Pro sees the numbers. Demo mode (no Supabase) shows them unless ?view=locked.
+  // Trade Pro sees the numbers. Demo mode (no Supabase) shows them unless ?view=locked / ?view=signed-out.
   const configured = isSupabaseConfigured();
   const session = configured ? await getSession() : null;
-  const pro = configured ? Boolean(session?.hasTradeAccess) : sp.view !== "locked";
-  const view = benchmarkView(b, pro);
+  const pro = configured ? Boolean(session?.hasTradeAccess) : sp.view !== "locked" && sp.view !== "signed-out";
+  // Free-account gate: signed out (crawlers too) = summary only; the gated lists are not in the data.
+  const signedIn = configured ? Boolean(session) : sp.view !== "signed-out";
+  const view = gateBenchmarkView(benchmarkView(b, pro), signedIn);
   const upgradeHref = session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly");
 
   const path = L(benchmarkPath(r.category.slug, r.province));
@@ -230,7 +235,9 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
           </>
         )}
 
-        {b.total > 0 && (
+        {view.gated && b.total > 0 && <FreeGate kind="benchmark" path={benchmarkPath(r.category.slug, r.province)} />}
+
+        {b.total > 0 && !view.gated && (
           <>
             <SH2 no={++no} id="awards">{view.pro ? tp.sec.awards : tp.sec.examples}</SH2>
             <div className="s-dtw">
@@ -280,7 +287,7 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
           </>
         )}
 
-        {b.total > 0 && (
+        {b.total > 0 && !view.gated && (
           <>
             <SH2 no={++no} id="winners">{tp.sec.winners}</SH2>
             {view.pro ? (
@@ -307,23 +314,27 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
           </>
         )}
 
-        {b.cities.length > 0 && (
+        {view.data.cities.length > 0 && (
           <>
             <SH2 no={++no} id="cities">{tp.sec.cities}</SH2>
-            <CityTable trade={r.category.name} province={r.province} cities={b.cities} pro={view.pro} currency={b.currency} lang={lang} labels={tp} />
+            <CityTable trade={r.category.name} province={r.province} cities={view.data.cities} pro={view.pro} currency={b.currency} lang={lang} labels={tp} />
             <p className="small muted">{tp.citiesNote}</p>
           </>
         )}
 
-        <SH2 no={++no} id="methodology">{tp.sec.method}</SH2>
-        <div className="s-callout">
-          <p>{fmt(t.method.window, vars)}</p>
-          <p>{fmt(t.method.included, vars)}</p>
-          <p>{fmt(t.method.excluded, { min: priceLabel(MIN_USABLE_AMOUNT, b.currency, lang) })}</p>
-          <p>{t.method.stats}</p>
-          <p>{t.method.caveat}</p>
-          <p>{t.method.names}</p>
-        </div>
+        {!view.gated && (
+          <>
+            <SH2 no={++no} id="methodology">{tp.sec.method}</SH2>
+            <div className="s-callout">
+              <p>{fmt(t.method.window, vars)}</p>
+              <p>{fmt(t.method.included, vars)}</p>
+              <p>{fmt(t.method.excluded, { min: priceLabel(MIN_USABLE_AMOUNT, b.currency, lang) })}</p>
+              <p>{t.method.stats}</p>
+              <p>{t.method.caveat}</p>
+              <p>{t.method.names}</p>
+            </div>
+          </>
+        )}
         {sourceKeys.length > 0 && (
           <>
             <h3 className="s-h2 sm">{tp.sec.sources}</h3>
@@ -364,6 +375,12 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
             )}
           </>
         )}
+
+        {/* The trade × province sponsor (lib/sponsors), below the content, labelled "Sponsored". */}
+        <SponsorSlot
+          className="mt-8 max-w-md"
+          ctx={{ placement: "benchmark", market: b.country, province: r.province, categories: [r.category.slug], seed: `${r.category.slug}|${r.province}` }}
+        />
 
         <div className="s-links">
           <a href={L(BENCHMARKS_PATH)}>{tp.index} →</a>

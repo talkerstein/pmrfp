@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DirectoryList, LIST_PATH, PER_PAGE, listHref, paginate } from "@/components/home-v3/directory-list";
+import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 import { V3Price, V3PriceParts } from "@/components/home-v3/chrome";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { awardTotals, listWinners } from "@/lib/data/winners";
@@ -144,6 +145,7 @@ export default async function ContractWinnersPage({
               }
             : null
         }
+        beforeClose={<DigestSignupBlock source="contract-winners" />}
         noMatch={!filtered.length && filteredView ? { clearHref: "/contract-winners" } : null}
         empty={null}
         close={{
