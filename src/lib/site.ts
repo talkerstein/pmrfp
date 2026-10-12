@@ -122,6 +122,7 @@ export const ADMIN_NAV = [
   { href: "/admin/organizations", label: "Organizations" },
   { href: "/admin/rfps", label: "RFPs" },
   { href: "/admin/gc-leads", label: "GC Leads" },
+  { href: "/admin/major-projects", label: "Major Projects" },
   { href: "/admin/subscriptions", label: "Subscriptions" },
   { href: "/admin/interests", label: "Interests" },
   { href: "/admin/contact-requests", label: "Contact Requests" },

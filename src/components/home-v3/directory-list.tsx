@@ -15,7 +15,9 @@ import { LevelBadge } from "@/components/karma/level-badge";
  * number and card comes from live data; sections without data are hidden.
  */
 
-export type ListType = "trades" | "suppliers" | "winners" | "jobs" | "talent";
+export type ListType = "trades" | "suppliers" | "winners" | "jobs" | "talent" | "projects";
+/** The five directory lists that share the tab row (major projects has none). */
+export type TabType = Exclude<ListType, "projects">;
 export type ListCopy = Messages["v3Pages"]["list"];
 
 export const LIST_PATH: Record<ListType, string> = {
@@ -24,6 +26,7 @@ export const LIST_PATH: Record<ListType, string> = {
   winners: "/contract-winners",
   jobs: "/jobs",
   talent: "/talent",
+  projects: "/major-projects",
 };
 
 export interface DLCard {
@@ -55,8 +58,8 @@ export interface DLProps {
   links?: DLLink[];
   search: { q: string; placeholder: string; button: string; keep: Record<string, string | undefined> } | null;
   ctas: [DLLink, DLLink];
-  /** Live count per list (null = unknown, the pill is hidden). */
-  tabs: Record<ListType, number | null>;
+  /** Live count per list (null = unknown, the pill is hidden). Null hides the tab row. */
+  tabs: Record<TabType, number | null> | null;
   filters: { name: string; label: string; value: string; options: { value: string; label: string }[] }[];
   /** Null hides the "Verified only" switch. */
   verified: boolean | null;
@@ -152,7 +155,8 @@ export function DirectoryList(p: DLProps) {
   const from = list && list.total ? (list.page - 1) * list.perPage + 1 : 0;
   const to = list ? Math.min(list.total, list.page * list.perPage) : 0;
   const showing = list ? t.showing.replace("{from}", num(from)).replace("{to}", num(to)).replace("{total}", num(list.total)) : "";
-  const tabKeys: ListType[] = ["trades", "suppliers", "winners", "jobs", "talent"];
+  const tabKeys: TabType[] = ["trades", "suppliers", "winners", "jobs", "talent"];
+  const tabs = p.tabs;
 
   return (
     <>
@@ -194,14 +198,16 @@ export function DirectoryList(p: DLProps) {
               <a href={L(p.ctas[1].href)} className="v3-pill ghost">{p.ctas[1].label}</a>
             </div>
 
-            <nav aria-label={t.tabsLabel} className="v3-dl-tabs">
-              {tabKeys.map((k) => (
-                <a key={k} href={L(LIST_PATH[k])} className="v3-dl-tab" aria-current={k === p.type ? "page" : undefined}>
-                  {t.tabs[k]}
-                  {p.tabs[k] != null && <span className="c">{num(p.tabs[k]!)}</span>}
-                </a>
-              ))}
-            </nav>
+            {tabs && (
+              <nav aria-label={t.tabsLabel} className="v3-dl-tabs">
+                {tabKeys.map((k) => (
+                  <a key={k} href={L(LIST_PATH[k])} className="v3-dl-tab" aria-current={k === p.type ? "page" : undefined}>
+                    {t.tabs[k]}
+                    {tabs[k] != null && <span className="c">{num(tabs[k]!)}</span>}
+                  </a>
+                ))}
+              </nav>
+            )}
           </div>
         </section>
       </div>

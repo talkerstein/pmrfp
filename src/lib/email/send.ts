@@ -3,6 +3,7 @@ import { COPY, SITE } from "@/lib/site";
 import { ROLE_LABEL, withDelta, type WeeklyReport } from "@/lib/admin/weekly-report";
 import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
 import { recentAwardsHtml } from "@/lib/alerts/awards";
+import { majorProjectsHtml } from "@/lib/major-projects/alerts";
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset
@@ -225,6 +226,8 @@ export async function sendDailyMatches(
     mailingAddress: string | null;
     /** Optional "Recently awarded near you" lines (see lib/alerts/awards). */
     recentAwards?: { slug: string; line: string }[];
+    /** Optional "Major projects near you" lines (lib/major-projects/alerts, behind MAJOR_PROJECT_ALERTS). */
+    majorProjects?: { slug: string; name: string; line: string }[];
     /** One relevant sponsor row (lib/sponsors/email), or "". */
     sponsorHtml?: string;
   },
@@ -265,6 +268,7 @@ export async function sendDailyMatches(
       `<p>New RFPs and public tenders in your trades and regions since yesterday, soonest deadline first:</p>
        <ul style="padding-left:18px;margin:16px 0">${list}</ul>${more}
        ${recentAwardsHtml(params.recentAwards ?? [], BASE)}
+       ${majorProjectsHtml(params.majorProjects ?? [], BASE)}
        <p>${btn(`${BASE}/dashboard/rfps`, "Open your feed")}</p>
        ${params.sponsorHtml ?? ""}`,
       `${footer}.`,

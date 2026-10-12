@@ -43,6 +43,7 @@ import foundingClient from "./messages/foundingClient";
 import reports from "./messages/reports";
 import gcHub from "./messages/gcHub";
 import karma from "./messages/karma";
+import majorProjects from "./messages/majorProjects";
 import portfolio from "./messages/portfolio";
 import portfolioClient from "./messages/portfolioClient";
 
@@ -83,6 +84,7 @@ const NAMESPACES = {
   reports,
   gcHub,
   karma,
+  majorProjects,
   portfolio,
   portfolioClient,
 };
