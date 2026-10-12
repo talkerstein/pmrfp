@@ -11,6 +11,8 @@ import { verifyStripeEvent } from "@/lib/stripe/verify-event";
 import { sendAdminFoundingAlert, sendFoundingLifetimeEmail } from "@/lib/email/send";
 import { FOUNDING_PRODUCT } from "@/lib/founding/config";
 import { grantLifetime, isOrgLifetime } from "@/lib/founding/server";
+import { SPONSOR_PRODUCT } from "@/lib/sponsors/pricing";
+import { handleSponsorCheckout, syncSponsorSubscription } from "@/lib/sponsors/stripe";
 
 /**
  * Founding 500 purchase. Never refuses: the cap was checked at checkout, and
@@ -120,6 +122,11 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const cs = event.data.object as Stripe.Checkout.Session;
+        // Monthly sponsorship (/advertise): its own subscription, never an org plan.
+        if (cs.metadata?.product === SPONSOR_PRODUCT) {
+          await handleSponsorCheckout(cs);
+          break;
+        }
         // One-time Project Spotlight purchase: tell the owner, and tell the
         // buyer where to send their article.
         if (cs.mode === "payment" && cs.metadata?.product === SPOTLIGHT_PRODUCT) {
@@ -256,6 +263,10 @@ export async function POST(request: Request) {
         // Sync Stripe's CURRENT state, not the event snapshot, so a late
         // retry or a backlog resent out of order can't roll a status back.
         const sub = await stripe.subscriptions.retrieve((event.data.object as Stripe.Subscription).id);
+        if (sub.metadata?.product === SPONSOR_PRODUCT) {
+          await syncSponsorSubscription(sub);
+          break;
+        }
         await syncSubscriptionFromStripe(sub);
 
         // Revenue leak: nothing previously demoted a churned org out of the

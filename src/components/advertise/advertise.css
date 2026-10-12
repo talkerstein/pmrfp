@@ -1,0 +1,38 @@
+/* /advertise on the v3 simple-page template. Scoped to .v3p like landing.css. */
+.v3p .ad-who { margin: 18px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.v3p .ad-who li { background: var(--soft); border-radius: 999px; padding: 6px 14px; font-size: 15px; font-weight: 700; color: var(--navy); }
+.v3p .ad-nums { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.v3p .ad-nums > div { background: var(--soft); border-radius: 20px; padding: 18px 20px; }
+.v3p .ad-nums .v { font-family: var(--fp); font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: -.03em; color: var(--navy); }
+.v3p .ad-nums .k { margin-top: 8px; font-size: 14px; line-height: 1.35; color: var(--sub); }
+.v3p .ad-badge { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.v3p .ad-badge.open { background: #DDFBF0; color: #0C5A43; }
+.v3p .ad-badge.taken { background: #F1F1F6; color: var(--sub); }
+.v3p .ad-tiers { margin-top: 22px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.v3p .ad-tier { display: flex; flex-direction: column; border: 2px solid var(--line); border-radius: 24px; padding: 22px; }
+.v3p .ad-tier.hi { border-color: var(--navy); }
+.v3p .ad-tier .nm { font-family: var(--fp); font-weight: 700; font-size: 20px; line-height: 1.2; color: var(--navy); }
+.v3p .ad-tier .pr { margin-top: 10px; font-family: var(--fp); font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: -.03em; color: var(--ink); }
+.v3p .ad-tier .pr small { font-family: var(--fl); font-weight: 400; font-size: 14px; letter-spacing: 0; color: var(--sub); }
+.v3p .ad-tier .bd { margin-top: 12px; flex: 1; font-size: 15px; line-height: 1.5; color: var(--sub); }
+.v3p .ad-tier .go { margin-top: 16px; font-size: 15px; font-weight: 700; }
+.v3p .ad-launch { display: inline-block; margin-top: 18px; background: var(--mint); color: var(--ink); border-radius: 999px; padding: 4px 12px; font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.v3p .ad-check { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.v3p .ad-check .s-fld { flex: 1 1 220px; min-width: 0; }
+.v3p .ad-check button { font: inherit; font-size: 16px; font-weight: 700; border: 0; border-radius: 12px; background: var(--navy); color: #FFFFFF; padding: 0 28px; min-height: 52px; cursor: pointer; }
+.v3p .ad-result { margin-top: 16px; }
+.v3p .ad-place { margin-top: 22px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 24px; align-items: start; }
+.v3p .ad-place .s-table { margin-top: 0; }
+.v3p .ad-place .s-table li { grid-template-columns: 1fr; }
+.v3p .ad-sample .eb { margin-bottom: 10px; }
+.v3p .ad-policy { margin: 18px 0 0; padding-left: 22px; font-size: 16px; }
+.v3p .ad-policy li { margin-top: 8px; }
+.v3p .s-form .ad-pay { font: inherit; font-size: 17px; font-weight: 700; height: 54px; border: 0; border-radius: 12px; background: var(--mint); color: var(--ink); cursor: pointer; }
+.v3p .s-form .ad-pay[disabled] { opacity: .7; cursor: default; }
+.v3p .s-form .ad-note { margin: 0; font-size: 14px; color: var(--sub); }
+.v3p .ad-enquire { margin-top: 22px; }
+@media (max-width: 1023px) {
+  .v3p .ad-tiers { grid-template-columns: 1fr; }
+  .v3p .ad-place { grid-template-columns: 1fr; }
+  .v3p .ad-nums .v { font-size: 28px; }
+}

@@ -1,18 +1,20 @@
 /**
- * Sponsors: native, relevant, one at a time. Each sponsor says where it fits
- * (placements, markets, trades) and what to say there; `pickSponsor` chooses
- * the best fit for a page or email, or nobody. Rules:
+ * House sponsors: the sister companies and launch partner that fill a slot
+ * when no PAID sponsor (lib/sponsors/model, sold on /advertise) holds it.
+ * A paid sponsor always wins its slot; these are the fallback. Rules:
  *   - At most one sponsor unit per page or email.
  *   - Only where it's useful to the reader: a trade-specific sponsor beats a
  *     general one, and a sponsor with nothing relevant to say isn't shown.
  *   - Always labelled ("Sponsored" / "From our sister company"), rel=sponsored.
- *   - Never on a company's own profile, sign-up, pricing or billing pages.
+ *   - Never on dashboards, a company's own profile, sign-up, pricing or
+ *     billing pages (model.EXCLUDED_ROUTES).
  * Claims come from each company's own site or PMRFP listing.
  */
+import type { PaidSponsor, Placement } from "./model";
+import { hash, matchPaidSponsor, sponsorCopy, tradeSlug } from "./model";
 
-export type Placement = "rfp_detail" | "trade_page" | "trade_dashboard" | "alerts_email" | "digest_email";
-
-export const PLACEMENTS: readonly Placement[] = ["rfp_detail", "trade_page", "trade_dashboard", "alerts_email", "digest_email"];
+export type { Placement } from "./model";
+export { PLACEMENTS, tradeSlug } from "./model";
 
 export interface SponsorContext {
   placement: Placement;
@@ -20,10 +22,18 @@ export interface SponsorContext {
   categories?: string[];
   /** Defaults to Canada. */
   market?: "CA" | "US";
+  /** Full province/state name (or code) the page or email is about, when there is one. */
+  province?: string | null;
+  /** A page about a province but no single trade (major projects filtered to a province). */
+  anyTrade?: boolean;
   /** A public (government) tender rather than a property manager's RFP. */
   publicTender?: boolean;
   /** Stable per page, so rotation doesn't flicker between renders. */
   seed?: string;
+  /** Paid sponsors holding slots (lib/sponsors/data getSponsorSnapshot); they win over house sponsors. */
+  paid?: readonly PaidSponsor[];
+  /** Page language: French sponsor copy on French pages when supplied. */
+  lang?: string;
 }
 
 export interface Creative {
@@ -47,14 +57,6 @@ export interface Sponsor {
 
 export type SponsorId = "maple" | "cleverpays" | "talkerstein";
 
-/** "Glass and Windows" → "glass-and-windows" (matches trade_categories.slug). */
-export function tradeSlug(nameOrSlug: string): string {
-  return nameOrSlug
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 const MAPLE_TRADES = ["electrical", "lighting", "ev-charging", "building-automation", "energy-efficiency"];
 /** Trades that bill homeowners and small businesses directly, where card payments on site matter most. */
 const CARD_HEAVY = [
@@ -72,7 +74,7 @@ export const SPONSORS: Sponsor[] = [
     url: "https://mapleelectricsupply.ca",
     label: "Sponsored",
     markets: ["CA"],
-    placements: ["rfp_detail", "trade_page", "trade_dashboard", "alerts_email", "digest_email"],
+    placements: ["rfp_detail", "trade_page", "alerts_email", "digest_email"],
     // Only for trades that buy what Maple sells.
     score: (_ctx, trades) => (overlaps(trades, MAPLE_TRADES) ? 3 : 0),
     creative: (ctx) =>
@@ -95,7 +97,7 @@ export const SPONSORS: Sponsor[] = [
     url: "https://cleverpays.ca/payment-processing",
     label: "Sponsored",
     markets: ["CA"],
-    placements: ["rfp_detail", "trade_page", "trade_dashboard", "alerts_email", "digest_email"],
+    placements: ["rfp_detail", "trade_page", "alerts_email", "digest_email"],
     score: (ctx, trades) => {
       // Governments pay by cheque or EFT: card payments don't help on a public tender.
       if (ctx.placement === "rfp_detail" && ctx.publicTender) return 0;
@@ -116,8 +118,8 @@ export const SPONSORS: Sponsor[] = [
     markets: ["CA", "US"],
     // Not on tender pages: open public tenders already carry Talkerstein's
     // bid-help card (components/public/bid-help-card), so a slot would repeat it.
-    placements: ["trade_page", "trade_dashboard", "digest_email"],
-    score: (ctx) => (ctx.placement === "trade_dashboard" ? 2 : 1),
+    placements: ["trade_page", "digest_email"],
+    score: () => 1,
     creative: () => ({
       headline: "Property managers check you out before they call",
       body: "Talkerstein builds the website, brand and Google profile that make a trade look established. Based in Toronto.",
@@ -126,19 +128,51 @@ export const SPONSORS: Sponsor[] = [
   },
 ];
 
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
-
 export interface PickedSponsor {
-  sponsor: Sponsor;
+  sponsor: {
+    /** /go/<id>: a house id or a paid sponsor's slug. */
+    id: string;
+    name: string;
+    logo: string | null;
+    url: string;
+    label: Sponsor["label"];
+    paid: boolean;
+  };
   creative: Creative;
+  /** Trade slug the unit counts under ("" when none). */
+  trade: string;
 }
 
-/** The single best sponsor for this context, or null when none is relevant. */
+/**
+ * The one sponsor for this page or email: the PAID sponsor holding the
+ * trade × province slot (ctx.paid, from lib/sponsors/data), else the best
+ * relevant house sponsor, else null.
+ */
 export function pickSponsor(ctx: SponsorContext): PickedSponsor | null {
+  const market = ctx.market ?? "CA";
+  const pageTrades = (ctx.categories ?? []).map(tradeSlug).filter(Boolean);
+  if (ctx.paid?.length) {
+    const p = matchPaidSponsor(
+      { placement: ctx.placement, country: market, trades: pageTrades, province: ctx.province, anyTrade: ctx.anyTrade, seed: ctx.seed },
+      ctx.paid,
+    );
+    if (p) {
+      const copy = sponsorCopy(p, ctx.lang ?? "en");
+      return {
+        sponsor: { id: p.slug, name: p.name, logo: p.logoUrl, url: p.url, label: "Sponsored", paid: true },
+        creative: { headline: copy.headline, body: copy.message, cta: copy.cta },
+        trade: p.trades.find((t) => pageTrades.includes(t)) ?? p.trades[0] ?? "",
+      };
+    }
+  }
+  const house = pickHouseSponsor(ctx);
+  if (!house) return null;
+  const { id, name, logo, url, label } = house.sponsor;
+  return { sponsor: { id, name, logo, url, label, paid: false }, creative: house.creative, trade: pageTrades[0] ?? "" };
+}
+
+/** The single best HOUSE sponsor for this context, or null when none is relevant. */
+export function pickHouseSponsor(ctx: SponsorContext): { sponsor: Sponsor; creative: Creative } | null {
   const market = ctx.market ?? "CA";
   const trades = (ctx.categories ?? []).map(tradeSlug);
   const scored = SPONSORS.filter((s) => s.placements.includes(ctx.placement) && s.markets.includes(market))
@@ -156,15 +190,16 @@ export function sponsorById(id: string): Sponsor | undefined {
   return SPONSORS.find((s) => s.id === id);
 }
 
-/** Tracked outbound link: /go/<id>?p=<placement>&t=<trade>. */
-export function sponsorHref(id: SponsorId, placement: Placement, trade?: string | null, base = ""): string {
+/** Tracked outbound link: /go/<slug>?p=<placement>&t=<trade>&r=<province>. */
+export function sponsorHref(id: string, placement: Placement, trade?: string | null, base = "", region?: string | null): string {
   const q = new URLSearchParams({ p: placement });
   if (trade) q.set("t", tradeSlug(trade));
+  if (region) q.set("r", tradeSlug(region));
   return `${base}/go/${id}?${q}`;
 }
 
 /** Destination with UTM tags so the sponsor sees PMRFP traffic in their own analytics. */
-export function sponsorDestination(s: Sponsor, placement: Placement, trade?: string | null): string {
+export function sponsorDestination(s: { url: string }, placement: Placement, trade?: string | null): string {
   const u = new URL(s.url);
   u.searchParams.set("utm_source", "pmrfp");
   u.searchParams.set("utm_medium", "sponsored");

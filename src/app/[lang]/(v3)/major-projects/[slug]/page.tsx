@@ -16,6 +16,7 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 
 export const revalidate = 3600;
 
@@ -228,6 +229,14 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
         )}
         <p className="small muted" data-license>{p.license}</p>
         <p className="small muted">{fmt(t.lastSeen, { date: day(p.lastSeen, lang), first: day(p.firstSeen, lang) })}</p>
+
+        {p.province && p.tradesNeeded.length > 0 && (
+          // The province × trade sponsor for this project's trades, below everything else.
+          <SponsorSlot
+            className="mt-8 max-w-md"
+            ctx={{ placement: "major_projects", market: "CA", province: p.province, categories: p.tradesNeeded, seed: p.slug }}
+          />
+        )}
 
         <div className="s-links">
           <a href={L("/major-projects")}>{t.back} →</a>

@@ -89,6 +89,8 @@ export interface DLProps {
   } | null;
   /** Extra block under the filters (e.g. the founding-region notice). */
   notice?: ReactNode;
+  /** One labelled sponsor unit under the list (never above it). */
+  sponsor?: ReactNode;
   /** Filters active but nothing matches. */
   noMatch: { clearHref: string } | null;
   empty: {
@@ -325,6 +327,7 @@ export function DirectoryList(p: DLProps) {
               )}
             </nav>
             {list.footnote && <p className="v3-dl-foot">{list.footnote}</p>}
+            {p.sponsor && <div className="mt-8 max-w-md">{p.sponsor}</div>}
           </div>
         </section>
       )}

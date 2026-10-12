@@ -10,6 +10,7 @@ import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
 import { FOUNDING } from "@/lib/founding/config";
+import { sponsorPrice } from "@/lib/sponsors/pricing";
 import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
@@ -114,8 +115,6 @@ const BUBBLES = [
 const FACES = [["#EEEEF8", "#282B59", "#91F2CF"], ["#DDFBF0", "#282B59", "#1B1D3A"], ["#282B59", "#FFFFFF", "#91F2CF"], ["#91F2CF", "#282B59", "#1B1D3A"], ["#EEEEF8", "#4A4E85", "#282B59"]].map((f) => ({ bg: f[0], fg: f[1], hat: f[2] }));
 const SMALL_BG = ["#4A4E85", "#444879", "#3D416F", "#363A66", "#30335D"];
 const BARS = [{ h: 16, c: "#4A4E85" }, { h: 26, c: "#5A6394" }, { h: 36, c: "#3E9F85" }, { h: 46, c: "#5FD3AC" }, { h: 56, c: "#91F2CF" }];
-const SPOTLIGHT_CAD = 149;
-const PARTNER_CAD = 399;
 
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const vars = (v: Record<string, string | number>) => v as CSSProperties;
@@ -179,6 +178,11 @@ export function HomeV3({
   const currency = us ? "USD" : "CAD";
   const money = (cad: number) => {
     const n = formatNumber(us ? toUsd(cad, rate) : cad, lang);
+    return lang === "fr" ? `${n} $` : `$${n}`;
+  };
+  /** Sponsorship prices are set per currency (lib/sponsors/pricing), never converted. */
+  const sponsorMoney = (tier: "province" | "national") => {
+    const n = formatNumber(sponsorPrice(tier, us ? "US" : "CA").amount, lang);
     return lang === "fr" ? `${n} $` : `$${n}`;
   };
   const foundingMoney = () => {
@@ -800,12 +804,12 @@ export function HomeV3({
                   </div>
                   <div className="v3-offer dk blk">
                     <div className="t">{t.platform.sponsor.spotlight}</div>
-                    <div className="pr">{known ? <>{money(SPOTLIGHT_CAD)} <small>{fmt(t.platform.sponsor.perMonth, { currency })}</small></> : <Sk w="3.5ch" />}</div>
+                    <div className="pr">{known ? <>{sponsorMoney("province")} <small>{fmt(t.platform.sponsor.perMonth, { currency })}</small></> : <Sk w="3.5ch" />}</div>
                     <div className="bd">{t.platform.sponsor.spotlightBody}</div>
                   </div>
                   <div className="v3-offer lt blk">
                     <div className="t">{t.platform.sponsor.partner}<span className="b">{t.platform.sponsor.partnerBadge}</span></div>
-                    <div className="pr">{known ? <>{money(PARTNER_CAD)} <small>{fmt(t.platform.sponsor.perMonth, { currency })}</small></> : <Sk w="3.5ch" />}</div>
+                    <div className="pr">{known ? <>{sponsorMoney("national")} <small>{fmt(t.platform.sponsor.perMonth, { currency })}</small></> : <Sk w="3.5ch" />}</div>
                     <div className="bd">{t.platform.sponsor.partnerBody}</div>
                   </div>
                 </div>

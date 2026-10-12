@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DirectoryList, LIST_PATH, PER_PAGE, listHref, paginate } from "@/components/home-v3/directory-list";
 import { V3Price, V3PriceParts } from "@/components/home-v3/chrome";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getMajorProjects } from "@/lib/major-projects/data";
 import { filterProjects, parseProjectFilters, provinceCounts, sortProjects } from "@/lib/major-projects/filters";
@@ -174,6 +175,21 @@ export default async function MajorProjectsPage({ searchParams, params }: { sear
                 footnote: t.footnote,
               }
             : null
+        }
+        sponsor={
+          // Province view only: that province's sponsor for the chosen trade (or any trade's when none is chosen).
+          f.province && !usView ? (
+            <SponsorSlot
+              ctx={{
+                placement: "major_projects",
+                market: "CA",
+                province: f.province,
+                categories: f.trade ? [f.trade] : [],
+                anyTrade: !f.trade,
+                seed: `${f.province}|${f.trade ?? ""}`,
+              }}
+            />
+          ) : null
         }
         noMatch={!filtered.length && filteredView ? { clearHref: "/major-projects" } : null}
         empty={
