@@ -23,6 +23,9 @@ export const MAJOR_PROJECT_CATEGORIES = [
 export type MajorProjectCategory = (typeof MAJOR_PROJECT_CATEGORIES)[number];
 
 export const MAJOR_PROJECT_STATUSES = [
+  // A development application (rezoning, site plan, development permit): an
+  // early signal, usually 1-3 years before construction, rarely with a value.
+  "application",
   "proposed",
   "approved",
   "under_construction",
@@ -66,6 +69,12 @@ export interface MajorProjectInput {
   license: string;
   evidence: "F" | "S" | "A" | null;
   caveats: string | null;
+  /**
+   * When the PUBLISHER last updated this record (not when we last saw it),
+   * if the source says. BC's inventory stopped at 2024-12-01, so its pages
+   * show that date instead of the import date.
+   */
+  sourceUpdated?: string | null;
 }
 
 /** Default minimum value for a city building permit to count as a major project. */
@@ -75,6 +84,15 @@ export const DEFAULT_PERMIT_MIN_CAD = 5_000_000;
 export function permitMinValue(env: string | undefined = process.env.MAJOR_PROJECT_PERMIT_MIN): number {
   const n = Number(env);
   return Number.isFinite(n) && n >= 1_000_000 ? n : DEFAULT_PERMIT_MIN_CAD;
+}
+
+/** Default minimum for funded / capital-plan projects (Infrastructure Canada, city capital plans). */
+export const DEFAULT_FUNDING_MIN_CAD = 1_000_000;
+
+/** MAJOR_PROJECT_FUNDING_MIN (CAD) or C$1M. Never below C$100k. */
+export function fundingMinValue(env: string | undefined = process.env.MAJOR_PROJECT_FUNDING_MIN): number {
+  const n = Number(env);
+  return Number.isFinite(n) && n >= 100_000 ? n : DEFAULT_FUNDING_MIN_CAD;
 }
 
 /* ------------------------------------------------------------------ text */
@@ -177,9 +195,9 @@ const CATEGORY_RULES: [MajorProjectCategory, RegExp][] = [
   ["mining", /\bmin(e|es|ing)\b|mineral|quarry|potash|smelter|\bore\b/i],
   ["energy", /energy|power|electric|hydro|wind|solar|transmission|substation|generat|nuclear|utility|battery storage|hydrogen|renewable/i],
   ["infrastructure", /infrastructure|transport|transit|road|highway|bridge|rail|airport|port\b|water ?(treatment|main)|wastewater|sewer|dam\b|municipal (services|infrastructure)|civic infrastructure/i],
-  ["institutional", /institution|hospital|health|school|education|universit|college|government|civic|library|recreation|arena|community cent|long[- ]term care|police|fire hall|fire station|courthouse|museum|church|place of worship|assembly/i],
+  ["institutional", /institution|hospital|health|school|education|universit|college|government|civic|library|recreation|arena|community cent|long[- ]term care|police|fire hall|fire station|courthouse|museum|church|place of worship|assembly|day ?care|child ?care/i],
   ["mixed_use", /mixed[- ]use|mixed use/i],
-  ["multi_residential", /residential|apartment|condo|housing|multi[- ]?(family|unit|res)|rental|townho|dwelling|seniors|tourism.*residential/i],
+  ["multi_residential", /residential|apartment|condo|housing|multi[- ]?(family|unit|res)|rental|townho|dwelling|seniors|tourism.*residential|dormitor/i],
   ["industrial", /industr|manufactur|warehouse|distribution|logistic|plant|factory|agri|forestry|chemical|processing/i],
   ["commercial", /commerc|retail|office|hotel|tourism|restaurant|shopping|mall|store|business|mercantile/i],
 ];

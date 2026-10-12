@@ -60,6 +60,14 @@
     {
       "path": "/api/cron/major-projects",
       "schedule": "26 9 * * 0"
+    },
+    {
+      "path": "/api/cron/major-projects/funding",
+      "schedule": "41 9 * * 0"
+    },
+    {
+      "path": "/api/cron/major-projects/local",
+      "schedule": "56 9 * * 0"
     }
   ]
 }

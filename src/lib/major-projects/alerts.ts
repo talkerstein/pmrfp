@@ -92,6 +92,7 @@ export function projectAlertsFor(
 }
 
 const STATUS_WORDS: Record<MajorProjectStatus, string> = {
+  application: "development application",
   proposed: "proposed",
   approved: "approved",
   under_construction: "under construction",

@@ -67,10 +67,12 @@ const STATUS_RANK: Record<MajorProjectStatus, number> = {
   under_construction: 0,
   approved: 1,
   proposed: 2,
-  on_hold: 3,
-  unknown: 4,
-  completed: 5,
-  cancelled: 6,
+  // Development applications: early signals, after confirmed projects.
+  application: 3,
+  on_hold: 4,
+  unknown: 5,
+  completed: 6,
+  cancelled: 7,
 };
 
 /**
@@ -85,6 +87,55 @@ export function sortProjects(rows: readonly MajorProject[], province: string | n
       a.name.localeCompare(b.name),
   );
   return provinceFirst(sorted, province, (p) => p.province);
+}
+
+/**
+ * One card per project: rows linked as the same project in different
+ * sources (link_group) collapse to the first one in the given order (the
+ * list is sorted first, so the best-known listing leads). `sources` is how
+ * many listings the group has in the input.
+ */
+export function collapseLinked<T extends Pick<MajorProject, "id" | "linkGroup">>(rows: readonly T[]): { row: T; sources: number }[] {
+  const size = new Map<string, number>();
+  for (const r of rows) if (r.linkGroup) size.set(r.linkGroup, (size.get(r.linkGroup) ?? 0) + 1);
+  const shown = new Set<string>();
+  const out: { row: T; sources: number }[] = [];
+  for (const r of rows) {
+    if (!r.linkGroup) {
+      out.push({ row: r, sources: 1 });
+      continue;
+    }
+    if (shown.has(r.linkGroup)) continue;
+    shown.add(r.linkGroup);
+    out.push({ row: r, sources: size.get(r.linkGroup) ?? 1 });
+  }
+  return out;
+}
+
+/** The other listings of the same project (same link group), for the project page. */
+export function linkedListings<T extends Pick<MajorProject, "id" | "linkGroup" | "stale">>(p: Pick<MajorProject, "id" | "linkGroup">, rows: readonly T[]): T[] {
+  return p.linkGroup ? rows.filter((r) => r.linkGroup === p.linkGroup && r.id !== p.id && !r.stale) : [];
+}
+
+/** Latest publisher date of a source's rows ("2024-12-01" for BC's frozen inventory). */
+export function sourceUpdatedMax(rows: readonly Pick<MajorProject, "source" | "sourceUpdated" | "stale">[], source: string): string | null {
+  let max: string | null = null;
+  for (const r of rows) if (r.source === source && !r.stale && r.sourceUpdated && (!max || r.sourceUpdated > max)) max = r.sourceUpdated;
+  return max;
+}
+
+/**
+ * The publisher date of a source whose newest record is older than
+ * `maxAgeDays` (a source that stopped updating, like BC's inventory), else null.
+ */
+export function frozenSourceDate(
+  rows: readonly Pick<MajorProject, "source" | "sourceUpdated" | "stale">[],
+  source: string,
+  maxAgeDays = 180,
+  now: number = Date.now(),
+): string | null {
+  const d = sourceUpdatedMax(rows, source);
+  return d && now - Date.parse(`${d}T12:00:00Z`) > maxAgeDays * 86_400_000 ? d : null;
 }
 
 /** Provinces with at least one listed project, most projects first. */

@@ -336,7 +336,7 @@ function project(over: Partial<MajorProject> = {}): MajorProject {
     id: "1", slug: "p", source: "permits-calgary", name: "Project", description: "A long enough description of a big building project in town.", category: "commercial",
     owner: null, city: "Calgary", province: "Alberta", regionId: null, estValueCad: 10e6, size: null, status: "approved", statusRaw: null, statusDate: null,
     timeline: null, tradesNeeded: ["electrical"], sources: [], license: "OGL", evidence: null, caveats: null, firstSeen: TODAY, lastSeen: TODAY,
-    stale: false, staleSince: null, statusChangedAt: null, updatedAt: TODAY, hasGc: false, hasBidRoute: false, ...over,
+    stale: false, staleSince: null, statusChangedAt: null, updatedAt: TODAY, hasGc: false, hasBidRoute: false, sourceUpdated: null, linkGroup: null, ...over,
   };
 }
 

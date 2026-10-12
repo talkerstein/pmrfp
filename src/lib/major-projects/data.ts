@@ -10,8 +10,10 @@ import type { MajorProjectCategory, MajorProjectStatus, ProjectSourceLink } from
 /**
  * ONE shared, server-cached copy of the public major-projects list (the
  * major_projects_public view), same pattern as lib/data/board-snapshot:
- * 8 shards by the first hex digit of the id, each its own Next data-cache
- * entry (tag "major-projects", 1 hour), keyset-paged, at most 2 shard loads
+ * 16 shards by the first hex digit of the id (wave 2 brought the list to
+ * several thousand rows; each shard stays well under the data cache's
+ * per-entry size limit), each its own Next data-cache entry (tag
+ * "major-projects", 1 hour), keyset-paged, at most 2 shard loads
  * at once and one load per shard in flight per server instance. Every page
  * (index, detail, related lists) reads this snapshot — never the table per
  * request. Imports mark the tag stale (lib/supabase/write-fetch).
@@ -21,7 +23,7 @@ import type { MajorProjectCategory, MajorProjectStatus, ProjectSourceLink } from
  * visitor's own session, so RLS decides (Trade Pro members and admins only).
  */
 
-export const MP_SHARDS = 8;
+export const MP_SHARDS = 16;
 export const MP_REVALIDATE = 3600;
 const PAGE = 1000;
 const READ_TIMEOUT_MS = 10_000;
@@ -56,6 +58,10 @@ export interface MajorProject {
   updatedAt: string;
   hasGc: boolean;
   hasBidRoute: boolean;
+  /** When the publisher last updated the record, if it says (BC: 2024-12-01). */
+  sourceUpdated: string | null;
+  /** Same project in another source (the id of one member of the group). */
+  linkGroup: string | null;
 }
 
 interface ViewRow {
@@ -67,10 +73,13 @@ interface ViewRow {
   evidence: "F" | "S" | "A" | null; caveats: string | null; first_seen: string; last_seen: string;
   stale: boolean; stale_since: string | null; status_changed_at: string | null; updated_at: string;
   has_gc: boolean; has_bid_route: boolean;
+  source_updated?: string | null; link_group?: string | null;
 }
 
-const COLUMNS =
+const BASE_COLUMNS =
   "id,slug,source,name,description,category,owner,city,province,region_id,est_value_cad,size,status,status_raw,status_date,timeline,trades_needed,sources,license,evidence,caveats,first_seen,last_seen,stale,stale_since,status_changed_at,updated_at,has_gc,has_bid_route";
+/** Wave-2 columns (migration 20261012000003). */
+const COLUMNS = `${BASE_COLUMNS},source_updated,link_group`;
 
 export function fromViewRow(r: ViewRow): MajorProject {
   const value = r.est_value_cad == null ? null : Number(r.est_value_cad);
@@ -104,6 +113,8 @@ export function fromViewRow(r: ViewRow): MajorProject {
     updatedAt: r.updated_at,
     hasGc: r.has_gc,
     hasBidRoute: r.has_bid_route,
+    sourceUpdated: r.source_updated ?? null,
+    linkGroup: r.link_group ?? null,
   };
 }
 
@@ -127,12 +138,23 @@ type Builder = {
 
 /** Reads one shard straight from Supabase (no cache). Exported for tests. */
 export async function fetchProjectShard(shard: number): Promise<MajorProject[]> {
+  try {
+    return await readShard(shard, COLUMNS);
+  } catch (e) {
+    // Deployed before migration 20261012000003 ran: the view has no wave-2
+    // columns yet. Keep the list up rather than empty.
+    if (e instanceof Error && /source_updated|link_group/.test(e.message)) return readShard(shard, BASE_COLUMNS);
+    throw e;
+  }
+}
+
+async function readShard(shard: number, columns: string): Promise<MajorProject[]> {
   const { lo, hi } = mpShardRange(shard);
   const client = createReadClient();
   const out: MajorProject[] = [];
   let after: string | null = null;
   for (;;) {
-    let q = client.from("major_projects_public").select(COLUMNS).order("id").limit(PAGE) as unknown as Builder;
+    let q = client.from("major_projects_public").select(columns).order("id").limit(PAGE) as unknown as Builder;
     if (lo) q = q.gte("id", lo);
     if (hi) q = q.lt("id", hi);
     if (after) q = q.gt("id", after);
@@ -153,7 +175,7 @@ const singleFlight = createSingleFlight();
 const cachedShard = unstable_cache(
   async (shard: number, _projectUrl: string): Promise<MajorProject[]> =>
     singleFlight(`major-projects-shard:${shard}`, () => limit(() => fetchProjectShard(shard))),
-  ["major-projects-shard-v1"],
+  ["major-projects-shard-v2"],
   { tags: [MAJOR_PROJECTS_TAG], revalidate: MP_REVALIDATE },
 );
 
