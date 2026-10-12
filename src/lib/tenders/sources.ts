@@ -45,24 +45,44 @@ export interface PublicTenderSource {
   closedArchive?: boolean;
 }
 
-// Slug suffix → source. Every suffix is distinct ("-tora-" never matches
-// "-tor-<digits>"), so order is for readability only.
+// Slug suffix → source. Each importer builds `${slugify(title)}-<marker>-<ref>`,
+// so the source is the importer marker nearest the END of the slug that is
+// followed by a valid reference for that importer. A title word
+// ("…-mont-joli-qc-cb-cw2466670") always sits left of the real marker, so it
+// can never win (see publicTenderSource); list order doesn't matter.
+//
+// Reference formats seen across every public_source row (2026-10-12):
+//   CanadaBuys (open/closed/awards)  cb-161-43955128 · ws5846022405-doc5846123481
+//                                    · mx-443841876264 · cw2466670 (+ legacy pw-…)
+//   Toronto (open/awards)            5830241025
+//   Yukon (open/closed)              rfb-2026-9-5555 · rso-rfb-2026-9-5560
+//   SEAO, Nova Scotia                buyer-assigned free text (ao-21243,
+//                                    us-24-e5-1125-00, vic-rfp-04-02-26)
+// A reference only has to be strict where it can itself contain another
+// marker: an award or closed ref "cb-161-…" contains "-cb-", and a SEAO ref
+// "us-24-…" contains "-us-". So open CanadaBuys ("cb") and SAM ("us") are
+// anchored to their exact formats. The rest stay permissive on purpose: a row
+// whose ref failed a too-strict pattern would fall back to "canadabuys" and be
+// archived by the CanadaBuys run as "gone from the feed".
+const CB_REF = String.raw`(?:cb-\d+-\d+|ws\d+-doc\d+|mx-\d+|cw\d+|pw-[a-z0-9-]+)`;
+const CB_CLOSED_REF = String.raw`(?:cb-\d+-\d+|ws\d+-doc\d+|mx-\d+)`; // CLOSED_REF in canadabuys-closed.ts
+const FREE_REF = "[a-z0-9-]+";
+const suffix = (marker: string, ref: string) => new RegExp(`-${marker}-${ref}$`);
+
 const SOURCES: [suffix: RegExp, source: PublicTenderSource][] = [
-  // Closed archives first: their suffix ends in a strict reference format, and
-  // a looser open-feed pattern ("-qc-…") must never claim them.
-  [/-cbc-(?:cb-\d+-\d+|ws\d+-doc\d+|mx-\d+)$/, { key: "canadabuys-closed", past: false, closedArchive: true, badge: "Closed public tender · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Open the notice on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
-  [/-ykc-[a-z0-9-]+$/, { key: "yukon-closed", past: false, closedArchive: true, badge: "Closed public tender · Yukon", issuer: "the Government of Yukon", portal: "Yukon's bids&tenders portal", bidLabel: "Open Yukon's portal", attribution: OGL_YUKON_ATTRIBUTION }],
+  [suffix("cbc", CB_CLOSED_REF), { key: "canadabuys-closed", past: false, closedArchive: true, badge: "Closed public tender · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Open the notice on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
+  [suffix("ykc", FREE_REF), { key: "yukon-closed", past: false, closedArchive: true, badge: "Closed public tender · Yukon", issuer: "the Government of Yukon", portal: "Yukon's bids&tenders portal", bidLabel: "Open Yukon's portal", attribution: OGL_YUKON_ATTRIBUTION }],
   ...US_STATE_SOURCES,
-  [/-cba-[a-z0-9-]+$/, { key: "awards", past: true, badge: "Past public contract · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Bid on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
-  [/-qca-[a-z0-9-]+$/, { key: "seao", past: true, badge: "Past public contract · Quebec (SEAO)", issuer: "a Quebec public body", portal: "SEAO", bidLabel: "Bid on SEAO", attribution: SEAO_ATTRIBUTION }],
-  [/-tora-[a-z0-9-]+$/, { key: "toronto-awards", past: true, badge: "Past public contract · City of Toronto", issuer: "the City of Toronto", portal: "the City of Toronto bid portal", bidLabel: "Bid on the City portal", attribution: OGL_TORONTO_ATTRIBUTION }],
-  [/-nsa-[a-z0-9-]+$/, { key: "ns-awards", past: true, badge: "Past public contract · Nova Scotia", issuer: "a Nova Scotia public body", portal: "the Nova Scotia procurement portal", bidLabel: "Open the NS portal", attribution: OGL_NS_ATTRIBUTION }],
-  [/-qc-[a-z0-9-]+$/, { key: "seao", past: false, badge: "Public tender · Quebec (SEAO)", issuer: "a Quebec public body", portal: "SEAO", bidLabel: "Bid on SEAO", attribution: SEAO_ATTRIBUTION }],
-  [/-tor-[a-z0-9-]+$/, { key: "toronto", past: false, badge: "Public tender · City of Toronto", issuer: "the City of Toronto", portal: "the City of Toronto bid portal", bidLabel: "Bid on the City portal", attribution: OGL_TORONTO_ATTRIBUTION }],
-  // SAM NoticeIds are 32 hex chars — anchored so a CanadaBuys title with "-us-" in it never matches.
+  [suffix("cba", FREE_REF), { key: "awards", past: true, badge: "Past public contract · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Bid on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
+  [suffix("qca", FREE_REF), { key: "seao", past: true, badge: "Past public contract · Quebec (SEAO)", issuer: "a Quebec public body", portal: "SEAO", bidLabel: "Bid on SEAO", attribution: SEAO_ATTRIBUTION }],
+  [suffix("tora", FREE_REF), { key: "toronto-awards", past: true, badge: "Past public contract · City of Toronto", issuer: "the City of Toronto", portal: "the City of Toronto bid portal", bidLabel: "Bid on the City portal", attribution: OGL_TORONTO_ATTRIBUTION }],
+  [suffix("nsa", FREE_REF), { key: "ns-awards", past: true, badge: "Past public contract · Nova Scotia", issuer: "a Nova Scotia public body", portal: "the Nova Scotia procurement portal", bidLabel: "Open the NS portal", attribution: OGL_NS_ATTRIBUTION }],
+  [suffix("qc", FREE_REF), { key: "seao", past: false, badge: "Public tender · Quebec (SEAO)", issuer: "a Quebec public body", portal: "SEAO", bidLabel: "Bid on SEAO", attribution: SEAO_ATTRIBUTION }],
+  [suffix("tor", FREE_REF), { key: "toronto", past: false, badge: "Public tender · City of Toronto", issuer: "the City of Toronto", portal: "the City of Toronto bid portal", bidLabel: "Bid on the City portal", attribution: OGL_TORONTO_ATTRIBUTION }],
+  // SAM NoticeIds are 32 hex chars (a SEAO ref like "us-24-e5-1125-00" isn't one).
   [/-us-[a-f0-9]{32}$/, { key: "sam", past: false, badge: "Public tender · U.S. federal (SAM.gov)", issuer: "a U.S. federal agency", portal: "SAM.gov", bidLabel: "Bid on SAM.gov", attribution: SAM_ATTRIBUTION }],
   [/-nyc-\d{6,}$/, { key: "nyc", past: false, badge: "Public tender · City of New York", issuer: "the City of New York", portal: "The City Record / PASSPort", bidLabel: "Open the City Record notice", attribution: NYC_ATTRIBUTION }],
-  [/-yk-[a-z0-9-]+$/, { key: "yukon", past: false, badge: "Public tender · Yukon", issuer: "the Government of Yukon", portal: "Yukon's bids&tenders portal", bidLabel: "Bid on Yukon's portal", attribution: OGL_YUKON_ATTRIBUTION }],
+  [suffix("yk", FREE_REF), { key: "yukon", past: false, badge: "Public tender · Yukon", issuer: "the Government of Yukon", portal: "Yukon's bids&tenders portal", bidLabel: "Bid on Yukon's portal", attribution: OGL_YUKON_ATTRIBUTION }],
 ];
 
 const CANADABUYS: PublicTenderSource = {
@@ -75,6 +95,21 @@ const CANADABUYS: PublicTenderSource = {
   attribution: OGL_CANADA_ATTRIBUTION,
 };
 
+// Open CanadaBuys is the fallback, but it still needs an entry: that's what
+// out-ranks a title word ("…-qc-cb-…") another marker would otherwise claim.
+// `^.*(…)` is greedy, so each pattern captures its rightmost (shortest) match.
+const ALL: [suffix: RegExp, source: PublicTenderSource][] = [...SOURCES, [suffix("cb", CB_REF), CANADABUYS]];
+const MATCHERS = ALL.map(([re, src]): [rightmost: RegExp, source: PublicTenderSource] => [new RegExp(`^.*(${re.source})`), src]);
+
+/** The source whose marker sits nearest the end of the slug (with a valid reference after it). */
 export function publicTenderSource(slug: string): PublicTenderSource {
-  return SOURCES.find(([suffix]) => suffix.test(slug))?.[1] ?? CANADABUYS;
+  let best = CANADABUYS;
+  let bestAt = -1;
+  for (const [re, src] of MATCHERS) {
+    const m = re.exec(slug);
+    if (!m) continue;
+    const at = slug.length - m[1].length;
+    if (at > bestAt) [best, bestAt] = [src, at];
+  }
+  return best;
 }
