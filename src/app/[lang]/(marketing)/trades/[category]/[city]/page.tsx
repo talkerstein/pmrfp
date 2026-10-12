@@ -571,6 +571,8 @@ export default async function TradeCityPage({
             placement: "trade_page",
             categories: [cat.slug],
             market: region.slug.startsWith("us-") || region.slug === "united-states" ? "US" : "CA",
+            // The trade × province slot: the city's province/state (a province-level region is its own).
+            province: region.province ?? region.name,
             seed: `${cat.slug}|${region.slug}`,
           }}
         />

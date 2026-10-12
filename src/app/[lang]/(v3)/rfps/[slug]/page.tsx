@@ -10,6 +10,7 @@ import { BidChecklist } from "@/components/public/bid-checklist";
 import { GcPackageCta } from "@/components/public/gc-package-cta";
 import { AwardIntelCard } from "@/components/public/award-intel-card";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { getSponsorSnapshot } from "@/lib/sponsors/data";
 import { ListingMatches } from "@/components/public/listing-matches";
 import { EmailCapture } from "@/components/public/email-capture";
 import { PaywallPlans } from "@/components/v3-pages/paywall-plans";
@@ -221,8 +222,12 @@ export default async function RfpDetailPage({
     placement: "rfp_detail",
     categories: teaser.categories,
     market: rfpMarket(teaser),
+    // The trade × province slot: the listing's own province/state.
+    province: teaser.province,
     publicTender: isPublicTender,
     seed: teaser.slug,
+    paid: await getSponsorSnapshot(),
+    lang,
   };
   const sponsorName = pickSponsor(sponsorCtx)?.sponsor.name;
   const monthlyEnabled = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);

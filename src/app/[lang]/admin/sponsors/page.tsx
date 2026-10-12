@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
@@ -6,81 +7,138 @@ import { EmptyState } from "@/components/public/empty-state";
 import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { SPONSORS } from "@/lib/sponsors/registry";
+import { loadAdminSponsors, loadCounters, type AdminSponsorRow } from "@/lib/sponsors/admin";
+import { torontoDay } from "@/lib/sponsors/model";
 import { setLangFrom } from "@/i18n/server";
 
 export const metadata: Metadata = { title: "Sponsors · Admin · PMRFP" };
 
-interface ClickRow {
-  day: string;
-  sponsor: string;
-  placement: string;
-  trade: string;
-  clicks: number;
-}
-
 const PLACEMENT_LABEL: Record<string, string> = {
   rfp_detail: "Tender pages",
   trade_page: "Trade pages",
-  trade_dashboard: "Trade dashboard",
+  benchmark: "Price benchmarks",
+  major_projects: "Major projects",
+  forum: "Forum",
+  trade_dashboard: "Trade dashboard (retired)",
   alerts_email: "Daily match email",
   digest_email: "Weekly digest",
 };
 
-/** Clicks per sponsor and placement over the last 30 days: the numbers for a sponsor's monthly report. */
-export default async function AdminSponsorsPage({ params }: { params: Promise<object> }) {
+const TIER_LABEL: Record<string, string> = { province: "Province × trade", national: "National trade", digest: "Digest only" };
+
+const STATUS_STYLE: Record<string, string> = {
+  approved: "bg-teal-50 text-teal-800 border-teal-300",
+  pending: "bg-amber-50 text-amber-800 border-amber-300",
+  paused: "bg-secondary text-foreground border-border",
+  draft: "bg-secondary text-muted-foreground border-border",
+  ended: "bg-secondary text-muted-foreground border-border",
+  rejected: "bg-red-50 text-red-800 border-red-300",
+};
+
+/**
+ * Paid sponsorships (create, review, approve, report) and the house
+ * sponsors' clicks. Numbers are the last 30 days from the daily counters.
+ */
+export default async function AdminSponsorsPage({ params, searchParams }: { params: Promise<object>; searchParams: Promise<Record<string, string | undefined>> }) {
   await setLangFrom(params);
   await requireRole(["admin", "super_admin"]);
-  const { rows, ready } = isDemoMode() ? { rows: [] as ClickRow[], ready: true } : await loadClicks();
+  const sp = await searchParams;
+  const { today, since } = last30Days();
 
-  const bySponsor = SPONSORS.map((s) => {
-    const mine = rows.filter((r) => r.sponsor === s.id);
-    const byPlacement = new Map<string, number>();
-    const byTrade = new Map<string, number>();
-    for (const r of mine) {
-      byPlacement.set(r.placement, (byPlacement.get(r.placement) ?? 0) + r.clicks);
-      if (r.trade) byTrade.set(r.trade, (byTrade.get(r.trade) ?? 0) + r.clicks);
+  let rows: AdminSponsorRow[] = [];
+  let ready = true;
+  let imp = new Map<string, number>();
+  let clk = new Map<string, number>();
+  const housePlacements = new Map<string, Map<string, number>>();
+  if (!isDemoMode()) {
+    const supabase = await createClient();
+    const loaded = await loadAdminSponsors(supabase);
+    rows = loaded.rows;
+    ready = loaded.ready;
+    const ids = [...rows.map((r) => r.slug), ...SPONSORS.map((s) => s.id)];
+    const c = await loadCounters(supabase, ids, since, today);
+    imp = sum(c.impressions);
+    clk = sum(c.clicks);
+    for (const r of c.clicks) {
+      const m = housePlacements.get(r.sponsor) ?? new Map<string, number>();
+      m.set(r.placement, (m.get(r.placement) ?? 0) + r.n);
+      housePlacements.set(r.sponsor, m);
     }
-    const topTrades = [...byTrade.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
-    return { s, total: mine.reduce((n, r) => n + r.clicks, 0), byPlacement, topTrades };
-  });
+  }
+  const pending = rows.filter((r) => r.status === "pending").length;
 
   return (
     <div>
       {isDemoMode() && <DemoBanner />}
       <PageHeader
         title="Sponsors"
-        description="Clicks on sponsor placements in the last 30 days. Sponsors are set in src/lib/sponsors/registry.ts."
+        description="Paid sponsorships by trade × province/state. One sponsor per slot; copy is reviewed before it goes live. Counts: last 30 days."
       />
+      {sp.error && <p className="mb-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{sp.error}</p>}
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+        <Link href="/admin/sponsors/new" className="rounded-full bg-primary px-4 py-1.5 font-semibold text-primary-foreground hover:opacity-90">New sponsor</Link>
+        {pending > 0 && <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-amber-800">{pending} waiting for review</span>}
+        <Link href="/advertise" className="text-teal-ink underline">Public page</Link>
+      </div>
+
       {!ready ? (
-        <EmptyState title="Almost ready" description="The sponsor click table is being set up. Check back after the next deploy." />
+        <EmptyState title="Almost ready" description="The sponsors table isn't there yet. Run migration 20261012000002_sponsorships.sql, then reload." />
+      ) : rows.length === 0 ? (
+        <EmptyState title="No paid sponsors yet" description="Enquiries from /advertise land in Contact Requests (and paid checkouts appear here as pending). Add one with New sponsor." />
       ) : (
-        <AdminTable columns={["Sponsor", "Label", "Clicks (30 days)", "By placement", "Top trades"]}>
-          {bySponsor.map(({ s, total, byPlacement, topTrades }) => (
-            <TableRow key={s.id}>
-              <TableCell className="font-medium">{s.name}</TableCell>
-              <TableCell className="text-muted-foreground">{s.label}</TableCell>
-              <TableCell className="font-semibold">{total}</TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {[...byPlacement.entries()].map(([p, n]) => `${PLACEMENT_LABEL[p] ?? p}: ${n}`).join(" · ") || "—"}
+        <AdminTable columns={["Sponsor", "Status", "Slot", "Dates", "Impressions", "Clicks", ""]}>
+          {rows.map((r) => (
+            <TableRow key={r.id}>
+              <TableCell className="font-medium">
+                <Link href={`/admin/sponsors/${r.id}`} className="underline">{r.name}</Link>
+                <div className="text-xs text-muted-foreground">/go/{r.slug}</div>
               </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {topTrades.map(([t, n]) => `${t} (${n})`).join(", ") || "—"}
+              <TableCell>
+                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[r.status] ?? ""}`}>{r.status}</span>
+              </TableCell>
+              <TableCell className="text-sm">
+                {TIER_LABEL[r.tier] ?? r.tier} · {r.country}
+                <div className="text-xs text-muted-foreground">
+                  {(r.trades ?? []).join(", ")}
+                  {(r.regions ?? []).length ? ` · ${(r.regions ?? []).join(", ")}` : " · whole country"}
+                </div>
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">{r.start_date ?? "—"} → {r.end_date ?? "open"}</TableCell>
+              <TableCell className="font-semibold">{imp.get(r.slug) ?? 0}</TableCell>
+              <TableCell className="font-semibold">{clk.get(r.slug) ?? 0}</TableCell>
+              <TableCell className="text-sm">
+                <Link href={`/admin/sponsors/${r.id}/report`} className="text-teal-ink underline">Report</Link>
               </TableCell>
             </TableRow>
           ))}
         </AdminTable>
       )}
+
+      <h2 className="mb-2 mt-10 text-base font-semibold">House sponsors</h2>
+      <p className="mb-3 text-sm text-muted-foreground">Fill a slot only when no paid sponsor holds it. Set in src/lib/sponsors/registry.ts.</p>
+      <AdminTable columns={["Sponsor", "Label", "Impressions", "Clicks", "Clicks by placement"]}>
+        {SPONSORS.map((s) => (
+          <TableRow key={s.id}>
+            <TableCell className="font-medium">{s.name}</TableCell>
+            <TableCell className="text-muted-foreground">{s.label}</TableCell>
+            <TableCell className="font-semibold">{imp.get(s.id) ?? 0}</TableCell>
+            <TableCell className="font-semibold">{clk.get(s.id) ?? 0}</TableCell>
+            <TableCell className="text-sm text-muted-foreground">
+              {[...(housePlacements.get(s.id) ?? new Map<string, number>()).entries()].map(([p, n]) => `${PLACEMENT_LABEL[p] ?? p}: ${n}`).join(" · ") || "—"}
+            </TableCell>
+          </TableRow>
+        ))}
+      </AdminTable>
     </div>
   );
 }
 
-async function loadClicks(): Promise<{ rows: ClickRow[]; ready: boolean }> {
-  const since = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
-  const { data, error } = await (await createClient())
-    .from("sponsor_clicks")
-    .select("day,sponsor,placement,trade,clicks")
-    .gte("day", since)
-    .order("day", { ascending: false })
-    .limit(2000);
-  return { rows: (data as ClickRow[] | null) ?? [], ready: !error };
+function last30Days(): { today: string; since: string } {
+  return { today: torontoDay(), since: torontoDay(new Date(Date.now() - 30 * 86_400_000)) };
+}
+
+function sum(rows: { sponsor: string; n: number }[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const r of rows) m.set(r.sponsor, (m.get(r.sponsor) ?? 0) + r.n);
+  return m;
 }

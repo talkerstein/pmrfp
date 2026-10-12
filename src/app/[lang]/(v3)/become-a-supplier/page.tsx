@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AudienceLanding } from "@/components/v3/audience";
-import { SPONSOR_PACKAGES, cad } from "@/components/advertise/packages";
+import { cad } from "@/components/advertise/packages";
+import { lowestSponsorPrice } from "@/lib/sponsors/pricing";
 import { getCategories, type CategoryOption } from "@/lib/data/taxonomy";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { isPastContract } from "@/lib/data/fomo";
@@ -52,7 +53,8 @@ export default async function BecomeASupplierPage({ params }: { params: Promise<
   ]);
   const busiest = busiestTrades(rfps, categories);
   const money = (n: number) => cad(n, lang);
-  const sponsorFrom = Math.min(...SPONSOR_PACKAGES.map((s) => s.monthly));
+  // This page shows CAD list prices (with a currency note); sponsorship from lib/sponsors/pricing.
+  const sponsorFrom = lowestSponsorPrice("CA");
   const plans = [
     { ...p.plans.free, price: p.plans.free.price, per: "" },
     { ...p.plans.seo, price: money(PRICING.seoAnnual), per: `${p.plans.perYear} · ${money(PRICING.seoMonthly)}${p.plans.perMonth}` },

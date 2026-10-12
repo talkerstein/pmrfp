@@ -81,6 +81,11 @@ export function forumForTrade(tradeSlug: string): ForumCategorySlug | null {
   return TRADE_TO_FORUM[tradeSlug] ?? null;
 }
 
+/** Every directory trade a forum covers ("electrical" → electrical, lighting, ev-charging). Empty for non-trade forums. */
+export function tradesForForum(slug: ForumCategorySlug): string[] {
+  return Object.entries(TRADE_TO_FORUM).filter(([, f]) => f === slug).map(([t]) => t);
+}
+
 /** Forum → the directory trade page it cross-links to (AEO internal linking). */
 const FORUM_TO_TRADE: Partial<Record<ForumCategorySlug, string>> = {
   electrical: "electrical",

@@ -6,6 +6,9 @@ import { sendTenderDigest } from "@/lib/email/send";
 import { unsubscribeUrl } from "@/lib/email/unsubscribe";
 import { displayTitle } from "@/lib/tenders/title";
 import { sponsorEmailBlock } from "@/lib/sponsors/email";
+import { getSponsorSnapshot } from "@/lib/sponsors/data";
+import { countImpression, flushImpressions } from "@/lib/sponsors/impressions";
+import { dominantPlace } from "@/lib/sponsors/model";
 import { freeDigestMatches, orgCountries, regionCountryMap } from "@/lib/alerts/country";
 
 export const maxDuration = 60;
@@ -129,6 +132,7 @@ export async function GET(request: Request) {
   const alreadySent = new Set(((recent ?? []) as { user_id: string }[]).map((r) => r.user_id));
 
   let sent = 0;
+  const paidSponsors = await getSponsorSnapshot();
   const preview: { org: string; count: number; trade: string }[] = [];
   for (const org of freeOrgs) {
     const cats = catsByOrg.get(org.id);
@@ -146,6 +150,8 @@ export async function GET(request: Request) {
           counts.set(c.trade_categories.name, (counts.get(c.trade_categories.name) ?? 0) + 1);
     const trade = ([...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "commercial").toLowerCase();
     preview.push({ org: org.name, count: matches.length, trade });
+    // Sponsor slot: this trade × the province most of these tenders are in.
+    const place = dominantPlace(matches.map((m) => ({ province: m.province })));
 
     for (const userId of usersByOrg.get(org.id) ?? []) {
       const email = emailById.get(userId);
@@ -176,12 +182,18 @@ export async function GET(request: Request) {
         annualUrl: `${base}/dashboard/billing?plan=pro&interval=annual`,
         unsubscribeUrl: unsub,
         mailingAddress: mailingAddress!,
-        sponsorHtml: sponsorEmailBlock({ placement: "digest_email", categories: [trade], seed: userId }, base),
+        sponsorHtml: sponsorEmailBlock(
+          { placement: "digest_email", categories: [trade], market: place.country, province: place.province, seed: userId },
+          base,
+          paidSponsors,
+          (u) => countImpression({ sponsor: u.id, placement: u.placement, trade: u.trade, region: u.region }),
+        ),
       });
       sent++;
     }
   }
 
+  if (!dry) await flushImpressions(true);
   return NextResponse.json(dry ? { dry: true, wouldSend: sent, orgs: preview } : { sent, orgs: preview.length });
 }
 

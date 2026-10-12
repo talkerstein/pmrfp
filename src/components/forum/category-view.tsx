@@ -5,7 +5,9 @@ import { CircleHelp, Lock, MapPin, MessagesSquare, Pin, ShieldCheck } from "luci
 import { Container } from "@/components/container";
 import { ForumHero, MemberName, OpeningSoon, Pager, RatingBar } from "@/components/forum/parts";
 import { getCategoryRow, listCategoryThreads, type ThreadSummary } from "@/lib/forum/data";
-import { isForumCategory } from "@/lib/forum/categories";
+import { isForumCategory, tradesForForum } from "@/lib/forum/categories";
+import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { PAGE_SIZE, isIndexableListPage, pageCount } from "@/lib/forum/rules";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT } from "@/i18n/server";
@@ -98,6 +100,8 @@ export async function CategoryView({ category, page, sort = "latest", hideAuto =
   const pages = pageCount(total, PAGE_SIZE);
   if (page > pages && !(page === 1 && sort !== "latest")) notFound();
   const base = `/forum/${category}`;
+  const forumTrades = tradesForForum(category);
+  const visitor = forumTrades.length ? await getVisitorCountry() : { country: "CA" as const, province: null };
 
   return (
     <>
@@ -176,6 +180,13 @@ export async function CategoryView({ category, page, sort = "latest", hideAuto =
           </div>
         )}
         <Pager base={base} page={page} total={pages} query={categoryQuery(sort, hideAuto)} />
+        {forumTrades.length > 0 && (
+          // The trade's sponsor, below the threads: the visitor's province slot, else the national one.
+          <SponsorSlot
+            className="mt-8 max-w-md"
+            ctx={{ placement: "forum", categories: forumTrades, market: visitor.country, province: visitor.province, seed: `${category}|${page}` }}
+          />
+        )}
       </Container>
     </>
   );

@@ -12,7 +12,6 @@ import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-ca
 import { ActivateButton } from "@/components/dashboard/billing-actions";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
 import { ReputationCard } from "@/components/karma/reputation-card";
-import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -165,11 +164,6 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
           </div>
         </div>
       )}
-
-      <SponsorSlot
-        className="mt-6 max-w-md"
-        ctx={{ placement: "trade_dashboard", categories: tradeSlugs, seed: org?.id ?? "" }}
-      />
     </div>
   );
 }

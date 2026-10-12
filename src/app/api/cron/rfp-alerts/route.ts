@@ -7,6 +7,9 @@ import { expandRegionIds, type RegionNode } from "@/lib/data/region-tree";
 import { buildDigests, digestSubject, type DigestRfp } from "@/lib/alerts/digest";
 import { displayTitle } from "@/lib/tenders/title";
 import { sponsorEmailBlock } from "@/lib/sponsors/email";
+import { getSponsorSnapshot } from "@/lib/sponsors/data";
+import { countImpression, flushImpressions } from "@/lib/sponsors/impressions";
+import { dominantPlace } from "@/lib/sponsors/model";
 import { listingCountry, orgCountries, regionCountryMap } from "@/lib/alerts/country";
 import type { CountryCode } from "@/lib/visitor-geo";
 import {
@@ -196,8 +199,12 @@ export async function GET(request: Request) {
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
   const mailingAddress = process.env.BUSINESS_MAILING_ADDRESS?.trim() || null;
+  // Sponsors: one cached read per run; the slot is the email's trade × its listings' province.
+  const paidSponsors = await getSponsorSnapshot();
+  const provinceByRfp = new Map(rows.map((r) => [r.id, r.province]));
   let sent = 0;
   for (const d of digests) {
+    const place = dominantPlace(d.items.map((i) => ({ province: provinceByRfp.get(i.id) ?? null, country: i.country ?? null })));
     await sendDailyMatches(d.email, {
       subject: digestSubject(d),
       items: d.items.map((i) => ({
@@ -213,8 +220,10 @@ export async function GET(request: Request) {
       recentAwards: (awardsByUser.get(d.userId) ?? []).map((a) => ({ slug: a.slug, line: awardLine(a, d.tradeLabel) })),
       majorProjects: (projectsByUser.get(d.userId) ?? []).map((a) => ({ slug: a.slug, name: a.name, line: projectAlertLine(a, (n) => compactDollars(n)) })),
       sponsorHtml: sponsorEmailBlock(
-        { placement: "alerts_email", categories: [d.tradeLabel], seed: d.userId },
+        { placement: "alerts_email", categories: [d.tradeLabel], market: place.country, province: place.province, seed: d.userId },
         base,
+        paidSponsors,
+        (u) => countImpression({ sponsor: u.id, placement: u.placement, trade: u.trade, region: u.region }),
       ),
     });
     await supabase.from("notifications").insert(
@@ -240,6 +249,7 @@ export async function GET(request: Request) {
     }
     sent++;
   }
+  await flushImpressions(true);
 
   return NextResponse.json({ sent, rfpsNotified: digests.reduce((s, d) => s + d.items.length, 0) });
 }
