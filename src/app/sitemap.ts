@@ -21,6 +21,8 @@ import { listActiveListings } from "@/lib/marketplace/data";
 import { CATEGORIES, landingIndexable } from "@/lib/marketplace/rules";
 import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
 import { PROVINCES } from "@/lib/data/province-hub";
+import { getMajorProjects } from "@/lib/major-projects/data";
+import { isThinProject } from "@/lib/major-projects/filters";
 
 /** Toronto supplier pages in the sitemap: indexable ones only, biggest first. */
 const TORONTO_SITEMAP_LIMIT = 2000;
@@ -98,6 +100,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   entries.push({ url: `${base}/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   entries.push({ url: `${base}/gc-hub`, lastModified: now, changeFrequency: "daily", priority: 0.7 });
+  // Major projects (Canada): the list plus every project page that isn't thin (thin ones are noindexed).
+  entries.push({ url: `${base}/major-projects`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  for (const p of (await getMajorProjects()).filter((x) => !isThinProject(x)).slice(0, 5000))
+    entries.push({ url: `${base}/major-projects/${p.slug}`, lastModified: new Date(`${p.lastSeen}T12:00:00Z`), changeFrequency: "weekly", priority: 0.5 });
   entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   // Monthly contract-winner reports: only months that have a page (complete, 10+ awards).
   entries.push({ url: `${base}/reports/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });

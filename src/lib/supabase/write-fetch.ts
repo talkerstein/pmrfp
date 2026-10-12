@@ -1,5 +1,5 @@
 import { revalidateTag } from "next/cache";
-import { FORUM_DATA_TAG, PUBLIC_DATA_TAG, RFPS_TAG, RFP_TABLES, TAXONOMY_DATA_TAG, TAXONOMY_TABLES, isForumTable } from "./public-cache";
+import { FORUM_DATA_TAG, MAJOR_PROJECTS_TAG, PUBLIC_DATA_TAG, RFPS_TAG, RFP_TABLES, TAXONOMY_DATA_TAG, TAXONOMY_TABLES, isForumTable } from "./public-cache";
 
 // Invalidate shared public reads after relevant server writes, including admin
 // moderation and tender imports. User/private queries themselves stay uncached.
@@ -29,6 +29,10 @@ export function createWriteFetch(baseUrl: string, transport: typeof fetch = (...
       // from the database at the same moment (incident 2026-10-09).
       revalidateTag(RFPS_TAG, "max");
       revalidateTag(PUBLIC_DATA_TAG, "max");
+    } else if (table === "major_projects") {
+      // Weekly import and admin review: serve the previous list while one
+      // background refresh reloads the snapshot (same reasoning as the board).
+      revalidateTag(MAJOR_PROJECTS_TAG, "max");
     } else if (PUBLIC_TABLES.has(table)) {
       revalidateTag(PUBLIC_DATA_TAG, { expire: 0 });
       if (TAXONOMY_TABLES.has(table)) revalidateTag(TAXONOMY_DATA_TAG, { expire: 0 });

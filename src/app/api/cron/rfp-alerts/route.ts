@@ -16,6 +16,15 @@ import {
   type AwardRow,
   type DigestAward,
 } from "@/lib/alerts/awards";
+import {
+  majorProjectAlertsEnabled,
+  projectAlertLine,
+  projectAlertsFor,
+  projectEvents,
+  type ProjectAlert,
+  type ProjectAlertRow,
+} from "@/lib/major-projects/alerts";
+import { compactDollars } from "@/lib/data/fomo";
 
 export const maxDuration = 60;
 
@@ -78,13 +87,13 @@ export async function GET(request: Request) {
     supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", paidOrgIds),
     supabase.from("organization_regions").select("organization_id,region_id").in("organization_id", paidOrgIds),
     supabase.from("organization_members").select("organization_id,user_id").in("organization_id", paidOrgIds),
-    supabase.from("regions").select("id,name,parent_id,country"),
+    supabase.from("regions").select("id,name,parent_id,country,province"),
     // Plain-English summaries from the bid checklist, when they exist (an
     // error here — e.g. the table isn't migrated yet — just means none).
     supabase.from("rfp_bid_checks").select("rfp_id,result").in("rfp_id", rows.map((r) => r.id)).not("result", "is", null),
   ]);
 
-  const tree = (regionRows ?? []) as (RegionNode & { name: string; country: string | null })[];
+  const tree = (regionRows ?? []) as (RegionNode & { name: string; country: string | null; province?: string | null })[];
   const countryByRegion = regionCountryMap(tree);
   const regionName = new Map(tree.map((r) => [r.id, r.name]));
   const plain = new Map(
@@ -161,6 +170,17 @@ export async function GET(request: Request) {
     ? await recentAwards(supabase, { since, today, countryByRegion, ...membership })
     : new Map<string, DigestAward[]>();
 
+  // "Major projects near you" (behind MAJOR_PROJECT_ALERTS=1): also only
+  // rides along with a digest that's going out anyway.
+  const projectsByUser =
+    digests.length && majorProjectAlertsEnabled()
+      ? await majorProjectAlertsByUser(supabase, {
+          userIds: digests.map((d) => d.userId),
+          tree,
+          ...membership,
+        })
+      : new Map<string, ProjectAlert[]>();
+
   if (dry) {
     return NextResponse.json({
       dry: true,
@@ -168,6 +188,7 @@ export async function GET(request: Request) {
       members: digests.map((d) => ({
         matches: d.items.length,
         recentAwards: awardsByUser.get(d.userId)?.length ?? 0,
+        majorProjects: projectsByUser.get(d.userId)?.length ?? 0,
         subject: digestSubject(d),
       })),
     });
@@ -190,6 +211,7 @@ export async function GET(request: Request) {
       unsubscribeUrl: unsubscribeUrl(base, d.userId),
       mailingAddress,
       recentAwards: (awardsByUser.get(d.userId) ?? []).map((a) => ({ slug: a.slug, line: awardLine(a, d.tradeLabel) })),
+      majorProjects: (projectsByUser.get(d.userId) ?? []).map((a) => ({ slug: a.slug, name: a.name, line: projectAlertLine(a, (n) => compactDollars(n)) })),
       sponsorHtml: sponsorEmailBlock(
         { placement: "alerts_email", categories: [d.tradeLabel], seed: d.userId },
         base,
@@ -204,6 +226,18 @@ export async function GET(request: Request) {
         link_url: `/rfps/${i.slug}`,
       })),
     );
+    const projects = projectsByUser.get(d.userId) ?? [];
+    if (projects.length) {
+      await supabase.from("notifications").insert(
+        projects.map((a) => ({
+          user_id: d.userId,
+          type: "major_project_alert",
+          title: a.kind === "status" ? "Major project status changed" : "New major project near you",
+          message: a.name,
+          link_url: `/major-projects/${a.slug}#${a.status}`,
+        })),
+      );
+    }
     sent++;
   }
 
@@ -249,6 +283,88 @@ async function recentAwards(
     })
     .filter((a): a is DigestAward => a !== null);
   return recentAwardsByUser({ awards, ...opts });
+}
+
+/** Major-project news a project can bring in a week; deduped per member by the notifications log. */
+const PROJECT_WINDOW_DAYS = 7;
+
+/**
+ * Major projects that are new or changed status in the last week, matched to
+ * each member's provinces (from their expanded service regions) and trades.
+ * Canada only. Any error just means no section.
+ */
+async function majorProjectAlertsByUser(
+  supabase: ReturnType<typeof createServiceClient>,
+  opts: {
+    userIds: string[];
+    tree: (RegionNode & { name: string; country: string | null; province?: string | null })[];
+    paidOrgIds: string[];
+    catsByOrg: Map<string, Set<string>>;
+    regionsByOrg: Map<string, Set<string>>;
+    usersByOrg: Map<string, Set<string>>;
+    countriesByOrg: Map<string, Set<CountryCode>>;
+  },
+): Promise<Map<string, ProjectAlert[]>> {
+  const since = new Date(Date.now() - PROJECT_WINDOW_DAYS * 86_400_000).toISOString();
+  const [{ data, error }, { data: cats }, { data: sentRows }] = await Promise.all([
+    supabase
+      .from("major_projects")
+      .select("slug,name,province,city,status,previous_status,est_value_cad,trades_needed,created_at,status_changed_at,stale")
+      .neq("review_status", "rejected")
+      .or("source.neq.manual,approved.eq.true")
+      .eq("stale", false)
+      .or(`created_at.gte.${since},status_changed_at.gte.${since}`)
+      .limit(500),
+    supabase.from("trade_categories").select("id,slug"),
+    supabase
+      .from("notifications")
+      .select("user_id,link_url")
+      .eq("type", "major_project_alert")
+      .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString())
+      .in("user_id", opts.userIds.length ? opts.userIds : ["__"]),
+  ]);
+  if (error || !data) return new Map();
+  const rows: ProjectAlertRow[] = (data as Record<string, unknown>[]).map((r) => ({
+    slug: String(r.slug),
+    name: String(r.name),
+    province: (r.province as string | null) ?? null,
+    city: (r.city as string | null) ?? null,
+    status: r.status as ProjectAlertRow["status"],
+    previousStatus: (r.previous_status as ProjectAlertRow["status"] | null) ?? null,
+    estValueCad: r.est_value_cad == null ? null : Number(r.est_value_cad),
+    tradesNeeded: (r.trades_needed as string[] | null) ?? [],
+    firstSeenAt: String(r.created_at),
+    statusChangedAt: (r.status_changed_at as string | null) ?? null,
+    stale: Boolean(r.stale),
+  }));
+  const events = projectEvents(rows, since);
+  if (!events.length) return new Map();
+  const slugById = new Map(((cats ?? []) as { id: string; slug: string }[]).map((c) => [c.id, c.slug]));
+  const provinceById = new Map(opts.tree.map((r) => [r.id, r.province ?? null]));
+  const sentByUser = new Map<string, Set<string>>();
+  for (const n of (sentRows ?? []) as { user_id: string; link_url: string }[]) {
+    const key = n.link_url.replace("/major-projects/", "").replace("#", "|");
+    if (!sentByUser.has(n.user_id)) sentByUser.set(n.user_id, new Set());
+    sentByUser.get(n.user_id)!.add(key);
+  }
+  const wanted = new Set(opts.userIds);
+  const out = new Map<string, ProjectAlert[]>();
+  for (const org of opts.paidOrgIds) {
+    const tradeSlugs = new Set([...(opts.catsByOrg.get(org) ?? [])].map((id) => slugById.get(id)).filter((s): s is string => Boolean(s)));
+    const provinces = new Set([...(opts.regionsByOrg.get(org) ?? [])].map((id) => provinceById.get(id)).filter((p): p is string => Boolean(p)));
+    if (!tradeSlugs.size || !provinces.size) continue;
+    for (const userId of opts.usersByOrg.get(org) ?? []) {
+      if (!wanted.has(userId) || out.has(userId)) continue;
+      const picks = projectAlertsFor(events, {
+        tradeSlugs,
+        provinces,
+        countries: opts.countriesByOrg.get(org) ?? new Set<CountryCode>(["CA"]),
+        alreadySent: sentByUser.get(userId),
+      });
+      if (picks.length) out.set(userId, picks);
+    }
+  }
+  return out;
 }
 
 function group(rows: Pair[], keyField: string, valField: string): Map<string, Set<string>> {

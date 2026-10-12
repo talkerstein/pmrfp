@@ -11,6 +11,8 @@ export const FORUM_DATA_TAG = "supabase-public-forum";
 export const isForumTable = (table: string) => table.startsWith("forum_");
 /** The shared board snapshot (lib/data/board-snapshot) and everything derived from it. */
 export const RFPS_TAG = "rfps";
+/** The shared major-projects snapshot (lib/major-projects/data). */
+export const MAJOR_PROJECTS_TAG = "major-projects";
 /** Tables whose writes change the public board. */
 export const RFP_TABLES = new Set(["rfp_posts", "rfp_categories", "rfp_documents"]);
 
