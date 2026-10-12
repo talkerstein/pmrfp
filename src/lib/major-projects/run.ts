@@ -11,8 +11,8 @@ import { applySync, loadExisting, loadRegionLookup, planSummary, planSync } from
  * One weekly major-projects import run (Vercel cron), shared by
  * /api/cron/major-projects (core) and /api/cron/major-projects/<group>
  * (funding, local). Canada only. Each source is fetched once, filtered
- * (permits >= MAJOR_PROJECT_PERMIT_MIN, default C$5M; funding lists and
- * capital plans >= MAJOR_PROJECT_FUNDING_MIN, default C$1M), then upserted
+ * (permits >= MAJOR_PROJECT_PERMIT_MIN, default C$3M; funding lists and
+ * capital plans >= MAJOR_PROJECT_FUNDING_MIN, default C$3M), then upserted
  * in small sequential batches. Rows a source stops listing are marked
  * stale, never deleted; a feed that suddenly shrinks by half marks nothing
  * stale. After a real run, cross-source link groups are recomputed.

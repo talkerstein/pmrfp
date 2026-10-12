@@ -45,6 +45,7 @@ import {
   type ProjectSource,
 } from "./sources";
 import {
+  DEFAULT_FUNDING_MIN_CAD,
   PERMIT_CATEGORIES,
   cleanText,
   inferTrades,
@@ -1134,7 +1135,7 @@ export const WAVE2_SOURCES: ProjectSource[] = [
     key: "capital-edmonton",
     label: "Edmonton capital projects",
     group: "funding",
-    collect: async ({ fundingMin }) => parseEdmontonCapital(await getJson(edmontonCapitalUrl()), fundingMin ?? 1_000_000),
+    collect: async ({ fundingMin }) => parseEdmontonCapital(await getJson(edmontonCapitalUrl()), fundingMin ?? DEFAULT_FUNDING_MIN_CAD),
   },
   {
     key: "manitoba-capital",

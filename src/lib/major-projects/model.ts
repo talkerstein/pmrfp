@@ -78,18 +78,18 @@ export interface MajorProjectInput {
 }
 
 /** Default minimum value for a city building permit to count as a major project. */
-export const DEFAULT_PERMIT_MIN_CAD = 5_000_000;
+export const DEFAULT_PERMIT_MIN_CAD = 3_000_000;
 
-/** MAJOR_PROJECT_PERMIT_MIN (CAD) or C$5M. Never below C$1M (that's not "major"). */
+/** MAJOR_PROJECT_PERMIT_MIN (CAD) or C$3M. Never below C$1M (that's not "major"). */
 export function permitMinValue(env: string | undefined = process.env.MAJOR_PROJECT_PERMIT_MIN): number {
   const n = Number(env);
   return Number.isFinite(n) && n >= 1_000_000 ? n : DEFAULT_PERMIT_MIN_CAD;
 }
 
 /** Default minimum for funded / capital-plan projects (Infrastructure Canada, city capital plans). */
-export const DEFAULT_FUNDING_MIN_CAD = 1_000_000;
+export const DEFAULT_FUNDING_MIN_CAD = 3_000_000;
 
-/** MAJOR_PROJECT_FUNDING_MIN (CAD) or C$1M. Never below C$100k. */
+/** MAJOR_PROJECT_FUNDING_MIN (CAD) or C$3M. Never below C$100k. */
 export function fundingMinValue(env: string | undefined = process.env.MAJOR_PROJECT_FUNDING_MIN): number {
   const n = Number(env);
   return Number.isFinite(n) && n >= 100_000 ? n : DEFAULT_FUNDING_MIN_CAD;
@@ -326,9 +326,9 @@ export function projectSlug(name: string, sourceKey: string): string {
 export const VALUE_BANDS = ["5m", "25m", "100m", "1b"] as const;
 export type ValueBand = (typeof VALUE_BANDS)[number];
 
-/** Lower bound (CAD) of each band: 5m = C$5M–25M, 25m = 25M–100M, 100m = 100M–1B, 1b = C$1B+. */
+/** Lower bound (CAD) of each band: 5m = C$3M–25M, 25m = 25M–100M, 100m = 100M–1B, 1b = C$1B+. */
 export const VALUE_BAND_RANGES: Record<ValueBand, [number, number]> = {
-  "5m": [5e6, 25e6],
+  "5m": [3e6, 25e6], // key kept for existing URLs; floor is C$3M
   "25m": [25e6, 100e6],
   "100m": [100e6, 1e9],
   "1b": [1e9, Number.POSITIVE_INFINITY],

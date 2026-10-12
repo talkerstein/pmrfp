@@ -163,9 +163,9 @@ describe("wave 2: thresholds and filters", () => {
     expect(rows[1]).toMatchObject({ status: "under_construction", city: null, regionSlug: "ontario" });
     expect(rows[1].description).toContain("Locations: Bruce, Grey");
     expect(parseInfrastructureCanada(csv, 20e6, TODAY)).toHaveLength(0);
-    expect(fundingMinValue(undefined)).toBe(1_000_000);
+    expect(fundingMinValue(undefined)).toBe(3_000_000);
     expect(fundingMinValue("250000")).toBe(250_000);
-    expect(fundingMinValue("5")).toBe(1_000_000);
+    expect(fundingMinValue("5")).toBe(3_000_000);
   });
 
   it("PQI: $ millions, French stages, newest snapshot link, stage date from the change log", () => {

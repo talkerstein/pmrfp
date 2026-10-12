@@ -89,11 +89,11 @@ describe("normalisers", () => {
     expect(provinceName("Texas")).toBeNull();
   });
 
-  it("permit minimum is C$5M unless configured (never below C$1M)", () => {
-    expect(permitMinValue(undefined)).toBe(5_000_000);
+  it("permit minimum is C$3M unless configured (never below C$1M)", () => {
+    expect(permitMinValue(undefined)).toBe(3_000_000);
     expect(permitMinValue("10000000")).toBe(10_000_000);
-    expect(permitMinValue("50000")).toBe(5_000_000);
-    expect(permitMinValue("abc")).toBe(5_000_000);
+    expect(permitMinValue("50000")).toBe(3_000_000);
+    expect(permitMinValue("abc")).toBe(3_000_000);
   });
 
   it("dates, urls, slugs, bands and trades", () => {

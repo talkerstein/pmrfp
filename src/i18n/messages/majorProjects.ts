@@ -5,7 +5,7 @@
 const en = {
   meta: {
     title: "Major construction projects in Canada: who is building what",
-    description: "Large building and infrastructure projects across Canada from federal and provincial project lists, city capital plans, building permits over $5M and large development applications: status, value, owner, and how trades get on the bid list.",
+    description: "Large building and infrastructure projects across Canada from federal and provincial project lists, city capital plans, building permits over $3M and large development applications: status, value, owner, and how trades get on the bid list.",
     provinceTitle: "Major construction projects in {province}",
     provinceDescription: "Large projects in {province} from public inventories and city permits: status, value, owner, and how trades get on the bid list.",
     projectTitle: "{name}: {city} major project",
@@ -36,7 +36,7 @@ const en = {
     unknown: "Status unknown",
   },
   bands: {
-    "5m": "$5M to $25M",
+    "5m": "$3M to $25M",
     "25m": "$25M to $100M",
     "100m": "$100M to $1B",
     "1b": "$1B and up",
@@ -44,7 +44,7 @@ const en = {
   list: {
     eyebrow: "Major projects",
     h1: "Major construction projects in Canada.",
-    sub: "Big jobs that are planned, approved or being built now: from federal and provincial project lists (Infrastructure Canada, Québec, Ontario, British Columbia, Manitoba), city capital plans, building permits over $5M and large development applications. See who owns each one and how trades get on the bid list.",
+    sub: "Big jobs that are planned, approved or being built now: from federal and provincial project lists (Infrastructure Canada, Québec, Ontario, British Columbia, Manitoba), city capital plans, building permits over $3M and large development applications. See who owns each one and how trades get on the bid list.",
     stats: { projects: "Projects", value: "Total value", building: "Under construction" },
     searchPh: "Project, owner or city",
     searchBtn: "Search",
@@ -89,7 +89,7 @@ const en = {
     how: [
       "Provincial major-project inventories.",
       "Federal and provincial funding lists and capital plans.",
-      "City building permits worth $5M or more.",
+      "City building permits worth $3M or more.",
       "Large development applications: the earliest signal, before any permit.",
       "Projects our team researched, each one checked before it shows.",
     ],
@@ -197,7 +197,7 @@ const en = {
 const fr: typeof en = {
   meta: {
     title: "Grands projets de construction au Canada : qui construit quoi",
-    description: "Les grands projets de bâtiment et d'infrastructure au Canada, tirés des listes fédérales et provinciales de projets, des plans d'immobilisations municipaux, des permis de plus de 5 M$ et des grandes demandes d'aménagement : état, valeur, propriétaire et comment les entrepreneurs se placent sur la liste des soumissionnaires.",
+    description: "Les grands projets de bâtiment et d'infrastructure au Canada, tirés des listes fédérales et provinciales de projets, des plans d'immobilisations municipaux, des permis de plus de 3 M$ et des grandes demandes d'aménagement : état, valeur, propriétaire et comment les entrepreneurs se placent sur la liste des soumissionnaires.",
     provinceTitle: "Grands projets de construction : {province}",
     provinceDescription: "Les grands projets en {province} tirés des inventaires publics et des permis municipaux : état, valeur, propriétaire et comment se placer sur la liste des soumissionnaires.",
     projectTitle: "{name} : grand projet à {city}",
@@ -228,7 +228,7 @@ const fr: typeof en = {
     unknown: "État inconnu",
   },
   bands: {
-    "5m": "5 M$ à 25 M$",
+    "5m": "3 M$ à 25 M$",
     "25m": "25 M$ à 100 M$",
     "100m": "100 M$ à 1 G$",
     "1b": "1 G$ et plus",
@@ -236,7 +236,7 @@ const fr: typeof en = {
   list: {
     eyebrow: "Grands projets",
     h1: "Grands projets de construction au Canada.",
-    sub: "Les gros chantiers prévus, approuvés ou en cours : tirés des listes fédérales et provinciales de projets (Infrastructure Canada, Québec, Ontario, Colombie-Britannique, Manitoba), des plans d'immobilisations municipaux, des permis de construire de plus de 5 M$ et des grandes demandes d'aménagement. Voyez à qui appartient chaque projet et comment les entrepreneurs se placent sur la liste des soumissionnaires.",
+    sub: "Les gros chantiers prévus, approuvés ou en cours : tirés des listes fédérales et provinciales de projets (Infrastructure Canada, Québec, Ontario, Colombie-Britannique, Manitoba), des plans d'immobilisations municipaux, des permis de construire de plus de 3 M$ et des grandes demandes d'aménagement. Voyez à qui appartient chaque projet et comment les entrepreneurs se placent sur la liste des soumissionnaires.",
     stats: { projects: "Projets", value: "Valeur totale", building: "En construction" },
     searchPh: "Projet, propriétaire ou ville",
     searchBtn: "Rechercher",
@@ -281,7 +281,7 @@ const fr: typeof en = {
     how: [
       "Les inventaires provinciaux de grands projets.",
       "Les listes de financement fédérales et provinciales et les plans d'immobilisations.",
-      "Les permis de construire municipaux de 5 M$ et plus.",
+      "Les permis de construire municipaux de 3 M$ et plus.",
       "Les grandes demandes d'aménagement : le premier signal, avant tout permis.",
       "Des projets recherchés par notre équipe, chacun vérifié avant d'être affiché.",
     ],
@@ -389,7 +389,7 @@ const fr: typeof en = {
 const es: typeof en = {
   meta: {
     title: "Grandes proyectos de construcción en Canadá: quién construye qué",
-    description: "Grandes proyectos de edificación e infraestructura en Canadá, de listas federales y provinciales de proyectos, planes de inversión municipales, permisos de más de $5M y grandes solicitudes de desarrollo: estado, valor, propietario y cómo los contratistas entran en la lista de licitantes.",
+    description: "Grandes proyectos de edificación e infraestructura en Canadá, de listas federales y provinciales de proyectos, planes de inversión municipales, permisos de más de $3M y grandes solicitudes de desarrollo: estado, valor, propietario y cómo los contratistas entran en la lista de licitantes.",
     provinceTitle: "Grandes proyectos de construcción en {province}",
     provinceDescription: "Grandes proyectos en {province} de inventarios públicos y permisos municipales: estado, valor, propietario y cómo entrar en la lista de licitantes.",
     projectTitle: "{name}: gran proyecto en {city}",
@@ -420,7 +420,7 @@ const es: typeof en = {
     unknown: "Estado desconocido",
   },
   bands: {
-    "5m": "$5M a $25M",
+    "5m": "$3M a $25M",
     "25m": "$25M a $100M",
     "100m": "$100M a $1,000M",
     "1b": "$1,000M o más",
@@ -428,7 +428,7 @@ const es: typeof en = {
   list: {
     eyebrow: "Grandes proyectos",
     h1: "Grandes proyectos de construcción en Canadá.",
-    sub: "Obras grandes planeadas, aprobadas o en construcción: de listas federales y provinciales de proyectos (Infrastructure Canada, Quebec, Ontario, Columbia Británica, Manitoba), planes de inversión municipales, permisos de construcción de más de $5M y grandes solicitudes de desarrollo. Vea de quién es cada una y cómo los contratistas entran en la lista de licitantes.",
+    sub: "Obras grandes planeadas, aprobadas o en construcción: de listas federales y provinciales de proyectos (Infrastructure Canada, Quebec, Ontario, Columbia Británica, Manitoba), planes de inversión municipales, permisos de construcción de más de $3M y grandes solicitudes de desarrollo. Vea de quién es cada una y cómo los contratistas entran en la lista de licitantes.",
     stats: { projects: "Proyectos", value: "Valor total", building: "En construcción" },
     searchPh: "Proyecto, propietario o ciudad",
     searchBtn: "Buscar",
@@ -473,7 +473,7 @@ const es: typeof en = {
     how: [
       "Inventarios provinciales de grandes proyectos.",
       "Listas de financiación federales y provinciales y planes de inversión.",
-      "Permisos de construcción municipales de $5M o más.",
+      "Permisos de construcción municipales de $3M o más.",
       "Grandes solicitudes de desarrollo: la primera señal, antes de cualquier permiso.",
       "Proyectos investigados por nuestro equipo, cada uno revisado antes de mostrarse.",
     ],
