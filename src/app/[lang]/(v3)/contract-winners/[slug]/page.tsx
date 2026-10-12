@@ -21,6 +21,9 @@ import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
 import { LevelBadge } from "@/components/karma/level-badge";
 import { packageLevels } from "@/lib/karma/data";
+import { benchmarkView } from "@/lib/data/price-benchmarks";
+import { benchmarkForWinner, benchmarkPath } from "@/lib/data/price-benchmarks-load";
+import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
 
 export const revalidate = 3600;
 
@@ -117,6 +120,8 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
     .filter((r) => r.status === "open" && (daysUntil(r.deadline) ?? 0) >= 0 && r.categories.some((c) => w.categories.includes(c)))
     .sort((a, b) => (a.deadline ?? "").localeCompare(b.deadline ?? ""));
   const proHref = signUpHrefForPlan("pro", "monthly");
+  // "What similar contracts sold for" in the trade and province this company wins most.
+  const bench = await benchmarkForWinner(w.slug).catch(() => null);
   const lead = [t.eyebrow, w.categories.slice(0, 4).map((c) => tradeName(c, lang)).join(" · ")].filter(Boolean).join(" — ");
   let no = 0;
 
@@ -216,6 +221,13 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
           )}
           <p className="small"><a href={L("/sign-up?role=trade")}>{p.listCta} →</a></p>
         </div>
+
+        {bench && (
+          <div className="v3-tw" style={{ marginTop: 32 }}>
+            {/* Cached page, viewer unknown: the free view, gated on the benchmark page itself. */}
+            <PriceBenchmarkCard view={benchmarkView(bench.benchmark, false)} href={benchmarkPath(bench.tradeSlug, bench.benchmark.province)} upgradeHref={null} />
+          </div>
+        )}
 
         <SH2 no={++no} id="open">{p.open}</SH2>
         <div className="g-cta">

@@ -21,6 +21,9 @@ import { hasLocale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
 import { tradeName } from "@/i18n/terms";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { benchmarkView } from "@/lib/data/price-benchmarks";
+import { benchmarkPath, benchmarksForTrades } from "@/lib/data/price-benchmarks-load";
+import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -34,10 +37,13 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
   const demo = isDemoMode();
   const org = session.organization;
   // Country-first: the company's own country (its profile, else the CA|US switch / IP).
-  const { country } = await getVisitorCountry({ session });
+  const { country, province } = await getVisitorCountry({ session });
   const [rfps, photoProjects, tradeSlugs] = await Promise.all([listRfps({ country }), projectsReady(), orgTradeSlugs(org?.id ?? null, demo)]);
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
   const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
+  // Price benchmarks for this company's trades, in its own country and province first.
+  const benches = tradeSlugs.length ? await benchmarksForTrades(tradeSlugs, country, province).catch(() => []) : [];
+  const tb = getT("benchmarks").dash;
   const lang = getLang();
   const tp = getT("portfolio").home;
   const nudge = photoProjects && org && !demo ? await projectNudge(org.id) : null;
@@ -85,6 +91,28 @@ export default async function TradeDashboardHome({ params }: { params: Promise<o
           </div>
           <span className={buttonVariants({ variant: "outline" })}>{t.gcCta}</span>
         </Link>
+      )}
+
+      {benches.length > 0 && (
+        <section className="mt-6" data-section="price-benchmarks">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <h2 className="text-base font-semibold">{tb.title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{tb.body}</p>
+            </div>
+            <Link href="/benchmarks" className="text-sm font-medium text-teal-700 hover:underline">{tb.all} →</Link>
+          </div>
+          <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {benches.map(({ benchmark, tradeSlug }) => (
+              <PriceBenchmarkCard
+                key={tradeSlug}
+                view={benchmarkView(benchmark, session.hasTradeAccess)}
+                href={benchmarkPath(tradeSlug, benchmark.province)}
+                upgradeHref="/dashboard/billing?plan=pro&interval=monthly"
+              />
+            ))}
+          </div>
+        </section>
       )}
 
       {photoProjects && nudge?.kind === "build" && (

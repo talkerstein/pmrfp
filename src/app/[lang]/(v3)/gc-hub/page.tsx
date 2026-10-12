@@ -21,7 +21,11 @@ import { SH2, SimplePage } from "@/components/v3/simple";
 import { LevelBadge } from "@/components/karma/level-badge";
 import { FeaturedContributors } from "@/components/karma/level-stairs";
 import { packageLevels } from "@/lib/karma/data";
-import { inCountry, parseCountryParam, provinceFirst } from "@/lib/visitor-geo";
+import { countryOf, inCountry, parseCountryParam, provinceFirst } from "@/lib/visitor-geo";
+import "@/components/benchmarks/benchmarks.css";
+import { benchmarkView, canonicalProvince, computeBenchmark } from "@/lib/data/price-benchmarks";
+import { BENCHMARKS_PATH, benchmarkPath, loadBenchmarkData } from "@/lib/data/price-benchmarks-load";
+import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 
 export const revalidate = 3600;
@@ -100,6 +104,27 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
     return cat ? [{ cat, count }] : [];
   });
   const proHref = signUpHrefForPlan("pro", "monthly");
+  // Price benchmarks, same country as the wins: the filtered trade × province when
+  // both are picked, else the visitor's country's best-covered combos.
+  const tb = getT("benchmarks").hub;
+  const benchData = await loadBenchmarkData();
+  const benchProvince = canonicalProvince(province);
+  const filteredBench =
+    tradeCat && benchProvince && countryOf({ province: benchProvince }) === visitor.country
+      ? computeBenchmark(benchData.awards, { trade: tradeCat.name, province: benchProvince }, benchData.today)
+      : null;
+  const benchCard =
+    filteredBench && tradeCat && filteredBench.total > 0 ? (
+      <PriceBenchmarkCard view={benchmarkView(filteredBench, false)} href={benchmarkPath(tradeCat.slug, filteredBench.province)} upgradeHref={null} />
+    ) : null;
+  const benchSlug = new Map(benchData.categories.map((c) => [c.name, c.slug]));
+  const benchLinks = provinceFirst(
+    benchData.combos.filter((c) => c.country === visitor.country && c.enough && benchSlug.has(c.trade)),
+    visitor.province,
+    (c) => c.province,
+  )
+    .slice(0, 8)
+    .map((c) => ({ ...c, slug: benchSlug.get(c.trade)! }));
   const keys = sourceKeys(all);
   const portalRows = keys.some((k) => k === "toronto-awards" || k === "ns-awards");
   let no = 0;
@@ -233,6 +258,22 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
           </>
         ) : (
           <p className="s-note" data-empty="wins">{fmt(t.wins.none, { days: HUB_DAYS })}</p>
+        )}
+
+        {(benchCard || benchLinks.length > 0) && (
+          <>
+            <SH2 no={++no} id="benchmarks">{tb.title}</SH2>
+            <p>{tb.intro}</p>
+            {benchCard && <div className="v3-tw" style={{ marginTop: 18 }}>{benchCard}</div>}
+            {!benchCard && (
+              <div className="bm-links" data-list="benchmarks">
+                {benchLinks.map((c) => (
+                  <a key={`${c.trade}|${c.province}`} href={L(benchmarkPath(c.slug, c.province))}>{`${tradeName(c.trade, lang)} · ${regionName(c.province, lang)} (${n(c.valued)})`}</a>
+                ))}
+              </div>
+            )}
+            <p className="small"><a href={L(BENCHMARKS_PATH)}>{tb.all} →</a></p>
+          </>
         )}
 
         <div className="g-cta">
