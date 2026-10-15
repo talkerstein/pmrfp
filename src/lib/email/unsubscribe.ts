@@ -19,6 +19,25 @@ export function unsubscribeUrl(base: string, userId: string): string | null {
   return `${base}/api/email/unsubscribe?u=${encodeURIComponent(userId)}&t=${sign(userId, key)}`;
 }
 
+/* The free weekly email (digest_subscribers): same secret, its own prefix, so a digest link can't unsubscribe an account and vice versa. */
+function signDigest(subscriberId: string, key: string): string {
+  return createHmac("sha256", key).update(`digest-unsub:${subscriberId}`).digest("base64url");
+}
+
+export function digestUnsubscribeUrl(base: string, subscriberId: string): string | null {
+  const key = secret();
+  if (!key) return null;
+  return `${base}/api/digest/unsubscribe?s=${encodeURIComponent(subscriberId)}&t=${signDigest(subscriberId, key)}`;
+}
+
+export function verifyDigestUnsubscribe(subscriberId: string | null, token: string | null): boolean {
+  const key = secret();
+  if (!key || !subscriberId || !token) return false;
+  const expected = Buffer.from(signDigest(subscriberId, key));
+  const given = Buffer.from(token);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}
+
 export function verifyUnsubscribe(userId: string | null, token: string | null): boolean {
   const key = secret();
   if (!key || !userId || !token) return false;

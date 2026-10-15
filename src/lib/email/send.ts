@@ -1181,3 +1181,26 @@ export async function sendAdminFoundingAlert(p: { reason: string; organizationId
     ),
   );
 }
+
+/**
+ * The free weekly email and its double opt-in confirmation (lib/digest).
+ * Subject, body and the CASL/CAN-SPAM footer are built (and tested) in
+ * lib/digest/build; this only wraps them in the shared shell. No referral
+ * P.S. (the reader may not be a member). The weekly email carries RFC 8058
+ * one-click List-Unsubscribe headers.
+ */
+export async function sendDigestEmail(
+  to: string,
+  email: { subject: string; title: string; bodyHtml: string; footnoteHtml: string },
+  lang: "en" | "fr" | "es",
+  unsubscribeUrl?: string,
+): Promise<void> {
+  await send(
+    to,
+    email.subject,
+    layout(email.title, email.bodyHtml, email.footnoteHtml, { referralPs: false, lang }),
+    unsubscribeUrl
+      ? { "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+      : undefined,
+  );
+}

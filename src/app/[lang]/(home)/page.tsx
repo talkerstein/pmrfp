@@ -21,6 +21,7 @@ import { cachedLifetimeCount } from "@/lib/founding/server";
 import type { RfpListItem } from "@/lib/data/types";
 import { HomeV3, type V3Closing, type V3Data, type V3Messages } from "@/components/home-v3/home-v3";
 import { V3_FALLBACK } from "@/components/home-v3/fallback";
+import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 
 /**
  * Homepage (Claude Design handoff 2026-10-07, approved). Its own route group so
@@ -318,5 +319,15 @@ export default async function HomePage({ params }: { params: Promise<object> }) 
   const lang = await setLangFrom(params);
   const t = getT("homeV3");
   const { data, dataUs, live, fallback } = await load(lang, t);
-  return <HomeV3 data={data} dataUs={dataUs} where={getT("common").market.where} t={t} lang={lang} dataSources={{ live, fallback }} />;
+  return (
+    <HomeV3
+      data={data}
+      dataUs={dataUs}
+      where={getT("common").market.where}
+      t={t}
+      lang={lang}
+      dataSources={{ live, fallback }}
+      digest={<DigestSignupBlock source="home" />}
+    />
+  );
 }

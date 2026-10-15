@@ -152,6 +152,7 @@ export function HomeV3({
   t,
   lang,
   dataSources,
+  digest,
 }: {
   /** Canada's board (also what crawlers and the first paint see). */
   data: V3Data;
@@ -162,6 +163,8 @@ export function HomeV3({
   t: V3Messages;
   lang: Locale;
   dataSources?: { live: string[]; fallback: string[] };
+  /** The free weekly email sign-up (server-rendered; null while sign-ups are off). */
+  digest?: ReactNode;
 }) {
   const router = useRouter();
   const market = useVisitorMarket();
@@ -856,6 +859,8 @@ export function HomeV3({
             </div>
           </div>
         </section>
+
+        {digest && <div className="v3-wrap">{digest}</div>}
 
         {(data.browse.combos.length > 0 || data.browse.newest.length > 0) && (
           <section className="v3-browse">

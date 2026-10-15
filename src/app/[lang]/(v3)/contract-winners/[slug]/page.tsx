@@ -24,6 +24,8 @@ import { packageLevels } from "@/lib/karma/data";
 import { benchmarkView } from "@/lib/data/price-benchmarks";
 import { benchmarkForWinner, benchmarkPath } from "@/lib/data/price-benchmarks-load";
 import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
+import { getWinnerClaim, websiteHref } from "@/lib/claims/data";
+import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 
 export const revalidate = 3600;
 
@@ -109,10 +111,13 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
   const sources = w.awards.map((a) => awardSourceCopy(a, lang));
   const issuers = [...new Set(sources.map((s) => s.issuer))];
   const attributions = [...new Set(sources.map((s) => s.attribution))];
-  const [notices, packages] = await Promise.all([
+  const [notices, packages, claim] = await Promise.all([
     officialNotices(w.awards.map((a) => a.slug)),
     listPackagesForAwardSlugs(w.awards.map((a) => a.slug)),
+    getWinnerClaim(w.slug),
   ]);
+  const g = getT("growth").winner;
+  const site = claim ? websiteHref(claim.website) : null;
   // Reputation level of the company behind each package (level 2+, poster stays anonymous).
   const pkgLevels = await packageLevels(packages.map((pk) => pk.slug));
   // Open work in the same trades — the "you could be bidding on this" hook.
@@ -149,6 +154,34 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
           <div><div className="k">{t.stats.total}</div><div className="v">{w.totalValue ? compactDollars(w.totalValue, lang) : t.stats.notDisclosed}</div></div>
           <div><div className="k">{t.stats.recent}</div><div className="v">{day(w.latest, lang)}</div></div>
         </div>
+
+        {claim && (
+          // The company's own profile (claimed page). Award facts below stay as published.
+          <div className="s-block" data-panel="claimed">
+            <h2>{g.profileTitle}</h2>
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginTop: 12 }}>
+              {claim.logoUrl && /^https:\/\//.test(claim.logoUrl) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={claim.logoUrl} alt={claim.name} width={64} height={64} style={{ borderRadius: 12, border: "1px solid #E3E4EE", objectFit: "contain", background: "#fff" }} />
+              )}
+              <div>
+                <p style={{ margin: 0 }}>
+                  <b>{claim.name}</b>
+                  {claim.verified && <> · {g.verified}</>}
+                  {claim.city && <> · {[claim.city, claim.province ? regionName(claim.province, lang) : null].filter(Boolean).join(", ")}</>}
+                </p>
+                {claim.description && <p>{claim.description}</p>}
+                <p className="small">
+                  {site && <><a className="ext" href={site} target="_blank" rel="noopener">{g.website}</a> · </>}
+                  {claim.phone && <><a href={`tel:${claim.phone.replace(/[^\d+]/g, "")}`}>{claim.phone}</a> · </>}
+                  {claim.email && <><a href={`mailto:${claim.email}`}>{claim.email}</a> · </>}
+                  <a href={L(`/directory/${claim.orgSlug}`)}>{g.directory} →</a>
+                </p>
+              </div>
+            </div>
+            <p className="small muted">{fmt(g.claimedNote, { date: day(claim.claimedAt, lang) })}</p>
+          </div>
+        )}
 
         <SH2 no={++no} id="contracts">{fmt(t.listTitle, { name: w.name })}</SH2>
         <div className="s-dtw">
@@ -251,6 +284,21 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
             ))}
           </ul>
         )}
+
+        {claim ? (
+          <p className="small"><a href={L(`/badges/winner/${w.slug}`)}>{g.badgeCta} →</a></p>
+        ) : (
+          <div className="s-block" data-panel="claim">
+            <h2>{g.claimTitle}</h2>
+            <p>{g.claimBody}</p>
+            <p className="s-links" style={{ marginTop: 14, paddingTop: 0, border: 0 }}>
+              <a href={L(`/contract-winners/${w.slug}/claim`)}>{g.claimCta} →</a>
+              <a href={L(`/badges/winner/${w.slug}`)}>{g.badgeCta} →</a>
+            </p>
+          </div>
+        )}
+
+        <DigestSignupBlock source="contract-winner" />
 
         <p className="small muted">{fmt(t.footnote, { issuers: issuers.join(", "), attributions: attributions.join(" "), site: SITE.name })}</p>
 
