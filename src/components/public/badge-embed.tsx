@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n/provider";
 import { fmt } from "@/i18n/format";
+import { badgeLinkUrl } from "@/lib/badge/snippet";
 
 export function BadgeEmbed({
   base,
@@ -24,11 +25,14 @@ export function BadgeEmbed({
   // link (no keyword-stuffed anchor text, which is what search engines treat
   // as widget link spam).
   const alt = t.anchor;
-  const html = `<a href="${profileUrl}" target="_blank" rel="noopener">\n  <img src="${img}" alt="${alt}" width="214" height="54" />\n</a>`;
-  const htmlDark = `<a href="${profileUrl}" target="_blank" rel="noopener">\n  <img src="${imgDark}" alt="${alt}" width="214" height="54" />\n</a>`;
-  const textLink = `<a href="${profileUrl}" target="_blank" rel="noopener">${t.anchor}</a>`;
+  // utm_source=badge: sign-ups that come through the badge are credited to it (/admin/signups).
+  const href = badgeLinkUrl(profileUrl, slug);
+  const hrefAttr = href.replace(/&/g, "&amp;");
+  const html = `<a href="${hrefAttr}" target="_blank" rel="noopener">\n  <img src="${img}" alt="${alt}" width="214" height="54" />\n</a>`;
+  const htmlDark = `<a href="${hrefAttr}" target="_blank" rel="noopener">\n  <img src="${imgDark}" alt="${alt}" width="214" height="54" />\n</a>`;
+  const textLink = `<a href="${hrefAttr}" target="_blank" rel="noopener">${t.anchor}</a>`;
   const signature = fmt(t.signature, { url: profileUrl });
-  const markdown = `[![${alt}](${img})](${profileUrl})`;
+  const markdown = `[![${alt}](${img})](${href})`;
 
   return (
     <div className="space-y-8">
