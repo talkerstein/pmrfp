@@ -91,6 +91,8 @@ export interface DLProps {
   notice?: ReactNode;
   /** One labelled sponsor unit under the list (never above it). */
   sponsor?: ReactNode;
+  /** A block above the closing band (the free weekly email sign-up). */
+  beforeClose?: ReactNode;
   /** Filters active but nothing matches. */
   noMatch: { clearHref: string } | null;
   empty: {
@@ -375,6 +377,8 @@ export function DirectoryList(p: DLProps) {
           </div>
         </section>
       )}
+
+      {p.beforeClose && <div className="v3-wrap">{p.beforeClose}</div>}
 
       <section className="v3-mint-band">
         <div className="v3-wrap v3-close-in">

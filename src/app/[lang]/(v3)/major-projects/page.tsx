@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DirectoryList, LIST_PATH, PER_PAGE, listHref, paginate } from "@/components/home-v3/directory-list";
+import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 import { V3Price, V3PriceParts } from "@/components/home-v3/chrome";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
@@ -191,6 +192,7 @@ export default async function MajorProjectsPage({ searchParams, params }: { sear
             />
           ) : null
         }
+        beforeClose={<DigestSignupBlock source="major-projects" />}
         noMatch={!filtered.length && filteredView ? { clearHref: "/major-projects" } : null}
         empty={
           usView

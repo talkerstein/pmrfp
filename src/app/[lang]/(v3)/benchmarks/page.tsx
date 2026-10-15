@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import "@/components/benchmarks/benchmarks.css";
+import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { CA_PROVINCES, US_STATE_NAMES } from "@/lib/geo";
 import { provinceFromSlug, provinceSlug } from "@/lib/data/price-benchmarks";
@@ -145,6 +146,8 @@ export default async function BenchmarksIndex({ params, searchParams }: { params
           <p>{t.method.stats}</p>
           <p>{t.method.caveat}</p>
         </div>
+
+        <DigestSignupBlock source="benchmarks" />
 
         <div className="s-links">
           <a href={L("/gc-hub")}>{t.page.gcHub} →</a>
