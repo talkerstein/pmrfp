@@ -89,11 +89,11 @@ describe("normalisers", () => {
     expect(provinceName("Texas")).toBeNull();
   });
 
-  it("permit minimum is C$5M unless configured (never below C$1M)", () => {
-    expect(permitMinValue(undefined)).toBe(5_000_000);
+  it("permit minimum is C$3M unless configured (never below C$1M)", () => {
+    expect(permitMinValue(undefined)).toBe(3_000_000);
     expect(permitMinValue("10000000")).toBe(10_000_000);
-    expect(permitMinValue("50000")).toBe(5_000_000);
-    expect(permitMinValue("abc")).toBe(5_000_000);
+    expect(permitMinValue("50000")).toBe(3_000_000);
+    expect(permitMinValue("abc")).toBe(3_000_000);
   });
 
   it("dates, urls, slugs, bands and trades", () => {
@@ -336,7 +336,7 @@ function project(over: Partial<MajorProject> = {}): MajorProject {
     id: "1", slug: "p", source: "permits-calgary", name: "Project", description: "A long enough description of a big building project in town.", category: "commercial",
     owner: null, city: "Calgary", province: "Alberta", regionId: null, estValueCad: 10e6, size: null, status: "approved", statusRaw: null, statusDate: null,
     timeline: null, tradesNeeded: ["electrical"], sources: [], license: "OGL", evidence: null, caveats: null, firstSeen: TODAY, lastSeen: TODAY,
-    stale: false, staleSince: null, statusChangedAt: null, updatedAt: TODAY, hasGc: false, hasBidRoute: false, ...over,
+    stale: false, staleSince: null, statusChangedAt: null, updatedAt: TODAY, hasGc: false, hasBidRoute: false, sourceUpdated: null, linkGroup: null, ...over,
   };
 }
 

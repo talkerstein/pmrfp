@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
-import { getMajorProject, getProjectProFields } from "@/lib/major-projects/data";
-import { isThinProject, relatedWork, type RelatedCandidate } from "@/lib/major-projects/filters";
+import { getMajorProject, getMajorProjects, getProjectProFields } from "@/lib/major-projects/data";
+import { frozenSourceDate, isThinProject, linkedListings, relatedWork, type RelatedCandidate } from "@/lib/major-projects/filters";
 import { compactDollars, isPastContract } from "@/lib/data/fomo";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -60,11 +60,13 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
   const p = await getMajorProject(slug);
   if (!p) notFound();
 
-  const [session, access, board, categories] = await Promise.all([
+  const [session, access, board, categories, allProjects] = await Promise.all([
     getSession(),
     hasActiveTradeAccess(),
     listAllRfpsCached().catch(() => []),
     getCategories().catch(() => []),
+    // The same cached snapshot getMajorProject() just read: no extra query.
+    getMajorProjects(),
   ]);
   // Trade Pro fields come through the visitor's own session: RLS decides.
   const pro = access ? await getProjectProFields(p.id) : null;
@@ -92,6 +94,10 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
   const { member } = majorProjectView(p, { trades, open: related.open, awards: related.awards }, Boolean(session));
   const here = `/major-projects/${p.slug}`;
   const sourceName = m.sourceNames[p.source] ?? p.source;
+  // Other public sources listing the same project (linked, never merged).
+  const alsoListed = linkedListings(p, allProjects);
+  // BC's inventory stopped at Dec 2024: say so on its pages.
+  const bcFrozen = p.source === "bc-major-projects" ? frozenSourceDate(allProjects, "bc-major-projects") : null;
   const place = [p.city, p.province ? regionName(p.province, lang) : null].filter(Boolean).join(", ");
   let no = 0;
 
@@ -117,10 +123,12 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
         <div className="s-facts">
           <div><div className="k">{t.facts.value}</div><div className="v">{p.estValueCad ? compactDollars(p.estValueCad, lang) : t.facts.notDisclosed}</div></div>
           <div><div className="k">{t.facts.status}</div><div className="v" data-stat="status">{m.statuses[p.status]}</div></div>
-          <div><div className="k">{t.facts.updated}</div><div className="v">{day(p.lastSeen, lang)}</div></div>
+          <div><div className="k">{p.sourceUpdated ? t.sourceUpdated : t.facts.updated}</div><div className="v">{day(p.sourceUpdated ?? p.lastSeen, lang)}</div></div>
         </div>
 
         {p.stale && <p className="small" data-flag="stale" style={{ marginTop: 18 }}><b>{fmt(t.stale, { date: day(p.staleSince, lang) })}</b></p>}
+        {bcFrozen && <p className="small" data-flag="bc-frozen" style={{ marginTop: 18 }}><b>{fmt(t.bcNote, { date: formatDate(`${bcFrozen}T12:00:00Z`, lang, { month: "long", year: "numeric" }) })}</b></p>}
+        {p.status === "application" && <p className="small muted" data-flag="application" style={{ marginTop: 18 }}>{t.applicationNote}</p>}
 
         <SH2 no={++no} id="about">{t.about}</SH2>
         {p.description && <p>{p.description}</p>}
@@ -228,6 +236,24 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
             <a href={L("/rfps")} className="lnk">{t.ctaBoard} →</a>
           </div>
         </div>
+
+        {alsoListed.length > 0 && (
+          <>
+            <SH2 no={++no} id="also-listed">{t.alsoTitle}</SH2>
+            <p className="small muted">{t.alsoBody}</p>
+            <ul className="s-table" data-list="also-listed">
+              {alsoListed.map((o) => (
+                <li key={o.id}>
+                  <span className="code" aria-hidden>{m.statuses[o.status].slice(0, 1)}</span>
+                  <span>
+                    <a className="nm" href={L(`/major-projects/${o.slug}`)}>{o.name}</a>
+                    <span className="lic">{[m.sourceNames[o.source] ?? o.source, o.estValueCad ? compactDollars(o.estValueCad, lang) : null, m.statuses[o.status]].filter(Boolean).join(" · ")}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         <SH2 no={++no} id="sources">{t.sources}</SH2>
         <p className="small">{fmt(t.sourceName, { source: sourceName })}</p>

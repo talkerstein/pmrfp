@@ -6,6 +6,8 @@ import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { reviewMajorProjectAction, uploadResearchCsvAction } from "@/lib/major-projects/actions";
 import { MAJOR_PROJECT_CATEGORIES } from "@/lib/major-projects/model";
+import { UPLOAD_SOURCES } from "@/lib/major-projects/sources-wave2";
+import { MajorProjectSourceUpload } from "@/components/admin/major-project-source-upload";
 import { compactDollars } from "@/lib/data/fomo";
 import { setLangFrom } from "@/i18n/server";
 
@@ -99,12 +101,12 @@ export default async function AdminMajorProjectsPage({ params, searchParams }: {
           Upload done: {sp.uploaded} new, {sp.updated} changed (back in the queue), {sp.unchanged} unchanged, {sp.skipped} skipped.
         </p>
       )}
-      {missing && <p className="mb-4 text-sm text-muted-foreground">The major_projects table isn&apos;t there yet. Run migration 20261012000001_major_projects.sql.</p>}
+      {missing && <p className="mb-4 text-sm text-muted-foreground">The major_projects table isn&apos;t there yet. Run migrations 20261012000001_major_projects.sql and 20261012000003_major_projects_wave2.sql.</p>}
 
       <section className="mb-8">
         <h2 className="mb-3 text-lg font-semibold">Sources</h2>
         {counts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing imported yet. The weekly cron (/api/cron/major-projects) fills this; add ?dry=1 to preview.</p>
+          <p className="text-sm text-muted-foreground">Nothing imported yet. The weekly crons (/api/cron/major-projects, /funding, /local) fill this; add ?dry=1 to preview.</p>
         ) : (
           <table className="w-full text-sm">
             <thead><tr className="text-left text-muted-foreground"><th className="py-1">Source</th><th>Live</th><th>Stale</th><th>Pending</th><th>Hidden</th><th>Last seen</th></tr></thead>
@@ -117,6 +119,14 @@ export default async function AdminMajorProjectsPage({ params, searchParams }: {
             </tbody>
           </table>
         )}
+      </section>
+
+      <section className="mb-8 rounded-lg border border-border bg-card p-5">
+        <h2 className="mb-1 text-lg font-semibold">Upload an open-data file</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          For feeds whose website blocks automated downloads in robots.txt (Infrastructure Canada). Download the file in your browser, then upload it here, about once a month. Rows go public right away under the source&apos;s open licence; projects missing from a newer file are marked as no longer listed.
+        </p>
+        <MajorProjectSourceUpload sources={Object.values(UPLOAD_SOURCES).map((s) => ({ key: s.key, label: s.label, fileUrl: s.fileUrl }))} />
       </section>
 
       <section className="mb-8 rounded-lg border border-border bg-card p-5">

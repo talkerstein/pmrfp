@@ -266,6 +266,8 @@ const project = (over: Partial<MajorProject>): MajorProject => ({
   updatedAt: "2026-10-12T00:00:00Z",
   hasGc: true,
   hasBidRoute: false,
+  sourceUpdated: null,
+  linkGroup: null,
   ...over,
 });
 

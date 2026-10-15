@@ -5,7 +5,7 @@ import { V3Price, V3PriceParts } from "@/components/home-v3/chrome";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getMajorProjects } from "@/lib/major-projects/data";
-import { filterProjects, parseProjectFilters, provinceCounts, sortProjects } from "@/lib/major-projects/filters";
+import { collapseLinked, filterProjects, frozenSourceDate, parseProjectFilters, provinceCounts, sortProjects } from "@/lib/major-projects/filters";
 import { MAJOR_PROJECT_CATEGORIES, MAJOR_PROJECT_STATUSES, VALUE_BANDS, provinceName } from "@/lib/major-projects/model";
 import { compactDollars } from "@/lib/data/fomo";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -18,7 +18,7 @@ import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
-import { fmt, formatNumber } from "@/i18n/format";
+import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 
 export const revalidate = 3600;
@@ -62,9 +62,16 @@ export default async function MajorProjectsPage({ searchParams, params }: { sear
   ]);
 
   const f = parseProjectFilters(sp);
-  const live = projects.filter((p) => !p.stale);
-  const filtered = sortProjects(filterProjects(projects, f), visitorProvince);
+  // One card per project: listings of the same project in two sources collapse (lib/major-projects/links).
+  const live = collapseLinked(projects.filter((p) => !p.stale)).map((c) => c.row);
+  const filtered = collapseLinked(sortProjects(filterProjects(projects, f), visitorProvince));
   const { page, pages, slice } = paginate(filtered, sp.page);
+  // BC's Major Projects Inventory stopped at Dec 2024: say so wherever BC rows show.
+  const bcUpdated = frozenSourceDate(projects, "bc-major-projects");
+  const bcNote =
+    bcUpdated && (!f.province || f.province === "British Columbia")
+      ? fmt(t.bcNote, { date: formatDate(`${bcUpdated}T12:00:00Z`, lang, { month: "long", year: "numeric" }) })
+      : null;
   const keep = {
     province: f.province ? slugify(f.province) : undefined,
     category: f.category ?? undefined,
@@ -81,7 +88,7 @@ export default async function MajorProjectsPage({ searchParams, params }: { sear
   const tradesUsed = new Map<string, number>();
   for (const p of live) for (const s of p.tradesNeeded) tradesUsed.set(s, (tradesUsed.get(s) ?? 0) + 1);
   const tradeOptions = [...tradesUsed.keys()].filter((s) => tradeNames.has(s)).sort((a, b) => (tradesUsed.get(b) ?? 0) - (tradesUsed.get(a) ?? 0));
-  const provinces = provinceCounts(projects);
+  const provinces = provinceCounts(live);
   // Province-first: the visitor's own province leads the chips.
   const chipProvinces = visitorProvince ? [...provinces.filter((p) => p.province === visitorProvince), ...provinces.filter((p) => p.province !== visitorProvince)] : provinces;
   const place = (city: string | null, prov: string | null) => [city, prov ? regionName(prov, lang) : null].filter(Boolean).join(", ") || null;
@@ -133,6 +140,7 @@ export default async function MajorProjectsPage({ searchParams, params }: { sear
         verified={null}
         filterButton={t.apply}
         filterKeep={{ q: sp.q, stale: keep.stale, country: keep.country }}
+        notice={bcNote && !usView ? <p className="small muted" data-note="bc-frozen">{bcNote}</p> : null}
         chips={
           chipProvinces.length > 1
             ? {
@@ -151,11 +159,11 @@ export default async function MajorProjectsPage({ searchParams, params }: { sear
           filtered.length
             ? {
                 title: f.province ? fmt(t.listTitleProvince, { province: regionName(f.province, lang) }) : t.listTitle,
-                cards: slice.map((p) => ({
+                cards: slice.map(({ row: p, sources }) => ({
                   href: `/major-projects/${p.slug}`,
                   name: p.name,
                   loc: place(p.city, p.province),
-                  tags: [m.categories[p.category], m.statuses[p.status]].join(" · "),
+                  tags: [m.categories[p.category], m.statuses[p.status], sources > 1 ? fmt(t.sourcesCount, { n: sources }) : null].filter(Boolean).join(" · "),
                   desc: p.owner ? fmt(t.owner, { owner: p.owner }) : (p.description ?? "").slice(0, 140) || null,
                   metaN: p.estValueCad ? compactDollars(p.estValueCad, lang) : null,
                   metaL: p.estValueCad ? t.valueLabel : null,

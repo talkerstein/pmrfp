@@ -92,6 +92,8 @@ export function contentColumns(p: MajorProjectInput, regionIdBySlug: ReadonlyMap
     license: p.license,
     evidence: p.evidence,
     caveats: p.caveats,
+    // Only sources that publish a per-record date send it (BC's inventory).
+    ...(p.sourceUpdated !== undefined ? { source_updated: p.sourceUpdated } : {}),
   };
 }
 

@@ -11,6 +11,10 @@
  *   permits-edmonton      Edmonton building permits >= C$5M (Socrata, OGL-Edmonton)
  *   permits-mississauga   Mississauga issued permits >= C$5M (ArcGIS, City Terms of Use)
  *
+ * Wave 2 (funding lists, Halifax / Surrey permits, development applications,
+ * city and provincial capital plans) lives in sources-wave2.ts; the full
+ * registry is registry.ts.
+ *
  * Not imported (see the CSV): Alberta Major Projects (a "Restricted
  * Dataset" under the site's terms), NRCan MPI and Vancouver permits
  * (robots.txt disallows the endpoints), Montréal permits (no value field),
@@ -55,13 +59,13 @@ export const LICENSES = {
 
 /* ------------------------------------------------------------------ shared */
 
-async function getText(url: string, timeoutMs = 90_000): Promise<string> {
+export async function getText(url: string, timeoutMs = 90_000): Promise<string> {
   const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json, text/csv;q=0.9, */*;q=0.5" }, signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
   if (!res.ok) throw new Error(`${new URL(url).hostname} ${res.status}`);
   return res.text();
 }
 
-async function getJson<T>(url: string): Promise<T> {
+export async function getJson<T>(url: string): Promise<T> {
   return JSON.parse(await getText(url)) as T;
 }
 
@@ -112,7 +116,7 @@ export function permitTitle(description: string | null, address: string | null, 
   return addr ? `${head} — ${addr}` : head;
 }
 
-function permitRow(p: {
+export function permitRow(p: {
   source: string;
   id: string;
   title: string;
@@ -213,6 +217,9 @@ export function parseBcMpi(json: { features?: { properties?: BcProps }[] }, toda
       license: LICENSES.bc,
       evidence: null,
       caveats: old ? `The province last updated this inventory entry on ${updated}.` : null,
+      // The inventory's own date (every row is 2024-12-01 since the province
+      // stopped publishing the layer), shown instead of our import date.
+      sourceUpdated: updated,
     });
   }
   return out;
@@ -241,7 +248,7 @@ export function ontarioTarget(s: string | null | undefined): string | null {
   return cleanText(s, 40);
 }
 
-function hashKey(s: string): string {
+export function hashKey(s: string): string {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
   return h.toString(36);
@@ -505,11 +512,19 @@ export function parseMississaugaPermits(json: { features?: { attributes?: Record
 
 /* ------------------------------------------------------------------ registry */
 
+/**
+ * Which weekly cron run imports a source (each run has its own 300 s budget
+ * and its own minute): core = /api/cron/major-projects, funding and local =
+ * /api/cron/major-projects/<group>.
+ */
+export type SourceGroup = "core" | "funding" | "local";
+
 export interface ProjectSource {
   key: string;
   label: string;
+  group?: SourceGroup;
   /** Fetch + parse. One request per run (Toronto: one per 32,000 filtered rows). */
-  collect: (ctx: { today: string; minValue: number }) => Promise<MajorProjectInput[]>;
+  collect: (ctx: { today: string; minValue: number; fundingMin?: number }) => Promise<MajorProjectInput[]>;
 }
 
 export const PROJECT_SOURCES: ProjectSource[] = [
