@@ -4,6 +4,7 @@ import { ROLE_LABEL, withDelta, type WeeklyReport } from "@/lib/admin/weekly-rep
 import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
 import { recentAwardsHtml } from "@/lib/alerts/awards";
 import { majorProjectsHtml } from "@/lib/major-projects/alerts";
+import { tagEmailLinks } from "@/lib/email/utm";
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset
@@ -25,8 +26,15 @@ async function send(
   subject: string,
   html: string,
   headers?: Record<string, string>,
-  opts?: { replyTo?: string; cc?: string[]; attachments?: { filename: string; content: Buffer }[] },
+  opts?: {
+    replyTo?: string;
+    cc?: string[];
+    attachments?: { filename: string; content: Buffer }[];
+    /** utm_campaign for our pmrfp.com links (lib/email/utm). Member- and public-facing emails only. */
+    utm?: string;
+  },
 ): Promise<void> {
+  if (opts?.utm) html = tagEmailLinks(html, opts.utm, BASE);
   const resend = client();
   if (!resend) {
     console.info(`[email:noop] to=${to} subject="${subject}"`);
@@ -162,7 +170,7 @@ export async function sendWelcomeEmail(
        <p>${btn(`${BASE}/pm-dashboard/rfps/new`, "Post your first RFP")}</p>
        <p style="margin:16px 0 0">Not sure how to write it? The <a href="${BASE}/rfp-writer" style="color:#282B59">free RFP writer</a> drafts one for you.</p>`;
   }
-  await send(to, title, layout(title, body, "PMRFP helps you find work and get found. It doesn't guarantee contracts."));
+  await send(to, title, layout(title, body, "PMRFP helps you find work and get found. It doesn't guarantee contracts."), undefined, { utm: "welcome" });
 }
 
 export async function sendSubscriptionActivatedEmail(to: string): Promise<void> {
@@ -175,6 +183,8 @@ export async function sendSubscriptionActivatedEmail(to: string): Promise<void> 
        <p>${btn(`${BASE}/dashboard/rfps`, "View RFP opportunities")}</p>`,
       COPY.disclaimer,
     ),
+    undefined,
+    { utm: "membership-active" },
   );
 }
 
@@ -279,6 +289,7 @@ export async function sendDailyMatches(
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         }
       : undefined,
+    { utm: "daily-matches" },
   );
 }
 
@@ -343,6 +354,7 @@ export async function sendSavedRfpAlerts(
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         }
       : undefined,
+    { utm: "saved-alerts" },
   );
 }
 
@@ -448,6 +460,8 @@ export async function sendPmRfpPublished(to: string, rfp: { title: string; slug:
        <p>${btn(`${BASE}/rfps/${rfp.slug}`, "View your listing")}</p>`,
       COPY.disclaimer,
     ),
+    undefined,
+    { utm: "rfp-published" },
   );
 }
 
@@ -711,6 +725,7 @@ export async function sendTenderDigest(
       "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
+    { utm: "tender-digest" },
   );
 }
 
@@ -790,6 +805,8 @@ export async function sendRfpDraftEmail(
       t.footnote,
       { lang },
     ),
+    undefined,
+    { utm: "rfp-writer" },
   );
 }
 
@@ -868,6 +885,8 @@ export async function sendReviewRequest(
       `You're getting this one email because ${esc(params.tradeName)} named you as the client for this project on ${SITE.name}. We won't add you to any mailing list. The link works once.`,
       { referralPs: false },
     ),
+    undefined,
+    { utm: "review-request" },
   );
 }
 
@@ -1161,6 +1180,8 @@ export async function sendFoundingLifetimeEmail(to: string): Promise<void> {
       undefined,
       { referralPs: false },
     ),
+    undefined,
+    { utm: "founding" },
   );
 }
 
@@ -1202,5 +1223,6 @@ export async function sendDigestEmail(
     unsubscribeUrl
       ? { "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
       : undefined,
+    { utm: unsubscribeUrl ? "weekly-digest" : "digest-confirm" },
   );
 }
