@@ -24,6 +24,7 @@ import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { gcFormPath, parseAwardRef } from "@/lib/gc/packages";
 import { parsePrefSlugs } from "@/lib/auth/signup-prefs";
+import { recordSignupAttribution } from "@/lib/attribution/record";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 
@@ -132,6 +133,11 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     // Avoid leaking whether an email is already registered (account enumeration).
     console.error("[signUp]", error.message);
     return { error: m.signUpFailed };
+  }
+  // Where they came from (first-touch cookie). Skipped when Supabase hides an
+  // existing account behind a placeholder user (no identities).
+  if (data.user?.id && (data.user.identities?.length ?? 1) > 0) {
+    await recordSignupAttribution({ userId: data.user.id, method: "email" });
   }
   // No welcome email here: it goes out once onboarding completes.
   const next = safeNextPath(formData.get("next")?.toString());
@@ -290,6 +296,7 @@ export async function chooseRoleAction(_prev: ActionState, formData: FormData): 
   // What signUpAction does for an email sign-up (the welcome email goes out
   // when onboarding completes).
   await trackEvent(EVENT.SIGNUP_COMPLETED, { role: pick.role, hasNext: !!next, gc: pick.builder, landlord: pick.orgKind === "landlord", method: "google" });
+  await recordSignupAttribution({ userId: user.id, method: "google" });
   await sendAdminNewSignup({ email: session.profile.email, name: session.profile.full_name, role: pick.role, method: "google", gc: pick.builder, landlord: pick.orgKind === "landlord" });
   await syncPmrfpUserToGhl({
     email: session.profile.email,
@@ -326,6 +333,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   if (intent === "browsing" || role === "visitor" || role === "talent") {
     const supabase = await createClient();
     await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
+    await recordSignupAttribution({ userId: session.userId });
     redirect(localizePath(next ?? "/directory", lang));
   }
 
@@ -436,6 +444,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   }
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
+  await recordSignupAttribution({ userId: session.userId, orgId: org.id });
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord });
 
   // One welcome email per member, with the next step for their kind of account.

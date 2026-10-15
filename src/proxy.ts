@@ -3,6 +3,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { GEO_COOKIE, encodeGeo } from "@/lib/visitor-geo";
 import { checkPublicReadLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { isPublicPageRead } from "@/lib/public-read-policy";
+import { withAttribution } from "@/lib/attribution/proxy";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, hasLocale, isEnabledLocale, splitLocale, type Locale } from "@/i18n/config";
 
 // Next.js 16 "proxy" convention (formerly middleware). Refreshes the Supabase
@@ -23,6 +24,7 @@ const PUBLIC_FILE = /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|gif|
 // File-based metadata routes (/en/opengraph-image...) are requested by their internal URL.
 const METADATA_ROUTE = /\/(opengraph-image|twitter-image|icon|apple-icon)(?:[-/]|$)/;
 const MONTHLY_REPORT_CSV = /^(?:\/(?:en|fr|es))?\/reports\/contract-winners\/(\d{4}-(?:0[1-9]|1[0-2]))\.csv$/;
+const BOT = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|embedly|preview|lighthouse|headless/i;
 const COOKIE_OPTS = { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" as const };
 
 function withGeo(request: NextRequest, response: NextResponse) {
@@ -33,6 +35,21 @@ function withGeo(request: NextRequest, response: NextResponse) {
     response.cookies.set(GEO_COOKIE, geo, { path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
   }
   return response;
+}
+
+function isPageNavigation(request: NextRequest) {
+  return request.headers.get("sec-fetch-dest") === "document" && !request.headers.get("rsc");
+}
+
+/** A person opening a page (not a bot, an asset, or a client-side route fetch): where first-touch attribution is read. */
+function isHumanPageView(request: NextRequest) {
+  return (request.method === "GET" || request.method === "HEAD") && isPageNavigation(request) && !BOT.test(request.headers.get("user-agent") ?? "");
+}
+
+/** Geo cookie on every response; the first-touch cookie on human page views (lib/attribution). */
+function finish(request: NextRequest, response: NextResponse, lang: string) {
+  withGeo(request, response);
+  return isHumanPageView(request) ? withAttribution(request, response, lang) : response;
 }
 
 function redirectTo(request: NextRequest, pathname: string, status: 307 | 308 = 307) {
@@ -73,7 +90,7 @@ export async function proxy(request: NextRequest) {
       if (first === DEFAULT_LOCALE) res.cookies.set(LOCALE_COOKIE, DEFAULT_LOCALE, COOKIE_OPTS);
       return res;
     }
-    return withGeo(request, await updateSession(request, { lang: first, path }));
+    return finish(request, await updateSession(request, { lang: first, path }), first);
   }
 
   // Unprefixed: English, unless the visitor picked another language in the switcher.
@@ -85,7 +102,7 @@ export async function proxy(request: NextRequest) {
 
   const rewrite = request.nextUrl.clone();
   rewrite.pathname = `/${DEFAULT_LOCALE}${pathname === "/" ? "" : pathname}`;
-  return withGeo(request, await updateSession(request, { lang: DEFAULT_LOCALE, path: pathname, rewrite }));
+  return finish(request, await updateSession(request, { lang: DEFAULT_LOCALE, path: pathname, rewrite }), DEFAULT_LOCALE);
 }
 
 export const config = {

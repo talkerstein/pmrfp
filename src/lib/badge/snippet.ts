@@ -7,6 +7,9 @@
  *  - nothing hidden: no display:none, no 1px images, no extra links in the code;
  *  - rel="noopener" only — a normal, followable link, and nobody is asked to
  *    add it as a condition of anything.
+ * The link carries utm_source=badge&utm_medium=referral&utm_campaign=<slug>,
+ * so sign-ups from a badge are credited to it in /admin/signups (the page's
+ * canonical URL has no tags, so search engines see one page).
  */
 
 export type BadgeKind = "listed" | "winner" | "karma";
@@ -45,19 +48,28 @@ export function badgeImageUrl(i: Pick<BadgeSnippetInput, "kind" | "base" | "slug
   return `${i.base}${path}${qs ? `?${qs}` : ""}`;
 }
 
+/** The company page URL with the badge's UTM tags (utm_campaign = the company slug). */
+export function badgeLinkUrl(pageUrl: string, slug: string): string {
+  const campaign = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 80);
+  const hashAt = pageUrl.indexOf("#");
+  const url = hashAt >= 0 ? pageUrl.slice(0, hashAt) : pageUrl;
+  const hash = hashAt >= 0 ? pageUrl.slice(hashAt) : "";
+  return `${url}${url.includes("?") ? "&" : "?"}utm_source=badge&utm_medium=referral&utm_campaign=${campaign}${hash}`;
+}
+
 /** <a href="their page"><img alt="Company name" …></a> */
 export function badgeHtml(i: BadgeSnippetInput): string {
   const { width, height } = BADGE_SIZE[i.kind];
-  return `<a href="${attr(i.pageUrl)}" target="_blank" rel="noopener">\n  <img src="${attr(badgeImageUrl(i))}" alt="${attr(i.name)}" width="${width}" height="${height}" />\n</a>`;
+  return `<a href="${attr(badgeLinkUrl(i.pageUrl, i.slug))}" target="_blank" rel="noopener">\n  <img src="${attr(badgeImageUrl(i))}" alt="${attr(i.name)}" width="${width}" height="${height}" />\n</a>`;
 }
 
 /** A plain text link with the company's name as the anchor. */
-export function badgeTextLink(i: Pick<BadgeSnippetInput, "pageUrl" | "name">): string {
-  return `<a href="${attr(i.pageUrl)}" target="_blank" rel="noopener">${text(i.name)}</a>`;
+export function badgeTextLink(i: Pick<BadgeSnippetInput, "pageUrl" | "name" | "slug">): string {
+  return `<a href="${attr(badgeLinkUrl(i.pageUrl, i.slug))}" target="_blank" rel="noopener">${text(i.name)}</a>`;
 }
 
 /** Markdown (GitHub READMEs, some site builders). */
 export function badgeMarkdown(i: BadgeSnippetInput): string {
   const alt = i.name.replace(/[[\]]/g, "");
-  return `[![${alt}](${badgeImageUrl(i)})](${i.pageUrl})`;
+  return `[![${alt}](${badgeImageUrl(i)})](${badgeLinkUrl(i.pageUrl, i.slug)})`;
 }
