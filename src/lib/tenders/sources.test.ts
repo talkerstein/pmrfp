@@ -34,6 +34,7 @@ describe("publicTenderSource: real slugs keep their source", () => {
     ["campus-perimeter-fencing-rfp-27-046-flvbs-17090", "florida-vbs", false],
     ["roof-repair-fs-73-job-walk-lacb-50399", "la-county", false],
     ["customs-house-renovation-addition-debid-9336", "delaware", false],
+    ["plumbing-and-hvac-maintenance-and-repairs-service-contract-commbuys-134506", "commbuys", false],
   ];
 
   it.each(REAL)("%s → %s", (slug, k, past) => {
@@ -98,6 +99,9 @@ describe("publicTenderSource: title words never claim the source", () => {
     expect(key("quebec-qc-cb-border-station-us-2a46798d54e34a12b83e614ef37cade8")).toBe("sam");
     // US state feed with a Canadian marker in the title.
     expect(key("tor-qc-roofing-scbo-69395")).toBe("scbo");
+    // Periscope (COMMBUYS) with other markers in the title, and the other way round.
+    expect(key("tor-qc-cb-roof-scbo-commbuys-134506")).toBe("commbuys");
+    expect(key("commbuys-roof-cb-cw2466670")).toBe("canadabuys");
   });
 
   it("anything unrecognised falls back to CanadaBuys", () => {
