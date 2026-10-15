@@ -4,16 +4,19 @@ import { GEO_COOKIE, encodeGeo } from "@/lib/visitor-geo";
 import { checkPublicReadLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { isPublicPageRead } from "@/lib/public-read-policy";
 import { withAttribution } from "@/lib/attribution/proxy";
-import { DEFAULT_LOCALE, ENABLED_LOCALES, LOCALE_COOKIE, hasLocale, isEnabledLocale, splitLocale, type Locale } from "@/i18n/config";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, hasLocale, isEnabledLocale, splitLocale, type Locale } from "@/i18n/config";
 
 // Next.js 16 "proxy" convention (formerly middleware). Refreshes the Supabase
 // session on each request, and routes languages:
 //   /rfps      -> rewritten to /en/rfps (English keeps its URLs)
 //   /fr/rfps   -> served as is (app/[lang])
 //   /en/rfps   -> redirected to /rfps
-// A visitor who picked French (cookie) or whose browser prefers it is sent to
-// the /fr version of unprefixed links, so untranslated hrefs and server
-// redirects keep their language.
+// A visitor who picked French or Spanish in the switcher (NEXT_LOCALE cookie)
+// is sent to that version of unprefixed links, so untranslated hrefs and
+// server redirects keep their language. The browser's Accept-Language never
+// redirects (crawlers and first-time visitors always get the URL they asked
+// for); instead English pages offer the translation in a small banner
+// (components/language-banner).
 
 // Routes outside app/[lang], and public files.
 const PASSTHROUGH = /^\/(api|embed|auth\/callback|go|app|_next)(\/|$)/;
@@ -21,7 +24,7 @@ const PUBLIC_FILE = /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|gif|
 // File-based metadata routes (/en/opengraph-image...) are requested by their internal URL.
 const METADATA_ROUTE = /\/(opengraph-image|twitter-image|icon|apple-icon)(?:[-/]|$)/;
 const MONTHLY_REPORT_CSV = /^(?:\/(?:en|fr|es))?\/reports\/contract-winners\/(\d{4}-(?:0[1-9]|1[0-2]))\.csv$/;
-const BOT =/bot|crawl|spider|slurp|facebookexternalhit|whatsapp|embedly|preview|lighthouse|headless/i;
+const BOT = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|embedly|preview|lighthouse|headless/i;
 const COOKIE_OPTS = { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" as const };
 
 function withGeo(request: NextRequest, response: NextResponse) {
@@ -32,12 +35,6 @@ function withGeo(request: NextRequest, response: NextResponse) {
     response.cookies.set(GEO_COOKIE, geo, { path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
   }
   return response;
-}
-
-/** The browser's first-choice language, if we serve it. */
-function browserLocale(acceptLanguage: string | null): Locale | null {
-  const first = acceptLanguage?.split(",")[0]?.trim().split(/[-;]/)[0]?.toLowerCase();
-  return isEnabledLocale(first) ? first : null;
 }
 
 function isPageNavigation(request: NextRequest) {
@@ -96,19 +93,11 @@ export async function proxy(request: NextRequest) {
     return finish(request, await updateSession(request, { lang: first, path }), first);
   }
 
-  // Unprefixed: English, unless the visitor chose another language or their browser asks for one.
+  // Unprefixed: English, unless the visitor picked another language in the switcher.
   if (isGet) {
     const chosen = request.cookies.get(LOCALE_COOKIE)?.value;
-    let target: Locale | null = isEnabledLocale(chosen) && chosen !== DEFAULT_LOCALE ? chosen : null;
-    const detected = !chosen && isPageNavigation(request) && !BOT.test(request.headers.get("user-agent") ?? "")
-      ? browserLocale(request.headers.get("accept-language"))
-      : null;
-    if (!target && detected && detected !== DEFAULT_LOCALE && ENABLED_LOCALES.includes(detected)) target = detected;
-    if (target) {
-      const res = redirectTo(request, `/${target}${pathname === "/" ? "" : pathname}`);
-      if (!chosen) res.cookies.set(LOCALE_COOKIE, target, COOKIE_OPTS);
-      return res;
-    }
+    const target: Locale | null = isEnabledLocale(chosen) && chosen !== DEFAULT_LOCALE ? chosen : null;
+    if (target) return redirectTo(request, `/${target}${pathname === "/" ? "" : pathname}`);
   }
 
   const rewrite = request.nextUrl.clone();

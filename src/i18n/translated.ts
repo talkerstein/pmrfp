@@ -37,6 +37,30 @@ const PAGES: RegExp[] = [
 // French and Spanish cover the same pages.
 const TRANSLATED: Partial<Record<Locale, RegExp[]>> = { fr: PAGES, es: PAGES };
 
+/**
+ * Pages whose copy is translated (they set hreflang with alternatesFor) but
+ * that the sitemap doesn't pair yet: sign-in/sign-up flows, and newer pages.
+ * The language switcher links straight to their /fr and /es versions.
+ */
+const ALSO_TRANSLATED: RegExp[] = [
+  /^\/(sign-in|sign-up|forgot-password|reset-password|check-email|onboarding)$/,
+  /^\/(founding-500|reputation|weekly-email|gc-packages\/new)$/,
+  /^\/major-projects(\/[^/]+)?$/,
+  /^\/reports\/contract-winners(\/[^/]+)?$/,
+  /^\/trusted\/[^/]+$/,
+];
+
+/**
+ * Whether `path` (English path, no prefix; query and hash ignored) has a real
+ * translated page in `lang`. English is always true.
+ */
+export function isTranslatedPath(path: string, lang: Locale): boolean {
+  if (lang === "en") return true;
+  if (!ENABLED_LOCALES.includes(lang)) return false;
+  const bare = (path.split(/[?#]/)[0] || "/").replace(/(.)\/+$/, "$1");
+  return (TRANSLATED[lang] ?? []).some((re) => re.test(bare)) || ALSO_TRANSLATED.some((re) => re.test(bare));
+}
+
 /** Languages (besides English) this path is translated into. */
 export function translationsOf(path: string): Locale[] {
   return ENABLED_LOCALES.filter((l) => l !== "en" && (TRANSLATED[l] ?? []).some((re) => re.test(path)));
