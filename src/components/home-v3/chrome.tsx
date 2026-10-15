@@ -14,8 +14,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { setMarket, useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
 import { foundingScarcity } from "@/lib/founding/config";
 import { toUsd } from "@/lib/markets";
-import { localizePath, type Locale } from "@/i18n/config";
+import { localizePath, splitLocale, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
+import { useT } from "@/i18n/provider";
+import { useLanguageLinks } from "@/components/language-switcher";
+import { LanguageBanner } from "@/components/language-banner";
 
 import { V3H, V3_MARK, type V3ChromeMessages, type V3Messages } from "./chrome-shared";
 
@@ -74,6 +77,43 @@ export function foundingLabel(t: V3ChromeMessages, left: number | null) {
   return s === "low" ? { d: t.founding.low, m: t.founding.lowShort } : { d: t.founding.limited, m: t.founding.limitedShort };
 }
 
+/* ------------------------------------------------------------------ language */
+
+/**
+ * EN | FR | ES: real links to the same page in each language (the mobile
+ * menu spells the names out). Sits next to the CA | US switch.
+ */
+export function V3LangSwitch() {
+  const t = useT("common");
+  const { links, onPick } = useLanguageLinks();
+  if (links.length < 2) return null;
+  return (
+    <div role="group" aria-label={t.lang.label} className="v3-lang">
+      {links.map((l) => (
+        <a key={l.lang} href={l.href} lang={l.tag} hrefLang={l.lang} aria-current={l.current ? "true" : undefined} aria-label={l.name} title={l.title} onClick={(e) => onPick(e, l)} onAuxClick={(e) => onPick(e, l)}>
+          <span className="d">{l.code}</span><span className="m">{l.name}</span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/** Footer row: "Language  English · Français · Español". */
+function V3FootLang() {
+  const t = useT("common");
+  const { links, onPick } = useLanguageLinks();
+  if (links.length < 2) return null;
+  return (
+    <nav aria-label={t.lang.label} className="v3-foot-lang">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></svg>
+      <span className="k">{t.lang.label}</span>
+      {links.map((l) => (
+        <a key={l.lang} href={l.href} lang={l.tag} hrefLang={l.lang} aria-current={l.current ? "true" : undefined} title={l.title} onClick={(e) => onPick(e, l)} onAuxClick={(e) => onPick(e, l)}>{l.name}</a>
+      ))}
+    </nav>
+  );
+}
+
 /* ------------------------------------------------------------------ header */
 
 export function V3Header({
@@ -95,7 +135,8 @@ export function V3Header({
   const market = useVisitorMarket();
   const [menu, setMenu] = useState(false);
   const L = (p: string) => localizePath(p, lang);
-  const path = (usePathname() ?? "/").replace(/^\/(fr|es)(?=\/|$)/, "") || "/";
+  // splitLocale also drops /en: a prerendered English page renders with its internal /en path.
+  const path = splitLocale(usePathname() ?? "/").path;
   const cur = (href: string) => (path === href || path.startsWith(`${href}/`) ? ("page" as const) : undefined);
   const spots = foundingLabel(t, foundingLeft);
   const goMarket = (m: "CA" | "US") => {
@@ -132,6 +173,7 @@ export function V3Header({
                 <button key={m} type="button" aria-pressed={(market ?? "CA") === m} onClick={() => goMarket(m)}>{m}</button>
               ))}
             </div>
+            <V3LangSwitch />
             <a href={L(V3H.signIn)}>{t.nav.signIn}</a>
           </nav>
           <a href={L(joinHref)} onClick={onJoin} className="v3-join">
@@ -142,6 +184,7 @@ export function V3Header({
           </button>
         </div>
       </header>
+      {!menu && <LanguageBanner />}
     </div>
   );
 }
@@ -176,6 +219,7 @@ export function V3Footer({ t, lang }: { t: V3ChromeMessages; lang: Locale }) {
             </nav>
           ))}
         </div>
+        <V3FootLang />
         <div className="legal">{f.legal}</div>
       </div>
     </footer>
