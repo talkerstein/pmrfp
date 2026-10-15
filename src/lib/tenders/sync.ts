@@ -37,6 +37,14 @@ export interface Source {
    */
   history?: boolean;
   collect: (today: string) => Promise<Candidate[]>;
+  /**
+   * Optional second pass over this run's NEW candidates only (no row yet),
+   * e.g. reading each one's detail page. Returns the candidates to insert
+   * now; any it leaves out simply wait for the next run. If it throws, the
+   * candidates are inserted as collected. Existing rows never reach it, so a
+   * source can keep its per-run requests small.
+   */
+  enrich?: (fresh: Candidate[], opts: { today: string; dry: boolean }) => Promise<Candidate[]>;
 }
 
 type Service = ReturnType<typeof createServiceClient>;
@@ -86,7 +94,9 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
     if (!ok) continue;
     let matched = 0;
     const seen = src.history ? historySeen.set(src.key, new Set()).get(src.key)! : openSources;
-    for (const { insert: ins, categories: slugs, regionSlug } of candidates) {
+    const fresh: Candidate[] = [];
+    for (const candidate of candidates) {
+      const { insert: ins, regionSlug } = candidate;
       // A feed can list one tender twice (amendment rows) — a duplicate in
       // the batch would trip the slug unique index and fail the whole insert.
       if (seen.has(ins.source_url)) continue;
@@ -112,8 +122,9 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
               id: prior.id,
               patch: {
                 title: ins.title,
-                summary: ins.summary,
-                scope: ins.scope,
+                // An enriched source's insert text came from its detail page;
+                // the plain list row would overwrite it with less.
+                ...(src.enrich ? {} : { summary: ins.summary, scope: ins.scope }),
                 deadline: ins.deadline,
                 // never blank a region we already had
                 ...(region ? { region_id: region } : {}),
@@ -123,13 +134,25 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
         }
         continue;
       }
-      toInsert.push({ ...ins, region_id: region });
+      fresh.push(candidate);
+    }
+    matchedBySource.set(src.key, matched);
+
+    let ready = fresh;
+    if (src.enrich && fresh.length) {
+      try {
+        ready = await src.enrich(fresh, { today, dry });
+      } catch (err) {
+        console.error(`[public-tenders] ${src.key} enrich failed:`, err);
+      }
+    }
+    for (const { insert: ins, categories: slugs, regionSlug } of ready) {
+      toInsert.push({ ...ins, region_id: resolveRegion(regionSlug, src.fallbackRegion) });
       categoriesBySource.set(
         ins.source_url,
         slugs.map((s) => catId.get(s)).filter((id): id is string => !!id),
       );
     }
-    matchedBySource.set(src.key, matched);
   }
 
   // Archive per source: only sources that downloaded fine AND matched a sane

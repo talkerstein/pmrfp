@@ -551,6 +551,12 @@ const fr: typeof en = {
         attribution:
           "Source : données ouvertes de l'État du Delaware — Open Bids (data.delaware.gov), avis d'appel d'offres public.",
       },
+      commbuys: {
+        issuer: "un organisme public du Massachusetts",
+        portal: "COMMBUYS",
+        bidLabel: "Ouvrir sur COMMBUYS",
+        attribution: "Source : COMMBUYS (Commonwealth of Massachusetts) — avis d'appel d'offres public",
+      },
     },
   },
 
@@ -881,6 +887,12 @@ const es: typeof en = {
         bidLabel: "Abrir en Delaware MyMarketplace",
         attribution:
           "Fuente: datos abiertos del estado de Delaware — Open Bids (data.delaware.gov), aviso de licitación pública.",
+      },
+      commbuys: {
+        issuer: "un organismo público de Massachusetts",
+        portal: "COMMBUYS",
+        bidLabel: "Abrir en COMMBUYS",
+        attribution: "Fuente: COMMBUYS (Commonwealth of Massachusetts) — aviso de licitación pública",
       },
     },
   },
