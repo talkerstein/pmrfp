@@ -104,6 +104,10 @@
     {
       "path": "/api/cron/award-history/federal",
       "schedule": "35 10 5 * *"
+    },
+    {
+      "path": "/api/cron/insights-brief",
+      "schedule": "40 13 * * 1"
     }
   ]
 }

@@ -31,6 +31,7 @@ const PAGES: RegExp[] = [
   /^\/contract-winners(\/[^/]+)?$/,
   /^\/gc-hub$/,
   /^\/benchmarks(\/[^/]+\/[^/]+)?$/,
+  /^\/insights(\/[^/]+\/[^/]+)?$/,
   /^\/trades(\/[^/]+){0,2}$/,
   /^\/(regions|for|vs)(\/[^/]+)?$/,
   /^\/(rfp-templates|cost-guides)(\/[^/]+)?$/,

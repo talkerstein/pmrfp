@@ -40,6 +40,10 @@ import { getAwardIndex, intelFor } from "@/lib/data/award-intel";
 import { benchmarkView } from "@/lib/data/price-benchmarks";
 import { benchmarkForListing, benchmarkPath } from "@/lib/data/price-benchmarks-load";
 import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
+import { BidPositioningCard } from "@/components/insights/bid-positioning-card";
+import { positioningForListing } from "@/lib/insights/load";
+import { positioningView } from "@/lib/insights/positioning";
+import { entitlementsOf } from "@/lib/insights/gating";
 import { pickSponsor, type SponsorContext } from "@/lib/sponsors/registry";
 import { rfpMarket } from "@/lib/visitor-geo";
 import { PRICING } from "@/lib/site";
@@ -222,6 +226,15 @@ export default async function RfpDetailPage({
   ) : null;
   // Award and closed pages: the benchmark sits in the side column.
   const asideBenchCard = (isAward || isClosed) && bench ? benchCard : null;
+  // "Bid positioning" (open listings): price band (Trade Pro), the buyer's usual winners (Award Intelligence), counts for everyone.
+  const positioning = !isAward && !isClosed ? await positioningForListing(teaser).catch(() => null) : null;
+  const positioningCard = positioning ? (
+    <BidPositioningCard
+      view={positioningView(positioning, configured ? entitlementsOf(session) : { pro: showFull, intel: showFull })}
+      lang={lang}
+      upgradeHref={upgradeHref}
+    />
+  ) : null;
 
   const firstTrade = teaser.categories[0];
   const tradeSlug = firstTrade ? categories.find((c) => c.name === firstTrade)?.slug : undefined;
@@ -686,6 +699,7 @@ export default async function RfpDetailPage({
           )}
 
           {asideBenchCard && <div className="v3-tw">{asideBenchCard}</div>}
+          {positioningCard && <div className="v3-tw">{positioningCard}</div>}
           {isAward && award?.winner && <div className="v3-tw"><GcPackageCta awardSlug={teaser.slug} /></div>}
           <div className="v3-tw"><SponsorSlot ctx={sponsorCtx} /></div>
           {!isAward && (

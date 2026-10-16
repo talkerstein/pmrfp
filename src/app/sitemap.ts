@@ -26,6 +26,9 @@ import { getMajorProjects } from "@/lib/major-projects/data";
 import { isThinProject } from "@/lib/major-projects/filters";
 import { FOUNDING_PATH } from "@/lib/founding/config";
 import { weeklyDigestEnabled } from "@/lib/digest/config";
+import { intelAwards } from "@/lib/intel/model";
+import { indexableMarkets } from "@/lib/insights/market";
+import { insightsMarketPath } from "@/lib/insights/paths";
 
 /** Toronto supplier pages in the sitemap: indexable ones only, biggest first. */
 const TORONTO_SITEMAP_LIMIT = 2000;
@@ -146,6 +149,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const c of benchCombos) {
     const slug = categories.find((cat) => cat.name === c.trade)?.slug;
     if (slug) entries.push({ url: `${base}/benchmarks/${slug}/${provinceSlug(c.province)}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
+  }
+  // Monthly market insights: only trade × province pages with enough records (the page's own noindex rule).
+  {
+    const today = torontoToday();
+    const awards = intelAwards(rfps, {
+      regionProvince: new Map(regions.map((rg) => [rg.name, rg.province] as const)),
+      tradeSlug: new Map(categories.map((c) => [c.name, c.slug] as const)),
+    });
+    const data = { today, rfps, awards, refs: [], benchmarkAwards: [], leads: null };
+    const tradeRefs = categories.map((c) => ({ slug: c.slug, name: c.name }));
+    const markets = [...indexableMarkets(data, "CA", tradeRefs), ...indexableMarkets(data, "US", tradeRefs)];
+    if (markets.length) entries.push({ url: `${base}/insights`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
+    for (const m of markets) entries.push({ url: `${base}${insightsMarketPath(m.trade.slug, m.province)}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   }
   // Public projects only (listCaseStudies drops unlisted and private). The
   // /projects gallery is noindexed while it's empty, so it's listed only then.

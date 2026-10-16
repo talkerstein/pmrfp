@@ -127,6 +127,7 @@ export const ADMIN_NAV = [
   { href: "/admin/trials", label: "Trials" },
   { href: "/admin/intel", label: "Award Intelligence" },
   { href: "/admin/award-history", label: "Award History" },
+  { href: "/admin/insights", label: "Insights" },
   { href: "/admin/interests", label: "Interests" },
   { href: "/admin/contact-requests", label: "Contact Requests" },
   { href: "/admin/categories", label: "Categories" },
