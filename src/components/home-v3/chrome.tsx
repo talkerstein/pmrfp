@@ -18,6 +18,7 @@ import { localizePath, splitLocale, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
 import { useT } from "@/i18n/provider";
 import { useLanguageLinks } from "@/components/language-switcher";
+import { V3AccountLink } from "./account-link";
 import { LanguageBanner } from "@/components/language-banner";
 
 import { V3H, V3_MARK, type V3ChromeMessages, type V3Messages } from "./chrome-shared";
@@ -174,7 +175,7 @@ export function V3Header({
               ))}
             </div>
             <V3LangSwitch />
-            <a href={L(V3H.signIn)}>{t.nav.signIn}</a>
+            <V3AccountLink L={L} signIn={{ href: V3H.signIn, label: t.nav.signIn }} listBusiness={t.nav.listBusiness} />
           </nav>
           <a href={L(joinHref)} onClick={onJoin} className="v3-join">
             <span className="d">{t.nav.join}</span><span className="m">{t.nav.joinShort}</span>

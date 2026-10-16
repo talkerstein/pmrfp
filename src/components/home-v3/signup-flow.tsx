@@ -11,21 +11,12 @@ import { fmt, formatNumber } from "@/i18n/format";
 import type { Messages } from "@/i18n/dictionaries";
 import { useV3Money, V3Skeleton } from "./chrome";
 import { BigTick, ROLE_PHOTO, SignupAside, SignupFrame, SignupSticky, SignupTop, SmallTick, Stepper } from "./signup-ui";
+import { SignupRolePicker } from "./signup-role-picker";
+import { looksLikeBusiness } from "@/lib/auth/visitor-upgrade";
 
 export type SignupCopy = Messages["v3Pages"]["signup"] & { linkNote?: string };
 export const SIGNUP_ROLES = ["trade", "supplier", "property_manager", "landlord", "general_contractor", "real_estate_agent", "talent", "visitor"] as const;
 export type SignupRole = (typeof SIGNUP_ROLES)[number];
-
-const ICON: Record<SignupRole, string> = {
-  trade: "M14.7 6.3a4 4 0 00-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 005.2-5.4l-2.6 2.6-2.1-.7-.7-2.1z",
-  supplier: "M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8",
-  property_manager: "M4 21V5l8-2v18M12 9l8 2v10M2 21h20M7 8h2M7 12h2M7 16h2M15 14h2M15 17h2",
-  landlord: "M15 7a4 4 0 11-3.9 4.9L3 20v-3l2-1v-2l2-.5 3.2-3.2A4 4 0 0115 7zM16 9.5v.1",
-  general_contractor: "M3 18h18M5 18v-3a7 7 0 0114 0v3M10 8V5h4v3M3 21h18",
-  real_estate_agent: "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",
-  talent: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5",
-  visitor: "M11 18a7 7 0 100-14 7 7 0 000 14zM16 16l5 5",
-};
 
 /** Companies that sell to the board: they pick trades and a plan. */
 const SELLERS: SignupRole[] = ["trade", "supplier"];
@@ -62,6 +53,10 @@ export function SignUpFlow(p: SignupProps) {
   const [allTrades, setAllTrades] = useState(false);
   const [allRegions, setAllRegions] = useState(false);
   const [detailsError, setDetailsError] = useState(false);
+  // "Just looking" with a company-ish name or a company email: offer the free listing.
+  const [typed, setTyped] = useState({ name: "", email: "" });
+  const [bizDismissed, setBizDismissed] = useState(false);
+  const showBiz = role === "visitor" && !bizDismissed && looksLikeBusiness(typed);
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passRef = useRef<HTMLInputElement>(null);
@@ -180,21 +175,31 @@ export function SignUpFlow(p: SignupProps) {
           <div className="v3-su-pane" hidden={step !== 0}>
             {step === 0 && <h1 className="v3-su-h1">{t.whoHead}</h1>}
             <p className="v3-su-sub">{t.whoSub}</p>
-            <div role="radiogroup" aria-label={t.iAm} className="v3-su-roles">
-              {SIGNUP_ROLES.map((r) => (
-                <button key={r} type="button" role="radio" aria-checked={role === r} className="v3-su-role" onClick={() => setRole(r)}>
-                  <span className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={ICON[r]} /></svg></span>
-                  <span className="tx"><span className="nm">{t.roles[r].name}</span><span className="ds">{t.roles[r].desc}{SELLERS.includes(r) && t.linkNote ? <><br />✓ {t.linkNote}</> : null}</span></span>
-                  <span className="tk"><SmallTick stroke="#FFFFFF" /></span>
-                </button>
-              ))}
-            </div>
+            <SignupRolePicker
+              t={t}
+              role={role}
+              onRole={setRole}
+              onLooking={() => {
+                setRole("visitor");
+                setStep(1);
+              }}
+            />
           </div>
 
           {/* 02 · Your details */}
           <div className="v3-su-pane" hidden={step !== 1}>
             {step === 1 && <h1 className="v3-su-h1">{role === "talent" ? t.detailsWorker : isSeller ? t.detailsSeller : t.detailsPoster}</h1>}
             <p className="v3-su-sub">{isSeller || role === "talent" ? t.subSeller : t.subPoster}</p>
+            {showBiz && (
+              <div className="v3-su-biz" role="status">
+                <b>{t.bizHead}</b>
+                <span>{t.bizBody}</span>
+                <span className="act">
+                  <button type="button" className="v3-su-go" onClick={() => setRole("trade")}>{t.bizCta}</button>
+                  <button type="button" className="v3-su-more" onClick={() => setBizDismissed(true)}>{t.bizDismiss}</button>
+                </span>
+              </div>
+            )}
             {p.google && role !== "talent" && (
               <div className="v3-su-google v3-bb">
                 {/* The role rides to onboarding, where it's asked again (pre-selected) before anything is saved. */}
@@ -202,7 +207,7 @@ export function SignUpFlow(p: SignupProps) {
               </div>
             )}
             <div className="v3-su-two">
-              <label className="v3-su-fld"><span>{t.yourName}</span><input ref={nameRef} name="fullName" required autoComplete="name" /></label>
+              <label className="v3-su-fld"><span>{t.yourName}</span><input ref={nameRef} name="fullName" required autoComplete="name" onBlur={(e) => { const name = e.currentTarget.value; setTyped((x) => ({ ...x, name })); }} /></label>
               {role !== "visitor" && (
                 <label className="v3-su-fld"><span>{tCompany(t, role)}</span><input name="pref_company" autoComplete="organization" maxLength={120} /></label>
               )}
@@ -239,7 +244,7 @@ export function SignUpFlow(p: SignupProps) {
 
             <div className="v3-su-block">
               <div className="v3-su-two" style={{ marginTop: 0 }}>
-                <label className="v3-su-fld"><span>{t.workEmail}</span><input ref={emailRef} name="email" type="email" required autoComplete="email" placeholder="you@company.com" /></label>
+                <label className="v3-su-fld"><span>{t.workEmail}</span><input ref={emailRef} name="email" type="email" required autoComplete="email" placeholder="you@company.com" onBlur={(e) => { const email = e.currentTarget.value; setTyped((x) => ({ ...x, email })); }} /></label>
                 <label className="v3-su-fld"><span>{t.password}</span><input ref={passRef} name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
               </div>
               <div className="v3-su-note">{t.emailNote} {t.passwordHint}</div>

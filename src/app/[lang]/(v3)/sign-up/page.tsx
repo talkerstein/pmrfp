@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies, headers } from "next/headers";
 import { SignUpFlow, type SignupRole } from "@/components/home-v3/signup-flow";
 import { safeNextPath } from "@/lib/auth/next";
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
@@ -8,6 +9,8 @@ import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getVisitorListCounts, getOpenCountsByName } from "@/lib/data/list-counts";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { regionCountry } from "@/lib/visitor-geo";
+import { FT_COOKIE, parseFirstTouch } from "@/lib/attribution/cookie";
+import { tradeLeaningArrival } from "@/lib/auth/visitor-upgrade";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
@@ -61,7 +64,10 @@ export default async function SignUpPage({
   const award = parseAwardRef(rawAward);
   // Plan chosen on /pricing: re-validated against an allowlist; never trusted for price.
   const intent = parsePlanIntent(plan, interval);
-  const initialRole: ValidRole | undefined = rawRole && (VALID_ROLES as readonly string[]).includes(rawRole) ? (rawRole as ValidRole) : undefined;
+  // Never start on "just looking" (visitor), even from ?role=visitor: it has to be a deliberate pick.
+  const linkedRole: ValidRole | undefined = rawRole && rawRole !== "visitor" && (VALID_ROLES as readonly string[]).includes(rawRole) ? (rawRole as ValidRole) : undefined;
+  // No role in the link: start on "I do the work" when they came from a trade page or trade outreach.
+  const initialRole: ValidRole | undefined = linkedRole ?? (!intent && (await cameFromTradeSide()) ? "trade" : undefined);
   // Back-compat: older links pass ?template=X; promote it to a `next` path.
   const next = safeNextPath(rawNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? billingPathForIntent(intent) : null));
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
@@ -101,4 +107,20 @@ export default async function SignUpPage({
       regions={regionChips}
     />
   );
+}
+
+/** This request's referrer (our own pages only) or the first-touch cookie say "trade side". */
+async function cameFromTradeSide(): Promise<boolean> {
+  try {
+    const [h, c] = await Promise.all([headers(), cookies()]);
+    let referrerPath: string | null = null;
+    const ref = h.get("referer");
+    if (ref) {
+      const u = new URL(ref);
+      if (u.host === h.get("host")) referrerPath = u.pathname;
+    }
+    return tradeLeaningArrival({ referrerPath, firstTouch: parseFirstTouch(c.get(FT_COOKIE)?.value) });
+  } catch {
+    return false;
+  }
 }

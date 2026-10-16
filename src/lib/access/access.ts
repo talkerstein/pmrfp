@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Organization, UserProfile, UserRole } from "@/types/db";
 import { NO_TRIAL, isMissingTableError, isProEntitled, trialState, type TrialState } from "@/lib/entitlement/trial";
 import { intelEntitled, type IntelAccessRow } from "@/lib/entitlement/intel";
+import { VISITOR_UPGRADE_PATH } from "@/lib/auth/visitor-upgrade";
 
 export interface SessionContext {
   userId: string;
@@ -207,8 +208,12 @@ export async function requireRole(roles: UserRole[]): Promise<SessionContext> {
   // authenticated areas are previewable. Live mode enforces real roles.
   if (!isSupabaseConfigured()) return demoSession(roles[0]);
   const session = await requireUser();
-  if (!roles.includes(session.profile.primary_role)) {
-    redirect(localizePath(roleHome(session.profile.primary_role), getLang()));
+  const role = session.profile.primary_role;
+  if (!roles.includes(role)) {
+    // A "just looking" account opening a business area (/dashboard): offer to
+    // list the business instead of bouncing them to the directory.
+    const business = roles.includes("trade") || roles.includes("supplier");
+    redirect(localizePath(role === "visitor" && business ? VISITOR_UPGRADE_PATH : roleHome(role), getLang()));
   }
   return session;
 }
