@@ -140,7 +140,7 @@ export async function ProvinceHub({ def }: { def: ProvinceDef }) {
             {hub.open.length ? `${hub.open.length} open ${def.name} RFPs and tenders` : `No open ${def.name} tenders this minute`}
           </h2>
           {hub.open.length > 0 ? (
-            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {openCards.map((r) => <RfpCard key={r.slug} rfp={r} locked />)}
             </div>
           ) : (
@@ -154,7 +154,7 @@ export async function ProvinceHub({ def }: { def: ProvinceDef }) {
         </section>
 
         {/* Trades + places */}
-        <div className="grid gap-12 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           {hub.trades.length > 0 && (
             <section>
               <Eyebrow>Top trades in {def.name}</Eyebrow>
@@ -209,7 +209,7 @@ export async function ProvinceHub({ def }: { def: ProvinceDef }) {
           <section>
             <Eyebrow><Trophy className="size-3.5" /> Recent awards</Eyebrow>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight">Who won {def.name} work lately</h2>
-            <div className="mt-6 grid gap-8 lg:grid-cols-2">
+            <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
               {toronto && toronto.recent.length > 0 && (
                 <div>
                   <h3 className="font-semibold">City of Toronto</h3>
@@ -252,7 +252,7 @@ export async function ProvinceHub({ def }: { def: ProvinceDef }) {
         )}
 
         {/* Winners + buyers */}
-        <div className="grid gap-12 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           {(hub.winners.length > 0 || torontoTop.length > 0) && (
             <section>
               <Eyebrow>Repeat winners</Eyebrow>

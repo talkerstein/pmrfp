@@ -24,9 +24,13 @@ import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
 import { PROVINCES } from "@/lib/data/province-hub";
 import { getMajorProjects } from "@/lib/major-projects/data";
 import { isThinProject } from "@/lib/major-projects/filters";
+import { FOUNDING_PATH } from "@/lib/founding/config";
+import { weeklyDigestEnabled } from "@/lib/digest/config";
 
 /** Toronto supplier pages in the sitemap: indexable ones only, biggest first. */
 const TORONTO_SITEMAP_LIMIT = 2000;
+/** Above this many URLs the single sitemap should become a sitemap index. */
+const SITEMAP_SPLIT_AT = 45_000;
 import { localizePath } from "@/i18n/config";
 import { translationsOf } from "@/i18n/translated";
 
@@ -62,6 +66,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/services-for-trades", priority: 0.5, freq: "monthly" },
     { path: "/about", priority: 0.5, freq: "monthly" },
     { path: "/reputation", priority: 0.4, freq: "monthly" },
+    { path: FOUNDING_PATH, priority: 0.7, freq: "weekly" },
+    // The weekly-email page is noindexed until the digest is switched on.
+    ...(weeklyDigestEnabled() ? [{ path: "/weekly-email", priority: 0.5, freq: "weekly" as const }] : []),
     { path: "/for-agencies", priority: 0.6, freq: "monthly" },
     { path: "/resources/contractor-directories", priority: 0.6, freq: "monthly" },
     { path: "/trades", priority: 0.8, freq: "weekly" },
@@ -172,7 +179,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const t of forumThreads) entries.push({ url: `${base}${isFrenchForum(t.path.split("/")[2]) ? localizePath(t.path, "fr") : t.path}`, lastModified: new Date(t.lastPostAt), changeFrequency: "weekly", priority: 0.6 });
   }
 
-  // Translated pages: list each language version and pair them with hreflang.
+  // Translated pages (the same list the language switcher uses): list each
+  // language version and pair them with the hreflang the page itself sets
+  // (alternatesFor: en, fr, es, x-default -> English).
   const localized: MetadataRoute.Sitemap = [];
   for (const e of entries) {
     const path = e.url.slice(base.length) || "/";
@@ -184,5 +193,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const l of langs) localized.push({ ...e, url: languages[l], alternates: { languages } });
   }
 
-  return [...entries, ...localized];
+  const all = [...entries, ...localized];
+  // One sitemap file holds 50,000 URLs / 50 MB. Well under today (~6k URLs); past
+  // 45k, split this into a sitemap index with generateSitemaps().
+  if (all.length > SITEMAP_SPLIT_AT) console.warn(`sitemap: ${all.length} URLs, split it into a sitemap index (limit 50,000)`);
+  return all;
 }

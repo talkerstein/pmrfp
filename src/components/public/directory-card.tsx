@@ -68,7 +68,7 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
     <Link
       href={`/directory/${vendor.slug}`}
       className={cn(
-        "group flex flex-col rounded-lg border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm",
+        "group flex min-w-0 flex-col rounded-lg border bg-card p-5 transition-all hover:border-teal-400 hover:shadow-sm",
         vendor.platinum
           ? "border-indigo/40 ring-2 ring-indigo/15"
           : vendor.featured

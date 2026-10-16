@@ -30,7 +30,9 @@
 .v3p .tag-rot { background: var(--mint); border-radius: 14px; padding: 0 12px; display: inline-block; transform: rotate(-2deg); color: var(--ink); }
 .v3p .dark { background: var(--ink); color: #FFFFFF; }
 .v3p .dark a.btn-ghost, .v3p a.btn-ghost { color: #FFFFFF; }
-.v3p .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; font-weight: 700; border-radius: 999px; white-space: nowrap; text-align: center; }
+/* Same rule as .v3-pill: a label wider than its column wraps (padding included,
+   via max-width: stretch) instead of overflowing; one that fits never shrinks. */
+.v3p .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; font-weight: 700; border-radius: 999px; white-space: normal; text-wrap: balance; flex-shrink: 0; max-width: 100%; max-width: -moz-available; max-width: -webkit-fill-available; max-width: stretch; text-align: center; }
 .v3p .btn.mint { background: var(--mint); color: var(--ink); }
 .v3p .btn.ink { background: var(--ink); color: #FFFFFF; }
 .v3p .btn.navy { background: var(--navy); color: #FFFFFF; }
@@ -215,7 +217,10 @@
 .v3p .a-plan .wh { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 15px; }
 .v3p .a-plan.pro .wh { border-top-color: #4A4E85; }
 .v3p .a-found { display: flex; align-items: center; justify-content: space-between; gap: 16px; text-decoration: none; color: var(--ink) !important; border-top: 2px solid var(--ink); padding-top: 14px; margin-left: 36px; }
-.v3p .a-found .bdg { font-family: var(--fm); font-size: 12px; background: var(--ink); color: #FFFFFF; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.v3p .a-found .bdg { font-family: var(--fm); font-size: 12px; background: var(--ink); color: #FFFFFF; border-radius: 999px; padding: 3px 10px; white-space: normal; text-wrap: balance; text-align: center; }
+/* The label takes what the badge leaves (as before); only when even an 8em label
+   leaves too little room (French at 1024px) does the badge wrap onto two lines. */
+.v3p .a-found > span:first-child { flex: 1 1 0; min-width: 8em; }
 
 .v3p .a-faq { padding-top: 96px; padding-bottom: 96px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 32px; align-items: start; }
 .v3p .a-faq-side { grid-column: span 4; }
