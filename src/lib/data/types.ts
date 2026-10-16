@@ -70,6 +70,9 @@ export interface RfpListItem {
   gcProjectName?: string | null;
   /** The public award notice a GC package belongs to. */
   awardedRfpId?: string | null;
+  /** Posting date (ISO) and when PMRFP first stored it; board snapshot only (insights). */
+  publishedAt?: string | null;
+  createdAt?: string | null;
 }
 
 // Override the optional/narrow status on the full detail with the real one.

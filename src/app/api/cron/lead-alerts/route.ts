@@ -24,6 +24,7 @@ import { orgCountries, regionCountryMap } from "@/lib/alerts/country";
 import { accountGeo, type CountryCode } from "@/lib/visitor-geo";
 import { sendLeadAlert } from "@/lib/email/send";
 import { unsubscribeUrl } from "@/lib/email/unsubscribe";
+import { insightsEmailEnabled, leadAlertDeferredToBrief } from "@/lib/insights/email";
 
 export const maxDuration = 60;
 
@@ -47,6 +48,9 @@ export const maxDuration = 60;
  *  - Board, major projects and taxonomy load ONCE per run from the shared
  *    cached snapshots; per-member reads are small and batched.
  *  - Country-first: one country per company, never mixed.
+ *  - While INSIGHTS_EMAIL_ENABLED is on, members on the WEEKLY cadence get
+ *    their leads inside the Monday insights brief instead (one email a
+ *    week; lib/insights/email), so they're skipped here.
  * Protect with CRON_SECRET if set.
  */
 const MAX_RECIPIENTS = 300;
@@ -126,6 +130,7 @@ export async function GET(request: Request) {
   const report: { org: string; country: CountryCode; leads: number; subject: string }[] = [];
   let sent = 0;
   let logMissing = false;
+  const briefOn = insightsEmailEnabled();
 
   for (const org of orgs) {
     if (sent >= MAX_RECIPIENTS || logMissing) break;
@@ -144,6 +149,7 @@ export async function GET(request: Request) {
       const email = emailById.get(userId);
       const cadence = leadCadence(prefById.get(userId));
       if (!email || !cadence || !isDue(cadence, lastById.get(userId), now)) continue;
+      if (leadAlertDeferredToBrief(cadence, briefOn)) continue;
       const candidates = pickLeadAlerts(leads, { alreadySent: new Set(), today, cadence, max: 50 });
       if (!candidates.length) continue;
       const already = await sentKeys(db, userId, candidates.map((l) => l.key));
