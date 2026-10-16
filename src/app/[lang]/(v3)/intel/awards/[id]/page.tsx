@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { RecordFooter } from "@/components/public/record-footer";
+import { localizeCredit } from "@/lib/data-credits";
 import { notFound } from "next/navigation";
 import { getBidResults, getHistoryAward } from "@/lib/contract-history/load";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -94,8 +96,9 @@ export default async function IntelAwardRecord({ params, searchParams }: { param
         )}
       </p>
       <p className="small muted">
-        {award.attribution} {tb.award.licence}: {award.licence}. {fmt(tb.award.asOf, { date: intelDay(award.as_of, lang) })}
+        {localizeCredit(award.attribution, lang)} {tb.award.licence}: {award.licence}. {fmt(tb.award.asOf, { date: intelDay(award.as_of, lang) })}
       </p>
+      <RecordFooter credits={[]} lang={lang} kind="intel_award" path={path} refId={id} className="mt-2" />
     </SimplePage>
   );
 }

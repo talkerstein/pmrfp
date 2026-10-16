@@ -51,13 +51,13 @@ const en = {
       {
         label: "Step 3",
         title: "Get bids from real trades",
-        body: "Your RFP goes live on {brand}. Qualified Canadian trades see it and express interest — you pick who to talk to. Posting is free.",
+        body: "Your RFP goes live on {brand}. Canadian trades in that trade can see it and express interest — you pick who to talk to. Posting is free.",
       },
     ],
     cta: {
       title: "Got a project? There's a template for that.",
       description:
-        "Pick a template above, or post your own RFP from scratch on {brand}. Either way, qualified Canadian trades respond — free to post.",
+        "Pick a template above, or post your own RFP from scratch on {brand}. Either way, Canadian trades can respond — free to post.",
       primary: "Post an RFP",
       secondary: "Browse the directory",
     },
@@ -152,7 +152,7 @@ const en = {
     cta: {
       title: "Skip the guesswork — get real numbers",
       description:
-        "Post your project on {brand} and qualified Canadian trades respond with real, scope-specific pricing. Free to post.",
+        "Post your project on {brand} and Canadian trades can respond with real, scope-specific pricing. Free to post.",
       primary: "Post an RFP",
       secondary: "Browse the directory",
     },
@@ -173,7 +173,7 @@ const en = {
     factorsTitle: "What moves the price",
     accurateTitle: "How to get an accurate price",
     accurateBody:
-      "The numbers above are for budgeting. To get a real, scope-specific price, post your project as an RFP on {brand} — describe the building, the work, and your region, and qualified {tradeLower} companies respond with their own pricing. Posting is free, and getting two or three competitive responses is the simplest way to know the true market rate.",
+      "The numbers above are for budgeting. To get a real, scope-specific price, post your project as an RFP on {brand} — describe the building, the work, and your region, and {tradeLower} companies can respond with their own pricing. Posting is free, and getting two or three competitive responses is the simplest way to know the true market rate.",
     postRfp: "Post an RFP",
     howWorks: "How PMRFP works",
     templateEyebrow: "Skip the blank page",
@@ -186,7 +186,7 @@ const en = {
     cta: {
       title: "Budgeting {nameLower}? Get real numbers.",
       description:
-        "Post your project on {brand} and qualified Canadian trades respond with real, scope-specific pricing. Free to post.",
+        "Post your project on {brand} and Canadian trades can respond with real, scope-specific pricing. Free to post.",
       primary: "Post an RFP",
       secondary: "Browse {trade}",
     },
@@ -254,7 +254,7 @@ const en = {
       { t: "Brand & logo", d: "A clean, professional identity that makes property managers take you seriously." },
       { t: "Website", d: "A fast, modern site that shows your work, services, and credentials — and turns visitors into calls." },
       { t: "Google Business Profile", d: "Set up and optimized so you show up when local buyers search for your trade." },
-      { t: "Polished PMRFP listing", d: "A complete, credible directory profile that wins the click over your competitors." },
+      { t: "Polished PMRFP listing", d: "A complete, credible directory profile that gives buyers a reason to click." },
       { t: "Marketing to get going", d: "The essentials to start getting found — so the work comes to you." },
     ],
     fullTitle: "The full package",
@@ -305,7 +305,7 @@ const en = {
     cta: {
       title: "Have a project like this coming up?",
       description:
-        "Post it free on {brand} — qualified trades express interest and you compare them in one place.",
+        "Post it free on {brand} — trades can express interest and you compare them in one place.",
       primary: "Post an RFP free",
       secondary: "More case studies",
     },
@@ -356,13 +356,13 @@ const fr: typeof en = {
       {
         label: "Étape 3",
         title: "Recevez des soumissions de vrais entrepreneurs",
-        body: "Votre appel d'offres est publié sur {brand}. Des entrepreneurs canadiens qualifiés le voient et manifestent leur intérêt — vous choisissez avec qui discuter. La publication est gratuite.",
+        body: "Votre appel d'offres est publié sur {brand}. Des entrepreneurs canadiens du métier peuvent le voir et manifester leur intérêt — vous choisissez avec qui discuter. La publication est gratuite.",
       },
     ],
     cta: {
       title: "Un projet en vue? Il y a un modèle pour ça.",
       description:
-        "Choisissez un modèle ci-dessus, ou publiez votre propre appel d'offres à partir de zéro sur {brand}. Dans les deux cas, des entrepreneurs canadiens qualifiés vous répondent — la publication est gratuite.",
+        "Choisissez un modèle ci-dessus, ou publiez votre propre appel d'offres à partir de zéro sur {brand}. Dans les deux cas, des entrepreneurs canadiens peuvent vous répondre — la publication est gratuite.",
       primary: "Publier un appel d'offres",
       secondary: "Parcourir le répertoire",
     },
@@ -455,7 +455,7 @@ const fr: typeof en = {
     cta: {
       title: "Fini les suppositions : obtenez de vrais prix",
       description:
-        "Publiez votre projet sur {brand} et des entrepreneurs canadiens qualifiés vous répondent avec de vrais prix adaptés à vos travaux. La publication est gratuite.",
+        "Publiez votre projet sur {brand} et des entrepreneurs canadiens peuvent vous répondre avec de vrais prix adaptés à vos travaux. La publication est gratuite.",
       primary: "Publier un appel d'offres",
       secondary: "Parcourir le répertoire",
     },
@@ -475,7 +475,7 @@ const fr: typeof en = {
     factorsTitle: "Ce qui fait varier le prix",
     accurateTitle: "Comment obtenir un prix précis",
     accurateBody:
-      "Les chiffres ci-dessus servent à établir un budget. Pour obtenir un vrai prix adapté à vos travaux, publiez votre projet sous forme d'appel d'offres sur {brand} : décrivez l'immeuble, les travaux et votre région, et des entreprises qualifiées de ce corps de métier vous répondent avec leurs propres prix. La publication est gratuite, et recevoir deux ou trois réponses concurrentes est la façon la plus simple de connaître le vrai prix du marché.",
+      "Les chiffres ci-dessus servent à établir un budget. Pour obtenir un vrai prix adapté à vos travaux, publiez votre projet sous forme d'appel d'offres sur {brand} : décrivez l'immeuble, les travaux et votre région, et des entreprises de ce corps de métier peuvent vous répondre avec leurs propres prix. La publication est gratuite, et recevoir deux ou trois réponses concurrentes est la façon la plus simple de connaître le vrai prix du marché.",
     postRfp: "Publier un appel d'offres",
     howWorks: "Comment fonctionne PMRFP",
     templateEyebrow: "Évitez la page blanche",
@@ -488,7 +488,7 @@ const fr: typeof en = {
     cta: {
       title: "Vous préparez votre budget? Obtenez de vrais prix.",
       description:
-        "Publiez votre projet sur {brand} et des entrepreneurs canadiens qualifiés vous répondent avec de vrais prix adaptés à vos travaux. La publication est gratuite.",
+        "Publiez votre projet sur {brand} et des entrepreneurs canadiens peuvent vous répondre avec de vrais prix adaptés à vos travaux. La publication est gratuite.",
       primary: "Publier un appel d'offres",
       secondary: "Voir les entreprises : {trade}",
     },
@@ -555,7 +555,7 @@ const fr: typeof en = {
       { t: "Image de marque et logo", d: "Une identité nette et professionnelle qui incite les gestionnaires immobiliers à vous prendre au sérieux." },
       { t: "Site Web", d: "Un site rapide et moderne qui présente vos réalisations, vos services et vos qualifications — et qui transforme les visiteurs en appels." },
       { t: "Profil d'entreprise Google", d: "Créé et optimisé pour que vous apparaissiez quand des acheteurs de votre région cherchent votre corps de métier." },
-      { t: "Fiche PMRFP soignée", d: "Un profil complet et crédible dans le répertoire, qui obtient le clic plutôt que vos concurrents." },
+      { t: "Fiche PMRFP soignée", d: "Un profil complet et crédible dans le répertoire, qui donne aux acheteurs une raison de cliquer." },
       { t: "Du marketing pour démarrer", d: "L'essentiel pour commencer à être trouvé — pour que le travail vienne à vous." },
     ],
     fullTitle: "La formule complète",
@@ -606,7 +606,7 @@ const fr: typeof en = {
     cta: {
       title: "Vous avez un projet semblable à venir?",
       description:
-        "Publiez-le gratuitement sur {brand} : des entrepreneurs qualifiés manifestent leur intérêt et vous les comparez au même endroit.",
+        "Publiez-le gratuitement sur {brand} : des entrepreneurs peuvent manifester leur intérêt et vous les comparez au même endroit.",
       primary: "Publier un appel d'offres gratuitement",
       secondary: "Autres études de cas",
     },
@@ -657,13 +657,13 @@ const es: typeof en = {
       {
         label: "Paso 3",
         title: "Reciba ofertas de contratistas reales",
-        body: "Su RFP se publica en {brand}. Contratistas calificados de Canadá la ven y expresan interés; usted elige con quién hablar. Publicar es gratis.",
+        body: "Su RFP se publica en {brand}. Contratistas de Canadá de ese oficio pueden verla y expresar interés; usted elige con quién hablar. Publicar es gratis.",
       },
     ],
     cta: {
       title: "¿Tiene un proyecto? Hay una plantilla para eso.",
       description:
-        "Elija una plantilla arriba o publique su propia RFP desde cero en {brand}. En cualquier caso, contratistas calificados de Canadá le responden. Publicar es gratis.",
+        "Elija una plantilla arriba o publique su propia RFP desde cero en {brand}. En cualquier caso, contratistas de Canadá pueden responderle. Publicar es gratis.",
       primary: "Publicar una RFP",
       secondary: "Explorar el directorio",
     },
@@ -756,7 +756,7 @@ const es: typeof en = {
     cta: {
       title: "Olvídese de las suposiciones: obtenga cifras reales",
       description:
-        "Publique su proyecto en {brand} y contratistas calificados de Canadá le responden con precios reales según su alcance. Publicar es gratis.",
+        "Publique su proyecto en {brand} y contratistas de Canadá pueden responderle con precios reales según su alcance. Publicar es gratis.",
       primary: "Publicar una RFP",
       secondary: "Explorar el directorio",
     },
@@ -776,7 +776,7 @@ const es: typeof en = {
     factorsTitle: "Qué hace variar el precio",
     accurateTitle: "Cómo obtener un precio preciso",
     accurateBody:
-      "Las cifras de arriba sirven para presupuestar. Para obtener un precio real según su alcance, publique su proyecto como RFP en {brand}: describa el edificio, el trabajo y su región, y empresas calificadas de ese oficio le responden con sus propios precios. Publicar es gratis, y recibir dos o tres respuestas competitivas es la forma más sencilla de conocer el precio real del mercado.",
+      "Las cifras de arriba sirven para presupuestar. Para obtener un precio real según su alcance, publique su proyecto como RFP en {brand}: describa el edificio, el trabajo y su región, y empresas de ese oficio pueden responderle con sus propios precios. Publicar es gratis, y recibir dos o tres respuestas competitivas es la forma más sencilla de conocer el precio real del mercado.",
     postRfp: "Publicar una RFP",
     howWorks: "Cómo funciona PMRFP",
     templateEyebrow: "Evite la página en blanco",
@@ -789,7 +789,7 @@ const es: typeof en = {
     cta: {
       title: "¿Está preparando su presupuesto? Obtenga cifras reales.",
       description:
-        "Publique su proyecto en {brand} y contratistas calificados de Canadá le responden con precios reales según su alcance. Publicar es gratis.",
+        "Publique su proyecto en {brand} y contratistas de Canadá pueden responderle con precios reales según su alcance. Publicar es gratis.",
       primary: "Publicar una RFP",
       secondary: "Ver empresas: {trade}",
     },
@@ -856,7 +856,7 @@ const es: typeof en = {
       { t: "Marca y logotipo", d: "Una identidad limpia y profesional que hace que los administradores de propiedades lo tomen en serio." },
       { t: "Sitio web", d: "Un sitio rápido y moderno que muestra su trabajo, sus servicios y sus credenciales, y que convierte a los visitantes en llamadas." },
       { t: "Perfil de Empresa en Google", d: "Configurado y optimizado para que usted aparezca cuando compradores de su zona buscan su oficio." },
-      { t: "Ficha de PMRFP impecable", d: "Un perfil de directorio completo y confiable que se lleva el clic antes que sus competidores." },
+      { t: "Ficha de PMRFP impecable", d: "Un perfil de directorio completo y confiable que les da a los compradores una razón para hacer clic." },
       { t: "Marketing para arrancar", d: "Lo esencial para empezar a que lo encuentren, para que el trabajo llegue a usted." },
     ],
     fullTitle: "El paquete completo",
@@ -907,7 +907,7 @@ const es: typeof en = {
     cta: {
       title: "¿Tiene un proyecto como este en puerta?",
       description:
-        "Publíquelo gratis en {brand}: los contratistas calificados expresan interés y usted los compara en un solo lugar.",
+        "Publíquelo gratis en {brand}: los contratistas pueden expresar interés y usted los compara en un solo lugar.",
       primary: "Publicar una RFP gratis",
       secondary: "Más casos de éxito",
     },

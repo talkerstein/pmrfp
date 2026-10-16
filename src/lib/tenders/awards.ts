@@ -19,6 +19,7 @@ import type { TenderInsert } from "./canadabuys";
 import { regionForTender } from "./canadabuys";
 import { EXCLUDE, RULES, clean, slugify } from "./shared";
 import { OGL_CANADA_ATTRIBUTION } from "./sources";
+import { canadabuysFetch } from "./canadabuys-access";
 
 /** A fiscal year's awards file (Apr–Mar); offset -1 = the previous year. */
 export function awardsUrl(today: string, offset = 0): string {
@@ -127,14 +128,23 @@ export function awardNoticeUrl(refSlug: string): string {
   return `https://canadabuys.canada.ca/en/tender-opportunities/award-notice/${refSlug}`;
 }
 
-/** This fiscal year plus the previous one, so the 365-day window is full. */
+/** Columns the past-contract import reads (the upload page sends only these). */
+export const AWARD_COLUMNS: readonly string[] = Object.values(COL);
+
+/** The award files the 365-day window needs: this fiscal year and the previous one. */
+export function awardFilesFor(today: string): string[] {
+  return [awardsUrl(today, 0), awardsUrl(today, -1)];
+}
+
+/**
+ * This fiscal year plus the previous one, so the 365-day window is full.
+ * Off by default (robots.txt bars bots from canadabuys.canada.ca; see
+ * ./canadabuys-access): the admin upload at /admin/canadabuys feeds the same rows.
+ */
 export async function fetchAwards(today: string): Promise<AwardRow[]> {
   const rows: AwardRow[] = [];
   for (const offset of [0, -1]) {
-    const res = await fetch(awardsUrl(today, offset), {
-      cache: "no-store",
-      headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" },
-    });
+    const res = await canadabuysFetch(awardsUrl(today, offset));
     if (!res.ok) throw new Error(`CanadaBuys awards fetch failed: HTTP ${res.status}`);
     rows.push(...parseCsv(await res.text()));
   }

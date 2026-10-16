@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { RecordFooter } from "@/components/public/record-footer";
+import { localizeCredits } from "@/lib/data-credits";
 import { notFound } from "next/navigation";
 import "@/components/benchmarks/benchmarks.css";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
@@ -350,9 +352,10 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
                 </li>
               ))}
             </ul>
-            {b.attributions.map((a) => <p key={a} className="small muted">{a}</p>)}
+            {localizeCredits(b.attributions, lang).map((a) => <p key={a} className="small muted">{a}</p>)}
           </>
         )}
+        <RecordFooter credits={[]} lang={lang} kind="benchmark" path={`/benchmarks/${tradeSlug}/${provSlug}`} className="mt-2" />
 
         {(otherTrades.length > 0 || otherPlaces.length > 0) && (
           <>

@@ -18,18 +18,18 @@ const en = {
       landlordTitle: "Post repair and maintenance jobs for your buildings, free",
       pmTitle: "Post your building project free",
       defaultTitle: "Join PMRFP — free",
-      tradeDescription: "Property managers post building jobs. Vetted trades get found and bid. Free to join, no credit card.",
+      tradeDescription: "Property managers post building jobs. Trades get found and bid. Free to join, no credit card.",
       gcDescription: "Won a job? Post a package per trade and get quotes from local trades. Free for general contractors.",
       landlordDescription: "Own a rental or commercial building? Post the job once and local trades come to you with interest. Free for landlords.",
-      pmDescription: "Post your project once and vetted trades come to you with bids. Free for property managers, always.",
-      defaultDescription: "Property managers post building RFPs free. Vetted trades bid on the work.",
+      pmDescription: "Post your project once and trades in your area can send you bids. Free for property managers.",
+      defaultDescription: "Property managers post building RFPs free. Trades bid on the work.",
     },
   },
   /** Share card for /sign-up. */
   og: {
     eyebrow: "Founding members · Free to join",
     title: "Get found. Win building work.",
-    subline: "Property managers post projects. Vetted trades bid. No credit card.",
+    subline: "Property managers post projects. Trades bid. No credit card.",
     caption: "pmrfp.com/sign-up",
   },
   signIn: {
@@ -43,7 +43,7 @@ const en = {
     eyebrow: "Membership",
     startPlan: "Start {plan}",
     planIntro:
-      "For trade and service companies. Every matching commercial RFP and public tender in your trade and regions, emailed the morning it posts.",
+      "For trade and service companies. Commercial RFPs and public tenders that match your trade and regions, emailed the morning they post.",
     heading: "Join the PMRFP network",
     intro:
       "The commercial property RFP network — trades, suppliers, property managers, builders, and real estate professionals on one platform.",
@@ -196,13 +196,13 @@ const en = {
     ],
     upgrade:
       "Upgrade to Trade Pro any time for the full scope, documents and buyer contact, and an email the morning every match posts.",
-    buyerHeading: "Post free. Qualified trades come to you.",
+    buyerHeading: "Post free. Trades in your area can find it.",
     steps: [
       { title: "Describe the job", body: "Or let the free RFP writer draft it: scope, insurance and WSIB requirements, bid scoring." },
       { title: "Trades in that trade see it", body: "Local trades who cover your area get it in their morning email." },
       { title: "Compare who responds", body: "Profiles, photos of past work and reviews, side by side. You pick." },
     ],
-    boardToday: "contracts on the board today. Posting is free for buyers, always.",
+    boardToday: "contracts on the board today. Posting is free for buyers.",
   },
   /** Returned by the auth server actions (src/lib/auth/actions.ts). */
   actions: {
@@ -255,20 +255,20 @@ const fr: typeof en = {
       pmTitle: "Publiez gratuitement votre projet d'immeuble",
       defaultTitle: "Joignez-vous à PMRFP — c'est gratuit",
       tradeDescription:
-        "Les gestionnaires immobiliers publient leurs travaux d'immeubles. Les entrepreneurs vérifiés se font trouver et soumissionnent. Inscription gratuite, sans carte de crédit.",
+        "Les gestionnaires immobiliers publient leurs travaux d'immeubles. Les entrepreneurs se font trouver et soumissionnent. Inscription gratuite, sans carte de crédit.",
       gcDescription:
         "Vous avez décroché un contrat? Publiez un lot par corps de métier et recevez des prix d'entrepreneurs de votre région. Gratuit pour les entrepreneurs généraux.",
       landlordDescription: "Propriétaire d'un immeuble locatif ou commercial? Publiez le travail une fois et les entrepreneurs de votre région vous contactent. Gratuit pour les propriétaires.",
       pmDescription:
-        "Publiez votre projet une seule fois et des entrepreneurs vérifiés vous envoient leurs soumissions. Toujours gratuit pour les gestionnaires immobiliers.",
+        "Publiez votre projet une seule fois et les entrepreneurs de votre région peuvent vous envoyer leurs soumissions. Gratuit pour les gestionnaires immobiliers.",
       defaultDescription:
-        "Les gestionnaires immobiliers publient gratuitement leurs appels d'offres. Des entrepreneurs vérifiés soumissionnent sur les travaux.",
+        "Les gestionnaires immobiliers publient gratuitement leurs appels d'offres. Des entrepreneurs soumissionnent sur les travaux.",
     },
   },
   og: {
     eyebrow: "Membres fondateurs · Inscription gratuite",
     title: "Faites-vous trouver. Décrochez des contrats d'immeubles.",
-    subline: "Les gestionnaires immobiliers publient leurs projets. Les entrepreneurs vérifiés soumissionnent. Sans carte de crédit.",
+    subline: "Les gestionnaires immobiliers publient leurs projets. Les entrepreneurs soumissionnent. Sans carte de crédit.",
     caption: "pmrfp.com/fr/sign-up",
   },
   signIn: {
@@ -283,7 +283,7 @@ const fr: typeof en = {
     eyebrow: "Adhésion",
     startPlan: "Commencer avec {plan}",
     planIntro:
-      "Pour les entreprises de métiers et de services. Chaque appel d'offres commercial et marché public qui correspond à votre corps de métier et à vos régions, envoyé par courriel le matin même de sa publication.",
+      "Pour les entreprises de métiers et de services. Les appels d'offres commerciaux et marchés publics qui correspondent à votre corps de métier et à vos régions, envoyés par courriel le matin même de leur publication.",
     heading: "Joignez-vous au réseau PMRFP",
     intro:
       "Le réseau des appels d'offres en immobilier commercial — entrepreneurs, fournisseurs, gestionnaires immobiliers, constructeurs et professionnels de l'immobilier sur une seule plateforme.",
@@ -434,7 +434,7 @@ const fr: typeof en = {
     ],
     upgrade:
       "Passez à Trade Pro en tout temps pour obtenir la portée complète, les documents et les coordonnées de l'acheteur, ainsi qu'un courriel le matin même de chaque nouvel appel d'offres qui vous correspond.",
-    buyerHeading: "Publiez gratuitement. Les entrepreneurs qualifiés viennent à vous.",
+    buyerHeading: "Publiez gratuitement. Les entrepreneurs de votre région peuvent le trouver.",
     steps: [
       {
         title: "Décrivez les travaux",
@@ -443,7 +443,7 @@ const fr: typeof en = {
       { title: "Les entrepreneurs du métier le voient", body: "Les entrepreneurs qui desservent votre secteur le reçoivent dans leur courriel du matin." },
       { title: "Comparez les réponses", body: "Profils, photos de travaux antérieurs et avis, côte à côte. C'est vous qui choisissez." },
     ],
-    boardToday: "contrats sur le tableau aujourd'hui. La publication est toujours gratuite pour les acheteurs.",
+    boardToday: "contrats sur le tableau aujourd'hui. La publication est gratuite pour les acheteurs.",
   },
   actions: {
     rateLimit: "Trop de tentatives. Veuillez patienter une minute et réessayer.",
@@ -493,20 +493,20 @@ const es: typeof en = {
       pmTitle: "Publique gratis el proyecto de su edificio",
       defaultTitle: "Únase a PMRFP: es gratis",
       tradeDescription:
-        "Los administradores de propiedades publican trabajos en sus edificios. Los contratistas verificados se dan a conocer y presentan ofertas. Registro gratis, sin tarjeta de crédito.",
+        "Los administradores de propiedades publican trabajos en sus edificios. Los contratistas se dan a conocer y presentan ofertas. Registro gratis, sin tarjeta de crédito.",
       gcDescription:
         "¿Ganó un contrato? Publique un paquete por oficio y reciba cotizaciones de contratistas locales. Gratis para contratistas generales.",
       landlordDescription: "¿Es dueño de un edificio de alquiler o comercial? Publique el trabajo una vez y los contratistas locales lo contactan. Gratis para propietarios.",
       pmDescription:
-        "Publique su proyecto una sola vez y los contratistas verificados le enviarán sus ofertas. Siempre gratis para los administradores de propiedades.",
+        "Publique su proyecto una sola vez y los contratistas de su zona pueden enviarle sus ofertas. Gratis para los administradores de propiedades.",
       defaultDescription:
-        "Los administradores de propiedades publican gratis solicitudes de propuestas (RFP) para sus edificios. Contratistas verificados presentan ofertas por el trabajo.",
+        "Los administradores de propiedades publican gratis solicitudes de propuestas (RFP) para sus edificios. Los contratistas presentan ofertas por el trabajo.",
     },
   },
   og: {
     eyebrow: "Miembros fundadores · Registro gratis",
     title: "Hágase visible. Gane contratos en edificios.",
-    subline: "Los administradores de propiedades publican proyectos. Los contratistas verificados presentan ofertas. Sin tarjeta de crédito.",
+    subline: "Los administradores de propiedades publican proyectos. Los contratistas presentan ofertas. Sin tarjeta de crédito.",
     caption: "pmrfp.com/es/sign-up",
   },
   signIn: {
@@ -521,7 +521,7 @@ const es: typeof en = {
     eyebrow: "Membresía",
     startPlan: "Comenzar con {plan}",
     planIntro:
-      "Para empresas de oficios y servicios. Todas las RFP comerciales y licitaciones públicas de su oficio y sus regiones, en su correo electrónico la misma mañana en que se publican.",
+      "Para empresas de oficios y servicios. Las RFP comerciales y licitaciones públicas que coinciden con su oficio y sus regiones, en su correo electrónico la misma mañana en que se publican.",
     heading: "Únase a la red PMRFP",
     intro:
       "La red de solicitudes de propuestas (RFP) para propiedades comerciales: contratistas, proveedores, administradores de propiedades, constructores y profesionales inmobiliarios en una sola plataforma.",
@@ -672,7 +672,7 @@ const es: typeof en = {
     ],
     upgrade:
       "Pásese a Trade Pro cuando quiera para ver el alcance completo, los documentos y el contacto del comprador, y recibir un correo electrónico la misma mañana en que se publica cada oportunidad que coincide con su perfil.",
-    buyerHeading: "Publique gratis. Los contratistas calificados llegan a usted.",
+    buyerHeading: "Publique gratis. Los contratistas de su zona pueden encontrarla.",
     steps: [
       {
         title: "Describa el trabajo",
@@ -681,7 +681,7 @@ const es: typeof en = {
       { title: "Lo ven los contratistas de ese oficio", body: "Los contratistas locales que cubren su zona lo reciben en su correo de la mañana." },
       { title: "Compare quién responde", body: "Perfiles, fotos de trabajos anteriores y reseñas, lado a lado. Usted elige." },
     ],
-    boardToday: "contratos en el tablero hoy. Publicar siempre es gratis para los compradores.",
+    boardToday: "contratos en el tablero hoy. Publicar es gratis para los compradores.",
   },
   actions: {
     rateLimit: "Demasiados intentos. Espere un minuto y vuelva a intentarlo.",

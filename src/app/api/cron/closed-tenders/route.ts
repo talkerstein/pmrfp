@@ -1,35 +1,17 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
-import { regionForTender } from "@/lib/tenders/canadabuys";
-import {
-  awardForTender,
-  classifyClosedTender,
-  closedTenderToRfpInsert,
-  fetchClosedTenderData,
-  indexAwards,
-  latestAmendments,
-} from "@/lib/tenders/canadabuys-closed";
+import { fetchClosedTenderData } from "@/lib/tenders/canadabuys-closed";
+import { CANADABUYS_OFF_NOTE, allowedSources, canadabuysFetchAllowed } from "@/lib/tenders/canadabuys-access";
+import { closedTendersSource } from "@/lib/tenders/canadabuys-feeds";
 import { classifyYukonClosed, fetchYukonClosedTenders, yukonClosedToRfpInsert } from "@/lib/tenders/yukon-closed";
 import { syncPublicSources, type Source } from "@/lib/tenders/sync";
 
 const SOURCES: Source[] = [
-  {
-    // ~700 real federal building-trade tenders that closed in the last 18
-    // months, with the winner where the award file has one.
-    key: "canadabuys-closed",
-    history: true,
-    minMatchesToArchive: 100,
-    collect: async (today) => {
-      const { tenders, awards } = await fetchClosedTenderData(today);
-      const byAward = indexAwards(awards, today);
-      return latestAmendments(tenders).flatMap((row) => {
-        const categories = classifyClosedTender(row, today);
-        const insert = categories.length ? closedTenderToRfpInsert(row, awardForTender(row, byAward)) : null;
-        return insert ? [{ insert, categories, regionSlug: regionForTender(row).regionSlug }] : [];
-      });
-    },
-  },
+  // ~700 real federal building-trade tenders that closed in the last 18
+  // months. Only when CANADABUYS_DIRECT_FETCH=1 (robots.txt bars bots);
+  // otherwise fed by the /admin/canadabuys upload.
+  closedTendersSource((today) => fetchClosedTenderData(today)),
   {
     key: "yukon-closed",
     history: true,
@@ -63,9 +45,9 @@ export async function GET(request: Request) {
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 
   const dry = new URL(request.url).searchParams.get("dry") === "1";
-  const { status, body } = await syncPublicSources(createServiceClient(), SOURCES, {
+  const { status, body } = await syncPublicSources(createServiceClient(), allowedSources(SOURCES), {
     today: new Date().toISOString().slice(0, 10),
     dry,
   });
-  return NextResponse.json(body, { status });
+  return NextResponse.json({ ...body, canadabuys: canadabuysFetchAllowed() ? "on" : CANADABUYS_OFF_NOTE }, { status });
 }

@@ -101,6 +101,8 @@ const CANADABUYS: PublicTenderSource = {
 // out-ranks a title word ("…-qc-cb-…") another marker would otherwise claim.
 // `^.*(…)` is greedy, so each pattern captures its rightmost (shortest) match.
 const ALL: [suffix: RegExp, source: PublicTenderSource][] = [...SOURCES, [suffix("cb", CB_REF), CANADABUYS]];
+/** Every public-tender source label (each has a credit; see lib/data-credits). */
+export const PUBLIC_TENDER_SOURCES: readonly PublicTenderSource[] = ALL.map(([, src]) => src);
 const MATCHERS = ALL.map(([re, src]): [rightmost: RegExp, source: PublicTenderSource] => [new RegExp(`^.*(${re.source})`), src]);
 
 /** The source whose marker sits nearest the end of the slug (with a valid reference after it). */

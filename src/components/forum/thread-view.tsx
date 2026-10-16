@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { MemberName, OpeningSoon, Pager, PostBody, PostImages, RatingBar, VerifyPanel } from "@/components/forum/parts";
 import { PollBlock, ReplyEmailToggle } from "@/components/forum/rework-client";
 import { canSeeResults, isPollOpen, tally } from "@/lib/forum/polls";
-import { ModButtons, PostControls, RateThread, ReplyForm, ThreadReport } from "@/components/forum/forms";
+import { ModButtons, PostControls, RateThread, ReplyForm, ThreadReport, ThreadReportPublic } from "@/components/forum/forms";
 import { getSession, isAdminRole } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
@@ -104,6 +104,7 @@ function PostCard({
           canAccept={thread.type === "question" && canAccept}
           accepted={p.isAccepted}
           canReport={viewerId != null && !own}
+          own={own}
           isMod={isMod}
         />
       </footer>
@@ -264,7 +265,8 @@ export async function ThreadView({ category, param, page }: { category: string; 
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {actorId && !op && <ThreadReport threadId={thread.id} />}
+                {/* Every thread has a Report: members flag it to moderators; anyone else files a correction request. */}
+                {actorId && !op ? <ThreadReport threadId={thread.id} /> : !op && <ThreadReportPublic threadId={thread.id} />}
                 {isMod && (
                   <ModButtons
                     type="thread"

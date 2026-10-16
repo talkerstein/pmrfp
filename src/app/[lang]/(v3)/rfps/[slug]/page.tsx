@@ -24,6 +24,8 @@ import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { publicTenderSource } from "@/lib/tenders/sources";
+import { localizeCredit } from "@/lib/data-credits";
+import { RecordFooter } from "@/components/public/record-footer";
 import { awardNoticeUrl } from "@/lib/tenders/awards";
 import { closedArchiveAward, closedArchiveNoticeUrl } from "@/lib/tenders/closed-archive";
 import { daysUntil, parseAward } from "@/lib/data/fomo";
@@ -153,7 +155,9 @@ export default async function RfpDetailPage({
   const isPublicTender = teaser.sourceType === "public_source";
   const tenderSource = publicTenderSource(teaser.slug);
   // Issuer, portal, bid label and credit line in the visitor's language (English: the lib as-is).
-  const source = { ...tenderSource, ...t.sources[tenderSource.key] };
+  // A source without its own copy still gets its licence credit translated (lib/data-credits).
+  const sourceCopy = t.sources[tenderSource.key] as (typeof t.sources)[string] | undefined;
+  const source = { ...tenderSource, ...sourceCopy, attribution: sourceCopy?.attribution ?? localizeCredit(tenderSource.attribution, lang) };
   const portalName = source.portal.replace(/^(the|le|la|les|el|los|las) /i, "");
   // Quebec SEAO notices are published in French; say so to Google and screen readers.
   const noticeLang = isPublicTender && tenderSource.key === "seao" ? "fr" : undefined;
@@ -625,6 +629,8 @@ export default async function RfpDetailPage({
               </div>
             </div>
           )}
+          {/* Credits are printed above; this adds the correction / removal link. */}
+          <RecordFooter credits={[]} lang={lang} kind="rfp" path={`/rfps/${teaser.slug}`} refId={teaser.slug} />
         </div>
 
         <aside className="vp-daside">

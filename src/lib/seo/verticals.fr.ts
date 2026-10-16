@@ -16,7 +16,7 @@ const FR: Record<string, VerticalCopy> = {
     who: "les constructeurs, promoteurs et entrepreneurs généraux",
     headline: "Recevez les prix de vos sous-traitants en quelques jours, pas après des semaines d'appels.",
     positioning:
-      "Publiez chaque lot de sous-traitance une seule fois, gratuitement. Les entrepreneurs commerciaux vérifiés qui desservent votre région le voient dès le lendemain matin et vous signalent leur intérêt. Comparez leurs profils, leurs qualifications et leurs réalisations au même endroit, puis embauchez ceux qui conviennent.",
+      "Publiez chaque lot de sous-traitance une seule fois, gratuitement. Les entrepreneurs commerciaux qui desservent votre région le voient dès le lendemain matin et vous signalent leur intérêt. Comparez leurs profils, leurs qualifications et leurs réalisations au même endroit, puis embauchez ceux qui conviennent.",
     pains: [
       "Des heures au téléphone à courir après un sous-traitant pour chaque corps de métier, sur chaque chantier",
       "Les trois mêmes sous-traitants soumissionnent chaque fois, donc aucune pression sur les prix",
@@ -43,7 +43,7 @@ const FR: Record<string, VerticalCopy> = {
     secondaryCta: "Parcourir le répertoire",
     metaTitle: "PMRFP pour les constructeurs : trouvez et embauchez des sous-traitants commerciaux",
     metaDescription:
-      "Constructeurs et promoteurs : publiez gratuitement chaque lot de sous-traitance et recevez l'intérêt de sous-traitants commerciaux vérifiés au Canada et aux États-Unis. Comparez qualifications et réalisations au même endroit.",
+      "Constructeurs et promoteurs : publiez gratuitement chaque lot de sous-traitance et recevez l'intérêt de sous-traitants commerciaux au Canada et aux États-Unis. Comparez qualifications et réalisations au même endroit.",
   },
   "general-contractors": {
     name: "Entrepreneurs généraux",
@@ -153,7 +153,7 @@ const FR: Record<string, VerticalCopy> = {
       "Des lacunes de qualifications et de conformité qui créent des risques d'assurance et de responsabilité",
     ],
     valueProps: [
-      { title: "Parcourez des entrepreneurs vérifiés", desc: "Cherchez par catégorie, région et qualification, gratuitement." },
+      { title: "Parcourez les entrepreneurs", desc: "Cherchez par catégorie, région et qualification, gratuitement." },
       { title: "Menez un vrai processus", desc: "Publiez un appel d'offres pour n'importe quel immeuble et recevez des propositions structurées." },
       { title: "Transparence des prix", desc: "Un processus concurrentiel fait ressortir des prix et une portée équitables." },
       { title: "Réduisez votre risque", desc: "Les profils font ressortir les assurances, les permis et les réalisations pour réduire votre exposition à la responsabilité." },
@@ -166,7 +166,7 @@ const FR: Record<string, VerticalCopy> = {
     ],
     cta: "Parcourir le répertoire",
     secondaryCta: "Publier un appel d'offres",
-    metaTitle: "PMRFP pour les investisseurs immobiliers — Trouvez des fournisseurs commerciaux vérifiés au Canada",
+    metaTitle: "PMRFP pour les investisseurs immobiliers — Trouvez des fournisseurs commerciaux au Canada",
     metaDescription:
       "Investisseurs et propriétaires immobiliers : parcourez un répertoire d'entrepreneurs commerciaux avec leurs qualifications et lancez des appels d'offres concurrentiels pour votre portefeuille. Publication et consultation gratuites.",
   },
@@ -179,13 +179,13 @@ const FR: Record<string, VerticalCopy> = {
     pains: [
       "Les réparations avant la mise en vente retardent une vente pendant que vous cherchez un entrepreneur fiable",
       "Le même homme à tout faire débordé ralentit chaque inscription et chaque remise en état",
-      "Aucun bassin d'entrepreneurs vérifiés quand une transaction exige des travaux avant la conclusion de la vente",
+      "Aucun bassin d'entrepreneurs prêt quand une transaction exige des travaux avant la conclusion de la vente",
       "L'entretien du portefeuille est réactif, éparpillé entre des contacts personnels",
       "Aucune trace écrite ni qualification quand une relation avec un fournisseur tourne mal",
     ],
     valueProps: [
       { title: "Votre page d'entrepreneurs de confiance", desc: "Enregistrez les entrepreneurs en qui vous avez confiance, ajoutez une note sur chacun et textez à vos clients un seul lien au lieu d'un numéro de mémoire. Gratuit pour 5 entrepreneurs." },
-      { title: "Un bassin vérifié, sur demande", desc: "Cherchez des entrepreneurs commerciaux et résidentiels par catégorie, région et qualification, gratuitement." },
+      { title: "Un bassin d'entrepreneurs, sur demande", desc: "Cherchez des entrepreneurs commerciaux et résidentiels par catégorie, région et qualification, gratuitement." },
       { title: "Publiez les travaux une fois", desc: "Réparations avant la mise en vente, remises en état de logements ou projets d'immobilisation : publiez un appel d'offres et des entrepreneurs qualifiés répondent." },
       { title: "Concluez plus vite", desc: "Ne laissez plus un entrepreneur introuvable retarder une vente ou une remise en marché." },
       { title: "Les qualifications d'entrée de jeu", desc: "Les profils font ressortir les assurances, les permis et les réalisations pour réduire votre risque." },
@@ -199,7 +199,7 @@ const FR: Record<string, VerticalCopy> = {
     ],
     cta: "Créer votre page d'entrepreneurs de confiance",
     secondaryCta: "Parcourir le répertoire",
-    metaTitle: "PMRFP pour l'immobilier — Trouvez des entrepreneurs vérifiés pour vos inscriptions et portefeuilles",
+    metaTitle: "PMRFP pour l'immobilier — Trouvez des entrepreneurs pour vos inscriptions et portefeuilles",
     metaDescription:
       "Courtiers, agences et investisseurs : parcourez un répertoire d'entrepreneurs commerciaux et résidentiels avec leurs qualifications et publiez vos réparations avant la mise en vente, vos remises en état et vos travaux d'entretien. Publication et consultation gratuites.",
   },
@@ -219,7 +219,7 @@ const FR: Record<string, VerticalCopy> = {
     valueProps: [
       { title: "Un processus concurrentiel documenté", desc: "Publiez un projet, recueillez des soumissions et gardez un dossier clair de qui a soumissionné et pourquoi vous l'avez choisi." },
       { title: "Une transparence visible pour les copropriétaires", desc: "Montrez au syndicat que vous avez mené un processus ouvert, pas une poignée de main avec un seul fournisseur." },
-      { title: "Des entrepreneurs vérifiés, sur demande", desc: "Joignez des entrepreneurs commerciaux par catégorie et région, avec leurs qualifications bien en vue." },
+      { title: "Des entrepreneurs, sur demande", desc: "Joignez des entrepreneurs commerciaux par catégorie et région, avec leurs qualifications bien en vue." },
       { title: "Publication gratuite", desc: "Publier un projet et recueillir des soumissions ne coûte rien au syndicat." },
       { title: "Conçu aussi pour les copropriétés autogérées", desc: "Aucun gestionnaire immobilier requis : un conseil peut mener tout le processus lui-même." },
     ],
@@ -227,13 +227,13 @@ const FR: Record<string, VerticalCopy> = {
     faqs: [
       { q: "Notre gestionnaire immobilier s'occupe des fournisseurs.", a: "Très bien. PMRFP est l'outil que votre gestionnaire (ou votre conseil) utilise pour mener un processus concurrentiel que vous pouvez présenter aux copropriétaires. Il renforce la recommandation du gestionnaire, il ne la remplace pas." },
       { q: "Les soumissions concurrentielles sont-elles exigées par la loi?", a: "Non. Mener des soumissions concurrentielles documentées est une bonne pratique de gouvernance que l'on attend de plus en plus des conseils, pas une obligation légale. PMRFP la rend simplement facile." },
-      { q: "Nous sommes autogérés.", a: "PMRFP est conçu pour ça : un conseil de bénévoles peut publier un projet, recueillir des soumissions d'entrepreneurs vérifiés et conserver le dossier, sans embaucher qui que ce soit." },
+      { q: "Nous sommes autogérés.", a: "PMRFP est conçu pour ça : un conseil de bénévoles peut publier un projet, recueillir des soumissions d'entrepreneurs inscrits et conserver le dossier, sans embaucher qui que ce soit." },
     ],
     cta: "Publier un projet — gratuit",
-    secondaryCta: "Parcourir les entrepreneurs vérifiés",
+    secondaryCta: "Parcourir les entrepreneurs",
     metaTitle: "PMRFP pour les syndicats de copropriété — Des soumissions concurrentielles transparentes à montrer aux copropriétaires",
     metaDescription:
-      "Syndicats de copropriété et copropriétés autogérées : menez un appel d'offres ouvert et documenté, recueillez des soumissions concurrentielles d'entrepreneurs vérifiés et montrez aux copropriétaires un processus équitable. Publication gratuite.",
+      "Syndicats de copropriété et copropriétés autogérées : menez un appel d'offres ouvert et documenté, recueillez des soumissions concurrentielles d'entrepreneurs inscrits et montrez aux copropriétaires un processus équitable. Publication gratuite.",
   },
   suppliers: {
     name: "Fournisseurs et distributeurs",
@@ -255,7 +255,7 @@ const FR: Record<string, VerticalCopy> = {
       { title: "Mettez en valeur votre catalogue et vos conditions", desc: "Votre profil présente vos catégories de produits, votre territoire desservi et les détails de vos comptes entrepreneurs." },
       { title: "Bâtissez le volet fournisseurs du réseau", desc: "Côtoyez les entrepreneurs et les constructeurs que vous servez déjà, dans une seule place de marché commerciale canadienne." },
     ],
-    features: ["Inscription au répertoire", "Ciblage par catégorie et région", "Visibilité sur les appels d'offres", "Profil d'entreprise", "Badge Vérifié"],
+    features: ["Inscription au répertoire", "Ciblage par catégorie et région", "Visibilité sur les appels d'offres", "Profil d'entreprise", "Badge pour votre site Web"],
     faqs: [
       { q: "PMRFP est-il réservé aux entrepreneurs?", a: "Non. Les fournisseurs et distributeurs s'inscrivent aux côtés des entrepreneurs : le même répertoire et le même abonnement Pro, adaptés pour que les acheteurs commerciaux trouvent ce que vous vendez." },
       { q: "Comment les fournisseurs utilisent-ils les appels d'offres?", a: "La visibilité sur les appels d'offres vous aide à repérer les projets commerciaux à venir qui auront besoin de matériaux ou d'équipement, pour joindre tôt les bons entrepreneurs." },

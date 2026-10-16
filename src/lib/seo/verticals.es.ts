@@ -13,7 +13,7 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     who: "los constructores, promotores y contratistas generales",
     headline: "Reciba cotizaciones de subcontratistas en días, no tras semanas de llamadas.",
     positioning:
-      "Publique cada paquete de subcontratación una sola vez, gratis. Los contratistas comerciales verificados que cubren su zona lo ven a la mañana siguiente y le expresan su interés. Compare sus perfiles, credenciales y trabajos anteriores en un solo lugar, y contrate a quien le convenga.",
+      "Publique cada paquete de subcontratación una sola vez, gratis. Los contratistas comerciales que cubren su zona lo ven a la mañana siguiente y le expresan su interés. Compare sus perfiles, credenciales y trabajos anteriores en un solo lugar, y contrate a quien le convenga.",
     pains: [
       "Horas al teléfono buscando un subcontratista para cada oficio en cada obra",
       "Los mismos tres subcontratistas cotizan siempre, así que no hay presión sobre los precios",
@@ -40,7 +40,7 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     secondaryCta: "Explorar el directorio",
     metaTitle: "PMRFP para constructores: encuentre y contrate subcontratistas comerciales",
     metaDescription:
-      "Constructores y promotores: publique gratis cada paquete de subcontratación y reciba el interés de subcontratistas comerciales verificados en Canadá y EE. UU. Compare credenciales y trabajos anteriores en un solo lugar.",
+      "Constructores y promotores: publique gratis cada paquete de subcontratación y reciba el interés de subcontratistas comerciales en Canadá y EE. UU. Compare credenciales y trabajos anteriores en un solo lugar.",
   },
   "general-contractors": {
     name: "Contratistas generales",
@@ -150,7 +150,7 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
       "Las brechas de credenciales y cumplimiento generan exposición en seguros y responsabilidad civil",
     ],
     valueProps: [
-      { title: "Explore contratistas verificados", desc: "Busque por categoría, región y credencial, gratis." },
+      { title: "Explore contratistas", desc: "Busque por categoría, región y credencial, gratis." },
       { title: "Lleve un proceso real", desc: "Publique una RFP para cualquier propiedad y reciba propuestas estructuradas." },
       { title: "Transparencia de precios", desc: "Un proceso competitivo saca a la luz precios y alcances justos." },
       { title: "Reduzca su riesgo", desc: "Los perfiles muestran seguros, licencias y trabajos anteriores para reducir su exposición a responsabilidades." },
@@ -163,7 +163,7 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     ],
     cta: "Explorar el directorio",
     secondaryCta: "Publicar una RFP",
-    metaTitle: "PMRFP para inversionistas inmobiliarios — Encuentre proveedores comerciales verificados en Canadá",
+    metaTitle: "PMRFP para inversionistas inmobiliarios — Encuentre proveedores comerciales en Canadá",
     metaDescription:
       "Inversionistas y propietarios de inmuebles: explore un directorio de contratistas comerciales con credenciales y lleve a cabo RFP competitivas para su cartera. Publicar y explorar es gratis.",
   },
@@ -176,13 +176,13 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     pains: [
       "Las reparaciones antes de poner en venta frenan la operación mientras usted busca un contratista confiable",
       "El mismo técnico de reparaciones sobrecargado retrasa cada propiedad en venta y cada cambio de inquilino",
-      "No tiene contratistas verificados a mano cuando una operación necesita trabajos antes del cierre",
+      "No tiene contratistas a mano cuando una operación necesita trabajos antes del cierre",
       "El mantenimiento de la cartera es reactivo y está repartido entre contactos personales",
       "No hay registro escrito ni credenciales cuando la relación con un proveedor se complica",
     ],
     valueProps: [
       { title: "Su página de contratistas de confianza", desc: "Guarde los contratistas en los que confía, agregue una nota a cada uno y envíe a sus clientes un solo enlace en lugar de un número de teléfono de memoria. Gratis para 5 contratistas." },
-      { title: "Contratistas verificados cuando los necesite", desc: "Busque contratistas comerciales y residenciales por categoría, región y credencial, gratis." },
+      { title: "Contratistas cuando los necesite", desc: "Busque contratistas comerciales y residenciales por categoría, región y credencial, gratis." },
       { title: "Publique el trabajo una vez", desc: "Reparaciones antes de la venta, preparación de unidades o proyectos de capital: publique una RFP y responderán contratistas calificados." },
       { title: "Cierre operaciones más rápido", desc: "Que la falta de un contratista ya no retrase un cierre ni una nueva puesta en venta." },
       { title: "Credenciales a la vista", desc: "Los perfiles muestran seguros, licencias y trabajos anteriores para reducir su riesgo." },
@@ -196,7 +196,7 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     ],
     cta: "Crear su página de contratistas de confianza",
     secondaryCta: "Explorar el directorio",
-    metaTitle: "PMRFP para bienes raíces — Encuentre contratistas verificados para propiedades en venta y carteras",
+    metaTitle: "PMRFP para bienes raíces — Encuentre contratistas para propiedades en venta y carteras",
     metaDescription:
       "Agentes inmobiliarios, corredurías e inversionistas: explore un directorio de contratistas comerciales y residenciales con credenciales y publique reparaciones antes de la venta, preparación de unidades y mantenimiento. Publicar y explorar es gratis.",
   },
@@ -216,7 +216,7 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     valueProps: [
       { title: "Un proceso competitivo documentado", desc: "Publique un proyecto, reciba ofertas y conserve un registro claro de quién ofertó y por qué eligió a quien eligió." },
       { title: "Transparencia que los propietarios pueden ver", desc: "Demuestre a la asociación que siguió un proceso abierto, no un apretón de manos con un solo proveedor." },
-      { title: "Contratistas verificados cuando los necesite", desc: "Contacte a contratistas comerciales por categoría y región, con sus credenciales a la vista." },
+      { title: "Contratistas cuando los necesite", desc: "Contacte a contratistas comerciales por categoría y región, con sus credenciales a la vista." },
       { title: "Publicar es gratis", desc: "Publicar un proyecto y recibir ofertas no le cuesta nada a la asociación." },
       { title: "Hecho también para juntas autogestionadas", desc: "No se necesita un administrador de propiedades: una junta puede llevar todo el proceso por sí misma." },
     ],
@@ -224,13 +224,13 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
     faqs: [
       { q: "Nuestro administrador de propiedades se encarga de los proveedores.", a: "Bien. PMRFP es la herramienta que su administrador (o su junta) usa para llevar un proceso competitivo que puede mostrar a los propietarios. Refuerza la recomendación del administrador, no la reemplaza." },
       { q: "¿La ley exige ofertas competitivas?", a: "No. Solicitar ofertas competitivas documentadas es una buena práctica de gobernanza que cada vez más se espera de las juntas, no un requisito legal. PMRFP simplemente lo hace fácil." },
-      { q: "Somos autogestionados.", a: "PMRFP está hecho para eso: una junta de voluntarios puede publicar un proyecto, recibir ofertas de contratistas verificados y conservar el registro, sin contratar a nadie." },
+      { q: "Somos autogestionados.", a: "PMRFP está hecho para eso: una junta de voluntarios puede publicar un proyecto, recibir ofertas de contratistas registrados y conservar el registro, sin contratar a nadie." },
     ],
     cta: "Publicar un proyecto — gratis",
-    secondaryCta: "Explorar contratistas verificados",
+    secondaryCta: "Explorar contratistas",
     metaTitle: "PMRFP para juntas de condominio — Ofertas competitivas transparentes que puede mostrar a los propietarios",
     metaDescription:
-      "Juntas de condominio y asociaciones autogestionadas: lleve a cabo una RFP abierta y documentada, reciba ofertas competitivas de contratistas verificados y muestre a los propietarios un proceso justo. Publicar es gratis.",
+      "Juntas de condominio y asociaciones autogestionadas: lleve a cabo una RFP abierta y documentada, reciba ofertas competitivas de contratistas registrados y muestre a los propietarios un proceso justo. Publicar es gratis.",
   },
   suppliers: {
     name: "Proveedores y distribuidores",
@@ -252,7 +252,7 @@ export const VERTICALS_ES: Record<string, VerticalCopy> = {
       { title: "Muestre su catálogo y sus condiciones", desc: "Su perfil destaca categorías de productos, zona de servicio y detalles de cuentas para contratistas." },
       { title: "Construya el lado de proveedores de la red", desc: "Esté junto a los contratistas y constructores que ya atiende, en un solo mercado comercial canadiense." },
     ],
-    features: ["Ficha en el directorio", "Segmentación por categoría y región", "Visibilidad de RFP", "Perfil de la empresa", "Insignia de verificado"],
+    features: ["Ficha en el directorio", "Segmentación por categoría y región", "Visibilidad de RFP", "Perfil de la empresa", "Insignia para su sitio web"],
     faqs: [
       { q: "¿PMRFP es solo para contratistas?", a: "No. Los proveedores y distribuidores aparecen junto a los contratistas: el mismo directorio y la misma membresía Pro, ajustados para que los compradores comerciales encuentren lo que usted vende." },
       { q: "¿Cómo usan las RFP los proveedores?", a: "La visibilidad de las RFP le ayuda a detectar próximos proyectos comerciales que necesitarán materiales o equipos, para llegar temprano a los contratistas adecuados." },

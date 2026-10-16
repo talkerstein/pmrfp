@@ -218,14 +218,14 @@ const en = {
   plans: {
     title: "Free gets you seen. Trade Pro gets you every match, first.",
     sub: "Property managers, builders and owners post RFPs free. Plans below are for trade and supplier companies, in {currency} per year.",
-    popular: "Most popular",
-    forever: "forever",
+    popular: "Recommended",
+    forever: "no card needed",
     perYear: "{currency} per year",
     perYearOr: "{currency} per year, or {monthly}/month",
     items: [
       { name: "Free", what: "Directory listing, basic company profile, and you appear in vendor search.", whatShort: "Directory listing, basic company profile, and you appear in vendor search.", cta: "Join free" },
       { name: "SEO Listing", what: "Trade and city page listings, unlimited project photos, case studies, Google ratings, priority over free listings.", whatShort: "Trade and city page listings, unlimited project photos, case studies, Google ratings.", cta: "Get SEO Listing" },
-      { name: "Trade Pro", what: "Full RFP access, matching alerts, saved opportunities, express interest, priority placement, verified vendor badge.", whatShort: "Full RFP access, matching alerts, saved opportunities, express interest, verified vendor badge.", cta: "Start Trade Pro" },
+      { name: "Trade Pro", what: "Full RFP access, matching alerts, saved opportunities, express interest, priority placement, website badge.", whatShort: "Full RFP access, matching alerts, saved opportunities, express interest, website badge.", cta: "Start Trade Pro" },
       { name: "Featured", what: "Everything in Trade Pro, plus featured placement in your categories and service regions and top search results.", whatShort: "Everything in Trade Pro, plus featured placement in your categories and regions.", cta: "Get Featured" },
     ],
     founding: "Founding 500",
@@ -235,7 +235,7 @@ const en = {
   cta: {
     line1: "contracts are open.",
     line2: "{n} close in the next 7 days.",
-    note: "Free forever for a directory listing. No card needed.",
+    note: "A directory listing is free. No card needed.",
     join: "Join free →",
     post: "Post an RFP free",
   },
@@ -273,6 +273,8 @@ const en = {
     contact: "Contact",
     terms: "Terms",
     privacy: "Privacy",
+    corrections: "Corrections",
+    forumRules: "Forum rules",
     resources: "Resources",
     monthlyReports: "Monthly contract winners",
     contractsReport: "Public contracts report",
@@ -311,7 +313,7 @@ const en = {
     open: "contracts open right now",
     closing: "{n} close in the next 7 days",
     tradesRegions: "{trades} trades · {regions} regions",
-    sources: "Pulled every morning from 7 public sources",
+    sources: "Pulled every morning from public open-data sources",
   },
 };
 
@@ -525,14 +527,14 @@ const fr: typeof en = {
   plans: {
     title: "Le gratuit vous rend visible. Trade Pro vous donne chaque correspondance, en premier.",
     sub: "Les gestionnaires immobiliers, constructeurs et propriétaires publient gratuitement. Les forfaits ci-dessous s'adressent aux entreprises de métier et aux fournisseurs, en {currency} par année.",
-    popular: "Le plus populaire",
-    forever: "pour toujours",
+    popular: "Recommandé",
+    forever: "sans carte",
     perYear: "{currency} par année",
     perYearOr: "{currency} par année, ou {monthly}/mois",
     items: [
       { name: "Gratuit", what: "Fiche au répertoire, profil d'entreprise de base et présence dans la recherche de fournisseurs.", whatShort: "Fiche au répertoire, profil d'entreprise de base et présence dans la recherche de fournisseurs.", cta: "S'inscrire gratuitement" },
       { name: "Fiche SEO", what: "Présence sur les pages métier et ville, photos de projets illimitées, études de cas, avis Google, priorité sur les fiches gratuites.", whatShort: "Présence sur les pages métier et ville, photos de projets illimitées, études de cas, avis Google.", cta: "Obtenir la Fiche SEO" },
-      { name: "Trade Pro", what: "Accès complet aux appels d'offres, alertes de correspondance, occasions sauvegardées, manifestation d'intérêt, placement prioritaire, badge de fournisseur vérifié.", whatShort: "Accès complet aux appels d'offres, alertes, occasions sauvegardées, manifestation d'intérêt, badge vérifié.", cta: "Commencer Trade Pro" },
+      { name: "Trade Pro", what: "Accès complet aux appels d'offres, alertes de correspondance, occasions sauvegardées, manifestation d'intérêt, placement prioritaire, badge pour votre site Web.", whatShort: "Accès complet aux appels d'offres, alertes, occasions sauvegardées, manifestation d'intérêt, badge vérifié.", cta: "Commencer Trade Pro" },
       { name: "En vedette", what: "Tout Trade Pro, plus un placement en vedette dans vos catégories et régions desservies et en tête des résultats.", whatShort: "Tout Trade Pro, plus un placement en vedette dans vos catégories et régions.", cta: "Passer En vedette" },
     ],
     founding: "Fondateurs 500",
@@ -542,7 +544,7 @@ const fr: typeof en = {
   cta: {
     line1: "contrats sont ouverts.",
     line2: "{n} clôturent dans les 7 prochains jours.",
-    note: "Fiche au répertoire gratuite pour toujours. Aucune carte requise.",
+    note: "Fiche au répertoire gratuite. Aucune carte requise.",
     join: "S'inscrire gratuitement →",
     post: "Publier un appel d'offres gratuitement",
   },
@@ -580,6 +582,8 @@ const fr: typeof en = {
     contact: "Contact",
     terms: "Conditions",
     privacy: "Confidentialité",
+    corrections: "Corrections",
+    forumRules: "Règles du forum",
     resources: "Ressources",
     monthlyReports: "Gagnants de contrats par mois",
     contractsReport: "Rapport sur les contrats publics",
@@ -618,7 +622,7 @@ const fr: typeof en = {
     open: "contrats ouverts en ce moment",
     closing: "{n} clôturent dans les 7 prochains jours",
     tradesRegions: "{trades} métiers · {regions} régions",
-    sources: "Récupérés chaque matin depuis 7 sources publiques",
+    sources: "Récupérés chaque matin depuis des sources publiques de données ouvertes",
   },
 };
 
@@ -832,14 +836,14 @@ const es: typeof en = {
   plans: {
     title: "Gratis lo hace visible. Trade Pro le da cada coincidencia, primero.",
     sub: "Administradores de propiedades, constructores y propietarios publican RFP gratis. Los planes son para empresas de oficios y proveedores, en {currency} al año.",
-    popular: "Más popular",
-    forever: "para siempre",
+    popular: "Recomendado",
+    forever: "sin tarjeta",
     perYear: "{currency} al año",
     perYearOr: "{currency} al año, o {monthly} al mes",
     items: [
       { name: "Gratis", what: "Ficha en el directorio, perfil básico de la empresa y aparición en la búsqueda de proveedores.", whatShort: "Ficha en el directorio, perfil básico de la empresa y aparición en la búsqueda de proveedores.", cta: "Registrarse gratis" },
       { name: "Ficha SEO", what: "Presencia en páginas de oficio y ciudad, fotos de proyectos ilimitadas, casos de estudio, calificaciones de Google, prioridad sobre las fichas gratuitas.", whatShort: "Presencia en páginas de oficio y ciudad, fotos ilimitadas, casos de estudio, calificaciones de Google.", cta: "Obtener Ficha SEO" },
-      { name: "Trade Pro", what: "Acceso completo a las RFP, alertas de coincidencias, oportunidades guardadas, expresar interés, ubicación prioritaria, insignia de proveedor verificado.", whatShort: "Acceso completo a las RFP, alertas, oportunidades guardadas, expresar interés, insignia verificada.", cta: "Empezar Trade Pro" },
+      { name: "Trade Pro", what: "Acceso completo a las RFP, alertas de coincidencias, oportunidades guardadas, expresar interés, ubicación prioritaria, insignia para su sitio web.", whatShort: "Acceso completo a las RFP, alertas, oportunidades guardadas, expresar interés, insignia verificada.", cta: "Empezar Trade Pro" },
       { name: "Destacado", what: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones de servicio y primeros resultados de búsqueda.", whatShort: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones.", cta: "Obtener Destacado" },
     ],
     founding: "Founding 500",
@@ -849,7 +853,7 @@ const es: typeof en = {
   cta: {
     line1: "contratos están abiertos.",
     line2: "{n} cierran en los próximos 7 días.",
-    note: "Ficha en el directorio gratis para siempre. Sin tarjeta.",
+    note: "Ficha en el directorio gratis. Sin tarjeta.",
     join: "Registrarse gratis →",
     post: "Publicar una RFP gratis",
   },
@@ -887,6 +891,8 @@ const es: typeof en = {
     contact: "Contacto",
     terms: "Términos",
     privacy: "Privacidad",
+    corrections: "Correcciones",
+    forumRules: "Reglas del foro",
     resources: "Recursos",
     monthlyReports: "Ganadores de contratos por mes",
     contractsReport: "Informe de contratos públicos",
@@ -925,7 +931,7 @@ const es: typeof en = {
     open: "contratos abiertos ahora",
     closing: "{n} cierran en los próximos 7 días",
     tradesRegions: "{trades} oficios · {regions} regiones",
-    sources: "Actualizado cada mañana desde 7 fuentes públicas",
+    sources: "Actualizado cada mañana desde fuentes públicas de datos abiertos",
   },
 };
 

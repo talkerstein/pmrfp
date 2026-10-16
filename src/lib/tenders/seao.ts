@@ -16,9 +16,17 @@
 import type { TenderInsert } from "./canadabuys";
 import { clean, slugify } from "./shared";
 import { SEAO_ATTRIBUTION } from "./sources";
+import { SEAO_DATASET_PAGE, savedSeaoFiles, seaoFilesFromPage, type SeaoFile } from "@/lib/contract-history/sources/seao-files";
 
-export const SEAO_PACKAGE_URL =
-  "https://www.donneesquebec.ca/recherche/api/3/action/package_show?id=systeme-electronique-dappel-doffres-seao";
+/**
+ * The weekly file list comes from the plain dataset page (SEAO_DATASET_PAGE).
+ * robots.txt on www.donneesquebec.ca (re-checked 2026-10-16) disallows the
+ * CKAN API (/recherche/api/, /api/) and query-string dataset URLs, allows the
+ * dataset page and the /download/ file URLs, and asks for Crawl-delay: 10.
+ */
+export { SEAO_DATASET_PAGE };
+/** Seconds between two requests to www.donneesquebec.ca (its robots.txt Crawl-delay). */
+export const SEAO_CRAWL_DELAY_S = 10;
 /** Weeks of weekly files to read — most calls close within 4–6 weeks. */
 export const SEAO_WEEKS = 6;
 
@@ -243,26 +251,63 @@ export function seaoAwardToRfpInsert(r: OcdsRelease, _today?: string): TenderIns
   };
 }
 
-/** URLs of the most recent weekly files, newest first. */
-export async function seaoWeeklyUrls(weeks = SEAO_WEEKS): Promise<string[]> {
-  const res = await fetch(SEAO_PACKAGE_URL, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Données Québec package lookup failed: HTTP ${res.status}`);
-  const pkg = (await res.json()) as { result: { resources: { name?: string; url: string }[] } };
-  return pkg.result.resources
-    .filter((r) => /^hebdo_\d{8}_\d{8}\.json$/.test(r.name ?? ""))
-    .sort((a, b) => (b.name ?? "").localeCompare(a.name ?? ""))
+const SEAO_UA = "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)";
+const SEAO_ALLOWED_PREFIX = "https://www.donneesquebec.ca/recherche/dataset/";
+
+let lastSeaoHit = 0;
+/** Tests only: forget the last request time. */
+export function resetSeaoPacing(): void {
+  lastSeaoHit = 0;
+}
+/**
+ * Every request this importer makes: dataset-page or /download/ URLs only
+ * (never the API, never a query string), one at a time, at least
+ * SEAO_CRAWL_DELAY_S apart.
+ */
+export async function seaoGet(url: string, accept: string): Promise<Response> {
+  if (!url.startsWith(SEAO_ALLOWED_PREFIX) || url.includes("?") || /\/api\//.test(url)) {
+    throw new Error(`Not an allowed Données Québec URL: ${url}`);
+  }
+  const wait = lastSeaoHit + SEAO_CRAWL_DELAY_S * 1000 - Date.now();
+  if (lastSeaoHit && wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastSeaoHit = Date.now();
+  return fetch(url, { cache: "no-store", headers: { "User-Agent": SEAO_UA, Accept: accept } });
+}
+
+/** The newest weekly "hebdo" /download/ URLs, newest first, from a file list. */
+export function newestWeekly(files: SeaoFile[], weeks = SEAO_WEEKS): string[] {
+  return files
+    .filter((f) => f.kind === "hebdo")
+    .sort((a, b) => b.from.localeCompare(a.from))
     .slice(0, weeks)
-    .map((r) => r.url);
+    .map((f) => f.url);
 }
 
 /**
- * Reads the recent weekly files one at a time (each ~17 MB) and keeps only
- * tender-bearing releases, so memory stays flat.
+ * URLs of the most recent weekly files, newest first: the /download/ links
+ * on the dataset page, merged with the saved list (seao-files.ts) when the
+ * page can't be read. A bot challenge is never solved or worked around.
+ */
+export async function seaoWeeklyUrls(weeks = SEAO_WEEKS): Promise<string[]> {
+  let live: SeaoFile[] = [];
+  try {
+    const res = await seaoGet(SEAO_DATASET_PAGE, "text/html");
+    if (res.status === 200) live = seaoFilesFromPage(await res.text());
+  } catch {
+    // Unreachable page: the saved list below.
+  }
+  const names = new Set(live.map((f) => f.name));
+  return newestWeekly([...live, ...savedSeaoFiles().filter((f) => !names.has(f.name))], weeks);
+}
+
+/**
+ * Reads the recent weekly files one at a time (each ~17 MB), 10 s apart,
+ * and keeps only tender-bearing releases, so memory stays flat.
  */
 export async function fetchSeaoReleases(): Promise<OcdsRelease[]> {
   const kept: OcdsRelease[] = [];
   for (const url of await seaoWeeklyUrls()) {
-    const res = await fetch(url, { cache: "no-store", headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" } });
+    const res = await seaoGet(url, "application/json");
     if (!res.ok) throw new Error(`SEAO weekly fetch failed: HTTP ${res.status}`);
     const { releases } = (await res.json()) as { releases: OcdsRelease[] };
     for (const r of releases) {

@@ -6,9 +6,9 @@
 export const SITE = {
   name: "PMRFP",
   longName: "PMRFP — Property Management RFP",
-  tagline: "Property managers post building RFPs free. Vetted trades bid on the work. Region by region across Canada and the U.S.",
+  tagline: "Property managers post building RFPs free. Trade companies bid on the work. Region by region across Canada and the U.S.",
   description:
-    "PMRFP is where property managers post commercial and residential building RFPs free, and vetted trades get listed and bid on the work — by region across Canada and the United States.",
+    "PMRFP is where property managers post commercial and residential building RFPs free, and trade companies get listed and bid on the work — by region across Canada and the United States.",
   url: "https://pmrfp.com",
   email: "info@pmrfp.com",
   supportEmail: "info@pmrfp.com",
@@ -127,6 +127,8 @@ export const ADMIN_NAV = [
   { href: "/admin/trials", label: "Trials" },
   { href: "/admin/intel", label: "Award Intelligence" },
   { href: "/admin/award-history", label: "Award History" },
+  { href: "/admin/canadabuys", label: "CanadaBuys Upload" },
+  { href: "/admin/corrections", label: "Corrections" },
   { href: "/admin/insights", label: "Insights" },
   { href: "/admin/interests", label: "Interests" },
   { href: "/admin/contact-requests", label: "Contact Requests" },
@@ -209,6 +211,7 @@ export const FOOTER_LEGAL = [
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Disclaimer", href: "/disclaimer" },
+  { label: "Corrections", href: "/corrections" },
 ] as const;
 
 /** Canonical copy blocks (§29) — reuse everywhere. Disclaimer legal substance is

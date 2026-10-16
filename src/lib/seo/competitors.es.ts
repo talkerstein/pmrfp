@@ -329,7 +329,7 @@ export const COMPETITORS_ES: Record<string, CompetitorCopy> = {
       "Sin referencia de precios competitivos ni proceso documentado",
     ],
     angle:
-      "Si no está ya en la lista de proveedores preferidos de alguien, no existe. PMRFP crea una puerta de entrada para los contratistas que aún no tienen contactos, y ofrece a los administradores de propiedades una alternativa verificada y con búsqueda en lugar de su agenda de contactos.",
+      "Si no está ya en la lista de proveedores preferidos de alguien, no existe. PMRFP crea una puerta de entrada para los contratistas que aún no tienen contactos, y ofrece a los administradores de propiedades una alternativa con búsqueda en lugar de su agenda de contactos.",
     rows: [
       { feature: "Precio anual", pmrfp: PRICE, them: "$0 (alto costo en tiempo)" },
       { feature: "Visibilidad para nuevos proveedores", pmrfp: "Sí", them: "No" },

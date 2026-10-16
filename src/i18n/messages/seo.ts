@@ -168,7 +168,7 @@ const en = {
       wherePm: "Property managers and owners",
       wherePlusPm: ", and property managers posting on {site}",
       whereTail:
-        ". {site} checks the official open-data feeds every morning and lists the {lower} work, so you don't have to search each portal. Bids go directly to the buyer.",
+        ". {site} checks the official open-data feeds every morning and lists the {lower} work, so you have fewer portals to check. Bids go directly to the buyer.",
       payQ: "How much do {lower} contracts in {place} pay?",
       payA: "Across the last {count} awarded {lower} contracts here with a published value, the median was {median} CAD, ranging from {min} to {max}. Each past contract below shows who won it and for how much.",
       firstQ: "How do I hear about new {lower} RFPs in {place} first?",
@@ -270,7 +270,7 @@ const en = {
     learnMore: "Learn more",
     cta: {
       title: "Find your place in the network",
-      description: "Property managers post building RFPs free. Vetted trades bid on the work.",
+      description: "Property managers post building RFPs free. Trades bid on the work.",
       primary: "Join {site}",
       secondary: "Compare alternatives",
     },
@@ -292,7 +292,7 @@ const en = {
     steps: {
       buyer: [
         { title: "Describe the job", desc: "Four questions in the free RFP writer, or post your own scope. Takes minutes." },
-        { title: "Trades come to you", desc: "Vetted companies that cover your trade and area see it and respond with interest." },
+        { title: "Trades come to you", desc: "Companies that cover your trade and area can see it and respond with interest." },
         { title: "Compare and hire", desc: "Profiles, credentials and past work side by side. No obligation to hire anyone." },
       ],
       seller: [
@@ -534,7 +534,7 @@ const fr: typeof en = {
       wherePm: "Des gestionnaires immobiliers et des propriétaires",
       wherePlusPm: ", ainsi que des gestionnaires immobiliers qui publient sur {site}",
       whereTail:
-        ". Chaque matin, {site} vérifie les sources officielles de données ouvertes et affiche les travaux {of}, pour que vous n'ayez pas à fouiller chaque portail. Les soumissions sont envoyées directement à l'acheteur.",
+        ". Chaque matin, {site} vérifie les sources officielles de données ouvertes et affiche les travaux {of}, pour que vous ayez moins de portails à consulter. Les soumissions sont envoyées directement à l'acheteur.",
       payQ: "Combien rapportent les contrats {of} {in}?",
       payA: "Sur les {count} derniers contrats {of} octroyés ici dont la valeur a été publiée, la médiane était de {median} CAD, pour une fourchette allant de {min} à {max}. Chaque contrat passé ci-dessous indique qui l'a remporté et pour combien.",
       firstQ: "Comment être informé en premier des nouveaux appels d'offres {of} {in}?",
@@ -637,7 +637,7 @@ const fr: typeof en = {
     learnMore: "En savoir plus",
     cta: {
       title: "Trouvez votre place dans le réseau",
-      description: "Les gestionnaires immobiliers publient gratuitement leurs appels d'offres. Des entrepreneurs vérifiés soumissionnent.",
+      description: "Les gestionnaires immobiliers publient gratuitement leurs appels d'offres. Des entrepreneurs soumissionnent.",
       primary: "Joignez-vous à {site}",
       secondary: "Comparer les solutions",
     },
@@ -659,7 +659,7 @@ const fr: typeof en = {
     steps: {
       buyer: [
         { title: "Décrivez les travaux", desc: "Quatre questions dans le rédacteur d'appels d'offres gratuit, ou publiez votre propre portée. Quelques minutes suffisent." },
-        { title: "Les entrepreneurs viennent à vous", desc: "Des entreprises vérifiées qui couvrent ce corps de métier et votre secteur le voient et manifestent leur intérêt." },
+        { title: "Les entrepreneurs viennent à vous", desc: "Les entreprises qui couvrent ce corps de métier et votre secteur peuvent le voir et manifester leur intérêt." },
         { title: "Comparez et embauchez", desc: "Profils, qualifications et réalisations côte à côte. Aucune obligation d'embaucher qui que ce soit." },
       ],
       seller: [
@@ -906,7 +906,7 @@ const es: typeof en = {
       wherePm: "De administradores de propiedades y propietarios",
       wherePlusPm: ", y de administradores de propiedades que publican en {site}",
       whereTail:
-        ". Cada mañana, {site} revisa las fuentes oficiales de datos abiertos y publica los trabajos {of}, para que usted no tenga que buscar en cada portal. Las ofertas se presentan directamente al comprador.",
+        ". Cada mañana, {site} revisa las fuentes oficiales de datos abiertos y publica los trabajos {of}, para que usted tenga menos portales que revisar. Las ofertas se presentan directamente al comprador.",
       payQ: "¿Cuánto pagan los contratos {of} {in}?",
       payA: "En los últimos {count} contratos {of} adjudicados aquí con valor publicado, la mediana fue de {median} CAD, con un rango de {min} a {max}. Cada contrato anterior de abajo muestra quién lo ganó y por cuánto.",
       firstQ: "¿Cómo me entero primero de las nuevas licitaciones {of} {in}?",
@@ -1008,7 +1008,7 @@ const es: typeof en = {
     learnMore: "Más información",
     cta: {
       title: "Encuentre su lugar en la red",
-      description: "Los administradores de propiedades publican gratis las RFP de sus edificios. Contratistas verificados presentan ofertas.",
+      description: "Los administradores de propiedades publican gratis las RFP de sus edificios. Los contratistas presentan ofertas.",
       primary: "Únase a {site}",
       secondary: "Comparar alternativas",
     },
@@ -1030,7 +1030,7 @@ const es: typeof en = {
     steps: {
       buyer: [
         { title: "Describa el trabajo", desc: "Cuatro preguntas en el Redactor de RFP gratuito, o publique su propio alcance. Toma minutos." },
-        { title: "Los contratistas vienen a usted", desc: "Empresas verificadas que cubren ese oficio y su zona la ven y le expresan su interés." },
+        { title: "Los contratistas vienen a usted", desc: "Las empresas que cubren ese oficio y su zona pueden verla y expresarle su interés." },
         { title: "Compare y contrate", desc: "Perfiles, credenciales y trabajos anteriores lado a lado. Sin obligación de contratar a nadie." },
       ],
       seller: [

@@ -85,3 +85,27 @@ export const SEAO_SAVED_FILES: readonly (readonly [name: string, resourceId: str
 
 export const seaoDownloadUrl = (name: string, resourceId: string) =>
   `https://www.donneesquebec.ca/recherche/dataset/${SEAO_DATASET_ID}/resource/${resourceId}/download/${name}`;
+
+/** The plain dataset page (robots.txt allows it; the CKAN API under /recherche/api/ is disallowed). */
+export const SEAO_DATASET_PAGE = "https://www.donneesquebec.ca/recherche/dataset/systeme-electronique-dappel-doffres-seao";
+
+export interface SeaoFile {
+  name: string;
+  url: string;
+  kind: "hebdo" | "mensuel";
+  from: string;
+}
+
+/** /download/ JSON files listed on the dataset page, newest first. */
+export function seaoFilesFromPage(html: string): SeaoFile[] {
+  const seen = new Map<string, SeaoFile>();
+  for (const m of html.matchAll(/https:\/\/www\.donneesquebec\.ca\/recherche\/dataset\/[0-9a-f-]+\/resource\/[0-9a-f-]+\/download\/((hebdo|mensuel)_(\d{8})_\d{8}\.json)/g)) {
+    if (!seen.has(m[1])) seen.set(m[1], { name: m[1], url: m[0], kind: m[2] as "hebdo" | "mensuel", from: m[3] });
+  }
+  return [...seen.values()].sort((a, b) => b.from.localeCompare(a.from) || a.kind.localeCompare(b.kind));
+}
+
+/** The saved list above, newest first. */
+export function savedSeaoFiles(): SeaoFile[] {
+  return seaoFilesFromPage(SEAO_SAVED_FILES.map(([name, id]) => seaoDownloadUrl(name, id)).join(" "));
+}

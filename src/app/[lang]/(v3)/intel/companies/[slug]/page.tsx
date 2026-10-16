@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RecordFooter } from "@/components/public/record-footer";
 import { notFound } from "next/navigation";
 import { loadIntel, intelCompanyPath } from "@/lib/intel/load";
 import { companyProfile, linkBuyers } from "@/lib/intel/model";
@@ -49,6 +50,7 @@ export default async function IntelCompany({ params, searchParams }: { params: P
     >
       <IntelNav ctx={ctx} current="companies" />
       <CompanyBody view={view} ctx={ctx} csvHref={`/api/intel/csv?view=company&slug=${encodeURIComponent(slug)}&country=${country.toLowerCase()}`} />
+      <RecordFooter credits={profile.awards.map((a) => a.attribution)} lang={lang} kind="intel_company" path={path} refId={slug} />
     </SimplePage>
   );
 }

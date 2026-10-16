@@ -16,9 +16,11 @@
 import { collectFederal, FEDERAL_DATASET_URL, FEDERAL_LICENCE, FEDERAL_SOURCE } from "./sources/federal";
 import { CANADABUYS_FILES, CANADABUYS_LICENCE, CANADABUYS_SOURCE } from "./sources/canadabuys";
 import { collectSeao, SEAO_DATASET_PAGE, SEAO_LICENCE, SEAO_SOURCE } from "./sources/seao";
-import { collectMontreal, collectOttawa, collectToronto, MONTREAL_DATASETS, MONTREAL_LICENCE, MONTREAL_SOURCE, OTTAWA_HUB, OTTAWA_LICENCE, OTTAWA_SOURCE, TORONTO_DUMP_URL, TORONTO_LICENCE, TORONTO_SOURCE } from "./sources/municipal";
-import { collectUsaSpending, USASPENDING_LICENCE, USASPENDING_SOURCE } from "./sources/usaspending";
-import { collectTxdot, TXDOT_DATASET_URL, TXDOT_LICENCE, TXDOT_SOURCE } from "@/lib/bid-results/txdot";
+import { collectMontreal, collectOttawa, collectToronto, MONTREAL_ATTRIBUTION, MONTREAL_DATASETS, MONTREAL_LICENCE, MONTREAL_SOURCE, OTTAWA_ATTRIBUTION, OTTAWA_HUB, OTTAWA_LICENCE, OTTAWA_SOURCE, TORONTO_DUMP_URL, TORONTO_LICENCE, TORONTO_SOURCE } from "./sources/municipal";
+import { OGL_CANADA_ATTRIBUTION, SEAO_ATTRIBUTION } from "@/lib/tenders/sources";
+import { TORONTO_ATTRIBUTION } from "@/lib/data/toronto-awards";
+import { collectUsaSpending, USASPENDING_ATTRIBUTION, USASPENDING_LICENCE, USASPENDING_SOURCE } from "./sources/usaspending";
+import { collectTxdot, TXDOT_ATTRIBUTION, TXDOT_DATASET_URL, TXDOT_LICENCE, TXDOT_SOURCE } from "@/lib/bid-results/txdot";
 import { addMonths } from "@/lib/intel/model";
 import type { ParsedBatch } from "./model";
 
@@ -45,6 +47,8 @@ export interface HistorySource {
   label: string;
   country: "CA" | "US";
   licence: string;
+  /** The credit stored on its rows (award_history.attribution) and shown wherever they surface. */
+  attribution: string;
   url: string;
   /** cron = fetched by /api/cron/award-history/<group>; upload = an admin uploads the file (robots.txt bars bots). */
   mode: "cron" | "upload";
@@ -58,6 +62,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "Government of Canada — contracts over $10,000 (Proactive Disclosure)",
     country: "CA",
     licence: FEDERAL_LICENCE,
+    attribution: OGL_CANADA_ATTRIBUTION,
     url: FEDERAL_DATASET_URL,
     mode: "cron",
     group: "federal",
@@ -68,6 +73,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "CanadaBuys award notices (CSV)",
     country: "CA",
     licence: CANADABUYS_LICENCE,
+    attribution: OGL_CANADA_ATTRIBUTION,
     url: CANADABUYS_FILES[0],
     mode: "upload",
     group: null,
@@ -77,6 +83,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "SEAO — Quebec public contracts (Données Québec)",
     country: "CA",
     licence: SEAO_LICENCE,
+    attribution: SEAO_ATTRIBUTION,
     url: SEAO_DATASET_PAGE,
     mode: "cron",
     group: "weekly",
@@ -87,6 +94,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "City of Toronto — awarded contracts",
     country: "CA",
     licence: TORONTO_LICENCE,
+    attribution: TORONTO_ATTRIBUTION,
     url: TORONTO_DUMP_URL,
     mode: "cron",
     group: "weekly",
@@ -97,6 +105,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "Ville de Montréal — contracts",
     country: "CA",
     licence: MONTREAL_LICENCE,
+    attribution: MONTREAL_ATTRIBUTION,
     url: MONTREAL_DATASETS[0],
     mode: "cron",
     group: "monthly",
@@ -107,6 +116,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "City of Ottawa — contracts over $25,000 (delegated authority)",
     country: "CA",
     licence: OTTAWA_LICENCE,
+    attribution: OTTAWA_ATTRIBUTION,
     url: OTTAWA_HUB,
     mode: "cron",
     group: "monthly",
@@ -117,6 +127,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "USAspending — federal construction & facilities contracts",
     country: "US",
     licence: USASPENDING_LICENCE,
+    attribution: USASPENDING_ATTRIBUTION,
     url: "https://api.usaspending.gov/",
     mode: "cron",
     group: "weekly",
@@ -135,6 +146,7 @@ export const HISTORY_SOURCES: HistorySource[] = [
     label: "TxDOT bid tabulations (maintenance & facilities lettings)",
     country: "US",
     licence: TXDOT_LICENCE,
+    attribution: TXDOT_ATTRIBUTION,
     url: TXDOT_DATASET_URL,
     mode: "cron",
     group: "weekly",

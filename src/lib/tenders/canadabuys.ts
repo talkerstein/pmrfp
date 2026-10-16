@@ -12,6 +12,7 @@
  */
 import { parseCsv } from "./csv";
 import { EXCLUDE, RULES, clean, slugify } from "./shared";
+import { canadabuysFetch } from "./canadabuys-access";
 
 export const CANADABUYS_OPEN_URL =
   "https://canadabuys.canada.ca/opendata/pub/openTenderNotice-ouvertAvisAppelOffres.csv";
@@ -247,13 +248,16 @@ function toIsoDate(s: string | undefined): string | null {
   return /^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d}T00:00:00Z` : null;
 }
 
+/** Columns the open-tender import reads (the upload page sends only these). */
+export const OPEN_TENDER_COLUMNS: readonly string[] = Object.values(COL);
+
+/**
+ * Downloads the open-tender file. Off by default (robots.txt bars bots from
+ * canadabuys.canada.ca; see ./canadabuys-access): the admin upload at
+ * /admin/canadabuys feeds the same rows instead.
+ */
 export async function fetchOpenTenders(): Promise<TenderRow[]> {
-  // CanadaBuys' firewall 403s the default "node" User-Agent (verified
-  // 2026-09-22); an honest identifying UA is accepted.
-  const res = await fetch(CANADABUYS_OPEN_URL, {
-    cache: "no-store",
-    headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" },
-  });
+  const res = await canadabuysFetch(CANADABUYS_OPEN_URL);
   if (!res.ok) throw new Error(`CanadaBuys fetch failed: HTTP ${res.status}`);
   return parseCsv(await res.text());
 }

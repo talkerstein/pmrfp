@@ -336,7 +336,7 @@ const FR: Record<string, CompetitorCopy> = {
       "Aucun repère de prix concurrentiel ni processus documenté",
     ],
     angle:
-      "Si vous n'êtes pas déjà sur la liste de fournisseurs privilégiés de quelqu'un, vous n'existez pas. PMRFP crée une porte d'entrée pour les entrepreneurs qui ne sont pas encore branchés, et offre aux gestionnaires immobiliers une solution consultable et vérifiée plutôt que leur carnet d'adresses.",
+      "Si vous n'êtes pas déjà sur la liste de fournisseurs privilégiés de quelqu'un, vous n'existez pas. PMRFP crée une porte d'entrée pour les entrepreneurs qui ne sont pas encore branchés, et offre aux gestionnaires immobiliers une solution consultable plutôt que leur carnet d'adresses.",
     rows: [
       { feature: "Prix annuel", pmrfp: PRICE, them: "0 $ (coût en temps élevé)" },
       { feature: "Visibilité pour les nouveaux fournisseurs", pmrfp: "Oui", them: "Non" },

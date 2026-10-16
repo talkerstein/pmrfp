@@ -14,6 +14,7 @@ const en = {
   forum: "Forum",
   index: {
     eyebrow: "PMRFP Forum",
+    rulesLink: "Forum rules: no defamation, personal attacks or personal information",
     title: "Shop talk for the people who keep buildings running",
     lead: "Trades, property managers, GCs and suppliers asking real questions and answering them. Pick your forum, post a question, earn your rank.",
     trades: "Trade forums",
@@ -286,6 +287,7 @@ const fr: typeof en = {
   forum: "Forum",
   index: {
     eyebrow: "Forum PMRFP",
+    rulesLink: "Règles du forum : pas de diffamation, d'attaques personnelles ni de renseignements personnels",
     title: "Les discussions de ceux qui font rouler les immeubles",
     lead: "Gens de métier, gestionnaires immobiliers, entrepreneurs généraux et fournisseurs posent de vraies questions et y répondent. Choisissez votre forum, posez une question, gagnez votre rang.",
     trades: "Forums des métiers",
@@ -558,6 +560,7 @@ const es: typeof en = {
   forum: "Foro",
   index: {
     eyebrow: "Foro de PMRFP",
+    rulesLink: "Reglas del foro: nada de difamación, ataques personales ni información personal",
     title: "La conversación de quienes mantienen los edificios funcionando",
     lead: "Oficios, administradores de propiedades, contratistas generales y proveedores haciendo preguntas reales y respondiéndolas. Elija su foro, publique una pregunta y gane su rango.",
     trades: "Foros de oficios",
