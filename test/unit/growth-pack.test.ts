@@ -38,10 +38,12 @@ describe("badge snippets: honest links only", () => {
   for (const kind of ["listed", "winner", "karma"] as const) {
     it(`${kind}: one visible link to the company's own PMRFP page, branded anchor, nothing hidden`, () => {
       const pageUrl = kind === "winner" ? base.pageUrl : "https://pmrfp.com/directory/acme-paving";
-      const html = badgeHtml({ ...base, kind, slug: kind === "winner" ? base.slug : "acme-paving", pageUrl });
+      const slug = kind === "winner" ? base.slug : "acme-paving";
+      const html = badgeHtml({ ...base, kind, slug, pageUrl });
       const links = html.match(/<a\s[^>]*>/g) ?? [];
       expect(links).toHaveLength(1);
-      expect(links[0]).toContain(`href="${pageUrl}"`);
+      // The company's own page, tagged so sign-ups from the badge are credited to it.
+      expect(links[0]).toContain(`href="${pageUrl}?utm_source=badge&amp;utm_medium=referral&amp;utm_campaign=${slug}"`);
       // Followable: no nofollow/sponsored/ugc, and no extra rel requirement.
       expect(links[0]).toContain('rel="noopener"');
       expect(links[0]).not.toMatch(/nofollow|sponsored|ugc/);
@@ -60,8 +62,12 @@ describe("badge snippets: honest links only", () => {
   });
 
   it("text link and markdown use the company name as the anchor", () => {
-    expect(badgeTextLink(base)).toBe('<a href="https://pmrfp.com/contract-winners/acme-paving-ltd" target="_blank" rel="noopener">Acme Paving Ltd.</a>');
-    expect(badgeMarkdown(base)).toBe("[![Acme Paving Ltd.](https://pmrfp.com/api/badge/winner/acme-paving-ltd)](https://pmrfp.com/contract-winners/acme-paving-ltd)");
+    expect(badgeTextLink(base)).toBe(
+      '<a href="https://pmrfp.com/contract-winners/acme-paving-ltd?utm_source=badge&amp;utm_medium=referral&amp;utm_campaign=acme-paving-ltd" target="_blank" rel="noopener">Acme Paving Ltd.</a>',
+    );
+    expect(badgeMarkdown(base)).toBe(
+      "[![Acme Paving Ltd.](https://pmrfp.com/api/badge/winner/acme-paving-ltd)](https://pmrfp.com/contract-winners/acme-paving-ltd?utm_source=badge&utm_medium=referral&utm_campaign=acme-paving-ltd)",
+    );
   });
 
   it("escapes names so a snippet can't break out of its attribute", () => {

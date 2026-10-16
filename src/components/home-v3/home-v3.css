@@ -77,8 +77,45 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-market { display: flex; background: #2E3160; border-radius: 999px; padding: 3px; }
 .v3-market button { font: inherit; font-size: 13px; padding: 5px 12px; border: 0; border-radius: 999px; background: transparent; color: #FFFFFF; cursor: pointer; }
 .v3-market button[aria-pressed="true"] { font-weight: 700; background: #FFFFFF; color: var(--ink); }
+/* EN | FR | ES: links styled like the CA | US switch; it sits right next to it. */
+.v3-lang { display: flex; background: #2E3160; border-radius: 999px; padding: 3px; margin-left: -24px; }
+.pmrfp-v3 .v3-nav .v3-lang a { font-size: 13px; line-height: 1.5; padding: 5px 10px; border-radius: 999px; color: #FFFFFF; text-decoration: none; white-space: nowrap; }
+.pmrfp-v3 .v3-nav .v3-lang a:hover { color: var(--mint); text-decoration: none; }
+.pmrfp-v3 .v3-nav .v3-lang a[aria-current="true"] { font-weight: 700; background: #FFFFFF; color: var(--ink); }
+/* "Also in French" banner: floats under the header so it never pushes the page down. */
+.v3-top { position: relative; }
+.v3-langbar { position: absolute; top: 100%; right: max(32px, calc((100% - 1200px) / 2 + 32px)); z-index: 45; margin-top: 12px; max-width: 460px; display: flex; flex-wrap: wrap; align-items: center; column-gap: 14px; row-gap: 2px; padding: 8px 6px 8px 18px; background: #FFFFFF; color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 14px 36px rgba(20,22,58,.18); font-size: 15px; line-height: 1.4; animation: v3-langbar-in .25s ease-out; }
+.v3-langbar .txt { font-weight: 500; }
+.pmrfp-v3 .v3-langbar .cta { font-weight: 700; color: var(--navy); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.v3-langbar .x { margin-left: auto; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; color: var(--sub); cursor: pointer; padding: 0; }
+.v3-langbar .x:hover { background: #F1F2F8; color: var(--ink); }
+@keyframes v3-langbar-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .v3-join { text-decoration: none; color: var(--ink) !important; background: var(--mint); font-weight: 700; border-radius: 999px; padding: 11px 22px; }
 .v3-burger { display: none; width: 44px; height: 44px; border: 0; background: transparent; padding: 0; align-items: center; justify-content: center; margin-right: -8px; cursor: pointer; }
+/* Narrow desktops (and French/Spanish, whose labels run longer, at every
+   desktop width): a tighter header so the row never overflows. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .pmrfp-v3 .v3-hdr { padding: 0 24px; gap: 16px; }
+  .pmrfp-v3 .v3-logo span { font-size: 20px; }
+  .pmrfp-v3 .v3-nav { gap: 12px; font-size: 15px; }
+  .pmrfp-v3 .v3-nav-links { gap: 16px; }
+  .pmrfp-v3 .v3-lang { margin-left: -4px; }
+  .pmrfp-v3 .v3-nav .v3-lang a, .pmrfp-v3 .v3-market button { padding-left: 8px; padding-right: 8px; }
+  .pmrfp-v3 .v3-join { padding: 11px 16px; }
+  .pmrfp-v3 .v3-join .d { display: none; }
+  .pmrfp-v3 .v3-join .m { display: inline; }
+}
+@media (min-width: 1280px) {
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-hdr { padding: 0 24px; gap: 16px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-logo span { font-size: 20px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav { gap: 12px; font-size: 15px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav-links { gap: 16px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-lang { margin-left: -4px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav .v3-lang a, .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-market button { padding-left: 8px; padding-right: 8px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-join { padding: 11px 16px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-join .d { display: none; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-join .m { display: inline; }
+}
 
 /* ------------------------------------------------------------ hero */
 .v3-hero { max-width: 1200px; margin: 0 auto; padding: 56px 32px 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 32px; align-items: end; }
@@ -398,6 +435,12 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-foot-col { display: flex; flex-direction: column; gap: 10px; font-size: 15px; }
 .v3-foot-col h2 { font-weight: 700; }
 .pmrfp-v3 .v3-foot-col a { color: #C9CCE6; text-decoration: none; }
+.v3-foot-lang { margin-top: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: 15px; color: #C9CCE6; }
+.v3-foot-lang .k { font-weight: 700; color: #FFFFFF; margin-right: 4px; }
+.pmrfp-v3 .v3-foot-lang a { color: #C9CCE6; text-decoration: none; }
+.pmrfp-v3 .v3-foot-lang a:hover { color: #FFFFFF; text-decoration: underline; text-underline-offset: 4px; }
+.pmrfp-v3 .v3-foot-lang a[aria-current="true"] { color: var(--mint); font-weight: 700; }
+.v3-foot .v3-foot-lang + .legal { margin-top: 20px; }
 .v3-foot .legal { margin-top: 40px; padding-top: 24px; border-top: 1px solid #2E3160; font-size: 13px; color: #C9CCE6; }
 .v3-sticky { position: sticky; bottom: 0; z-index: 40; background: var(--ink); color: #FFFFFF; box-shadow: 0 -8px 24px rgba(20,22,58,0.25); }
 .v3-sticky-in { max-width: 1200px; margin: 0 auto; padding: 12px 32px; display: flex; align-items: center; gap: 20px; }
@@ -497,6 +540,10 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
   .v3-nav-links a { font-weight: 700; }
   .v3-market { order: 3; align-self: flex-start; margin-top: 6px; }
   .v3-market button { padding: 8px 14px; }
+  .v3-lang { order: 4; align-self: flex-start; margin: 10px 0 0; flex-wrap: wrap; }
+  .pmrfp-v3 .v3-nav .v3-lang a { min-height: 44px; font-size: 14px; padding: 0 16px; }
+  .v3-langbar { left: 16px; right: 16px; max-width: none; margin-top: 10px; padding: 10px 48px 10px 14px; font-size: 14px; }
+  .v3-langbar .x { position: absolute; top: 50%; right: 2px; margin-top: -22px; width: 44px; height: 44px; }
 
   .v3-hero { display: block; padding: 28px 16px 0; }
   .v3-hero-eyebrow { font-size: 12px; gap: 8px; }
@@ -738,6 +785,8 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
   .v3-foot .txt { margin-top: 14px; max-width: none; }
   .v3-foot-col { gap: 0; }
   .pmrfp-v3 .v3-foot-col a { min-height: 44px; display: flex; align-items: center; }
+  .v3-foot-lang { margin-top: 24px; gap: 0 18px; }
+  .pmrfp-v3 .v3-foot-lang a { min-height: 44px; display: flex; align-items: center; }
   .v3-foot .legal { margin-top: 20px; padding-top: 18px; }
   .v3-sticky-in { padding: 10px 12px; gap: 10px; }
   .v3-sticky .txt b, .v3-sticky .txt .c { display: block; line-height: 1.2; }
@@ -760,6 +809,6 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
   .pmrfp-v3 .lift, .pmrfp-v3 .zoom .v3-img, .pmrfp-v3 .blk, .pmrfp-v3 .v3-steps button { transition: none; }
   .pmrfp-v3 .fadeup, .pmrfp-v3 .swapa, .pmrfp-v3 .swapb, .pmrfp-v3 .marquee, .pmrfp-v3 .drop,
   .pmrfp-v3 .float, .pmrfp-v3 .wave, .pmrfp-v3 .roll, .pmrfp-v3 .ping, .pmrfp-v3 .spin,
-  .pmrfp-v3 .v3-dialog, .pmrfp-v3 .v3-toast { animation: none; }
+  .pmrfp-v3 .v3-dialog, .pmrfp-v3 .v3-toast, .pmrfp-v3 .v3-langbar { animation: none; }
   .pmrfp-v3 .v3-tile.on .v3-img { transform: none; }
 }

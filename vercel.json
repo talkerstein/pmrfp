@@ -30,6 +30,10 @@
       "schedule": "48 12 * * *"
     },
     {
+      "path": "/api/cron/periscope-tenders",
+      "schedule": "45 12 * * *"
+    },
+    {
       "path": "/api/cron/rfp-alerts",
       "schedule": "0 13 * * *"
     },

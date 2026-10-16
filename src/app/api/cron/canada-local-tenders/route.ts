@@ -65,6 +65,8 @@ const SOURCES: Source[] = [
   },
   {
     // SaskTenders: province, Sask Housing, school divisions, health, cities, towns, RMs.
+    // OFF until SaskBuilds answers our 2026-10-09 permission request: set
+    // SASKTENDERS_ENABLED=1 in Vercel once a yes is logged in briefs/outreach/buyer-permissions.csv.
     key: "sasktenders",
     minMatchesToArchive: 10,
     collect: async (today) =>
@@ -77,6 +79,11 @@ const SOURCES: Source[] = [
       ),
   },
 ];
+
+/** Sources that run today. SaskTenders stays off until permission is granted. */
+function activeSources(env: NodeJS.ProcessEnv = process.env): Source[] {
+  return SOURCES.filter((s) => s.key !== "sasktenders" || env.SASKTENDERS_ENABLED === "1");
+}
 
 export const maxDuration = 60;
 
@@ -95,7 +102,7 @@ export async function GET(request: Request) {
   }
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 
-  const { status, body } = await syncPublicSources(createServiceClient(), SOURCES, {
+  const { status, body } = await syncPublicSources(createServiceClient(), activeSources(), {
     today: new Date().toISOString().slice(0, 10),
     dry: new URL(request.url).searchParams.get("dry") === "1",
   });

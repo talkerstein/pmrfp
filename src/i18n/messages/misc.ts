@@ -148,6 +148,10 @@ const en = {
         body: "We use cookies and similar technologies to keep you signed in, remember preferences, and understand how the Service is used. Aggregated analytics help us improve performance and features. You can control cookies through your browser settings, though some features may not function without them.",
       },
       {
+        title: "How People Find PMRFP",
+        body: "To understand how people find PMRFP, we record the page you first landed on and the referring site or campaign. One first-party cookie (pmrfp_ft, kept for 90 days) holds the first page's address without its query string, the referring website's domain only (never the full address), any campaign tags in the link (utm_source, utm_medium, utm_campaign, utm_content), the date, the page language and your country as estimated by our host. It never holds your IP address. If you create an account, we save these values with it so we can see which channels bring members; we also count first visits per page and channel as daily totals that identify no one. We use no third-party trackers or advertising cookies, and we do no cross-site tracking. Blocking or clearing the cookie doesn't affect the Service.",
+      },
+      {
         title: "Data Storage",
         body: "Account and platform data is stored using Supabase, our managed database and authentication provider. We take reasonable steps to ensure data is handled securely by our infrastructure providers.",
       },
@@ -749,6 +753,10 @@ const fr: typeof en = {
       {
         title: "Témoins et analytique",
         body: "Nous utilisons des témoins (cookies) et des technologies semblables pour maintenir votre session ouverte, mémoriser vos préférences et comprendre comment le Service est utilisé. Des données analytiques agrégées nous aident à améliorer la performance et les fonctionnalités. Vous pouvez gérer les témoins dans les paramètres de votre navigateur, mais certaines fonctionnalités pourraient ne pas fonctionner sans eux.",
+      },
+      {
+        title: "Comment les gens trouvent PMRFP",
+        body: "Pour comprendre comment les gens trouvent PMRFP, nous enregistrons la première page que vous avez visitée et le site ou la campagne qui vous y a dirigé. Un seul témoin interne (pmrfp_ft, conservé 90 jours) contient l'adresse de cette première page sans ses paramètres, le domaine du site référent seulement (jamais l'adresse complète), les balises de campagne du lien, le cas échéant (utm_source, utm_medium, utm_campaign, utm_content), la date, la langue de la page et votre pays tel qu'estimé par notre hébergeur. Il ne contient jamais votre adresse IP. Si vous créez un compte, nous conservons ces valeurs avec celui-ci pour savoir quels canaux nous amènent des membres; nous comptons aussi les premières visites par page et par canal sous forme de totaux quotidiens qui n'identifient personne. Nous n'utilisons aucun traceur tiers ni témoin publicitaire, et nous ne faisons aucun suivi intersites. Bloquer ou effacer ce témoin n'a aucun effet sur le Service.",
       },
       {
         title: "Stockage des données",
@@ -1369,6 +1377,10 @@ const es: typeof en = {
       {
         title: "Cookies y analítica",
         body: "Usamos cookies y tecnologías similares para mantener su sesión iniciada, recordar sus preferencias y entender cómo se usa el Servicio. La analítica agregada nos ayuda a mejorar el rendimiento y las funciones. Puede controlar las cookies desde la configuración de su navegador, aunque algunas funciones podrían no funcionar sin ellas.",
+      },
+      {
+        title: "Cómo nos encuentra la gente",
+        body: "Para entender cómo la gente encuentra PMRFP, registramos la primera página que visitó y el sitio o la campaña que lo trajo. Una sola cookie propia (pmrfp_ft, guardada 90 días) contiene la dirección de esa primera página sin sus parámetros, solo el dominio del sitio de referencia (nunca la dirección completa), las etiquetas de campaña del enlace, si las hay (utm_source, utm_medium, utm_campaign, utm_content), la fecha, el idioma de la página y su país según lo estima nuestro proveedor de alojamiento. Nunca contiene su dirección IP. Si crea una cuenta, guardamos estos valores con ella para saber qué canales nos traen miembros; también contamos las primeras visitas por página y canal como totales diarios que no identifican a nadie. No usamos rastreadores de terceros ni cookies publicitarias, y no hacemos seguimiento entre sitios. Bloquear o borrar la cookie no afecta al Servicio.",
       },
       {
         title: "Almacenamiento de datos",

@@ -7,8 +7,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { Container } from "@/components/container";
 import { Logo } from "@/components/logo";
 import { MAIN_NAV } from "@/lib/site";
-import { useT } from "@/i18n/provider";
+import { useLang, useT } from "@/i18n/provider";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { LanguageBanner } from "@/components/language-banner";
 import { MarketSwitcher } from "@/components/geo/market-switcher";
 
 const NAV_KEY = {
@@ -24,6 +25,11 @@ import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
   const t = useT("common").nav;
+  // French and Spanish labels run longer: keep the burger menu up to 2xl so the desktop row never overflows.
+  const en = useLang() === "en";
+  const bp = en
+    ? { show: "xl:flex", hide: "xl:hidden", pad: "2xl:px-3.5" }
+    : { show: "2xl:flex", hide: "2xl:hidden", pad: "" };
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -52,19 +58,19 @@ export function SiteHeader() {
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className={cn("hidden items-center gap-1", bp.show)}>
           {MAIN_NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="whitespace-nowrap rounded-full px-2.5 py-2 text-sm font-medium text-ink-2/80 transition-colors hover:bg-secondary hover:text-foreground xl:px-3.5"
+              className={cn("whitespace-nowrap rounded-full px-2.5 py-2 text-sm font-medium text-ink-2/80 transition-colors hover:bg-secondary hover:text-foreground", bp.pad)}
             >
               {t[NAV_KEY[item.href]]}
             </Link>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className={cn("hidden items-center gap-2", bp.show)}>
           <MarketSwitcher />
           <LanguageSwitcher />
           <Link href="/sign-in" className={buttonVariants({ variant: "ghost", size: "sm" })}>
@@ -80,14 +86,15 @@ export function SiteHeader() {
           aria-label={t.toggleMenu}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex size-10 items-center justify-center rounded-md text-foreground hover:bg-secondary lg:hidden"
+          className={cn("inline-flex size-10 items-center justify-center rounded-md text-foreground hover:bg-secondary", bp.hide)}
         >
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
       </Container>
+      {!open && <LanguageBanner variant="site" />}
 
       {open && (
-        <div className="fixed inset-x-0 top-[72px] z-50 border-t border-border bg-background lg:hidden">
+        <div className={cn("fixed inset-x-0 top-[72px] z-50 border-t border-border bg-background", bp.hide)}>
           <div className="space-y-1 px-5 py-6">
             {MAIN_NAV.map((item) => (
               <Link

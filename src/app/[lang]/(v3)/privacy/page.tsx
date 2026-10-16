@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return { title: t.title, description: t.description, alternates: alternatesFor(l, "/privacy") };
 }
 
-const LAST_UPDATED = "May 29, 2026";
-const LAST_UPDATED_ISO = "2026-05-29";
+const LAST_UPDATED = "October 15, 2026";
+const LAST_UPDATED_ISO = "2026-10-15";
 
 /** One numbered section of the legal text (wording unchanged, layout only). */
 function LegalSection({ no, title, children }: { no: number; title: string; children: React.ReactNode }) {

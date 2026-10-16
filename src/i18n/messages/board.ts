@@ -581,6 +581,12 @@ const fr: typeof en = {
         bidLabel: "Ouvrir sur SaskTenders",
         attribution: "Source : SaskTenders (sasktenders.ca), gouvernement de la Saskatchewan — avis de concours public.",
       },
+      commbuys: {
+        issuer: "un organisme public du Massachusetts",
+        portal: "COMMBUYS",
+        bidLabel: "Ouvrir sur COMMBUYS",
+        attribution: "Source : COMMBUYS (Commonwealth of Massachusetts) — avis d'appel d'offres public",
+      },
     },
   },
 
@@ -941,6 +947,12 @@ const es: typeof en = {
         portal: "SaskTenders",
         bidLabel: "Abrir en SaskTenders",
         attribution: "Fuente: SaskTenders (sasktenders.ca), Gobierno de Saskatchewan — aviso de concurso público.",
+      },
+      commbuys: {
+        issuer: "un organismo público de Massachusetts",
+        portal: "COMMBUYS",
+        bidLabel: "Abrir en COMMBUYS",
+        attribution: "Fuente: COMMBUYS (Commonwealth of Massachusetts) — aviso de licitación pública",
       },
     },
   },
