@@ -5,6 +5,7 @@
  * Safe to import from any component.
  */
 import { US_STATE_SOURCES } from "./us-state-sources";
+import { CANADA_LOCAL_SOURCES } from "./canada-local-sources";
 
 export const OGL_CANADA_ATTRIBUTION =
   "Contains information licensed under the Open Government Licence – Canada.";
@@ -73,6 +74,7 @@ const SOURCES: [suffix: RegExp, source: PublicTenderSource][] = [
   [suffix("cbc", CB_CLOSED_REF), { key: "canadabuys-closed", past: false, closedArchive: true, badge: "Closed public tender · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Open the notice on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
   [suffix("ykc", FREE_REF), { key: "yukon-closed", past: false, closedArchive: true, badge: "Closed public tender · Yukon", issuer: "the Government of Yukon", portal: "Yukon's bids&tenders portal", bidLabel: "Open Yukon's portal", attribution: OGL_YUKON_ATTRIBUTION }],
   ...US_STATE_SOURCES,
+  ...CANADA_LOCAL_SOURCES,
   [suffix("cba", FREE_REF), { key: "awards", past: true, badge: "Past public contract · Gov. of Canada", issuer: "the Government of Canada", portal: "CanadaBuys", bidLabel: "Bid on CanadaBuys", attribution: OGL_CANADA_ATTRIBUTION }],
   [suffix("qca", FREE_REF), { key: "seao", past: true, badge: "Past public contract · Quebec (SEAO)", issuer: "a Quebec public body", portal: "SEAO", bidLabel: "Bid on SEAO", attribution: SEAO_ATTRIBUTION }],
   [suffix("tora", FREE_REF), { key: "toronto-awards", past: true, badge: "Past public contract · City of Toronto", issuer: "the City of Toronto", portal: "the City of Toronto bid portal", bidLabel: "Bid on the City portal", attribution: OGL_TORONTO_ATTRIBUTION }],

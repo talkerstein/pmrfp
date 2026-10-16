@@ -551,6 +551,36 @@ const fr: typeof en = {
         attribution:
           "Source : données ouvertes de l'État du Delaware — Open Bids (data.delaware.gov), avis d'appel d'offres public.",
       },
+      "ontario-northland": {
+        issuer: "Ontario Northland",
+        portal: "le site d'Ontario Northland",
+        bidLabel: "Ouvrir l'avis d'Ontario Northland",
+        attribution: "Source : Commission de transport Ontario Northland (ontarionorthland.ca) — avis d'approvisionnement public.",
+      },
+      saanich: {
+        issuer: "le District de Saanich",
+        portal: "le site du District de Saanich",
+        bidLabel: "Ouvrir l'avis de Saanich",
+        attribution: "Source : occasions d'affaires du District de Saanich (saanich.ca) — avis d'approvisionnement public.",
+      },
+      fvrd: {
+        issuer: "le District régional de Fraser Valley",
+        portal: "le site du FVRD",
+        bidLabel: "Ouvrir l'avis du FVRD",
+        attribution: "Source : appels d'offres du District régional de Fraser Valley (fvrd.ca) — avis d'approvisionnement public.",
+      },
+      "portage-la-prairie": {
+        issuer: "la Ville de Portage la Prairie",
+        portal: "le site de la Ville de Portage la Prairie",
+        bidLabel: "Ouvrir l'avis de la Ville",
+        attribution: "Source : appels d'offres de la Ville de Portage la Prairie (city-plap.com) — avis d'appel d'offres public.",
+      },
+      sasktenders: {
+        issuer: "un organisme public de la Saskatchewan",
+        portal: "SaskTenders",
+        bidLabel: "Ouvrir sur SaskTenders",
+        attribution: "Source : SaskTenders (sasktenders.ca), gouvernement de la Saskatchewan — avis de concours public.",
+      },
     },
   },
 
@@ -881,6 +911,36 @@ const es: typeof en = {
         bidLabel: "Abrir en Delaware MyMarketplace",
         attribution:
           "Fuente: datos abiertos del estado de Delaware — Open Bids (data.delaware.gov), aviso de licitación pública.",
+      },
+      "ontario-northland": {
+        issuer: "Ontario Northland",
+        portal: "el sitio de Ontario Northland",
+        bidLabel: "Abrir el aviso de Ontario Northland",
+        attribution: "Fuente: Ontario Northland Transportation Commission (ontarionorthland.ca) — aviso de compra pública.",
+      },
+      saanich: {
+        issuer: "el Distrito de Saanich",
+        portal: "el sitio del Distrito de Saanich",
+        bidLabel: "Abrir el aviso de Saanich",
+        attribution: "Fuente: oportunidades de licitación del Distrito de Saanich (saanich.ca) — aviso de compra pública.",
+      },
+      fvrd: {
+        issuer: "el Distrito Regional de Fraser Valley",
+        portal: "el sitio del FVRD",
+        bidLabel: "Abrir el aviso del FVRD",
+        attribution: "Fuente: licitaciones del Distrito Regional de Fraser Valley (fvrd.ca) — aviso de compra pública.",
+      },
+      "portage-la-prairie": {
+        issuer: "la Ciudad de Portage la Prairie",
+        portal: "el sitio de la Ciudad de Portage la Prairie",
+        bidLabel: "Abrir el aviso de la Ciudad",
+        attribution: "Fuente: licitaciones de la Ciudad de Portage la Prairie (city-plap.com) — aviso de licitación pública.",
+      },
+      sasktenders: {
+        issuer: "un organismo público de Saskatchewan",
+        portal: "SaskTenders",
+        bidLabel: "Abrir en SaskTenders",
+        attribution: "Fuente: SaskTenders (sasktenders.ca), Gobierno de Saskatchewan — aviso de concurso público.",
       },
     },
   },
