@@ -348,6 +348,6 @@ describe("recurring run (DB side)", () => {
     const db = { from: () => ({ select: () => ({ limit: async () => ({ error: { code: "42703", message: "column forum_threads.country does not exist" } }) }) }) } as unknown as SupabaseClient;
     const r = await runRecurringThreads(db, { dry: false });
     expect(r.ready).toBe(false);
-    expect(r.reason).toMatch(/20261017000001_forum_rework/);
+    expect(r.reason).toMatch(/20261017000002_forum_rework/);
   });
 });

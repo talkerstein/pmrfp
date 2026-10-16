@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Is the forum rework migration (20261017000001_forum_rework.sql) applied?
+ * Is the forum rework migration (20261017000002_forum_rework.sql) applied?
  * The app reads its columns (country, images, auto_source kinds) and tables
  * (polls, follows) only once it is, so deploying before the migration keeps
  * every forum page working. A yes is remembered for the life of the

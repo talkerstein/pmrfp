@@ -1,7 +1,7 @@
 /**
  * Thread polls (pure part): one question, 2 to 6 options, one vote per
  * verified member, results only after you vote. Mirrored in the database
- * (20261017000001_forum_rework.sql): option positions 0..5, primary key
+ * (20261017000002_forum_rework.sql): option positions 0..5, primary key
  * (poll_id, user_id) on votes, and forum_poll_results() that only answers a
  * member who has voted. Tested in test/forum-polls.test.ts.
  */

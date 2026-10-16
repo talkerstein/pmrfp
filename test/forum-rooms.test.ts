@@ -23,7 +23,7 @@ import { pickOpenBids, pickRooms } from "@/lib/forum/this-week";
 import { CA_PROVINCES, US_STATE_NAMES } from "@/lib/geo";
 import forumMessages from "@/i18n/messages/forum";
 
-const MIGRATION = readFileSync("supabase/migrations/20261017000001_forum_rework.sql", "utf8");
+const MIGRATION = readFileSync("supabase/migrations/20261017000002_forum_rework.sql", "utf8");
 
 describe("rooms", () => {
   it("has the rooms the study calls for", () => {

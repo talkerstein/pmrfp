@@ -115,7 +115,7 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
               price benchmark has 5+ valued awards). PMRFP Team (staff): a winter &quot;Weather &amp; storm thread&quot; per regional room
               (Nov–Mar, official forecast links only), weekly &quot;What are you working on?&quot;, monthly &quot;Post a picture of your
               current job&quot; and a monthly poll. Replies only ever come from members. Noindex until a member replies. Set
-              FORUM_RECURRING=0 to stop. Needs supabase/migrations/20261017000001_forum_rework.sql.
+              FORUM_RECURRING=0 to stop. Needs supabase/migrations/20261017000002_forum_rework.sql.
             </p>
             <div className="mt-3"><RecurringRun /></div>
           </section>

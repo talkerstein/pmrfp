@@ -64,7 +64,7 @@ export function recurringRow(d: RecurringDraft, categoryId: string, authorId: st
 export async function runRecurringThreads(db: SupabaseClient, opts: { dry: boolean; now?: Date; kinds?: RecurringKind[] }): Promise<RecurringRunResult> {
   const today = torontoToday(opts.now ?? new Date());
   const base: RecurringRunResult = { ready: false, dry: opts.dry, today, planned: 0, created: 0, skippedExisting: 0, failed: 0, byKind: {}, sample: [] };
-  if (!(await forumV2Ready(db))) return { ...base, reason: "Apply supabase/migrations/20261017000001_forum_rework.sql first." };
+  if (!(await forumV2Ready(db))) return { ...base, reason: "Apply supabase/migrations/20261017000002_forum_rework.sql first." };
 
   const want = new Set(opts.kinds ?? []);
   const needs = (k: RecurringKind) => want.size === 0 || want.has(k);

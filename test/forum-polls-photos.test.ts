@@ -17,7 +17,7 @@ import {
 } from "@/lib/forum/photos";
 import { THROTTLE_HOURS, forumUnsubscribeUrl, shouldNotify, verifyForumUnsubscribe } from "@/lib/forum/notify-rules";
 
-const MIGRATION = readFileSync("supabase/migrations/20261017000001_forum_rework.sql", "utf8");
+const MIGRATION = readFileSync("supabase/migrations/20261017000002_forum_rework.sql", "utf8");
 const U = "11111111-2222-4333-8444-555555555555";
 const OTHER = "99999999-2222-4333-8444-555555555555";
 const P = (n: number) => `${U}/0000000${n}-aaaa-4bbb-8ccc-dddddddddddd.jpg`;
