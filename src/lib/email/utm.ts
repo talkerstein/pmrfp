@@ -11,14 +11,18 @@
 
 const OWN_ORIGINS = ["https://pmrfp.com", "https://www.pmrfp.com"];
 
-/** `href` with our email tags. `amp`: separators written as &amp; (inside an HTML attribute). */
-export function emailUtmUrl(href: string, campaign: string, amp = false): string {
+/**
+ * `href` with our email tags. `amp`: separators written as &amp; (inside an
+ * HTML attribute). `source`: utm_source ("pmrfp" for our alert and account
+ * emails, "lifecycle" for the onboarding sequence in lib/lifecycle).
+ */
+export function emailUtmUrl(href: string, campaign: string, amp = false, source = "pmrfp"): string {
   const and = amp ? "&amp;" : "&";
   const hashAt = href.indexOf("#");
   const beforeHash = hashAt >= 0 ? href.slice(0, hashAt) : href;
   const hash = hashAt >= 0 ? href.slice(hashAt) : "";
   const sep = beforeHash.includes("?") ? and : "?";
-  const tags = ["utm_source=pmrfp", "utm_medium=email", `utm_campaign=${encodeURIComponent(campaign)}`].join(and);
+  const tags = [`utm_source=${encodeURIComponent(source)}`, "utm_medium=email", `utm_campaign=${encodeURIComponent(campaign)}`].join(and);
   return `${beforeHash}${sep}${tags}${hash}`;
 }
 
