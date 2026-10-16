@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeCredits } from "@/lib/data-credits";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { listRfps } from "@/lib/data/rfps";
 import { winnersFromRfps } from "@/lib/data/winners";
@@ -316,7 +317,7 @@ export default async function GcHubPage({ params, searchParams }: { params: Prom
             ))}
           </ul>
         )}
-        {[...new Set(all.map((w) => w.attribution))].map((a) => <p key={a} className="small muted">{a}</p>)}
+        {localizeCredits(all.map((w) => w.attribution), lang).map((a) => <p key={a} className="small muted">{a}</p>)}
 
         <div className="s-links">
           <a href={L("/contract-winners")}>{t.subs.winners} →</a>

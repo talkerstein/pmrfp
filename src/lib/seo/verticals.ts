@@ -23,7 +23,7 @@ export const VERTICALS: Vertical[] = [
     who: "builders, developers and general contractors",
     headline: "Get sub-trade quotes in days, not weeks of phone calls.",
     positioning:
-      "Post each trade package once, free. Vetted commercial trades that cover your area see it the next morning and send you interest. Compare their profiles, credentials and past work in one place, then hire who fits.",
+      "Post each trade package once, free. Commercial trades that cover your area see it the next morning and send you interest. Compare their profiles, credentials and past work in one place, then hire who fits.",
     pains: [
       "Hours on the phone chasing a sub for every trade on every job",
       "The same three subs quote every time, so there's no price pressure",
@@ -50,7 +50,7 @@ export const VERTICALS: Vertical[] = [
     secondaryCta: { label: "Browse the directory", href: "/directory" },
     metaTitle: "PMRFP for Builders: Find and Hire Commercial Subcontractors",
     metaDescription:
-      "Builders and developers: post each trade package free and get interest back from vetted commercial subcontractors in Canada and the U.S. Compare credentials and past work in one place.",
+      "Builders and developers: post each trade package free and get interest back from commercial subcontractors in Canada and the U.S. Compare credentials and past work in one place.",
   },
   {
     slug: "general-contractors",
@@ -164,7 +164,7 @@ export const VERTICALS: Vertical[] = [
       "Credential and compliance gaps create insurance and liability exposure",
     ],
     valueProps: [
-      { title: "Browse vetted trades", desc: "Search by category, region, and credential — free." },
+      { title: "Browse trades", desc: "Search by category, region, and credential — free." },
       { title: "Run a real process", desc: "Post an RFP for any property and receive structured proposals." },
       { title: "Price transparency", desc: "A competitive process surfaces fair pricing and scope." },
       { title: "Lower your risk", desc: "Profiles surface insurance, licensing, and past work to reduce liability exposure." },
@@ -177,7 +177,7 @@ export const VERTICALS: Vertical[] = [
     ],
     cta: { label: "Browse the directory", href: "/directory" },
     secondaryCta: { label: "Post an RFP", href: "/sign-up" },
-    metaTitle: "PMRFP for Property Investors — Find Vetted Commercial Vendors in Canada",
+    metaTitle: "PMRFP for Property Investors — Find Commercial Vendors in Canada",
     metaDescription:
       "Real-estate investors and owners: browse a credentialed directory of commercial trade contractors and run competitive RFPs for your portfolio. Free to post and browse.",
   },
@@ -191,13 +191,13 @@ export const VERTICALS: Vertical[] = [
     pains: [
       "Pre-listing repairs stall a sale while you chase a reliable contractor",
       "The same overworked handyman bottlenecks every listing and turnover",
-      "No vetted bench when a deal needs work done before closing",
+      "No ready bench of trades when a deal needs work done before closing",
       "Portfolio maintenance is reactive, scattered across personal contacts",
       "No paper trail or credentials when a vendor relationship goes sideways",
     ],
     valueProps: [
       { title: "Your trusted-trades page", desc: "Save the trades you trust, add a note on each, and text clients one link instead of a phone number from memory. Free for 5 trades." },
-      { title: "A vetted bench, on demand", desc: "Search commercial & residential trades by category, region, and credential — free." },
+      { title: "A bench of trades, on demand", desc: "Search commercial & residential trades by category, region, and credential — free." },
       { title: "Post the work once", desc: "Pre-listing repairs, unit turnovers, or capital projects — publish an RFP and qualified trades respond." },
       { title: "Move deals faster", desc: "Stop letting a missing contractor delay a close or a re-list." },
       { title: "See credentials up front", desc: "Profiles surface insurance, licensing, and past work to lower your risk." },
@@ -211,7 +211,7 @@ export const VERTICALS: Vertical[] = [
     ],
     cta: { label: "Create your trusted-trades page", href: "/sign-up?role=real_estate_agent" },
     secondaryCta: { label: "Browse the directory", href: "/directory" },
-    metaTitle: "PMRFP for Real Estate — Find Vetted Trades for Listings & Portfolios",
+    metaTitle: "PMRFP for Real Estate — Find Trades for Listings & Portfolios",
     metaDescription:
       "Realtors, brokerages, and investors: browse a credentialed directory of commercial & residential trades and post pre-listing repairs, turnovers, and maintenance. Free to post and browse.",
   },
@@ -232,7 +232,7 @@ export const VERTICALS: Vertical[] = [
     valueProps: [
       { title: "A documented competitive process", desc: "Post a project, collect bids, and keep a clean record of who bid and why you chose them." },
       { title: "Transparency owners can see", desc: "Show the corporation you ran an open process — not a handshake with one vendor." },
-      { title: "Vetted trades on demand", desc: "Reach commercial trades by category and region, with credentials up front." },
+      { title: "Trades on demand", desc: "Reach commercial trades by category and region, with credentials up front." },
       { title: "Free to post", desc: "Posting a project and collecting bids costs the corporation nothing." },
       { title: "Built for self-managed boards too", desc: "No property manager required — a board can run the whole process itself." },
     ],
@@ -240,13 +240,13 @@ export const VERTICALS: Vertical[] = [
     faqs: [
       { q: "Our property manager handles vendors.", a: "Good — PMRFP is the tool your manager (or your board) uses to run a competitive process you can put in front of owners. It strengthens the manager's recommendation, it doesn't replace it." },
       { q: "Is competitive bidding required by law?", a: "No. Running documented competitive bids is a governance best practice boards are increasingly expected to follow — not a legal requirement. PMRFP just makes it simple." },
-      { q: "We're self-managed.", a: "PMRFP is built for that — a volunteer board can post a project, collect bids from vetted trades, and keep the record, without hiring anyone." },
+      { q: "We're self-managed.", a: "PMRFP is built for that — a volunteer board can post a project, collect bids from listed trades, and keep the record, without hiring anyone." },
     ],
     cta: { label: "Post a project — free", href: "/sign-up?role=property_manager" },
-    secondaryCta: { label: "Browse vetted trades", href: "/directory" },
+    secondaryCta: { label: "Browse trades", href: "/directory" },
     metaTitle: "PMRFP for Condo Boards — Transparent Competitive Bids You Can Show Owners",
     metaDescription:
-      "Condo boards and self-managed corporations: run an open, documented RFP, collect competitive bids from vetted trades, and show owners a fair process. Free to post.",
+      "Condo boards and self-managed corporations: run an open, documented RFP, collect competitive bids from listed trades, and show owners a fair process. Free to post.",
   },
   {
     slug: "suppliers",
@@ -269,7 +269,7 @@ export const VERTICALS: Vertical[] = [
       { title: "Showcase your catalog & terms", desc: "Your profile highlights product categories, service area, and contractor-account details." },
       { title: "Build the supplier side of the network", desc: "Sit alongside the trades and builders you already serve, in one Canadian commercial marketplace." },
     ],
-    features: ["Directory listing", "Category + region targeting", "RFP visibility", "Company profile", "Verified badge"],
+    features: ["Directory listing", "Category + region targeting", "RFP visibility", "Company profile", "Website badge"],
     faqs: [
       { q: "Is PMRFP only for trades?", a: "No. Suppliers and distributors list alongside trades — the same directory and Pro membership, tuned so commercial buyers can find what you sell." },
       { q: "How do suppliers use RFPs?", a: "RFP visibility helps you spot upcoming commercial projects that will need materials or equipment, so you can reach the right contractors early." },

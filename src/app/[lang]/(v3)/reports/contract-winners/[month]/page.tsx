@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { localizeCredits } from "@/lib/data-credits";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/site";
@@ -308,7 +309,7 @@ export default async function MonthlyReportPage({ params }: { params: Params }) 
             );
           })}
         </ul>
-        {r.attributions.map((a) => <p key={a} className="small muted">{a}</p>)}
+        {localizeCredits(r.attributions, lang).map((a) => <p key={a} className="small muted">{a}</p>)}
         <p><a href={`${REPORTS_PATH}/${month}.csv`} download>{t.method.csv} ↓</a></p>
 
         <SH2 no={++no} id="cite">{t.sec.cite}</SH2>

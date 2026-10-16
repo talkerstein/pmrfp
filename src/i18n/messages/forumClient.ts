@@ -48,6 +48,9 @@ const en = {
     held: "Thanks. Your post includes a link, so a moderator will check it before it appears.",
     posted: "Posted.",
     staff: "Post as PMRFP Staff (labelled)",
+    rulesBefore: "Posting means you follow the ",
+    rulesLink: "forum rules",
+    rulesAfter: ": no defamation, personal attacks, unproven fraud accusations, personal information or spam.",
   },
   actions: {
     upvote: "Upvote",
@@ -151,6 +154,9 @@ const fr: typeof en = {
     held: "Merci. Votre message contient un lien; un modérateur le vérifiera avant qu'il apparaisse.",
     posted: "Publié.",
     staff: "Publier au nom de l'équipe PMRFP (identifié)",
+    rulesBefore: "En publiant, vous respectez les ",
+    rulesLink: "règles du forum",
+    rulesAfter: " : pas de diffamation, d'attaques personnelles, d'accusations de fraude non prouvées, de renseignements personnels ni de pourriel.",
   },
   actions: {
     upvote: "Voter",
@@ -254,6 +260,9 @@ const es: typeof en = {
     held: "Gracias. Su mensaje incluye un enlace, así que un moderador lo revisará antes de que aparezca.",
     posted: "Publicado.",
     staff: "Publicar como Equipo de PMRFP (identificado)",
+    rulesBefore: "Al publicar, usted acepta las ",
+    rulesLink: "reglas del foro",
+    rulesAfter: ": nada de difamación, ataques personales, acusaciones de fraude no comprobadas, información personal ni spam.",
   },
   actions: {
     upvote: "Votar",

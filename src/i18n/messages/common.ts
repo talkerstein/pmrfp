@@ -3,8 +3,8 @@ const en = {
   meta: {
     defaultTitle: "PMRFP — Commercial Property RFPs & Trade Directory",
     description:
-      "PMRFP is where property managers post commercial and residential building RFPs free, and vetted trades get listed and bid on the work — by region across Canada and the United States.",
-    tagline: "Property managers post building RFPs free. Vetted trades bid on the work. Region by region across Canada and the U.S.",
+      "PMRFP is where property managers post commercial and residential building RFPs free, and trade companies get listed and bid on the work — by region across Canada and the United States.",
+    tagline: "Property managers post building RFPs free. Trade companies bid on the work. Region by region across Canada and the U.S.",
   },
   nav: {
     home: "PMRFP home",
@@ -74,6 +74,7 @@ const en = {
       contact: "Contact",
       terms: "Terms",
       privacy: "Privacy",
+      corrections: "Corrections",
       disclaimer: "Disclaimer",
     },
     legal: "Legal",
@@ -105,9 +106,9 @@ const fr: typeof en = {
   meta: {
     defaultTitle: "PMRFP — Appels d'offres immobiliers commerciaux et répertoire d'entrepreneurs",
     description:
-      "Sur PMRFP, les gestionnaires immobiliers publient gratuitement leurs appels d'offres pour des immeubles commerciaux et résidentiels, et des entrepreneurs vérifiés s'inscrivent et soumissionnent, région par région, partout au Canada et aux États-Unis.",
+      "Sur PMRFP, les gestionnaires immobiliers publient gratuitement leurs appels d'offres pour des immeubles commerciaux et résidentiels, et des entrepreneurs s'inscrivent et soumissionnent, région par région, partout au Canada et aux États-Unis.",
     tagline:
-      "Les gestionnaires immobiliers publient leurs appels d'offres gratuitement. Des entrepreneurs vérifiés soumissionnent. Région par région, partout au Canada et aux États-Unis.",
+      "Les gestionnaires immobiliers publient leurs appels d'offres gratuitement. Des entrepreneurs soumissionnent. Région par région, partout au Canada et aux États-Unis.",
   },
   nav: {
     home: "Accueil PMRFP",
@@ -176,6 +177,7 @@ const fr: typeof en = {
       contact: "Contact",
       terms: "Conditions",
       privacy: "Confidentialité",
+      corrections: "Corrections",
       disclaimer: "Avis de non-responsabilité",
     },
     legal: "Mentions légales",
@@ -207,9 +209,9 @@ const es: typeof en = {
   meta: {
     defaultTitle: "PMRFP — Solicitudes de propuestas para propiedades comerciales y directorio de contratistas",
     description:
-      "En PMRFP, los administradores de propiedades publican gratis solicitudes de propuestas (RFP) para edificios comerciales y residenciales, y contratistas verificados se registran y presentan ofertas, región por región, en Canadá y Estados Unidos.",
+      "En PMRFP, los administradores de propiedades publican gratis solicitudes de propuestas (RFP) para edificios comerciales y residenciales, y los contratistas se registran y presentan ofertas, región por región, en Canadá y Estados Unidos.",
     tagline:
-      "Los administradores de propiedades publican RFP gratis. Contratistas verificados presentan ofertas. Región por región, en Canadá y Estados Unidos.",
+      "Los administradores de propiedades publican RFP gratis. Los contratistas presentan ofertas. Región por región, en Canadá y Estados Unidos.",
   },
   nav: {
     home: "Inicio de PMRFP",
@@ -278,6 +280,7 @@ const es: typeof en = {
       contact: "Contacto",
       terms: "Términos",
       privacy: "Privacidad",
+      corrections: "Correcciones",
       disclaimer: "Aviso legal",
     },
     legal: "Legal",

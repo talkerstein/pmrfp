@@ -538,6 +538,8 @@ export const PROJECT_SOURCES: ProjectSource[] = [
     label: "Ontario Builds",
     collect: async ({ minValue }) => {
       const page = await getText(ONTARIO_BUILDS_PAGE).catch(() => "");
+      // data.ontario.ca robots.txt asks for Crawl-delay: 10 between requests.
+      await new Promise((r) => setTimeout(r, 10_000));
       return parseOntarioBuilds(await getText(ontarioBuildsCsvUrl(page) ?? ONTARIO_BUILDS_FALLBACK), minValue);
     },
   },

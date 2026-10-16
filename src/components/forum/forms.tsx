@@ -25,6 +25,8 @@ import { RATING_LABELS } from "@/lib/forum/rules";
 import { defaultThreadType } from "@/lib/forum/categories";
 import { cn } from "@/lib/utils";
 import { PhotoUploader, PollFields } from "@/components/forum/rework-client";
+import { ReportErrorLink } from "@/components/public/report-error-link";
+import Link from "@/i18n/link";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -143,10 +145,23 @@ export function ThreadForm({
           <input type="checkbox" name="staff" value="1" defaultChecked /> {t.staff}
         </label>
       )}
+      <RulesNote />
       <Turnstile show={firstPost} />
       <ErrorLine state={state} />
       <Button type="submit" disabled={pending}>{pending ? t.posting : t.submit}</Button>
     </form>
+  );
+}
+
+/** Shown in every composer: posting means following /forum/rules. */
+export function RulesNote() {
+  const t = useT("forumClient").form;
+  return (
+    <p className="text-xs text-muted-foreground" data-forum-rules>
+      {t.rulesBefore}
+      <Link href="/forum/rules" className="underline" target="_blank">{t.rulesLink}</Link>
+      {t.rulesAfter}
+    </p>
   );
 }
 
@@ -175,6 +190,7 @@ export function ReplyForm({ threadId, label, firstPost, photos = false }: { thre
       <Textarea id="forum-reply" name="body" required minLength={2} maxLength={10000} rows={6} />
       <p className="text-xs text-muted-foreground">{t.help}</p>
       {photos && <PhotoUploader key={round} />}
+      <RulesNote />
       <Turnstile show={firstPost} />
       <ErrorLine state={state} />
       {state.ok && !state.held && <p role="status" className="text-sm text-teal-700">{t.posted}</p>}
@@ -239,6 +255,7 @@ export function PostControls({
   canAccept,
   accepted,
   canReport,
+  own = false,
   isMod,
 }: {
   postId: string;
@@ -248,6 +265,8 @@ export function PostControls({
   canAccept: boolean;
   accepted: boolean;
   canReport: boolean;
+  /** The viewer wrote this post (no report option at all). */
+  own?: boolean;
   isMod: boolean;
 }) {
   const t = useT("forumClient");
@@ -272,19 +291,44 @@ export function PostControls({
           <CheckCircle2 className="size-3.5" /> {accepted ? t.actions.unaccept : t.actions.accept}
         </button>
       )}
-      {canReport && (
+      {canReport ? (
         <button
           type="button"
           disabled={pending || reported}
           onClick={() => window.confirm(t.actions.reportConfirm) && run(() => reportAction("post", postId), () => setReported(true))}
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground hover:bg-muted"
+          data-report-post
         >
           <Flag className="size-3.5" /> {reported ? t.actions.reported : t.actions.report}
         </button>
+      ) : (
+        !own && (
+          // Visitors and unverified accounts can't use the members' report button,
+          // so every post still gets a "Report" that files a correction request.
+          <ReportErrorLink
+            kind="forum_post"
+            refId={postId}
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground hover:bg-muted"
+            label={<><Flag className="size-3.5" /> {t.actions.report}</>}
+          />
+        )
       )}
       {isMod && <ModButtons type="post" id={postId} ops={["hide"]} />}
       {error && <span role="alert" className="text-destructive">{t.errors[error]}</span>}
     </div>
+  );
+}
+
+/** The thread's "Report" for visitors and unverified accounts: files a correction request. */
+export function ThreadReportPublic({ threadId }: { threadId: string }) {
+  const t = useT("forumClient");
+  return (
+    <ReportErrorLink
+      kind="forum_thread"
+      refId={threadId}
+      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+      label={<><Flag className="size-3.5" /> {t.actions.report}</>}
+    />
   );
 }
 

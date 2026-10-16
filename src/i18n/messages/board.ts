@@ -207,7 +207,7 @@ const en = {
       },
       proof: "Trade Pro members get the full scope and contacts for every one, plus an email the day a new one matches their trade.",
       publicPitch:
-        "This tender is public. What Trade Pro adds: every public tender that fits your trade in one place, a daily email when a new one is posted in your region, and the direct link, full scope and buyer contact for each, instead of checking government bid portals yourself.",
+        "This tender is public. What Trade Pro adds: the public tenders we track for your trade, in one place, a daily email when a new one is posted in your region, and the direct link, full scope and buyer contact for each, so you check fewer government bid portals yourself.",
     },
     side: {
       region: "Region",
@@ -459,7 +459,7 @@ const fr: typeof en = {
       },
       proof: "Les membres Trade Pro obtiennent la portée complète et les contacts de chacun, plus un courriel le jour même où un nouveau correspond à leur corps de métier.",
       publicPitch:
-        "Cet appel d'offres est public. Ce que Trade Pro ajoute : tous les appels d'offres publics qui correspondent à votre corps de métier au même endroit, un courriel quotidien quand un nouveau est publié dans votre région, et le lien direct, la portée complète et le contact de l'acheteur pour chacun, au lieu de vérifier vous-même les portails d'appels d'offres gouvernementaux.",
+        "Cet appel d'offres est public. Ce que Trade Pro ajoute : les appels d'offres publics que nous suivons pour votre corps de métier, au même endroit, un courriel quotidien quand un nouveau est publié dans votre région, et le lien direct, la portée complète et le contact de l'acheteur pour chacun, pour que vous ayez moins de portails gouvernementaux à vérifier vous-même.",
     },
     side: {
       region: "Région",
@@ -826,7 +826,7 @@ const es: typeof en = {
       },
       proof: "Los miembros de Trade Pro obtienen el alcance completo y los contactos de cada una, además de un correo el mismo día en que una nueva coincide con su oficio.",
       publicPitch:
-        "Esta licitación es pública. Lo que agrega Trade Pro: todas las licitaciones públicas que encajan con su oficio en un solo lugar, un correo diario cuando se publica una nueva en su región, y el enlace directo, el alcance completo y el contacto del comprador de cada una, en lugar de revisar usted mismo los portales de licitaciones del gobierno.",
+        "Esta licitación es pública. Lo que agrega Trade Pro: las licitaciones públicas que seguimos para su oficio, en un solo lugar, un correo diario cuando se publica una nueva en su región, y el enlace directo, el alcance completo y el contacto del comprador de cada una, para que revise menos portales de licitaciones del gobierno.",
     },
     side: {
       region: "Región",

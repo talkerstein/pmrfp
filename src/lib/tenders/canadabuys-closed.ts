@@ -25,6 +25,7 @@ import { classifyConstructionTitle, deliversInCanada, regionForTender } from "./
 import { NOT_TRADE, fmtDate } from "./awards";
 import { CIVIL, EXCLUDE, RULES, clean, slugify } from "./shared";
 import { OGL_CANADA_ATTRIBUTION } from "./sources";
+import { canadabuysFetch } from "./canadabuys-access";
 
 /** How far back the archive reaches: about 18 months of closed tenders. */
 export const CLOSED_WINDOW_DAYS = 548;
@@ -260,11 +261,33 @@ export function closedTenderToRfpInsert(r: ClosedRow, award: ClosedAward | null)
   };
 }
 
+/** Columns the closed-tender import reads from tender and award files (the upload page sends only these). */
+export const CLOSED_COLUMNS: readonly string[] = Object.values(COL);
+
+/** The files one closed-archive run needs: a tender file and an award file per fiscal year in the window. */
+export function closedFilesFor(today: string): { tenders: string[]; awards: string[] } {
+  const years = fiscalYearsInWindow(today);
+  return { tenders: years.map(tenderFileUrl), awards: years.map(awardFileUrl) };
+}
+
+/**
+ * Shrinks a full upload to what the import can use, so it fits one request:
+ * the newest amendment of each closed notice that classifies, and the award
+ * rows that could be linked to one of them (every row of a matching
+ * solicitation is kept, so "several contracts → no single winner" still holds).
+ */
+export function prefilterClosed(tenders: ClosedRow[], awards: ClosedRow[], today: string): { tenders: ClosedRow[]; awards: ClosedRow[] } {
+  const kept = latestAmendments(tenders).filter((r) => classifyClosedTender(r, today).length > 0);
+  const keys = new Set(kept.map((r) => awardKey(r[COL.solicitation] ?? "", r[COL.entity] ?? "")));
+  return { tenders: kept, awards: awards.filter((a) => keys.has(awardKey(a[COL.solicitation] ?? "", a[COL.entity] ?? ""))) };
+}
+
+/**
+ * Off by default (robots.txt bars bots from canadabuys.canada.ca; see
+ * ./canadabuys-access): the admin upload at /admin/canadabuys feeds the same rows.
+ */
 async function fetchCsv(url: string): Promise<ClosedRow[]> {
-  const res = await fetch(url, {
-    cache: "no-store",
-    headers: { "User-Agent": "PMRFP-TenderFeed/1.0 (+https://pmrfp.com)" },
-  });
+  const res = await canadabuysFetch(url);
   // A fiscal year that hasn't started its file yet is fine; anything else is a failed download.
   if (res.status === 404) return [];
   if (!res.ok) throw new Error(`CanadaBuys closed-tender fetch failed: HTTP ${res.status} (${url})`);

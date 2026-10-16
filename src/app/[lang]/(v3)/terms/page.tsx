@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Fragment, type ReactNode } from "react";
 import Link from "@/i18n/link";
 import { SH2, SimplePage } from "@/components/v3/simple";
 import { PRICING, SITE } from "@/lib/site";
@@ -7,6 +8,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate } from "@/i18n/format";
+import type { LegalBlock } from "@/i18n/messages/misc";
 import { FoundingTermsList } from "@/components/founding/terms-list";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -16,16 +18,52 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return { title: t.title, description: t.description, alternates: alternatesFor(l, "/terms") };
 }
 
-const LAST_UPDATED = "May 29, 2026";
-const LAST_UPDATED_ISO = "2026-05-29";
+const LAST_UPDATED = "October 16, 2026";
+const LAST_UPDATED_ISO = "2026-10-16";
+/** The Privacy Officer's mailbox (privacy requests, corrections, takedowns). */
+const PRIVACY_EMAIL = "privacy@pmrfp.com";
 
-/** One numbered section of the legal text (wording unchanged, layout only). */
+/** One numbered section of the legal text. */
 function LegalSection({ no, title, children }: { no: number; title: string; children: React.ReactNode }) {
   return (
     <section>
       <SH2 no={no} sm>{title}</SH2>
       <div className="s-legal">{children}</div>
     </section>
+  );
+}
+
+/** A string with {token} placeholders, each replaced by its link. */
+function Rich({ text, links }: { text: string; links: Record<string, ReactNode> }) {
+  return (
+    <>
+      {text.split(/(\{\w+\})/g).map((part, i) => {
+        const key = /^\{(\w+)\}$/.exec(part)?.[1];
+        return <Fragment key={i}>{key && key in links ? links[key] : part}</Fragment>;
+      })}
+    </>
+  );
+}
+
+/** Paragraphs, then the bullet list, then the closing paragraphs (`children` goes between list and closing). */
+function Block({ b, links, children }: { b: LegalBlock; links: Record<string, ReactNode>; children?: ReactNode }) {
+  return (
+    <>
+      {b.body.map((p) => (
+        <p key={p}><Rich text={p} links={links} /></p>
+      ))}
+      {b.list && (
+        <ul className="mb-4">
+          {b.list.map((li) => (
+            <li key={li}><Rich text={li} links={links} /></li>
+          ))}
+        </ul>
+      )}
+      {children}
+      {b.after?.map((p) => (
+        <p key={p}><Rich text={p} links={links} /></p>
+      ))}
+    </>
   );
 }
 
@@ -37,26 +75,35 @@ export default async function TermsPage({ params }: { params: Promise<object> })
   const updated =
     lang === "en" ? LAST_UPDATED : formatDate(LAST_UPDATED_ISO, lang, { day: "numeric", month: "long", year: "numeric" });
   const price = { annual: PRICING.proAnnual, monthly: PRICING.proMonthly, currency: PRICING.currency };
-  const [contactBefore, contactAfter] = t.contact.body.split("{email}");
+  const L = m.legal.links;
+  const links: Record<string, ReactNode> = {
+    privacyEmail: <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>,
+    email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>,
+    corrections: <Link href="/corrections">{L.corrections}</Link>,
+    forumRules: <Link href="/forum/rules">{L.forumRules}</Link>,
+    privacyLink: <Link href="/privacy">{L.privacy}</Link>,
+    termsLink: <Link href="/terms">{L.terms}</Link>,
+  };
   let n = 0;
+  /** A section that is only its LegalBlock (billing, founding and noGuarantee add content, below). */
+  const plain = (b: LegalBlock) => (
+    <LegalSection no={++n} title={b.title}>
+      <Block b={b} links={links} />
+    </LegalSection>
+  );
   return (
     <SimplePage lang={lang} current="terms" group="legal" title={t.title} lead={fmt(m.legal.lastUpdated, { date: updated })}>
         <p className="s-meta">{m.legal.eyebrow}</p>
         {m.legal.translationNote && (
           <p className="s-note">{m.legal.translationNote}</p>
         )}
+        {t.intro.map((p) => (
+          <p key={p} className="muted"><Rich text={p} links={links} /></p>
+        ))}
 
-        <LegalSection no={++n} title={t.acceptance.title}>
-          <p>{t.acceptance.body}</p>
-        </LegalSection>
-
-        <LegalSection no={++n} title={t.description.title}>
-          <p>{t.description.body}</p>
-        </LegalSection>
-
-        <LegalSection no={++n} title={t.accounts.title}>
-          <p>{t.accounts.body}</p>
-        </LegalSection>
+        {plain(t.acceptance)}
+        {plain(t.description)}
+        {plain(t.accounts)}
 
         <LegalSection no={++n} title={t.billing.title}>
           {process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY ? (
@@ -64,50 +111,46 @@ export default async function TermsPage({ params }: { params: Promise<object> })
           ) : (
             <p>{fmt(t.billing.annualOnly, price)}</p>
           )}
+          <Block b={t.billing} links={links} />
           <p>{t.billing.free}</p>
         </LegalSection>
 
+        {plain(t.trial)}
+
         <div id="founding-500" className="scroll-mt-24">
           <LegalSection no={++n} title={getT("founding").termsSectionTitle}>
-            <FoundingTermsList />
+            <Block b={t.founding} links={links}>
+              <div className="mb-4">
+                <FoundingTermsList />
+              </div>
+            </Block>
           </LegalSection>
         </div>
 
-        <LegalSection no={++n} title={t.use.title}>
-          <p>{t.use.body}</p>
-        </LegalSection>
+        {plain(t.intel)}
+        {plain(t.sponsored)}
+        {plain(t.publicData)}
+        {plain(t.insights)}
 
         <LegalSection no={++n} title={t.noGuarantee.title}>
           <p>{m.copy.disclaimer}</p>
+          <Block b={t.noGuarantee} links={links} />
         </LegalSection>
 
-        <LegalSection no={++n} title={t.content.title}>
-          <p>{t.content.body}</p>
-        </LegalSection>
-
-        <LegalSection no={++n} title={t.liability.title}>
-          <p>{t.liability.body}</p>
-        </LegalSection>
-
-        <LegalSection no={++n} title={t.termination.title}>
-          <p>{t.termination.body}</p>
-        </LegalSection>
-
-        <LegalSection no={++n} title={t.changes.title}>
-          <p>{t.changes.body}</p>
-        </LegalSection>
+        {plain(t.use)}
+        {plain(t.content)}
+        {plain(t.takedown)}
+        {plain(t.forum)}
+        {plain(t.liability)}
+        {plain(t.indemnity)}
+        {plain(t.termination)}
+        {plain(t.law)}
+        {plain(t.consumer)}
+        {plain(t.language)}
+        {plain(t.changes)}
 
         <LegalSection no={++n} title={t.contact.title}>
-          <p>
-            {contactBefore}
-            <Link
-              href={`mailto:${SITE.email}`}
-              
-            >
-              {SITE.email}
-            </Link>
-            {contactAfter}
-          </p>
+          <p><Rich text={t.contact.body} links={links} /></p>
         </LegalSection>
     </SimplePage>
   );

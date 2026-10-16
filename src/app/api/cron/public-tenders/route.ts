@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
-import {
-  classifyTender,
-  fetchOpenTenders,
-  regionForTender,
-  toRfpInsert,
-} from "@/lib/tenders/canadabuys";
+import { fetchOpenTenders } from "@/lib/tenders/canadabuys";
+import { CANADABUYS_OFF_NOTE, allowedSources, canadabuysFetchAllowed } from "@/lib/tenders/canadabuys-access";
+import { openTendersSource, pastAwardsSource } from "@/lib/tenders/canadabuys-feeds";
 import {
   classifyToronto,
   classifyTorontoAward,
@@ -20,7 +17,7 @@ import { classifyYukon, fetchYukonOpenTenders, yukonToRfpInsert } from "@/lib/te
 import { syncPublicSources, type Source } from "@/lib/tenders/sync";
 import { CRON_CAP, CRON_DAYS, autoThreadsEnabled } from "@/lib/forum/auto-threads";
 import { runAutoThreads } from "@/lib/forum/auto-threads-server";
-import { awardToRfpInsert, classifyAward, fetchAwards } from "@/lib/tenders/awards";
+import { fetchAwards } from "@/lib/tenders/awards";
 import {
   classifySeao,
   classifySeaoAward,
@@ -31,16 +28,9 @@ import {
 } from "@/lib/tenders/seao";
 
 const SOURCES: Source[] = [
-  {
-    key: "canadabuys",
-    minMatchesToArchive: 10,
-    collect: async (today) =>
-      (await fetchOpenTenders()).flatMap((row) => {
-        const categories = classifyTender(row, today);
-        const insert = categories.length ? toRfpInsert(row, today) : null;
-        return insert ? [{ insert, categories, regionSlug: regionForTender(row).regionSlug }] : [];
-      }),
-  },
+  // CanadaBuys: only when CANADABUYS_DIRECT_FETCH=1 (robots.txt bars bots;
+  // filtered out below otherwise, and fed by the /admin/canadabuys upload).
+  openTendersSource(() => fetchOpenTenders()),
   {
     key: "toronto",
     minMatchesToArchive: 3,
@@ -102,21 +92,13 @@ const SOURCES: Source[] = [
         return insert ? [{ insert, categories, regionSlug: "yukon" }] : [];
       }),
   },
-  {
-    // Past contracts: the "feed" is every trade award in the last 180 days,
-    // so anything that ages out of the window is archived by the same rule.
-    key: "awards",
-    minMatchesToArchive: 20,
-    collect: async (today) =>
-      (await fetchAwards(today)).flatMap((row) => {
-        const categories = classifyAward(row, today);
-        const insert = categories.length ? awardToRfpInsert(row, today) : null;
-        return insert ? [{ insert, categories, regionSlug: regionForTender(row).regionSlug }] : [];
-      }),
-  },
+  // CanadaBuys past contracts: same gate as the open feed.
+  pastAwardsSource((today) => fetchAwards(today)),
 ];
 
-export const maxDuration = 60;
+// SEAO is read politely (Données Québec asks for 10 s between requests:
+// the dataset page plus six weekly files), so the run needs more than 60 s.
+export const maxDuration = 300;
 
 /**
  * Daily Canadian public-tender import (Vercel cron, 12:00 UTC — an hour before
@@ -138,7 +120,7 @@ export async function GET(request: Request) {
 
   const dry = new URL(request.url).searchParams.get("dry") === "1";
   const db = createServiceClient();
-  const { status, body } = await syncPublicSources(db, SOURCES, {
+  const { status, body } = await syncPublicSources(db, allowedSources(SOURCES), {
     today: new Date().toISOString().slice(0, 10),
     dry,
   });
@@ -153,5 +135,6 @@ export async function GET(request: Request) {
         return "error";
       });
   }
-  return NextResponse.json({ ...body, forum }, { status });
+  const canadabuys = canadabuysFetchAllowed() ? "on" : CANADABUYS_OFF_NOTE;
+  return NextResponse.json({ ...body, forum, canadabuys }, { status });
 }

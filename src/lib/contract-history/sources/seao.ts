@@ -20,12 +20,13 @@
 import { SEAO_ATTRIBUTION } from "@/lib/tenders/sources";
 import { slugify } from "@/lib/tenders/shared";
 import { politeFetch, politeText } from "../fetch";
-import { SEAO_SAVED_FILES, seaoDownloadUrl } from "./seao-files";
+import { SEAO_DATASET_PAGE, savedSeaoFiles, seaoFilesFromPage, type SeaoFile } from "./seao-files";
+
+export { SEAO_DATASET_PAGE, savedSeaoFiles, seaoFilesFromPage };
 import { businessNameOrNull, buyerKey, clip, emptyBatch, endDateFor, httpsOrNull, isoDay, money, nameKey, skip, winnerFields, type AwardHistoryInput, type BidResultInput, type ParsedBatch } from "../model";
 import { tradesFr } from "../trades";
 
 export const SEAO_SOURCE = "ca-seao";
-export const SEAO_DATASET_PAGE = "https://www.donneesquebec.ca/recherche/dataset/systeme-electronique-dappel-doffres-seao";
 export const SEAO_LICENCE = "CC BY 4.0 (Données Québec)";
 
 interface Party {
@@ -56,14 +57,6 @@ interface Release {
   contracts?: { id?: string; awardID?: string; status?: string; period?: { startDate?: string; endDate?: string }; value?: { amount?: number; currency?: string }; dateSigned?: string }[];
 }
 
-/** /download/ JSON files listed on the dataset page, newest first. */
-export function seaoFilesFromPage(html: string): { name: string; url: string; kind: "hebdo" | "mensuel"; from: string }[] {
-  const seen = new Map<string, { name: string; url: string; kind: "hebdo" | "mensuel"; from: string }>();
-  for (const m of html.matchAll(/https:\/\/www\.donneesquebec\.ca\/recherche\/dataset\/[0-9a-f-]+\/resource\/[0-9a-f-]+\/download\/((hebdo|mensuel)_(\d{8})_\d{8}\.json)/g)) {
-    if (!seen.has(m[1])) seen.set(m[1], { name: m[1], url: m[0], kind: m[2] as "hebdo" | "mensuel", from: m[3] });
-  }
-  return [...seen.values()].sort((a, b) => b.from.localeCompare(a.from) || a.kind.localeCompare(b.kind));
-}
 
 const COMPETITIVE = new Set(["open", "selective", "limited"]);
 
@@ -199,12 +192,6 @@ export function seaoBids(r: Release, names: Map<string, string>, winnerId: strin
   return out;
 }
 
-type SeaoFile = ReturnType<typeof seaoFilesFromPage>[number];
-
-/** The saved list (seao-files.ts), newest first. */
-export function savedSeaoFiles(): SeaoFile[] {
-  return seaoFilesFromPage(SEAO_SAVED_FILES.map(([name, id]) => seaoDownloadUrl(name, id)).join(" "));
-}
 
 /**
  * The file list: the live dataset page when it answers with the page, else

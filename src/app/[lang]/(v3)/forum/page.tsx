@@ -131,6 +131,7 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
             <div className="a-kicker"><span className="dot" />{t.index.eyebrow}</div>
             <h1 className="f-h1">{t.index.title}</h1>
             <p className="f-lead">{t.index.lead}</p>
+            <p className="f-lead small"><a href={L("/forum/rules")} className="underline" data-forum-rules>{t.index.rulesLink}</a></p>
             {idx.ready && (
               <>
                 <div className="f-ctas">

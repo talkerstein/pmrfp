@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { RecordFooter } from "@/components/public/record-footer";
+import { localizeCredits } from "@/lib/data-credits";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
@@ -110,7 +112,7 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
 
   const sources = w.awards.map((a) => awardSourceCopy(a, lang));
   const issuers = [...new Set(sources.map((s) => s.issuer))];
-  const attributions = [...new Set(sources.map((s) => s.attribution))];
+  const attributions = localizeCredits(sources.map((s) => s.attribution), lang);
   const [notices, packages, claim] = await Promise.all([
     officialNotices(w.awards.map((a) => a.slug)),
     listPackagesForAwardSlugs(w.awards.map((a) => a.slug)),
@@ -301,6 +303,7 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
         <DigestSignupBlock source="contract-winner" />
 
         <p className="small muted">{fmt(t.footnote, { issuers: issuers.join(", "), attributions: attributions.join(" "), site: SITE.name })}</p>
+        <RecordFooter credits={[]} lang={lang} kind="contract_winner" path={`/contract-winners/${(await params).slug}`} refId={(await params).slug} className="mt-2" />
 
         <div className="s-links">
           <a href={L("/contract-winners")}>{getT("gcHub").subs.winners} →</a>

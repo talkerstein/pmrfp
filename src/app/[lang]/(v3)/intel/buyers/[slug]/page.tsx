@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RecordFooter } from "@/components/public/record-footer";
 import { notFound } from "next/navigation";
 import { loadIntel, intelBuyerPath } from "@/lib/intel/load";
 import { buyerProfile } from "@/lib/intel/model";
@@ -52,6 +53,7 @@ export default async function IntelBuyer({ params, searchParams }: { params: Par
     >
       <IntelNav ctx={ctx} current="buyers" />
       <BuyerBody view={view} ctx={ctx} csvHref={`/api/intel/csv?view=buyer&slug=${encodeURIComponent(slug)}&country=${ref.country.toLowerCase()}`} />
+      <RecordFooter credits={profile.awards.map((a) => a.attribution)} lang={lang} kind="intel_buyer" path={path} refId={slug} />
     </SimplePage>
   );
 }

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { RecordFooter } from "@/components/public/record-footer";
+import { localizeCredit } from "@/lib/data-credits";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getMajorProject, getMajorProjects, getProjectProFields } from "@/lib/major-projects/data";
@@ -264,8 +266,9 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
             ))}
           </ul>
         )}
-        <p className="small muted" data-license>{p.license}</p>
+        <p className="small muted" data-license>{localizeCredit(p.license, lang)}</p>
         <p className="small muted">{fmt(t.lastSeen, { date: day(p.lastSeen, lang), first: day(p.firstSeen, lang) })}</p>
+        <RecordFooter credits={[]} lang={lang} kind="major_project" path={`/major-projects/${p.slug}`} refId={p.slug} className="mt-2" />
 
         {p.province && p.tradesNeeded.length > 0 && (
           // The province × trade sponsor for this project's trades, below everything else.

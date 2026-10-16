@@ -89,6 +89,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/terms", priority: 0.3, freq: "yearly" },
     { path: "/privacy", priority: 0.3, freq: "yearly" },
     { path: "/disclaimer", priority: 0.3, freq: "yearly" },
+    { path: "/corrections", priority: 0.3, freq: "yearly" },
+    { path: "/forum/rules", priority: 0.3, freq: "yearly" },
   ];
 
   const [rfps, vendors, resources, categories, regions, tradeCityCombos, caseStudies, toronto] = await Promise.all([

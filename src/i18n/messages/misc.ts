@@ -20,6 +20,13 @@ import {
   SEAO_ATTRIBUTION,
 } from "@/lib/tenders/sources";
 
+/**
+ * One section of a legal page: paragraphs, an optional bullet list, then more
+ * paragraphs. Tokens such as {privacyEmail} or {corrections} become links on
+ * the page (see `legal.links`).
+ */
+export type LegalBlock = { title: string; body: string[]; list?: string[]; after?: string[] };
+
 const en = {
   about: {
     meta: {
@@ -73,102 +80,378 @@ const en = {
     body: "Questions about listing your trade company, posting an RFP, or sourcing vendors? Send us a note and we'll get back to you. You can also email {email}.",
   },
 
-  /** Shared by terms, privacy and disclaimer. */
+  /**
+   * Shared by terms, privacy, disclaimer, /corrections and /forum/rules.
+   * In legal text, {privacyEmail} {email} {corrections} {forumRules}
+   * {privacyLink} {termsLink} become links on the page (labels in `links`).
+   */
   legal: {
     eyebrow: "Legal",
     lastUpdated: "Last updated: {date}",
     /** Shown at the top of translated legal pages only; empty in English. */
     translationNote: "",
+    links: {
+      corrections: "Corrections and removal policy",
+      forumRules: "Forum rules",
+      privacy: "Privacy Policy",
+      terms: "Terms of Service",
+    },
   },
 
   terms: {
     meta: { title: "Terms of Service", description: "The terms governing your use of PMRFP." },
     title: "Terms of Service",
+    intro: [
+      "These Terms of Service (the “Terms”) are an agreement between you and Talkerstein Consulting Group, which operates PMRFP at pmrfp.com (“PMRFP”, “we”, “us”). Please read them with our {privacyLink}, which explains how we handle personal information.",
+    ],
     acceptance: {
-      title: "1. Acceptance of Terms",
-      body: "By accessing or using PMRFP (the “Service”), you agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use the Service. These terms apply to all users, including trade companies, contractors, property managers, builders, and building owners.",
+      title: "Acceptance of Terms",
+      body: [
+        "By accessing or using PMRFP (the “Service”), you agree to be bound by these Terms. If you do not agree to these Terms, you may not use the Service. These Terms apply to all users, including trade companies, suppliers, contractors, tradespeople, property managers, builders, realtors and building owners.",
+        "If you use the Service on behalf of a company, you accept these Terms for that company and confirm that you are authorized to do so.",
+      ],
     },
     description: {
-      title: "2. Description of Service",
-      body: "PMRFP is a platform for posting RFPs and finding trades, serving the Canadian commercial property market. The Service allows trade companies to publish profiles and monitor opportunities, and allows property managers, builders, and owners to post requests for proposals (RFPs) and discover vendors.",
+      title: "Description of Service",
+      body: [
+        "PMRFP is a platform for posting RFPs and finding trades, serving the commercial property market in Canada and the United States. The Service allows trade companies to publish profiles and monitor opportunities, and allows property managers, builders and owners to post requests for proposals (RFPs) and discover vendors. It also republishes public tenders, contract awards and related project data from government sources, and offers paid plans and tools described below.",
+        "We are not a broker, procurement agent or legal advisor, and we do not act on behalf of either party. We are not a party to any contract between users. A company marked verified has been reviewed by the PMRFP team; otherwise we don't check licences, insurance or qualifications, so confirm them directly for your project.",
+      ],
     },
     accounts: {
-      title: "3. Accounts & Eligibility",
-      body: "You must provide accurate, complete information when creating an account and keep it up to date. You are responsible for safeguarding your account credentials and for all activity that occurs under your account. You must be authorized to act on behalf of any company you represent on the Service.",
+      title: "Accounts & Eligibility",
+      body: [
+        "You must provide accurate, complete information when creating an account and keep it up to date. You are responsible for safeguarding your account credentials and for all activity that occurs under your account. You must be authorized to act on behalf of any company you represent on the Service.",
+      ],
     },
     billing: {
-      title: "4. Subscriptions & Billing",
+      title: "Subscriptions & Billing",
       withMonthly:
         "Trade Pro is offered on two billing intervals: ${annual} {currency} per year (annual), or ${monthly} {currency} per month (monthly). Each renews automatically at the end of the current term unless cancelled. You may cancel at any time; cancellation takes effect at the end of your current billing period, and you retain access until then. Fees are non-refundable except where required by law. We may change pricing on a prospective basis with reasonable notice. You may switch between annual and monthly via your billing portal; switching takes effect at the end of your current billing period.",
       annualOnly:
         "Trade Pro is offered at ${annual} {currency} per year and renews automatically at the end of each annual term unless cancelled. You may cancel at any time; cancellation takes effect at the end of your current billing period, and you retain access until then. Fees are non-refundable except where required by law. We may change pricing on a prospective basis with reasonable notice.",
+      body: [
+        "Other paid plans (such as Featured, SEO Listing, Realtor Pro, Award Intelligence and sponsorships) are billed at the price, currency and interval shown on the plan's page and at checkout. Recurring plans renew automatically at the end of each billing period until you cancel. Prices and any applicable taxes are as shown at checkout.",
+        "Payments are processed by Stripe. To cancel, use the billing portal in your dashboard (Billing) or email us at {email} before your renewal date. Cancelling stops future renewals; it does not refund the current period. Price changes apply from your next renewal, not to a period you have already paid for.",
+        "Except as stated in the Founding 500 terms below, or where the law requires a refund, fees are non-refundable.",
+      ],
       free: "Property managers, builders, and owners may post RFPs at no cost. Free directory listings are available to trade companies without a paid subscription.",
     },
-    use: {
-      title: "5. Acceptable Use",
-      body: "You agree not to misuse the Service, including by posting false, misleading, spam, infringing, or unlawful content; scraping or harvesting data; attempting to gain unauthorized access; or using the Service to harass other users. We may edit, reject, or remove content that violates these terms.",
+    trial: {
+      title: "Free Trade Pro Trial",
+      body: [
+        "Trade companies may start one free 14-day Trade Pro trial per organization. No payment card is needed. During the trial the organization has Trade Pro features. When the 14 days end, the organization returns to the free plan automatically. Nothing is charged at the end of a trial, and nothing is billed unless you choose to subscribe. An organization that has already had a trial, or that already pays for Trade Pro, can't start another.",
+      ],
     },
-    /** Body is `disclaimer` (COPY.disclaimer). */
-    noGuarantee: { title: "6. No Guarantee of Work" },
+    founding: {
+      title: "Founding 500 Lifetime Offer",
+      body: [
+        "The Founding 500 offer gives one organization Trade Pro for a single payment. It is subject to the plain-English terms below, which form part of these Terms.",
+      ],
+      after: [
+        "In these Terms, “lifetime” refers to the life of the Trade Pro service as PMRFP operates it, not the lifetime of any person or of your organization. Founding access belongs to the one organization that bought it and cannot be transferred, resold or moved to another organization or account.",
+      ],
+    },
+    intel: {
+      title: "Award Intelligence",
+      body: [
+        "Award Intelligence is a paid add-on that organizes public contract award records into company and buyer profiles, market share tables, renewal estimates and, where a source publishes them, lists of the bids received.",
+        "It is built only from public records and is provided for information. Award values are as disclosed by the buyer. Contract end dates and likely re-tender windows are often estimates (for example, an award date plus a typical term) and are labelled as such. Bid lists are unofficial, are shown as published by the source with an as-of date, and never say why a bid was or wasn't chosen; the buyer's official record governs. We don't guarantee that any record is complete, current or accurate, or that a contract will be re-tendered.",
+      ],
+    },
+    sponsored: {
+      title: "Sponsored & Paid Placements",
+      body: [
+        "Some placements on PMRFP are paid. Sponsorships carry a “Sponsored” label in the reader's language and their links are marked as sponsored; Featured listings get priority placement because the company pays for it. A paid placement is not an endorsement or a verification by PMRFP. Sponsors are responsible for their own content and offers.",
+      ],
+    },
+    publicData: {
+      title: "Public Records & Data Accuracy",
+      body: [
+        "Public tenders, contract awards, bid results, permits and major-project data on PMRFP come from government and other public sources, under the open-data licences or terms of use that apply to each source. We republish them largely as the source published them, sort them by trade and region, and link to the official notice where one exists.",
+        "These records may be incomplete, out of date or contain errors made by the source or by us. Always check the official notice or the buyer's portal before you bid, sign or rely on any figure. You always bid through the buyer's own process, never through PMRFP. To report an error or ask for a removal, see our {corrections}.",
+      ],
+    },
+    insights: {
+      title: "Insights, Benchmarks & AI-Assisted Tools",
+      body: [
+        "Insights, price benchmarks, reports, renewal estimates, rankings and similar figures are computed from public records and other data on the Service. They are informational only. They are not financial, legal, accounting, engineering or other professional advice, and they are not a promise of any price, result or award. Some text may be drafted with automated tools, including AI.",
+        "AI-assisted tools (such as the RFP Writer and bid checklists) can produce incomplete or wrong output. Review everything they produce, and get professional advice where you need it, before you use it.",
+      ],
+    },
+    noGuarantee: {
+      title: "No Guarantee of Work",
+      body: [],
+    },
+    use: {
+      title: "Acceptable Use",
+      body: [
+        "You agree not to misuse the Service, including by posting false, misleading, defamatory, spam, infringing, or unlawful content; posting other people's personal information without a right to do so; scraping or harvesting data; attempting to gain unauthorized access; or using the Service to harass other users. We may edit, reject, or remove content that violates these Terms.",
+      ],
+    },
     content: {
-      title: "7. Content & Listings",
-      body: "You retain ownership of the content you submit, and you grant PMRFP a non-exclusive licence to host, display, and distribute that content as needed to operate the Service. You are solely responsible for the accuracy and legality of your listings, profiles, and RFPs. We may moderate, edit, or remove listings that are incomplete, misleading, spam, or inappropriate.",
+      title: "Content & Listings",
+      body: [
+        "You retain ownership of the content you submit, and you grant PMRFP a non-exclusive licence to host, display, and distribute that content as needed to operate the Service. You are solely responsible for the accuracy and legality of your listings, profiles, RFPs, reviews, forum posts and photos, and you confirm you have the rights to post them. We may moderate, edit, or remove listings that are incomplete, misleading, spam, or inappropriate.",
+        "Content posted by users reflects the views of its authors, not PMRFP. We don't review all content before it appears.",
+      ],
+    },
+    takedown: {
+      title: "Reporting Content & Takedown Requests",
+      body: [
+        "If you believe content on PMRFP is inaccurate, infringes your rights (including copyright), is defamatory, or exposes personal information, tell us. Use the report link where one is shown, or email {privacyEmail} with:",
+      ],
+      list: [
+        "the page address (URL) and the specific content;",
+        "why you believe it is wrong, unlawful or infringing, and any supporting evidence;",
+        "for a copyright or other rights claim, the work or right concerned and confirmation that you own it or are authorized to act for the owner;",
+        "your name and how to reach you.",
+      ],
+      after: [
+        "We review notices in good faith and may remove, hide, correct or annotate content, or leave it up where we conclude it is accurate and lawful. Where appropriate we tell the person who posted it. How we handle errors and removals in public-record data is set out in our {corrections}.",
+      ],
+    },
+    forum: {
+      title: "Forum",
+      body: [
+        "Posting in the PMRFP forum is subject to our {forumRules}, which form part of these Terms. Moderators may hide posts, lock threads and stop an account from posting when the rules are broken.",
+      ],
     },
     liability: {
-      title: "8. Limitation of Liability",
-      body: "To the maximum extent permitted by law, PMRFP and its affiliates are not liable for any indirect, incidental, consequential, or punitive damages, or for lost profits, revenue, data, or business opportunities, arising from your use of the Service. The Service is provided “as is” and “as available” without warranties of any kind.",
+      title: "Limitation of Liability",
+      body: [
+        "To the maximum extent permitted by law, PMRFP and its affiliates are not liable for any indirect, incidental, consequential, or punitive damages, or for lost profits, revenue, data, or business opportunities, arising from your use of the Service. The Service is provided “as is” and “as available” without warranties of any kind.",
+        "This includes decisions you make based on public-record data, insights, benchmarks or AI-assisted output, and dealings between users. Nothing in these Terms excludes liability that cannot be excluded by law.",
+      ],
+    },
+    indemnity: {
+      title: "Your Responsibility for Your Content",
+      body: [
+        "To the extent permitted by law, you agree to be responsible for, and to compensate us for, claims made by others that arise from content you post or from your breach of these Terms. This does not apply to the extent a claim is caused by our own fault.",
+      ],
     },
     termination: {
-      title: "9. Termination",
-      body: "We may suspend or terminate your access to the Service at any time if you violate these terms or if we discontinue the Service. You may stop using the Service and close your account at any time.",
+      title: "Termination",
+      body: [
+        "We may suspend or terminate your access to the Service at any time if you violate these Terms or if we discontinue the Service. You may stop using the Service and close your account at any time.",
+      ],
+    },
+    law: {
+      title: "Governing Law & Courts",
+      body: [
+        "These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada that apply there. Subject to the next section, any dispute about these Terms or the Service will be heard by the courts of Ontario sitting in Toronto, and you and we agree to their jurisdiction.",
+      ],
+    },
+    consumer: {
+      title: "Your Rights as a Consumer",
+      body: [
+        "Nothing in these Terms limits any right you have under consumer protection law that cannot be waived or limited by contract. If you are a consumer in Québec, the Consumer Protection Act (Québec) applies to you, and any clause of these Terms that it prohibits does not apply to you; this includes your right to bring proceedings before the courts of Québec. Consumers in other provinces, states or countries keep the mandatory protections of the law where they live.",
+      ],
+    },
+    language: {
+      title: "Language",
+      body: [
+        "These Terms, the Privacy Policy and related documents are available in English and in French (pmrfp.com/fr/terms). The parties have expressly wished that these Terms and all related documents be available in English and in French. Les parties ont expressément souhaité que les présentes conditions et tous les documents qui s'y rattachent soient offerts en anglais et en français. The English and French versions are equally authoritative. The Spanish version is a translation for information only; if it differs from the English version, the English version prevails.",
+      ],
     },
     changes: {
-      title: "10. Changes to These Terms",
-      body: "We may update these terms from time to time. When we make material changes, we will update the “last updated” date above and, where appropriate, provide additional notice. Continued use of the Service after changes take effect constitutes acceptance of the revised terms.",
+      title: "Changes to These Terms",
+      body: [
+        "We may update these Terms from time to time. When we make material changes, we will update the “last updated” date above and, where appropriate, provide additional notice. Continued use of the Service after changes take effect constitutes acceptance of the revised Terms. A change to a price or plan you have already paid for applies only from your next renewal.",
+      ],
     },
-    contact: { title: "11. Contact", body: "Questions about these terms? Reach us at {email}." },
+    contact: { title: "Contact", body: "Questions about these Terms? Reach us at {email}." },
   },
 
   privacy: {
     meta: { title: "Privacy Policy", description: "How PMRFP collects, uses, and protects your information." },
     title: "Privacy Policy",
-    intro:
-      "PMRFP respects your privacy. This policy explains what information we collect, how we use it, and the choices you have. It is written with Canadian privacy expectations, including PIPEDA, in mind.",
+    intro: [
+      "PMRFP respects your privacy. This policy explains what information we collect, how we use it, who we share it with, and the choices and rights you have. It is written to meet Canada's Personal Information Protection and Electronic Documents Act (PIPEDA) and Québec's Act respecting the protection of personal information in the private sector (as amended by Law 25).",
+    ],
+    officer: {
+      title: "Who Is Responsible",
+      body: [
+        "PMRFP is operated by Talkerstein Consulting Group, which is responsible for the personal information described in this policy. Our Privacy Officer oversees how we protect it and handles privacy requests and complaints:",
+      ],
+      lines: [
+        "Privacy Officer, Talkerstein Consulting Group",
+        "{privacyEmail}",
+        "c/o Talkerstein Consulting Group, 5050 Dufferin St., Toronto, ON M3H 5T5",
+      ],
+    },
     sections: [
       {
-        title: "Information We Collect",
-        body: "We collect information you provide directly, such as your name, company details, email address, service categories, regions, and the content of profiles, RFPs, and messages. We also collect limited technical information automatically, such as device and browser data and usage activity, when you interact with the Service.",
+        title: "Who This Policy Covers",
+        body: [
+          "This policy covers members (trade companies, suppliers, property managers, realtors, tradespeople and other account holders), visitors to pmrfp.com, people who sign up for our emails, job applicants who apply through PMRFP, people who contact us, and people whose information appears in the public records we republish.",
+        ],
       },
       {
-        title: "How We Use It",
-        body: "We use your information to operate and improve the Service, including to match trades with relevant opportunities, display directory listings and RFPs, send transactional and matching notifications, process subscriptions, provide support, and maintain security.",
+        title: "Information You Give Us",
+        body: ["We collect the information you provide directly, including:"],
+        list: [
+          "Account details: your name, email address, phone number, role and password (or your Google account name and email if you sign in with Google).",
+          "Company details: company name, contact details, trades, service regions, profile text, photos, projects and case studies.",
+          "Activity on the Service: RFPs you post, interest you express in an RFP, saved RFPs, reviews, forum posts, photos and votes, marketplace and job listings.",
+          "Job applications: the name, contact details and message you send, which go to the employer you apply to.",
+          "Tradesperson profiles: your display name, trade, region, city, experience, tickets (certifications), availability, pay expectations, bio and phone number. You choose whether the profile is published and whether your contact details are visible.",
+          "Messages to us: contact-form messages, bid-support requests and emails.",
+          "Text you enter into our AI-assisted tools (such as the RFP Writer).",
+          "Billing: payments are handled by Stripe. We receive your billing contact, plan, amounts and payment status, not your full card number.",
+        ],
       },
       {
-        title: "Cookies & Analytics",
-        body: "We use cookies and similar technologies to keep you signed in, remember preferences, and understand how the Service is used. Aggregated analytics help us improve performance and features. You can control cookies through your browser settings, though some features may not function without them.",
+        title: "Information From Public Records",
+        body: [
+          "PMRFP republishes public tender notices, contract award records, bid results, building permits and major-project data from government open-data portals and other public sources, under the open-data licences or terms of use that apply to each source. These records can include business names, the buyer's contact details as the buyer published them (sometimes the name, work email and work phone of a procurement contact), contract and bid amounts, and project locations.",
+          "We publish business names only. When a winner or bidder name looks like a private individual's name (a person's name with no business word or legal suffix), we don't publish the name: the record is counted and shown as “Individual (not named)” or “Individual bidder (not named)”. A trading name that includes a person's name together with a business word (for example “Jean Tremblay Excavation”) is a business name and is shown as published. This is an automated rule; if it gets something wrong, or you want a record about you corrected or removed, see our {corrections}.",
+        ],
+      },
+      {
+        title: "Information Collected Automatically",
+        body: ["When you use the Service, we and our providers collect limited technical information:"],
+        list: [
+          "Technical and log data our hosting provider records when pages are served, such as IP address, browser and device type, pages requested and time.",
+          "The country and province or state our host estimates from your IP address, used to show the right market (Canada or the U.S.) and prefill your region. Never for access or billing.",
+          "A one-way hash of your IP address, used for rate limiting and spam protection, and to count profile views.",
+          "Usage events, such as completing sign-up or starting a checkout, counted through Vercel Web Analytics.",
+        ],
+      },
+      {
+        title: "Cookies & Similar Technologies",
+        body: ["We use these first-party cookies:"],
+        list: [
+          "Sign-in cookies set by our authentication provider (Supabase) to keep you signed in. Essential.",
+          "NEXT_LOCALE (1 year): the language you picked.",
+          "pmrfp_lang_hint (1 year): remembers that you closed the language suggestion.",
+          "pmrfp_geo (30 days): your country and province or state as estimated by our host (for example “CA-ON”). Never your IP address.",
+          "pmrfp_market (1 year): whether you chose to see Canada or the U.S.",
+          "pmrfp_acct (1 year): your company's country and province or state, so pages match your account.",
+          "pmrfp_ft (90 days): how you first found PMRFP (see below).",
+        ],
+        after: [
+          "Your browser's local storage also keeps your analytics choice, unsent drafts (for example an RFP you are writing) and similar conveniences on your own device. You can control cookies and local storage in your browser settings; blocking sign-in cookies will stop you from signing in.",
+        ],
       },
       {
         title: "How People Find PMRFP",
-        body: "To understand how people find PMRFP, we record the page you first landed on and the referring site or campaign. One first-party cookie (pmrfp_ft, kept for 90 days) holds the first page's address without its query string, the referring website's domain only (never the full address), any campaign tags in the link (utm_source, utm_medium, utm_campaign, utm_content), the date, the page language and your country as estimated by our host. It never holds your IP address. If you create an account, we save these values with it so we can see which channels bring members; we also count first visits per page and channel as daily totals that identify no one. We use no third-party trackers or advertising cookies, and we do no cross-site tracking. Blocking or clearing the cookie doesn't affect the Service.",
+        body: [
+          "To understand how people find PMRFP, we record the page you first landed on and the referring site or campaign. One first-party cookie (pmrfp_ft, kept for 90 days from your first visit) holds the first page's address without its query string, the referring website's domain only (never the full address), any campaign tags in the link (utm_source, utm_medium, utm_campaign, utm_content), the campaign tags of a later tagged visit if they differ, the date, the page language and your country as estimated by our host. It never holds your IP address, and anything that looks like an email address is dropped.",
+          "If you create an account, we save these values with it, along with the channel we classify them into (for example search, email or social) and how you signed up (email or Google), so we can see which channels bring members. This record is visible only to PMRFP administrators and is deleted with your account. We also count first visits per page and channel as daily totals that identify no one. Blocking or clearing the cookie doesn't affect the Service.",
+        ],
       },
       {
-        title: "Data Storage",
-        body: "Account and platform data is stored using Supabase, our managed database and authentication provider. We take reasonable steps to ensure data is handled securely by our infrastructure providers.",
+        title: "Analytics",
+        body: [
+          "We use Vercel Web Analytics and Speed Insights to count page views and measure site performance. On the live site we also use Google Analytics 4, which sets Google Analytics cookies and sends usage data (such as pages viewed, device type and approximate location) to Google. You can block it with your browser settings or Google's opt-out browser add-on.",
+          "If Microsoft Clarity is turned on, we ask first: it loads only if you click “Accept analytics” in the banner, and never if you decline. Clarity records how visitors use pages (heatmaps and session recordings). We don't use advertising or retargeting pixels.",
+        ],
       },
       {
-        title: "Sharing",
-        body: "We do not sell your personal information. Information you choose to publish — such as your company profile or an RFP — is visible to other users as part of the Service. We may share data with service providers who help us operate the platform (for example, hosting, payments, and email), and where required by law.",
+        title: "How We Use Information",
+        body: ["We use personal information to:"],
+        list: [
+          "operate the Service: accounts, profiles, the directory, RFPs, the forum, jobs and the marketplace;",
+          "match trades with relevant opportunities and send the alerts and emails described below;",
+          "process subscriptions, trials and payments;",
+          "provide support and answer messages;",
+          "keep the Service secure and prevent spam, fraud and abuse;",
+          "understand and improve how the Service is used, mostly with aggregate data;",
+          "comply with the law.",
+        ],
+        after: ["We don't sell personal information."],
       },
       {
-        title: "Your Rights",
-        body: "Under PIPEDA and applicable Canadian privacy law, you may request access to the personal information we hold about you, ask us to correct it, or request its deletion, subject to legal and operational limits. To exercise these rights, contact us using the details below.",
+        title: "Email & Anti-Spam (CASL)",
+        body: ["We send these kinds of email:"],
+        list: [
+          "Service and transactional messages: sign-in, account and billing emails, trial status, replies to your RFP or interest, and other messages needed to run your account.",
+          "Alerts and digests you turn on: RFP and lead alerts, saved-RFP and tender alerts, forum reply notifications, the weekly brief for Trade Pro and trial members, and the free weekly email (sent only after you confirm your address).",
+          "Onboarding emails: after a trade company joins, a short series (at most one a day) about getting started, the free trial, Trade Pro and the Founding 500 offer. It stops when you upgrade, unsubscribe or reach the end of the series. We send these only where Canada's Anti-Spam Legislation (CASL) allows.",
+          "Business outreach: we may email businesses at business addresses they publish conspicuously (for example on their website or in public tender records), about PMRFP as it relates to the recipient's business or role, where they haven't said they don't want unsolicited email.",
+        ],
+        after: [
+          "Every commercial email identifies PMRFP and Talkerstein Consulting Group, includes our mailing address, and has an unsubscribe link. Unsubscribe links take effect right away; if you ask by email, we act within 10 business days. You can also change most email settings in your account. Unsubscribing doesn't stop essential service messages about your account.",
+        ],
+      },
+      {
+        title: "How We Share Information",
+        body: [
+          "Information you choose to publish, such as your company profile, an RFP, a review, a forum post or a published tradesperson profile, is visible to others as part of the Service. When you express interest in an RFP or apply for a job, we share what you submit with the person who posted it.",
+          "We share personal information with service providers that help us run PMRFP (listed below), only as needed for the services they provide. We may also disclose information where required by law, to protect rights and safety, or as part of a sale or reorganization of the business, subject to this policy. We do not sell your personal information.",
+        ],
+      },
+      {
+        title: "Service Providers & Where Data Is Stored",
+        body: ["We use these providers to operate the Service:"],
+        list: [
+          "Supabase: database, sign-in and file storage.",
+          "Vercel: website hosting, analytics and performance measurement.",
+          "Stripe: payments and billing.",
+          "Resend: sending email.",
+          "HighLevel: our customer-relationship (CRM) system, for member and enquiry contact details.",
+          "Google: Google Analytics, Google sign-in if you use it, and the Gemini AI service for AI-assisted features.",
+          "Upstash: rate limiting (hashed IP addresses only).",
+          "Cloudflare Turnstile: spam checks on forum posts, when turned on.",
+          "Microsoft Clarity: only if you accept it in the banner.",
+        ],
+        after: [
+          "Some of these providers store or process personal information outside Québec and Canada, including in the United States. There, it is subject to the laws of that country and may be accessible to its authorities. We rely on our providers' contractual commitments to protect personal information they handle for us.",
+        ],
+      },
+      {
+        title: "How Long We Keep Information",
+        list: [
+          "Account and profile information: while your account is open. When you ask us to close your account, we delete or anonymize it, except what we must keep by law (for example billing and tax records).",
+          "Sign-up attribution: the pmrfp_ft cookie lasts up to 90 days; the copy saved with an account is deleted with that account.",
+          "Rate-limiting data: hashed IP addresses, kept for a short time (usually less than a day).",
+          "Trial records: kept while the organization exists, as the record that it used its one trial.",
+          "Unsubscribe records: kept so we keep honouring your choice.",
+          "Public-record data: kept while it remains relevant and the source publishes it, or until we correct or remove it under our {corrections}.",
+        ],
+        body: [],
+        after: ["Everything else is kept only as long as needed for the purposes above, then deleted or anonymized."],
       },
       {
         title: "Security",
-        body: "We use administrative, technical, and physical safeguards designed to protect your information. No method of transmission or storage is completely secure, so we cannot guarantee absolute security, but we work to protect your data and respond promptly to any incident.",
+        body: [
+          "We use administrative, technical, and physical safeguards designed to protect your information, including access controls that limit who can see it. No method of transmission or storage is completely secure, so we cannot guarantee absolute security, but we work to protect your data and respond promptly to any incident, including notifying you and the authorities where the law requires.",
+        ],
       },
-    ],
-    contact: { title: "Contact", body: "Questions or privacy requests? Reach us at {email}." },
+      {
+        title: "Your Rights",
+        body: ["Under PIPEDA and Québec's private-sector privacy law, you may, subject to the limits the law allows:"],
+        list: [
+          "ask whether we hold personal information about you and get access to it;",
+          "ask us to correct (rectify) information that is inaccurate, incomplete or out of date;",
+          "ask us to delete information we no longer need, or, where the law provides, to stop disseminating it or de-index a link to it;",
+          "withdraw your consent to a use of your information (this may mean we can't provide part of the Service);",
+          "where the law provides, receive information you gave us in a structured, commonly used technological format.",
+        ],
+        after: [
+          "To make a request, email our Privacy Officer at {privacyEmail}. We may need to confirm your identity. We will respond within 30 days. If we can't do what you ask, we will explain why and tell you how to challenge our decision.",
+          "If you are not satisfied with our answer, you can complain to the Office of the Privacy Commissioner of Canada or, in Québec, to the Commission d'accès à l'information du Québec.",
+        ],
+      },
+      {
+        title: "Corrections & Removal Requests",
+        body: [
+          "To report an error in a listing, a public record or a profile, or to ask us to remove personal information, use the “Report an error or request removal” link where it appears or email {privacyEmail}. Our {corrections} explains what we check and how long it takes.",
+        ],
+      },
+      {
+        title: "Children",
+        body: ["PMRFP is meant for businesses and working professionals. It is not directed at children, and we don't knowingly collect personal information from children."],
+      },
+      {
+        title: "Changes to This Policy",
+        body: [
+          "We may update this policy from time to time. We will change the “last updated” date above and, for significant changes, give additional notice where appropriate.",
+        ],
+      },
+    ] as LegalBlock[],
+    contact: { title: "Contact", body: "Questions or privacy requests? Email our Privacy Officer at {privacyEmail}. For anything else, reach us at {email}." },
   },
 
   disclaimer: {
@@ -372,7 +655,7 @@ const en = {
       { title: "Real estate agents", body: "Pre-listing repairs, post-sale turnovers, and seller-side capital recommendations." },
       { title: "Mortgage brokers", body: "Pre-funding repairs flagged in the appraisal — without losing the deal." },
       { title: "Real estate lawyers", body: "Estate cleanups, probate property work, and post-closing remediation." },
-      { title: "Insurance brokers", body: "Claims-related repair work where a vetted trade speed matters." },
+      { title: "Insurance brokers", body: "Claims-related repair work where a fast trade response matters." },
       { title: "Property managers", body: "Peer PM referrals when scope is outside your bench, or you're booked." },
       { title: "Anyone with a project", body: "Owners, neighbours, family — if you know about work that needs doing, refer it." },
     ],
@@ -382,7 +665,7 @@ const en = {
     why: [
       {
         strong: "Help your client first.",
-        rest: " Their project gets vetted bids fast — better outcome, stronger relationship.",
+        rest: " Their project reaches matching trades fast — better outcome, stronger relationship.",
       },
       {
         strong: "Get publicly credited.",
@@ -683,54 +966,178 @@ const fr: typeof en = {
     eyebrow: "Juridique",
     lastUpdated: "Dernière mise à jour : {date}",
     translationNote:
-      "Cette traduction est fournie à titre informatif. En cas de divergence, la version anglaise prévaut.",
+      "Ce document est offert en français et en anglais. Les deux versions ont la même valeur.",
+    links: {
+      corrections: "Politique de correction et de retrait",
+      forumRules: "Règles du forum",
+      privacy: "Politique de confidentialité",
+      terms: "Conditions d'utilisation",
+    },
   },
 
   terms: {
     meta: { title: "Conditions d'utilisation", description: "Les conditions qui régissent votre utilisation de PMRFP." },
     title: "Conditions d'utilisation",
+    intro: [
+      "Les présentes conditions d'utilisation (les « Conditions ») constituent une entente entre vous et Talkerstein Consulting Group, qui exploite PMRFP à l'adresse pmrfp.com (« PMRFP », « nous »). Veuillez les lire avec notre {privacyLink}, qui explique comment nous traitons les renseignements personnels.",
+    ],
     acceptance: {
-      title: "1. Acceptation des conditions",
-      body: "En accédant à PMRFP (le « Service ») ou en l'utilisant, vous acceptez d'être lié par les présentes conditions d'utilisation. Si vous n'acceptez pas ces conditions, vous ne pouvez pas utiliser le Service. Ces conditions s'appliquent à tous les utilisateurs, y compris les entreprises de métiers, les entrepreneurs, les gestionnaires immobiliers, les constructeurs et les propriétaires d'immeubles.",
+      title: "Acceptation des conditions",
+      body: [
+        "En accédant à PMRFP (le « Service ») ou en l'utilisant, vous acceptez d'être lié par les présentes Conditions. Si vous n'acceptez pas ces Conditions, vous ne pouvez pas utiliser le Service. Ces Conditions s'appliquent à tous les utilisateurs, y compris les entreprises de métiers, les fournisseurs, les entrepreneurs, les gens de métier, les gestionnaires immobiliers, les constructeurs, les courtiers immobiliers et les propriétaires d'immeubles.",
+        "Si vous utilisez le Service au nom d'une entreprise, vous acceptez les présentes Conditions pour cette entreprise et confirmez que vous êtes autorisé à le faire.",
+      ],
     },
     description: {
-      title: "2. Description du Service",
-      body: "PMRFP est une plateforme pour publier des appels d'offres et trouver des entrepreneurs, au service du marché canadien de l'immobilier commercial. Le Service permet aux entreprises de métiers de publier des profils et de suivre des occasions d'affaires, et permet aux gestionnaires immobiliers, aux constructeurs et aux propriétaires de publier des demandes de propositions (appels d'offres) et de découvrir des fournisseurs.",
+      title: "Description du Service",
+      body: [
+        "PMRFP est une plateforme pour publier des appels d'offres et trouver des entrepreneurs, au service du marché de l'immobilier commercial au Canada et aux États-Unis. Le Service permet aux entreprises de métiers de publier des profils et de suivre des occasions d'affaires, et permet aux gestionnaires immobiliers, aux constructeurs et aux propriétaires de publier des demandes de propositions (appels d'offres) et de découvrir des fournisseurs. Il republie aussi des appels d'offres publics, des contrats octroyés et des données de projets connexes provenant de sources gouvernementales, et offre les forfaits payants et les outils décrits ci-dessous.",
+        "Nous ne sommes ni courtier, ni agent d'approvisionnement, ni conseiller juridique, et nous n'agissons au nom d'aucune des parties. Nous ne sommes partie à aucun contrat entre utilisateurs. Une entreprise identifiée comme vérifiée a été examinée par l'équipe de PMRFP; sinon, nous ne vérifions pas les licences, les assurances ni les qualifications : confirmez-les directement pour votre projet.",
+      ],
     },
     accounts: {
-      title: "3. Comptes et admissibilité",
-      body: "Vous devez fournir des renseignements exacts et complets lors de la création d'un compte et les tenir à jour. Vous êtes responsable de la protection de vos identifiants de connexion et de toute activité effectuée dans votre compte. Vous devez être autorisé à agir au nom de toute entreprise que vous représentez sur le Service.",
+      title: "Comptes et admissibilité",
+      body: [
+        "Vous devez fournir des renseignements exacts et complets lors de la création d'un compte et les tenir à jour. Vous êtes responsable de la protection de vos identifiants de connexion et de toute activité effectuée dans votre compte. Vous devez être autorisé à agir au nom de toute entreprise que vous représentez sur le Service.",
+      ],
     },
     billing: {
-      title: "4. Abonnements et facturation",
+      title: "Abonnements et facturation",
       withMonthly:
         "Trade Pro est offert selon deux fréquences de facturation : {annual} $ {currency} par année (annuelle) ou {monthly} $ {currency} par mois (mensuelle). Chaque abonnement se renouvelle automatiquement à la fin de la période en cours, sauf s'il est annulé. Vous pouvez annuler en tout temps; l'annulation prend effet à la fin de votre période de facturation en cours, et vous conservez votre accès jusque-là. Les frais ne sont pas remboursables, sauf si la loi l'exige. Nous pouvons modifier nos prix pour l'avenir moyennant un préavis raisonnable. Vous pouvez passer de la facturation annuelle à la facturation mensuelle, et inversement, dans votre portail de facturation; le changement prend effet à la fin de votre période de facturation en cours.",
       annualOnly:
         "Trade Pro est offert au prix de {annual} $ {currency} par année et se renouvelle automatiquement à la fin de chaque période annuelle, sauf s'il est annulé. Vous pouvez annuler en tout temps; l'annulation prend effet à la fin de votre période de facturation en cours, et vous conservez votre accès jusque-là. Les frais ne sont pas remboursables, sauf si la loi l'exige. Nous pouvons modifier nos prix pour l'avenir moyennant un préavis raisonnable.",
+      body: [
+        "Les autres forfaits payants (comme En vedette, Fiche SEO, Realtor Pro, Award Intelligence et les commandites) sont facturés au prix, dans la devise et selon la fréquence indiqués sur la page du forfait et au moment du paiement. Les forfaits récurrents se renouvellent automatiquement à la fin de chaque période de facturation jusqu'à ce que vous les annuliez. Les prix et les taxes applicables, le cas échéant, sont ceux indiqués au moment du paiement.",
+        "Les paiements sont traités par Stripe. Pour annuler, utilisez le portail de facturation de votre tableau de bord (Facturation) ou écrivez-nous à {email} avant la date de renouvellement. L'annulation met fin aux renouvellements futurs; elle ne rembourse pas la période en cours. Un changement de prix s'applique à partir de votre prochain renouvellement, et non à une période déjà payée.",
+        "Sauf indication contraire dans les conditions Fondateurs 500 ci-dessous, ou si la loi exige un remboursement, les frais ne sont pas remboursables.",
+      ],
       free: "Les gestionnaires immobiliers, les constructeurs et les propriétaires peuvent publier des appels d'offres sans frais. Les entreprises de métiers peuvent obtenir une inscription gratuite au répertoire sans abonnement payant.",
     },
-    use: {
-      title: "5. Utilisation acceptable",
-      body: "Vous acceptez de ne pas faire un usage abusif du Service, notamment en publiant du contenu faux, trompeur, indésirable, contrefaisant ou illégal; en extrayant ou en moissonnant des données; en tentant d'obtenir un accès non autorisé; ou en utilisant le Service pour harceler d'autres utilisateurs. Nous pouvons modifier, refuser ou retirer tout contenu qui enfreint ces conditions.",
+    trial: {
+      title: "Essai gratuit de Trade Pro",
+      body: [
+        "Les entreprises de métiers peuvent commencer un seul essai gratuit de Trade Pro de 14 jours par organisation. Aucune carte de paiement n'est requise. Pendant l'essai, l'organisation a accès aux fonctionnalités de Trade Pro. À la fin des 14 jours, l'organisation revient automatiquement au forfait gratuit. Rien n'est facturé à la fin d'un essai, et rien n'est facturé à moins que vous choisissiez de vous abonner. Une organisation qui a déjà eu un essai, ou qui paie déjà Trade Pro, ne peut pas en commencer un autre.",
+      ],
     },
-    noGuarantee: { title: "6. Aucune garantie de travail" },
+    founding: {
+      title: "Offre à vie Fondateurs 500",
+      body: [
+        "L'offre Fondateurs 500 donne à une organisation l'accès à Trade Pro moyennant un paiement unique. Elle est soumise aux conditions en langage clair ci-dessous, qui font partie des présentes Conditions.",
+      ],
+      after: [
+        "Dans les présentes Conditions, « à vie » désigne la durée de vie du service Trade Pro tel que PMRFP l'exploite, et non la durée de vie d'une personne ou de votre organisation. L'accès Fondateurs appartient à l'organisation qui l'a acheté et ne peut être ni cédé, ni revendu, ni transféré à une autre organisation ou à un autre compte.",
+      ],
+    },
+    intel: {
+      title: "Award Intelligence",
+      body: [
+        "Award Intelligence est un module payant qui organise les dossiers publics de contrats octroyés en profils d'entreprises et d'acheteurs, en tableaux de parts de marché, en estimations de renouvellement et, lorsqu'une source les publie, en listes des soumissions reçues.",
+        "Il est bâti uniquement à partir de dossiers publics et est fourni à titre informatif. Les valeurs des contrats sont celles divulguées par l'acheteur. Les dates de fin de contrat et les périodes probables de nouvel appel d'offres sont souvent des estimations (par exemple, la date d'octroi plus une durée habituelle) et sont identifiées comme telles. Les listes de soumissions sont non officielles, sont présentées telles que publiées par la source avec leur date de consultation, et n'indiquent jamais pourquoi une soumission a été retenue ou non; le dossier officiel de l'acheteur fait foi. Nous ne garantissons pas qu'un dossier soit complet, à jour ou exact, ni qu'un contrat fera l'objet d'un nouvel appel d'offres.",
+      ],
+    },
+    sponsored: {
+      title: "Commandites et placements payants",
+      body: [
+        "Certains placements sur PMRFP sont payants. Les commandites portent la mention « Commandité » dans la langue du lecteur et leurs liens sont identifiés comme commandités; les fiches En vedette obtiennent un placement prioritaire parce que l'entreprise le paie. Un placement payant n'est ni une recommandation ni une vérification de la part de PMRFP. Les commanditaires sont responsables de leur propre contenu et de leurs offres.",
+      ],
+    },
+    publicData: {
+      title: "Dossiers publics et exactitude des données",
+      body: [
+        "Les appels d'offres publics, les contrats octroyés, les résultats de soumissions, les permis et les données sur les grands projets présentés sur PMRFP proviennent de sources gouvernementales et d'autres sources publiques, selon les licences de données ouvertes ou les conditions d'utilisation propres à chaque source. Nous les republions en grande partie tels que la source les a publiés, les classons par corps de métier et par région, et ajoutons un lien vers l'avis officiel lorsqu'il en existe un.",
+        "Ces dossiers peuvent être incomplets, périmés ou contenir des erreurs commises par la source ou par nous. Vérifiez toujours l'avis officiel ou le portail de l'acheteur avant de soumissionner, de signer ou de vous fier à un chiffre. Vous soumissionnez toujours selon le processus de l'acheteur, jamais par l'entremise de PMRFP. Pour signaler une erreur ou demander un retrait, consultez notre {corrections}.",
+      ],
+    },
+    insights: {
+      title: "Analyses, comparatifs et outils assistés par l'IA",
+      body: [
+        "Les analyses, les prix de référence, les rapports, les estimations de renouvellement, les classements et les chiffres semblables sont calculés à partir de dossiers publics et d'autres données du Service. Ils sont fournis à titre informatif seulement. Ils ne constituent pas des conseils financiers, juridiques, comptables, d'ingénierie ni d'autres conseils professionnels, ni une promesse de prix, de résultat ou d'octroi. Certains textes peuvent être rédigés à l'aide d'outils automatisés, y compris l'intelligence artificielle.",
+        "Les outils assistés par l'IA (comme le rédacteur d'appels d'offres et les listes de vérification de soumission) peuvent produire des résultats incomplets ou erronés. Révisez tout ce qu'ils produisent, et obtenez des conseils professionnels au besoin, avant de l'utiliser.",
+      ],
+    },
+    noGuarantee: {
+      title: "Aucune garantie de travail",
+      body: [],
+    },
+    use: {
+      title: "Utilisation acceptable",
+      body: [
+        "Vous acceptez de ne pas faire un usage abusif du Service, notamment en publiant du contenu faux, trompeur, diffamatoire, indésirable, contrefaisant ou illégal; en publiant les renseignements personnels d'autrui sans en avoir le droit; en extrayant ou en moissonnant des données; en tentant d'obtenir un accès non autorisé; ou en utilisant le Service pour harceler d'autres utilisateurs. Nous pouvons modifier, refuser ou retirer tout contenu qui enfreint ces Conditions.",
+      ],
+    },
     content: {
-      title: "7. Contenu et annonces",
-      body: "Vous demeurez propriétaire du contenu que vous soumettez, et vous accordez à PMRFP une licence non exclusive pour héberger, afficher et diffuser ce contenu dans la mesure nécessaire à l'exploitation du Service. Vous êtes seul responsable de l'exactitude et de la légalité de vos annonces, de vos profils et de vos appels d'offres. Nous pouvons modérer, modifier ou retirer les annonces incomplètes, trompeuses, indésirables ou inappropriées.",
+      title: "Contenu et annonces",
+      body: [
+        "Vous demeurez propriétaire du contenu que vous soumettez, et vous accordez à PMRFP une licence non exclusive pour héberger, afficher et diffuser ce contenu dans la mesure nécessaire à l'exploitation du Service. Vous êtes seul responsable de l'exactitude et de la légalité de vos annonces, profils, appels d'offres, avis, messages du forum et photos, et vous confirmez avoir le droit de les publier. Nous pouvons modérer, modifier ou retirer les annonces incomplètes, trompeuses, indésirables ou inappropriées.",
+        "Le contenu publié par les utilisateurs reflète l'opinion de ses auteurs, et non celle de PMRFP. Nous n'examinons pas tout le contenu avant sa publication.",
+      ],
+    },
+    takedown: {
+      title: "Signalement de contenu et demandes de retrait",
+      body: [
+        "Si vous croyez qu'un contenu sur PMRFP est inexact, porte atteinte à vos droits (y compris le droit d'auteur), est diffamatoire ou expose des renseignements personnels, dites-le-nous. Utilisez le lien de signalement lorsqu'il est affiché, ou écrivez à {privacyEmail} en indiquant :",
+      ],
+      list: [
+        "l'adresse (URL) de la page et le contenu visé;",
+        "pourquoi vous croyez qu'il est erroné, illégal ou contrefaisant, avec toute preuve à l'appui;",
+        "pour une plainte relative au droit d'auteur ou à un autre droit, l'œuvre ou le droit visé et la confirmation que vous en êtes titulaire ou que vous êtes autorisé à agir pour le titulaire;",
+        "votre nom et la façon de vous joindre.",
+      ],
+      after: [
+        "Nous examinons les avis de bonne foi et pouvons retirer, masquer, corriger ou annoter le contenu, ou le laisser en ligne si nous concluons qu'il est exact et licite. Au besoin, nous en informons la personne qui l'a publié. Notre façon de traiter les erreurs et les retraits dans les données issues de dossiers publics est décrite dans notre {corrections}.",
+      ],
+    },
+    forum: {
+      title: "Forum",
+      body: [
+        "La publication sur le forum de PMRFP est soumise à nos {forumRules}, qui font partie des présentes Conditions. Les modérateurs peuvent masquer des messages, verrouiller des fils et empêcher un compte de publier lorsque les règles ne sont pas respectées.",
+      ],
     },
     liability: {
-      title: "8. Limitation de responsabilité",
-      body: "Dans toute la mesure permise par la loi, PMRFP et ses sociétés affiliées ne sont pas responsables des dommages indirects, accessoires, consécutifs ou punitifs, ni de la perte de profits, de revenus, de données ou d'occasions d'affaires, découlant de votre utilisation du Service. Le Service est fourni « tel quel » et « selon sa disponibilité », sans garantie d'aucune sorte.",
+      title: "Limitation de responsabilité",
+      body: [
+        "Dans toute la mesure permise par la loi, PMRFP et ses sociétés affiliées ne sont pas responsables des dommages indirects, accessoires, consécutifs ou punitifs, ni de la perte de profits, de revenus, de données ou d'occasions d'affaires, découlant de votre utilisation du Service. Le Service est fourni « tel quel » et « selon sa disponibilité », sans garantie d'aucune sorte.",
+        "Cela comprend les décisions que vous prenez en vous fondant sur des données issues de dossiers publics, des analyses, des comparatifs ou des résultats produits par l'IA, ainsi que les rapports entre utilisateurs. Rien dans les présentes Conditions n'exclut une responsabilité qui ne peut être exclue par la loi.",
+      ],
+    },
+    indemnity: {
+      title: "Votre responsabilité à l'égard de votre contenu",
+      body: [
+        "Dans la mesure permise par la loi, vous acceptez d'être responsable des réclamations présentées par des tiers qui découlent du contenu que vous publiez ou de votre manquement aux présentes Conditions, et de nous indemniser à cet égard. Cela ne s'applique pas dans la mesure où une réclamation résulte de notre propre faute.",
+      ],
     },
     termination: {
-      title: "9. Résiliation",
-      body: "Nous pouvons suspendre ou résilier votre accès au Service en tout temps si vous enfreignez ces conditions ou si nous cessons d'offrir le Service. Vous pouvez cesser d'utiliser le Service et fermer votre compte en tout temps.",
+      title: "Résiliation",
+      body: [
+        "Nous pouvons suspendre ou résilier votre accès au Service en tout temps si vous enfreignez ces Conditions ou si nous cessons d'offrir le Service. Vous pouvez cesser d'utiliser le Service et fermer votre compte en tout temps.",
+      ],
+    },
+    law: {
+      title: "Droit applicable et tribunaux",
+      body: [
+        "Les présentes Conditions sont régies par les lois de la province d'Ontario et les lois fédérales du Canada qui s'y appliquent. Sous réserve de la section suivante, tout différend relatif aux présentes Conditions ou au Service sera soumis aux tribunaux de l'Ontario siégeant à Toronto, dont vous et nous reconnaissons la compétence.",
+      ],
+    },
+    consumer: {
+      title: "Vos droits à titre de consommateur",
+      body: [
+        "Rien dans les présentes Conditions ne limite un droit que vous confère une loi sur la protection du consommateur et auquel on ne peut renoncer ni déroger par contrat. Si vous êtes un consommateur au Québec, la Loi sur la protection du consommateur (Québec) s'applique à vous, et toute clause des présentes Conditions qu'elle interdit ne s'applique pas à vous; cela comprend votre droit d'intenter une poursuite devant les tribunaux du Québec. Les consommateurs d'autres provinces, États ou pays conservent les protections impératives de la loi de l'endroit où ils résident.",
+      ],
+    },
+    language: {
+      title: "Langue",
+      body: [
+        "Les présentes Conditions, la Politique de confidentialité et les documents connexes sont offerts en français (pmrfp.com/fr/terms) et en anglais. Les parties ont expressément souhaité que les présentes conditions et tous les documents qui s'y rattachent soient offerts en anglais et en français. The parties have expressly wished that these Terms and all related documents be available in English and in French. Les versions française et anglaise ont la même valeur. La version espagnole est une traduction fournie à titre informatif; en cas de divergence avec la version anglaise, la version anglaise prévaut.",
+      ],
     },
     changes: {
-      title: "10. Modifications des présentes conditions",
-      body: "Nous pouvons mettre à jour ces conditions à l'occasion. Lorsque nous apporterons des modifications importantes, nous mettrons à jour la date de « dernière mise à jour » ci-dessus et, s'il y a lieu, fournirons un avis supplémentaire. L'utilisation continue du Service après l'entrée en vigueur des modifications constitue une acceptation des conditions révisées.",
+      title: "Modifications des présentes conditions",
+      body: [
+        "Nous pouvons mettre à jour ces Conditions à l'occasion. Lorsque nous apporterons des modifications importantes, nous mettrons à jour la date de « dernière mise à jour » ci-dessus et, s'il y a lieu, fournirons un avis supplémentaire. L'utilisation continue du Service après l'entrée en vigueur des modifications constitue une acceptation des Conditions révisées. Un changement de prix ou de forfait que vous avez déjà payé ne s'applique qu'à partir de votre prochain renouvellement.",
+      ],
     },
-    contact: { title: "11. Nous joindre", body: "Des questions sur ces conditions? Écrivez-nous à {email}." },
+    contact: { title: "Nous joindre", body: "Des questions sur ces Conditions? Écrivez-nous à {email}." },
   },
 
   privacy: {
@@ -739,45 +1146,194 @@ const fr: typeof en = {
       description: "Comment PMRFP recueille, utilise et protège vos renseignements.",
     },
     title: "Politique de confidentialité",
-    intro:
-      "PMRFP respecte votre vie privée. La présente politique explique quels renseignements nous recueillons, comment nous les utilisons et les choix qui s'offrent à vous. Elle a été rédigée en tenant compte des attentes canadiennes en matière de protection de la vie privée, notamment de la LPRPDE.",
+    intro: [
+      "PMRFP respecte votre vie privée. La présente politique explique quels renseignements nous recueillons, comment nous les utilisons, avec qui nous les communiquons, ainsi que les choix et les droits qui s'offrent à vous. Elle est rédigée pour respecter la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE) du Canada et la Loi sur la protection des renseignements personnels dans le secteur privé du Québec (telle que modifiée par la Loi 25).",
+    ],
+    officer: {
+      title: "Qui est responsable",
+      body: [
+        "PMRFP est exploité par Talkerstein Consulting Group, qui est responsable des renseignements personnels décrits dans la présente politique. Notre responsable de la protection des renseignements personnels veille à leur protection et traite les demandes et les plaintes relatives à la vie privée :",
+      ],
+      lines: [
+        "Responsable de la protection des renseignements personnels, Talkerstein Consulting Group",
+        "{privacyEmail}",
+        "a/s Talkerstein Consulting Group, 5050, rue Dufferin, Toronto (Ontario) M3H 5T5",
+      ],
+    },
     sections: [
       {
-        title: "Renseignements que nous recueillons",
-        body: "Nous recueillons les renseignements que vous nous fournissez directement, comme votre nom, les renseignements sur votre entreprise, votre adresse courriel, vos catégories de services, vos régions ainsi que le contenu de vos profils, appels d'offres et messages. Nous recueillons aussi automatiquement des renseignements techniques limités, comme des données sur l'appareil et le navigateur et sur votre utilisation, lorsque vous interagissez avec le Service.",
+        title: "À qui s'applique la présente politique",
+        body: [
+          "La présente politique s'applique aux membres (entreprises de métiers, fournisseurs, gestionnaires immobiliers, courtiers immobiliers, gens de métier et autres titulaires de compte), aux visiteurs de pmrfp.com, aux personnes qui s'inscrivent à nos courriels, aux candidats qui postulent à un emploi par l'entremise de PMRFP, aux personnes qui communiquent avec nous et aux personnes dont les renseignements figurent dans les dossiers publics que nous republions.",
+        ],
       },
       {
-        title: "Comment nous les utilisons",
-        body: "Nous utilisons vos renseignements pour exploiter et améliorer le Service, notamment pour jumeler les entrepreneurs avec des occasions pertinentes, afficher les fiches du répertoire et les appels d'offres, envoyer des notifications transactionnelles et de jumelage, traiter les abonnements, offrir du soutien et assurer la sécurité.",
+        title: "Renseignements que vous nous fournissez",
+        body: ["Nous recueillons les renseignements que vous nous fournissez directement, notamment :"],
+        list: [
+          "Renseignements de compte : votre nom, votre adresse courriel, votre numéro de téléphone, votre rôle et votre mot de passe (ou le nom et l'adresse courriel de votre compte Google si vous vous connectez avec Google).",
+          "Renseignements sur l'entreprise : nom de l'entreprise, coordonnées, corps de métier, régions desservies, texte du profil, photos, projets et études de cas.",
+          "Activité sur le Service : appels d'offres que vous publiez, intérêt que vous manifestez pour un appel d'offres, appels d'offres sauvegardés, avis, messages, photos et votes sur le forum, annonces du marché et offres d'emploi.",
+          "Candidatures : le nom, les coordonnées et le message que vous envoyez, qui sont transmis à l'employeur auquel vous postulez.",
+          "Profils de gens de métier : votre nom affiché, votre corps de métier, votre région, votre ville, votre expérience, vos cartes de compétence, vos disponibilités, vos attentes salariales, votre présentation et votre numéro de téléphone. Vous choisissez si le profil est publié et si vos coordonnées sont visibles.",
+          "Messages qui nous sont adressés : messages du formulaire de contact, demandes de soutien aux soumissions et courriels.",
+          "Le texte que vous entrez dans nos outils assistés par l'IA (comme le rédacteur d'appels d'offres).",
+          "Facturation : les paiements sont traités par Stripe. Nous recevons vos coordonnées de facturation, votre forfait, les montants et l'état du paiement, mais pas votre numéro de carte complet.",
+        ],
       },
       {
-        title: "Témoins et analytique",
-        body: "Nous utilisons des témoins (cookies) et des technologies semblables pour maintenir votre session ouverte, mémoriser vos préférences et comprendre comment le Service est utilisé. Des données analytiques agrégées nous aident à améliorer la performance et les fonctionnalités. Vous pouvez gérer les témoins dans les paramètres de votre navigateur, mais certaines fonctionnalités pourraient ne pas fonctionner sans eux.",
+        title: "Renseignements provenant de dossiers publics",
+        body: [
+          "PMRFP republie des avis d'appels d'offres publics, des dossiers de contrats octroyés, des résultats de soumissions, des permis de construire et des données sur les grands projets provenant de portails gouvernementaux de données ouvertes et d'autres sources publiques, selon les licences de données ouvertes ou les conditions d'utilisation propres à chaque source. Ces dossiers peuvent comprendre des noms d'entreprises, les coordonnées de l'acheteur telles qu'il les a publiées (parfois le nom, le courriel et le téléphone professionnels d'un responsable de l'approvisionnement), les montants des contrats et des soumissions, et l'emplacement des projets.",
+          "Nous publions uniquement des noms d'entreprises. Lorsque le nom d'un adjudicataire ou d'un soumissionnaire ressemble à celui d'un particulier (un nom de personne sans mot d'affaires ni forme juridique), nous ne publions pas le nom : le dossier est compté et présenté comme « Particulier (non nommé) » ou « Soumissionnaire particulier (non nommé) ». Un nom commercial qui comprend un nom de personne accompagné d'un mot d'affaires (par exemple « Jean Tremblay Excavation ») est un nom d'entreprise et est présenté tel que publié. Il s'agit d'une règle automatisée; si elle se trompe, ou si vous voulez faire corriger ou retirer un dossier qui vous concerne, consultez notre {corrections}.",
+        ],
+      },
+      {
+        title: "Renseignements recueillis automatiquement",
+        body: ["Lorsque vous utilisez le Service, nous et nos fournisseurs recueillons des renseignements techniques limités :"],
+        list: [
+          "Les données techniques et de journalisation que notre hébergeur enregistre lorsque des pages sont servies, comme l'adresse IP, le type de navigateur et d'appareil, les pages demandées et l'heure.",
+          "Le pays et la province ou l'État que notre hébergeur estime à partir de votre adresse IP, utilisés pour afficher le bon marché (Canada ou États-Unis) et préremplir votre région. Jamais pour l'accès ni pour la facturation.",
+          "Un hachage à sens unique de votre adresse IP, utilisé pour limiter le débit des requêtes, protéger contre le pollupostage et compter les consultations de profils.",
+          "Des événements d'utilisation, comme la fin d'une inscription ou le début d'un paiement, comptés au moyen de Vercel Web Analytics.",
+        ],
+      },
+      {
+        title: "Témoins et technologies semblables",
+        body: ["Nous utilisons les témoins internes suivants :"],
+        list: [
+          "Les témoins de connexion déposés par notre fournisseur d'authentification (Supabase) pour maintenir votre session ouverte. Essentiels.",
+          "NEXT_LOCALE (1 an) : la langue que vous avez choisie.",
+          "pmrfp_lang_hint (1 an) : mémorise que vous avez fermé la suggestion de langue.",
+          "pmrfp_geo (30 jours) : votre pays et votre province ou État tels qu'estimés par notre hébergeur (par exemple « CA-QC »). Jamais votre adresse IP.",
+          "pmrfp_market (1 an) : si vous avez choisi d'afficher le Canada ou les États-Unis.",
+          "pmrfp_acct (1 an) : le pays et la province ou l'État de votre entreprise, pour que les pages correspondent à votre compte.",
+          "pmrfp_ft (90 jours) : comment vous avez trouvé PMRFP la première fois (voir ci-dessous).",
+        ],
+        after: [
+          "Le stockage local de votre navigateur conserve aussi, sur votre propre appareil, votre choix en matière d'analytique, vos brouillons non envoyés (par exemple un appel d'offres en cours de rédaction) et d'autres commodités semblables. Vous pouvez gérer les témoins et le stockage local dans les paramètres de votre navigateur; bloquer les témoins de connexion vous empêchera de vous connecter.",
+        ],
       },
       {
         title: "Comment les gens trouvent PMRFP",
-        body: "Pour comprendre comment les gens trouvent PMRFP, nous enregistrons la première page que vous avez visitée et le site ou la campagne qui vous y a dirigé. Un seul témoin interne (pmrfp_ft, conservé 90 jours) contient l'adresse de cette première page sans ses paramètres, le domaine du site référent seulement (jamais l'adresse complète), les balises de campagne du lien, le cas échéant (utm_source, utm_medium, utm_campaign, utm_content), la date, la langue de la page et votre pays tel qu'estimé par notre hébergeur. Il ne contient jamais votre adresse IP. Si vous créez un compte, nous conservons ces valeurs avec celui-ci pour savoir quels canaux nous amènent des membres; nous comptons aussi les premières visites par page et par canal sous forme de totaux quotidiens qui n'identifient personne. Nous n'utilisons aucun traceur tiers ni témoin publicitaire, et nous ne faisons aucun suivi intersites. Bloquer ou effacer ce témoin n'a aucun effet sur le Service.",
+        body: [
+          "Pour comprendre comment les gens trouvent PMRFP, nous enregistrons la première page que vous avez visitée et le site ou la campagne qui vous y a dirigé. Un seul témoin interne (pmrfp_ft, conservé 90 jours à compter de votre première visite) contient l'adresse de cette première page sans ses paramètres, le domaine du site référent seulement (jamais l'adresse complète), les balises de campagne du lien, le cas échéant (utm_source, utm_medium, utm_campaign, utm_content), les balises de campagne d'une visite ultérieure si elles diffèrent, la date, la langue de la page et votre pays tel qu'estimé par notre hébergeur. Il ne contient jamais votre adresse IP, et tout ce qui ressemble à une adresse courriel est supprimé.",
+          "Si vous créez un compte, nous conservons ces valeurs avec celui-ci, ainsi que le canal dans lequel nous les classons (par exemple recherche, courriel ou réseaux sociaux) et votre mode d'inscription (courriel ou Google), pour savoir quels canaux nous amènent des membres. Ce dossier n'est visible que par les administrateurs de PMRFP et est supprimé avec votre compte. Nous comptons aussi les premières visites par page et par canal sous forme de totaux quotidiens qui n'identifient personne. Bloquer ou effacer ce témoin n'a aucun effet sur le Service.",
+        ],
       },
       {
-        title: "Stockage des données",
-        body: "Les données des comptes et de la plateforme sont stockées au moyen de Supabase, notre fournisseur de base de données gérée et d'authentification. Nous prenons des mesures raisonnables pour que nos fournisseurs d'infrastructure traitent les données de façon sécuritaire.",
+        title: "Analytique",
+        body: [
+          "Nous utilisons Vercel Web Analytics et Speed Insights pour compter les pages vues et mesurer la performance du site. Sur le site en production, nous utilisons aussi Google Analytics 4, qui dépose des témoins Google Analytics et transmet à Google des données d'utilisation (comme les pages consultées, le type d'appareil et l'emplacement approximatif). Vous pouvez le bloquer au moyen des paramètres de votre navigateur ou du module complémentaire de désactivation de Google.",
+          "Si Microsoft Clarity est activé, nous vous le demandons d'abord : il ne se charge que si vous cliquez sur « Accepter l'analyse » dans le bandeau, et jamais si vous refusez. Clarity enregistre la façon dont les visiteurs utilisent les pages (cartes de chaleur et enregistrements de sessions). Nous n'utilisons aucun pixel publicitaire ni de reciblage.",
+        ],
       },
       {
-        title: "Communication des renseignements",
-        body: "Nous ne vendons pas vos renseignements personnels. Les renseignements que vous choisissez de publier — comme le profil de votre entreprise ou un appel d'offres — sont visibles par les autres utilisateurs dans le cadre du Service. Nous pouvons communiquer des données aux fournisseurs de services qui nous aident à exploiter la plateforme (par exemple, pour l'hébergement, les paiements et le courriel), ainsi que lorsque la loi l'exige.",
+        title: "Comment nous utilisons les renseignements",
+        body: ["Nous utilisons les renseignements personnels pour :"],
+        list: [
+          "exploiter le Service : comptes, profils, répertoire, appels d'offres, forum, emplois et marché;",
+          "jumeler les entrepreneurs avec des occasions pertinentes et envoyer les alertes et courriels décrits ci-dessous;",
+          "traiter les abonnements, les essais et les paiements;",
+          "offrir du soutien et répondre aux messages;",
+          "assurer la sécurité du Service et prévenir le pollupostage, la fraude et les abus;",
+          "comprendre et améliorer l'utilisation du Service, surtout à l'aide de données agrégées;",
+          "respecter la loi.",
+        ],
+        after: ["Nous ne vendons pas de renseignements personnels."],
       },
       {
-        title: "Vos droits",
-        body: "En vertu de la LPRPDE et des lois canadiennes applicables en matière de protection de la vie privée, vous pouvez demander à consulter les renseignements personnels que nous détenons à votre sujet, nous demander de les corriger ou en demander la suppression, sous réserve de limites juridiques et opérationnelles. Pour exercer ces droits, communiquez avec nous au moyen des coordonnées ci-dessous.",
+        title: "Courriel et loi antipourriel (LCAP)",
+        body: ["Nous envoyons les types de courriels suivants :"],
+        list: [
+          "Messages de service et transactionnels : courriels de connexion, de compte et de facturation, état de l'essai, réponses à votre appel d'offres ou à votre intérêt, et autres messages nécessaires au fonctionnement de votre compte.",
+          "Alertes et résumés que vous activez : alertes d'appels d'offres et d'occasions, alertes sur les appels d'offres sauvegardés et les marchés publics, avis de réponse sur le forum, le bulletin hebdomadaire des membres Trade Pro et en essai, et le courriel hebdomadaire gratuit (envoyé seulement après la confirmation de votre adresse).",
+          "Courriels d'accueil : après l'inscription d'une entreprise de métiers, une courte série (au plus un par jour) sur les premiers pas, l'essai gratuit, Trade Pro et l'offre Fondateurs 500. Elle prend fin lorsque vous passez à un forfait payant, vous désabonnez ou atteignez la fin de la série. Nous ne les envoyons que dans la mesure permise par la Loi canadienne anti-pourriel (LCAP).",
+          "Prospection d'affaires : nous pouvons écrire à des entreprises à des adresses professionnelles qu'elles publient bien en évidence (par exemple sur leur site Web ou dans des dossiers publics d'appels d'offres), au sujet de PMRFP en lien avec les activités ou le rôle du destinataire, lorsqu'elles n'ont pas indiqué refuser les messages non sollicités.",
+        ],
+        after: [
+          "Chaque courriel commercial identifie PMRFP et Talkerstein Consulting Group, indique notre adresse postale et comporte un lien de désabonnement. Les liens de désabonnement prennent effet immédiatement; si vous en faites la demande par courriel, nous y donnons suite dans un délai de 10 jours ouvrables. Vous pouvez aussi modifier la plupart des paramètres de courriel dans votre compte. Le désabonnement n'arrête pas les messages de service essentiels concernant votre compte.",
+        ],
+      },
+      {
+        title: "Comment nous communiquons les renseignements",
+        body: [
+          "Les renseignements que vous choisissez de publier, comme le profil de votre entreprise, un appel d'offres, un avis, un message sur le forum ou un profil de gens de métier publié, sont visibles par d'autres personnes dans le cadre du Service. Lorsque vous manifestez votre intérêt pour un appel d'offres ou postulez à un emploi, nous transmettons ce que vous soumettez à la personne qui l'a publié.",
+          "Nous communiquons des renseignements personnels aux fournisseurs de services qui nous aident à exploiter PMRFP (énumérés ci-dessous), uniquement dans la mesure nécessaire aux services qu'ils fournissent. Nous pouvons aussi communiquer des renseignements lorsque la loi l'exige, pour protéger des droits et la sécurité, ou dans le cadre d'une vente ou d'une réorganisation de l'entreprise, sous réserve de la présente politique. Nous ne vendons pas vos renseignements personnels.",
+        ],
+      },
+      {
+        title: "Fournisseurs de services et lieu de conservation des données",
+        body: ["Nous faisons appel aux fournisseurs suivants pour exploiter le Service :"],
+        list: [
+          "Supabase : base de données, connexion et stockage de fichiers.",
+          "Vercel : hébergement du site, analytique et mesure de la performance.",
+          "Stripe : paiements et facturation.",
+          "Resend : envoi de courriels.",
+          "HighLevel : notre système de gestion de la relation client (CRM), pour les coordonnées des membres et des demandes.",
+          "Google : Google Analytics, la connexion Google si vous l'utilisez, et le service d'IA Gemini pour les fonctionnalités assistées par l'IA.",
+          "Upstash : limitation du débit des requêtes (adresses IP hachées seulement).",
+          "Cloudflare Turnstile : vérification antipourriel des messages du forum, lorsqu'elle est activée.",
+          "Microsoft Clarity : seulement si vous l'acceptez dans le bandeau.",
+        ],
+        after: [
+          "Certains de ces fournisseurs conservent ou traitent des renseignements personnels à l'extérieur du Québec et du Canada, notamment aux États-Unis. Ces renseignements sont alors assujettis aux lois de ce pays et peuvent être accessibles à ses autorités. Nous nous fions aux engagements contractuels de nos fournisseurs pour protéger les renseignements personnels qu'ils traitent pour nous.",
+        ],
+      },
+      {
+        title: "Durée de conservation",
+        list: [
+          "Renseignements de compte et de profil : tant que votre compte est ouvert. Lorsque vous nous demandez de fermer votre compte, nous les supprimons ou les anonymisons, sauf ce que la loi nous oblige à conserver (par exemple les dossiers de facturation et fiscaux).",
+          "Provenance des inscriptions : le témoin pmrfp_ft dure au plus 90 jours; la copie conservée avec un compte est supprimée avec ce compte.",
+          "Données de limitation du débit : adresses IP hachées, conservées peu de temps (généralement moins d'un jour).",
+          "Dossiers d'essai : conservés tant que l'organisation existe, comme preuve qu'elle a utilisé son unique essai.",
+          "Dossiers de désabonnement : conservés pour que nous continuions à respecter votre choix.",
+          "Données issues de dossiers publics : conservées tant qu'elles demeurent pertinentes et que la source les publie, ou jusqu'à ce que nous les corrigions ou les retirions en vertu de notre {corrections}.",
+        ],
+        body: [],
+        after: ["Tout le reste n'est conservé que le temps nécessaire aux fins décrites ci-dessus, puis est supprimé ou anonymisé."],
       },
       {
         title: "Sécurité",
-        body: "Nous utilisons des mesures de protection administratives, techniques et physiques conçues pour protéger vos renseignements. Aucune méthode de transmission ou de stockage n'est entièrement sécuritaire; nous ne pouvons donc pas garantir une sécurité absolue, mais nous nous efforçons de protéger vos données et d'intervenir rapidement en cas d'incident.",
+        body: [
+          "Nous utilisons des mesures de protection administratives, techniques et physiques conçues pour protéger vos renseignements, y compris des contrôles d'accès qui limitent qui peut les consulter. Aucune méthode de transmission ou de stockage n'est entièrement sûre; nous ne pouvons donc pas garantir une sécurité absolue, mais nous travaillons à protéger vos données et réagissons rapidement à tout incident, notamment en avisant les personnes concernées et les autorités lorsque la loi l'exige.",
+        ],
       },
-    ],
+      {
+        title: "Vos droits",
+        body: ["En vertu de la LPRPDE et de la loi québécoise sur la protection des renseignements personnels dans le secteur privé, vous pouvez, dans les limites prévues par la loi :"],
+        list: [
+          "demander si nous détenons des renseignements personnels à votre sujet et y avoir accès;",
+          "nous demander de rectifier des renseignements inexacts, incomplets ou périmés;",
+          "nous demander de supprimer des renseignements dont nous n'avons plus besoin ou, lorsque la loi le prévoit, de cesser de les diffuser ou de désindexer un lien qui y mène;",
+          "retirer votre consentement à une utilisation de vos renseignements (ce qui peut nous empêcher de vous offrir une partie du Service);",
+          "lorsque la loi le prévoit, recevoir les renseignements que vous nous avez fournis dans un format technologique structuré et couramment utilisé.",
+        ],
+        after: [
+          "Pour présenter une demande, écrivez à notre responsable de la protection des renseignements personnels à {privacyEmail}. Nous pourrions devoir confirmer votre identité. Nous répondrons dans un délai de 30 jours. Si nous ne pouvons pas donner suite à votre demande, nous vous en expliquerons les raisons et vous indiquerons comment contester notre décision.",
+          "Si notre réponse ne vous satisfait pas, vous pouvez porter plainte auprès du Commissariat à la protection de la vie privée du Canada ou, au Québec, de la Commission d'accès à l'information du Québec.",
+        ],
+      },
+      {
+        title: "Corrections et demandes de retrait",
+        body: [
+          "Pour signaler une erreur dans une fiche, un dossier public ou un profil, ou pour nous demander de retirer des renseignements personnels, utilisez le lien « Signaler une erreur ou demander un retrait » lorsqu'il est affiché, ou écrivez à {privacyEmail}. Notre {corrections} explique ce que nous vérifions et les délais applicables.",
+        ],
+      },
+      {
+        title: "Enfants",
+        body: ["PMRFP s'adresse aux entreprises et aux professionnels. Il ne s'adresse pas aux enfants, et nous ne recueillons pas sciemment de renseignements personnels auprès d'enfants."],
+      },
+      {
+        title: "Modifications de la présente politique",
+        body: [
+          "Nous pouvons mettre à jour la présente politique à l'occasion. Nous modifierons la date de « dernière mise à jour » ci-dessus et, pour les changements importants, fournirons un avis supplémentaire s'il y a lieu.",
+        ],
+      },
+    ] as LegalBlock[],
     contact: {
       title: "Nous joindre",
-      body: "Des questions ou une demande relative à la confidentialité? Écrivez-nous à {email}.",
+      body: "Des questions ou une demande relative à la vie privée? Écrivez à notre responsable de la protection des renseignements personnels à {privacyEmail}. Pour toute autre question, écrivez-nous à {email}.",
     },
   },
 
@@ -990,7 +1546,7 @@ const fr: typeof en = {
       },
       {
         title: "Courtiers d'assurance",
-        body: "Réparations liées à des réclamations, où la rapidité d'un entrepreneur fiable compte.",
+        body: "Réparations liées à des réclamations, où la rapidité d'intervention compte.",
       },
       {
         title: "Gestionnaires immobiliers",
@@ -1006,7 +1562,7 @@ const fr: typeof en = {
     why: [
       {
         strong: "Aidez d'abord votre client.",
-        rest: " Son projet reçoit rapidement des soumissions d'entrepreneurs vérifiés — meilleur résultat, relation plus solide.",
+        rest: " Son projet est vu rapidement par des entrepreneurs du métier — meilleur résultat, relation plus solide.",
       },
       {
         strong: "Obtenez une mention publique.",
@@ -1311,97 +1867,370 @@ const es: typeof en = {
     lastUpdated: "Última actualización: {date}",
     translationNote:
       "Esta traducción se ofrece a título informativo. En caso de discrepancia, prevalece la versión en inglés.",
+    links: {
+      corrections: "Política de correcciones y retiros",
+      forumRules: "Reglas del foro",
+      privacy: "Política de privacidad",
+      terms: "Términos del servicio",
+    },
   },
 
   terms: {
     meta: { title: "Términos del servicio", description: "Los términos que rigen su uso de PMRFP." },
     title: "Términos del servicio",
+    intro: [
+      "Estos Términos del servicio (los “Términos”) son un acuerdo entre usted y Talkerstein Consulting Group, que opera PMRFP en pmrfp.com (“PMRFP”, “nosotros”). Léalos junto con nuestra {privacyLink}, que explica cómo tratamos la información personal.",
+    ],
     acceptance: {
-      title: "1. Aceptación de los términos",
-      body: "Al acceder a PMRFP (el “Servicio”) o utilizarlo, usted acepta quedar obligado por estos Términos del servicio. Si no está de acuerdo con estos términos, no puede utilizar el Servicio. Estos términos se aplican a todos los usuarios, incluidas las empresas de oficios, los contratistas, los administradores de propiedades, los constructores y los propietarios de edificios.",
+      title: "Aceptación de los términos",
+      body: [
+        "Al acceder a PMRFP (el “Servicio”) o utilizarlo, usted acepta quedar obligado por estos Términos. Si no está de acuerdo con estos Términos, no puede utilizar el Servicio. Estos Términos se aplican a todos los usuarios, incluidas las empresas de oficios, los proveedores, los contratistas, los trabajadores de oficios, los administradores de propiedades, los constructores, los agentes inmobiliarios y los propietarios de edificios.",
+        "Si usa el Servicio en nombre de una empresa, acepta estos Términos en nombre de esa empresa y confirma que está autorizado para hacerlo.",
+      ],
     },
     description: {
-      title: "2. Descripción del Servicio",
-      body: "PMRFP es una plataforma para publicar solicitudes de propuestas y encontrar contratistas, al servicio del mercado canadiense de propiedades comerciales. El Servicio permite a las empresas de oficios publicar perfiles y seguir oportunidades, y permite a los administradores de propiedades, constructores y propietarios publicar solicitudes de propuestas (RFP) y encontrar proveedores.",
+      title: "Descripción del Servicio",
+      body: [
+        "PMRFP es una plataforma para publicar solicitudes de propuestas y encontrar contratistas, al servicio del mercado de propiedades comerciales en Canadá y los Estados Unidos. El Servicio permite a las empresas de oficios publicar perfiles y seguir oportunidades, y permite a los administradores de propiedades, constructores y propietarios publicar solicitudes de propuestas (RFP) y encontrar proveedores. También republica licitaciones públicas, contratos adjudicados y datos de proyectos relacionados de fuentes gubernamentales, y ofrece los planes de pago y las herramientas que se describen a continuación.",
+        "No somos corredores, agentes de adquisiciones ni asesores legales, y no actuamos en nombre de ninguna de las partes. No somos parte de ningún contrato entre usuarios. Una empresa marcada como verificada fue revisada por el equipo de PMRFP; de lo contrario, no verificamos licencias, seguros ni calificaciones, así que confírmelos directamente para su proyecto.",
+      ],
     },
     accounts: {
-      title: "3. Cuentas y elegibilidad",
-      body: "Debe proporcionar información exacta y completa al crear una cuenta y mantenerla actualizada. Usted es responsable de proteger las credenciales de su cuenta y de toda la actividad que se realice en ella. Debe estar autorizado para actuar en nombre de cualquier empresa que represente en el Servicio.",
+      title: "Cuentas y elegibilidad",
+      body: [
+        "Debe proporcionar información exacta y completa al crear una cuenta y mantenerla actualizada. Usted es responsable de proteger las credenciales de su cuenta y de toda la actividad que se realice en ella. Debe estar autorizado para actuar en nombre de cualquier empresa que represente en el Servicio.",
+      ],
     },
     billing: {
-      title: "4. Suscripciones y facturación",
+      title: "Suscripciones y facturación",
       withMonthly:
         "Trade Pro se ofrece con dos intervalos de facturación: ${annual} {currency} al año (anual) o ${monthly} {currency} al mes (mensual). Cada uno se renueva automáticamente al final del período vigente, salvo que se cancele. Puede cancelar en cualquier momento; la cancelación entra en vigor al final de su período de facturación vigente, y usted conserva el acceso hasta entonces. Las tarifas no son reembolsables, salvo cuando la ley lo exija. Podemos cambiar los precios a futuro con un aviso razonable. Puede cambiar entre la facturación anual y la mensual desde su portal de facturación; el cambio entra en vigor al final de su período de facturación vigente.",
       annualOnly:
         "Trade Pro se ofrece a ${annual} {currency} al año y se renueva automáticamente al final de cada período anual, salvo que se cancele. Puede cancelar en cualquier momento; la cancelación entra en vigor al final de su período de facturación vigente, y usted conserva el acceso hasta entonces. Las tarifas no son reembolsables, salvo cuando la ley lo exija. Podemos cambiar los precios a futuro con un aviso razonable.",
+      body: [
+        "Los demás planes de pago (como Destacado, Ficha SEO, Realtor Pro, Award Intelligence y los patrocinios) se facturan al precio, en la moneda y con el intervalo que se muestran en la página del plan y al pagar. Los planes recurrentes se renuevan automáticamente al final de cada período de facturación hasta que usted los cancele. Los precios y los impuestos aplicables, si los hay, son los que se muestran al pagar.",
+        "Los pagos los procesa Stripe. Para cancelar, use el portal de facturación de su panel (Facturación) o escríbanos a {email} antes de la fecha de renovación. Cancelar detiene las renovaciones futuras; no reembolsa el período en curso. Los cambios de precio se aplican a partir de su próxima renovación, no a un período que ya pagó.",
+        "Salvo lo indicado en los términos de Fundadores 500 a continuación, o cuando la ley exija un reembolso, las tarifas no son reembolsables.",
+      ],
       free: "Los administradores de propiedades, constructores y propietarios pueden publicar solicitudes de propuestas sin costo. Las empresas de oficios pueden tener fichas gratuitas en el directorio sin una suscripción de pago.",
     },
-    use: {
-      title: "5. Uso aceptable",
-      body: "Usted se compromete a no hacer un uso indebido del Servicio, lo que incluye publicar contenido falso, engañoso, no deseado (spam), infractor o ilícito; extraer o recolectar datos; intentar obtener acceso no autorizado; o usar el Servicio para acosar a otros usuarios. Podemos editar, rechazar o eliminar el contenido que infrinja estos términos.",
+    trial: {
+      title: "Prueba gratuita de Trade Pro",
+      body: [
+        "Las empresas de oficios pueden iniciar una sola prueba gratuita de Trade Pro de 14 días por organización. No se necesita tarjeta de pago. Durante la prueba, la organización tiene las funciones de Trade Pro. Al terminar los 14 días, la organización vuelve automáticamente al plan gratuito. No se cobra nada al final de una prueba, y no se factura nada a menos que usted decida suscribirse. Una organización que ya tuvo una prueba, o que ya paga Trade Pro, no puede iniciar otra.",
+      ],
     },
-    noGuarantee: { title: "6. Sin garantía de trabajo" },
+    founding: {
+      title: "Oferta de por vida Fundadores 500",
+      body: [
+        "La oferta Fundadores 500 da a una organización Trade Pro por un solo pago. Está sujeta a los términos en lenguaje claro que siguen, que forman parte de estos Términos.",
+      ],
+      after: [
+        "En estos Términos, “de por vida” se refiere a la vida del servicio Trade Pro tal como PMRFP lo opera, no a la vida de ninguna persona ni de su organización. El acceso de Fundador pertenece a la organización que lo compró y no se puede ceder, revender ni trasladar a otra organización o cuenta.",
+      ],
+    },
+    intel: {
+      title: "Award Intelligence",
+      body: [
+        "Award Intelligence es un complemento de pago que organiza los registros públicos de contratos adjudicados en perfiles de empresas y compradores, tablas de participación de mercado, estimaciones de renovación y, cuando una fuente las publica, listas de las ofertas recibidas.",
+        "Se basa únicamente en registros públicos y se ofrece a título informativo. Los valores de los contratos son los que divulga el comprador. Las fechas de fin de contrato y los períodos probables de nueva licitación suelen ser estimaciones (por ejemplo, la fecha de adjudicación más un plazo típico) y se identifican como tales. Las listas de ofertas no son oficiales, se muestran tal como las publica la fuente con su fecha de consulta y nunca indican por qué una oferta fue elegida o no; prevalece el registro oficial del comprador. No garantizamos que ningún registro esté completo, actualizado o sea exacto, ni que un contrato vuelva a licitarse.",
+      ],
+    },
+    sponsored: {
+      title: "Patrocinios y ubicaciones pagadas",
+      body: [
+        "Algunas ubicaciones en PMRFP son pagadas. Los patrocinios llevan la etiqueta “Patrocinado” en el idioma del lector y sus enlaces se marcan como patrocinados; las fichas Destacadas obtienen una ubicación prioritaria porque la empresa paga por ella. Una ubicación pagada no es una recomendación ni una verificación de PMRFP. Los patrocinadores son responsables de su propio contenido y de sus ofertas.",
+      ],
+    },
+    publicData: {
+      title: "Registros públicos y exactitud de los datos",
+      body: [
+        "Las licitaciones públicas, los contratos adjudicados, los resultados de ofertas, los permisos y los datos de grandes proyectos que aparecen en PMRFP provienen de fuentes gubernamentales y otras fuentes públicas, según las licencias de datos abiertos o las condiciones de uso de cada fuente. Los republicamos en gran medida tal como la fuente los publicó, los clasificamos por oficio y región, y enlazamos al aviso oficial cuando existe.",
+        "Estos registros pueden estar incompletos o desactualizados, o contener errores de la fuente o nuestros. Verifique siempre el aviso oficial o el portal del comprador antes de presentar una oferta, firmar o basarse en cualquier cifra. Usted siempre presenta sus ofertas mediante el proceso del comprador, nunca a través de PMRFP. Para reportar un error o pedir un retiro, consulte nuestra {corrections}.",
+      ],
+    },
+    insights: {
+      title: "Análisis, referencias y herramientas asistidas por IA",
+      body: [
+        "Los análisis, los precios de referencia, los informes, las estimaciones de renovación, las clasificaciones y cifras similares se calculan a partir de registros públicos y otros datos del Servicio. Son solo informativos. No constituyen asesoramiento financiero, legal, contable, de ingeniería ni otro asesoramiento profesional, ni una promesa de precio, resultado o adjudicación. Algunos textos pueden redactarse con herramientas automatizadas, incluida la inteligencia artificial.",
+        "Las herramientas asistidas por IA (como el RFP Writer y las listas de verificación de ofertas) pueden producir resultados incompletos o erróneos. Revise todo lo que produzcan, y busque asesoramiento profesional cuando lo necesite, antes de usarlo.",
+      ],
+    },
+    noGuarantee: {
+      title: "Sin garantía de trabajo",
+      body: [],
+    },
+    use: {
+      title: "Uso aceptable",
+      body: [
+        "Usted se compromete a no hacer un uso indebido del Servicio, lo que incluye publicar contenido falso, engañoso, difamatorio, no deseado (spam), infractor o ilícito; publicar información personal de otras personas sin derecho a hacerlo; extraer o recolectar datos; intentar obtener acceso no autorizado; o usar el Servicio para acosar a otros usuarios. Podemos editar, rechazar o eliminar el contenido que infrinja estos Términos.",
+      ],
+    },
     content: {
-      title: "7. Contenido y anuncios",
-      body: "Usted conserva la propiedad del contenido que envía y otorga a PMRFP una licencia no exclusiva para alojar, mostrar y distribuir ese contenido según sea necesario para operar el Servicio. Usted es el único responsable de la exactitud y la legalidad de sus anuncios, perfiles y solicitudes de propuestas. Podemos moderar, editar o eliminar los anuncios que estén incompletos o que sean engañosos, no deseados (spam) o inapropiados.",
+      title: "Contenido y anuncios",
+      body: [
+        "Usted conserva la propiedad del contenido que envía y otorga a PMRFP una licencia no exclusiva para alojar, mostrar y distribuir ese contenido según sea necesario para operar el Servicio. Usted es el único responsable de la exactitud y la legalidad de sus anuncios, perfiles, solicitudes de propuestas, reseñas, mensajes del foro y fotos, y confirma que tiene derecho a publicarlos. Podemos moderar, editar o eliminar los anuncios que estén incompletos o que sean engañosos, no deseados (spam) o inapropiados.",
+        "El contenido publicado por los usuarios refleja la opinión de sus autores, no la de PMRFP. No revisamos todo el contenido antes de que aparezca.",
+      ],
+    },
+    takedown: {
+      title: "Reporte de contenido y solicitudes de retiro",
+      body: [
+        "Si cree que un contenido en PMRFP es inexacto, infringe sus derechos (incluidos los derechos de autor), es difamatorio o expone información personal, avísenos. Use el enlace de reporte cuando aparezca, o escriba a {privacyEmail} indicando:",
+      ],
+      list: [
+        "la dirección (URL) de la página y el contenido específico;",
+        "por qué cree que es erróneo, ilícito o infractor, con cualquier prueba que lo respalde;",
+        "en un reclamo de derechos de autor u otro derecho, la obra o el derecho de que se trata y la confirmación de que usted es su titular o está autorizado para actuar en nombre del titular;",
+        "su nombre y cómo contactarlo.",
+      ],
+      after: [
+        "Revisamos los avisos de buena fe y podemos eliminar, ocultar, corregir o anotar el contenido, o mantenerlo publicado si concluimos que es exacto y lícito. Cuando corresponde, se lo informamos a quien lo publicó. La forma en que tratamos los errores y retiros en los datos de registros públicos se explica en nuestra {corrections}.",
+      ],
+    },
+    forum: {
+      title: "Foro",
+      body: [
+        "Publicar en el foro de PMRFP está sujeto a nuestras {forumRules}, que forman parte de estos Términos. Los moderadores pueden ocultar mensajes, bloquear hilos e impedir que una cuenta publique cuando se infringen las reglas.",
+      ],
     },
     liability: {
-      title: "8. Limitación de responsabilidad",
-      body: "En la máxima medida permitida por la ley, PMRFP y sus afiliadas no son responsables de ningún daño indirecto, incidental, consecuente o punitivo, ni de la pérdida de ganancias, ingresos, datos u oportunidades de negocio, que se derive de su uso del Servicio. El Servicio se proporciona “tal cual” y “según disponibilidad”, sin garantías de ningún tipo.",
+      title: "Limitación de responsabilidad",
+      body: [
+        "En la máxima medida permitida por la ley, PMRFP y sus afiliadas no son responsables de ningún daño indirecto, incidental, consecuente o punitivo, ni de la pérdida de ganancias, ingresos, datos u oportunidades de negocio, que se derive de su uso del Servicio. El Servicio se proporciona “tal cual” y “según disponibilidad”, sin garantías de ningún tipo.",
+        "Esto incluye las decisiones que usted tome con base en datos de registros públicos, análisis, referencias o resultados de IA, y las relaciones entre usuarios. Nada en estos Términos excluye una responsabilidad que la ley no permita excluir.",
+      ],
+    },
+    indemnity: {
+      title: "Su responsabilidad por su contenido",
+      body: [
+        "En la medida en que la ley lo permita, usted acepta responder por los reclamos de terceros que se deriven del contenido que publique o del incumplimiento de estos Términos, y compensarnos por ellos. Esto no se aplica en la medida en que un reclamo sea causado por nuestra propia culpa.",
+      ],
     },
     termination: {
-      title: "9. Terminación",
-      body: "Podemos suspender o terminar su acceso al Servicio en cualquier momento si usted infringe estos términos o si dejamos de ofrecer el Servicio. Usted puede dejar de usar el Servicio y cerrar su cuenta en cualquier momento.",
+      title: "Terminación",
+      body: [
+        "Podemos suspender o terminar su acceso al Servicio en cualquier momento si usted infringe estos Términos o si dejamos de ofrecer el Servicio. Usted puede dejar de usar el Servicio y cerrar su cuenta en cualquier momento.",
+      ],
+    },
+    law: {
+      title: "Ley aplicable y tribunales",
+      body: [
+        "Estos Términos se rigen por las leyes de la provincia de Ontario y las leyes federales de Canadá aplicables en ella. Con sujeción a la sección siguiente, cualquier controversia sobre estos Términos o el Servicio será conocida por los tribunales de Ontario con sede en Toronto, y usted y nosotros aceptamos su jurisdicción.",
+      ],
+    },
+    consumer: {
+      title: "Sus derechos como consumidor",
+      body: [
+        "Nada en estos Términos limita ningún derecho que usted tenga en virtud de la legislación de protección del consumidor y que no pueda renunciarse ni limitarse por contrato. Si usted es un consumidor en Quebec, se le aplica la Ley de protección del consumidor de Quebec (Loi sur la protection du consommateur), y cualquier cláusula de estos Términos que esa ley prohíba no se le aplica; esto incluye su derecho a presentar una demanda ante los tribunales de Quebec. Los consumidores de otras provincias, estados o países conservan las protecciones obligatorias de la ley del lugar donde residen.",
+      ],
+    },
+    language: {
+      title: "Idioma",
+      body: [
+        "Estos Términos, la Política de privacidad y los documentos relacionados están disponibles en inglés y en francés (pmrfp.com/fr/terms). Las partes han manifestado expresamente su deseo de que estos Términos y todos los documentos relacionados estén disponibles en inglés y en francés. Las versiones en inglés y en francés tienen el mismo valor. Esta versión en español es una traducción a título informativo; si difiere de la versión en inglés, prevalece la versión en inglés.",
+      ],
     },
     changes: {
-      title: "10. Cambios en estos términos",
-      body: "Podemos actualizar estos términos periódicamente. Cuando hagamos cambios importantes, actualizaremos la fecha de “última actualización” indicada arriba y, cuando corresponda, daremos un aviso adicional. El uso continuado del Servicio después de que los cambios entren en vigor constituye la aceptación de los términos revisados.",
+      title: "Cambios en estos términos",
+      body: [
+        "Podemos actualizar estos Términos periódicamente. Cuando hagamos cambios importantes, actualizaremos la fecha de “última actualización” indicada arriba y, cuando corresponda, daremos un aviso adicional. El uso continuado del Servicio después de que los cambios entren en vigor constituye la aceptación de los Términos revisados. Un cambio en un precio o plan que ya pagó solo se aplica a partir de su próxima renovación.",
+      ],
     },
-    contact: { title: "11. Contacto", body: "¿Preguntas sobre estos términos? Escríbanos a {email}." },
+    contact: { title: "Contacto", body: "¿Preguntas sobre estos Términos? Escríbanos a {email}." },
   },
 
   privacy: {
     meta: { title: "Política de privacidad", description: "Cómo PMRFP recopila, usa y protege su información." },
     title: "Política de privacidad",
-    intro:
-      "PMRFP respeta su privacidad. Esta política explica qué información recopilamos, cómo la usamos y qué opciones tiene usted. Está redactada teniendo en cuenta las expectativas canadienses en materia de privacidad, incluida la PIPEDA.",
+    intro: [
+      "PMRFP respeta su privacidad. Esta política explica qué información recopilamos, cómo la usamos, con quién la compartimos y qué opciones y derechos tiene usted. Está redactada para cumplir con la Ley de Protección de la Información Personal y los Documentos Electrónicos de Canadá (PIPEDA) y con la Ley sobre la protección de la información personal en el sector privado de Quebec (modificada por la Ley 25).",
+    ],
+    officer: {
+      title: "Quién es responsable",
+      body: [
+        "PMRFP es operado por Talkerstein Consulting Group, que es responsable de la información personal descrita en esta política. Nuestro Responsable de Privacidad supervisa cómo la protegemos y atiende las solicitudes y quejas sobre privacidad:",
+      ],
+      lines: [
+        "Responsable de Privacidad, Talkerstein Consulting Group",
+        "{privacyEmail}",
+        "a/c Talkerstein Consulting Group, 5050 Dufferin St., Toronto, ON M3H 5T5, Canadá",
+      ],
+    },
     sections: [
       {
-        title: "Información que recopilamos",
-        body: "Recopilamos la información que usted nos proporciona directamente, como su nombre, los datos de su empresa, su dirección de correo electrónico, sus categorías de servicio, sus regiones y el contenido de sus perfiles, solicitudes de propuestas y mensajes. También recopilamos automáticamente información técnica limitada, como datos del dispositivo y del navegador y actividad de uso, cuando usted interactúa con el Servicio.",
+        title: "A quién se aplica esta política",
+        body: [
+          "Esta política se aplica a los miembros (empresas de oficios, proveedores, administradores de propiedades, agentes inmobiliarios, trabajadores de oficios y otros titulares de cuentas), a los visitantes de pmrfp.com, a las personas que se suscriben a nuestros correos, a los candidatos que postulan a un empleo a través de PMRFP, a las personas que se comunican con nosotros y a las personas cuya información aparece en los registros públicos que republicamos.",
+        ],
       },
       {
-        title: "Cómo la usamos",
-        body: "Usamos su información para operar y mejorar el Servicio, lo que incluye relacionar a los contratistas con oportunidades pertinentes, mostrar las fichas del directorio y las solicitudes de propuestas, enviar notificaciones transaccionales y de coincidencias, procesar suscripciones, brindar soporte y mantener la seguridad.",
+        title: "Información que usted nos proporciona",
+        body: ["Recopilamos la información que usted nos proporciona directamente, por ejemplo:"],
+        list: [
+          "Datos de la cuenta: su nombre, dirección de correo electrónico, número de teléfono, rol y contraseña (o el nombre y el correo de su cuenta de Google si inicia sesión con Google).",
+          "Datos de la empresa: nombre de la empresa, datos de contacto, oficios, regiones de servicio, texto del perfil, fotos, proyectos y casos de estudio.",
+          "Actividad en el Servicio: solicitudes de propuestas que publica, interés que manifiesta en una solicitud, solicitudes guardadas, reseñas, mensajes, fotos y votos en el foro, anuncios del mercado y ofertas de empleo.",
+          "Postulaciones a empleos: el nombre, los datos de contacto y el mensaje que envía, que se transmiten al empleador al que postula.",
+          "Perfiles de trabajadores de oficios: su nombre visible, oficio, región, ciudad, experiencia, certificaciones, disponibilidad, expectativa salarial, presentación y número de teléfono. Usted decide si el perfil se publica y si sus datos de contacto son visibles.",
+          "Mensajes que nos envía: mensajes del formulario de contacto, solicitudes de apoyo para ofertas y correos electrónicos.",
+          "El texto que ingresa en nuestras herramientas asistidas por IA (como el RFP Writer).",
+          "Facturación: los pagos los procesa Stripe. Recibimos su contacto de facturación, su plan, los montos y el estado del pago, no el número completo de su tarjeta.",
+        ],
       },
       {
-        title: "Cookies y analítica",
-        body: "Usamos cookies y tecnologías similares para mantener su sesión iniciada, recordar sus preferencias y entender cómo se usa el Servicio. La analítica agregada nos ayuda a mejorar el rendimiento y las funciones. Puede controlar las cookies desde la configuración de su navegador, aunque algunas funciones podrían no funcionar sin ellas.",
+        title: "Información de registros públicos",
+        body: [
+          "PMRFP republica avisos de licitaciones públicas, registros de contratos adjudicados, resultados de ofertas, permisos de construcción y datos de grandes proyectos de portales gubernamentales de datos abiertos y otras fuentes públicas, según las licencias de datos abiertos o las condiciones de uso de cada fuente. Estos registros pueden incluir nombres de empresas, los datos de contacto del comprador tal como este los publicó (a veces el nombre, el correo y el teléfono laborales de un responsable de compras), los montos de contratos y ofertas, y la ubicación de los proyectos.",
+          "Solo publicamos nombres de empresas. Cuando el nombre de un adjudicatario o licitante parece el de un particular (un nombre de persona sin palabra comercial ni forma jurídica), no publicamos el nombre: el registro se cuenta y se muestra como “Persona física (sin nombre)” o “Licitante particular (sin nombre)”. Un nombre comercial que incluye un nombre de persona junto con una palabra comercial (por ejemplo “Jean Tremblay Excavation”) es un nombre de empresa y se muestra tal como se publicó. Es una regla automatizada; si se equivoca, o si quiere que se corrija o retire un registro sobre usted, consulte nuestra {corrections}.",
+        ],
+      },
+      {
+        title: "Información que se recopila automáticamente",
+        body: ["Cuando usa el Servicio, nosotros y nuestros proveedores recopilamos información técnica limitada:"],
+        list: [
+          "Datos técnicos y de registro que nuestro proveedor de alojamiento guarda al servir las páginas, como la dirección IP, el tipo de navegador y de dispositivo, las páginas solicitadas y la hora.",
+          "El país y la provincia o el estado que nuestro proveedor de alojamiento estima a partir de su dirección IP, que usamos para mostrar el mercado correcto (Canadá o EE. UU.) y prellenar su región. Nunca para el acceso ni la facturación.",
+          "Un hash unidireccional de su dirección IP, que usamos para limitar la frecuencia de solicitudes, proteger contra el spam y contar las visitas a los perfiles.",
+          "Eventos de uso, como completar el registro o iniciar un pago, contados mediante Vercel Web Analytics.",
+        ],
+      },
+      {
+        title: "Cookies y tecnologías similares",
+        body: ["Usamos estas cookies propias:"],
+        list: [
+          "Cookies de inicio de sesión que establece nuestro proveedor de autenticación (Supabase) para mantener su sesión iniciada. Esenciales.",
+          "NEXT_LOCALE (1 año): el idioma que eligió.",
+          "pmrfp_lang_hint (1 año): recuerda que cerró la sugerencia de idioma.",
+          "pmrfp_geo (30 días): su país y su provincia o estado según lo estima nuestro proveedor de alojamiento (por ejemplo “US-TX”). Nunca su dirección IP.",
+          "pmrfp_market (1 año): si eligió ver Canadá o EE. UU.",
+          "pmrfp_acct (1 año): el país y la provincia o el estado de su empresa, para que las páginas coincidan con su cuenta.",
+          "pmrfp_ft (90 días): cómo encontró PMRFP por primera vez (vea abajo).",
+        ],
+        after: [
+          "El almacenamiento local de su navegador también guarda en su propio dispositivo su elección sobre analítica, borradores no enviados (por ejemplo, una solicitud de propuestas que está redactando) y otras comodidades similares. Puede controlar las cookies y el almacenamiento local desde la configuración de su navegador; bloquear las cookies de inicio de sesión le impedirá iniciar sesión.",
+        ],
       },
       {
         title: "Cómo nos encuentra la gente",
-        body: "Para entender cómo la gente encuentra PMRFP, registramos la primera página que visitó y el sitio o la campaña que lo trajo. Una sola cookie propia (pmrfp_ft, guardada 90 días) contiene la dirección de esa primera página sin sus parámetros, solo el dominio del sitio de referencia (nunca la dirección completa), las etiquetas de campaña del enlace, si las hay (utm_source, utm_medium, utm_campaign, utm_content), la fecha, el idioma de la página y su país según lo estima nuestro proveedor de alojamiento. Nunca contiene su dirección IP. Si crea una cuenta, guardamos estos valores con ella para saber qué canales nos traen miembros; también contamos las primeras visitas por página y canal como totales diarios que no identifican a nadie. No usamos rastreadores de terceros ni cookies publicitarias, y no hacemos seguimiento entre sitios. Bloquear o borrar la cookie no afecta al Servicio.",
+        body: [
+          "Para entender cómo la gente encuentra PMRFP, registramos la primera página que visitó y el sitio o la campaña que lo trajo. Una sola cookie propia (pmrfp_ft, guardada 90 días desde su primera visita) contiene la dirección de esa primera página sin sus parámetros, solo el dominio del sitio de referencia (nunca la dirección completa), las etiquetas de campaña del enlace, si las hay (utm_source, utm_medium, utm_campaign, utm_content), las etiquetas de campaña de una visita posterior si son diferentes, la fecha, el idioma de la página y su país según lo estima nuestro proveedor de alojamiento. Nunca contiene su dirección IP, y se descarta cualquier cosa que parezca una dirección de correo electrónico.",
+          "Si crea una cuenta, guardamos estos valores con ella, junto con el canal en el que los clasificamos (por ejemplo búsqueda, correo o redes sociales) y la forma en que se registró (correo o Google), para saber qué canales nos traen miembros. Este registro solo lo ven los administradores de PMRFP y se elimina junto con su cuenta. También contamos las primeras visitas por página y canal como totales diarios que no identifican a nadie. Bloquear o borrar la cookie no afecta al Servicio.",
+        ],
       },
       {
-        title: "Almacenamiento de datos",
-        body: "Los datos de las cuentas y de la plataforma se almacenan mediante Supabase, nuestro proveedor administrado de base de datos y autenticación. Tomamos medidas razonables para que nuestros proveedores de infraestructura manejen los datos de forma segura.",
+        title: "Analítica",
+        body: [
+          "Usamos Vercel Web Analytics y Speed Insights para contar las páginas vistas y medir el rendimiento del sitio. En el sitio en producción también usamos Google Analytics 4, que establece cookies de Google Analytics y envía a Google datos de uso (como las páginas vistas, el tipo de dispositivo y la ubicación aproximada). Puede bloquearlo desde la configuración de su navegador o con el complemento de inhabilitación de Google.",
+          "Si Microsoft Clarity está activado, se lo preguntamos primero: solo se carga si hace clic en “Aceptar analítica” en el aviso, y nunca si lo rechaza. Clarity registra cómo los visitantes usan las páginas (mapas de calor y grabaciones de sesiones). No usamos píxeles de publicidad ni de remarketing.",
+        ],
       },
       {
-        title: "Compartir información",
-        body: "No vendemos su información personal. La información que usted decide publicar, como el perfil de su empresa o una solicitud de propuestas, es visible para otros usuarios como parte del Servicio. Podemos compartir datos con proveedores de servicios que nos ayudan a operar la plataforma (por ejemplo, de alojamiento, pagos y correo electrónico) y cuando la ley lo exija.",
+        title: "Cómo usamos la información",
+        body: ["Usamos la información personal para:"],
+        list: [
+          "operar el Servicio: cuentas, perfiles, el directorio, las solicitudes de propuestas, el foro, los empleos y el mercado;",
+          "relacionar a los contratistas con oportunidades pertinentes y enviar las alertas y los correos que se describen abajo;",
+          "procesar suscripciones, pruebas y pagos;",
+          "brindar soporte y responder mensajes;",
+          "mantener la seguridad del Servicio y prevenir el spam, el fraude y el abuso;",
+          "entender y mejorar el uso del Servicio, principalmente con datos agregados;",
+          "cumplir con la ley.",
+        ],
+        after: ["No vendemos información personal."],
       },
       {
-        title: "Sus derechos",
-        body: "En virtud de la PIPEDA y de la legislación canadiense de privacidad aplicable, usted puede solicitar acceso a la información personal que tenemos sobre usted, pedirnos que la corrijamos o solicitar que la eliminemos, con sujeción a límites legales y operativos. Para ejercer estos derechos, contáctenos mediante los datos que aparecen a continuación.",
+        title: "Correo electrónico y ley antispam (CASL)",
+        body: ["Enviamos estos tipos de correo:"],
+        list: [
+          "Mensajes del servicio y transaccionales: correos de inicio de sesión, de la cuenta y de facturación, estado de la prueba, respuestas a su solicitud de propuestas o a su interés, y otros mensajes necesarios para operar su cuenta.",
+          "Alertas y resúmenes que usted activa: alertas de solicitudes de propuestas y de oportunidades, alertas de solicitudes guardadas y de licitaciones, avisos de respuestas en el foro, el informe semanal para miembros de Trade Pro y en prueba, y el correo semanal gratuito (que solo se envía después de que confirme su dirección).",
+          "Correos de bienvenida: después de que una empresa de oficios se registra, una serie breve (como máximo uno al día) sobre cómo empezar, la prueba gratuita, Trade Pro y la oferta Fundadores 500. Se detiene cuando usted contrata un plan de pago, se da de baja o llega al final de la serie. Solo los enviamos cuando lo permite la ley antispam de Canadá (CASL).",
+          "Contacto comercial: podemos escribir a empresas en direcciones comerciales que publican de forma visible (por ejemplo en su sitio web o en registros públicos de licitaciones), sobre PMRFP en relación con la actividad o el cargo del destinatario, cuando no han indicado que no desean recibir mensajes no solicitados.",
+        ],
+        after: [
+          "Cada correo comercial identifica a PMRFP y a Talkerstein Consulting Group, incluye nuestra dirección postal y tiene un enlace para darse de baja. Los enlaces para darse de baja surten efecto de inmediato; si lo pide por correo, lo atendemos en un plazo de 10 días hábiles. También puede cambiar la mayoría de las preferencias de correo en su cuenta. Darse de baja no detiene los mensajes esenciales del servicio sobre su cuenta.",
+        ],
+      },
+      {
+        title: "Cómo compartimos la información",
+        body: [
+          "La información que usted decide publicar, como el perfil de su empresa, una solicitud de propuestas, una reseña, un mensaje en el foro o un perfil de trabajador publicado, es visible para otras personas como parte del Servicio. Cuando manifiesta interés en una solicitud de propuestas o postula a un empleo, compartimos lo que envía con la persona que lo publicó.",
+          "Compartimos información personal con los proveedores de servicios que nos ayudan a operar PMRFP (indicados abajo), solo en la medida necesaria para los servicios que prestan. También podemos divulgar información cuando la ley lo exija, para proteger derechos y la seguridad, o como parte de una venta o reorganización del negocio, con sujeción a esta política. No vendemos su información personal.",
+        ],
+      },
+      {
+        title: "Proveedores de servicios y dónde se almacenan los datos",
+        body: ["Usamos estos proveedores para operar el Servicio:"],
+        list: [
+          "Supabase: base de datos, inicio de sesión y almacenamiento de archivos.",
+          "Vercel: alojamiento del sitio, analítica y medición del rendimiento.",
+          "Stripe: pagos y facturación.",
+          "Resend: envío de correos electrónicos.",
+          "HighLevel: nuestro sistema de gestión de relaciones con clientes (CRM), para los datos de contacto de miembros y consultas.",
+          "Google: Google Analytics, el inicio de sesión con Google si lo usa, y el servicio de IA Gemini para las funciones asistidas por IA.",
+          "Upstash: limitación de la frecuencia de solicitudes (solo direcciones IP con hash).",
+          "Cloudflare Turnstile: verificación antispam de los mensajes del foro, cuando está activada.",
+          "Microsoft Clarity: solo si lo acepta en el aviso.",
+        ],
+        after: [
+          "Algunos de estos proveedores almacenan o procesan información personal fuera de Quebec y de Canadá, incluso en los Estados Unidos. Allí, la información está sujeta a las leyes de ese país y puede ser accesible para sus autoridades. Nos basamos en los compromisos contractuales de nuestros proveedores para proteger la información personal que tratan por cuenta nuestra.",
+        ],
+      },
+      {
+        title: "Cuánto tiempo conservamos la información",
+        list: [
+          "Información de la cuenta y del perfil: mientras su cuenta esté abierta. Cuando nos pide cerrar su cuenta, la eliminamos o anonimizamos, salvo lo que la ley nos obliga a conservar (por ejemplo, registros de facturación e impuestos).",
+          "Origen del registro: la cookie pmrfp_ft dura como máximo 90 días; la copia guardada con una cuenta se elimina junto con esa cuenta.",
+          "Datos de limitación de frecuencia: direcciones IP con hash, conservadas por poco tiempo (normalmente menos de un día).",
+          "Registros de pruebas: se conservan mientras exista la organización, como constancia de que usó su única prueba.",
+          "Registros de bajas: se conservan para seguir respetando su decisión.",
+          "Datos de registros públicos: se conservan mientras sigan siendo pertinentes y la fuente los publique, o hasta que los corrijamos o retiremos según nuestra {corrections}.",
+        ],
+        body: [],
+        after: ["Todo lo demás se conserva solo el tiempo necesario para los fines indicados arriba y luego se elimina o anonimiza."],
       },
       {
         title: "Seguridad",
-        body: "Usamos medidas de protección administrativas, técnicas y físicas diseñadas para proteger su información. Ningún método de transmisión o almacenamiento es completamente seguro, por lo que no podemos garantizar una seguridad absoluta, pero trabajamos para proteger sus datos y responder con prontitud ante cualquier incidente.",
+        body: [
+          "Usamos medidas de protección administrativas, técnicas y físicas diseñadas para proteger su información, incluidos controles de acceso que limitan quién puede verla. Ningún método de transmisión o almacenamiento es completamente seguro, por lo que no podemos garantizar una seguridad absoluta, pero trabajamos para proteger sus datos y responder con prontitud ante cualquier incidente, lo que incluye avisarle a usted y a las autoridades cuando la ley lo exija.",
+        ],
       },
-    ],
+      {
+        title: "Sus derechos",
+        body: ["En virtud de la PIPEDA y de la ley de privacidad del sector privado de Quebec, usted puede, dentro de los límites que permite la ley:"],
+        list: [
+          "preguntar si tenemos información personal sobre usted y acceder a ella;",
+          "pedirnos que corrijamos (rectifiquemos) información inexacta, incompleta o desactualizada;",
+          "pedirnos que eliminemos información que ya no necesitamos o, cuando la ley lo prevea, que dejemos de difundirla o desindexemos un enlace a ella;",
+          "retirar su consentimiento para un uso de su información (lo que puede impedirnos ofrecerle parte del Servicio);",
+          "cuando la ley lo prevea, recibir la información que nos proporcionó en un formato tecnológico estructurado y de uso común.",
+        ],
+        after: [
+          "Para hacer una solicitud, escriba a nuestro Responsable de Privacidad a {privacyEmail}. Es posible que necesitemos confirmar su identidad. Responderemos en un plazo de 30 días. Si no podemos atender su solicitud, le explicaremos por qué y le indicaremos cómo impugnar nuestra decisión.",
+          "Si no está satisfecho con nuestra respuesta, puede presentar una queja ante la Oficina del Comisionado de Privacidad de Canadá (Office of the Privacy Commissioner of Canada) o, en Quebec, ante la Commission d'accès à l'information du Québec.",
+        ],
+      },
+      {
+        title: "Correcciones y solicitudes de retiro",
+        body: [
+          "Para reportar un error en una ficha, un registro público o un perfil, o para pedirnos que retiremos información personal, use el enlace “Reportar un error o pedir un retiro” donde aparezca, o escriba a {privacyEmail}. Nuestra {corrections} explica qué verificamos y cuánto tarda.",
+        ],
+      },
+      {
+        title: "Menores",
+        body: ["PMRFP está pensado para empresas y profesionales. No está dirigido a menores, y no recopilamos a sabiendas información personal de menores."],
+      },
+      {
+        title: "Cambios en esta política",
+        body: [
+          "Podemos actualizar esta política periódicamente. Cambiaremos la fecha de “última actualización” indicada arriba y, en caso de cambios importantes, daremos un aviso adicional cuando corresponda.",
+        ],
+      },
+    ] as LegalBlock[],
     contact: {
       title: "Contacto",
-      body: "¿Preguntas o solicitudes relacionadas con la privacidad? Escríbanos a {email}.",
+      body: "¿Preguntas o solicitudes relacionadas con la privacidad? Escriba a nuestro Responsable de Privacidad a {privacyEmail}. Para cualquier otro asunto, escríbanos a {email}.",
     },
   },
 
@@ -1614,7 +2443,7 @@ const es: typeof en = {
       },
       {
         title: "Corredores de seguros",
-        body: "Reparaciones relacionadas con reclamos, donde importa la rapidez de un contratista verificado.",
+        body: "Reparaciones relacionadas con reclamos, donde importa la rapidez de un contratista.",
       },
       {
         title: "Administradores de propiedades",
@@ -1630,7 +2459,7 @@ const es: typeof en = {
     why: [
       {
         strong: "Primero, ayude a su cliente.",
-        rest: " Su proyecto recibe ofertas verificadas rápido: mejor resultado, relación más sólida.",
+        rest: " Su proyecto llega rápido a contratistas del oficio: mejor resultado, relación más sólida.",
       },
       {
         strong: "Obtenga reconocimiento público.",

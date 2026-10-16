@@ -66,9 +66,9 @@ const en = {
     subtleCta: "See lanes",
   },
   founding: {
-    eyebrow: "Founding 100 · Ontario trades",
-    headline: "Lock in ${price}/year — for as long as you're a member.",
-    sub: "The first 100 trades to join keep this rate for life. It rises to ${future} after.",
+    eyebrow: "Trade Pro · Ontario trades",
+    headline: "Trade Pro for ${price}/year.",
+    sub: "Full RFP access, matching alerts and priority directory placement.",
     cta: "Claim your rate",
   },
   checklist: {
@@ -174,9 +174,9 @@ const fr: typeof en = {
     subtleCta: "Voir les volets",
   },
   founding: {
-    eyebrow: "Les 100 fondateurs · Entrepreneurs de l'Ontario",
-    headline: "Bloquez {price} $/an — aussi longtemps que vous êtes membre.",
-    sub: "Les 100 premiers entrepreneurs inscrits gardent ce tarif à vie. Il passe ensuite à {future} $.",
+    eyebrow: "Trade Pro · Entrepreneurs de l'Ontario",
+    headline: "Trade Pro à {price} $/an.",
+    sub: "Accès complet aux appels d'offres, alertes ciblées et placement prioritaire dans le répertoire.",
     cta: "Réserver votre tarif",
   },
   checklist: {
@@ -311,9 +311,9 @@ const es: typeof en = {
     subtleCta: "Ver modalidades",
   },
   founding: {
-    eyebrow: "Los 100 fundadores · Contratistas de Ontario",
-    headline: "Asegure ${price} al año — mientras sea miembro.",
-    sub: "Los primeros 100 contratistas que se unan conservan esta tarifa de por vida. Después sube a ${future}.",
+    eyebrow: "Trade Pro · Contratistas de Ontario",
+    headline: "Trade Pro por ${price} al año.",
+    sub: "Acceso completo a las RFP, alertas de coincidencias y ubicación prioritaria en el directorio.",
     cta: "Reserve su tarifa",
   },
   checklist: {

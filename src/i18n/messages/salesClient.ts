@@ -11,7 +11,7 @@ const en = {
   billedAnnually: "~${n}/mo billed annually",
   monthlyNote: "${total}/yr if held all year — switch to annual any time to save ${savings}",
   tradePro: {
-    badge: "Most popular",
+    badge: "Recommended",
     blurb: "Full RFP access and everything you need to win commercial work.",
     features: [
       "Full company profile",
@@ -21,7 +21,7 @@ const en = {
       "Express interest",
       "Matching alerts",
       "Priority placement",
-      "Verified vendor badge for your website",
+      "PMRFP badge for your website",
     ],
     cta: "Join {site}",
   },
@@ -51,7 +51,7 @@ const fr: typeof en = {
   billedAnnually: "~{n} $/mois facturé annuellement",
   monthlyNote: "{total} $/an sur une année complète — passez à l'annuel en tout temps pour économiser {savings} $",
   tradePro: {
-    badge: "Le plus populaire",
+    badge: "Recommandé",
     blurb: "L'accès complet aux appels d'offres et tout ce qu'il faut pour décrocher des contrats commerciaux.",
     features: [
       "Profil d'entreprise complet",
@@ -61,7 +61,7 @@ const fr: typeof en = {
       "Manifestation d'intérêt",
       "Alertes sur mesure",
       "Placement prioritaire",
-      "Badge de fournisseur vérifié pour votre site Web",
+      "Badge PMRFP pour votre site Web",
     ],
     cta: "S'inscrire à {site}",
   },
@@ -91,7 +91,7 @@ const es: typeof en = {
   billedAnnually: "~${n} al mes, facturado anualmente",
   monthlyNote: "${total} al año si lo mantiene todo el año — cambie al plan anual cuando quiera para ahorrar ${savings}",
   tradePro: {
-    badge: "El más popular",
+    badge: "Recomendado",
     blurb: "Acceso completo a las RFP y todo lo que necesita para ganar trabajos comerciales.",
     features: [
       "Perfil completo de la empresa",
@@ -101,7 +101,7 @@ const es: typeof en = {
       "Expresar interés",
       "Alertas de oportunidades",
       "Ubicación prioritaria",
-      "Insignia de proveedor verificado para su sitio web",
+      "Insignia de PMRFP para su sitio web",
     ],
     cta: "Únase a {site}",
   },
