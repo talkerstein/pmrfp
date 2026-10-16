@@ -30,7 +30,7 @@ export default async function AdminAwardHistoryPage({ params }: { params: Promis
   const demo = isDemoMode() || !isServiceConfigured();
   const counts = new Map<string, { rows: number; asOf: string | null }>();
   let bids = 0;
-  let missing = false;
+  const missingFlags: boolean[] = [];
   if (!demo) {
     const db = createServiceClient();
     await Promise.all(
@@ -39,13 +39,14 @@ export default async function AdminAwardHistoryPage({ params }: { params: Promis
           db.from("award_history").select("id", { count: "exact", head: true }).eq("source", s.key),
           db.from("award_history").select("as_of").eq("source", s.key).order("as_of", { ascending: false }).limit(1).maybeSingle<{ as_of: string }>(),
         ]);
-        if (isMissingTableError(error)) missing = true;
+        missingFlags.push(isMissingTableError(error));
         counts.set(s.key, { rows: count ?? 0, asOf: latest.data?.as_of ?? null });
       }),
     );
     const { count } = await db.from("bid_results").select("id", { count: "exact", head: true });
     bids = count ?? 0;
   }
+  const missing = missingFlags.some(Boolean);
   const total = [...counts.values()].reduce((n, c) => n + c.rows, 0);
 
   return (

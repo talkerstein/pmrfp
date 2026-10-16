@@ -121,7 +121,7 @@ export function AwardHistoryUpload({ files }: { files: string[] }) {
             <a href={f} className="text-teal-ink underline" target="_blank" rel="noreferrer">{f.split("/").pop()}</a>
           </span>
         ))}
-        . Leave "Since" empty for the last five years.
+        . Leave &ldquo;Since&rdquo; empty for the last five years.
       </p>
       {log.length > 0 && (
         <div className="rounded-md border border-border bg-secondary/40 p-2 text-sm" role="status">
