@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { isLifetimeSubscriptionId } from "@/lib/founding/config";
+import { INTEL_PRODUCT } from "@/lib/intel/pricing";
 
 export function isStripeConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_TRADE_PRO_ANNUAL);
@@ -22,6 +23,8 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:30
  */
 export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Promise<void> {
   if (!isServiceConfigured()) return;
+  // Award Intelligence has its own table (intel_access): never a Trade Pro row.
+  if (sub.metadata?.product === INTEL_PRODUCT) return;
   const orgId = sub.metadata?.organization_id;
   if (!orgId) return;
 
