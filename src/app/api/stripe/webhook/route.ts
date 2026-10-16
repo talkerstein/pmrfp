@@ -13,6 +13,8 @@ import { FOUNDING_PRODUCT } from "@/lib/founding/config";
 import { grantLifetime, isOrgLifetime } from "@/lib/founding/server";
 import { SPONSOR_PRODUCT } from "@/lib/sponsors/pricing";
 import { handleSponsorCheckout, syncSponsorSubscription } from "@/lib/sponsors/stripe";
+import { INTEL_PRODUCT } from "@/lib/intel/pricing";
+import { handleIntelCheckout, syncIntelSubscription } from "@/lib/intel/stripe";
 
 /**
  * Founding 500 purchase. Never refuses: the cap was checked at checkout, and
@@ -125,6 +127,11 @@ export async function POST(request: Request) {
         // Monthly sponsorship (/advertise): its own subscription, never an org plan.
         if (cs.metadata?.product === SPONSOR_PRODUCT) {
           await handleSponsorCheckout(cs);
+          break;
+        }
+        // Award Intelligence: its own entitlement (intel_access), never the org's Trade Pro row.
+        if (cs.metadata?.product === INTEL_PRODUCT) {
+          await handleIntelCheckout(cs, stripe);
           break;
         }
         // One-time Project Spotlight purchase: tell the owner, and tell the
@@ -267,6 +274,10 @@ export async function POST(request: Request) {
           await syncSponsorSubscription(sub);
           break;
         }
+        if (sub.metadata?.product === INTEL_PRODUCT) {
+          await syncIntelSubscription(sub);
+          break;
+        }
         await syncSubscriptionFromStripe(sub);
 
         // Revenue leak: nothing previously demoted a churned org out of the
@@ -343,7 +354,11 @@ export async function POST(request: Request) {
         // must not mark them past_due again.
         if (subId) {
           const sub = await stripe.subscriptions.retrieve(subId);
-          if (sub.metadata?.organization_id) {
+          // An Award Intelligence sub carries organization_id too: it must
+          // never be synced into the org's Trade Pro subscriptions row.
+          if (sub.metadata?.product === INTEL_PRODUCT) {
+            await syncIntelSubscription(sub);
+          } else if (sub.metadata?.organization_id) {
             await syncSubscriptionFromStripe(sub);
           } else if (isServiceConfigured() && sub.status !== "active" && sub.status !== "trialing") {
             // No org id on the subscription (e.g. a hand-linked row): keep the

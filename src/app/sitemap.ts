@@ -141,6 +141,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // awards) — the same rule that keeps the others noindexed.
   const benchCombos = benchmarkCombos(benchmarkAwards(rfps, { regionProvince: new Map(regions.map((rg) => [rg.name, rg.province] as const)) }), torontoToday()).filter((c) => c.enough);
   if (benchCombos.length) entries.push({ url: `${base}/benchmarks`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+  // Award Intelligence: only the public landing page; every /intel/* page is noindexed paid analysis.
+  entries.push({ url: `${base}/intel`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
   for (const c of benchCombos) {
     const slug = categories.find((cat) => cat.name === c.trade)?.slug;
     if (slug) entries.push({ url: `${base}/benchmarks/${slug}/${provinceSlug(c.province)}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
