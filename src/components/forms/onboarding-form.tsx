@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useLang, useT } from "@/i18n/provider";
 import { regionName, tradeName } from "@/i18n/terms";
+import { localizePath } from "@/i18n/config";
+import { VISITOR_UPGRADE_PATH } from "@/lib/auth/visitor-upgrade";
 
 type Option = { slug: string; name: string };
 
@@ -38,6 +40,7 @@ export function OnboardingForm({
   award?: string | null;
 }) {
   const t = useT("auth").onboarding;
+  const tu = useT("auth").visitorUpgrade;
   const lang = useLang();
   const [state, action, pending] = useActionState(completeOnboardingAction, {} as ActionState);
   const isListing = role === "trade" || role === "supplier";
@@ -51,6 +54,12 @@ export function OnboardingForm({
         <input type="hidden" name="intent" value="browsing" />
         <input type="hidden" name="lang" value={lang} />
         {next && <input type="hidden" name="next" value={next} />}
+        {/* Safety net: businesses that picked "just looking" by mistake. */}
+        <div className="v3-su-biz" style={{ marginTop: 0 }}>
+          <b>{tu.bannerHead}</b>
+          <span>{tu.bannerBody}</span>
+          <span className="act"><a className="v3-su-go" href={localizePath(VISITOR_UPGRADE_PATH, lang)}>{tu.bannerCta}</a></span>
+        </div>
         <p className="text-sm text-muted-foreground">
           {t.browseReady}
         </p>
