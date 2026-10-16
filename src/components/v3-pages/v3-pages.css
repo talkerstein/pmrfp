@@ -671,3 +671,21 @@
   .vp-faq-list .q { font-size: 17px; }
   .vp-faq-list .a { padding: 0 12px 18px 44px; font-size: 16px; }
 }
+
+/* Pricing: "Project leads before they're tendered" (lead feed + 14-day trial). */
+.vp-leads { padding-top: 88px; padding-bottom: 72px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 32px; align-items: start; }
+.vp-leads-l { grid-column: span 7; min-width: 0; }
+.vp-leads-l .ctas { margin-top: 28px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; color: var(--sub); }
+.vp-leads-l .ctas form { display: inline; max-width: 100%; }
+.vp-leads-l .nt { font-size: 14px; }
+.vp-leads-r { grid-column: 9 / span 4; min-width: 0; }
+.vp-leads-r dl { margin: 0; display: grid; row-gap: 18px; }
+.vp-leads-r dl > div { display: flex; flex-direction: column; border-top: 2px solid var(--navy); padding-top: 10px; }
+.vp-leads-r dd { margin: 0; font-family: var(--fp); font-weight: 700; font-size: 44px; line-height: 1; letter-spacing: -.03em; color: var(--navy); }
+.vp-leads-r dt { font-size: 14px; color: var(--sub); margin-top: 6px; }
+.vp-leads-r .note { margin: 14px 0 0; font-size: 13px; color: var(--sub); }
+@media (max-width: 1023px) {
+  .vp-leads { grid-template-columns: minmax(0, 1fr); row-gap: 32px; padding-top: 56px; padding-bottom: 48px; }
+  .vp-leads-l, .vp-leads-r { grid-column: auto; }
+  .vp-leads-r dd { font-size: 32px; }
+}

@@ -5,12 +5,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Organization, UserProfile, UserRole } from "@/types/db";
+import { NO_TRIAL, isMissingTableError, isProEntitled, trialState, type TrialState } from "@/lib/entitlement/trial";
 
 export interface SessionContext {
   userId: string;
   profile: UserProfile;
   organization: Organization | null;
+  /** Trade Pro right now: paying, or a 14-day trial that hasn't ended. */
   hasTradeAccess: boolean;
+  /** Paying for Trade Pro (or Featured). False during a trial. */
+  paid?: boolean;
+  /** The organization's trial, if it ever started one (lib/entitlement/trial). */
+  trial?: TrialState;
 }
 
 /** The authenticated auth user id, or null (also null in demo mode). */
@@ -48,7 +54,7 @@ export async function loadSessionContext(
     .eq("id", user.id)
     .maybeSingle<UserProfile>();
   if (!profile) {
-    return { userId: user.id, profile: fallbackProfile(user.id, user.email), organization: null, hasTradeAccess: false };
+    return { userId: user.id, profile: fallbackProfile(user.id, user.email), organization: null, hasTradeAccess: false, paid: false, trial: NO_TRIAL };
   }
 
   const { data: membership } = await supabase
@@ -67,13 +73,15 @@ export async function loadSessionContext(
     organization = org ?? null;
   }
 
-  const hasTradeAccess = await computeTradeAccess(supabase, organization);
-  return { userId: user.id, profile, organization, hasTradeAccess };
+  const { paid, trial } = await computeTradeAccess(supabase, organization);
+  return { userId: user.id, profile, organization, hasTradeAccess: isProEntitled({ paid, trial }), paid, trial };
 }
 
 /**
  * Mirror of the SQL has_active_trade_access(): active|comped sub, tier
- * pro/featured, org not suspended.
+ * pro/featured, org not suspended — OR (trade companies) a 14-day trial that
+ * hasn't ended (trade_trials, migration 20261016000001). This is THE Trade
+ * Pro check: gates read session.hasTradeAccess, never their own query.
  *
  * The tier check matters as much as the status check: the SEO Listing tier
  * is directory-only (see PRICING.seoNote), so an active SEO subscription
@@ -84,10 +92,33 @@ export async function loadSessionContext(
 async function computeTradeAccess(
   supabase: SupabaseClient,
   organization: Organization | null,
-): Promise<boolean> {
-  if (!organization) return false;
-  if (organization.organization_type !== "trade_company" && organization.organization_type !== "supplier") return false;
-  if (organization.status === "suspended") return false;
+): Promise<{ paid: boolean; trial: TrialState }> {
+  const none = { paid: false, trial: NO_TRIAL };
+  if (!organization) return none;
+  if (organization.organization_type !== "trade_company" && organization.organization_type !== "supplier") return none;
+  if (organization.status === "suspended") return none;
+  const [paid, trial] = await Promise.all([
+    paidTradeAccess(supabase, organization),
+    organization.organization_type === "trade_company" ? readTrial(supabase, organization.id) : Promise.resolve(NO_TRIAL),
+  ]);
+  return { paid, trial };
+}
+
+/** The organization's trial, read as the member (RLS). A missing table or any error = no trial. */
+async function readTrial(supabase: SupabaseClient, organizationId: string): Promise<TrialState> {
+  const { data, error } = await supabase
+    .from("trade_trials")
+    .select("started_at,ends_at")
+    .eq("organization_id", organizationId)
+    .maybeSingle<{ started_at: string; ends_at: string }>();
+  if (error) {
+    if (!isMissingTableError(error)) console.warn("[access] trial read failed", error.message);
+    return NO_TRIAL;
+  }
+  return data ? trialState({ startedAt: data.started_at, endsAt: data.ends_at }) : NO_TRIAL;
+}
+
+async function paidTradeAccess(supabase: SupabaseClient, organization: Organization): Promise<boolean> {
   const { data, error } = await supabase
     .from("subscriptions")
     .select("status,tier")
@@ -200,6 +231,8 @@ function demoSession(role: UserRole): SessionContext {
         }
       : null,
     hasTradeAccess: isListing,
+    paid: isListing,
+    trial: NO_TRIAL,
   };
 }
 

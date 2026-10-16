@@ -49,13 +49,15 @@ export default async function ForTradesPage({ params }: { params: Promise<object
           f1Img: "/images/photos/floor-coating-crew.webp",
           getLabel: p.included.eyebrow,
           getHead: p.included.title,
-          tags: [it.feed.title, it.save.title, it.bid.title, it.alerts.title, it.profile.title],
+          tags: [it.leads.title, it.winners.title, it.feed.title, it.benchmarks.title, it.alerts.title, it.profile.title],
           today: v ? { head: p.opportunity.title, items: v.pains } : undefined,
+          // Lead with project leads (the photo card), then open bids (the card
+          // that shows today's open count), who just won, price benchmarks.
           features: [
-            { t: it.directory.title, d: it.directory.body },
+            { t: it.leads.title, d: it.leads.body },
             { t: it.feed.title, d: it.feed.body },
-            { t: it.bid.title, d: it.bid.body, drops: [it.save.title, it.alerts.title] },
-            { t: it.profile.title, d: it.profile.body, chips: p.who.trades.slice(0, 5) },
+            { t: it.winners.title, d: it.winners.body, drops: [it.alerts.title, it.save.title] },
+            { t: it.benchmarks.title, d: it.benchmarks.body, chips: p.who.trades.slice(0, 5) },
             { t: fmt(p.badge.title, { site: SITE.name }), d: p.badge.body, href: "/badge" },
           ],
           steps: getT("seo").vertical.steps.seller.map((s) => ({ t: s.title, d: s.desc })),

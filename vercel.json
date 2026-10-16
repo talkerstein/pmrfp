@@ -78,6 +78,10 @@
       "schedule": "56 9 * * 0"
     },
     {
+      "path": "/api/cron/lead-alerts",
+      "schedule": "20 14 * * *"
+    },
+    {
       "path": "/api/cron/weekly-digest",
       "schedule": "5,20,35,50 14 * * 2"
     }

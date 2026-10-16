@@ -22,6 +22,12 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
+import { getMajorProjects } from "@/lib/major-projects/data";
+import { AWARD_DAYS, isLiveLeadProject } from "@/lib/leads/match";
+import { hubWins } from "@/lib/gc/hub";
+import { winnerKey } from "@/lib/data/winners";
+import { torontoToday } from "@/lib/data/monthly-winners-load";
+import { startTrialAction } from "@/lib/entitlement/actions";
 
 /** Board numbers and the Founding 500 copy refresh about once a minute. */
 export const revalidate = 60;
@@ -74,12 +80,23 @@ export default async function PricingPage({ params }: { params: Promise<object> 
   const sales = getT("sales");
   const founding = getT("founding");
   const v = getT("v3Pages").pricing;
-  const [stats, rfps, categories, sold] = await Promise.all([
+  const tl = getT("leads").pricing;
+  const [stats, rfps, categories, sold, projects] = await Promise.all([
     getPlatformStats().catch((): PlatformStats => ({ rfpsPostedLast30Days: 0, tradesListed: 0 })),
     listAllRfpsCached().catch(() => [] as RfpListItem[]),
     getCategories().catch(() => []),
     cachedLifetimeCount().catch(() => null),
+    // Shared cached snapshot; [] until the major-projects tables exist.
+    getMajorProjects().catch(() => []),
   ]);
+  // Lead counts from the data, per country (projects and permits are Canada only).
+  const today = torontoToday();
+  const liveProjects = projects.filter((p) => isLiveLeadProject(p, today)).length;
+  const wins = hubWins(rfps, [], { today, days: AWARD_DAYS });
+  const winners = {
+    CA: new Set(wins.filter((w) => rfpMarket(w) === "CA").map((w) => winnerKey(w.winner))).size,
+    US: new Set(wins.filter((w) => rfpMarket(w) === "US").map((w) => winnerKey(w.winner))).size,
+  };
   // Country-first: the page is cached, so each country's numbers and preview
   // ship and the visitor's shows (ByMarket). Never the two added together.
   const boards = boardStatsByCountry(rfps);
@@ -171,6 +188,37 @@ export default async function PricingPage({ params }: { params: Promise<object> 
         </section>
         <PricingPlans t={v.plans} lang={lang} seoMonthly={seoMonthly} proMonthly={proMonthly} />
       </div>
+
+      <section className="v3-wrap vp-leads" data-section="pricing-leads">
+        <div className="vp-leads-l">
+          <div className="v3-eyebrow">{tl.eyebrow}</div>
+          <h2 className="vp-h2">{byMarket((c) => (c === "CA" && liveProjects > 0 ? tl.title : tl.titleUs))}</h2>
+          <p className="vp-lead dark">{byMarket((c) => (c === "US" ? tl.bodyUs : liveProjects > 0 ? tl.body : tl.bodyNoProjects))}</p>
+          <div className="ctas">
+            <form action={startTrialAction}>
+              <input type="hidden" name="source" value="pricing" />
+              <input type="hidden" name="lang" value={lang} />
+              <button type="submit" className="v3-pill navy vp-big" data-action="start-trial">{tl.trialCta}</button>
+            </form>
+            <span className="nt">{tl.trialNote}</span>
+          </div>
+        </div>
+        <div className="vp-leads-r">
+        <dl>
+          {liveProjects > 0 && (
+            <ByMarket
+              ca={<div><dd>{num(liveProjects)}</dd><dt>{tl.projects}</dt></div>}
+              us={<></>}
+            />
+          )}
+          {boards.CA.open + boards.US.open > 0 && <div><dd>{byMarket((c) => num(boards[c].open))}</dd><dt>{tl.bids}</dt></div>}
+          {winners.CA + winners.US > 0 && (
+            <div><dd>{byMarket((c) => num(winners[c]))}</dd><dt>{tl.winners}</dt></div>
+          )}
+        </dl>
+        {liveProjects > 0 && <p className="note">{tl.canadaNote}</p>}
+        </div>
+      </section>
 
       <section className="vp-terms">
         <div className="v3-wrap">

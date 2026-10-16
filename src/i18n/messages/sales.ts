@@ -47,7 +47,7 @@ const en = {
     },
     eyebrow: "Pricing",
     title: "Simple pricing, built for trades.",
-    lead: "Get found for free, or unlock full RFP access with Trade Pro. Property managers, builders, and owners post projects at no cost.",
+    lead: "Trade Pro gets you project leads before they're tendered, every open bid in your trade, and what similar contracts sold for. Or get found for free. Property managers, builders, and owners post projects at no cost.",
     free: {
       name: "Free",
       blurb: "Get listed and discoverable — no RFP access.",
@@ -114,11 +114,11 @@ const en = {
     meta: {
       title: "For Trade Companies",
       description:
-        "Get discovered for commercial property work. PMRFP helps trades and contractors get listed, monitor RFP opportunities, and express interest in one focused place.",
+        "Project leads before they're tendered: major projects, $3M+ building permits and contractors who just won public work in your trade and area, plus every open bid and what similar contracts sold for.",
     },
     eyebrow: "For trade companies",
-    title: "Get discovered for commercial property work.",
-    lead: "Most building work goes to whoever the property manager already knows. {site} is where they post RFPs — get listed, watch your trade and region, and bid.",
+    title: "Project leads before they're tendered.",
+    lead: "Most trade work is hired by the general contractor long before anything is posted. {site} shows you the projects early (major projects, building permits over $3M, development applications) and who just won public work in your trade, plus every open bid and what similar contracts sold for.",
     join: "Join as a Trade Company",
     seePricing: "See pricing",
     comparePlans: "Compare plans",
@@ -138,6 +138,18 @@ const en = {
       eyebrow: "What's included",
       title: "Everything you need to get found and win building work",
       items: {
+        leads: {
+          title: "Project leads",
+          body: "Major projects, building permits over $3M and large development applications in your area (Canada), with the general contractor where it's public, so you can get on the bid list before the trade packages go out.",
+        },
+        winners: {
+          title: "Who just won",
+          body: "Contractors who just won public work in your trade and region, by name: the companies about to hire subs.",
+        },
+        benchmarks: {
+          title: "Price benchmarks",
+          body: "What similar public contracts sold for, so you can price your bid.",
+        },
         profile: {
           title: "Company profile",
           body: "A structured, professional profile showing your services, categories, and regions.",
@@ -441,7 +453,7 @@ const fr: typeof en = {
     },
     eyebrow: "Tarifs",
     title: "Des tarifs simples, pensés pour les entrepreneurs.",
-    lead: "Faites-vous trouver gratuitement, ou débloquez l'accès complet aux appels d'offres avec Trade Pro. Les gestionnaires immobiliers, constructeurs et propriétaires publient leurs projets sans frais.",
+    lead: "Trade Pro vous donne des projets avant leur appel d'offres, tous les appels d'offres ouverts dans votre corps de métier et le prix de contrats semblables. Ou faites-vous trouver gratuitement. Les gestionnaires immobiliers, constructeurs et propriétaires publient leurs projets sans frais.",
     free: {
       name: "Gratuit",
       blurb: "Soyez inscrit et visible — sans accès aux appels d'offres.",
@@ -508,11 +520,11 @@ const fr: typeof en = {
     meta: {
       title: "Pour les entrepreneurs",
       description:
-        "Faites-vous connaître pour des contrats en immobilier commercial. PMRFP aide les gens de métier et les entrepreneurs à s'inscrire au répertoire, à suivre les appels d'offres et à manifester leur intérêt, au même endroit.",
+        "Des projets avant leur appel d'offres : grands projets, permis de construire de 3 M$ et plus, et entrepreneurs qui viennent de décrocher un contrat public dans votre corps de métier et votre région, plus tous les appels d'offres ouverts et le prix de contrats semblables.",
     },
     eyebrow: "Pour les entrepreneurs",
-    title: "Faites-vous connaître pour des contrats en immobilier commercial.",
-    lead: "La plupart des travaux d'immeubles vont aux entrepreneurs que le gestionnaire immobilier connaît déjà. C'est sur {site} qu'il publie ses appels d'offres — inscrivez-vous, suivez votre corps de métier et votre région, et soumissionnez.",
+    title: "Des projets avant leur appel d'offres.",
+    lead: "La plupart des travaux de métier sont confiés par l'entrepreneur général bien avant toute publication. {site} vous montre les projets tôt (grands projets, permis de construire de plus de 3 M$, demandes d'aménagement) et qui vient de décrocher un contrat public dans votre corps de métier, ainsi que tous les appels d'offres ouverts et le prix de contrats semblables.",
     join: "S'inscrire comme entrepreneur",
     seePricing: "Voir les tarifs",
     comparePlans: "Comparer les forfaits",
@@ -533,6 +545,18 @@ const fr: typeof en = {
       eyebrow: "Ce qui est inclus",
       title: "Tout ce qu'il faut pour vous faire trouver et décrocher des contrats",
       items: {
+        leads: {
+          title: "Occasions de projets",
+          body: "Grands projets, permis de construire de plus de 3 M$ et grandes demandes d'aménagement dans votre région (Canada), avec l'entrepreneur général quand il est public, pour vous inscrire sur la liste de soumissionnaires avant la sortie des lots.",
+        },
+        winners: {
+          title: "Qui vient de gagner",
+          body: "Les entrepreneurs qui viennent de décrocher un contrat public dans votre corps de métier et votre région, nommés : ceux qui s'apprêtent à embaucher des sous-traitants.",
+        },
+        benchmarks: {
+          title: "Prix de référence",
+          body: "À combien se sont octroyés des contrats publics semblables, pour fixer le prix de votre soumission.",
+        },
         profile: {
           title: "Profil d'entreprise",
           body: "Un profil structuré et professionnel qui présente vos services, vos catégories et vos régions.",
@@ -835,7 +859,7 @@ const es: typeof en = {
     },
     eyebrow: "Precios",
     title: "Precios simples, pensados para contratistas.",
-    lead: "Hágase visible gratis o desbloquee el acceso completo a las RFP con Trade Pro. Los administradores de propiedades, constructores y propietarios publican proyectos sin costo.",
+    lead: "Trade Pro le da proyectos antes de que salgan a licitación, todas las licitaciones abiertas en su oficio y cuánto se pagó por contratos similares. O hágase visible gratis. Los administradores de propiedades, constructores y propietarios publican proyectos sin costo.",
     free: {
       name: "Gratis",
       blurb: "Aparezca en el directorio y hágase visible — sin acceso a las RFP.",
@@ -902,11 +926,11 @@ const es: typeof en = {
     meta: {
       title: "Para empresas de oficios",
       description:
-        "Hágase visible para trabajos en propiedades comerciales. PMRFP ayuda a los oficios y contratistas a aparecer en el directorio, seguir oportunidades de RFP y expresar interés en un solo lugar.",
+        "Proyectos antes de que salgan a licitación: grandes proyectos, permisos de construcción de $3M o más y contratistas que acaban de ganar obra pública en su oficio y zona, además de todas las licitaciones abiertas y cuánto se pagó por contratos similares.",
     },
     eyebrow: "Para empresas de oficios",
-    title: "Hágase visible para trabajos en propiedades comerciales.",
-    lead: "La mayoría de los trabajos en edificios se los lleva quien el administrador de propiedades ya conoce. {site} es donde publican sus RFP — regístrese, siga su oficio y su región, y presente ofertas.",
+    title: "Proyectos antes de que salgan a licitación.",
+    lead: "La mayor parte del trabajo de oficios la contrata el contratista general mucho antes de que se publique algo. {site} le muestra los proyectos temprano (grandes proyectos, permisos de construcción de más de $3M, solicitudes de desarrollo) y quién acaba de ganar obra pública en su oficio, además de todas las licitaciones abiertas y cuánto se pagó por contratos similares.",
     join: "Registrarse como contratista",
     seePricing: "Ver precios",
     comparePlans: "Comparar planes",
@@ -926,6 +950,18 @@ const es: typeof en = {
       eyebrow: "Qué incluye",
       title: "Todo lo que necesita para hacerse visible y ganar trabajos en edificios",
       items: {
+        leads: {
+          title: "Oportunidades de proyectos",
+          body: "Grandes proyectos, permisos de construcción de más de $3M y grandes solicitudes de desarrollo en su zona (Canadá), con el contratista general cuando es público, para entrar en la lista de oferentes antes de que salgan los paquetes de oficios.",
+        },
+        winners: {
+          title: "Quién acaba de ganar",
+          body: "Los contratistas que acaban de ganar obra pública en su oficio y región, con nombre: las empresas que están por contratar subcontratistas.",
+        },
+        benchmarks: {
+          title: "Precios de referencia",
+          body: "Cuánto se pagó por contratos públicos similares, para poner precio a su oferta.",
+        },
         profile: {
           title: "Perfil de la empresa",
           body: "Un perfil estructurado y profesional que muestra sus servicios, categorías y regiones.",
