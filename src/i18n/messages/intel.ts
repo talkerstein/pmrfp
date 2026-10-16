@@ -160,6 +160,8 @@ const en = {
     none: "No recurring contracts match these filters yet.",
     status: { past: "Term likely over", due: "Window open now", upcoming: "Opens within 12 months", later: "Later" },
     how: {
+      "stated-end-date": "Contract end date on record ({date})",
+      "derived-end-date": "End date from the term stated in the contract ({date})",
       "stated-years": "Period stated in the notice ({from}–{to})",
       "stated-duration": "Term stated in the notice ({months} months)",
       "stated-seasons": "{n} seasons stated in the notice",
@@ -169,6 +171,7 @@ const en = {
     rebidMonths: "When these rebids are expected (month of year)",
     methodTitle: "How the dates are estimated",
     method: [
+      "When a contract record states its end date (Government of Canada contract disclosure, CanadaBuys, SEAO, USAspending), we use that date: the rebid window opens 4 months before the contract ends and, when the record also gives the end date with every option exercised, stays open until then. Rows say \"Contract end date on record\".",
       "We start from the award date on the official notice. When the notice states the term (\"2026-2029\", \"winters 2026-2027 to 2029-2030\", \"six winter seasons\", \"3-year\", \"36 months\", \"3+2\"), we use it; option years stated in the notice keep the window open longer. Today we read the notice title; terms buried in the full tender documents aren't picked up yet.",
       "When the notice says nothing about the term, we assume a typical 3-year term and say so on the row: \"Estimated from typical 3-year terms\". Buyers often add option years, so a contract can run longer.",
       "The next award is expected at the same time of year as this one, one term later (buyers re-tender seasonal work in the same months: snow clearing is mostly awarded May to August). The window opens 4 months before that. These are estimates to plan around, not dates the buyer has announced: watch the buyer's portal.",
@@ -352,6 +355,8 @@ const fr: typeof en = {
     none: "Aucun contrat récurrent ne correspond à ces filtres pour l'instant.",
     status: { past: "Terme probablement échu", due: "Fenêtre ouverte", upcoming: "S'ouvre d'ici 12 mois", later: "Plus tard" },
     how: {
+      "stated-end-date": "Date de fin du contrat au dossier ({date})",
+      "derived-end-date": "Date de fin tirée de la durée indiquée au contrat ({date})",
       "stated-years": "Période indiquée dans l'avis ({from}–{to})",
       "stated-duration": "Durée indiquée dans l'avis ({months} mois)",
       "stated-seasons": "{n} saisons indiquées dans l'avis",
@@ -361,6 +366,7 @@ const fr: typeof en = {
     rebidMonths: "Quand ces nouveaux appels d'offres sont attendus (mois de l'année)",
     methodTitle: "Comment les dates sont estimées",
     method: [
+      "Quand la fiche du contrat indique sa date de fin (divulgation des contrats du gouvernement du Canada, AchatsCanada, SEAO, USAspending), nous l'utilisons : la fenêtre de relance s'ouvre 4 mois avant la fin du contrat et, si la fiche donne aussi la fin avec toutes les options levées, reste ouverte jusque-là. La ligne l'indique : « Date de fin du contrat au dossier ».",
       "Nous partons de la date d'octroi indiquée dans l'avis officiel. Quand l'avis indique la durée (« 2026-2029 », « hivers 2026-2027 à 2029-2030 », « six saisons », « 3 ans », « 36 mois », « 3+2 »), nous l'utilisons; les années d'option indiquées dans l'avis prolongent la fenêtre. Pour l'instant, nous lisons le titre de l'avis; les durées inscrites seulement dans les documents d'appel d'offres ne sont pas encore repérées.",
       "Quand l'avis ne dit rien de la durée, nous présumons une durée typique de 3 ans et l'indiquons sur la ligne : « Estimé selon une durée typique de 3 ans ». Les donneurs d'ouvrage ajoutent souvent des années d'option; un contrat peut donc durer plus longtemps.",
       "Le prochain octroi est attendu à la même période de l'année que celui-ci, une durée plus tard (les donneurs d'ouvrage relancent les services saisonniers aux mêmes mois : le déneigement est surtout octroyé de mai à août). La fenêtre s'ouvre 4 mois avant. Ce sont des estimations pour planifier, pas des dates annoncées par le donneur d'ouvrage : surveillez son portail.",
@@ -544,6 +550,8 @@ const es: typeof en = {
     none: "Aún no hay contratos recurrentes que coincidan con estos filtros.",
     status: { past: "Plazo probablemente vencido", due: "Ventana abierta ahora", upcoming: "Se abre en 12 meses", later: "Más adelante" },
     how: {
+      "stated-end-date": "Fecha de fin del contrato registrada ({date})",
+      "derived-end-date": "Fecha de fin según el plazo indicado en el contrato ({date})",
       "stated-years": "Período indicado en el aviso ({from}–{to})",
       "stated-duration": "Plazo indicado en el aviso ({months} meses)",
       "stated-seasons": "{n} temporadas indicadas en el aviso",
@@ -553,6 +561,7 @@ const es: typeof en = {
     rebidMonths: "Cuándo se esperan estas nuevas licitaciones (mes del año)",
     methodTitle: "Cómo se estiman las fechas",
     method: [
+      "Cuando el registro del contrato indica su fecha de fin (divulgación de contratos del Gobierno de Canadá, CanadaBuys, SEAO, USAspending), usamos esa fecha: la ventana de nueva licitación se abre 4 meses antes del fin del contrato y, si el registro también da el fin con todas las opciones ejercidas, sigue abierta hasta entonces. La fila lo indica: \"Fecha de fin del contrato registrada\".",
       "Partimos de la fecha de adjudicación del aviso oficial. Cuando el aviso indica el plazo (\"2026-2029\", \"inviernos 2026-2027 a 2029-2030\", \"seis temporadas\", \"3 años\", \"36 meses\", \"3+2\"), lo usamos; los años de opción indicados en el aviso mantienen la ventana abierta más tiempo. Por ahora leemos el título del aviso; los plazos que solo aparecen en los documentos completos de la licitación aún no se detectan.",
       "Cuando el aviso no dice nada del plazo, suponemos un plazo típico de 3 años y lo indicamos en la fila: \"Estimado con plazos típicos de 3 años\". Los compradores suelen agregar años de opción, así que un contrato puede durar más.",
       "La próxima adjudicación se espera en la misma época del año que esta, un plazo después (los compradores vuelven a licitar los servicios de temporada en los mismos meses: la remoción de nieve se adjudica sobre todo de mayo a agosto). La ventana se abre 4 meses antes. Son estimaciones para planificar, no fechas anunciadas por el comprador: vigile el portal del comprador.",

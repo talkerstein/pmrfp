@@ -4,6 +4,7 @@
  * BOM first so Excel keeps Quebec accents.
  */
 import type { BuyerIndexRow, BuyerProfile, CompanyIndexRow, CompanyProfile, IntelAward, MarketIndexRow, MarketShare, RenewalItem } from "./model";
+import { awardHref } from "./history";
 
 const BOM = "﻿";
 
@@ -23,7 +24,7 @@ const INDIVIDUAL = "Individual (not named)";
 function awardRows(awards: readonly IntelAward[], siteUrl: string) {
   const currency = awards[0]?.currency ?? "CAD";
   const header = ["award_date", "contract", "buyer", "winner", `value_${currency.toLowerCase()}`, "currency", "province_or_state", "city", "country", "trades", "pmrfp_url", "official_notice", "source_licence"];
-  const rows = awards.map((a) => [a.date, a.title, a.buyer, a.winner ?? INDIVIDUAL, a.amount, a.currency, a.province, a.city, a.country, a.trades.join("; "), `${siteUrl}/rfps/${a.slug}`, a.noticeUrl, a.attribution]);
+  const rows = awards.map((a) => [a.date, a.title, a.buyer, a.winner ?? INDIVIDUAL, a.amount, a.currency, a.province, a.city, a.country, a.trades.join("; "), `${siteUrl}${awardHref(a)}`, a.noticeUrl, a.attribution]);
   return { header, rows };
 }
 
@@ -49,6 +50,8 @@ export function marketCsv(m: MarketShare, siteUrl: string): string {
 }
 
 export const TERM_LABEL: Record<RenewalItem["term"]["source"], string> = {
+  "stated-end-date": "Contract end date on record",
+  "derived-end-date": "End date from the term stated in the contract",
   "stated-years": "Period stated in the notice",
   "stated-seasons": "Seasons stated in the notice",
   "stated-duration": "Term stated in the notice",
@@ -56,6 +59,7 @@ export const TERM_LABEL: Record<RenewalItem["term"]["source"], string> = {
 };
 
 function statedTerm(term: RenewalItem["term"]): string {
+  if (term.endDate && (term.source === "stated-end-date" || term.source === "derived-end-date")) return `ends ${term.endDate}`;
   if (term.source === "stated-years") return `${term.startYear}-${term.endYear}`;
   if (term.source === "stated-seasons") return `${term.seasons} seasons`;
   if (term.source === "stated-duration") return `${term.months} months`;
@@ -69,7 +73,7 @@ export function renewalsCsv(items: readonly RenewalItem[], siteUrl: string): str
     it.windowStart, it.windowEnd, it.expectedRebid, it.status, TERM_LABEL[it.term.source],
     statedTerm(it.term), it.term.optionMonths ? Math.round(it.term.optionMonths / 12) : "",
     it.trade, it.award.title, it.award.buyer, it.award.winner ?? INDIVIDUAL, it.award.date, it.award.amount, it.award.currency, it.award.province, it.award.city, it.award.country,
-    `${siteUrl}/rfps/${it.award.slug}`, it.award.noticeUrl,
+    `${siteUrl}${awardHref(it.award)}`, it.award.noticeUrl,
   ]);
   return toCsv(header, rows);
 }

@@ -25,6 +25,7 @@ import type {
   TermEstimate,
 } from "@/lib/intel/model";
 import { rebidMonths } from "@/lib/intel/model";
+import { awardHref } from "@/lib/intel/history";
 import { BLUR_ROWS, type BuyerTeaser, type CompanyTeaser, type ExampleAward, type IndexTeaser, type IntelView, type MarketTeaser, type RenewalExample, type RenewalTeaser } from "@/lib/intel/view";
 import { intelDay, intelMoney, intelMonth, intelPct, intelShortMoney } from "@/lib/intel/format";
 
@@ -189,7 +190,7 @@ function AwardRow({ a, ctx }: { a: IntelAward | ExampleAward; ctx: IntelCtx }) {
   return (
     <tr>
       <td>
-        <a href={L(`/rfps/${a.slug}`)}>{a.title}</a>
+        <a href={L(awardHref(a))}>{a.title}</a>
         <span className="sub">{[a.buyer, place(a, lang)].filter(Boolean).join(" · ")}</span>
       </td>
       <td className="nm">{a.winner ? (a.winnerSlug ? <a href={L(`/intel/companies/${a.winnerSlug}`)}>{a.winner}</a> : a.winner) : <span className="bm-muted">{t.individual}</span>}</td>
@@ -476,7 +477,9 @@ export function BuyerBody({ view, ctx, csvHref }: { view: IntelView<BuyerProfile
 export function termLabel(term: TermEstimate, t: IntelMessages): string {
   const how = t.renewals.how;
   const base =
-    term.source === "stated-years"
+    term.source === "stated-end-date" || term.source === "derived-end-date"
+      ? fmt(how[term.source], { date: term.endDate ?? "" })
+      : term.source === "stated-years"
       ? fmt(how["stated-years"], { from: term.startYear ?? "", to: term.endYear ?? "" })
       : term.source === "stated-seasons"
         ? fmt(how["stated-seasons"], { n: term.seasons ?? "" })
@@ -500,7 +503,7 @@ function RenewalRow({ r, ctx }: { r: RenewalItem | RenewalExample; ctx: IntelCtx
       <td className="small">{termLabel(r.term, t)}</td>
       <td>{tradeName(r.trade, lang)}</td>
       <td>
-        <a href={L(`/rfps/${a.slug}`)}>{a.title}</a>
+        <a href={L(awardHref(a))}>{a.title}</a>
         <span className="sub">{[a.buyer, place(a, lang), intelDay(a.date, lang)].filter(Boolean).join(" · ")}</span>
       </td>
       <td className="nm">{a.winner ? (a.winnerSlug ? <a href={L(`/intel/companies/${a.winnerSlug}`)}>{a.winner}</a> : a.winner) : <span className="bm-muted">{t.individual}</span>}</td>

@@ -64,6 +64,20 @@ export interface IntelAward {
   attribution: string;
   noticeUrl: string | null;
   noticeExact: boolean;
+  // Award history fields (src/lib/intel/history.ts), Intel subscribers only; absent on board-only awards.
+  /** The award_history row (its /intel/awards/<id> page and any bid results). */
+  historyId?: string | null;
+  /** In award history only: no board listing, so no /rfps page. */
+  historyOnly?: boolean;
+  /** Contract end date and where it came from (stated > derived_from_title > estimated). */
+  endDate?: string | null;
+  endDateSource?: "stated" | "derived_from_title" | "estimated" | null;
+  /** End date if every option is exercised, when the source states it. */
+  potentialEndDate?: string | null;
+  /** Number of bids / offers received, when the source states it. */
+  bids?: number | null;
+  /** Bid results (who else bid) are on record for this award. */
+  hasBidList?: boolean;
 }
 
 export interface IntelContext {
@@ -625,7 +639,7 @@ export const RADAR_MAX_AGE_YEARS = 5;
 export const RADAR_HORIZONS = [12, 24, 36] as const;
 export type RadarHorizon = (typeof RADAR_HORIZONS)[number] | "all";
 
-export type TermSource = "stated-years" | "stated-seasons" | "stated-duration" | "typical";
+export type TermSource = "stated-end-date" | "derived-end-date" | "stated-years" | "stated-seasons" | "stated-duration" | "typical";
 
 export interface TermEstimate {
   source: TermSource;
@@ -638,6 +652,8 @@ export interface TermEstimate {
   endYear: number | null;
   /** Stated number of seasons ("six winter seasons", "3 saisons"). */
   seasons: number | null;
+  /** The contract end date, when the source states it or award history derived it (stated-end-date / derived-end-date). */
+  endDate?: string | null;
 }
 
 const NUM = "(\\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|un|une|deux|trois|quatre|cinq|sept|huit|neuf|dix)";
@@ -757,6 +773,28 @@ const monthsBetween = (from: string, to: string) => {
 };
 
 /**
+ * The term behind a radar entry, best source first: an end date the source
+ * states (federal disclosure, CanadaBuys, SEAO, USAspending), then one award
+ * history derived from a stated term, then the notice title (parseTerm:
+ * stated periods / seasons / durations, else the typical estimate).
+ */
+export function termFor(a: IntelAward): TermEstimate {
+  if (a.endDate && a.endDate > a.date && (a.endDateSource === "stated" || a.endDateSource === "derived_from_title")) {
+    const optionMonths = a.potentialEndDate && a.potentialEndDate > a.endDate ? monthsBetween(a.endDate, a.potentialEndDate) || null : null;
+    return {
+      source: a.endDateSource === "stated" ? "stated-end-date" : "derived-end-date",
+      months: Math.max(1, monthsBetween(a.date, a.endDate)),
+      optionMonths,
+      startYear: null,
+      endYear: null,
+      seasons: null,
+      endDate: a.endDate,
+    };
+  }
+  return parseTerm(a.title, a.date);
+}
+
+/**
  * The radar entry for one award, or null when it isn't recurring service
  * work. The rebid is expected in the same month as this award, one term
  * later: buyers re-tender seasonal work at the same time of year (snow
@@ -765,9 +803,11 @@ const monthsBetween = (from: string, to: string) => {
 export function renewalFor(a: IntelAward, today: string): RenewalItem | null {
   const hit = RENEWAL_TRADES.find((t) => a.tradeSlugs.includes(t.slug) && (!t.titleMust || t.titleMust.test(a.title)));
   if (!hit) return null;
-  if (a.date < addMonths(today, -RADAR_MAX_AGE_YEARS * 12) || a.date > today) return null;
-  const term = parseTerm(a.title, a.date);
-  const expectedRebid = addMonths(a.date, term.months);
+  if (a.date > today) return null;
+  const term = termFor(a);
+  // Older awards stay on the radar only while a stated end date is still ahead.
+  if (a.date < addMonths(today, -RADAR_MAX_AGE_YEARS * 12) && !(term.endDate && term.endDate >= addMonths(today, -12))) return null;
+  const expectedRebid = term.endDate ?? addMonths(a.date, term.months);
   const windowStart = addMonths(expectedRebid, -RETENDER_LEAD_MONTHS);
   const windowEnd = term.optionMonths ? addMonths(expectedRebid, term.optionMonths) : expectedRebid;
   const status: RenewalStatus = windowEnd < today ? "past" : windowStart <= today ? "due" : windowStart <= addMonths(today, 12) ? "upcoming" : "later";
@@ -794,7 +834,7 @@ export function termStatedShare(all: readonly IntelAward[], country: CountryCode
     if (a.country !== country) continue;
     if (onlyRecurring && !RENEWAL_TRADES.some((t) => a.tradeSlugs.includes(t.slug) && (!t.titleMust || t.titleMust.test(a.title)))) continue;
     n++;
-    const t = parseTerm(a.title, a.date);
+    const t = termFor(a);
     if (t.source !== "typical") stated++;
     if (t.optionMonths) withOptions++;
   }
