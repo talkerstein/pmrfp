@@ -294,6 +294,53 @@ export async function sendDailyMatches(
 }
 
 /**
+ * "New leads for {trade} in {area}" (cron/lead-alerts, behind
+ * LEAD_ALERTS_ENABLED): projects, permits, development applications and
+ * contractors who just won public work, for Trade Pro and trial members.
+ * `listHtml` comes from lib/leads/alerts (already escaped).
+ */
+export async function sendLeadAlert(
+  to: string,
+  params: {
+    subject: string;
+    listHtml: string;
+    trial: boolean;
+    unsubscribeUrl: string | null;
+    mailingAddress: string | null;
+    sponsorHtml?: string;
+  },
+): Promise<void> {
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const footer = [
+    `You're receiving this because your ${SITE.name} Trade Pro ${params.trial ? "trial" : "membership"} includes lead alerts`,
+    `<a href="${BASE}/dashboard/company" style="color:#64748b">Change your trades or service areas</a>`,
+    params.unsubscribeUrl ? `<a href="${params.unsubscribeUrl}" style="color:#64748b">Turn off opportunity emails</a>` : null,
+    params.mailingAddress ? `${SITE.name}, ${esc(params.mailingAddress)} · ${SITE.email}` : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
+  await send(
+    to,
+    params.subject,
+    layout(
+      params.subject,
+      `<p>New in your trades and area: projects, permits and contractors who just won public work. Trade packages usually go out through the general contractor, so this is the time to get on the bid list.</p>
+       ${params.listHtml}
+       <p>${btn(`${BASE}/dashboard`, "See all your leads")}</p>
+       ${params.sponsorHtml ?? ""}`,
+      `${footer}.`,
+    ),
+    params.unsubscribeUrl
+      ? {
+          "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        }
+      : undefined,
+    { utm: "lead-alerts" },
+  );
+}
+
+/**
  * Saved-tender alerts (cron/saved-rfp-alerts): one email per member listing
  * saved tenders that close within 3 days and saved tenders whose status
  * changed (closed / awarded / expired / archived).

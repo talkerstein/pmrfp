@@ -28,6 +28,8 @@ import {
   type ProjectAlertRow,
 } from "@/lib/major-projects/alerts";
 import { compactDollars } from "@/lib/data/fomo";
+import { activeTrialOrgIds } from "@/lib/entitlement/server";
+import { leadAlertsEnabled } from "@/lib/leads/alerts";
 
 export const maxDuration = 60;
 
@@ -83,7 +85,9 @@ export async function GET(request: Request) {
   if (!rows.length) return NextResponse.json({ sent: 0, reason: "no recent RFPs" });
 
   const { data: paidSubs } = await supabase.from("subscriptions").select("organization_id").in("status", ["active", "comped"]);
-  const paidOrgIds = [...new Set(((paidSubs ?? []) as Pair[]).map((s) => s.organization_id))];
+  // A running 14-day trial gets what Trade Pro gets (lib/entitlement).
+  const trialOrgIds = await activeTrialOrgIds(supabase);
+  const paidOrgIds = [...new Set([...((paidSubs ?? []) as Pair[]).map((s) => s.organization_id), ...trialOrgIds])];
   if (!paidOrgIds.length) return NextResponse.json({ sent: 0, reason: "no paid orgs" });
 
   const [{ data: orgCats }, { data: orgRegs }, { data: members }, { data: regionRows }, { data: checks }] = await Promise.all([
@@ -174,9 +178,11 @@ export async function GET(request: Request) {
     : new Map<string, DigestAward[]>();
 
   // "Major projects near you" (behind MAJOR_PROJECT_ALERTS=1): also only
-  // rides along with a digest that's going out anyway.
+  // rides along with a digest that's going out anyway. Once the lead alerts
+  // are on (LEAD_ALERTS_ENABLED, cron/lead-alerts) they carry projects
+  // instead, so a member never gets the same project in two emails.
   const projectsByUser =
-    digests.length && majorProjectAlertsEnabled()
+    digests.length && majorProjectAlertsEnabled() && !leadAlertsEnabled()
       ? await majorProjectAlertsByUser(supabase, {
           userIds: digests.map((d) => d.userId),
           tree,

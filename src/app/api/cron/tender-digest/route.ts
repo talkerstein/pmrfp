@@ -10,6 +10,7 @@ import { getSponsorSnapshot } from "@/lib/sponsors/data";
 import { countImpression, flushImpressions } from "@/lib/sponsors/impressions";
 import { dominantPlace } from "@/lib/sponsors/model";
 import { freeDigestMatches, orgCountries, regionCountryMap } from "@/lib/alerts/country";
+import { activeTrialOrgIds } from "@/lib/entitlement/server";
 
 export const maxDuration = 60;
 
@@ -86,6 +87,8 @@ export async function GET(request: Request) {
       .filter((s) => s.status === "active" || s.status === "comped")
       .map((s) => s.organization_id),
   );
+  // Companies on a running 14-day trial get the Trade Pro alerts instead.
+  for (const id of await activeTrialOrgIds(supabase)) paid.add(id);
   const freeOrgs = ((orgs ?? []) as { id: string; name: string; province: string | null; country: string | null }[]).filter((o) => !paid.has(o.id));
   const orgIds = freeOrgs.map((o) => o.id);
   if (!orgIds.length) return NextResponse.json({ sent: 0, reason: "no free trades" });
