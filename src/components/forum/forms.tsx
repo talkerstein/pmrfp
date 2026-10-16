@@ -24,6 +24,7 @@ import {
 import { RATING_LABELS } from "@/lib/forum/rules";
 import { defaultThreadType } from "@/lib/forum/categories";
 import { cn } from "@/lib/utils";
+import { PhotoUploader, PollFields } from "@/components/forum/rework-client";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -63,12 +64,15 @@ export function ThreadForm({
   initialType,
   firstPost,
   staffOption,
+  extras = false,
 }: {
   initialType?: "question" | "discussion";
   categories: { slug: string; name: string }[];
   initialCategory?: string;
   firstPost: boolean;
   staffOption?: boolean;
+  /** Photos and polls (once the forum rework migration is applied). */
+  extras?: boolean;
 }) {
   const t = useT("forumClient").form;
   const lang = useLang();
@@ -124,6 +128,12 @@ export function ThreadForm({
         <Textarea id="forum-body" name="body" required minLength={20} maxLength={10000} rows={9} placeholder={t.bodyPlaceholder} />
         <p className="text-xs text-muted-foreground">{t.help}</p>
       </div>
+      {extras && (
+        <div className="space-y-3">
+          <PhotoUploader />
+          <PollFields />
+        </div>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor="forum-region">{t.region}</Label>
         <Input id="forum-region" name="region" maxLength={40} />
@@ -140,15 +150,18 @@ export function ThreadForm({
   );
 }
 
-export function ReplyForm({ threadId, label, firstPost }: { threadId: string; label: string; firstPost: boolean }) {
+export function ReplyForm({ threadId, label, firstPost, photos = false }: { threadId: string; label: string; firstPost: boolean; photos?: boolean }) {
   const t = useT("forumClient").form;
   const lang = useLang();
   const router = useRouter();
   const ref = useRef<HTMLFormElement>(null);
+  // Bumped after a successful reply so the photo picker starts empty again.
+  const [round, setRound] = useState(0);
   const [state, action, pending] = useActionState(async (prev: ForumFormState, fd: FormData) => {
     const res = await createReplyAction(prev, fd);
     if (res.ok) {
       ref.current?.reset();
+      setRound((n) => n + 1);
       router.refresh();
     }
     return res;
@@ -161,6 +174,7 @@ export function ReplyForm({ threadId, label, firstPost }: { threadId: string; la
       <Label htmlFor="forum-reply">{label}</Label>
       <Textarea id="forum-reply" name="body" required minLength={2} maxLength={10000} rows={6} />
       <p className="text-xs text-muted-foreground">{t.help}</p>
+      {photos && <PhotoUploader key={round} />}
       <Turnstile show={firstPost} />
       <ErrorLine state={state} />
       {state.ok && !state.held && <p role="status" className="text-sm text-teal-700">{t.posted}</p>}

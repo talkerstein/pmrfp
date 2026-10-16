@@ -10,7 +10,7 @@ import type { StaffGuide } from "./staff-guides";
 export const STAFF_GUIDES: readonly StaffGuide[] = [
   {
     key: "A9",
-    category: "job-site-stories",
+    category: "getting-paid",
     lang: "en",
     pinned: true,
     title: "It was behind the wall: concealed conditions in standard contracts and what to put in your quote",
@@ -18,7 +18,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "A8",
-    category: "client-talk",
+    category: "getting-paid",
     lang: "en",
     pinned: true,
     title: "Change orders that hold up: a written process, plus Ontario's 10% estimate rule for consumers",
@@ -26,7 +26,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "D18",
-    category: "client-talk",
+    category: "pricing-estimating",
     lang: "en",
     pinned: true,
     title: "When your price is higher: walking a client through a line-by-line scope comparison",
@@ -34,7 +34,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "A7",
-    category: "business-pricing",
+    category: "getting-paid",
     lang: "en",
     pinned: true,
     title: "Getting paid on commercial work: contract terms vs what prompt payment law guarantees (ON, AB, federal)",
@@ -42,7 +42,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "D17",
-    category: "business-pricing",
+    category: "pricing-estimating",
     lang: "en",
     pinned: true,
     title: "Pricing after-hours and emergency calls in Ontario: overtime basics and common rate structures",
@@ -50,7 +50,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "C3",
-    category: "jobs-hiring",
+    category: "running-the-business",
     lang: "en",
     pinned: true,
     title: "Checking a tradesperson's ticket: compulsory trades, the STO public register and Red Seal",
@@ -58,7 +58,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "D14",
-    category: "tools-gear",
+    category: "running-the-business",
     lang: "en",
     pinned: true,
     title: "Writing off tools, equipment and trucks: the CRA capital cost allowance classes trades use most",
@@ -66,7 +66,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "B1",
-    category: "marketplace-talk",
+    category: "finding-work",
     lang: "en",
     pinned: true,
     title: "How to read a public tender before you price it: a 9-point pre-bid checklist",
@@ -74,7 +74,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "B2",
-    category: "marketplace-talk",
+    category: "finding-work",
     lang: "en",
     pinned: true,
     title: "Registering to bid on federal tenders: CanadaBuys, SAP Business Network and your business number",
@@ -82,7 +82,7 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "D15",
-    category: "marketplace-talk",
+    category: "tools-gear",
     lang: "en",
     pinned: true,
     title: "Buying used equipment or a truck privately: search for registered liens first (Ontario, Alberta, BC)",
@@ -314,9 +314,9 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "A4",
-    category: "general-contractors",
+    category: "getting-paid",
     lang: "en",
-    pinned: true,
+    pinned: false,
     title: "Federal prompt payment for construction: which contracts it covers, the 28/35/42-day clock and adjudication",
     body: "This covers the federal Prompt Payment for Construction Work Act: which jobs it applies to, the payment clock, and adjudication. It applies to construction on federal property, so it matters if you bid federal work directly or work under a federal service provider.\n\n**In force and scope**\n- In force since December 9, 2023 (S.C. 2019, c. 29, s. 387).\n- It applies to the federal Crown, service providers and every contractor and subcontractor doing construction work for a project on federal real property or federal immovables in Canada (s. 5).\n- \"Construction project\" covers additions, alterations, capital repair or restoration, construction and installation, and demolition (s. 2). Routine maintenance to prevent normal deterioration is not \"capital repair\" (s. 2).\n- For one year after it came into force, it did not apply to contracts already signed before that date (s. 25). That transition has now ended.\n- Before signing, the federal payer must tell you the contract is subject to the Act, and each contractor must tell its subs (s. 8).\n\n**Payment timeline (counted from when the federal payer receives the proper invoice)**\n- Contractor invoices monthly or as the contract says (s. 9(1)).\n- Day 21: last day for the federal payer to give a notice of non-payment (s. 9(3)).\n- Day 28: federal payer must pay (s. 9(2)).\n- Day 28: last day for the contractor to give its subs a notice of non-payment (s. 10(3)).\n- Day 35: contractor pays its subs for work covered and paid (s. 10(1)).\n- Day 42: first-tier subs pay their subs; day 49 and so on in 7-day steps down the chain (s. 11).\n- Saturdays, holidays, December 24 to January 1, and provincially recognized construction holidays are left out of the count (regulations, s. 3).\n- A notice of non-payment must describe the work, the amount withheld and the reasons (s. 13).\n- A contractor must tell any sub, on request, the date the federal payer received the invoice (s. 9(5)). Ask for it.\n\n**Holdback and interest**\n- Holdback is allowed only if the contract provides for it, and can't exceed what provincial construction law would allow. It must be paid out no later than provincial law would require (s. 12).\n- Late amounts earn simple interest at the average bank rate plus 3% a year, or the contract rate if higher (Act s. 14; regulations s. 4).\n\n**Adjudication**\n- If you are not fully paid on time, you can refer the non-payment dispute to an adjudicator (s. 16(1)).\n- Notice of adjudication: no later than 21 days after the later of the certificate of completion for the project or the payment deadline on the last invoice that covers your work (s. 16(2)).\n- The parties appoint an adjudicator jointly, or ask the Adjudicator Authority to appoint one (s. 17). PSPC contracted ADR Chambers Inc. to provide adjudication services.\n- The paying party must pay within 10 days of receiving the determination. If it does not, you may suspend work without breaching the contract and file the determination in court within two years (s. 19).\n- Each side pays its own costs and half the adjudicator's fees, unless someone acted in bad faith (s. 20).\n\n**Provincial overlap**\nOntario, Saskatchewan and Alberta are designated provinces. On federal projects there, much of the subcontract-level federal regime steps aside for the provincial one (s. 6 and the designation order). Projects that straddle provinces stay under the federal Act.\n\n**Before you bid**\n- Confirm the site is federal property and who the payer is.\n- Check the holdback clause against the provincial limit.\n- Diary the 21-day notice deadline for adjudication now, not at the end of the job.\n\n**Sources** (checked October 9, 2026)\n- Federal Prompt Payment for Construction Work Act (Justice Laws): https://laws-lois.justice.gc.ca/eng/acts/F-7.7/FullText.html\n- Regulations (Criteria, Time Limits, Interest and Circumstances), SOR/2023-269: https://laws-lois.justice.gc.ca/eng/regulations/SOR-2023-269/FullText.html\n- Order Designating Provinces, SOR/2023-270: https://laws-lois.justice.gc.ca/eng/regulations/SOR-2023-270/FullText.html\n- PSPC news release, December 2023: https://www.canada.ca/en/public-services-procurement/news/2023/12/new-federal-prompt-payment-legislation-to-protect-construction-workers.html\n\nGeneral information, not legal advice. Rules change; confirm with the source or a lawyer before you rely on it. Questions or corrections? Reply below.",
   },
@@ -338,9 +338,9 @@ export const STAFF_GUIDES: readonly StaffGuide[] = [
   },
   {
     key: "A6",
-    category: "suppliers-equipment",
+    category: "getting-paid",
     lang: "en",
-    pinned: true,
+    pinned: false,
     title: "Material suppliers and lien rights in Ontario, Alberta and BC: who qualifies and the deadlines",
     body: "For material suppliers and equipment rental firms on Ontario, Alberta and BC jobs: whether you have lien rights, how long you have, and what to keep on file.\n\n**Ontario (Construction Act)**\n- Anyone who supplies services or materials to an improvement for an owner, contractor or subcontractor has a lien (s. 14(1)). A supplier working under the contractor or a sub is a \"subcontractor\" under the Act, so the prompt payment rules in Part I.1 also reach you.\n- \"Materials\" includes things that become part of the job or are used directly to make it, and equipment rented without an operator. Equipment rented with an operator counts as services (s. 1).\n- Your lien arises when you first supply (s. 15).\n- Deadline: 60 days after the earliest of publication of the certificate of substantial performance, your last supply, the contract ending, or your subcontract being certified complete (s. 31(3)). Then 90 more days to perfect (s. 36).\n- On Crown or municipal property, the lien does not attach to the land. You give a copy of the claim to the owner instead (s. 16 and s. 34).\n- You can ask the owner or contractor in writing for contract details, the state of accounts and any payment bond. They must answer within a reasonable time, no more than 21 days (s. 39).\n\n**Alberta (Prompt Payment and Construction Lien Act)**\n- A person who furnishes material to be used in an improvement for an owner, contractor or subcontractor has a lien (s. 6(1)).\n- Material counts as furnished when delivered on the land, or to a nearby place the owner or contractor designates. If it ends up incorporated in the job anyway, you still have a lien (s. 9).\n- Deadline: register within 60 days from the day the last material is furnished or the supply contract is abandoned. Concrete work and oil or gas well sites get 90 days (s. 41(1)).\n- Fixing defective work later does not extend the time (s. 41(5)).\n- A registered lien expires unless you start an action and register a certificate of lis pendens within 180 days (s. 43).\n- Note: the Act's definition of \"subcontractor\" excludes a person engaged only in furnishing materials. Ask a lawyer how the prompt payment flow-down applies to you before relying on it.\n\n**British Columbia (Builders Lien Act)**\n- A \"material supplier\" is a contractor or sub who supplies only material (s. 1). Material suppliers have lien rights (s. 2(1)).\n- Material must be delivered to the land and meant to become part of the job or be used up making it. Equipment rented without an operator counts (s. 1).\n- If you supply material to a material supplier, for example a manufacturer selling to a distributor who then supplies the job, you have no lien (s. 2(2)).\n- Deadline: 45 days after a certificate of completion for the contract or subcontract you supplied under, or otherwise 45 days after the head contract or improvement is completed, abandoned or terminated (s. 20). Claims under $200 can't be filed (s. 17).\n\n**What to keep on file**\n- A PO or credit application that names the project address and who ordered.\n- Signed delivery tickets showing date, site address and what was delivered. In BC and Alberta, the delivery location matters.\n- A running log of your last delivery date per job. That date often starts your clock.\n- The legal description or PIN of the land and the owner's name.\n- Any certificate of substantial performance or completion you hear about, and your written info requests and the replies.\n- Rental agreements showing whether an operator was included.\n\n**Common mistakes**\n- Waiting for the GC's job to finish when your own deadline started at your last delivery.\n- Selling through a middleman in BC and assuming you can lien.\n\n**Sources** (checked October 9, 2026)\n- Ontario Construction Act (e-Laws): https://www.ontario.ca/laws/statute/90c30\n- Alberta Prompt Payment and Construction Lien Act (King's Printer): https://kings-printer.alberta.ca/documents/Acts/P26P4.pdf\n- BC Builders Lien Act (BC Laws): https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01\n\nGeneral information, not legal advice. Rules change; confirm with the source or a lawyer before you rely on it. Questions or corrections? Reply below.",
   },

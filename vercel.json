@@ -86,6 +86,10 @@
       "schedule": "5,20,35,50 14 * * 2"
     },
     {
+      "path": "/api/cron/forum-recurring",
+      "schedule": "38 13 * * *"
+    },
+    {
       "path": "/api/cron/lifecycle",
       "schedule": "33 * * * *"
     }

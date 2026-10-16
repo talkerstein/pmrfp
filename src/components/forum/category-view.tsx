@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { CircleHelp, Lock, MapPin, MessagesSquare, Pin, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/container";
 import { ForumHero, MemberName, OpeningSoon, Pager, RatingBar } from "@/components/forum/parts";
-import { getCategoryRow, listCategoryThreads, type ThreadSummary } from "@/lib/forum/data";
-import { isForumCategory, tradesForForum } from "@/lib/forum/categories";
+import { forumReworkReady, getCategoryRow, listCategoryThreads, viewerFollows, type ThreadSummary } from "@/lib/forum/data";
+import { isForumCategory, redirectRoom, roomCountry, tradesForForum } from "@/lib/forum/categories";
+import { getSession } from "@/lib/access/access";
+import { createClient } from "@/lib/supabase/server";
+import { FollowButton } from "@/components/forum/rework-client";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { PAGE_SIZE, isIndexableListPage, pageCount } from "@/lib/forum/rules";
@@ -83,6 +86,9 @@ function ThreadRow({ th, pinned }: { th: ThreadSummary; pinned?: boolean }) {
 }
 
 export async function CategoryView({ category, page, sort = "latest", hideAuto = false }: { category: string; page: number; sort?: ThreadSort; hideAuto?: boolean }) {
+  // Renamed or merged rooms: every old list URL lands on the new room, same page and tab.
+  const moved = redirectRoom(category);
+  if (moved) permanentRedirect(localizePath(`${page > 1 ? `/forum/${moved}/page/${page}` : `/forum/${moved}`}${categoryQuery(sort, hideAuto)}`, getLang()));
   if (!isForumCategory(category)) notFound();
   const t = getT("forum");
   const lang = getLang();
@@ -96,12 +102,19 @@ export async function CategoryView({ category, page, sort = "latest", hideAuto =
       </>
     );
   }
-  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page, sort, { hideAuto });
+  // Country-first: a regional room is its own country; every other room shows
+  // the visitor's country's threads (plus threads meant for both).
+  const session = await getSession();
+  const visitor = await getVisitorCountry({ session });
+  const country = roomCountry(category) ?? visitor.country;
+  const { pinned, threads, total } = await listCategoryThreads(res.category.id, category, page, sort, { hideAuto, country });
   const pages = pageCount(total, PAGE_SIZE);
   if (page > pages && !(page === 1 && sort !== "latest")) notFound();
   const base = `/forum/${category}`;
   const forumTrades = tradesForForum(category);
-  const visitor = forumTrades.length ? await getVisitorCountry() : { country: "CA" as const, province: null };
+  const rework = await forumReworkReady();
+  const following = rework && session ? (await viewerFollows(await createClient(), session.userId)).has(res.category.id) : false;
+  const about = (t.hub.roomAbout as Partial<Record<string, string>>)[category];
 
   return (
     <>
@@ -132,11 +145,16 @@ export async function CategoryView({ category, page, sort = "latest", hideAuto =
           <Link href={`${base}/new?type=discussion`} className="btn ghost">
             <MessagesSquare className="size-4" /> {t.category.newThread}
           </Link>
+          {rework && <FollowButton slug={category} following={following} signedIn={Boolean(session)} signInHref={localizePath(`/sign-in?next=${encodeURIComponent(base)}`, lang)} />}
           <Link href="/forum" className="btn ghost">{t.category.back}</Link>
         </div>
       </ForumHero>
       <Container className="f-page">
-        {category === "client-talk" && (
+        {about && <p className="mb-4 max-w-3xl text-[15px] leading-relaxed text-[#4B4F6B]">{about}</p>}
+        {rework && !roomCountry(category) && (
+          <p className="mb-4 text-xs text-[#4B4F6B]">{fmt(t.hub.countryNote, { country: t.hub.countries[country] })}</p>
+        )}
+        {category === "getting-paid" && (
           <p className="mb-4 flex items-start gap-2 rounded-2xl border-2 border-amber-500/50 bg-amber-50/60 px-5 py-4 text-sm">
             <Pin className="mt-0.5 size-4 shrink-0 text-amber-600" /> {t.clientTalkRule}
           </p>

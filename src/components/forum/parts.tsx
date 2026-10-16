@@ -7,6 +7,7 @@ import { ratingLabel } from "@/lib/forum/rules";
 import { orgLevel } from "@/lib/karma/data";
 import { LevelBadge } from "@/components/karma/level-badge";
 import type { MemberRef } from "@/lib/forum/data";
+import { publicPhotoUrl, type ForumImage } from "@/lib/forum/photos";
 import { getT } from "@/i18n/server";
 import { fmt } from "@/i18n/format";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,30 @@ function inline(t: Inline, key: number) {
     default:
       return <span key={key}>{t.v}</span>;
   }
+}
+
+/**
+ * Photos attached to an approved thread or reply. Plain <img> on purpose:
+ * next/image would keep an optimized copy at the edge for a year, and a
+ * photo must stop being reachable the moment its post is hidden.
+ */
+export function PostImages({ images, className }: { images: ForumImage[]; className?: string }) {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!images.length || !base) return null;
+  const t = getT("forum").hub;
+  return (
+    <div className={cn("grid gap-2", images.length > 1 ? "grid-cols-2" : "grid-cols-1", className)}>
+      {images.map((img, i) => {
+        const src = publicPhotoUrl(base, img.path);
+        return (
+          <a key={img.path} href={src} target="_blank" rel="noopener" className="block overflow-hidden rounded-xl border border-[#E3E4EE] bg-[#F5F5FA]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt={`${t.photos} ${i + 1}`} width={img.w} height={img.h} loading="lazy" decoding="async" className="h-auto max-h-[520px] w-full object-cover" />
+          </a>
+        );
+      })}
+    </div>
+  );
 }
 
 export function RatingBar({ avg, count }: { avg: number | null; count: number }) {

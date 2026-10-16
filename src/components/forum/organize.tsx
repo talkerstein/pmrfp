@@ -1,7 +1,7 @@
 import Link from "@/i18n/link";
 import {
-  BookOpen, Briefcase, Building2, Calculator, CheckCircle2, CircleHelp, Coffee, Droplets, Fan, FileCheck, Flag, HardHat, Landmark,
-  Lock, MapPin, MessageSquare, MessagesSquare, Mountain, PaintRoller, Pin, Search, Sparkles, Store, Trees, Truck, Users,
+  Banknote, BookOpen, Briefcase, Building2, Calculator, Camera, CheckCircle2, CircleHelp, Coffee, Droplets, Fan, FileCheck, Flag, Landmark,
+  Lock, MapPin, MessageSquare, MessagesSquare, Mountain, PaintRoller, Pin, Search, Sparkles, Store, Trees, Truck,
   Wrench, Zap, type LucideIcon,
 } from "lucide-react";
 import type { ForumCategorySlug } from "@/lib/forum/categories";
@@ -14,14 +14,14 @@ import { fmt, plural } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<ForumCategorySlug, LucideIcon> = {
-  "job-site-stories": HardHat,
-  "client-talk": Users,
-  "business-pricing": Calculator,
-  "jobs-hiring": Briefcase,
+  "finding-work": Store,
+  "pricing-estimating": Calculator,
+  "getting-paid": Banknote,
+  "running-the-business": Briefcase,
+  "show-your-work": Camera,
+  "break-room": Coffee,
   "tools-gear": Truck,
-  "marketplace-talk": Store,
   "codes-permits": FileCheck,
-  "off-topic": Coffee,
   electrical: Zap,
   "hvac-mechanical": Fan,
   plumbing: Droplets,
@@ -38,7 +38,13 @@ const ICONS: Record<ForumCategorySlug, LucideIcon> = {
   ontario: MapPin,
   alberta: MapPin,
   "british-columbia": MapPin,
+  prairies: MapPin,
+  atlantic: MapPin,
   "united-states": MapPin,
+  "us-northeast": MapPin,
+  "us-midwest": MapPin,
+  "us-south": MapPin,
+  "us-west": MapPin,
 };
 
 export function ForumIcon({ slug, className }: { slug: ForumCategorySlug; className?: string }) {
@@ -76,6 +82,10 @@ export function ThreadBadges({ th }: { th: ThreadSummary }) {
         </span>
       )}
       {th.isAuto && <AutoPostChip lang={getLang()} />}
+      {th.recurring && (
+        <span className="inline-flex items-center gap-1 rounded bg-[#F5F5FA] px-1.5 py-0.5 text-[11px] font-semibold text-[#4A4E85]">{t.hub.recurring[th.recurring]}</span>
+      )}
+      {th.images.length > 0 && <Camera className="size-3 text-[#4A4E85]" aria-label={t.hub.photos} />}
       {status === "solved" ? (
         <span className="inline-flex items-center gap-1 rounded bg-[#DDFBF0] px-1.5 py-0.5 text-[11px] font-semibold text-teal-800">
           <CheckCircle2 className="size-3" aria-hidden /> {o.solved}

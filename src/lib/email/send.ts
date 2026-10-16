@@ -1214,6 +1214,43 @@ export async function sendAdminForumQueue(params: { reason: "held" | "reported";
   );
 }
 
+/**
+ * Forum: someone replied to your thread (lib/forum/notify). Only sent when
+ * the member's forum_replies preference allows it; carries a one-click
+ * unsubscribe for these emails only.
+ */
+export async function sendForumReplyEmail(
+  to: string,
+  p: { threadTitle: string; replierName: string; excerpt: string; url: string; unsubscribeUrl: string | null; lang: "en" | "fr" },
+): Promise<void> {
+  const fr = p.lang === "fr";
+  const subject = fr ? `Nouvelle réponse : ${p.threadTitle.slice(0, 90)}` : `New reply: ${p.threadTitle.slice(0, 90)}`;
+  const footer = [
+    fr
+      ? `Vous recevez ce courriel parce que vous avez lancé cette discussion sur le forum ${SITE.name}. Au plus un courriel par discussion toutes les 6 heures`
+      : `You're getting this because you started this thread on the ${SITE.name} forum. At most one email per thread every 6 hours`,
+    p.unsubscribeUrl ? `<a href="${p.unsubscribeUrl}" style="color:#64748b">${fr ? "Ne plus recevoir ces courriels" : "Turn off forum reply emails"}</a>` : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
+  await send(
+    to,
+    subject,
+    layout(
+      fr ? "Nouvelle réponse à votre discussion" : "New reply to your thread",
+      `<p>${fr ? `${esc(p.replierName)} a répondu à <strong>${esc(p.threadTitle)}</strong> :` : `${esc(p.replierName)} replied to <strong>${esc(p.threadTitle)}</strong>:`}</p>
+       <blockquote style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #91F2CF;background:#F6F7FB;color:#334155">${esc(p.excerpt)}</blockquote>
+       <p>${btn(p.url, fr ? "Lire et répondre" : "Read and reply")}</p>`,
+      `${footer}.`,
+      { lang: p.lang },
+    ),
+    p.unsubscribeUrl
+      ? { "List-Unsubscribe": `<${p.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+      : undefined,
+    { utm: "forum-replies" },
+  );
+}
+
 /** Founding 500: the buyer's confirmation (Stripe sends the actual receipt). */
 export async function sendFoundingLifetimeEmail(to: string): Promise<void> {
   await send(

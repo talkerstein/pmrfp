@@ -807,7 +807,7 @@ const en = {
     points: "points",
     nBoards: "{n} boards",
     channelBlurbs: {
-      "shop-talk": "The business of the work: clients, pricing, crews, gear and the stories from the field.",
+      "shop-talk": "What every trade forum talks about most: finding work, pricing it, getting paid, running the shop and showing the job.",
       trades: "One board per trade, for the technical questions only someone in your trade can answer.",
       property: "Where the people who hire trades talk about RFPs, vendors and contracts.",
       regional: "Local work, local rules, local weather.",
@@ -1742,7 +1742,7 @@ const fr: typeof en = {
     points: "points",
     nBoards: "{n} forums",
     channelBlurbs: {
-      "shop-talk": "Le côté affaires du métier : clients, prix, équipes, équipement et histoires de chantier.",
+      "shop-talk": "Ce dont on parle le plus entre gens de métier : trouver du travail, le chiffrer, se faire payer, gérer l'entreprise et montrer le chantier.",
       trades: "Un forum par métier, pour les questions techniques auxquelles seul quelqu'un du métier peut répondre.",
       property: "Là où ceux qui embauchent des entreprises parlent d'appels d'offres, de fournisseurs et de contrats.",
       regional: "Travaux locaux, règles locales, météo locale.",
@@ -2676,7 +2676,7 @@ const es: typeof en = {
     points: "puntos",
     nBoards: "{n} foros",
     channelBlurbs: {
-      "shop-talk": "El negocio del oficio: clientes, precios, cuadrillas, equipo e historias de obra.",
+      "shop-talk": "Lo que más se habla en cualquier foro de oficios: encontrar trabajo, cotizarlo, cobrar, llevar el negocio y mostrar la obra.",
       trades: "Un foro por oficio, para las preguntas técnicas que solo alguien de su oficio puede responder.",
       property: "Donde quienes contratan oficios hablan de RFP, proveedores y contratos.",
       regional: "Trabajo local, reglas locales, clima local.",

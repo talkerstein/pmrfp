@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSession, isAdminRole, type SessionContext } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
@@ -10,8 +11,13 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { sendAdminForumQueue } from "@/lib/email/send";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath } from "@/i18n/config";
-import { isForumCategory } from "./categories";
+import { isForumCategory, roomCountry, roomSlugCandidates, type ForumCategorySlug } from "./categories";
 import { isMissingTable, threadPath } from "./data";
+import { forumV2Ready } from "./schema-v2";
+import { parseImagesField } from "./photos";
+import { placePhotos, syncPhotosForStatus } from "./photos-server";
+import { checkVote, parsePoll } from "./polls";
+import { notifyThreadAuthor } from "./notify";
 import { checkPost, shouldAutoHide } from "./rules";
 import { karmaSyncAfter } from "@/lib/karma/sync";
 import { handleFrom, normalizeBody, normalizeTitle, shortId, slugify, wordCount } from "./text";
@@ -22,7 +28,8 @@ import { sessionCanPost } from "./eligibility";
 export type ForumError =
   | "signin" | "verify" | "unavailable" | "banned" | "rate" | "cooldown" | "daily-threads" | "daily-posts"
   | "shortener" | "duplicate" | "honeypot" | "captcha" | "title" | "body" | "category" | "locked"
-  | "notfound" | "forbidden" | "own" | "failed" | "unverified";
+  | "notfound" | "forbidden" | "own" | "failed" | "unverified"
+  | "photos" | "poll" | "already" | "closed" | "option";
 
 export interface ForumFormState {
   error?: ForumError;
@@ -171,6 +178,13 @@ async function spamGate(a: Actor, kind: "thread" | "post", body: string, formDat
   return { hold: res.hold };
 }
 
+/** A room's category row: its own slug, or its old slug before the rework migration. */
+async function roomRow(admin: SupabaseClient, slug: ForumCategorySlug): Promise<{ id: string } | null> {
+  const { data } = await admin.from("forum_categories").select("id,slug").in("slug", roomSlugCandidates(slug));
+  const rows = (data ?? []) as { id: string; slug: string }[];
+  return rows.find((r) => r.slug === slug) ?? rows[0] ?? null;
+}
+
 function langPath(formData: FormData, path: string): string {
   const l = formData.get("lang");
   return localizePath(path, isEnabledLocale(l) ? l : DEFAULT_LOCALE);
@@ -192,14 +206,24 @@ export async function createThreadAction(_prev: ForumFormState, formData: FormDa
   if (body.length < 20) return { error: "body" };
   const region = formData.get("region")?.toString().trim().slice(0, 40) || null;
 
+  // Photos and polls need the rework migration; before it, the form doesn't offer them.
+  const v2 = await forumV2Ready(a.admin);
+  const images = v2 ? parseImagesField(formData.get("images"), a.userId) : [];
+  if (images === "invalid") return { error: "photos" };
+  const poll = v2 ? parsePoll({ question: formData.get("pollQuestion"), options: formData.getAll("pollOption") }) : null;
+  if (poll === "invalid") return { error: "poll" };
+
   const gate = await spamGate(a, "thread", body, formData, staff || a.isAdmin);
   if ("error" in gate) return { error: gate.error };
 
-  const { data: cat } = await a.admin.from("forum_categories").select("id").eq("slug", category).maybeSingle<{ id: string }>();
+  const cat = await roomRow(a.admin, category);
   if (!cat) return { error: "unavailable" };
 
   if (staff && !a.profile.is_staff) await a.admin.from("forum_profiles").update({ is_staff: true }).eq("user_id", a.userId);
 
+  // Photos go public only with an approved post; a held one keeps them private.
+  const status = gate.hold ? "held" : "approved";
+  const placed = await placePhotos(a.admin, images, status);
   const slug = slugify(title);
   let sid = "";
   let insertedId = "";
@@ -216,9 +240,11 @@ export async function createThreadAction(_prev: ForumFormState, formData: FormDa
         slug,
         body,
         body_words: wordCount(body) + wordCount(title),
-        status: gate.hold ? "held" : "approved",
+        status,
         is_staff: staff,
         region,
+        // A regional room is one country; other rooms serve both.
+        ...(v2 ? { images: placed, country: roomCountry(category) } : {}),
       })
       .select("id")
       .single<{ id: string }>();
@@ -226,6 +252,11 @@ export async function createThreadAction(_prev: ForumFormState, formData: FormDa
     else if (error && error.code !== "23505") return { error: isMissingTable(error) ? "unavailable" : "failed" };
   }
   if (!insertedId) return { error: "failed" };
+
+  if (poll) {
+    const { data: p } = await a.admin.from("forum_polls").insert({ thread_id: insertedId, question: poll.question }).select("id").single<{ id: string }>();
+    if (p) await a.admin.from("forum_poll_options").insert(poll.options.map((label, position) => ({ poll_id: p.id, position, label })));
+  }
 
   if (gate.hold) {
     await sendAdminForumQueue({ reason: "held", title, author: a.profile.handle }).catch(() => undefined);
@@ -252,12 +283,26 @@ export async function createReplyAction(_prev: ForumFormState, formData: FormDat
   const mod = await isMod(a, t.category_id);
   if (t.is_locked && !mod) return { error: "locked" };
 
+  const v2 = await forumV2Ready(a.admin);
+  const images = v2 ? parseImagesField(formData.get("images"), a.userId) : [];
+  if (images === "invalid") return { error: "photos" };
+
   const gate = await spamGate(a, "post", body, formData, mod);
   if ("error" in gate) return { error: gate.error };
 
+  const status = gate.hold ? "held" : "approved";
+  const placed = await placePhotos(a.admin, images, status);
   const { data: post, error } = await a.admin
     .from("forum_posts")
-    .insert({ thread_id: t.id, author_id: a.userId, body, body_words: wordCount(body), status: gate.hold ? "held" : "approved", is_staff: a.profile.is_staff && a.isAdmin })
+    .insert({
+      thread_id: t.id,
+      author_id: a.userId,
+      body,
+      body_words: wordCount(body),
+      status,
+      is_staff: a.profile.is_staff && a.isAdmin,
+      ...(v2 ? { images: placed } : {}),
+    })
     .select("id")
     .single<{ id: string }>();
   if (!post) return { error: isMissingTable(error) ? "unavailable" : "failed" };
@@ -266,6 +311,9 @@ export async function createReplyAction(_prev: ForumFormState, formData: FormDat
     await sendAdminForumQueue({ reason: "held", title: t.title, author: a.profile.handle }).catch(() => undefined);
     return { ok: true, held: true };
   }
+  // Tell the thread's author (if their email preferences allow), after the response.
+  const admin = a.admin;
+  after(() => notifyThreadAuthor(admin, { threadId: t.id, replierId: a.userId, replyBody: body }));
   return { ok: true };
 }
 
@@ -367,6 +415,7 @@ export async function reportAction(type: Target, id: string, reason?: string): P
   const hide = shouldAutoHide(count ?? 0);
   await a.admin.from(table).update(hide ? { flag_count: count ?? 0, status: "hidden" } : { flag_count: count ?? 0 }).eq("id", id);
   if (hide) {
+    if (await forumV2Ready(a.admin)) await syncPhotosForStatus(a.admin, table, id, "hidden");
     await a.admin.from("forum_mod_log").insert({ mod_id: a.userId, action: "auto-hide", target_type: type, target_id: id, reason: `${count} reports` });
     await sendAdminForumQueue({ reason: "reported", title: target.threadTitle, author: target.author_id }).catch(() => undefined);
   }
@@ -409,8 +458,76 @@ export async function modAction(type: Target, id: string, op: ModOp, reason?: st
   }
   await a.admin.from("forum_mod_log").insert({ mod_id: a.userId, action: op, target_type: type, target_id: id, reason: reason?.slice(0, 300) || null });
   // A removal costs the author's company; un-hiding gives it back.
-  if (op === "hide" || op === "unhide" || op === "approve") await rescore(target.author_id);
+  if (op === "hide" || op === "unhide" || op === "approve") {
+    await rescore(target.author_id);
+    // Photos follow the post: public when approved, private when hidden.
+    if (await forumV2Ready(a.admin)) await syncPhotosForStatus(a.admin, table, id, op === "hide" ? "hidden" : "approved");
+  }
+  // A held reply that's now approved: the thread's author hears about it.
+  if (op === "approve" && type === "post" && target.status === "held") {
+    const admin = a.admin;
+    const { data: post } = await admin.from("forum_posts").select("thread_id,author_id,body").eq("id", id).maybeSingle<{ thread_id: string; author_id: string; body: string }>();
+    if (post) after(() => notifyThreadAuthor(admin, { threadId: post.thread_id, replierId: post.author_id, replyBody: post.body }));
+  }
   return { ok: true };
+}
+
+// ── Polls, following rooms, reply emails (rework) ───────────────────
+/** One vote per verified member; no changing it afterwards. */
+export async function votePollAction(pollId: string, optionId: string): Promise<ForumFormState> {
+  const got = await getActor();
+  if ("error" in got) return { error: got.error };
+  const a = got.actor;
+  if (await checkRateLimitByIp(await clientIp(), "forum-vote")) return { error: "rate" };
+  const { data: poll } = await a.admin
+    .from("forum_polls")
+    .select("id,closes_at,thread:forum_threads(status),options:forum_poll_options!forum_poll_options_poll_id_fkey(id)")
+    .eq("id", pollId)
+    .maybeSingle();
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const p = poll as any;
+  const thread = p ? (Array.isArray(p.thread) ? p.thread[0] : p.thread) : null;
+  const { data: mine } = await a.admin.from("forum_poll_votes").select("option_id").eq("poll_id", pollId).eq("user_id", a.userId).maybeSingle();
+  const check = checkVote({
+    canPost: true, // getActor already required a verified member
+    pollExists: Boolean(p),
+    threadApproved: thread?.status === "approved",
+    closesAt: p?.closes_at ?? null,
+    optionInPoll: Boolean(p?.options?.some((o: any) => o.id === optionId)),
+    alreadyVoted: Boolean(mine),
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  if (!check.ok) return { error: check.reason === "unverified" ? "unverified" : check.reason };
+  const { error } = await a.admin.from("forum_poll_votes").insert({ poll_id: pollId, option_id: optionId, user_id: a.userId });
+  if (error) return { error: error.code === "23505" ? "already" : "failed" };
+  return { ok: true };
+}
+
+/** Follow (or unfollow) a room: followed rooms lead "This week" on the forum home. */
+export async function followRoomAction(slug: string, follow: boolean): Promise<ForumFormState> {
+  if (!isForumCategory(slug)) return { error: "category" };
+  if (!isServiceConfigured()) return { error: "unavailable" };
+  const session = await getSession();
+  if (!session) return { error: "signin" };
+  const admin = createServiceClient();
+  const cat = await roomRow(admin, slug);
+  if (!cat) return { error: "unavailable" };
+  const res = follow
+    ? await admin.from("forum_room_follows").upsert({ user_id: session.userId, category_id: cat.id }, { onConflict: "user_id,category_id", ignoreDuplicates: true })
+    : await admin.from("forum_room_follows").delete().eq("user_id", session.userId).eq("category_id", cat.id);
+  if (res.error) return { error: isMissingTable(res.error) ? "unavailable" : "failed" };
+  return { ok: true };
+}
+
+/** Turn "email me when someone replies to my thread" on or off (notification_preferences.forum_replies). */
+export async function setReplyEmailsAction(on: boolean): Promise<ForumFormState> {
+  if (!isServiceConfigured()) return { error: "unavailable" };
+  const session = await getSession();
+  if (!session) return { error: "signin" };
+  const { error } = await createServiceClient()
+    .from("notification_preferences")
+    .upsert({ user_id: session.userId, forum_replies: on ? "instant" : "off" }, { onConflict: "user_id" });
+  return error ? { error: "failed" } : { ok: true };
 }
 
 /** Staff-only: appoint (or remove) a community moderator by handle. */
@@ -422,9 +539,9 @@ export async function appointModAction(_prev: ForumFormState, formData: FormData
   const handle = formData.get("handle")?.toString().trim().replace(/^@/, "").toLowerCase() ?? "";
   const category = formData.get("category")?.toString();
   if (!isForumCategory(category)) return { error: "category" };
-  const [{ data: prof }, { data: cat }] = await Promise.all([
+  const [{ data: prof }, cat] = await Promise.all([
     a.admin.from("forum_profiles").select("user_id").eq("handle", handle).maybeSingle<{ user_id: string }>(),
-    a.admin.from("forum_categories").select("id").eq("slug", category).maybeSingle<{ id: string }>(),
+    roomRow(a.admin, category),
   ]);
   if (!prof || !cat) return { error: "notfound" };
   const remove = formData.get("remove") === "1";
