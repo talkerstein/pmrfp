@@ -1311,6 +1311,32 @@ export async function sendDigestEmail(
   );
 }
 
+/**
+ * The weekly insights brief (lib/insights/email, cron/insights-brief behind
+ * INSIGHTS_EMAIL_ENABLED) in the shared shell. Body and footer are built
+ * and escaped in lib/insights/email; exported for the admin preview.
+ */
+export function insightsBriefHtml(email: { title: string; bodyHtml: string; footnoteHtml: string }, lang: "en" | "fr" | "es"): string {
+  return layout(email.title, email.bodyHtml, email.footnoteHtml, { referralPs: false, lang });
+}
+
+export async function sendInsightsBrief(
+  to: string,
+  email: { subject: string; title: string; bodyHtml: string; footnoteHtml: string },
+  lang: "en" | "fr" | "es",
+  unsubscribeUrl: string | null,
+): Promise<void> {
+  await send(
+    to,
+    email.subject,
+    insightsBriefHtml(email, lang),
+    unsubscribeUrl
+      ? { "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+      : undefined,
+    { utm: "insights-brief" },
+  );
+}
+
 /** Is Resend configured (an email can actually go out)? */
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);

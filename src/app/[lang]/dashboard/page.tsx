@@ -26,6 +26,8 @@ import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card
 import { getMemberMarket } from "@/lib/leads/load";
 import { MarketPanel } from "@/components/leads/market-panel";
 import { TrialFlash, TrialStartForm, TrialStatus, canStartTrial } from "@/components/leads/trial";
+import { InsightsCard } from "@/components/insights/insights-card";
+import { dashboardInsights } from "@/lib/insights/dashboard";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -67,6 +69,13 @@ export default async function TradeDashboardHome({
   const lang = getLang();
   const tp = getT("portfolio").home;
   const nudge = photoProjects && org && !demo ? await projectNudge(org.id) : null;
+  // "Insights for you": facts from the cached snapshots, gated on the session's entitlements.
+  const insights = market
+    ? await dashboardInsights(session, market, lang).catch((e) => {
+        console.warn("[insights] unavailable", e instanceof Error ? e.message : e);
+        return null;
+      })
+    : null;
 
   return (
     <div>
@@ -80,6 +89,10 @@ export default async function TradeDashboardHome({
       <TrialStatus trial={session.trial} paid={session.paid} country={country} />
 
       {market && <MarketPanel market={market} session={session} country={country} />}
+
+      {insights && (
+        <InsightsCard insights={insights.insights} persona={insights.persona} lang={lang} isPro={insights.isPro} marketHref={insights.marketHref} />
+      )}
 
       {/* Prominent profile-completion meter — single source of truth for "what
           to do next." Replaces the previous trio (stat / checklist / recommended-

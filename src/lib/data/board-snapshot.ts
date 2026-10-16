@@ -53,6 +53,10 @@ export interface BoardRow {
   sourceType: string | null;
   gcProjectName: string | null;
   awardedRfpId: string | null;
+  /** When the buyer posted it (importers use the source's posting date), ISO. */
+  publishedAt: string | null;
+  /** When PMRFP first stored it (rfp_posts.created_at), ISO. Insights use it to ignore a feed's first weeks. */
+  createdAt: string | null;
   categoryIds: string[];
 }
 
@@ -61,9 +65,10 @@ interface RfpPublicRow {
   region_id: string | null; property_type_id: string | null;
   city: string | null; province: string | null; deadline: string | null; is_demo: boolean;
   source_type?: string | null; gc_project_name?: string | null; awarded_rfp_id?: string | null;
+  published_at?: string | null; created_at?: string | null;
 }
 
-const COLUMNS = "id,slug,title,summary,region_id,property_type_id,city,province,deadline,is_demo,source_type,gc_project_name,awarded_rfp_id";
+const COLUMNS = "id,slug,title,summary,region_id,property_type_id,city,province,deadline,is_demo,source_type,gc_project_name,awarded_rfp_id,published_at,created_at";
 
 /** Inclusive lower / exclusive upper UUID bound of a shard (null = open end). */
 export function shardRange(shard: number): { lo: string | null; hi: string | null } {
@@ -143,6 +148,8 @@ export async function fetchBoardShard(shard: number): Promise<BoardRow[]> {
     sourceType: r.source_type ?? null,
     gcProjectName: r.gc_project_name ?? null,
     awardedRfpId: r.awarded_rfp_id ?? null,
+    publishedAt: r.published_at ?? null,
+    createdAt: r.created_at ?? null,
     categoryIds: cats.get(r.id) ?? [],
   }));
   const bytes = JSON.stringify(out).length;
@@ -159,7 +166,7 @@ const cachedShard = unstable_cache(
   // The project URL is part of the key so preview and production databases never share entries.
   async (shard: number, _projectUrl: string): Promise<BoardRow[]> =>
     singleFlight(`board-shard:${shard}`, () => limit(() => fetchBoardShard(shard))),
-  ["board-snapshot-shard-v1"],
+  ["board-snapshot-shard-v2"],
   { tags: [RFPS_TAG], revalidate: SNAPSHOT_REVALIDATE },
 );
 

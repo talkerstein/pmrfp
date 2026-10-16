@@ -96,6 +96,8 @@ function toListItem(r: BoardRow, m: Lookups, today: string): RfpListItem {
     sourceType: r.sourceType,
     gcProjectName: r.gcProjectName,
     awardedRfpId: r.awardedRfpId,
+    publishedAt: r.publishedAt,
+    createdAt: r.createdAt,
   };
 }
 
