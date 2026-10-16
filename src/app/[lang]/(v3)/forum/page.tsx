@@ -9,7 +9,10 @@ import { newestPerForum, openTenderStrip, partitionForums, pickStartHere, shownC
 import { ForumIcon, ForumSearch, ThreadList } from "@/components/forum/organize";
 import { cleanSearch } from "@/lib/forum/organize";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
-import { CHANNEL_ORDER, FORUM_CHANNELS, type ForumCategorySlug } from "@/lib/forum/categories";
+import { CHANNEL_ORDER, FORUM_CHANNELS, regionalOrder, type ForumCategorySlug } from "@/lib/forum/categories";
+import { canonicalProvince } from "@/lib/data/price-benchmarks";
+import { getSession } from "@/lib/access/access";
+import { ThisWeek } from "@/components/forum/this-week";
 import { FeaturedContributors, LevelStairs } from "@/components/karma/level-stairs";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -22,13 +25,10 @@ import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
-/** The regional channel in the visitor's order: their own province/state's forum, then their country's, then the other country's. */
+/** The regional channel in the visitor's order: their own region's room, then their country's, then the other country's. */
 function regionalFirst(ch: string, slugs: readonly ForumCategorySlug[], visitor: { country: "CA" | "US"; province: string | null }): ForumCategorySlug[] {
   if (ch !== "regional") return [...slugs];
-  const own = (s: string) => (s === "united-states" ? "US" : "CA") === visitor.country;
-  const home = visitor.province ? visitor.province.toLowerCase().replace(/[^a-z]+/g, "-") : null;
-  const rank = (s: string) => (s === home ? 0 : own(s) ? 1 : 2);
-  return [...slugs].sort((a, b) => rank(a) - rank(b));
+  return regionalOrder(slugs, { country: visitor.country, province: canonicalProvince(visitor.province) });
 }
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: SP }): Promise<Metadata> {
@@ -52,15 +52,15 @@ async function runSearch(raw: unknown): Promise<{ q: string | null; asked: boole
 
 /** Floating board names in the hero: [board, left, top, font size, palette]. */
 const BUBBLES: [ForumCategorySlug, string, string, number, number][] = [
-  ["business-pricing", "0%", "2%", 19, 0],
-  ["jobs-hiring", "52%", "0%", 15, 1],
+  ["pricing-estimating", "0%", "2%", 19, 0],
+  ["finding-work", "52%", "0%", 15, 1],
   ["quebec", "4%", "17%", 15, 2],
   ["codes-permits", "34%", "15%", 17, 3],
-  ["tools-gear", "48%", "30%", 15, 2],
+  ["getting-paid", "48%", "30%", 15, 2],
   ["electrical", "0%", "32%", 18, 0],
   ["hvac-mechanical", "14%", "47%", 15, 1],
   ["roofing-envelope", "56%", "45%", 15, 3],
-  ["condo-boards", "0%", "61%", 15, 1],
+  ["show-your-work", "0%", "61%", 15, 1],
   ["ontario", "60%", "60%", 17, 0],
 ];
 const PAL = [["#91F2CF", "#1B1D3A"], ["#282B59", "#FFFFFF"], ["#4A4E85", "#FFFFFF"], ["#FFFFFF", "#1B1D3A"]];
@@ -72,13 +72,14 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
   const v = getT("v3Pages").forum;
   const k = getT("karma");
   const o = t.org;
+  const session = await getSession();
   const [idx, search, latestThreads, pinnedGuides, allAutoThreads, visitor] = await Promise.all([
     getForumIndex(),
     runSearch(rawQ),
     listLatestThreads(40),
     listPinnedGuides(),
     listRecentAutoThreads(),
-    getVisitorCountry(),
+    getVisitorCountry({ session }),
   ]);
   // Country-first: tender strips only carry the visitor's country's listings,
   // their own province/state's first; the regional channel leads with theirs.
@@ -86,7 +87,7 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
   const q = t.quiet;
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => formatNumber(n, lang);
-  const newThread = L("/forum/job-site-stories/new");
+  const newThread = L("/forum/show-your-work/new");
 
   const cats = idx.ready ? idx.categories : [];
   const bySlug = new Map(cats.map((c) => [c.slug, c]));
@@ -181,8 +182,10 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
         <OpeningSoon />
       ) : (
         <>
+          {!search.asked && <ThisWeek session={session} visitor={visitor} categories={cats} />}
+
           {!search.asked && startHere.length > 0 && (
-            <section className="wrap f-sec first" aria-labelledby="forum-start">
+            <section className="wrap f-sec" aria-labelledby="forum-start">
               <h2 className="h2" id="forum-start">{q.startHereTitle}</h2>
               <p className="mt-1 max-w-2xl text-sm text-[#4B4F6B]">{q.startHereLead}</p>
               <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -252,7 +255,7 @@ export default async function ForumIndexPage({ params, searchParams }: { params:
             </section>
           )}
 
-          <section className={`wrap f-sec${search.asked || (startHere.length === 0 && tenders.length === 0 && byForum.length === 0) ? " first" : ""}`} aria-labelledby="forum-latest">
+          <section className={`wrap f-sec${search.asked ? " first" : ""}`} aria-labelledby="forum-latest">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
               <h2 className="h2" id="forum-latest">{search.asked ? (search.q ? fmt(o.searchTitle, { q: search.q }) : o.searchLabel) : activity.length > 0 ? o.latestTitle : o.searchLabel}</h2>
               <ForumSearch action={L("/forum")} q={search.q} />

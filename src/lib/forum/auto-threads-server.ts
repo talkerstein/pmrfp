@@ -1,6 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { shortId } from "./text";
+import { countryOf } from "@/lib/visitor-geo";
+import { forumV2Ready } from "./schema-v2";
 import {
   SYSTEM_DISPLAY_NAME,
   SYSTEM_HANDLE,
@@ -210,11 +212,15 @@ export async function runAutoThreads(db: SupabaseClient, opts: { days: number; c
 
   const authorId = await ensureSystemProfile(db);
   if (!authorId) return { ...result, reason: "Could not create the PMRFP Board system profile." };
+  const v2 = await forumV2Ready(db);
 
   for (const d of drafts) {
     let done = false;
     for (let i = 0; i < 3 && !done; i++) {
-      const { error } = await db.from("forum_threads").insert(threadRow(d, catId.get(d.category)!, authorId, shortId(8)));
+      const row = threadRow(d, catId.get(d.category)!, authorId, shortId(8));
+      // Country-first (rework migration): a listing's thread is for its own country only.
+      const insert: Record<string, unknown> = v2 ? { ...row, country: countryOf({ province: d.region }) } : row;
+      const { error } = await db.from("forum_threads").insert(insert);
       if (!error) {
         result.created++;
         done = true;

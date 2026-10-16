@@ -22,6 +22,11 @@ const en = {
     own: "You can't do that on your own post.",
     failed: "Couldn't save that. Try again.",
     unverified: "Posting is open to verified members. Finish your free company profile to get verified.",
+    photos: "Those photos can't be attached. Upload them again.",
+    poll: "A poll needs a question and 2 to 6 different options.",
+    already: "You've already voted in this poll.",
+    closed: "This poll is closed.",
+    option: "Pick one of the options.",
   },
   form: {
     forum: "Forum",
@@ -63,6 +68,38 @@ const en = {
     yourRating: "Your rating: {label}",
   },
   ratings: { dud: "Dud", fair: "Fair", solid: "Solid", sharp: "Sharp", gold: "Gold" },
+  photos: {
+    add: "Add photos",
+    uploading: "Uploading…",
+    remove: "Remove photo",
+    limit: "Up to 4 photos, 10 MB each. Location and camera data are removed.",
+    failed: "That photo couldn't be added.",
+    alt: "Photo {n}",
+  },
+  poll: {
+    add: "Add a poll",
+    remove: "Remove the poll",
+    question: "Poll question",
+    option: "Option {n}",
+    addOption: "Add an option",
+    hint: "2 to 6 options. Each verified member votes once; results show after voting.",
+    vote: "Vote",
+    voting: "Voting…",
+    youVoted: "You voted",
+    votes: { one: "{n} vote", other: "{n} votes" },
+  },
+  follow: {
+    follow: "Follow this room",
+    following: "Following",
+    unfollow: "Unfollow",
+    signIn: "Sign in to follow rooms",
+  },
+  emails: {
+    on: "You'll get an email when someone replies here.",
+    off: "Reply emails are off.",
+    turnOff: "Turn off",
+    turnOn: "Email me replies",
+  },
 };
 
 const fr: typeof en = {
@@ -88,6 +125,11 @@ const fr: typeof en = {
     own: "Vous ne pouvez pas faire cela sur votre propre message.",
     failed: "Impossible d'enregistrer. Réessayez.",
     unverified: "La publication est réservée aux membres vérifiés. Remplissez votre profil d'entreprise gratuit pour être vérifié.",
+    photos: "Ces photos ne peuvent pas être jointes. Téléversez-les de nouveau.",
+    poll: "Un sondage demande une question et de 2 à 6 choix différents.",
+    already: "Vous avez déjà voté à ce sondage.",
+    closed: "Ce sondage est fermé.",
+    option: "Choisissez une des options.",
   },
   form: {
     forum: "Forum",
@@ -129,6 +171,38 @@ const fr: typeof en = {
     yourRating: "Votre note : {label}",
   },
   ratings: { dud: "Raté", fair: "Passable", solid: "Solide", sharp: "Pointu", gold: "En or" },
+  photos: {
+    add: "Ajouter des photos",
+    uploading: "Téléversement…",
+    remove: "Retirer la photo",
+    limit: "Jusqu'à 4 photos de 10 Mo chacune. La localisation et les données de l'appareil sont retirées.",
+    failed: "Impossible d'ajouter cette photo.",
+    alt: "Photo {n}",
+  },
+  poll: {
+    add: "Ajouter un sondage",
+    remove: "Retirer le sondage",
+    question: "Question du sondage",
+    option: "Choix {n}",
+    addOption: "Ajouter un choix",
+    hint: "De 2 à 6 choix. Chaque membre vérifié vote une fois; les résultats s'affichent après le vote.",
+    vote: "Voter",
+    voting: "Vote en cours…",
+    youVoted: "Votre vote",
+    votes: { one: "{n} vote", other: "{n} votes" },
+  },
+  follow: {
+    follow: "Suivre cette section",
+    following: "Suivie",
+    unfollow: "Ne plus suivre",
+    signIn: "Connectez-vous pour suivre des sections",
+  },
+  emails: {
+    on: "Vous recevrez un courriel quand quelqu'un répond ici.",
+    off: "Les courriels de réponse sont désactivés.",
+    turnOff: "Désactiver",
+    turnOn: "M'envoyer les réponses",
+  },
 };
 
 const es: typeof en = {
@@ -154,6 +228,11 @@ const es: typeof en = {
     own: "No puede hacer eso en su propio mensaje.",
     failed: "No se pudo guardar. Inténtelo de nuevo.",
     unverified: "Solo los miembros verificados pueden publicar. Complete su perfil de empresa gratuito para verificarse.",
+    photos: "No se pueden adjuntar esas fotos. Vuelva a subirlas.",
+    poll: "Una encuesta necesita una pregunta y de 2 a 6 opciones distintas.",
+    already: "Ya votó en esta encuesta.",
+    closed: "Esta encuesta está cerrada.",
+    option: "Elija una de las opciones.",
   },
   form: {
     forum: "Foro",
@@ -195,6 +274,38 @@ const es: typeof en = {
     yourRating: "Su calificación: {label}",
   },
   ratings: { dud: "Flojo", fair: "Regular", solid: "Sólido", sharp: "Destacado", gold: "Oro" },
+  photos: {
+    add: "Agregar fotos",
+    uploading: "Subiendo…",
+    remove: "Quitar foto",
+    limit: "Hasta 4 fotos de 10 MB cada una. Se eliminan la ubicación y los datos de la cámara.",
+    failed: "No se pudo agregar esa foto.",
+    alt: "Foto {n}",
+  },
+  poll: {
+    add: "Agregar una encuesta",
+    remove: "Quitar la encuesta",
+    question: "Pregunta de la encuesta",
+    option: "Opción {n}",
+    addOption: "Agregar una opción",
+    hint: "De 2 a 6 opciones. Cada miembro verificado vota una vez; los resultados se ven después de votar.",
+    vote: "Votar",
+    voting: "Votando…",
+    youVoted: "Su voto",
+    votes: { one: "{n} voto", other: "{n} votos" },
+  },
+  follow: {
+    follow: "Seguir esta sala",
+    following: "Siguiendo",
+    unfollow: "Dejar de seguir",
+    signIn: "Inicie sesión para seguir salas",
+  },
+  emails: {
+    on: "Recibirá un correo cuando alguien responda aquí.",
+    off: "Los correos de respuesta están desactivados.",
+    turnOff: "Desactivar",
+    turnOn: "Enviarme las respuestas",
+  },
 };
 
 export default { en, fr, es };

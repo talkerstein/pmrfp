@@ -3,7 +3,10 @@ import { createReadClient } from "@/lib/supabase/read";
 import { countryOf } from "@/lib/visitor-geo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
-import { FORUM_CATEGORY_SLUGS, type ForumCategorySlug } from "./categories";
+import { canonicalRoom, roomSlugCandidates, type ForumCategorySlug, type RoomCountry } from "./categories";
+import { forumV2Ready } from "./schema-v2";
+import { sanitizeImages, type ForumImage } from "./photos";
+import { isRecurringKind, type RecurringKind } from "./recurring";
 import { PAGE_SIZE, isIndexableThread, ratingAverage } from "./rules";
 import { SYSTEM_HANDLE } from "./auto-threads";
 import { TEAM_HANDLE } from "./staff-guides";
@@ -65,6 +68,12 @@ export interface ThreadSummary {
   author: MemberRef | null;
   lastUser: { handle: string; displayName: string } | null;
   region: string | null;
+  /** Canada or U.S. (recurring threads always; member threads may be unset = both). */
+  country: RoomCountry | null;
+  /** Photos (approved threads: public bucket). */
+  images: ForumImage[];
+  /** A recurring thread's series (open-bids, prompt, poll, ...), else null. */
+  recurring: RecurringKind | null;
 }
 
 export interface Thread extends ThreadSummary {
@@ -87,6 +96,7 @@ export interface Post {
   createdAt: string;
   editedAt: string | null;
   author: MemberRef | null;
+  images: ForumImage[];
 }
 
 type Res<T> = ({ ready: true } & T) | { ready: false };
@@ -95,6 +105,18 @@ const MEMBER_COLS = "user_id,handle,display_name,reputation,is_staff,verified_bu
 const THREAD_COLS =
   "id,short_id,slug,title,type,status,is_pinned,is_locked,is_staff,accepted_post_id,reply_count,view_count,rating_sum,rating_count,created_at,last_post_at,region," +
   `author:forum_profiles!forum_threads_author_fkey(${MEMBER_COLS}),last_user:forum_profiles!forum_threads_last_user_fkey(handle,display_name)`;
+
+/** Columns added by the forum rework migration (read only once it is applied). */
+const V2_THREAD_COLS = ",country,images,auto_source";
+
+async function threadCols(client: SupabaseClient): Promise<string> {
+  return (await forumV2Ready(client)) ? THREAD_COLS + V2_THREAD_COLS : THREAD_COLS;
+}
+
+/** Country filter for lists: threads for this country, plus threads for both (country unset). */
+function inCountryFilter(country: RoomCountry): string {
+  return `country.is.null,country.eq.${country}`;
+}
 
 /** Table missing (migration not applied) or schema cache not reloaded yet. */
 export function isMissingTable(err: { code?: string; message?: string } | null | undefined): boolean {
@@ -172,6 +194,9 @@ function summary(r: any, categorySlug: string): ThreadSummary {
     author: member(r.author),
     lastUser: lu ? { handle: lu.handle, displayName: lu.display_name } : null,
     region: r.region ?? null,
+    country: r.country === "CA" || r.country === "US" ? r.country : null,
+    images: sanitizeImages(r.images),
+    recurring: isRecurringKind(r.auto_source) ? r.auto_source : null,
   };
 }
 
@@ -200,7 +225,8 @@ export async function getForumIndex(): Promise<Res<{ categories: ForumCategory[]
     if (!isMissingTable(error)) console.error("[forum] categories", error?.message);
     return { ready: false };
   }
-  const rows = (data as any[]).filter((c) => (FORUM_CATEGORY_SLUGS as readonly string[]).includes(c.slug));
+  // Rows still on an old room slug (before the rework migration) show under the new room.
+  const rows = canonicalRows(data as any[]);
   const lastIds = rows.map((c) => c.last_thread_id).filter(Boolean);
   const [mods, last] = await Promise.all([
     modsByCategory(client),
@@ -242,7 +268,7 @@ export async function listCategoryThreads(
   categorySlug: string,
   page: number,
   sort: ThreadSort = "latest",
-  opts: { hideAuto?: boolean } = {},
+  opts: { hideAuto?: boolean; country?: RoomCountry } = {},
 ): Promise<{ threads: ThreadSummary[]; pinned: ThreadSummary[]; total: number }> {
   if (previewSamplesOn()) {
     const s = sampleCategoryThreads(categoryId);
@@ -255,15 +281,23 @@ export async function listCategoryThreads(
   const from = (page - 1) * PAGE_SIZE;
   // ?auto=0: hide automatic PMRFP Board posts.
   const hideId = opts.hideAuto ? await systemAuthorId(client) : null;
+  const [cols, v2] = await Promise.all([threadCols(client), forumV2Ready(client)]);
+  // Country-first: Canadian and U.S. threads are never mixed (unset = for both).
+  const country = v2 && opts.country ? inCountryFilter(opts.country) : null;
   const [pinned, list] = await Promise.all([
     page === 1 && sort === "latest"
-      ? client.from("forum_threads").select(THREAD_COLS).eq("category_id", categoryId).eq("status", "approved").eq("is_pinned", true).order("last_post_at", { ascending: false }).limit(10)
+      ? (() => {
+          let q = client.from("forum_threads").select(cols).eq("category_id", categoryId).eq("status", "approved").eq("is_pinned", true);
+          if (country) q = q.or(country);
+          return q.order("last_post_at", { ascending: false }).limit(10);
+        })()
       : Promise.resolve({ data: [] as any[] }),
     (() => {
       // Pinned threads sit above the Latest tab; the other tabs include them.
-      let q = client.from("forum_threads").select(THREAD_COLS, { count: "exact" }).eq("category_id", categoryId).eq("status", "approved");
+      let q = client.from("forum_threads").select(cols, { count: "exact" }).eq("category_id", categoryId).eq("status", "approved");
       if (sort === "latest") q = q.eq("is_pinned", false);
       if (hideId) q = q.neq("author_id", hideId);
+      if (country) q = q.or(country);
       return applyThreadSort(q, sort).range(from, from + PAGE_SIZE - 1);
     })(),
   ]);
@@ -274,9 +308,37 @@ export async function listCategoryThreads(
   };
 }
 
+/**
+ * forum_categories rows → one row per current room, slug rewritten to the
+ * current name. When both an old and a new row exist, the new one wins.
+ */
+export function canonicalRows<T extends { slug: string }>(rows: readonly T[]): (T & { slug: ForumCategorySlug })[] {
+  const out = new Map<ForumCategorySlug, T & { slug: ForumCategorySlug }>();
+  for (const r of rows) {
+    const slug = canonicalRoom(r.slug);
+    if (!slug) continue;
+    if (out.has(slug) && r.slug !== slug) continue;
+    out.set(slug, { ...r, slug });
+  }
+  return [...out.values()];
+}
+
 async function slugMap(client: SupabaseClient): Promise<Map<string, ForumCategorySlug>> {
   const { data } = await client.from("forum_categories").select("id,slug");
-  return new Map(((data ?? []) as { id: string; slug: ForumCategorySlug }[]).filter((c) => (FORUM_CATEGORY_SLUGS as readonly string[]).includes(c.slug)).map((c) => [c.id, c.slug]));
+  const map = new Map<string, ForumCategorySlug>();
+  for (const c of (data ?? []) as { id: string; slug: string }[]) {
+    const slug = canonicalRoom(c.slug);
+    if (slug) map.set(c.id, slug);
+  }
+  return map;
+}
+
+/** Category row ids for a room: its own row, plus an old-slug row before the migration. */
+export async function roomIds(slug: ForumCategorySlug): Promise<string[]> {
+  const client = db();
+  if (!client) return [];
+  const { data } = await client.from("forum_categories").select("id,slug").in("slug", roomSlugCandidates(slug));
+  return ((data ?? []) as { id: string }[]).map((r) => r.id);
 }
 
 function withSlugs(rows: any[], slugs: Map<string, ForumCategorySlug>): (ThreadSummary & { categorySlug: ForumCategorySlug })[] {
@@ -294,7 +356,7 @@ export async function listLatestThreads(limit = 8): Promise<ThreadWithCategory[]
   const client = db();
   if (!client) return [];
   const [{ data, error }, slugs] = await Promise.all([
-    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").order("last_post_at", { ascending: false }).limit(limit),
+    client.from("forum_threads").select(`${await threadCols(client)},category_id`).eq("status", "approved").order("last_post_at", { ascending: false }).limit(limit),
     slugMap(client),
   ]);
   if (error) return [];
@@ -307,7 +369,7 @@ export async function listPinnedThreads(limit = 3): Promise<ThreadWithCategory[]
   const client = db();
   if (!client) return [];
   const [{ data, error }, slugs] = await Promise.all([
-    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").eq("is_pinned", true).order("created_at", { ascending: true }).limit(limit),
+    client.from("forum_threads").select(`${await threadCols(client)},category_id`).eq("status", "approved").eq("is_pinned", true).order("created_at", { ascending: true }).limit(limit),
     slugMap(client),
   ]);
   if (error) return [];
@@ -323,7 +385,7 @@ export async function searchThreads(q: string, limit = 30): Promise<ThreadWithCa
   const client = db();
   if (!client) return [];
   const [{ data, error }, slugs] = await Promise.all([
-    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").ilike("title", ilikePattern(q)).order("last_post_at", { ascending: false }).limit(limit),
+    client.from("forum_threads").select(`${await threadCols(client)},category_id`).eq("status", "approved").ilike("title", ilikePattern(q)).order("last_post_at", { ascending: false }).limit(limit),
     slugMap(client),
   ]);
   if (error) return [];
@@ -337,7 +399,7 @@ export async function listRelatedThreads(categoryId: string, categorySlug: Forum
   if (!client) return [];
   const { data } = await client
     .from("forum_threads")
-    .select(THREAD_COLS)
+    .select(await threadCols(client))
     .eq("category_id", categoryId)
     .eq("status", "approved")
     .neq("id", excludeId)
@@ -352,7 +414,10 @@ async function categorySlugFor(client: SupabaseClient, id: string): Promise<Foru
   const hit = CATEGORY_BY_ID.get(id);
   if (hit) return hit;
   const { data } = await client.from("forum_categories").select("id,slug");
-  for (const c of (data ?? []) as { id: string; slug: ForumCategorySlug }[]) CATEGORY_BY_ID.set(c.id, c.slug);
+  for (const c of (data ?? []) as { id: string; slug: string }[]) {
+    const slug = canonicalRoom(c.slug);
+    if (slug) CATEGORY_BY_ID.set(c.id, slug);
+  }
   return CATEGORY_BY_ID.get(id) ?? null;
 }
 
@@ -363,7 +428,7 @@ export async function getThread(sid: string): Promise<Res<{ thread: Thread | nul
   if (!client) return { ready: false };
   const { data, error } = await client
     .from("forum_threads")
-    .select(`${THREAD_COLS},category_id,body,words_total,flag_count,region,updated_at`)
+    .select(`${await threadCols(client)},category_id,body,words_total,flag_count,region,updated_at`)
     .eq("short_id", sid)
     .maybeSingle();
   if (error) {
@@ -400,16 +465,18 @@ function toPost(r: any): Post {
     createdAt: r.created_at,
     editedAt: r.edited_at,
     author: member(r.author),
+    images: sanitizeImages(r.images),
   };
 }
 
-const POST_COLS = `id,body,status,is_staff,is_accepted,upvote_count,created_at,edited_at,author:forum_profiles!forum_posts_author_fkey(${MEMBER_COLS})`;
+const POST_COLS_V1 = `id,body,status,is_staff,is_accepted,upvote_count,created_at,edited_at,author:forum_profiles!forum_posts_author_fkey(${MEMBER_COLS})`;
 
 export async function listPosts(thread: Thread, page: number): Promise<{ posts: Post[]; accepted: Post | null }> {
   if (previewSamplesOn()) return samplePosts(thread);
   const client = db();
   if (!client) return { posts: [], accepted: null };
   const from = (page - 1) * PAGE_SIZE;
+  const POST_COLS = (await forumV2Ready(client)) ? `${POST_COLS_V1},images` : POST_COLS_V1;
   let q = client.from("forum_posts").select(POST_COLS).eq("thread_id", thread.id).eq("status", "approved");
   q = thread.type === "question"
     ? q.order("is_accepted", { ascending: false }).order("upvote_count", { ascending: false }).order("created_at", { ascending: true })
@@ -469,11 +536,11 @@ export async function getProfile(handle: string): Promise<Res<{ profile: Profile
     client.from("forum_posts").select("id,forum_threads!inner(type)", { count: "exact", head: true }).eq("author_id", p.user_id).eq("status", "approved").eq("forum_threads.type", "question"),
     client.from("forum_posts").select("id", { count: "exact", head: true }).eq("author_id", p.user_id).eq("status", "approved").eq("is_accepted", true),
     client.from("forum_threads").select("rating_sum,rating_count").eq("author_id", p.user_id).eq("status", "approved").gte("rating_count", 3).limit(200),
-    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("author_id", p.user_id).eq("status", "approved").order("created_at", { ascending: false }).limit(10),
+    client.from("forum_threads").select(`${await threadCols(client)},category_id`).eq("author_id", p.user_id).eq("status", "approved").order("created_at", { ascending: false }).limit(10),
     client.from("forum_category_mods").select("category_id").eq("user_id", p.user_id),
     client.from("forum_categories").select("id,slug"),
   ]);
-  const slugById = new Map(((cats.data ?? []) as { id: string; slug: ForumCategorySlug }[]).map((c) => [c.id, c.slug]));
+  const slugById = new Map(((cats.data ?? []) as { id: string; slug: string }[]).flatMap((c) => { const s = canonicalRoom(c.slug); return s ? [[c.id, s] as const] : []; }));
   let best: number | null = null;
   for (const r of (rated.data ?? []) as { rating_sum: number; rating_count: number }[]) {
     const avg = ratingAverage(r.rating_sum, r.rating_count);
@@ -543,7 +610,7 @@ export async function listIndexableThreads(): Promise<{ path: string; lastPostAt
     client.from("forum_categories").select("id,slug"),
   ]);
   if (error || !data) return [];
-  const slugById = new Map(((cats ?? []) as { id: string; slug: string }[]).map((c) => [c.id, c.slug]));
+  const slugById = new Map(((cats ?? []) as { id: string; slug: string }[]).flatMap((c) => { const s = canonicalRoom(c.slug); return s ? [[c.id, s] as const] : []; }));
   return (data as any[])
     .filter((t) => slugById.has(t.category_id) && isIndexableThread({ status: t.status, type: t.type, replyCount: t.reply_count, wordsTotal: t.words_total, flagged: false, category: slugById.get(t.category_id) }))
     .map((t) => ({ path: threadPath(slugById.get(t.category_id)!, t.slug, t.short_id), lastPostAt: t.last_post_at }));
@@ -604,7 +671,7 @@ export async function listPinnedGuides(limit = 60): Promise<ThreadWithCategory[]
   const teamId = await teamAuthorId(client);
   if (!teamId) return [];
   const [{ data, error }, slugs] = await Promise.all([
-    client.from("forum_threads").select(`${THREAD_COLS},category_id`).eq("status", "approved").eq("is_pinned", true).eq("author_id", teamId).order("created_at", { ascending: true }).limit(limit),
+    client.from("forum_threads").select(`${await threadCols(client)},category_id`).eq("status", "approved").eq("is_pinned", true).eq("author_id", teamId).order("created_at", { ascending: true }).limit(limit),
     slugMap(client),
   ]);
   if (error) return [];
@@ -665,5 +732,193 @@ export async function autoThreadListingSlug(threadId: string): Promise<{ kind: s
   if (error || !data?.auto_source_key?.startsWith("rfp:")) return null;
   const { data: rfp } = await client.from("rfp_public").select("slug").eq("id", data.auto_source_key.slice(4)).maybeSingle<{ slug: string }>();
   return rfp ? { kind: data.auto_source, slug: rfp.slug } : null;
+}
+
+/** Photos, polls, follows and country scoping are on (the rework migration is applied). */
+export async function forumReworkReady(): Promise<boolean> {
+  if (previewSamplesOn()) return false;
+  return forumV2Ready(db());
+}
+
+// ── Discovery: this week, unanswered, photos, polls (rework) ─────────
+const one = (v: any) => (Array.isArray(v) ? v[0] : v);
+const forCountry = (c: unknown, country: RoomCountry) => c == null || c === country;
+
+/** Open questions nobody has answered yet (members only: no automatic posts or guides). For helpers. */
+export async function listUnansweredQuestions(country: RoomCountry, limit = 8): Promise<ThreadWithCategory[]> {
+  if (previewSamplesOn()) return sampleAllThreads().filter((t) => t.type === "question" && t.replyCount === 0).slice(0, limit);
+  const client = db();
+  if (!client) return [];
+  const [cols, v2, slugs] = await Promise.all([threadCols(client), forumV2Ready(client), slugMap(client)]);
+  let q = client.from("forum_threads").select(`${cols},category_id`).eq("status", "approved").eq("type", "question").eq("reply_count", 0).eq("is_locked", false);
+  if (v2) q = q.or(inCountryFilter(country));
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(limit * 3);
+  if (error) return [];
+  return withSlugs((data ?? []) as any[], slugs).filter((t) => !t.isAuto && !t.isGuide).slice(0, limit);
+}
+
+/** This week's most-answered questions (members only). */
+export async function listTopQuestions(country: RoomCountry, days = 7, limit = 5): Promise<ThreadWithCategory[]> {
+  if (previewSamplesOn()) return sampleAllThreads().filter((t) => t.type === "question" && t.replyCount > 0).slice(0, limit);
+  const client = db();
+  if (!client) return [];
+  // Day precision keeps the cache key stable for the whole day.
+  const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const [cols, v2, slugs] = await Promise.all([threadCols(client), forumV2Ready(client), slugMap(client)]);
+  let q = client.from("forum_threads").select(`${cols},category_id`).eq("status", "approved").eq("type", "question").gt("reply_count", 0).gte("created_at", since);
+  if (v2) q = q.or(inCountryFilter(country));
+  const { data, error } = await q.order("reply_count", { ascending: false }).order("view_count", { ascending: false }).limit(limit * 3);
+  if (error) return [];
+  return withSlugs((data ?? []) as any[], slugs).filter((t) => !t.isAuto).slice(0, limit);
+}
+
+export interface PhotoItem {
+  key: string;
+  path: string;
+  threadTitle: string;
+  categorySlug: ForumCategorySlug;
+  image: ForumImage;
+  createdAt: string;
+  author: MemberRef | null;
+}
+
+/** Newest photos in approved threads and replies, for one country (or for both). */
+export async function listLatestPhotos(country: RoomCountry, limit = 8): Promise<PhotoItem[]> {
+  if (previewSamplesOn()) return [];
+  const client = db();
+  if (!client || !(await forumV2Ready(client))) return [];
+  const thread = "thread:forum_threads!inner(id,short_id,slug,title,category_id,country,status)";
+  const [posts, threads, slugs] = await Promise.all([
+    client
+      .from("forum_posts")
+      .select(`id,images,created_at,author:forum_profiles!forum_posts_author_fkey(${MEMBER_COLS}),${thread}`)
+      .eq("status", "approved")
+      .eq("thread.status", "approved")
+      .neq("images", "[]")
+      .order("created_at", { ascending: false })
+      .limit(limit * 3),
+    client
+      .from("forum_threads")
+      .select(`id,short_id,slug,title,category_id,country,images,created_at,author:forum_profiles!forum_threads_author_fkey(${MEMBER_COLS})`)
+      .eq("status", "approved")
+      .neq("images", "[]")
+      .order("created_at", { ascending: false })
+      .limit(limit * 2),
+    slugMap(client),
+  ]);
+  const out: PhotoItem[] = [];
+  for (const r of (posts.data ?? []) as any[]) {
+    const th = one(r.thread);
+    const slug = th ? slugs.get(th.category_id) : undefined;
+    const img = sanitizeImages(r.images)[0];
+    if (!th || !slug || !img || !forCountry(th.country, country)) continue;
+    out.push({ key: `p-${r.id}`, path: `${threadPath(slug, th.slug, th.short_id)}#post-${r.id}`, threadTitle: th.title, categorySlug: slug, image: img, createdAt: r.created_at, author: member(r.author) });
+  }
+  for (const r of (threads.data ?? []) as any[]) {
+    const slug = slugs.get(r.category_id);
+    const img = sanitizeImages(r.images)[0];
+    if (!slug || !img || !forCountry(r.country, country)) continue;
+    out.push({ key: `t-${r.id}`, path: threadPath(slug, r.slug, r.short_id), threadTitle: r.title, categorySlug: slug, image: img, createdAt: r.created_at, author: member(r.author) });
+  }
+  return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
+}
+
+export interface PollSummary {
+  pollId: string;
+  question: string;
+  path: string;
+  title: string;
+  categorySlug: ForumCategorySlug;
+  createdAt: string;
+}
+
+/** Open polls from the last 45 days, for one country (or for both). */
+export async function listActivePolls(country: RoomCountry, limit = 4): Promise<PollSummary[]> {
+  if (previewSamplesOn()) return [];
+  const client = db();
+  if (!client || !(await forumV2Ready(client))) return [];
+  const since = new Date(Date.now() - 45 * 86_400_000).toISOString().slice(0, 10);
+  const [{ data, error }, slugs] = await Promise.all([
+    client
+      .from("forum_polls")
+      .select("id,question,closes_at,created_at,thread:forum_threads!inner(id,short_id,slug,title,category_id,country,status)")
+      .eq("thread.status", "approved")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(limit * 4),
+    slugMap(client),
+  ]);
+  if (error) return [];
+  const now = Date.now();
+  const out: PollSummary[] = [];
+  for (const r of (data ?? []) as any[]) {
+    const th = one(r.thread);
+    const slug = th ? slugs.get(th.category_id) : undefined;
+    if (!th || !slug || !forCountry(th.country, country)) continue;
+    if (r.closes_at && new Date(r.closes_at).getTime() <= now) continue;
+    out.push({ pollId: r.id, question: r.question, path: threadPath(slug, th.slug, th.short_id), title: th.title, categorySlug: slug, createdAt: r.created_at });
+  }
+  return out.slice(0, limit);
+}
+
+/** Newest recurring threads of one series for one country (e.g. this week's "Open bids" threads). */
+export async function listRecurringThreads(kind: RecurringKind, country: RoomCountry, limit = 40): Promise<ThreadWithCategory[]> {
+  if (previewSamplesOn()) return [];
+  const client = db();
+  if (!client || !(await forumV2Ready(client))) return [];
+  const [cols, slugs] = await Promise.all([threadCols(client), slugMap(client)]);
+  const { data, error } = await client
+    .from("forum_threads")
+    .select(`${cols},category_id`)
+    .eq("status", "approved")
+    .eq("auto_source", kind)
+    .eq("country", country)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  return withSlugs((data ?? []) as any[], slugs);
+}
+
+export interface PollView {
+  id: string;
+  question: string;
+  closesAt: string | null;
+  options: { id: string; label: string; position: number }[];
+}
+
+/** A thread's poll (public read: the question and options, never the counts). */
+export async function getPoll(threadId: string): Promise<PollView | null> {
+  if (previewSamplesOn()) return null;
+  const client = db();
+  if (!client || !(await forumV2Ready(client))) return null;
+  const { data, error } = await client.from("forum_polls").select("id,question,closes_at,options:forum_poll_options!forum_poll_options_poll_id_fkey(id,label,position)").eq("thread_id", threadId).maybeSingle();
+  if (error || !data) return null;
+  const r = data as any;
+  return {
+    id: r.id,
+    question: r.question,
+    closesAt: r.closes_at,
+    options: ((r.options ?? []) as any[]).map((o) => ({ id: o.id, label: o.label, position: o.position })).sort((a, b) => a.position - b.position),
+  };
+}
+
+/**
+ * The viewer's own vote, and the counts once they have voted (the
+ * forum_poll_results RPC refuses counts to anyone who hasn't). Cookie
+ * client: RLS sees the viewer.
+ */
+export async function viewerPollState(client: SupabaseClient, userId: string, pollId: string): Promise<{ votedFor: string | null; counts: Map<string, number> | null }> {
+  const { data } = await client.from("forum_poll_votes").select("option_id").eq("poll_id", pollId).eq("user_id", userId).maybeSingle<{ option_id: string }>();
+  if (!data) return { votedFor: null, counts: null };
+  const { data: rows, error } = await client.rpc("forum_poll_results", { pid: pollId });
+  if (error) return { votedFor: data.option_id, counts: null };
+  return { votedFor: data.option_id, counts: new Map(((rows ?? []) as { option_id: string; votes: number }[]).map((r) => [r.option_id, r.votes])) };
+}
+
+/** Room ids the viewer follows (RLS: own rows). Empty before the migration. */
+export async function viewerFollows(client: SupabaseClient, userId: string): Promise<Set<string>> {
+  const { data, error } = await client.from("forum_room_follows").select("category_id").eq("user_id", userId);
+  if (error) return new Set();
+  return new Set(((data ?? []) as { category_id: string }[]).map((r) => r.category_id));
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */

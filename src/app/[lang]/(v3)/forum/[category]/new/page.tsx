@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { Container } from "@/components/container";
 import { ForumHero, OpeningSoon, VerifyPanel } from "@/components/forum/parts";
 import { ThreadForm } from "@/components/forum/forms";
 import { getSession } from "@/lib/access/access";
-import { getCategoryRow } from "@/lib/forum/data";
+import { forumReworkReady, getCategoryRow } from "@/lib/forum/data";
 import { sessionCanPost } from "@/lib/forum/eligibility";
 import { createClient } from "@/lib/supabase/server";
-import { FORUM_CATEGORY_SLUGS, isForumCategory } from "@/lib/forum/categories";
+import { FORUM_CATEGORY_SLUGS, isForumCategory, redirectRoom } from "@/lib/forum/categories";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -28,6 +28,9 @@ export default async function NewThreadPage({
   const rawType = (await searchParams).type;
   const initialType = rawType === "question" || rawType === "discussion" ? rawType : undefined;
   const self = `/forum/${category}/new${initialType ? `?type=${initialType}` : ""}`;
+  // Renamed or merged rooms: the old "new thread" URL goes to the new room.
+  const moved = redirectRoom(category);
+  if (moved) permanentRedirect(localizePath(`/forum/${moved}/new${initialType ? `?type=${initialType}` : ""}`, getLang()));
   if (!isForumCategory(category)) notFound();
   const lang = getLang();
   const t = getT("forum");
@@ -54,6 +57,7 @@ export default async function NewThreadPage({
           initialCategory={category}
           initialType={initialType}
           firstPost={firstPost}
+          extras={await forumReworkReady()}
         />
         )}
       </Container>

@@ -8,6 +8,7 @@ import { ModButtons, ThreadForm } from "@/components/forum/forms";
 import { AppointModForm } from "@/components/forum/admin-forms";
 import { AutoThreadImport } from "@/components/forum/auto-import";
 import { StaffGuideImport } from "@/components/forum/staff-guide-import";
+import { RecurringRun } from "@/components/forum/recurring-run";
 import { isMissingTable } from "@/lib/forum/data";
 import { FORUM_CATEGORY_SLUGS } from "@/lib/forum/categories";
 import { excerpt } from "@/lib/forum/text";
@@ -106,6 +107,20 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
           </section>
 
           <section className="max-w-2xl">
+            <h2 className="text-lg font-semibold">Recurring threads</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Posted daily by the cron (/api/cron/forum-recurring, 13:38 UTC), once per period, Canada and the U.S. kept apart.
+              PMRFP Board (automatic, real data only, nothing posted when there&apos;s no data): weekly &quot;Open bids this week&quot; per
+              trade room and regional room, weekly &quot;Who won public work&quot;, monthly &quot;What jobs sold for&quot; (only where the
+              price benchmark has 5+ valued awards). PMRFP Team (staff): a winter &quot;Weather &amp; storm thread&quot; per regional room
+              (Nov–Mar, official forecast links only), weekly &quot;What are you working on?&quot;, monthly &quot;Post a picture of your
+              current job&quot; and a monthly poll. Replies only ever come from members. Noindex until a member replies. Set
+              FORUM_RECURRING=0 to stop. Needs supabase/migrations/20261017000001_forum_rework.sql.
+            </p>
+            <div className="mt-3"><RecurringRun /></div>
+          </section>
+
+          <section className="max-w-2xl">
             <h2 className="text-lg font-semibold">Automatic posts from real tenders &amp; awards</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               One &quot;PMRFP Board · automatic post&quot; thread per real tender, RFP or contract award published in the last 90 days
@@ -120,7 +135,7 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
             <h2 className="text-lg font-semibold">Post a staff thread</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Posts under your account with a visible &quot;PMRFP Staff&quot; label. This is a community, not a Q&amp;A board: seed a mix.
-              Start conversations in Shop Talk (a job-site story, a getting-paid thread in Client Talk, a tools thread, an Off the Clock
+              Start conversations in the business rooms (a job you are proud of in Show your work, a getting-paid question, a tools thread, a Break room
               thread) next to real trade questions. Real topics only; never post as a fake persona, and never name private individuals.
             </p>
             <div className="mt-4"><ThreadForm categories={categories} firstPost={false} staffOption /></div>

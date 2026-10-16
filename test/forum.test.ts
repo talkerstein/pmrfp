@@ -223,13 +223,13 @@ describe("posting gate (verified members only)", () => {
 describe("channels", () => {
   it("defaults trades to Question and community channels to Discussion", () => {
     expect(defaultThreadType("plumbing")).toBe("question");
-    expect(defaultThreadType("job-site-stories")).toBe("discussion");
-    expect(defaultThreadType("off-topic")).toBe("discussion");
+    expect(defaultThreadType("show-your-work")).toBe("discussion");
+    expect(defaultThreadType("break-room")).toBe("discussion");
   });
-  it("never indexes Off the Clock", () => {
+  it("never indexes the Break room", () => {
     const t = { status: "approved" as const, type: "discussion" as const, replyCount: 5, wordsTotal: 900 };
-    expect(isIndexableThread({ ...t, category: "off-topic" })).toBe(false);
-    expect(isIndexableThread({ ...t, category: "job-site-stories" })).toBe(true);
+    expect(isIndexableThread({ ...t, category: "break-room" })).toBe(false);
+    expect(isIndexableThread({ ...t, category: "show-your-work" })).toBe(true);
   });
   it("puts every category in exactly one channel; Québec is French-first", () => {
     expect(new Set(FORUM_CATEGORY_SLUGS).size).toBe(FORUM_CATEGORY_SLUGS.length);
@@ -255,7 +255,7 @@ describe("preview samples", () => {
     const t = sampleThread("hv01rtu1");
     expect(t?.type).toBe("question");
     expect(samplePosts(t!).accepted).not.toBeNull();
-    expect(sampleThread("js01boil")?.categorySlug).toBe("job-site-stories");
+    expect(sampleThread("js01boil")?.categorySlug).toBe("show-your-work");
     expect(sampleProfile("dave_hvac")?.crew?.listed).toBe(true);
   });
 });
@@ -273,6 +273,6 @@ describe("categories", () => {
     expect(forumForTrade("snow-removal")).toBe("landscaping-snow");
     expect(forumForTrade("unknown")).toBeNull();
     expect(tradeForForum("plumbing")).toBe("plumbing");
-    expect(tradeForForum("off-topic")).toBeNull();
+    expect(tradeForForum("break-room")).toBeNull();
   });
 });

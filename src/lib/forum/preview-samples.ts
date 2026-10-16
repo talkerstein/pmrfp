@@ -16,9 +16,9 @@ const dave: MemberRef = { userId: "u-dave", handle: "dave_hvac", displayName: "D
 const marie: MemberRef = { userId: "u-marie", handle: "marie_toit", displayName: "Marie L. (exemple)", reputation: 140, isStaff: false, verifiedBusiness: false, orgId: null };
 
 const CAT_IDS: Partial<Record<ForumCategorySlug, string>> = {
-  "job-site-stories": "c-jss",
-  "client-talk": "c-ct",
-  "off-topic": "c-ot",
+  "show-your-work": "c-jss",
+  "getting-paid": "c-ct",
+  "break-room": "c-ot",
   electrical: "c-el",
   "hvac-mechanical": "c-hv",
   plumbing: "c-pl",
@@ -72,21 +72,21 @@ const SEEDS: Seed[] = [
     views: 64, rating: [8, 2], age: 2,
   },
   {
-    sid: "js01boil", cat: "job-site-stories", slug: "the-boiler-room-that-flooded-at-2am", type: "discussion", author: dave,
+    sid: "js01boil", cat: "show-your-work", slug: "the-boiler-room-that-flooded-at-2am", type: "discussion", author: dave,
     title: "The boiler room that flooded at 2am on Christmas Eve",
     body: "Call comes in at 1:40. Super says \"a little water.\" We get there and it's shin deep, the sump pump is sitting on the shelf still in the box. Three of us bailing, one on the phone with the restoration guys. Back on heat by 7. Best thank-you card I've ever gotten from a board.",
     replies: [{ id: "p5", author: marie, up: 5, age: 0, body: "Pump still in the box is a classic. Ours was a float switch zip-tied up \"so it would stop running.\"" }],
     views: 290, rating: [23, 5], age: 1, pinned: false,
   },
   {
-    sid: "ct01paid", cat: "client-talk", slug: "ninety-days-and-still-not-paid", type: "discussion", author: marie,
+    sid: "ct01paid", cat: "getting-paid", slug: "ninety-days-and-still-not-paid", type: "discussion", author: marie,
     title: "90 days and still not paid by a condo corporation. What actually works?",
     body: "Work signed off, invoice approved by the manager, and it's sitting waiting on a board signature that never comes. I don't want to burn the relationship. Lien deadlines are on my mind. What's worked for you?",
     replies: [{ id: "p6", author: dave, up: 4, age: 0, body: "Polite email to the manager with the lien deadline date in it, copied to the board's general inbox. Facts only. Usually gets a cheque within two weeks." }],
     views: 175, rating: [17, 4], age: 2,
   },
   {
-    sid: "ot01lnch", cat: "off-topic", slug: "best-job-site-lunch", type: "discussion", author: dave,
+    sid: "ot01lnch", cat: "break-room", slug: "best-job-site-lunch", type: "discussion", author: dave,
     title: "Best job site lunch you've had this year?",
     body: "Mine: a Portuguese bakery next to a reroof in Etobicoke. Bifana and a custard tart. Your turn.",
     replies: [{ id: "p7", author: marie, up: 2, age: 0, body: "Poutine d'un camion à Laval, -20 dehors. Rien ne bat ça." }],
@@ -105,6 +105,9 @@ function summary(s: Seed): ThreadSummary {
     createdAt: day(s.age), lastPostAt: day(last ? last.age : s.age), author: s.author,
     lastUser: { handle: (last?.author ?? s.author).handle, displayName: (last?.author ?? s.author).displayName },
     region: null,
+    country: null,
+    images: [],
+    recurring: null,
   };
 }
 
@@ -150,7 +153,7 @@ export function samplePosts(thread: Thread): { posts: Post[]; accepted: Post | n
   const s = SEEDS.find((x) => x.sid === thread.shortId);
   const posts: Post[] = (s?.replies ?? []).map((r) => ({
     id: r.id, body: r.body, status: "approved", isStaff: false, isAccepted: Boolean(r.accepted), upvoteCount: r.up,
-    createdAt: day(r.age), editedAt: null, author: r.author,
+    createdAt: day(r.age), editedAt: null, author: r.author, images: [],
   }));
   if (thread.type === "question") posts.sort((a, b) => Number(b.isAccepted) - Number(a.isAccepted) || b.upvoteCount - a.upvoteCount);
   return { posts, accepted: posts.find((p) => p.isAccepted) ?? null };

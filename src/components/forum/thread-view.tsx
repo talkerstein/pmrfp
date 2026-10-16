@@ -4,12 +4,14 @@ import { notFound, permanentRedirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { CheckCircle2, Lock } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { MemberName, OpeningSoon, Pager, PostBody, RatingBar, VerifyPanel } from "@/components/forum/parts";
+import { MemberName, OpeningSoon, Pager, PostBody, PostImages, RatingBar, VerifyPanel } from "@/components/forum/parts";
+import { PollBlock, ReplyEmailToggle } from "@/components/forum/rework-client";
+import { canSeeResults, isPollOpen, tally } from "@/lib/forum/polls";
 import { ModButtons, PostControls, RateThread, ReplyForm, ThreadReport } from "@/components/forum/forms";
 import { getSession, isAdminRole } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
-import { getThread, isCategoryMod, listPosts, listRelatedThreads, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
+import { forumReworkReady, getPoll, getThread, isCategoryMod, listPosts, listRelatedThreads, viewerPollState, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
 import { isFrenchForum, tradeForForum } from "@/lib/forum/categories";
 import { sessionCanPost } from "@/lib/forum/eligibility";
 import { isIndexableThread, pageCount } from "@/lib/forum/rules";
@@ -46,7 +48,7 @@ export async function threadMetadata(langParam: string, category: string, param:
   const th = res.thread;
   const t = getDictionary(l).forum;
   const path = page > 1 ? `${th.path}/page/${page}` : th.path;
-  const indexable = isIndexableThread({ status: th.status, type: th.type, replyCount: th.replyCount, wordsTotal: th.wordsTotal, category: th.categorySlug, auto: th.isAuto });
+  const indexable = isIndexableThread({ status: th.status, type: th.type, replyCount: th.replyCount, wordsTotal: th.wordsTotal, category: th.categorySlug, auto: th.isAuto, recurring: th.recurring != null });
   return {
     title: `${th.title}${page > 1 ? fmt(t.meta.pageSuffix, { n: page }) : ""} · ${t.categories[th.categorySlug].name}`,
     description: excerpt(th.body, 160),
@@ -92,6 +94,7 @@ function PostCard({
         </span>
       </header>
       <PostBody text={p.body} className="mt-3" />
+      <PostImages images={p.images} className="mt-3" />
       <footer className="mt-4">
         <PostControls
           postId={p.id}
@@ -162,6 +165,30 @@ export async function ThreadView({ category, param, page }: { category: string; 
   // Forum ranks were folded into company reputation: show the company's level.
   const authorLevel = thread.author && !thread.isAuto && !thread.isGuide ? await orgLevel(thread.author.orgId) : null;
 
+  // Rework: polls, photos and reply emails (only once the migration is applied).
+  const rework = await forumReworkReady();
+  const poll = rework && page === 1 ? await getPoll(thread.id) : null;
+  let pollProps: Parameters<typeof PollBlock>[0] | null = null;
+  if (poll) {
+    const state = session ? await viewerPollState(await createClient(), session.userId, poll.id) : { votedFor: null, counts: null };
+    const seen = state.counts && canSeeResults({ voted: state.votedFor != null, closesAt: poll.closesAt });
+    const tallied = seen ? tally(poll.options, state.counts!) : null;
+    pollProps = {
+      pollId: poll.id,
+      question: poll.question,
+      options: poll.options.map((o) => ({ id: o.id, label: o.label })),
+      votedFor: state.votedFor,
+      results: tallied ? tallied.rows.map((r) => ({ id: r.id, label: r.label, votes: r.votes, pct: r.pct })) : null,
+      total: tallied?.total ?? 0,
+      canVote: actorId != null && state.votedFor == null && isPollOpen(poll.closesAt),
+    };
+  }
+  let replyEmails: boolean | null = null;
+  if (rework && op && session) {
+    const { data: pref } = await (await createClient()).from("notification_preferences").select("forum_replies,channel_email").eq("user_id", session.userId).maybeSingle<{ forum_replies: string | null; channel_email: boolean | null }>();
+    replyEmails = pref?.channel_email !== false && (pref?.forum_replies ?? "instant") !== "off";
+  }
+
   return (
     <>
       <JsonLd data={{ ...threadSchema(thread, posts, accepted), ...(isFrenchForum(thread.categorySlug) ? { inLanguage: "fr" } : {}) }} />
@@ -226,6 +253,8 @@ export async function ThreadView({ category, param, page }: { category: string; 
               <time dateTime={thread.createdAt} className="text-xs text-muted-foreground">{fmt(t.thread.posted, { date: formatDate(thread.createdAt, lang) })}</time>
             </header>
             <PostBody text={thread.body} className="mt-3" />
+            <PostImages images={thread.images} className="mt-3" />
+            {replyEmails != null && <div className="mt-3"><ReplyEmailToggle on={replyEmails} /></div>}
             <footer className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t.thread.rateThis}</p>
@@ -247,6 +276,8 @@ export async function ThreadView({ category, param, page }: { category: string; 
             </footer>
           </article>
         )}
+
+        {page === 1 && pollProps && <PollBlock {...pollProps} />}
 
         {page === 1 && tender && <TenderCard ctx={tender} />}
 
@@ -271,7 +302,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
           {firstPrompt && (
             <div className="mb-4">
               <h2 className="f-hd2">{firstPrompt === "answer" ? q.firstAnswer : q.firstReply}</h2>
-              <p className="mt-1 text-sm text-[#4B4F6B]">{thread.isGuide ? q.firstGuideLead : q.firstLead}</p>
+              <p className="mt-1 text-sm text-[#4B4F6B]">{thread.recurring ? t.hub.emptyRecurring : thread.isGuide ? q.firstGuideLead : q.firstLead}</p>
             </div>
           )}
           {thread.isLocked && !isMod ? (
@@ -279,7 +310,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
           ) : !canPost ? (
             <VerifyPanel signedIn={Boolean(session)} next={thread.path} />
           ) : session ? (
-            <ReplyForm threadId={thread.id} label={thread.type === "question" ? t.thread.yourAnswer : t.thread.yourReply} firstPost={(await viewerPostCount(session.userId)) === 0} />
+            <ReplyForm threadId={thread.id} label={thread.type === "question" ? t.thread.yourAnswer : t.thread.yourReply} firstPost={(await viewerPostCount(session.userId)) === 0} photos={rework} />
           ) : (
             <div className="flex flex-wrap gap-3">
               <Link href={`/sign-in?next=${encodeURIComponent(thread.path)}`} className={buttonVariants()}>{t.thread.signInToReply}</Link>

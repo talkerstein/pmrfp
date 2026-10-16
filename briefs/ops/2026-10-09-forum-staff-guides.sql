@@ -91,7 +91,7 @@ If your quote to a homeowner is an estimate, the Consumer Protection Act, 2002 c
 General information, not legal advice. Rules change; confirm with the source or a lawyer before you rely on it. Questions or corrections? Reply below.$guide$,
   673, 'approved', true, true, 'guide:A9'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'job-site-stories' and p.handle = 'pmrfp_team'
+where c.slug = 'getting-paid' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -134,7 +134,7 @@ select 'gb427cc064', c.id, p.user_id, 'discussion', $guide$Change orders that ho
 General information, not legal advice. Rules change; confirm with the source or a lawyer before you rely on it. Questions or corrections? Reply below.$guide$,
   645, 'approved', true, true, 'guide:A8'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'client-talk' and p.handle = 'pmrfp_team'
+where c.slug = 'getting-paid' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -188,7 +188,7 @@ Faster is not cheaper if it relies on overtime or a crew that is not available. 
 General information, not legal or engineering advice. Rules change; confirm with the source before you rely on it. Questions or corrections? Reply below.$guide$,
   396, 'approved', true, true, 'guide:D18'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'client-talk' and p.handle = 'pmrfp_team'
+where c.slug = 'pricing-estimating' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -243,7 +243,7 @@ Put an interest rate in your contract anyway. Where the law uses "the higher of"
 General information, not legal advice. Rules change; confirm with the source or a lawyer before you rely on it. Questions or corrections? Reply below.$guide$,
   731, 'approved', true, true, 'guide:A7'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'business-pricing' and p.handle = 'pmrfp_team'
+where c.slug = 'getting-paid' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -295,7 +295,7 @@ Several construction categories are also exempt from other standards, such as ho
 General information, not legal or engineering advice. Rules change; confirm with the source before you rely on it. Questions or corrections? Reply below.$guide$,
   519, 'approved', true, true, 'guide:D17'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'business-pricing' and p.handle = 'pmrfp_team'
+where c.slug = 'pricing-estimating' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -351,7 +351,7 @@ Each province keeps its own list. Alberta's Tradesecrets site lists its compulso
 General information, not legal advice. Rules change; confirm with the source before you rely on it. Questions or corrections? Reply below.$guide$,
   592, 'approved', true, true, 'guide:C3'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'jobs-hiring' and p.handle = 'pmrfp_team'
+where c.slug = 'running-the-business' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -403,7 +403,7 @@ select 'ga8a23d31b', c.id, p.user_id, 'discussion', $guide$Writing off tools, eq
 General information, not legal or engineering advice. Rules change; confirm with the source before you rely on it. Questions or corrections? Reply below.$guide$,
   499, 'approved', true, true, 'guide:D14'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'tools-gear' and p.handle = 'pmrfp_team'
+where c.slug = 'running-the-business' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -468,7 +468,7 @@ PMRFP lists public tenders in one place at https://pmrfp.com/rfps.
 General information, not legal advice. Rules change; confirm with the source before you rely on it. Questions or corrections? Reply below.$guide$,
   757, 'approved', true, true, 'guide:B1'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'marketplace-talk' and p.handle = 'pmrfp_team'
+where c.slug = 'finding-work' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -520,7 +520,7 @@ PMRFP also lists federal and other public tenders at https://pmrfp.com/rfps.
 General information, not legal advice. Rules change; confirm with the source before you rely on it. Questions or corrections? Reply below.$guide$,
   661, 'approved', true, true, 'guide:B2'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'marketplace-talk' and p.handle = 'pmrfp_team'
+where c.slug = 'finding-work' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -564,7 +564,7 @@ Ontario's guidance puts it plainly: a lender may still have rights in a used ite
 General information, not legal or engineering advice. Rules change; confirm with the source before you rely on it. Questions or corrections? Reply below.$guide$,
   549, 'approved', true, true, 'guide:D15'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'marketplace-talk' and p.handle = 'pmrfp_team'
+where c.slug = 'tools-gear' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -2039,9 +2039,9 @@ Ontario, Saskatchewan and Alberta are designated provinces. On federal projects 
 - PSPC news release, December 2023: https://www.canada.ca/en/public-services-procurement/news/2023/12/new-federal-prompt-payment-legislation-to-protect-construction-workers.html
 
 General information, not legal advice. Rules change; confirm with the source or a lawyer before you rely on it. Questions or corrections? Reply below.$guide$,
-  716, 'approved', true, true, 'guide:A4'
+  716, 'approved', true, false, 'guide:A4'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'general-contractors' and p.handle = 'pmrfp_team'
+where c.slug = 'getting-paid' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
@@ -2188,9 +2188,9 @@ select 'g4f66be110', c.id, p.user_id, 'discussion', $guide$Material suppliers an
 - BC Builders Lien Act (BC Laws): https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/97045_01
 
 General information, not legal advice. Rules change; confirm with the source or a lawyer before you rely on it. Questions or corrections? Reply below.$guide$,
-  716, 'approved', true, true, 'guide:A6'
+  716, 'approved', true, false, 'guide:A6'
 from public.forum_categories c, public.forum_profiles p
-where c.slug = 'suppliers-equipment' and p.handle = 'pmrfp_team'
+where c.slug = 'getting-paid' and p.handle = 'pmrfp_team'
 on conflict (auto_source_key) where auto_source_key is not null do nothing;
 
 insert into public.forum_threads
