@@ -45,7 +45,11 @@
 .v3-h2 { font-family: var(--fp); font-weight: 700; font-size: 48px; line-height: 1.06; letter-spacing: -.03em; color: var(--navy); margin-top: 10px !important; }
 .v3-h3 { font-family: var(--fp); font-weight: 700; font-size: 30px; letter-spacing: -.02em; color: var(--navy); }
 .v3-wrap { max-width: 1200px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
-.v3-pill { display: inline-block; border-radius: 999px; font-weight: 700; padding: 13px 24px; white-space: nowrap; text-decoration: none; text-align: center; }
+/* A label longer than its column (French and Spanish run long) wraps inside the pill
+   instead of pushing the page sideways; a label that fits stays on one line, and never
+   shrinks to make room for a neighbour (flex-shrink: 0). max-width: stretch caps the
+   whole pill, padding included, at its column (boxes here are content-box). */
+.v3-pill { display: inline-block; border-radius: 999px; font-weight: 700; padding: 13px 24px; white-space: normal; text-wrap: balance; flex-shrink: 0; max-width: 100%; max-width: -moz-available; max-width: -webkit-fill-available; max-width: stretch; text-decoration: none; text-align: center; }
 .v3-pill.mint { background: var(--mint); color: var(--ink); }
 .v3-pill.navy { background: var(--navy); color: #FFFFFF; }
 .v3-pill.ink { background: var(--ink); color: #FFFFFF; }
@@ -119,8 +123,8 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 
 /* ------------------------------------------------------------ hero */
 .v3-hero { max-width: 1200px; margin: 0 auto; padding: 56px 32px 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 32px; align-items: end; }
-.v3-hero-main { grid-column: span 8; }
-.v3-hero-side { grid-column: span 4; padding-bottom: 10px; }
+.v3-hero-main { grid-column: span 8; min-width: 0; }
+.v3-hero-side { grid-column: span 4; min-width: 0; padding-bottom: 10px; }
 .v3-hero-eyebrow { font-family: var(--fm); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--mint); display: flex; align-items: center; gap: 10px; }
 .v3-h1 { margin-top: 18px; font-family: var(--fp); font-weight: 700; font-size: clamp(48px, 5.4vw, 68px); line-height: 1.04; letter-spacing: -.03em; min-height: 4.2em; }
 /* Room for the longest rotating word, so the swap never moves the page (measured per language). */
@@ -128,7 +132,7 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .pmrfp-v3:lang(es) .v3-h1 { min-height: 5.25em; }
 .v3-h1 .w { color: var(--mint); }
 .v3-hero-sub { margin: 0; font-size: 18px; color: #C9CCE6; }
-.v3-hero-ctas { margin-top: 18px; display: flex; gap: 10px; }
+.v3-hero-ctas { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
 
 .v3-aud-wrap { max-width: 1200px; margin: 0 auto; padding: 40px 32px 64px; }
 .v3-aud { display: flex; gap: 10px; }
@@ -165,7 +169,7 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-trades { padding-top: 96px; }
 .v3-trades-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; }
 .v3-trades-head .v3-h2 { max-width: 420px; }
-.v3-search { flex: 0 0 600px; display: flex; gap: 6px; background: var(--ink); border-radius: 999px; padding: 8px; }
+.v3-search { flex: 0 0 600px; min-width: 0; max-width: 100%; display: flex; gap: 6px; background: var(--ink); border-radius: 999px; padding: 8px; }
 .v3-field { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; background: #FFFFFF; padding: 8px 14px; border-radius: 12px; }
 .v3-field:first-child { border-radius: 999px 12px 12px 999px; padding-left: 24px; }
 .v3-field > span { font-size: 12px; font-weight: 700; color: var(--sub); }

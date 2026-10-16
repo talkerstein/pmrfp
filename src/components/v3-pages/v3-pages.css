@@ -408,7 +408,11 @@
 .vp-sechead { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; }
 .vp-legend { max-width: 360px; color: var(--sub); font-size: 15px; display: flex; flex-direction: column; gap: 6px; }
 .vp-legend > span { display: flex; align-items: center; gap: 10px; }
-.vp-table-scroll { margin-top: 40px; border: 2px solid var(--navy); border-radius: 24px; overflow: hidden; }
+/* position: relative makes this the containing block of the screen-reader-only spans
+   (position: absolute) in the cells; without it they escape the clip and widen the page. */
+.vp-table-scroll { position: relative; margin-top: 40px; border: 2px solid var(--navy); border-radius: 24px; overflow: hidden; }
+/* The plan buttons in the table keep one line: the table scrolls inside its own box. */
+.vp-table .v3-pill { white-space: nowrap; max-width: none; }
 .vp-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .vp-table th, .vp-table td { padding: 14px 12px; text-align: center; font-size: 14px; color: var(--sub); border-top: 1px solid var(--rule); }
 .vp-table th[scope="row"] { text-align: left; padding-left: 26px; font-weight: 700; color: var(--ink); font-size: 16px; width: 34%; }
@@ -510,7 +514,7 @@
 .vp-faq-list { grid-column: 5 / span 8; background: #FFFFFF; border-radius: 28px; padding: 12px; }
 .vp-faq-list .it { border-bottom: 1px solid var(--rule); }
 .vp-faq-list .it:last-child { border-bottom-color: transparent; }
-.vp-faq-list .faqb { font: inherit; width: 100%; text-align: left; cursor: pointer; border: 0; background: transparent; color: var(--ink); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 18px; transition: background .2s ease; }
+.vp-faq-list .faqb { font: inherit; width: 100%; box-sizing: border-box; text-align: left; cursor: pointer; border: 0; background: transparent; color: var(--ink); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 18px; transition: background .2s ease; }
 .vp-faq-list .faqb:hover { background: #F5F5FA; }
 .vp-faq-list .no { font-family: var(--fm); font-size: 13px; color: var(--sub); flex-shrink: 0; }
 .vp-faq-list .q { flex-grow: 1; font-family: var(--fp); font-weight: 600; font-size: 20px; line-height: 1.25; color: var(--navy); }
