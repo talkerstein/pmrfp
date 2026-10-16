@@ -24,6 +24,9 @@ import {
   BENCHMARK_MIN_AWARDS,
   FREE_HORIZON_MS,
   LIFECYCLE_REPLY_TO,
+  RESCUE_HORIZON_MS,
+  RESCUE_STEPS,
+  STALLED_LIST_DAYS,
   MAX_MEMBERS_PER_RUN,
   MAX_SENDS_PER_RUN,
   isStepId,
@@ -32,8 +35,13 @@ import {
   type StepId,
 } from "./config";
 import { openSteps, plan, type MemberFacts, type MemberState, type SkipReason, type StopReason, type WaitReason } from "./schedule";
-import { renderStep, sampleCopyData, type CopyData, type RenderedEmail } from "./copy";
+import { countryArea, renderStep, sampleCopyData, type CopyData, type RenderedEmail, type RescueCopy } from "./copy";
 import { personaOf, type Persona } from "./persona";
+import { decideRescue, isInternalEmail, manualOutreach, missingParts, openBidsIn, resumePath, type RescueStopReason, type StalledState } from "./rescue";
+import { isPastContract } from "@/lib/data/fomo";
+import { countryOf } from "@/lib/visitor-geo";
+import { parsePrefSlugs } from "@/lib/auth/signup-prefs";
+import { STAGE_LABEL, stageOf, type Stage } from "@/lib/onboarding/steps";
 
 /**
  * The lifecycle engine (service role): load every member who could be due a
@@ -70,6 +78,8 @@ export interface RunReport {
   stops: Partial<Record<StopReason, number>>;
   sent: number;
   failed: number;
+  /** The onboarding rescue track (accounts with no company yet). */
+  rescue: { considered: number; waits: Partial<Record<WaitReason, number>>; stops: Partial<Record<RescueStopReason, number>> };
 }
 
 interface OrgRow {
@@ -370,6 +380,7 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
       recorded: recordedBy.get(userId) ?? new Set(),
       lastSentAt: lastSentBy.get(userId) ?? null,
       digestSentAt: dig?.last_sent_at ?? null,
+      pendingReview: org.profile_status === "pending_review",
       facts: {
         ...NO_FACTS,
         hasTrades: tradeSlugs.length > 0,
@@ -392,6 +403,298 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
     });
   }
   return { members, error: null };
+}
+
+/* ------------------------------------------------------------------ stalled sign-ups (onboarding rescue) */
+
+export interface StalledSignup {
+  state: StalledState;
+  email: string;
+  fullName: string | null;
+  firstName: string | null;
+  role: string;
+  lang: Locale;
+  country: CountryCode;
+  createdAt: string;
+  confirmedAt: string | null;
+  provider: string | null;
+  stage: Stage;
+  /** form_error: the first field that failed. */
+  stageDetail: string | null;
+  prefs: { company: string | null; trades: string[]; regions: string[] };
+  orgKind: string | null;
+  /** Province / state from the sign-up region picks (quiet hours, examples). */
+  province: string | null;
+  /** Rescue emails recorded for them (sent / skipped / failed). */
+  rescueSends: { step: StepId; status: string; sentAt: string }[];
+}
+
+interface AuthInfo {
+  confirmedAt: string | null;
+  provider: string | null;
+  meta: Record<string, unknown>;
+}
+
+type AuthAdmin = { auth?: { admin?: { getUserById?: (id: string) => Promise<{ data: { user: unknown } | null; error: unknown }> } } };
+
+/** Email confirmation + sign-up picks from auth (service role), a few at a time. Unknown on any error (never sends then). */
+async function authInfo(db: Db, ids: string[]): Promise<Map<string, AuthInfo>> {
+  const out = new Map<string, AuthInfo>();
+  const get = (db as unknown as AuthAdmin).auth?.admin?.getUserById;
+  if (typeof get !== "function") return out;
+  for (const c of chunk(ids, 8)) {
+    await Promise.all(
+      c.map(async (id) => {
+        try {
+          const { data, error } = await get.call((db as unknown as AuthAdmin).auth!.admin, id);
+          const u = data?.user as { email_confirmed_at?: string | null; app_metadata?: { provider?: string }; user_metadata?: Record<string, unknown> } | null;
+          if (error || !u) return;
+          out.set(id, { confirmedAt: u.email_confirmed_at ?? null, provider: u.app_metadata?.provider ?? null, meta: u.user_metadata ?? {} });
+        } catch {
+          /* unknown: treated as unconfirmed */
+        }
+      }),
+    );
+  }
+  return out;
+}
+
+const regionIsUs = (r: { country?: string | null }) => ["usa", "us", "united states"].includes((r.country ?? "").trim().toLowerCase());
+
+/**
+ * Accounts that started but never finished onboarding: signed up within
+ * `horizonMs`, in one of `roles`, and onboarding not completed OR no company
+ * linked. Internal / test / demo addresses are left out entirely.
+ */
+export async function loadStalled(
+  db: Db,
+  now: Date,
+  tax: Pick<MarketData, "regions">,
+  opts: { horizonMs: number; roles: readonly string[]; limit?: number },
+): Promise<{ stalled: StalledSignup[]; error: string | null }> {
+  const since = new Date(now.getTime() - opts.horizonMs).toISOString();
+  const res = await db
+    .from("users_profile")
+    .select("id,email,full_name,status,primary_role,onboarding_completed,created_at")
+    .gte("created_at", since)
+    .in("primary_role", [...opts.roles])
+    .order("created_at", { ascending: false })
+    .limit(opts.limit ?? MAX_MEMBERS_PER_RUN);
+  if (res.error) return { stalled: [], error: `users_profile: ${res.error.message}` };
+  const rows = ((res.data ?? []) as { id: string; email: string; full_name: string | null; status: string; primary_role: string; onboarding_completed: boolean; created_at: string }[]).filter(
+    (p) => typeof p.onboarding_completed === "boolean" && opts.roles.includes(p.primary_role) && !isInternalEmail(p.email),
+  );
+  if (!rows.length) return { stalled: [], error: null };
+  const memberships = await selectIn<{ user_id: string }>(rows.map((p) => p.id), (c) => db.from("organization_members").select("user_id").in("user_id", c));
+  if (memberships.error) return { stalled: [], error: `organization_members: ${memberships.error.message}` };
+  const hasCompany = new Set(memberships.rows.map((m) => m.user_id));
+  const candidates = rows.filter((p) => !p.onboarding_completed || !hasCompany.has(p.id));
+  if (!candidates.length) return { stalled: [], error: null };
+  const ids = candidates.map((p) => p.id);
+  const emails = candidates.map((p) => p.email.trim().toLowerCase());
+
+  const [auth, prefs, sends, attrib, steps, suppressed, digest] = await Promise.all([
+    authInfo(db, ids),
+    selectIn<{ user_id: string; new_rfps: string | null; channel_email: boolean | null; lifecycle_emails: boolean | null }>(ids, (c) =>
+      db.from("notification_preferences").select("user_id,new_rfps,channel_email,lifecycle_emails").in("user_id", c),
+    ),
+    selectIn<{ user_id: string; step: string; status: string; sent_at: string }>(ids, (c) => db.from("lifecycle_sends").select("user_id,step,status,sent_at").in("user_id", c)),
+    selectIn<{ user_id: string; lang: string | null; country: string | null }>(ids, (c) => db.from("signup_attribution").select("user_id,lang,country").in("user_id", c)),
+    selectIn<{ user_id: string; step: string; detail: string | null }>(ids, (c) => db.from("onboarding_steps").select("user_id,step,detail").in("user_id", c)),
+    selectIn<{ email_key: string }>(emails, (c) => db.from("email_suppressions").select("email_key").in("email_key", c)),
+    selectIn<{ email_key: string; status: string; last_sent_at: string | null }>(emails, (c) => db.from("digest_subscribers").select("email_key,status,last_sent_at").in("email_key", c)),
+  ]);
+  if (sends.error) return { stalled: [], error: isMissingTableError(sends.error) ? "lifecycle_sends table missing (run migration 20261016000020)" : sends.error.message };
+  if (prefs.error) return { stalled: [], error: `notification_preferences: ${prefs.error.message}` };
+  if (suppressed.error && !isMissingTableError(suppressed.error)) return { stalled: [], error: `email_suppressions: ${suppressed.error.message}` };
+
+  const prefBy = new Map(prefs.rows.map((p) => [p.user_id, p]));
+  const attribBy = new Map(attrib.rows.map((a) => [a.user_id, a]));
+  const suppressedSet = new Set(suppressed.rows.map((s) => s.email_key));
+  const digestBy = new Map(digest.rows.map((d) => [d.email_key, d]));
+  const stepsBy = new Map<string, Set<string>>();
+  const errorBy = new Map<string, string>();
+  // A missing onboarding_steps table (migration not run yet) = nothing tracked.
+  for (const s of steps.error ? [] : steps.rows) {
+    if (!stepsBy.has(s.user_id)) stepsBy.set(s.user_id, new Set());
+    stepsBy.get(s.user_id)!.add(s.step);
+    if (s.step === "form_error" && s.detail) errorBy.set(s.user_id, s.detail);
+  }
+  const sendsBy = new Map<string, { step: StepId; status: string; sentAt: string }[]>();
+  for (const s of sends.rows) {
+    if (!isStepId(s.step)) continue;
+    sendsBy.set(s.user_id, [...(sendsBy.get(s.user_id) ?? []), { step: s.step, status: s.status, sentAt: s.sent_at }]);
+  }
+  const regionBySlug = new Map(tax.regions.map((r) => [r.slug, r]));
+
+  const stalled: StalledSignup[] = [];
+  for (const p of candidates) {
+    const a = auth.get(p.id) ?? null;
+    const meta = a?.meta ?? {};
+    const prefRegions = parsePrefSlugs(meta.pref_regions).filter((slug) => regionBySlug.has(slug));
+    const company = typeof meta.pref_company === "string" ? meta.pref_company.trim().slice(0, 120) || null : null;
+    const firstRegion = prefRegions.map((slug) => regionBySlug.get(slug)!).find(Boolean) ?? null;
+    const attr = attribBy.get(p.id);
+    const country: CountryCode = firstRegion ? (regionIsUs(firstRegion) ? "US" : "CA") : attr?.country === "US" ? "US" : "CA";
+    const province = prefRegions.map((slug) => regionBySlug.get(slug)!.province).find((x): x is string => Boolean(x)) ?? (firstRegion && regionIsUs(firstRegion) && firstRegion.slug !== "united-states" ? firstRegion.name : null);
+    const emailKey = p.email.trim().toLowerCase();
+    const pref = prefBy.get(p.id);
+    const dig = digestBy.get(emailKey);
+    const userSends = sendsBy.get(p.id) ?? [];
+    const recorded = new Set(userSends.map((s) => s.step));
+    const lastSent = userSends.filter((s) => s.status === "sent" || s.status === "sending").map((s) => s.sentAt).sort().at(-1) ?? null;
+    const completed = p.onboarding_completed && hasCompany.has(p.id);
+    const steps = stepsBy.get(p.id) ?? new Set<string>();
+    const stage = stageOf({ emailConfirmed: Boolean(a?.confirmedAt), steps, onboardingCompleted: p.onboarding_completed, hasCompany: hasCompany.has(p.id) });
+    const rawLang = attr?.lang;
+    stalled.push({
+      state: {
+        userId: p.id,
+        startedAt: a?.confirmedAt && Date.parse(a.confirmedAt) > Date.parse(p.created_at) ? a.confirmedAt : p.created_at,
+        province,
+        active: p.status === "active" && p.primary_role === "trade",
+        internal: false,
+        emailConfirmed: Boolean(a?.confirmedAt),
+        completed,
+        optedOut: pref?.lifecycle_emails === false || pref?.channel_email === false || pref?.new_rfps === "off" || dig?.status === "unsubscribed",
+        suppressed: suppressedSet.has(emailKey) || dig?.status === "bounced",
+        recorded,
+        lastSentAt: lastSent,
+        digestSentAt: dig?.last_sent_at ?? null,
+      },
+      email: p.email,
+      fullName: p.full_name,
+      firstName: p.full_name?.trim().split(/\s+/)[0] || null,
+      role: p.primary_role,
+      lang: isEnabledLocale(rawLang) ? rawLang : "en",
+      country,
+      createdAt: p.created_at,
+      confirmedAt: a?.confirmedAt ?? null,
+      provider: a?.provider ?? null,
+      stage,
+      stageDetail: errorBy.get(p.id) ?? null,
+      prefs: { company, trades: parsePrefSlugs(meta.pref_categories), regions: prefRegions },
+      orgKind: typeof meta.org_kind === "string" ? meta.org_kind : null,
+      province,
+      rescueSends: userSends.filter((s) => (RESCUE_STEPS as readonly string[]).includes(s.step)),
+    });
+  }
+  return { stalled, error: null };
+}
+
+/** What the rescue email for this account says (real counts only). */
+function rescueCopyData(s: StalledSignup, step: StepId, md: MarketData | null, tax: Awaited<ReturnType<typeof loadTaxonomy>>): CopyData {
+  const lang = s.lang;
+  const known = new Map(tax.trades.map((t) => [t.slug, t]));
+  const tradeSlugs = s.prefs.trades.filter((slug) => known.has(slug));
+  const tradeNames = tradeSlugs.map((slug) => tradeName(known.get(slug)!.name, lang));
+  const regionBySlug = new Map(tax.regions.map((r) => [r.slug, r]));
+  const firstRegion = s.prefs.regions.map((slug) => regionBySlug.get(slug)).find((r) => r && r.slug !== "canada" && r.slug !== "united-states");
+  let area: string | null = firstRegion ? regionName(firstRegion.name, lang) : s.province ? regionName(s.province, lang) : null;
+
+  let examples: RescueCopy["examples"] = null;
+  if (step === "rescue_1d" && md) {
+    if (tradeSlugs.length) {
+      // Their sign-up areas, else their whole country.
+      const regionIds = s.prefs.regions.map((slug) => regionBySlug.get(slug)?.id).filter((x): x is string => Boolean(x));
+      const countryRegionIds = md.regions.filter((r) => (regionIsUs(r) ? "US" : "CA") === s.country).map((r) => r.id);
+      const profile = buildLeadProfile({
+        country: s.country,
+        org: { city: null, province: s.province },
+        tradeSlugs,
+        regionIds: regionIds.length ? regionIds : countryRegionIds,
+        regions: md.regions,
+        trades: md.trades,
+      });
+      const leads = matchLeads({ profile, rfps: md.rfps, projects: s.country === "CA" ? md.projects : [], regionNameById: md.regionNameById, today: md.today, wins: md.wins });
+      examples = { scope: "trade", total: leads.length, titles: leadsForViewer(leads, false).slice(0, 3).map((l) => l.title) };
+      if (!regionIds.length) area = countryArea(s.country, lang);
+    } else {
+      const inCountry = (r: { province?: string | null }) => countryOf(r) === s.country;
+      let bids = openBidsIn(md.rfps, { inCountry, province: s.province, today: md.today, isPast: isPastContract });
+      // Counted by province, so name the province (not a city they picked).
+      area = s.province ? regionName(s.province, lang) : countryArea(s.country, lang);
+      if (!bids.length && s.province) {
+        bids = openBidsIn(md.rfps, { inCountry, province: null, today: md.today, isPast: isPastContract });
+        area = countryArea(s.country, lang);
+      }
+      examples = { scope: "area", total: bids.length, titles: bids.slice(0, 3).map((r) => r.title) };
+    }
+  }
+  const missing = missingParts({ stage: s.stage, prefCompany: Boolean(s.prefs.company), prefTrades: tradeSlugs.length > 0, prefAreas: s.prefs.regions.length > 0 });
+  return {
+    lang,
+    country: s.country,
+    firstName: s.firstName,
+    company: s.prefs.company ?? "",
+    trades: tradeNames,
+    area,
+    hasTrades: tradeSlugs.length > 0,
+    hasAreas: s.prefs.regions.length > 0,
+    persona: personaOf(tradeSlugs),
+    market: { openBids: 0, projects: 0, winners: 0, packages: 0, total: 0 },
+    leadTitles: [],
+    hasProject: false,
+    hasBadge: false,
+    proBenchmarks: 0,
+    benchmark: null,
+    foundingScarcity: "quiet",
+    trial: null,
+    rescue: { missing, resumePath: resumePath({ orgKind: s.orgKind }), examples },
+  };
+}
+
+export interface StalledRow {
+  userId: string;
+  email: string;
+  name: string | null;
+  role: string;
+  company: string | null;
+  ageHours: number;
+  confirmed: boolean;
+  provider: string | null;
+  stage: Stage;
+  stageLabel: string;
+  stageDetail: string | null;
+  rescueSent: StepId[];
+  /** What the rescue track would do now (dry). */
+  next: string;
+  manual: { subject: string; text: string };
+}
+
+/**
+ * /admin/lifecycle "Stalled sign-ups": every unfinished account from the
+ * last STALLED_LIST_DAYS days (trades, suppliers and property managers), for
+ * a personal note. Read-only.
+ */
+export async function listStalledSignups(now: Date = new Date()): Promise<{ rows: StalledRow[]; error: string | null }> {
+  if (!isServiceConfigured()) return { rows: [], error: "no service client" };
+  const db = createServiceClient();
+  const tax = await loadTaxonomy();
+  const { stalled, error } = await loadStalled(db, now, tax, { horizonMs: STALLED_LIST_DAYS * DAY, roles: ["trade", "supplier", "property_manager"], limit: 500 });
+  if (error) return { rows: [], error };
+  const rows = stalled.map((s): StalledRow => {
+    const d = decideRescue(s.state, now);
+    const next =
+      s.role !== "trade" ? "not emailed (rescue is for trades)" : d.action === "send" ? `would send ${d.step}` : d.action === "wait" ? `waiting (${d.reason})` : `stopped (${d.reason})`;
+    return {
+      userId: s.state.userId,
+      email: s.email,
+      name: s.fullName,
+      role: s.orgKind === "builder" ? "general_contractor" : s.role,
+      company: s.prefs.company,
+      ageHours: Math.max(0, Math.round((now.getTime() - Date.parse(s.createdAt)) / 3_600_000)),
+      confirmed: s.state.emailConfirmed,
+      provider: s.provider,
+      stage: s.stage,
+      stageLabel: STAGE_LABEL[s.stage],
+      stageDetail: s.stageDetail,
+      rescueSent: s.rescueSends.filter((x) => x.status === "sent").map((x) => x.step),
+      next,
+      manual: manualOutreach({ email: s.email, firstName: s.firstName, company: s.prefs.company, role: s.role }),
+    };
+  });
+  return { rows, error: null };
 }
 
 /* ------------------------------------------------------------------ trial activity (trial_day7 only) */
@@ -418,7 +721,18 @@ const BENCH_STEPS: ReadonlySet<StepId> = new Set(["market", "benchmark", "trial_
 export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: number } = { dry: true }): Promise<RunReport> {
   const now = opts.now ?? new Date();
   const enabled = lifecycleEnabled();
-  const report: RunReport = { enabled, dry: opts.dry, considered: 0, sends: [], skips: [], waits: {}, stops: {}, sent: 0, failed: 0 };
+  const report: RunReport = {
+    enabled,
+    dry: opts.dry,
+    considered: 0,
+    sends: [],
+    skips: [],
+    waits: {},
+    stops: {},
+    sent: 0,
+    failed: 0,
+    rescue: { considered: 0, waits: {}, stops: {} },
+  };
   if (!isServiceConfigured()) return { ...report, skipped: "no service client" };
   if (!opts.dry && !enabled) return { ...report, skipped: "LIFECYCLE_EMAILS_ENABLED is off" };
   if (!opts.dry && !emailConfigured()) return { ...report, skipped: "RESEND_API_KEY not set" };
@@ -447,6 +761,35 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
   const maxSends = opts.maxSends ?? MAX_SENDS_PER_RUN;
   let budget = maxSends;
 
+  // 1. Onboarding rescue: trade accounts with no company yet. Time-sensitive, so first.
+  const stalledRes = await loadStalled(db, now, tax, { horizonMs: RESCUE_HORIZON_MS, roles: ["trade"] });
+  if (stalledRes.error) console.error("[lifecycle] rescue load failed", stalledRes.error);
+  report.rescue.considered = stalledRes.stalled.length;
+  for (const s of stalledRes.stalled) {
+    if (budget <= 0) break;
+    const decision = decideRescue(s.state, now);
+    if (decision.action === "wait") {
+      report.rescue.waits[decision.reason] = (report.rescue.waits[decision.reason] ?? 0) + 1;
+      continue;
+    }
+    if (decision.action === "stop") {
+      report.rescue.stops[decision.reason] = (report.rescue.stops[decision.reason] ?? 0) + 1;
+      continue;
+    }
+    const step = decision.step;
+    const data = rescueCopyData(s, step, step === "rescue_1d" ? await market() : null, tax);
+    const unsub = lifecycleUnsubscribeUrl(base, s.state.userId);
+    const email = renderStep(step, data, { base, unsubscribeUrl: unsub });
+    const label = s.prefs.company ?? "(no company yet)";
+    report.sends.push({ userId: s.state.userId, email: s.email, org: label, step, lang: s.lang, country: s.country, subject: email.subject, words: email.words });
+    budget--;
+    if (opts.dry) continue;
+    const res = await claimAndSend(db, { userId: s.state.userId, orgId: null, step, lang: s.lang, to: s.email, from, email, unsub });
+    if (res === "sent") report.sent++;
+    else if (res === "failed") report.failed++;
+  }
+
+  // 2. Companies: review_pending, the free track, the trial track.
   for (const m of members) {
     if (budget <= 0) break;
     const open = new Set(openSteps(m.state, now));
@@ -494,24 +837,44 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     budget--;
     if (opts.dry) continue;
 
-    // Record first: the unique (user_id, step) means a racing run or a retry never sends twice.
-    const { data: claimed, error: claimErr } = await db
-      .from("lifecycle_sends")
-      .upsert({ user_id: m.state.userId, organization_id: m.org.id, step, status: "sending", lang: m.lang }, { onConflict: "user_id,step", ignoreDuplicates: true })
-      .select("id");
-    if (claimErr || !claimed?.length) {
-      if (claimErr) console.error("[lifecycle] claim failed", claimErr.message);
-      continue;
-    }
-    const res = await sendLifecycleEmail({ to: m.email, from, replyTo: LIFECYCLE_REPLY_TO, subject: email.subject, text: email.text, html: email.html, unsubscribeUrl: unsub, step });
-    await db
-      .from("lifecycle_sends")
-      .update({ status: res.ok ? "sent" : "failed", resend_id: res.id, detail: res.ok ? null : (res.error ?? "send failed").slice(0, 300), sent_at: new Date().toISOString() })
-      .eq("id", (claimed[0] as { id: string }).id);
-    if (res.ok) report.sent++;
-    else report.failed++;
+    const res = await claimAndSend(db, { userId: m.state.userId, orgId: m.org.id, step, lang: m.lang, to: m.email, from, email, unsub });
+    if (res === "sent") report.sent++;
+    else if (res === "failed") report.failed++;
   }
   return report;
+}
+
+/**
+ * Record first, then send: the unique (user_id, step) means a racing run or
+ * a retry never sends the same step twice.
+ */
+async function claimAndSend(
+  db: Db,
+  p: { userId: string; orgId: string | null; step: StepId; lang: Locale; to: string; from: string; email: RenderedEmail; unsub: string | null },
+): Promise<"sent" | "failed" | "claimed_elsewhere"> {
+  const { data: claimed, error: claimErr } = await db
+    .from("lifecycle_sends")
+    .upsert({ user_id: p.userId, organization_id: p.orgId, step: p.step, status: "sending", lang: p.lang }, { onConflict: "user_id,step", ignoreDuplicates: true })
+    .select("id");
+  if (claimErr || !claimed?.length) {
+    if (claimErr) console.error("[lifecycle] claim failed", claimErr.message);
+    return "claimed_elsewhere";
+  }
+  const res = await sendLifecycleEmail({
+    to: p.to,
+    from: p.from,
+    replyTo: LIFECYCLE_REPLY_TO,
+    subject: p.email.subject,
+    text: p.email.text,
+    html: p.email.html,
+    unsubscribeUrl: p.unsub,
+    step: p.step,
+  });
+  await db
+    .from("lifecycle_sends")
+    .update({ status: res.ok ? "sent" : "failed", resend_id: res.id, detail: res.ok ? null : (res.error ?? "send failed").slice(0, 300), sent_at: new Date().toISOString() })
+    .eq("id", (claimed[0] as { id: string }).id);
+  return res.ok ? "sent" : "failed";
 }
 
 async function copyDataFor(

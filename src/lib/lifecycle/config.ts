@@ -14,6 +14,16 @@
  *          trial_winback (7 days after it ended; then nothing more)
  * Everything stops on upgrade (paid Pro / Featured / lifetime),
  * unsubscribe, bounce or complaint.
+ *
+ * Before any of that, the ONBOARDING RESCUE track (lib/lifecycle/rescue) is
+ * for trade accounts that never finished onboarding (no company yet), so
+ * never reach the welcome:
+ *   rescue  rescue_2h → rescue_1d → rescue_3d (2 hours, 1 day, 3 days after
+ *           the account was confirmed; then nothing more). Stops the moment
+ *           onboarding completes; the free track's Day 0 welcome then starts
+ *           from the new membership, as for everyone else.
+ * And once, for a new company whose profile is waiting in pending_review:
+ *   review_pending  "we're reviewing your profile" (first 3 days only).
  */
 
 export function lifecycleEnabled(env: string | undefined = process.env.LIFECYCLE_EMAILS_ENABLED): boolean {
@@ -33,10 +43,14 @@ export const LIFECYCLE_UTM_SOURCE = "lifecycle";
 
 export const FREE_STEPS = ["welcome", "market", "get_found", "trial_offer", "benchmark", "community", "founding"] as const;
 export const TRIAL_STEPS = ["trial_day1", "trial_day7", "trial_day12", "trial_expired", "trial_winback"] as const;
-export const STEPS = [...FREE_STEPS, ...TRIAL_STEPS] as const;
+export const RESCUE_STEPS = ["rescue_2h", "rescue_1d", "rescue_3d"] as const;
+/** One-off: a new company whose profile waits in pending_review. */
+export const REVIEW_STEP = "review_pending" as const;
+export const STEPS = [...RESCUE_STEPS, REVIEW_STEP, ...FREE_STEPS, ...TRIAL_STEPS] as const;
 
 export type FreeStep = (typeof FREE_STEPS)[number];
 export type TrialStep = (typeof TRIAL_STEPS)[number];
+export type RescueStep = (typeof RESCUE_STEPS)[number];
 export type StepId = (typeof STEPS)[number];
 
 export function isStepId(v: unknown): v is StepId {
@@ -44,9 +58,14 @@ export function isStepId(v: unknown): v is StepId {
 }
 
 export const isTrialStep = (s: StepId): s is TrialStep => (TRIAL_STEPS as readonly string[]).includes(s);
+export const isRescueStep = (s: StepId): s is RescueStep => (RESCUE_STEPS as readonly string[]).includes(s);
 
 /** Admin labels. */
 export const STEP_LABEL: Record<StepId, string> = {
+  rescue_2h: "Rescue +2h · Finish your profile (2 min)",
+  rescue_1d: "Rescue +1 day · Real leads for your trade",
+  rescue_3d: "Rescue +3 days · Want us to set it up? (last)",
+  review_pending: "Pending review · We're reviewing your profile",
   welcome: "Day 0 · Welcome + finish profile",
   market: "Day 1 · Your market",
   get_found: "Day 3 · Get found (project + badge)",
@@ -89,6 +108,34 @@ export const TRIAL_WINDOWS: Record<TrialStep, { from: "start" | "end"; dueMs: nu
   trial_expired: { from: "end", dueMs: 0, untilMs: 3 * D },
   trial_winback: { from: "end", dueMs: 7 * D, untilMs: 11 * D },
 };
+
+/**
+ * Rescue windows, from the moment the account could first be used (email
+ * confirmed, else created): [due, until]. Same never-late rule. The +2h
+ * window is wide (to day 3) so a Friday-night sign-up still gets it on
+ * Monday morning; the track only ever starts with it.
+ */
+export const RESCUE_WINDOWS: Record<RescueStep, { dueMs: number; untilMs: number }> = {
+  rescue_2h: { dueMs: 2 * H, untilMs: 3 * D },
+  rescue_1d: { dueMs: 1 * D, untilMs: 5 * D },
+  rescue_3d: { dueMs: 3 * D, untilMs: 8 * D },
+};
+export const RESCUE_HORIZON_MS = 8 * D;
+
+/** review_pending: once, within this long of joining the company (never for an old profile edit). */
+export const REVIEW_WINDOW_MS = 3 * D;
+
+/**
+ * Relaxed hours for the two "you just did something" emails (rescue_2h and
+ * review_pending): 8:00 to 20:00 local Monday to Thursday, so someone who
+ * signs up at 4pm hears back the same evening. Friday keeps the normal
+ * 9:00–17:00 (no Friday-evening sends), weekends nothing.
+ */
+export const RELAXED_HOURS = { start: 8, end: 20 } as const;
+export const RELAXED_WEEKDAYS: ReadonlySet<number> = new Set([1, 2, 3, 4]);
+
+/** Stalled sign-ups shown on /admin/lifecycle (for a personal note). */
+export const STALLED_LIST_DAYS = 30;
 
 /** The furthest any member can be into the sequence (cron candidate windows). */
 export const FREE_HORIZON_MS = 21 * D;

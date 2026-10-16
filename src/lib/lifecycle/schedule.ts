@@ -15,10 +15,18 @@
  *   4. Gates for an actual send: one lifecycle email per local day, not on a
  *      day the weekly email went to them, 9:00–17:00 Mon–Fri in their time
  *      zone (province/state, else Eastern).
+ * A new company waiting in pending_review gets review_pending once, first
+ * (within REVIEW_WINDOW_MS of joining, relaxed hours); the welcome then goes
+ * on a later day under the one-a-day rule. The onboarding rescue track (no
+ * company yet) is lib/lifecycle/rescue.
  */
 import {
   FREE_STEPS,
   FREE_WINDOWS,
+  RELAXED_HOURS,
+  RELAXED_WEEKDAYS,
+  REVIEW_STEP,
+  REVIEW_WINDOW_MS,
   SEND_HOURS,
   SEND_WEEKDAYS,
   TRIAL_STEPS,
@@ -67,6 +75,8 @@ export interface MemberState {
   lastSentAt: string | null;
   /** Last weekly email (digest_subscribers.last_sent_at), ISO. */
   digestSentAt: string | null;
+  /** The company profile is waiting in pending_review (not yet in the directory). */
+  pendingReview?: boolean;
   facts: MemberFacts;
 }
 
@@ -100,7 +110,7 @@ export function stepWindow(step: StepId, m: Pick<MemberState, "joinedAt" | "tria
     if (!Number.isFinite(joined)) return null;
     return { from: joined + w.dueMs, until: joined + w.dueMs + w.graceMs };
   }
-  if (!m.trial) return null;
+  if (!m.trial || !(TRIAL_STEPS as readonly string[]).includes(step)) return null;
   const w = TRIAL_WINDOWS[step as TrialStep];
   const anchor = Date.parse(w.from === "start" ? m.trial.startedAt : m.trial.endsAt);
   if (!Number.isFinite(anchor)) return null;
@@ -148,10 +158,35 @@ export function memberTimeZone(province: string | null | undefined): string {
   return provinceTimeZone(province) ?? DEFAULT_TIME_ZONE;
 }
 
-/** 9:00–17:00, Monday to Friday, member local time. */
-export function inSendingHours(now: Date, timeZone: string): boolean {
+/**
+ * 9:00–17:00, Monday to Friday, member local time. relaxed (rescue_2h,
+ * review_pending): also 8:00–20:00 Monday to Thursday; Friday stays 9–17.
+ */
+export function inSendingHours(now: Date, timeZone: string, relaxed = false): boolean {
   const c = localClock(now, timeZone);
+  if (relaxed && RELAXED_WEEKDAYS.has(c.weekday)) return c.hour >= RELAXED_HOURS.start && c.hour < RELAXED_HOURS.end;
   return SEND_WEEKDAYS.has(c.weekday) && c.hour >= SEND_HOURS.start && c.hour < SEND_HOURS.end;
+}
+
+/** The send gates every lifecycle email shares: one a day, not on a weekly-email day, sending hours. */
+export function sendGate(
+  m: Pick<MemberState, "province" | "lastSentAt" | "digestSentAt">,
+  now: Date,
+  relaxed = false,
+): WaitReason | null {
+  const tz = memberTimeZone(m.province);
+  if (sameLocalDay(m.lastSentAt, now, tz)) return "one_per_day";
+  if (sameLocalDay(m.digestSentAt, now, tz)) return "digest_today";
+  if (!inSendingHours(now, tz, relaxed)) return "quiet_hours";
+  return null;
+}
+
+/** review_pending is open: free track, profile pending, not yet sent, within REVIEW_WINDOW_MS of joining. */
+export function reviewPendingOpen(m: Pick<MemberState, "pendingReview" | "recorded" | "joinedAt" | "trial">, now: Date): boolean {
+  if (!m.pendingReview || m.trial || m.recorded.has(REVIEW_STEP)) return false;
+  const joined = Date.parse(m.joinedAt);
+  const t = now.getTime();
+  return Number.isFinite(joined) && t >= joined && t <= joined + REVIEW_WINDOW_MS;
 }
 
 /** Same calendar day in the member's zone. */
@@ -178,6 +213,10 @@ export function decide(m: MemberState, now: Date): Decision {
 
   const track = trackOf(m);
   const t = now.getTime();
+  if (reviewPendingOpen(m, now)) {
+    const gate = sendGate(m, now, true);
+    return gate ? { action: "wait", step: REVIEW_STEP, reason: gate } : { action: "send", step: REVIEW_STEP };
+  }
   if (track === "free" && !m.recorded.has("welcome")) {
     const w = stepWindow("welcome", m);
     if (!w || t > w.until) return { action: "stop", reason: "not_in_sequence" };
@@ -202,11 +241,8 @@ export function decide(m: MemberState, now: Date): Decision {
   const skip = skipReason(candidate, m);
   if (skip) return { action: "skip", step: candidate, reason: skip };
 
-  const tz = memberTimeZone(m.province);
-  if (sameLocalDay(m.lastSentAt, now, tz)) return { action: "wait", step: candidate, reason: "one_per_day" };
-  if (sameLocalDay(m.digestSentAt, now, tz)) return { action: "wait", step: candidate, reason: "digest_today" };
-  if (!inSendingHours(now, tz)) return { action: "wait", step: candidate, reason: "quiet_hours" };
-  return { action: "send", step: candidate };
+  const gate = sendGate(m, now);
+  return gate ? { action: "wait", step: candidate, reason: gate } : { action: "send", step: candidate };
 }
 
 /**

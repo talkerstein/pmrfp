@@ -19,6 +19,9 @@ export const dynamic = "force-dynamic";
  *    unique, so a step never goes twice. Missed windows are never sent late.
  *  - Stops on upgrade, unsubscribe, bounce or complaint; one lifecycle email
  *    a day; not on a day the weekly email went out to that member.
+ *  - Onboarding rescue first (lib/lifecycle/rescue): trade accounts with no
+ *    company yet get +2h / +1 day / +3 days nudges, then nothing; it stops
+ *    the moment onboarding completes and the normal welcome takes over.
  * Protect with CRON_SECRET if set.
  */
 export async function GET(request: Request) {
@@ -36,6 +39,7 @@ export async function GET(request: Request) {
     waits: r.waits,
     stops: r.stops,
     skips: r.skips.length,
+    rescue: r.rescue,
   };
   if (dry) {
     return NextResponse.json({

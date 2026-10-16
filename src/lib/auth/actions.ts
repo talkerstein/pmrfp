@@ -26,6 +26,8 @@ import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { gcFormPath, parseAwardRef } from "@/lib/gc/packages";
 import { parsePrefSlugs } from "@/lib/auth/signup-prefs";
 import { recordSignupAttribution } from "@/lib/attribution/record";
+import { recordOnboardingStep } from "@/lib/onboarding/progress";
+import { errorDetail } from "@/lib/onboarding/steps";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 
@@ -293,6 +295,7 @@ export async function chooseRoleAction(_prev: ActionState, formData: FormData): 
     },
   });
   if (metaErr) return saveFailed;
+  await recordOnboardingStep(user.id, "role_picked");
 
   // What signUpAction does for an email sign-up (the welcome email goes out
   // when onboarding completes).
@@ -364,6 +367,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     regions: isListing ? regions : regions.length ? regions : ["__pm__"],
   });
   if (!parsed.success) {
+    await recordOnboardingStep(session.userId, "form_error", errorDetail(parsed.error.issues[0]?.path));
     return { error: translated("validation", parsed.error.issues[0]?.message, lang, m.completeRequired) };
   }
   const data = parsed.data;
@@ -421,7 +425,10 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
       });
     }
   }
-  if (orgErr || !org) return { error: m.orgFailed };
+  if (orgErr || !org) {
+    await recordOnboardingStep(session.userId, "org_failed", orgErr?.code ?? null);
+    return { error: m.orgFailed };
+  }
 
   await admin.from("organization_members").insert({
     organization_id: org.id,
