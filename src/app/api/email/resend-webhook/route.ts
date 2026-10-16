@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { suppressionFromEvent, verifySvixSignature } from "@/lib/digest/webhook";
+import { engagementFromEvent } from "@/lib/lifecycle/engagement";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,18 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "bad body" }, { status: 400 });
   }
+  // Opens / clicks on lifecycle emails (only sent by Resend when tracking is on).
+  const eng = engagementFromEvent(event);
+  if (eng) {
+    const { error } = await createServiceClient()
+      .from("lifecycle_sends")
+      .update({ [eng.field]: new Date().toISOString() })
+      .eq("resend_id", eng.emailId)
+      .is(eng.field, null);
+    if (error) console.error("[resend-webhook] engagement failed:", error.message);
+    return NextResponse.json({ engagement: eng.field });
+  }
+
   const s = suppressionFromEvent(event);
   if (!s) return NextResponse.json({ ignored: true });
 

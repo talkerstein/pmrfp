@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Organization, UserProfile, UserRole } from "@/types/db";
 import { NO_TRIAL, isMissingTableError, isProEntitled, trialState, type TrialState } from "@/lib/entitlement/trial";
+import { intelEntitled, type IntelAccessRow } from "@/lib/entitlement/intel";
 
 export interface SessionContext {
   userId: string;
@@ -17,6 +18,8 @@ export interface SessionContext {
   paid?: boolean;
   /** The organization's trial, if it ever started one (lib/entitlement/trial). */
   trial?: TrialState;
+  /** Award Intelligence (lib/entitlement/intel): its own paid add-on, separate from Trade Pro. */
+  hasIntelAccess?: boolean;
 }
 
 /** The authenticated auth user id, or null (also null in demo mode). */
@@ -54,7 +57,7 @@ export async function loadSessionContext(
     .eq("id", user.id)
     .maybeSingle<UserProfile>();
   if (!profile) {
-    return { userId: user.id, profile: fallbackProfile(user.id, user.email), organization: null, hasTradeAccess: false, paid: false, trial: NO_TRIAL };
+    return { userId: user.id, profile: fallbackProfile(user.id, user.email), organization: null, hasTradeAccess: false, paid: false, trial: NO_TRIAL, hasIntelAccess: false };
   }
 
   const { data: membership } = await supabase
@@ -73,8 +76,30 @@ export async function loadSessionContext(
     organization = org ?? null;
   }
 
-  const { paid, trial } = await computeTradeAccess(supabase, organization);
-  return { userId: user.id, profile, organization, hasTradeAccess: isProEntitled({ paid, trial }), paid, trial };
+  const admin = isAdminRole(profile.primary_role);
+  const [{ paid, trial }, intelRow] = await Promise.all([
+    computeTradeAccess(supabase, organization),
+    admin || !organization ? Promise.resolve(null) : readIntelAccess(supabase, organization.id),
+  ]);
+  const hasIntelAccess = intelEntitled({ admin, organizationStatus: organization?.status, row: intelRow });
+  return { userId: user.id, profile, organization, hasTradeAccess: isProEntitled({ paid, trial }), paid, trial, hasIntelAccess };
+}
+
+/**
+ * The organization's Award Intelligence row, read as the member (RLS).
+ * A missing table (migration 20261017000001 not applied) or any error = no Intel.
+ */
+async function readIntelAccess(supabase: SupabaseClient, organizationId: string): Promise<IntelAccessRow | null> {
+  const { data, error } = await supabase
+    .from("intel_access")
+    .select("status,expires_at")
+    .eq("organization_id", organizationId)
+    .maybeSingle<IntelAccessRow>();
+  if (error) {
+    if (!isMissingTableError(error)) console.warn("[access] intel read failed", error.message);
+    return null;
+  }
+  return data ?? null;
 }
 
 /**
@@ -233,6 +258,7 @@ function demoSession(role: UserRole): SessionContext {
     hasTradeAccess: isListing,
     paid: isListing,
     trial: NO_TRIAL,
+    hasIntelAccess: isListing,
   };
 }
 
