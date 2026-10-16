@@ -8,7 +8,9 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { setLangFrom } from "@/i18n/server";
 import { isEnabledLocale, type Locale } from "@/i18n/config";
 import { STEPS, STEP_LABEL, isStepId, lifecycleEnabled, type StepId } from "@/lib/lifecycle/config";
-import { previewEmail, runLifecycle, type RunReport } from "@/lib/lifecycle/server";
+import { listStalledSignups, previewEmail, runLifecycle, type RunReport, type StalledRow } from "@/lib/lifecycle/server";
+import { stallCounts, STAGE_LABEL } from "@/lib/onboarding/steps";
+import { CopyTextButton } from "@/components/admin/copy-text-button";
 import { sendLifecycleTestAction } from "@/lib/lifecycle/actions";
 import type { Persona } from "@/lib/lifecycle/persona";
 
@@ -26,6 +28,7 @@ interface SendRow {
 
 const PERSONAS: Persona[] = ["specialty", "recurring", "subtrade"];
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "—");
+const age = (h: number) => (h < 48 ? `${h}h` : `${Math.round(h / 24)}d`);
 
 /**
  * Admin: the lifecycle sequence (lib/lifecycle). Funnel per step from
@@ -74,6 +77,11 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
   });
   const tracked = funnel.some((f) => f.opened || f.clicked);
 
+  let stalled: StalledRow[] = [];
+  let stalledError: string | null = null;
+  if (!demo) ({ rows: stalled, error: stalledError } = await listStalledSignups());
+  const stalls = stallCounts(stalled.map((r) => r.stage));
+
   let dry: RunReport | null = null;
   if (sp.dry === "1" && !demo && !missing) dry = await runLifecycle({ dry: true });
 
@@ -81,7 +89,7 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
     <>
       <PageHeader
         title="Lifecycle emails"
-        description="Onboarding → trial → upgrade sequence for free trade companies. One email a day at most, 9:00–17:00 weekdays in the member's time zone, stops on upgrade, unsubscribe, bounce or complaint."
+        description="Onboarding rescue → welcome → trial → upgrade sequence for trade accounts. One email a day at most, 9:00–17:00 weekdays in the member's time zone (the +2h rescue and the pending-review note may go 8:00–20:00 Mon–Thu), stops on upgrade, unsubscribe, bounce or complaint."
       />
       {demo && <DemoBanner />}
       <p className={`mb-4 rounded-md px-3 py-2 text-sm ${enabled ? "bg-teal-50 text-teal-900" : "bg-amber-50 text-amber-900"}`}>
@@ -91,8 +99,40 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
       </p>
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The lifecycle_sends table is missing. Run supabase/migrations/20261016000020_lifecycle_emails.sql.
+          The lifecycle_sends table is missing. Run supabase/migrations/20261016000020_lifecycle_emails.sql, then 20261017000060_onboarding_rescue.sql.
         </p>
+      )}
+
+      <h2 className="mb-2 mt-6 text-base font-semibold">Stalled sign-ups (last 30 days)</h2>
+      <p className="mb-2 text-xs text-muted-foreground">
+        Accounts that never finished onboarding (no company yet). Trades get the rescue emails (+2h, +1 day, +3 days, then nothing);
+        property managers and suppliers are listed for a personal note only. &quot;Copy email&quot; copies a short note to send yourself from info@.
+        Internal and test addresses are hidden.
+      </p>
+      {stalledError ? (
+        <p className="mb-2 text-sm text-amber-900">Couldn&apos;t load: {stalledError}</p>
+      ) : !stalled.length ? (
+        <p className="mb-2 text-sm text-muted-foreground">{demo ? "Demo mode: no data." : "Nobody stalled in the last 30 days."}</p>
+      ) : (
+        <>
+          <p className="mb-2 text-sm">
+            <strong>Where they stopped:</strong> {stalls.map((c) => `${STAGE_LABEL[c.stage]}: ${c.count}`).join(" · ")}
+          </p>
+          <AdminTable columns={["Email", "Name / company", "Role", "Age", "Last step reached", "Rescue sent", "Next", ""]}>
+            {stalled.map((r) => (
+              <TableRow key={r.userId}>
+                <TableCell className="text-xs">{r.email}</TableCell>
+                <TableCell className="text-xs">{[r.name, r.company].filter(Boolean).join(" · ") || "—"}</TableCell>
+                <TableCell className="text-xs">{r.role}{r.provider === "google" ? " (Google)" : ""}</TableCell>
+                <TableCell className="text-xs">{age(r.ageHours)}</TableCell>
+                <TableCell className="text-xs">{r.stageLabel}{r.stageDetail ? ` (${r.stageDetail})` : ""}</TableCell>
+                <TableCell className="text-xs">{r.rescueSent.join(", ") || "none"}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{r.next}</TableCell>
+                <TableCell className="text-xs"><CopyTextButton text={r.manual.text} /></TableCell>
+              </TableRow>
+            ))}
+          </AdminTable>
+        </>
       )}
 
       <h2 className="mb-2 mt-6 text-base font-semibold">Funnel</h2>
@@ -125,9 +165,10 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
       ) : (
         <div className="space-y-3 text-sm">
           <p>
-            {dry.considered} members considered · {dry.sends.length} would get an email now · {dry.skips.length} steps would be skipped.
+            {dry.considered} members considered (+ {dry.rescue.considered} unfinished sign-ups on the rescue track) · {dry.sends.length} would get an email now · {dry.skips.length} steps would be skipped.
             {" "}Waiting: {Object.entries(dry.waits).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}.
             {" "}Stopped: {Object.entries(dry.stops).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}.
+            {" "}Rescue waiting: {Object.entries(dry.rescue.waits).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}; stopped: {Object.entries(dry.rescue.stops).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}.
           </p>
           {dry.sends.length > 0 && (
             <AdminTable columns={["Email", "Company", "Step", "Lang", "Country", "Subject", "Words"]}>

@@ -20,7 +20,8 @@ import { FREE_LEAD_LIMIT } from "@/lib/leads/view";
 import { THIN_MARKET } from "@/lib/leads/match";
 import type { CountryCode } from "@/lib/visitor-geo";
 import type { Persona } from "./persona";
-import { LIFECYCLE_ADDRESS, LIFECYCLE_SENDER, LIFECYCLE_UTM_SOURCE, isTrialStep, type StepId } from "./config";
+import type { Missing } from "./rescue";
+import { LIFECYCLE_ADDRESS, LIFECYCLE_SENDER, LIFECYCLE_UTM_SOURCE, isRescueStep, isTrialStep, type StepId } from "./config";
 
 /** Regular Trade Pro, CAD a year (lib/site PRICING.proAnnual; billed in CAD only). */
 export const TRADE_PRO_ANNUAL_CAD = 249;
@@ -54,6 +55,18 @@ export interface CopyData {
   } | null;
   foundingScarcity: FoundingScarcity;
   trial: { endsAt: string; daysLeft: number; alertsSent: number; saved: number; interests: number } | null;
+  /** Onboarding rescue only (no company yet). */
+  rescue?: RescueCopy | null;
+}
+
+/** What the onboarding rescue emails say (lib/lifecycle/rescue). */
+export interface RescueCopy {
+  /** Still to do on /onboarding (sign-up picks are pre-filled there). */
+  missing: Missing[];
+  /** Back to the exact onboarding step (lib/lifecycle/rescue resumePath). */
+  resumePath: string;
+  /** rescue_1d: real leads for their trade, else open bids in their area. Honest total, up to 3 titles. */
+  examples: { scope: "trade" | "area"; total: number; titles: string[] } | null;
 }
 
 export interface RenderContext {
@@ -638,6 +651,169 @@ const ES: Strings = {
 
 export const STRINGS: Record<Locale, Strings> = { en: EN, fr: FR, es: ES };
 
+/* ------------------------------------------------------------------ onboarding rescue + pending review strings */
+
+interface RescueStrings {
+  why: string;
+  parts: Record<Missing, string>;
+  s2h: { subject: string; intro: (company: string | null) => string; left: string; picked: string; why: string; cta: string; help: string };
+  s1d: {
+    subject: (trade: string | null, area: string) => string;
+    trade: (n: number, trade: string, area: string) => string;
+    area: (n: number, area: string) => string;
+    noneTrade: (trade: string, area: string) => string;
+    noneArea: (area: string) => string;
+    notYet: string;
+    pickTrades: string;
+    cta: string;
+  };
+  s3d: { subject: string; intro: string; ask: string; self: string; last: string };
+  review: { subject: string; intro: (company: string) => string; once: string; perks: string[]; todo: string; todoCta: string; nothing: string };
+}
+
+const RESCUE_EN: RescueStrings = {
+  why: "You're getting this because you created a PMRFP account.",
+  parts: {
+    role: "Tell us what describes you: trade, property manager or contractor",
+    company: "Your company name",
+    trades: "The trades you do",
+    areas: "The areas you serve",
+  },
+  s2h: {
+    subject: "Finish your PMRFP profile in 2 minutes",
+    intro: (c) => (c ? `You started setting up ${c} on PMRFP but didn't finish.` : "You started a PMRFP account but didn't finish setting it up."),
+    left: "What's left:",
+    picked: "What you picked at sign-up is saved. Check it and press Finish.",
+    why: "Why it matters: leads match on your trades and service area. Until those are set, we can't show or send you anything.",
+    cta: "Finish your profile",
+    help: "Stuck? Reply to this email and I'll help.",
+  },
+  s1d: {
+    subject: (t, a) => (t ? `${t} work in ${a} on PMRFP` : `Open bids in ${a} on PMRFP`),
+    trade: (n, t, a) => `PMRFP has ${pl(n, "{n} lead", "{n} leads")} for ${t} in ${a} right now. A few:`,
+    area: (n, a) => `PMRFP has ${pl(n, "{n} open bid", "{n} open bids")} in ${a} right now. A few:`,
+    noneTrade: (t, a) => `Honest answer: there are no open ${t} leads in ${a} today. New tenders, permits and awards come in every day.`,
+    noneArea: (a) => `Honest answer: it's quiet in ${a} today. New tenders, permits and awards come in every day.`,
+    notYet: "Your profile isn't finished, so none of this can reach you yet.",
+    pickTrades: "Pick your trades and we'll show you the ones that fit.",
+    cta: "Finish your profile to see your leads",
+  },
+  s3d: {
+    subject: "Want us to set up your PMRFP profile?",
+    intro: "Setting up a profile is nobody's favourite job. We can do it for you.",
+    ask: "Reply with your company name, the trades you do and the area you cover. We'll set it up and email you when it's ready.",
+    self: "Or finish it yourself in 2 minutes",
+    last: "This is the last reminder about it.",
+  },
+  review: {
+    subject: "We're reviewing your PMRFP profile",
+    intro: (c) => `Thanks for setting up ${c}. We review new company profiles before they show in the directory, usually within 1 business day.`,
+    once: "Once it's approved:",
+    perks: ["Property managers can find you in the PMRFP directory", "Your leads match on your trades and areas", "You can post in the trades forum"],
+    todo: "One thing that helps: add your trades and service areas. It's what we check, and what your leads match on.",
+    todoCta: "Add trades and areas",
+    nothing: "Nothing to do in the meantime. Questions? Just reply to this email.",
+  },
+};
+
+const RESCUE_FR: RescueStrings = {
+  why: "Vous recevez ce courriel parce que vous avez créé un compte PMRFP.",
+  parts: {
+    role: "Dites-nous qui vous êtes : corps de métier, gestionnaire immobilier ou entrepreneur",
+    company: "Le nom de votre entreprise",
+    trades: "Vos corps de métier",
+    areas: "Les régions que vous desservez",
+  },
+  s2h: {
+    subject: "Complétez votre profil PMRFP en 2 minutes",
+    intro: (c) => (c ? `Vous avez commencé à inscrire ${c} sur PMRFP sans terminer.` : "Vous avez créé un compte PMRFP sans terminer l'inscription."),
+    left: "Il reste :",
+    picked: "Vos choix à l'inscription sont gardés. Vérifiez-les et cliquez sur Terminer.",
+    why: "Pourquoi : les occasions sont jumelées sur vos corps de métier et votre région. Sans eux, on ne peut rien vous montrer ni vous envoyer.",
+    cta: "Compléter votre profil",
+    help: "Un problème? Répondez à ce courriel et je vous aide.",
+  },
+  s1d: {
+    subject: (t, a) => (t ? `${t}, ${a} : le travail sur PMRFP` : `${a} : les appels d'offres ouverts sur PMRFP`),
+    trade: (n, t, a) => `PMRFP a ${pl(n, "{n} occasion", "{n} occasions")} pour ${t} (${a}) en ce moment. Quelques exemples :`,
+    area: (n, a) => `PMRFP a ${pl(n, "{n} appel d'offres ouvert", "{n} appels d'offres ouverts")} (${a}) en ce moment. Quelques exemples :`,
+    noneTrade: (t, a) => `Réponse honnête : aucune occasion ouverte pour ${t} (${a}) aujourd'hui. De nouveaux appels d'offres, permis et contrats arrivent chaque jour.`,
+    noneArea: (a) => `Réponse honnête : c'est calme (${a}) aujourd'hui. De nouveaux appels d'offres, permis et contrats arrivent chaque jour.`,
+    notYet: "Votre profil n'est pas terminé, alors rien de tout ça ne peut encore vous parvenir.",
+    pickTrades: "Choisissez vos corps de métier et on vous montrera ce qui vous convient.",
+    cta: "Compléter votre profil pour voir vos occasions",
+  },
+  s3d: {
+    subject: "Voulez-vous qu'on crée votre profil PMRFP?",
+    intro: "Remplir un profil, personne n'aime ça. On peut le faire pour vous.",
+    ask: "Répondez avec le nom de votre entreprise, vos corps de métier et votre région. On crée le profil et on vous écrit quand il est prêt.",
+    self: "Ou terminez-le vous-même en 2 minutes",
+    last: "C'est le dernier rappel à ce sujet.",
+  },
+  review: {
+    subject: "Nous examinons votre profil PMRFP",
+    intro: (c) => `Merci d'avoir inscrit ${c}. Nous examinons les nouveaux profils d'entreprise avant qu'ils paraissent dans le répertoire, en général en 1 jour ouvrable.`,
+    once: "Une fois approuvé :",
+    perks: ["Les gestionnaires immobiliers vous trouvent dans le répertoire PMRFP", "Vos occasions sont jumelées sur vos corps de métier et vos régions", "Vous pouvez publier dans le forum des métiers"],
+    todo: "Une chose qui aide : ajoutez vos corps de métier et vos régions. C'est ce qu'on vérifie, et c'est sur quoi vos occasions sont jumelées.",
+    todoCta: "Ajouter métiers et régions",
+    nothing: "Rien à faire d'ici là. Des questions? Répondez simplement à ce courriel.",
+  },
+};
+
+const RESCUE_ES: RescueStrings = {
+  why: "Recibe este correo porque creó una cuenta en PMRFP.",
+  parts: {
+    role: "Díganos qué lo describe: oficio, administrador de propiedades o contratista",
+    company: "El nombre de su empresa",
+    trades: "Sus oficios",
+    areas: "Las zonas donde trabaja",
+  },
+  s2h: {
+    subject: "Complete su perfil de PMRFP en 2 minutos",
+    intro: (c) => (c ? `Empezó a registrar ${c} en PMRFP pero no terminó.` : "Creó una cuenta en PMRFP pero no terminó de configurarla."),
+    left: "Falta:",
+    picked: "Lo que eligió al registrarse está guardado. Revíselo y pulse Terminar.",
+    why: "Por qué importa: las oportunidades se buscan por sus oficios y su zona. Sin eso no podemos mostrarle ni enviarle nada.",
+    cta: "Complete su perfil",
+    help: "¿Algún problema? Responda a este correo y le ayudo.",
+  },
+  s1d: {
+    subject: (t, a) => (t ? `${t} en ${a}: trabajo en PMRFP` : `Licitaciones abiertas en ${a} en PMRFP`),
+    trade: (n, t, a) => `PMRFP tiene ${pl(n, "{n} oportunidad", "{n} oportunidades")} de ${t} en ${a} ahora mismo. Algunas:`,
+    area: (n, a) => `PMRFP tiene ${pl(n, "{n} licitación abierta", "{n} licitaciones abiertas")} en ${a} ahora mismo. Algunas:`,
+    noneTrade: (t, a) => `Respuesta honesta: hoy no hay oportunidades abiertas de ${t} en ${a}. Cada día llegan licitaciones, permisos y adjudicaciones nuevas.`,
+    noneArea: (a) => `Respuesta honesta: hoy está tranquilo en ${a}. Cada día llegan licitaciones, permisos y adjudicaciones nuevas.`,
+    notYet: "Su perfil no está terminado, así que nada de esto puede llegarle todavía.",
+    pickTrades: "Elija sus oficios y le mostraremos lo que le sirve.",
+    cta: "Complete su perfil para ver sus oportunidades",
+  },
+  s3d: {
+    subject: "¿Quiere que le armemos su perfil de PMRFP?",
+    intro: "Llenar un perfil no le gusta a nadie. Podemos hacerlo por usted.",
+    ask: "Responda con el nombre de su empresa, sus oficios y su zona. Armamos el perfil y le escribimos cuando esté listo.",
+    self: "O termínelo usted en 2 minutos",
+    last: "Este es el último recordatorio.",
+  },
+  review: {
+    subject: "Estamos revisando su perfil de PMRFP",
+    intro: (c) => `Gracias por registrar ${c}. Revisamos los perfiles nuevos antes de que aparezcan en el directorio, normalmente en 1 día hábil.`,
+    once: "Cuando se apruebe:",
+    perks: ["Los administradores de propiedades lo encuentran en el directorio de PMRFP", "Sus oportunidades se buscan por sus oficios y zonas", "Puede publicar en el foro de oficios"],
+    todo: "Algo que ayuda: agregue sus oficios y zonas. Es lo que revisamos y con lo que se buscan sus oportunidades.",
+    todoCta: "Agregar oficios y zonas",
+    nothing: "No tiene que hacer nada mientras tanto. ¿Preguntas? Solo responda a este correo.",
+  },
+};
+
+export const RESCUE_STRINGS: Record<Locale, RescueStrings> = { en: RESCUE_EN, fr: RESCUE_FR, es: RESCUE_ES };
+
+/** The country as the "area" when nothing finer is known. */
+export function countryArea(country: CountryCode, lang: Locale): string {
+  if (country === "US") return lang === "fr" ? "États-Unis" : lang === "es" ? "EE. UU." : "the U.S.";
+  return "Canada";
+}
+
 /* ------------------------------------------------------------------ steps */
 
 function body(step: StepId, d: CopyData, url: (path: string) => string): { subject: string; blocks: Block[] } {
@@ -648,7 +824,56 @@ function body(step: StepId, d: CopyData, url: (path: string) => string): { subje
   const annual = annualLabel(d.country, d.lang);
   const link = (label: string, path: string): Block => ({ link: { label, url: url(path) } });
 
+  const r = RESCUE_STRINGS[d.lang];
+  const rescue = d.rescue ?? { missing: ["company", "trades", "areas"], resumePath: "/onboarding", examples: null };
+
   switch (step) {
+    case "rescue_2h": {
+      const x = r.s2h;
+      const missing = rescue.missing.map((m) => r.parts[m]);
+      const company = rescue.missing.includes("company") ? null : d.company || null;
+      return {
+        subject: x.subject,
+        blocks: [
+          { p: x.intro(company) },
+          ...(missing.length ? [{ p: x.left }, { list: missing }] : [{ p: x.picked }]),
+          { p: x.why },
+          link(x.cta, rescue.resumePath),
+          { p: x.help },
+        ],
+      };
+    }
+    case "rescue_1d": {
+      const x = r.s1d;
+      const area = d.area || countryArea(d.country, d.lang);
+      const ex = rescue.examples;
+      const byTrade = ex?.scope === "trade" && Boolean(firstTrade);
+      const blocks: Block[] = [];
+      if (ex && ex.total > 0 && ex.titles.length) {
+        blocks.push({ p: byTrade ? x.trade(ex.total, trades, area) : x.area(ex.total, area) }, { list: ex.titles.slice(0, 3) });
+      } else {
+        blocks.push({ p: byTrade ? x.noneTrade(trades, area) : x.noneArea(area) });
+      }
+      blocks.push({ p: byTrade ? x.notYet : `${x.notYet} ${x.pickTrades}` }, link(x.cta, rescue.resumePath));
+      return { subject: x.subject(byTrade ? firstTrade : null, area), blocks };
+    }
+    case "rescue_3d": {
+      const x = r.s3d;
+      return { subject: x.subject, blocks: [{ p: x.intro }, { p: x.ask }, link(x.self, rescue.resumePath), { p: x.last }] };
+    }
+    case "review_pending": {
+      const x = r.review;
+      const todo = !d.hasTrades || !d.hasAreas;
+      return {
+        subject: x.subject,
+        blocks: [
+          { p: x.intro(d.company) },
+          { p: x.once },
+          { list: x.perks },
+          ...(todo ? [{ p: x.todo }, link(x.todoCta, PATHS.company)] : [{ p: x.nothing }]),
+        ],
+      };
+    }
     case "welcome": {
       const w = s.welcome;
       const done = d.hasTrades && d.hasAreas;
@@ -823,7 +1048,7 @@ export function renderStep(step: StepId, d: CopyData, ctx: RenderContext): Rende
     }
   }
   textLines.push(...SIGNATURE, "", "--");
-  const why = isTrialStep(step) ? s.whyTrial : s.why;
+  const why = isRescueStep(step) ? RESCUE_STRINGS[d.lang].why : isTrialStep(step) ? s.whyTrial : s.why;
   const unsubLine = ctx.unsubscribeUrl ? `${s.unsub}${colon} ${ctx.unsubscribeUrl}` : s.unsubManual;
   textLines.push(why, unsubLine, `${LIFECYCLE_SENDER}, ${LIFECYCLE_ADDRESS} · info@pmrfp.com`);
   const text = textLines.join("\n");
@@ -882,7 +1107,7 @@ export function sampleCopyData(step: StepId, lang: Locale, country: CountryCode 
     trades,
     area,
     hasTrades: true,
-    hasAreas: step !== "welcome",
+    hasAreas: step !== "welcome" && step !== "review_pending",
     persona,
     market: { openBids: 6, projects: 9, winners: 4, packages: 2, total: 21 },
     leadTitles: SAMPLE_TITLES[country],
@@ -901,5 +1126,7 @@ export function sampleCopyData(step: StepId, lang: Locale, country: CountryCode 
     },
     foundingScarcity: "quiet",
     trial: { endsAt, daysLeft: step === "trial_day12" ? 2 : 7, alertsSent: 12, saved: 3, interests: 1 },
+    // Rescue sample: picked trades at sign-up, no company name or areas yet.
+    rescue: { missing: ["company", "areas"], resumePath: "/onboarding", examples: { scope: "trade", total: 14, titles: SAMPLE_TITLES[country] } },
   };
 }
