@@ -9,6 +9,8 @@ import { ExpressInterestDialog } from "@/components/forms/express-interest-dialo
 import { BidChecklist } from "@/components/public/bid-checklist";
 import { GcPackageCta } from "@/components/public/gc-package-cta";
 import { AwardIntelCard } from "@/components/public/award-intel-card";
+import { WhoElseBidPanel } from "@/components/intel/who-else-bid";
+import { whoElseBidForBoardSlug } from "@/lib/bid-results/load";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { getSponsorSnapshot } from "@/lib/sponsors/data";
 import { ListingMatches } from "@/components/public/listing-matches";
@@ -200,6 +202,9 @@ export default async function RfpDetailPage({
     isGc ? getAwardById(teaser.awardedRfpId) : Promise.resolve(null),
     isAward ? listPackagesForAward(teaser.slug) : Promise.resolve([]),
   ]);
+  // Award Intelligence: who else bid on this award (SEAO bid lists), for Intel subscribers only.
+  // Read with the viewer's session, so row level security gates it a second time.
+  const bidPanel = isAward && session?.hasIntelAccess ? await whoElseBidForBoardSlug(teaser.slug).catch(() => null) : null;
   const closesLabel = isGc ? t.facts.quotesDue : t.facts.closes;
   const dateLabel = isAward ? t.facts.awarded : isClosed ? t.facts.closed : closesLabel;
   // "What similar contracts sold for": the trade × province price benchmark
@@ -458,6 +463,11 @@ export default async function RfpDetailPage({
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+              {bidPanel && (
+                <div className="vp-winner">
+                  <WhoElseBidPanel panel={bidPanel} t={getT("bidResults")} lang={lang} />
                 </div>
               )}
               <h2 className="vp-h3">

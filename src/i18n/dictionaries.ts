@@ -51,6 +51,7 @@ import growth from "./messages/growth";
 import growthClient from "./messages/growthClient";
 import leads from "./messages/leads";
 import intel from "./messages/intel";
+import bidResults from "./messages/bidResults";
 
 const NAMESPACES = {
   common,
@@ -97,6 +98,7 @@ const NAMESPACES = {
   growthClient,
   leads,
   intel,
+  bidResults,
 };
 
 type Namespaces = typeof NAMESPACES;

@@ -55,7 +55,7 @@ export interface OcdsRelease {
 }
 
 // French trade vocabulary → PMRFP category slugs. Accents are stripped first.
-const RULES_FR: [slug: string, pattern: RegExp][] = [
+export const RULES_FR: [slug: string, pattern: RegExp][] = [
   ["snow-removal", /deneigement|enlevement de la neige|deglacage/],
   ["cleaning-janitorial", /entretien menager|conciergerie|nettoyage|menage des|lavage de vitres/],
   ["landscaping", /amenagement paysager|paysag|tonte|gazon|horticult|elagage|abattage d.arbres|entretien des terrains/],
@@ -88,10 +88,10 @@ const RULES_FR: [slug: string, pattern: RegExp][] = [
 
 // Not building-trade work: civil infrastructure, IT, professional services,
 // transport/vehicles, and pure goods purchases.
-const EXCLUDE_FR =
+export const EXCLUDE_FR =
   /\bpont|ponceau|\broute|chaussee|egout|aqueduc|\brue\b|\brues\b|trottoir|talus|voirie|emissaire|enrochement|informatique|logiciel|infonuagique|services professionnels|ingenieur|ingenierie|architecte|consultant|expertise|etude|solutions technologiques|recensement|vehicule|camion|autobus|location de|fourniture de (?!.*installation)|achat de|acquisition de/;
 
-function fold(s: string): string {
+export function fold(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 

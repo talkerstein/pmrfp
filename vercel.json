@@ -94,6 +94,18 @@
       "schedule": "33 * * * *"
     },
     {
+      "path": "/api/cron/award-history/weekly",
+      "schedule": "5 10 * * 1"
+    },
+    {
+      "path": "/api/cron/award-history/monthly",
+      "schedule": "20 10 3 * *"
+    },
+    {
+      "path": "/api/cron/award-history/federal",
+      "schedule": "35 10 5 * *"
+    },
+    {
       "path": "/api/cron/insights-brief",
       "schedule": "40 13 * * 1"
     }
