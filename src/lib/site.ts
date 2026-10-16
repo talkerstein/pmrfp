@@ -137,6 +137,7 @@ export const ADMIN_NAV = [
   { href: "/admin/badge-installs", label: "Badge Installs" },
   { href: "/admin/signups", label: "Sign-up Sources" },
   { href: "/admin/weekly-email", label: "Weekly Email" },
+  { href: "/admin/lifecycle", label: "Lifecycle Emails" },
   { href: "/admin/forum", label: "Forum" },
   { href: "/admin/karma", label: "Reputation" },
   { href: "/admin/marketplace", label: "Marketplace" },

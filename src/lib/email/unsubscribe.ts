@@ -45,3 +45,26 @@ export function verifyUnsubscribe(userId: string | null, token: string | null): 
   const given = Buffer.from(token);
   return expected.length === given.length && timingSafeEqual(expected, given);
 }
+
+/*
+ * The lifecycle sequence (lib/lifecycle: onboarding tips, trial and offer
+ * emails): same secret, its own prefix, so this link only stops those emails
+ * and can't turn off someone's alerts (or the other way round).
+ */
+function signLifecycle(userId: string, key: string): string {
+  return createHmac("sha256", key).update(`lifecycle-unsub:${userId}`).digest("base64url");
+}
+
+export function lifecycleUnsubscribeUrl(base: string, userId: string): string | null {
+  const key = secret();
+  if (!key) return null;
+  return `${base}/api/email/lifecycle-unsubscribe?u=${encodeURIComponent(userId)}&t=${signLifecycle(userId, key)}`;
+}
+
+export function verifyLifecycleUnsubscribe(userId: string | null, token: string | null): boolean {
+  const key = secret();
+  if (!key || !userId || !token) return false;
+  const expected = Buffer.from(signLifecycle(userId, key));
+  const given = Buffer.from(token);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}

@@ -1273,3 +1273,60 @@ export async function sendDigestEmail(
     { utm: unsubscribeUrl ? "weekly-digest" : "digest-confirm" },
   );
 }
+
+/** Is Resend configured (an email can actually go out)? */
+export function emailConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
+/**
+ * One lifecycle email (lib/lifecycle): plain text plus the simple HTML
+ * wrapper, both already built and utm-tagged by lib/lifecycle/copy. Its own
+ * sender ("R. Talkar · PMRFP"), replies to info@, RFC 8058 one-click
+ * unsubscribe headers, and Resend tags so delivery events can be matched
+ * back to the step. Returns Resend's email id (for opens / clicks, if
+ * tracking is on in Resend) or the error; never throws.
+ */
+export async function sendLifecycleEmail(p: {
+  to: string;
+  from: string;
+  replyTo: string;
+  subject: string;
+  text: string;
+  html: string;
+  unsubscribeUrl: string | null;
+  step: string;
+}): Promise<{ ok: boolean; id: string | null; error?: string }> {
+  const resend = client();
+  if (!resend) {
+    console.info(`[email:noop] lifecycle to=${p.to} subject="${p.subject}"`);
+    return { ok: false, id: null, error: "RESEND_API_KEY not set" };
+  }
+  try {
+    const { data, error } = await resend.emails.send({
+      from: p.from,
+      to: p.to,
+      replyTo: p.replyTo,
+      subject: p.subject,
+      text: p.text,
+      html: p.html,
+      ...(p.unsubscribeUrl
+        ? {
+            headers: {
+              "List-Unsubscribe": `<${p.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+          }
+        : {}),
+      tags: [
+        { name: "category", value: "lifecycle" },
+        { name: "step", value: p.step.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60) },
+      ],
+    });
+    if (error) return { ok: false, id: null, error: error.message };
+    return { ok: true, id: data?.id ?? null };
+  } catch (err) {
+    console.error("[email] lifecycle send failed", err);
+    return { ok: false, id: null, error: err instanceof Error ? err.message : "send failed" };
+  }
+}

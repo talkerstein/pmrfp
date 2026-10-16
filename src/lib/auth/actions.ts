@@ -19,6 +19,7 @@ import {
   signUpSchema,
 } from "@/lib/validations";
 import { sendAdminNewSignup, sendWelcomeEmail } from "@/lib/email/send";
+import { lifecycleEnabled } from "@/lib/lifecycle/config";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
@@ -448,7 +449,9 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord });
 
   // One welcome email per member, with the next step for their kind of account.
-  await sendWelcomeEmail(session.profile.email, {
+  // Trade companies get the lifecycle sequence's Day 0 welcome instead when
+  // it's on (lib/lifecycle), so nobody gets two welcomes.
+  if (!(orgType === "trade_company" && lifecycleEnabled())) await sendWelcomeEmail(session.profile.email, {
     name: session.profile.full_name,
     kind: isBuilder ? "general_contractor" : isLandlord ? "landlord" : isSupplier ? "supplier" : isListing ? "trade" : "property_manager",
     companyName: data.name,
