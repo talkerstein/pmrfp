@@ -78,6 +78,10 @@
       "schedule": "56 9 * * 0"
     },
     {
+      "path": "/api/cron/major-projects/corridor",
+      "schedule": "11 10 * * 0"
+    },
+    {
       "path": "/api/cron/lead-alerts",
       "schedule": "20 14 * * *"
     },

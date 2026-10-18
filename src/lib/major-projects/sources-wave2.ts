@@ -229,7 +229,7 @@ export function tidyAddress(a: unknown): string | null {
   return tidyName(main.replace(/\s+-\s+/g, " ").replace(/\s+/g, " ").trim())?.replace(/\b(Nw|Ne|Sw|Se)\b/g, (m) => m.toUpperCase()) ?? null;
 }
 
-interface AppRow {
+export interface AppRow {
   source: string;
   id: string;
   kind: string;
@@ -246,7 +246,7 @@ interface AppRow {
   sources: { label: string; url: string }[];
 }
 
-function applicationRow(a: AppRow): MajorProjectInput {
+export function applicationRow(a: AppRow): MajorProjectInput {
   return {
     source: a.source,
     sourceKey: `${a.source}:${a.id}`,
@@ -275,7 +275,7 @@ function applicationRow(a: AppRow): MajorProjectInput {
 }
 
 /** Closed, refused, withdrawn or cancelled files aren't leads. */
-const DEAD_APP = /closed|refused|withdrawn|cancel|denied|rejected|abandon|expired/i;
+export const DEAD_APP = /closed|refused|withdrawn|cancel|denied|rejected|abandon|expired/i;
 
 /* ------------------------------------------------------------------ Infrastructure Canada (upload) */
 
@@ -529,7 +529,7 @@ export function halifaxUrl(minValue: number, today: string, offset = 0): string 
   return `${HALIFAX_LAYER}?${q}`;
 }
 
-type Attrs = Record<string, string | number | null>;
+export type Attrs = Record<string, string | number | null>;
 
 export function parseHalifaxPermits(features: { attributes?: Attrs }[], minValue: number): MajorProjectInput[] {
   // One row per occupancy type: group by permit number.
@@ -824,7 +824,7 @@ export function addressKey(a: string | null | undefined): string {
 }
 
 /** Several applications on one site (rezoning + site plan) become one project: the biggest scale wins the title. */
-function groupBySite<T extends { site: string; scale: Scale; received: string | null }>(apps: T[]): { lead: T; all: T[] }[] {
+export function groupBySite<T extends { site: string; scale: Scale; received: string | null }>(apps: T[]): { lead: T; all: T[] }[] {
   const by = new Map<string, T[]>();
   for (const a of apps) by.set(a.site, [...(by.get(a.site) ?? []), a]);
   const size = (s: Scale) => (s.units ?? 0) + (s.storeys ?? 0) * 10 + (s.gfaM2 ?? 0) / 100 + (s.buildings ?? 0) * 20;
@@ -834,7 +834,7 @@ function groupBySite<T extends { site: string; scale: Scale; received: string | 
   }));
 }
 
-const mergeScale = (all: { scale: Scale }[]): Scale => ({
+export const mergeScale = (all: { scale: Scale }[]): Scale => ({
   storeys: Math.max(0, ...all.map((a) => a.scale.storeys ?? 0)) || null,
   units: Math.max(0, ...all.map((a) => a.scale.units ?? 0)) || null,
   gfaM2: Math.max(0, ...all.map((a) => a.scale.gfaM2 ?? 0)) || null,

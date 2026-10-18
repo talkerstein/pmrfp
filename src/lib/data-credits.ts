@@ -84,6 +84,42 @@ export const CREDITS: readonly Credit[] = [
     fr: "Contient des informations du secteur public diffusées en vertu de la licence de données ouvertes de la Municipalité régionale de York (The Regional Municipality of York's Open Data Licence).",
     es: "Contiene información del sector público publicada bajo la licencia de datos abiertos de la Municipalidad Regional de York (The Regional Municipality of York's Open Data Licence).",
   },
+  // ---- Toronto–Kitchener corridor permits and applications (2026-10-18)
+  {
+    en: "Contains information licensed under the Open Government Licence – The Corporation of the City of Kitchener.",
+    fr: "Contient des informations visées par la Licence du gouvernement ouvert – The Corporation of the City of Kitchener (Open Government Licence – City of Kitchener).",
+    es: "Contiene información bajo la Open Government Licence – The Corporation of the City of Kitchener (Licencia de Gobierno Abierto – Ciudad de Kitchener).",
+  },
+  {
+    en: "Contains information provided by the City of Waterloo under licence.",
+    fr: "Contient des informations fournies par la Ville de Waterloo en vertu d'une licence (City of Waterloo Open Data Licence).",
+    es: "Contiene información proporcionada por la Ciudad de Waterloo bajo licencia (City of Waterloo Open Data Licence).",
+  },
+  {
+    en: "Contains information licensed under the Open Government License – City of Cambridge.",
+    fr: "Contient des informations visées par la Licence du gouvernement ouvert – Ville de Cambridge (Open Government License – City of Cambridge).",
+    es: "Contiene información bajo la Open Government License – City of Cambridge (Licencia de Gobierno Abierto – Ciudad de Cambridge).",
+  },
+  {
+    en: "Source: City of Burlington Open Data, used under the City of Burlington Open Data Terms of Use (https://opendata.burlington.ca/opendata-terms-of-use/City%20of%20Burlington%20-%20Open%20Data%20Terms%20of%20Use.pdf).",
+    fr: "Source : données ouvertes de la Ville de Burlington, utilisées conformément aux conditions d'utilisation des données ouvertes de la Ville de Burlington (https://opendata.burlington.ca/opendata-terms-of-use/City%20of%20Burlington%20-%20Open%20Data%20Terms%20of%20Use.pdf).",
+    es: "Fuente: datos abiertos de la Ciudad de Burlington, usados conforme a los términos de uso de datos abiertos de la Ciudad de Burlington (https://opendata.burlington.ca/opendata-terms-of-use/City%20of%20Burlington%20-%20Open%20Data%20Terms%20of%20Use.pdf).",
+  },
+  {
+    en: "Contains information licensed under the Open Government Licence – Town of Oakville.",
+    fr: "Contient des informations visées par la Licence du gouvernement ouvert – Ville d'Oakville (Open Government Licence – Town of Oakville).",
+    es: "Contiene información bajo la Open Government Licence – Town of Oakville (Licencia de Gobierno Abierto – Ciudad de Oakville).",
+  },
+  {
+    en: "Source: City of Brampton Open Data (geohub.brampton.ca), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).",
+    fr: "Source : données ouvertes de la Ville de Brampton (geohub.brampton.ca), sous licence CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/deed.fr).",
+    es: "Fuente: datos abiertos de la Ciudad de Brampton (geohub.brampton.ca), con licencia CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/deed.es).",
+  },
+  {
+    en: "Contains public sector Data made available under the City of Hamilton's Open Data Licence.",
+    fr: "Contient des données du secteur public diffusées en vertu de la licence de données ouvertes de la Ville de Hamilton (City of Hamilton's Open Data Licence).",
+    es: "Contiene datos del sector público publicados bajo la licencia de datos abiertos de la Ciudad de Hamilton (City of Hamilton's Open Data Licence).",
+  },
   {
     en: "Contains information from the Government of Manitoba, licensed under the OpenMB Information and Data Use License (Manitoba.ca/OpenMB).",
     fr: "Contient des informations du gouvernement du Manitoba, utilisées en vertu de la licence d'utilisation de l'information et des données OpenMB (OpenMB Information and Data Use License, Manitoba.ca/OpenMB).",
@@ -138,6 +174,11 @@ export const CREDITS: readonly Credit[] = [
     en: "Source: City of Portage la Prairie tenders and proposals (city-plap.com) — public tender notice.",
     fr: "Source : appels d'offres et propositions de la Ville de Portage la Prairie (city-plap.com) — avis public d'appel d'offres.",
     es: "Fuente: licitaciones y propuestas de la Ciudad de Portage la Prairie (city-plap.com) — aviso público de licitación.",
+  },
+  {
+    en: "Source: Township of Guelph/Eramosa bids and tenders (get.on.ca) — public tender notice.",
+    fr: "Source : appels d'offres du Canton de Guelph/Eramosa (get.on.ca) — avis public d'appel d'offres.",
+    es: "Fuente: licitaciones del Municipio de Guelph/Eramosa (get.on.ca) — aviso público de licitación.",
   },
   {
     en: "Source: SaskTenders (sasktenders.ca), Government of Saskatchewan — public competition notice.",

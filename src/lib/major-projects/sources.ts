@@ -517,7 +517,7 @@ export function parseMississaugaPermits(json: { features?: { attributes?: Record
  * and its own minute): core = /api/cron/major-projects, funding and local =
  * /api/cron/major-projects/<group>.
  */
-export type SourceGroup = "core" | "funding" | "local";
+export type SourceGroup = "core" | "funding" | "local" | "corridor";
 
 export interface ProjectSource {
   key: string;
