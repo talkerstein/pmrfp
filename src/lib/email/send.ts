@@ -1258,7 +1258,7 @@ export async function sendFoundingLifetimeEmail(to: string): Promise<void> {
     "You're a PMRFP Founding member: lifetime Trade Pro is active",
     layout(
       "Welcome, Founding member",
-      `<p>Your one-time payment went through and your organization now has Trade Pro for life: full RFP access, matching alerts, saved opportunities and priority placement in the directory. There is nothing to renew and no card on file to charge.</p>
+      `<p>Your one-time payment went through and your organization now has lifetime Trade Pro (for as long as PMRFP operates Trade Pro): full RFP access, matching alerts and saved opportunities. There is nothing to renew and no card on file to charge.</p>
        <p>${btn(`${BASE}/dashboard/rfps`, "Open the RFP board")}</p>
        <p style="font-size:14px">Not happy? Email us within 30 days for a full refund. The Founding 500 terms are at <a href="${BASE}/terms#founding-500">${BASE}/terms#founding-500</a>.</p>`,
       undefined,

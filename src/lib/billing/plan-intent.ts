@@ -10,7 +10,13 @@ import { PRICING } from "@/lib/site";
  * the checkout route resolves the Stripe price itself, so a tampered query
  * string can change nothing but which summary is displayed.
  */
-export type PlanId = "seo" | "pro" | "featured";
+/**
+ * Plans a new buyer can start. "seo" (SEO Listing) is retired: old links and
+ * bookmarks carrying plan=seo are steered to Trade Pro (and its 14-day trial)
+ * instead of a plan we no longer sell. Existing SEO subscribers keep their
+ * entitlement (subscriptions.tier = "seo"), handled in the access code.
+ */
+export type PlanId = "pro" | "featured";
 export type PlanInterval = "annual" | "monthly";
 
 export interface PlanIntent {
@@ -24,20 +30,13 @@ export function parsePlanIntent(
   plan: string | null | undefined,
   interval: string | null | undefined,
 ): PlanIntent | null {
-  if (plan !== "seo" && plan !== "pro" && plan !== "featured") return null;
+  if (plan === "seo") plan = "pro";
+  if (plan !== "pro" && plan !== "featured") return null;
   // Featured is annual-only (mirrors /api/stripe/checkout).
   const iv: PlanInterval = plan !== "featured" && interval === "monthly" ? "monthly" : "annual";
   const cur = PRICING.currency;
   if (plan === "featured") {
     return { plan, interval: iv, name: "Featured", priceLabel: `$${PRICING.featuredAnnual} ${cur}/year` };
-  }
-  if (plan === "seo") {
-    return {
-      plan,
-      interval: iv,
-      name: "SEO Listing",
-      priceLabel: iv === "monthly" ? `$${PRICING.seoMonthly} ${cur}/month` : `$${PRICING.seoAnnual} ${cur}/year`,
-    };
   }
   return {
     plan,

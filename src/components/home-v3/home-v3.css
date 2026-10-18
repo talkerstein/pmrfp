@@ -392,7 +392,7 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-plans-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
 .v3-plans-head .v3-h2 { font-size: 42px; line-height: 1.1; letter-spacing: -.025em; max-width: 640px; margin-top: 0 !important; }
 .v3-plans-head p { margin: 0; color: var(--sub); max-width: 330px; }
-.v3-plans { margin-top: 40px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 20px; align-items: stretch; }
+.v3-plans { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 20px; align-items: stretch; }
 .v3-plan { border: 2px solid var(--rule); background: #FFFFFF; color: var(--ink); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; }
 .v3-plan.pop { border-color: var(--navy); background: var(--navy); color: #FFFFFF; }
 .v3-plan .nm { display: flex; justify-content: space-between; align-items: center; min-height: 28px; gap: 8px; }

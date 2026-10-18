@@ -21,12 +21,17 @@ import type { Messages } from "@/i18n/dictionaries";
 export type { V3Messages } from "./chrome-shared";
 type V3Messages = Messages["homeV3"];
 export interface V3Closing { mon: string; day: string; tag: string; left: string; title: string; href: string; soon: boolean }
-export interface V3Trade { name: string; n: number; href: string }
+/** `n` is null when the live count couldn't load: the count is hidden, never guessed. */
+export interface V3Trade { name: string; n: number | null; href: string }
+/**
+ * Counts are null when their live query fails (see fallback.ts): the stat
+ * block is hidden or reads "Live numbers loading". Never a design-time number.
+ */
 export interface V3Data {
-  open: number;
-  closing7: number;
-  trades: number;
-  regions: number;
+  open: number | null;
+  closing7: number | null;
+  trades: number | null;
+  regions: number | null;
   /** Founding 500 spots left; null when the count can't be read. Only used to pick quiet / low / sold-out copy, never displayed. */
   foundingLeft: number | null;
   big: V3Trade & { img: string };
@@ -97,7 +102,6 @@ const H = {
   advertise: "/advertise",
   proAnnual: signUpHrefForPlan("pro", "annual"),
   proMonthly: signUpHrefForPlan("pro", "monthly"),
-  seo: signUpHrefForPlan("seo", "annual"),
   featured: signUpHrefForPlan("featured", "annual"),
 };
 
@@ -174,6 +178,9 @@ export function HomeV3({
   const rate = useUsdPerCad();
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
+  /** A "{n} …" line, or null (hidden) when the count is unknown. Lines without {n} pass through. */
+  const factLine = (tpl: string, n: number | null): string | null =>
+    !tpl.includes("{n}") ? tpl : n == null ? null : fmt(tpl, { n: num(n) });
 
   /* One currency per visitor: CAD in Canada, USD in the U.S.; nothing until we know which. */
   const known = market != null;
@@ -297,7 +304,7 @@ export function HomeV3({
     ...a,
     img: AUD_IMG[i],
     href: AUD_HREF[i],
-    fact: fmt(a.fact, { n: num(i === 0 ? data.open : data.regions) }),
+    fact: factLine(a.fact, i === 0 ? data.open : data.regions),
   }));
   const word = aud[active].word;
   const swapClass = tick % 2 ? "swapb" : "swapa";
@@ -310,20 +317,22 @@ export function HomeV3({
   const w = data.winners;
   const top = w.top;
   const bigwords = [
-    fmt(t.platform.bigwords.open, { n: num(data.open) }),
-    fmt(t.platform.bigwords.trades, { n: num(data.trades) }),
-    fmt(t.platform.bigwords.regions, { n: num(data.regions) }),
+    factLine(t.platform.bigwords.open, data.open),
+    factLine(t.platform.bigwords.trades, data.trades),
+    factLine(t.platform.bigwords.regions, data.regions),
     ...(top.length ? [fmt(t.platform.bigwords.awarded, { value: w.value })] : []),
-  ];
+  ].filter((x): x is string => x != null);
+  const stats = ([[data.open, t.stats.open], [data.closing7, t.stats.closing], [data.trades, t.stats.trades], [data.regions, t.stats.regions]] as const).filter(
+    (s): s is readonly [number, string] => s[0] != null,
+  );
   const cards = DECK.map((img, i) => {
     const slot = (i - deck + 4) % 4;
     return { no: `0${i + 1}`, cap: t.platform.work.steps[i], img, slot, z: 4 - slot, pick: () => setDeck(i) };
   });
   const plans = [
     { ...t.plans.items[0], price: known ? (lang === "fr" ? "0 $" : "$0") : null, per: t.plans.forever, href: H.joinTrade, pop: false, w: "3ch" },
-    { ...t.plans.items[1], price: known ? money(PRICING.seoAnnual) : null, per: known ? fmt(t.plans.perYear, { currency }) : null, href: H.seo, pop: false, w: "4ch" },
-    { ...t.plans.items[2], price: known ? money(PRICING.proAnnual) : null, per: known ? fmt(t.plans.perYearOr, { currency, monthly: money(PRICING.proMonthly) }) : null, href: H.proAnnual, pop: true, w: "4ch" },
-    { ...t.plans.items[3], price: known ? money(PRICING.featuredAnnual) : null, per: known ? fmt(t.plans.perYear, { currency }) : null, href: H.featured, pop: false, w: "4ch" },
+    { ...t.plans.items[1], price: known ? money(PRICING.proAnnual) : null, per: known ? fmt(t.plans.perYearOr, { currency, monthly: money(PRICING.proMonthly) }) : null, href: H.proAnnual, pop: true, w: "4ch" },
+    { ...t.plans.items[2], price: known ? money(PRICING.featuredAnnual) : null, per: known ? fmt(t.plans.perYear, { currency }) : null, href: H.featured, pop: false, w: "4ch" },
   ];
 
   const onSearch = (e: FormEvent<HTMLFormElement>) => {
@@ -416,8 +425,8 @@ export function HomeV3({
               <div className="v3-hero-main">
                 <div className="v3-hero-eyebrow">
                   <span className="v3-dot" />
-                  <span className="d">{fmt(t.hero.eyebrow, { n: num(data.open), where: here })}</span>
-                  <span className="m">{fmt(t.hero.eyebrowShort, { n: num(data.open), where: here })}</span>
+                  <span className="d">{data.open != null ? fmt(t.hero.eyebrow, { n: num(data.open), where: here }) : t.stats.loading}</span>
+                  <span className="m">{data.open != null ? fmt(t.hero.eyebrowShort, { n: num(data.open), where: here }) : t.stats.loading}</span>
                 </div>
                 <h1 className="v3-h1">
                   {t.hero.title} <span key={tick} className={`w ${swapClass}`} aria-live="off">{word}.</span>
@@ -454,7 +463,7 @@ export function HomeV3({
                           <div className="p"><span className="d">{p.desc}</span><span className="m">{p.descShort}</span></div>
                           <div className="row">
                             <a href={L(p.href)} className="v3-pill mint"><span className="d">{p.cta}</span><span className="m">{p.ctaShort}</span> →</a>
-                            <span className="fact">{p.fact}</span>
+                            {p.fact && <span className="fact">{p.fact}</span>}
                           </div>
                         </div>
                       )}
@@ -465,6 +474,7 @@ export function HomeV3({
             </div>
           </section>
 
+          {data.ticker.length > 0 && (
           <div className="v3-ticker">
             <div className="marquee">
               {ticker.map((k, i) => (
@@ -476,13 +486,16 @@ export function HomeV3({
               ))}
             </div>
           </div>
+          )}
         </div>
 
-        <section className="v3-wrap v3-stats" aria-label={t.stats.open}>
-          {([[data.open, t.stats.open], [data.closing7, t.stats.closing], [data.trades, t.stats.trades], [data.regions, t.stats.regions]] as const).map(([n, l]) => (
-            <div key={l}><div className="n">{num(n)}</div><div className="l">{l}</div></div>
-          ))}
-        </section>
+        {stats.length > 0 && (
+          <section className="v3-wrap v3-stats" aria-label={t.stats.open}>
+            {stats.map(([n, l]) => (
+              <div key={l}><div className="n">{num(n)}</div><div className="l">{l}</div></div>
+            ))}
+          </section>
+        )}
 
         <section className="v3-wrap v3-trades">
           <div className="v3-trades-head">
@@ -502,7 +515,7 @@ export function HomeV3({
               <Image src={data.big.img} alt="" fill sizes="(max-width: 1023px) 100vw, 480px" className="v3-img" />
               <span className="sh" />
               <span className="in">
-                <span className="n">{num(data.big.n)}</span>
+                {data.big.n != null && <span className="n">{num(data.big.n)}</span>}
                 <span className="row"><span className="nm">{data.big.name}</span><span className="on">{t.trades.openNow}</span></span>
               </span>
             </a>
@@ -510,26 +523,27 @@ export function HomeV3({
               <a key={x.name} className="v3-tt zoom" href={L(x.href)}>
                 <Image src={x.img} alt="" fill sizes="(max-width: 1023px) 50vw, 230px" className="v3-img" />
                 <span className="sh" />
-                <span className="in"><span className="n">{num(x.n)}</span><span className="nm">{x.name}</span></span>
+                <span className="in">{x.n != null && <span className="n">{num(x.n)}</span>}<span className="nm">{x.name}</span></span>
               </a>
             ))}
             <a className="v3-allt lift" href={L(H.trades)}>
               <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#1B1D3A" strokeWidth="3" aria-hidden><path d="M9 27L27 9M12 9h15v15" /></svg>
-              <span><span className="n">{num(data.trades)}</span><span className="nm">{t.trades.all}</span></span>
+              <span>{data.trades != null && <span className="n">{num(data.trades)}</span>}<span className="nm">{t.trades.all}</span></span>
             </a>
           </div>
 
           <div className="v3-chips hs">
             {data.chips.map((c) => (
-              <a key={c.name} className="v3-chip lift" href={L(c.href)}><b>{c.name}</b><span className="c">{num(c.n)}</span></a>
+              <a key={c.name} className="v3-chip lift" href={L(c.href)}><b>{c.name}</b>{c.n != null && <span className="c">{num(c.n)}</span>}</a>
             ))}
           </div>
         </section>
 
         <section className="v3-wrap v3-closing">
+          {closing.length > 0 && (<>
           <div className="v3-row-head">
             <h2 className="v3-h3">{t.closing.title}</h2>
-            <a href={L(H.rfps)}><span className="d">{fmt(t.closing.all, { n: num(data.open) })}</span><span className="m">{fmt(t.closing.allShort, { n: num(data.open) })}</span></a>
+            <a href={L(H.rfps)}>{data.open != null ? <><span className="d">{fmt(t.closing.all, { n: num(data.open) })}</span><span className="m">{fmt(t.closing.allShort, { n: num(data.open) })}</span></> : t.closing.allNoCount}</a>
           </div>
           <div className="v3-cards4 hs">
             {closing.map((r) => {
@@ -544,6 +558,7 @@ export function HomeV3({
               );
             })}
           </div>
+          </>)}
 
           <div className="v3-src">
             <h2 className="v3-h3">{t.sources.title}</h2>
@@ -584,6 +599,7 @@ export function HomeV3({
               </div>
             </div>
             <div className="v3-pro-r">
+              {data.alerts.length > 0 && (<>
               <div className="v3-mailpill">
                 {mark(30)}
                 <span className="t">{t.pro.time}</span>
@@ -597,6 +613,7 @@ export function HomeV3({
                 </a>
               ))}
               <div className="v3-pro-note">{t.pro.note}</div>
+              </>)}
             </div>
           </div>
         </section>
@@ -848,9 +865,12 @@ export function HomeV3({
 
         <section className="v3-final">
           <div className="v3-wrap v3-final-in">
-            <div className="big" aria-hidden>{num(data.open)}</div>
+            {data.open != null && <div className="big" aria-hidden>{num(data.open)}</div>}
             <div>
-              <h2><span className="v3-sr">{num(data.open)} </span>{t.cta.line1}<br /> {fmt(t.cta.line2, { n: num(data.closing7) })}</h2>
+              <h2>
+                {data.open != null ? <><span className="v3-sr">{num(data.open)} </span>{t.cta.line1}</> : t.cta.line1NoCount}
+                {data.closing7 != null && <><br /> {fmt(t.cta.line2, { n: num(data.closing7) })}</>}
+              </h2>
               <div className="note">{t.cta.note}</div>
             </div>
             <div className="btns">
@@ -898,8 +918,8 @@ export function HomeV3({
         <div className="v3-sticky-in">
           <span className="v3-dot d" style={{ width: 10, height: 10 }} />
           <div className="txt">
-            <b><span className="d">{fmt(t.sticky.open, { n: num(data.open), where: here })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(data.open), where: here })}</span></b>{" "}
-            <span className="c"><span className="d">{fmt(t.sticky.closing, { n: num(data.closing7) })}</span><span className="m">{fmt(t.sticky.closingShort, { n: num(data.closing7) })}</span></span>
+            <b>{data.open != null ? <><span className="d">{fmt(t.sticky.open, { n: num(data.open), where: here })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(data.open), where: here })}</span></> : t.stats.loading}</b>{" "}
+            {data.closing7 != null && <span className="c"><span className="d">{fmt(t.sticky.closing, { n: num(data.closing7) })}</span><span className="m">{fmt(t.sticky.closingShort, { n: num(data.closing7) })}</span></span>}
           </div>
           <a href={L(H.postRfp)} className="v3-pill ghost">{t.sticky.post}</a>
           <button type="button" onClick={openModal} className="v3-pill mint"><span className="d">{t.sticky.cta}</span><span className="m">{t.sticky.ctaShort}</span></button>
@@ -922,11 +942,11 @@ export function HomeV3({
             <div className="v3-dlg-side">
               <Image src={IMG.roofing} alt="" fill sizes="400px" className="v3-img" />
               <span className="sh" />
-              <span className="n">{num(data.open)}</span>
-              <span className="l">{t.popup.open}</span>
+              {data.open != null && <span className="n">{num(data.open)}</span>}
+              <span className="l">{data.open != null ? t.popup.open : t.stats.loading}</span>
               <span className="ls">
-                <span>{fmt(t.popup.closing, { n: num(data.closing7) })}</span>
-                <span>{fmt(t.popup.tradesRegions, { trades: num(data.trades), regions: num(data.regions) })}</span>
+                {data.closing7 != null && <span>{fmt(t.popup.closing, { n: num(data.closing7) })}</span>}
+                {data.trades != null && data.regions != null && <span>{fmt(t.popup.tradesRegions, { trades: num(data.trades), regions: num(data.regions) })}</span>}
                 <span>{t.popup.sources}</span>
               </span>
             </div>

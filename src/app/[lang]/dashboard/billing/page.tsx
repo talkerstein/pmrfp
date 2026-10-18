@@ -11,6 +11,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { fmt, formatDate } from "@/i18n/format";
 import { isLifetimeSubscriptionId } from "@/lib/founding/config";
+import { isSeoPriceId } from "@/lib/stripe/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -32,9 +33,7 @@ function intentPrice(intent: PlanIntent, perMonth: string, perYear: string): str
   const amount =
     intent.plan === "featured"
       ? PRICING.featuredAnnual
-      : intent.plan === "seo"
-        ? monthly ? PRICING.seoMonthly : PRICING.seoAnnual
-        : monthly ? PRICING.proMonthly : PRICING.proAnnual;
+      : monthly ? PRICING.proMonthly : PRICING.proAnnual;
   return fmt(monthly ? perMonth : perYear, { amount, currency: PRICING.currency });
 }
 
@@ -70,13 +69,18 @@ export default async function BillingPage({
     !!sub?.stripe_price_id &&
     !!process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY &&
     sub.stripe_price_id === process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY;
+  // SEO Listing is retired but grandfathered: name it as what they pay for,
+  // never as Trade Pro (it does not include RFP access).
+  const isLegacySeo = isSeoPriceId(sub?.stripe_price_id);
   const planName = isLifetime
     ? tf.billingBadge
     : isFeatured
     ? t.plans.featured
-    : isMonthly
-      ? t.plans.proMonthly
-      : t.plans.pro;
+    : isLegacySeo
+      ? t.plans.seo
+      : isMonthly
+        ? t.plans.proMonthly
+        : t.plans.pro;
   const intentName = intent ? (lang === "en" ? intent.name : t.plans[intent.plan]) : "";
   const intentPriceLabel = intent ? (lang === "en" ? intent.priceLabel : intentPrice(intent, t.perMonth, t.perYear)) : "";
   const annualSaving = PRICING.proMonthly * 12 - PRICING.proAnnual;

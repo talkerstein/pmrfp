@@ -48,7 +48,7 @@ const en = {
   audience: [
     { label: "For tradesmen", word: "tradesmen", head: "Get discovered for commercial property work.", desc: "PMRFP is where property managers post RFPs. Get listed, watch your trade and region, and bid.", descShort: "Get listed, watch your trade and region, and bid.", cta: "Join as a trade company", ctaShort: "Join as a trade company", fact: "{n} open contracts today" },
     { label: "For property managers", word: "property managers", head: "Post a project. Find the right vendors. No pressure to hire.", desc: "Post your building project free. Trades that match your category and region see it and bid.", descShort: "Trades that match your category and region see it and bid.", cta: "Post an RFP free", ctaShort: "Post an RFP free", fact: "Free to post" },
-    { label: "For landlords", word: "landlords", head: "Own your buildings? Post repair and maintenance jobs free.", desc: "Search a credentialed directory of commercial trade contractors, by trade and region.", descShort: "Search a credentialed directory of commercial trades.", cta: "Sign up as a landlord", ctaShort: "Sign up as a landlord", fact: "{n} regions covered" },
+    { label: "For landlords", word: "landlords", head: "Own your buildings? Post repair and maintenance jobs free.", desc: "Search a directory of commercial trade contractors by trade and region, with the credentials each company lists.", descShort: "Search a directory of commercial trades.", cta: "Sign up as a landlord", ctaShort: "Sign up as a landlord", fact: "{n} regions covered" },
     { label: "For condo boards", word: "condo boards", head: "Run open, documented RFPs.", desc: "Show owners competitive bids, side by side, with every trade’s credentials on record.", descShort: "Show owners competitive bids, side by side.", cta: "Start an RFP", ctaShort: "Start an RFP", fact: "Free to post" },
     { label: "For real estate", word: "realtors", head: "Your trusted trades. Your name. One link.", desc: "Save the trades you trust to one page and text clients a single link instead of a phone number from memory.", descShort: "Text clients a single link. Free for 5 trades.", cta: "Create your trusted-trades page", ctaShort: "Create your page", fact: "Free for 5 trades" },
     { label: "For suppliers", word: "suppliers", head: "Get listed where trades and builders source products.", desc: "A searchable directory listing for building products, materials and equipment, by category and region.", descShort: "A searchable listing by category and region.", cta: "List your company", ctaShort: "List your company", fact: "Suppliers directory" },
@@ -59,6 +59,8 @@ const en = {
     closing: "close in the next 7 days",
     trades: "trades covered",
     regions: "regions in Canada and the U.S.",
+    /** Shown instead of a count when live data can't load (never a made-up number). */
+    loading: "Live numbers loading",
   },
   trades: {
     eyebrow: "For tradesmen",
@@ -81,6 +83,7 @@ const en = {
     title: "Closing soonest",
     all: "All {n} open →",
     allShort: "All {n} →",
+    allNoCount: "All open contracts →",
     today: "Today",
     tomorrow: "Tomorrow",
     daysLeft: "{n} days left",
@@ -225,9 +228,8 @@ const en = {
     perYearOr: "{currency} per year, or {monthly}/month",
     items: [
       { name: "Free", what: "Directory listing, basic company profile, and you appear in vendor search.", whatShort: "Directory listing, basic company profile, and you appear in vendor search.", cta: "Join free" },
-      { name: "SEO Listing", what: "Trade and city page listings, unlimited project photos, case studies, Google ratings, priority over free listings.", whatShort: "Trade and city page listings, unlimited project photos, case studies, Google ratings.", cta: "Get SEO Listing" },
-      { name: "Trade Pro", what: "Full RFP access, matching alerts, saved opportunities, express interest, priority placement, website badge.", whatShort: "Full RFP access, matching alerts, saved opportunities, express interest, website badge.", cta: "Start Trade Pro" },
-      { name: "Featured", what: "Everything in Trade Pro, plus featured placement in your categories and service regions and top search results.", whatShort: "Everything in Trade Pro, plus featured placement in your categories and regions.", cta: "Get Featured" },
+      { name: "Trade Pro", what: "Full RFP access, matching alerts, saved opportunities, express interest, website badge.", whatShort: "Full RFP access, matching alerts, saved opportunities, express interest, website badge.", cta: "Start Trade Pro" },
+      { name: "Featured", what: "Everything in Trade Pro, plus featured placement in your categories and service regions, ranked ahead of standard listings.", whatShort: "Everything in Trade Pro, plus featured placement in your categories and regions.", cta: "Get Featured" },
     ],
     founding: "Founding 500",
     foundingBody: "Lifetime Trade Pro for one payment of {price}, for the first 500 trade and supplier companies.",
@@ -235,6 +237,7 @@ const en = {
   },
   cta: {
     line1: "contracts are open.",
+    line1NoCount: "Contracts are open on the board.",
     line2: "{n} close in the next 7 days.",
     note: "A directory listing is free. No card needed.",
     join: "Join free →",
@@ -359,7 +362,7 @@ const fr: typeof en = {
   audience: [
     { label: "Gens de métier", word: "gens de métier", head: "Faites-vous découvrir pour des travaux en immobilier commercial.", desc: "C'est sur PMRFP que les gestionnaires immobiliers publient leurs appels d'offres. Inscrivez-vous, suivez votre corps de métier et votre région, et soumissionnez.", descShort: "Inscrivez-vous, suivez votre corps de métier et votre région, et soumissionnez.", cta: "S'inscrire comme entrepreneur", ctaShort: "S'inscrire comme entrepreneur", fact: "{n} contrats ouverts aujourd'hui" },
     { label: "Gestionnaires immobiliers", word: "gestionnaires immobiliers", head: "Publiez un projet. Trouvez les bons fournisseurs. Aucune obligation d'embaucher.", desc: "Publiez votre projet gratuitement. Les entrepreneurs de votre catégorie et de votre région le voient et soumissionnent.", descShort: "Les entrepreneurs de votre catégorie et de votre région le voient et soumissionnent.", cta: "Publier un appel d'offres gratuitement", ctaShort: "Publier gratuitement", fact: "Publication gratuite" },
-    { label: "Propriétaires", word: "propriétaires", head: "Propriétaire d'immeubles? Publiez vos travaux de réparation et d'entretien gratuitement.", desc: "Cherchez dans un répertoire d'entrepreneurs commerciaux vérifiés, par corps de métier et par région.", descShort: "Cherchez dans un répertoire d'entrepreneurs commerciaux vérifiés.", cta: "S'inscrire comme propriétaire", ctaShort: "S'inscrire comme propriétaire", fact: "{n} régions couvertes" },
+    { label: "Propriétaires", word: "propriétaires", head: "Propriétaire d'immeubles? Publiez vos travaux de réparation et d'entretien gratuitement.", desc: "Cherchez dans un répertoire d'entrepreneurs commerciaux par corps de métier et par région, avec les qualifications que chaque entreprise indique.", descShort: "Cherchez dans un répertoire d'entrepreneurs commerciaux.", cta: "S'inscrire comme propriétaire", ctaShort: "S'inscrire comme propriétaire", fact: "{n} régions couvertes" },
     { label: "Syndicats de copropriété", word: "syndicats de copropriété", head: "Menez des appels d'offres ouverts et documentés.", desc: "Présentez aux copropriétaires des soumissions concurrentes, côte à côte, avec les qualifications de chaque entrepreneur au dossier.", descShort: "Présentez des soumissions concurrentes, côte à côte.", cta: "Lancer un appel d'offres", ctaShort: "Lancer un appel d'offres", fact: "Publication gratuite" },
     { label: "Immobilier", word: "courtiers immobiliers", head: "Vos entrepreneurs de confiance. Votre nom. Un seul lien.", desc: "Regroupez les entrepreneurs en qui vous avez confiance sur une page et envoyez un seul lien à vos clients au lieu d'un numéro de mémoire.", descShort: "Envoyez un seul lien à vos clients. Gratuit pour 5 entrepreneurs.", cta: "Créer votre page d'entrepreneurs de confiance", ctaShort: "Créer votre page", fact: "Gratuit pour 5 entrepreneurs" },
     { label: "Fournisseurs", word: "fournisseurs", head: "Soyez présent là où les entrepreneurs et les constructeurs s'approvisionnent.", desc: "Une fiche dans un répertoire consultable pour les produits, matériaux et équipements de construction, par catégorie et par région.", descShort: "Une fiche consultable par catégorie et par région.", cta: "Inscrire votre entreprise", ctaShort: "Inscrire votre entreprise", fact: "Répertoire des fournisseurs" },
@@ -370,6 +373,7 @@ const fr: typeof en = {
     closing: "clôturent dans les 7 prochains jours",
     trades: "corps de métier couverts",
     regions: "régions au Canada et aux États-Unis",
+    loading: "Chiffres en direct en cours de chargement",
   },
   trades: {
     eyebrow: "Gens de métier",
@@ -391,6 +395,7 @@ const fr: typeof en = {
     title: "Clôture imminente",
     all: "Les {n} ouverts →",
     allShort: "Les {n} →",
+    allNoCount: "Tous les contrats ouverts →",
     today: "Aujourd'hui",
     tomorrow: "Demain",
     daysLeft: "{n} jours restants",
@@ -535,9 +540,8 @@ const fr: typeof en = {
     perYearOr: "{currency} par année, ou {monthly}/mois",
     items: [
       { name: "Gratuit", what: "Fiche au répertoire, profil d'entreprise de base et présence dans la recherche de fournisseurs.", whatShort: "Fiche au répertoire, profil d'entreprise de base et présence dans la recherche de fournisseurs.", cta: "S'inscrire gratuitement" },
-      { name: "Fiche SEO", what: "Présence sur les pages métier et ville, photos de projets illimitées, études de cas, avis Google, priorité sur les fiches gratuites.", whatShort: "Présence sur les pages métier et ville, photos de projets illimitées, études de cas, avis Google.", cta: "Obtenir la Fiche SEO" },
-      { name: "Trade Pro", what: "Accès complet aux appels d'offres, alertes de correspondance, occasions sauvegardées, manifestation d'intérêt, placement prioritaire, badge pour votre site Web.", whatShort: "Accès complet aux appels d'offres, alertes, occasions sauvegardées, manifestation d'intérêt, badge vérifié.", cta: "Commencer Trade Pro" },
-      { name: "En vedette", what: "Tout Trade Pro, plus un placement en vedette dans vos catégories et régions desservies et en tête des résultats.", whatShort: "Tout Trade Pro, plus un placement en vedette dans vos catégories et régions.", cta: "Passer En vedette" },
+      { name: "Trade Pro", what: "Accès complet aux appels d'offres, alertes de correspondance, occasions sauvegardées, manifestation d'intérêt, badge pour votre site Web.", whatShort: "Accès complet aux appels d'offres, alertes, occasions sauvegardées, manifestation d'intérêt, badge pour votre site.", cta: "Commencer Trade Pro" },
+      { name: "En vedette", what: "Tout Trade Pro, plus un placement en vedette dans vos catégories et régions desservies, devant les fiches standard.", whatShort: "Tout Trade Pro, plus un placement en vedette dans vos catégories et régions.", cta: "Passer En vedette" },
     ],
     founding: "Fondateurs 500",
     foundingBody: "Trade Pro à vie pour un seul paiement de {price}, pour les 500 premières entreprises de métier et fournisseurs.",
@@ -545,6 +549,7 @@ const fr: typeof en = {
   },
   cta: {
     line1: "contrats sont ouverts.",
+    line1NoCount: "Des contrats sont ouverts sur le tableau.",
     line2: "{n} clôturent dans les 7 prochains jours.",
     note: "Fiche au répertoire gratuite. Aucune carte requise.",
     join: "S'inscrire gratuitement →",
@@ -669,7 +674,7 @@ const es: typeof en = {
   audience: [
     { label: "Para oficios", word: "contratistas", head: "Que lo encuentren para trabajos en propiedades comerciales.", desc: "En PMRFP los administradores de propiedades publican sus RFP. Regístrese, siga su oficio y su región, y presente ofertas.", descShort: "Regístrese, siga su oficio y su región, y presente ofertas.", cta: "Registrarse como contratista", ctaShort: "Registrarse como contratista", fact: "{n} contratos abiertos hoy" },
     { label: "Para administradores", word: "administradores de propiedades", head: "Publique un proyecto. Encuentre a los proveedores adecuados. Sin obligación de contratar.", desc: "Publique su proyecto gratis. Los contratistas de su categoría y región lo ven y presentan ofertas.", descShort: "Los contratistas de su categoría y región lo ven y presentan ofertas.", cta: "Publicar una RFP gratis", ctaShort: "Publicar una RFP gratis", fact: "Publicar es gratis" },
-    { label: "Para propietarios", word: "propietarios", head: "¿Tiene edificios? Publique trabajos de reparación y mantenimiento gratis.", desc: "Busque en un directorio de contratistas comerciales acreditados, por oficio y región.", descShort: "Busque en un directorio de contratistas comerciales acreditados.", cta: "Registrarse como propietario", ctaShort: "Registrarse como propietario", fact: "{n} regiones cubiertas" },
+    { label: "Para propietarios", word: "propietarios", head: "¿Tiene edificios? Publique trabajos de reparación y mantenimiento gratis.", desc: "Busque en un directorio de contratistas comerciales por oficio y región, con las credenciales que indica cada empresa.", descShort: "Busque en un directorio de contratistas comerciales.", cta: "Registrarse como propietario", ctaShort: "Registrarse como propietario", fact: "{n} regiones cubiertas" },
     { label: "Para juntas de condominio", word: "juntas de condominio", head: "Realice RFP abiertas y documentadas.", desc: "Muestre a los propietarios ofertas competitivas, lado a lado, con las credenciales de cada contratista en el expediente.", descShort: "Muestre ofertas competitivas, lado a lado.", cta: "Iniciar una RFP", ctaShort: "Iniciar una RFP", fact: "Publicar es gratis" },
     { label: "Para bienes raíces", word: "agentes inmobiliarios", head: "Sus contratistas de confianza. Su nombre. Un solo enlace.", desc: "Guarde en una página los contratistas en quienes confía y envíe a sus clientes un solo enlace en lugar de un número de memoria.", descShort: "Envíe a sus clientes un solo enlace. Gratis para 5 contratistas.", cta: "Crear su página de contratistas de confianza", ctaShort: "Crear su página", fact: "Gratis para 5 contratistas" },
     { label: "Para proveedores", word: "proveedores", head: "Aparezca donde los contratistas y constructores compran productos.", desc: "Una ficha en un directorio para productos, materiales y equipos de construcción, por categoría y región.", descShort: "Una ficha por categoría y región.", cta: "Registrar su empresa", ctaShort: "Registrar su empresa", fact: "Directorio de proveedores" },
@@ -680,6 +685,7 @@ const es: typeof en = {
     closing: "cierran en los próximos 7 días",
     trades: "oficios cubiertos",
     regions: "regiones en Canadá y EE. UU.",
+    loading: "Cargando cifras en vivo",
   },
   trades: {
     eyebrow: "Para oficios",
@@ -701,6 +707,7 @@ const es: typeof en = {
     title: "Cierran pronto",
     all: "Las {n} abiertas →",
     allShort: "Las {n} →",
+    allNoCount: "Todas las licitaciones abiertas →",
     today: "Hoy",
     tomorrow: "Mañana",
     daysLeft: "Quedan {n} días",
@@ -845,9 +852,8 @@ const es: typeof en = {
     perYearOr: "{currency} al año, o {monthly} al mes",
     items: [
       { name: "Gratis", what: "Ficha en el directorio, perfil básico de la empresa y aparición en la búsqueda de proveedores.", whatShort: "Ficha en el directorio, perfil básico de la empresa y aparición en la búsqueda de proveedores.", cta: "Registrarse gratis" },
-      { name: "Ficha SEO", what: "Presencia en páginas de oficio y ciudad, fotos de proyectos ilimitadas, casos de estudio, calificaciones de Google, prioridad sobre las fichas gratuitas.", whatShort: "Presencia en páginas de oficio y ciudad, fotos ilimitadas, casos de estudio, calificaciones de Google.", cta: "Obtener Ficha SEO" },
-      { name: "Trade Pro", what: "Acceso completo a las RFP, alertas de coincidencias, oportunidades guardadas, expresar interés, ubicación prioritaria, insignia para su sitio web.", whatShort: "Acceso completo a las RFP, alertas, oportunidades guardadas, expresar interés, insignia verificada.", cta: "Empezar Trade Pro" },
-      { name: "Destacado", what: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones de servicio y primeros resultados de búsqueda.", whatShort: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones.", cta: "Obtener Destacado" },
+      { name: "Trade Pro", what: "Acceso completo a las RFP, alertas de coincidencias, oportunidades guardadas, expresar interés, insignia para su sitio web.", whatShort: "Acceso completo a las RFP, alertas, oportunidades guardadas, expresar interés, insignia para su sitio.", cta: "Empezar Trade Pro" },
+      { name: "Destacado", what: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones de servicio, antes que las fichas estándar.", whatShort: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones.", cta: "Obtener Destacado" },
     ],
     founding: "Founding 500",
     foundingBody: "Trade Pro de por vida con un solo pago de {price}, para las primeras 500 empresas de oficios y proveedores.",
@@ -855,6 +861,7 @@ const es: typeof en = {
   },
   cta: {
     line1: "contratos están abiertos.",
+    line1NoCount: "Hay contratos abiertos en el tablero.",
     line2: "{n} cierran en los próximos 7 días.",
     note: "Ficha en el directorio gratis. Sin tarjeta.",
     join: "Registrarse gratis →",

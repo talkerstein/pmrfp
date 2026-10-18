@@ -30,7 +30,7 @@ import { trialsOpen } from "@/lib/entitlement/server";
 import { ServerMarketProvider } from "@/components/geo/server-market";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { getUsdPerCad } from "@/lib/fx";
-import { MATRIX_GROUPS, PLAN_MATRIX, TIERS, countCell } from "@/lib/pricing/plan-matrix";
+import { MATRIX_GROUPS, PLAN_MATRIX, SOLD_TIERS, countCell } from "@/lib/pricing/plan-matrix";
 
 // Dynamic: the visitor's country is read from the request (getVisitorCountry,
 // same as /advertise and /rfps), so prices render in the server HTML in ONE
@@ -148,7 +148,6 @@ export default async function PricingPage({ params }: { params: Promise<object> 
         </section>
   );
   const scarcity = foundingScarcity(sold == null ? null : spotsLeft(sold));
-  const seoMonthly = Boolean(process.env.STRIPE_PRICE_SEO_MONTHLY);
   const proMonthly = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);
   const proHref = L(signUpHrefForPlan("pro", "annual"));
   const fv = { months: FOUNDING.discontinueRefundMonths, days: FOUNDING.refundDays, cap: FOUNDING.cap, low: FOUNDING_LOW_SPOTS };
@@ -160,7 +159,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
     { group: v.compare.groups[g] },
     ...PLAN_MATRIX.filter((r) => r.group === g).map((r) => ({
       label: v.compare.rows[r.id],
-      c: TIERS.map((tier): Cell => countCell(r, tier, v.compare.count, num) ?? (r.value[tier] > 0 ? 1 : 0)),
+      c: SOLD_TIERS.map((tier): Cell => countCell(r, tier, v.compare.count, num) ?? (r.value[tier] > 0 ? 1 : 0)),
     })),
   ]);
 
@@ -201,9 +200,8 @@ export default async function PricingPage({ params }: { params: Promise<object> 
         <PricingPlans
           t={v.plans}
           lang={lang}
-          seoMonthly={seoMonthly}
           proMonthly={proMonthly}
-          show={[0, 2]}
+          show={[0, 1]}
           actions={
             trialOpen ? (
               <>
@@ -263,7 +261,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
           </div>
           <p className="vp-lead dark">{v.found.body}</p>
         </div>
-        <PricingPlans t={v.plans} lang={lang} seoMonthly={seoMonthly} proMonthly={false} show={[1, 3]} steps={false} />
+        <PricingPlans t={v.plans} lang={lang} proMonthly={false} show={[2]} steps={false} />
       </section>
 
       <section className="v3-wrap vp-compare">
@@ -284,21 +282,20 @@ export default async function PricingPage({ params }: { params: Promise<object> 
               <tr>
                 <th scope="col" className="lbl">{v.compare.included}</th>
                 <th scope="col"><b>{p[0].name}</b><span>{lang === "fr" ? "0 $" : "$0"} · {v.plans.forever}</span></th>
-                <th scope="col"><b>{p[1].name}</b><span><PriceLine tpl={v.compare.perYear} cad={{ price: PRICING.seoAnnual }} lang={lang} w="7em" /></span></th>
-                <th scope="col" className="pro"><b>{p[2].name}</b><span><PriceLine tpl={v.compare.perYear} cad={{ price: PRICING.proAnnual }} lang={lang} w="7em" /></span></th>
-                <th scope="col"><b>{p[3].name}</b><span><PriceLine tpl={v.compare.perYear} cad={{ price: PRICING.featuredAnnual }} lang={lang} w="7em" /></span></th>
+                <th scope="col" className="pro"><b>{p[1].name}</b><span><PriceLine tpl={v.compare.perYear} cad={{ price: PRICING.proAnnual }} lang={lang} w="7em" /></span></th>
+                <th scope="col"><b>{p[2].name}</b><span><PriceLine tpl={v.compare.perYear} cad={{ price: PRICING.featuredAnnual }} lang={lang} w="7em" /></span></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) =>
                 "group" in r ? (
-                  <tr key={r.group} className="grp"><th scope="colgroup" colSpan={5}>{r.group}</th></tr>
+                  <tr key={r.group} className="grp"><th scope="colgroup" colSpan={4}>{r.group}</th></tr>
                 ) : (
                   <tr key={r.label} className="rowhl">
                     <th scope="row">{r.label}</th>
                     {r.c.map((c, i) => (
-                      <td key={i} className={i === 2 ? "pro" : undefined}>
-                        <Mark c={c} pro={i === 2} />
+                      <td key={i} className={i === 1 ? "pro" : undefined}>
+                        <Mark c={c} pro={i === 1} />
                         {typeof c === "number" && <span className="v3-sr">{c ? v.compare.yes : v.compare.no}</span>}
                       </td>
                     ))}
@@ -310,9 +307,8 @@ export default async function PricingPage({ params }: { params: Promise<object> 
               <tr>
                 <th scope="row" className="note">{v.compare.cumulative} <PriceLine tpl={v.compare.currencyNote} cad={{}} lang={lang} w="16em" /></th>
                 <td><a href={joinFreeHref}>{p[0].cta} →</a></td>
-                <td><a href={L(signUpHrefForPlan("seo"))}>{p[1].cta} →</a></td>
-                <td className="pro"><a href={proHref} className="v3-pill ink">{p[2].cta}</a></td>
-                <td><a href={L(signUpHrefForPlan("featured"))}>{p[3].cta} →</a></td>
+                <td className="pro"><a href={proHref} className="v3-pill ink">{p[1].cta}</a></td>
+                <td><a href={L(signUpHrefForPlan("featured"))}>{p[2].cta} →</a></td>
               </tr>
             </tfoot>
           </table>

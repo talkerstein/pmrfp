@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 /** Prices for the {placeholders} in the copy (lib/site.ts). */
 const p = (s: string) =>
-  fmt(s, { annual: PRICING.proAnnual, seoAnnual: PRICING.seoAnnual, seoMonthly: PRICING.seoMonthly });
+  fmt(s, { annual: PRICING.proAnnual, featuredAnnual: PRICING.featuredAnnual });
 
 /**
  * The SEO/AEO pitch page for the tiered directory model. Claims here are
@@ -36,8 +36,8 @@ export default async function GetFoundPage({ params }: { params: Promise<object>
   const faqs = t.faqs.map((f) => ({ q: f.q, a: p(f.a) }));
   const tiers: { name: string; price: string; badge?: string; lines: string[] }[] = [
     { name: t.tiers.free.name, price: t.tiers.free.price, lines: t.tiers.free.lines },
-    { name: t.tiers.seo.name, price: p(t.tiers.seo.price), badge: p(t.tiers.seo.badge), lines: t.tiers.seo.lines },
     { name: p(t.tiers.pro.name), price: "", lines: t.tiers.pro.lines },
+    { name: p(t.tiers.featured.name), price: "", lines: t.tiers.featured.lines },
   ];
   return (
     <>

@@ -366,7 +366,7 @@
 .vp-ptools-r form { display: flex; }
 .vp-ptools-rr { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 0; }
 .vp-ptools-an { font-size: 14px; color: #C9CCE6; max-width: 420px; text-align: right; }
-/* --cols: how many plan cards the row holds (the hero shows 2, "Get found" 2). */
+/* --cols: how many plan cards the row holds (the hero shows 2; "Get found" shows Featured alone, in a 2-wide grid). */
 .vp-cards { padding-top: 36px; display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); column-gap: 16px; align-items: stretch; }
 /* "Get found": the same cards on the light page, boxed instead of sitting on the band's edge. */
 .vp-found { padding-top: 96px; }

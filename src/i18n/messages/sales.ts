@@ -58,16 +58,15 @@ const en = {
     },
     featured: {
       name: "Featured",
-      blurb: "Maximum visibility — rank at the top where buyers look first.",
+      blurb: "Trade Pro, plus featured placement where buyers browse the directory.",
       price: "${n}",
       per: "{currency}/year",
       features: [
         "Everything in Trade Pro",
-        "Featured placement — top of your categories",
+        "Featured placement in your categories",
         "Featured in your service regions",
         "Featured badge on your profile",
-        "Priority in directory search results",
-        "Maximum visibility to buyers",
+        "Ranked ahead of standard listings in directory results",
       ],
       cta: "Get Featured",
     },
@@ -347,8 +346,7 @@ const en = {
       oneTime: "one time",
       from: "from",
       free: { name: "Free listing", price: "$0", body: "Company profile in the Supplier Directory, the trades you sell into, your regions, and matching on RFP pages." },
-      seo: { name: "SEO Listing", body: "Your company on the trade and city pages property managers find on Google and in AI answers, plus an unlimited project photo gallery." },
-      featured: { name: "Featured", body: "Everything in Trade Pro, plus priority placement at the top of your categories and regions." },
+      featured: { name: "Featured", body: "Everything in Trade Pro, plus featured placement in your categories and regions, ranked ahead of standard listings." },
       sponsor: { name: "Trade × province sponsorship", body: "The one sponsor for a trade in a province or state: its price benchmark, major projects and tender pages there, and its match emails. Always labelled as sponsored." },
       spotlight: { name: "Project Spotlight", body: "A reviewed, clearly labelled article about one finished project, with photos." },
       marketplace: { name: "Equipment Marketplace", price: "Free", body: "List surplus or used equipment. No commission; buyers message you through PMRFP." },
@@ -382,7 +380,7 @@ const en = {
     faq: [
       {
         q: "Is a supplier listing free?",
-        a: "Yes. A supplier account and directory listing are free. Paid options (SEO Listing, Featured, sponsorship, Project Spotlight) only add visibility.",
+        a: "Yes. A supplier account and directory listing are free. Paid options (Featured, sponsorship, Project Spotlight) only add visibility.",
       },
       {
         q: "Who sees my listing?",
@@ -398,7 +396,7 @@ const en = {
       },
       {
         q: "How is advertising different from Featured?",
-        a: "Featured moves your listing to the top of your categories and regions in the directory. A sponsorship puts one labelled sponsor unit on a trade's pages in a province or state (benchmarks, major projects, tenders, forum) and in its match emails, never on dashboards.",
+        a: "Featured ranks your listing ahead of standard listings in your categories and regions in the directory. A sponsorship puts one labelled sponsor unit on a trade's pages in a province or state (benchmarks, major projects, tenders, forum) and in its match emails, never on dashboards.",
       },
     ],
     cta: {
@@ -464,16 +462,15 @@ const fr: typeof en = {
     },
     featured: {
       name: "En vedette",
-      blurb: "Visibilité maximale — apparaissez en tête, là où les acheteurs regardent en premier.",
+      blurb: "Trade Pro, plus une place en vedette là où les acheteurs parcourent le répertoire.",
       price: "{n} $",
       per: "{currency}/an",
       features: [
         "Tout ce qu'inclut Trade Pro",
-        "Placement en vedette — en tête de vos catégories",
+        "Placement en vedette dans vos catégories",
         "En vedette dans vos régions desservies",
         "Badge « En vedette » sur votre profil",
-        "Priorité dans les résultats de recherche du répertoire",
-        "Visibilité maximale auprès des acheteurs",
+        "Classé devant les fiches standard dans le répertoire",
       ],
       cta: "Passer en vedette",
     },
@@ -754,8 +751,7 @@ const fr: typeof en = {
       oneTime: "paiement unique",
       from: "à partir de",
       free: { name: "Fiche gratuite", price: "0 $", body: "Profil d'entreprise dans le répertoire des fournisseurs, les métiers que vous approvisionnez, vos régions et le jumelage sur les pages d'appels d'offres." },
-      seo: { name: "Fiche SEO", body: "Votre entreprise sur les pages métier et ville que les gestionnaires trouvent sur Google et dans les réponses d'IA, plus une galerie de photos de projets illimitée." },
-      featured: { name: "En vedette", body: "Tout ce qu'offre Trade Pro, plus un placement prioritaire en tête de vos catégories et régions." },
+      featured: { name: "En vedette", body: "Tout ce qu'offre Trade Pro, plus une place en vedette dans vos catégories et régions, devant les fiches standard." },
       sponsor: { name: "Commandite métier × province", body: "Le seul commanditaire d'un métier dans une province ou un État : sa page de prix de référence, ses grands projets et ses pages d'appels d'offres, et ses courriels de jumelage. Toujours identifié comme commandité." },
       spotlight: { name: "Project Spotlight", body: "Un article révisé et clairement identifié sur un projet terminé, avec photos." },
       marketplace: { name: "Marché d'équipement", price: "Gratuit", body: "Annoncez de l'équipement usagé ou excédentaire. Aucune commission; les acheteurs vous écrivent par PMRFP." },
@@ -789,7 +785,7 @@ const fr: typeof en = {
     faq: [
       {
         q: "La fiche fournisseur est-elle gratuite?",
-        a: "Oui. Le compte fournisseur et la fiche au répertoire sont gratuits. Les options payantes (Fiche SEO, En vedette, commandite, Project Spotlight) ajoutent seulement de la visibilité.",
+        a: "Oui. Le compte fournisseur et la fiche au répertoire sont gratuits. Les options payantes (En vedette, commandite, Project Spotlight) ajoutent seulement de la visibilité.",
       },
       {
         q: "Qui voit ma fiche?",
@@ -805,7 +801,7 @@ const fr: typeof en = {
       },
       {
         q: "Quelle différence entre la publicité et En vedette?",
-        a: "En vedette place votre fiche en tête de vos catégories et régions dans le répertoire. Une commandite ajoute un seul encart identifié comme commandité sur les pages d'un métier dans une province ou un État (prix de référence, grands projets, appels d'offres, forum) et dans ses courriels de jumelage, jamais dans les tableaux de bord.",
+        a: "En vedette classe votre fiche devant les fiches standard de vos catégories et régions dans le répertoire. Une commandite ajoute un seul encart identifié comme commandité sur les pages d'un métier dans une province ou un État (prix de référence, grands projets, appels d'offres, forum) et dans ses courriels de jumelage, jamais dans les tableaux de bord.",
       },
     ],
     cta: {
@@ -870,16 +866,15 @@ const es: typeof en = {
     },
     featured: {
       name: "Destacado",
-      blurb: "Máxima visibilidad — aparezca arriba, donde los compradores miran primero.",
+      blurb: "Trade Pro, más una ubicación destacada donde los compradores recorren el directorio.",
       price: "${n}",
       per: "{currency} al año",
       features: [
         "Todo lo que incluye Trade Pro",
-        "Ubicación destacada — arriba en sus categorías",
+        "Ubicación destacada en sus categorías",
         "Destacado en sus regiones de servicio",
         "Insignia de Destacado en su perfil",
-        "Prioridad en los resultados de búsqueda del directorio",
-        "Máxima visibilidad ante los compradores",
+        "Antes que las fichas estándar en el directorio",
       ],
       cta: "Obtener Destacado",
     },
@@ -1159,8 +1154,7 @@ const es: typeof en = {
       oneTime: "pago único",
       from: "desde",
       free: { name: "Perfil gratis", price: "$0", body: "Perfil de empresa en el directorio de proveedores, los oficios a los que vende, sus regiones y la coincidencia en páginas de RFP." },
-      seo: { name: "Perfil SEO", body: "Su empresa en las páginas de oficio y ciudad que los administradores encuentran en Google y en respuestas de IA, más una galería ilimitada de fotos de proyectos." },
-      featured: { name: "Destacado", body: "Todo lo de Trade Pro, más ubicación prioritaria al inicio de sus categorías y regiones." },
+      featured: { name: "Destacado", body: "Todo lo de Trade Pro, más una ubicación destacada en sus categorías y regiones, antes que las fichas estándar." },
       sponsor: { name: "Patrocinio oficio × provincia", body: "El único patrocinador de un oficio en una provincia o estado: su página de precios de referencia, grandes proyectos y licitaciones allí, y sus correos de coincidencias. Siempre identificado como patrocinado." },
       spotlight: { name: "Project Spotlight", body: "Un artículo revisado y claramente identificado sobre un proyecto terminado, con fotos." },
       marketplace: { name: "Mercado de equipo", price: "Gratis", body: "Publique equipo usado o excedente. Sin comisión; los compradores le escriben por PMRFP." },
@@ -1194,7 +1188,7 @@ const es: typeof en = {
     faq: [
       {
         q: "¿El perfil de proveedor es gratis?",
-        a: "Sí. La cuenta de proveedor y el perfil en el directorio son gratis. Las opciones de pago (Perfil SEO, Destacado, patrocinio, Project Spotlight) solo agregan visibilidad.",
+        a: "Sí. La cuenta de proveedor y el perfil en el directorio son gratis. Las opciones de pago (Destacado, patrocinio, Project Spotlight) solo agregan visibilidad.",
       },
       {
         q: "¿Quién ve mi perfil?",
@@ -1210,7 +1204,7 @@ const es: typeof en = {
       },
       {
         q: "¿En qué se diferencia la publicidad de Destacado?",
-        a: "Destacado pone su perfil al inicio de sus categorías y regiones en el directorio. Un patrocinio coloca una sola unidad identificada como patrocinada en las páginas de un oficio en una provincia o estado (precios de referencia, grandes proyectos, licitaciones, foro) y en sus correos de coincidencias, nunca en los paneles.",
+        a: "Destacado pone su perfil antes que las fichas estándar de sus categorías y regiones en el directorio. Un patrocinio coloca una sola unidad identificada como patrocinada en las páginas de un oficio en una provincia o estado (precios de referencia, grandes proyectos, licitaciones, foro) y en sus correos de coincidencias, nunca en los paneles.",
       },
     ],
     cta: {

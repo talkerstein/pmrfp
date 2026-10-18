@@ -63,8 +63,8 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
     selectedPropertyTypes = slugs(props.data, "property_types");
   }
 
-  // Portfolio gallery: 1 photo free, unlimited on any paid tier (seo/pro/
-  // featured) — the concrete value behind the SEO Listing tier.
+  // Portfolio gallery: 1 photo free, up to PROFILE_PHOTOS.paid (12) on any
+  // paid tier (pro/featured, and grandfathered SEO Listing subscribers).
   const isPaid = await hasAnyPaidTier(org?.id ?? null);
 
   return (

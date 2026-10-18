@@ -188,7 +188,8 @@ const en = {
       pro: "Trade Pro",
       proMonthly: "Trade Pro · Monthly",
       featured: "Featured",
-      seo: "SEO Listing",
+      // Retired plan, shown only to grandfathered subscribers.
+      seo: "SEO Listing (legacy plan)",
     },
     featuredNote: PRICING.featuredNote as string,
     guaranteeNote: PRICING.guaranteeNote as string,
@@ -508,10 +509,10 @@ const fr: typeof en = {
       pro: "Trade Pro",
       proMonthly: "Trade Pro · Mensuel",
       featured: "En vedette",
-      seo: "Fiche SEO",
+      seo: "Fiche SEO (ancien forfait)",
     },
     featuredNote:
-      "Le forfait En vedette comprend tout ce qu'offre Trade Pro, plus un placement prioritaire en tête de vos catégories et de vos régions.",
+      "Le forfait En vedette comprend tout ce qu'offre Trade Pro, plus une place en vedette dans vos catégories et vos régions, devant les fiches standard.",
     guaranteeNote:
       "Annulez en tout temps — votre accès se poursuit jusqu'à la fin de votre période de facturation. Les abonnements ne sont pas remboursables.",
   },
@@ -832,10 +833,10 @@ const es: typeof en = {
       pro: "Trade Pro",
       proMonthly: "Trade Pro · Mensual",
       featured: "Destacado",
-      seo: "Ficha SEO",
+      seo: "Ficha SEO (plan anterior)",
     },
     featuredNote:
-      "Destacado incluye todo lo de Trade Pro, más una ubicación prioritaria en la parte superior de sus categorías y regiones.",
+      "Destacado incluye todo lo de Trade Pro, más una ubicación destacada en sus categorías y regiones, antes que las fichas estándar.",
     guaranteeNote:
       "Cancele cuando quiera: su acceso continúa hasta el final de su período de facturación. Las suscripciones no son reembolsables.",
   },

@@ -110,7 +110,8 @@ async function readIntelAccess(supabase: SupabaseClient, organizationId: string)
  * Pro check: gates read session.hasTradeAccess, never their own query.
  *
  * The tier check matters as much as the status check: the SEO Listing tier
- * is directory-only (see PRICING.seoNote), so an active SEO subscription
+ * (retired, still honoured for grandfathered subscribers) is directory-only,
+ * so an active SEO subscription
  * must NOT satisfy this — otherwise the cheapest paid tier would silently
  * unlock the RFP dashboard this function gates (dashboard/rfps, rfp-interest,
  * save-rfp). Keep this in lockstep with the SQL function of the same name.
@@ -165,15 +166,28 @@ async function paidTradeAccess(supabase: SupabaseClient, organization: Organizat
       .maybeSingle<{ status: string }>();
     sub = legacy.data ? { status: legacy.data.status, tier: "pro" } : null;
   }
-  const activeStatus = sub?.status === "active" || sub?.status === "comped";
-  const paidTier = sub?.tier === "pro" || sub?.tier === "featured";
-  return activeStatus && paidTier;
+  return tierGrantsTradeAccess(sub);
+}
+
+/** active or comped: the statuses that count as a live paid plan. */
+export function isPaidStatus(status: string | null | undefined): boolean {
+  return status === "active" || status === "comped";
+}
+
+/**
+ * Pure core of paidTradeAccess: a live pro/featured subscription. A
+ * grandfathered SEO Listing row (tier "seo") is a live paid plan for the
+ * shared perks (isPaidStatus) but never Trade Pro access.
+ */
+export function tierGrantsTradeAccess(sub: { status: string; tier: string } | null | undefined): boolean {
+  return isPaidStatus(sub?.status) && (sub?.tier === "pro" || sub?.tier === "featured");
 }
 
 /**
  * Any active/comped paid tier — seo, pro, or featured. Unlike
  * computeTradeAccess (RFP-gate specific), this is for perks every paid tier
- * shares, e.g. the unlimited portfolio gallery advertised on SEO Listing.
+ * shares, e.g. the 12-photo portfolio gallery (PROFILE_PHOTOS.paid). This is
+ * also what keeps grandfathered SEO Listing subscribers' gallery working.
  */
 export async function hasAnyPaidTier(organizationId: string | null): Promise<boolean> {
   if (!organizationId || !isSupabaseConfigured()) return false;
@@ -183,7 +197,7 @@ export async function hasAnyPaidTier(organizationId: string | null): Promise<boo
     .select("status")
     .eq("organization_id", organizationId)
     .maybeSingle<{ status: string }>();
-  return sub?.status === "active" || sub?.status === "comped";
+  return isPaidStatus(sub?.status);
 }
 
 /** Convenience: does the current user have paid trade access right now? */

@@ -15,7 +15,8 @@ import { FREE_PROJECT_LIMIT } from "@/lib/projects/limits";
  *    paid tier (hasAnyPaidTier, src/app/[lang]/dashboard/company/page.tsx).
  *  - projects: canAddProject(session.hasTradeAccess) (src/lib/projects/limits.ts):
  *    1 project unless the org has Trade Pro access (Pro, Featured or a trial).
- *    SEO Listing does not get Trade Pro access (computeTradeAccess, src/lib/access/access.ts).
+ *    SEO Listing (retired, grandfathered) does not get Trade Pro access
+ *    (computeTradeAccess, src/lib/access/access.ts).
  *  - rfp / alerts / interest: session.hasTradeAccess (Pro, Featured, trial).
  *  - save: canSaveRfps() (src/lib/access/free-actions.ts): any signed-in
  *    trade or supplier account, paid or not.
@@ -24,8 +25,21 @@ import { FREE_PROJECT_LIMIT } from "@/lib/projects/limits";
  *    tierRank() in src/lib/data/directory.ts.
  */
 
+/**
+ * Every tier the entitlement code knows. "seo" (SEO Listing, $120/yr) is
+ * RETIRED: it is no longer sold anywhere, but existing subscribers keep what
+ * it granted (the 12-photo gallery, directory-only, no RFP access), so it
+ * stays here and in the access code. Only SOLD_TIERS appear on /pricing.
+ */
 export const TIERS = ["free", "seo", "pro", "featured"] as const;
 export type Tier = (typeof TIERS)[number];
+
+/** Tiers a new buyer can choose, in the order /pricing shows them. */
+export const SOLD_TIERS = ["free", "pro", "featured"] as const satisfies readonly Tier[];
+export type SoldTier = (typeof SOLD_TIERS)[number];
+
+/** Retired tiers: still honoured for existing subscribers, never offered at checkout. */
+export const RETIRED_TIERS: readonly Tier[] = ["seo"];
 
 export type MatrixGroup = "found" | "win" | "stand";
 

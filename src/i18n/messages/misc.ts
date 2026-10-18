@@ -7,7 +7,7 @@
  * Placeholders are filled from lib/site.ts at render time so the English
  * copy stays identical: {fee} REFERRAL.tradeFee, {feeMonthly}
  * REFERRAL.tradeFeeMonthly, {currency}, {annual} PRICING.proAnnual,
- * {monthly} PRICING.proMonthly, {seoAnnual}, {seoMonthly}, {email} SITE.email.
+ * {monthly} PRICING.proMonthly, {featuredAnnual} PRICING.featuredAnnual, {email} SITE.email.
  */
 import { COPY } from "@/lib/site";
 import { PHOTOS } from "@/lib/photos";
@@ -162,7 +162,7 @@ const en = {
     sponsored: {
       title: "Sponsored & Paid Placements",
       body: [
-        "Some placements on PMRFP are paid. Sponsorships carry a “Sponsored” label in the reader's language and their links are marked as sponsored; Featured listings get priority placement because the company pays for it. A paid placement is not an endorsement or a verification by PMRFP. Sponsors are responsible for their own content and offers.",
+        "Some placements on PMRFP are paid. Sponsorships carry a “Sponsored” label in the reader's language and their links are marked as sponsored; Featured listings are ranked ahead of standard listings because the company pays for it. A paid placement is not an endorsement or a verification by PMRFP. Sponsors are responsible for their own content and offers.",
       ],
     },
     publicData: {
@@ -704,7 +704,7 @@ const en = {
     crumbPage: "Get Found",
     faqs: [
       {
-        q: "What does an SEO Listing actually get me?",
+        q: "What does a free listing actually get me?",
         a: "Placement on the PMRFP pages property managers find when they search for your trade in your city — plus your own profile page with your services, service areas, and Google rating. Search engines and AI assistants read these pages because they're structured data-first and kept honest: a page only exists where real companies are listed.",
       },
       {
@@ -717,7 +717,7 @@ const en = {
       },
       {
         q: "How is this different from Trade Pro?",
-        a: "SEO Listing is visibility only. Trade Pro (${annual}/yr) adds the RFP board: see posted projects, get matching alerts, and express interest. You can start with visibility and upgrade any time.",
+        a: "A free listing is visibility only. Trade Pro (${annual}/yr) adds the RFP board: see posted projects, get matching alerts, and express interest. Featured (${featuredAnnual}/yr) adds featured placement in your categories and regions. You can start free and upgrade any time.",
       },
     ],
     eyebrow: "For trades & service companies",
@@ -750,27 +750,26 @@ const en = {
         lines: [
           "Company profile in the directory",
           "Appear in category + region search on the site",
+          "Listed on your trade + city pages — the ones Google indexes",
           "Submit project case studies",
-        ],
-      },
-      seo: {
-        name: "SEO Listing",
-        price: "${seoAnnual}/yr",
-        badge: "or ${seoMonthly}/mo",
-        lines: [
-          "Placement on your trade + city pages — the ones Google indexes",
-          "Unlimited project photo gallery on your profile",
-          "Google rating displayed on your profile (official Places data)",
-          "Case studies featured on your city pages",
-          "Priority ordering over free listings",
         ],
       },
       pro: {
         name: "Trade Pro — ${annual}/yr",
         lines: [
-          "Everything in SEO Listing",
+          "Everything in the free listing",
           "Full RFP board access + matching alerts",
           "Express interest on posted projects",
+          "Profile photo gallery, up to 12 photos",
+        ],
+      },
+      featured: {
+        name: "Featured — ${featuredAnnual}/yr",
+        lines: [
+          "Everything in Trade Pro",
+          "Featured placement in your categories and service regions",
+          "Featured badge on your profile",
+          "Ranked ahead of standard listings in directory results",
         ],
       },
     },
@@ -1039,7 +1038,7 @@ const fr: typeof en = {
     sponsored: {
       title: "Commandites et placements payants",
       body: [
-        "Certains placements sur PMRFP sont payants. Les commandites portent la mention « Commandité » dans la langue du lecteur et leurs liens sont identifiés comme commandités; les fiches En vedette obtiennent un placement prioritaire parce que l'entreprise le paie. Un placement payant n'est ni une recommandation ni une vérification de la part de PMRFP. Les commanditaires sont responsables de leur propre contenu et de leurs offres.",
+        "Certains placements sur PMRFP sont payants. Les commandites portent la mention « Commandité » dans la langue du lecteur et leurs liens sont identifiés comme commandités; les fiches En vedette sont classées devant les fiches standard parce que l'entreprise le paie. Un placement payant n'est ni une recommandation ni une vérification de la part de PMRFP. Les commanditaires sont responsables de leur propre contenu et de leurs offres.",
       ],
     },
     publicData: {
@@ -1601,7 +1600,7 @@ const fr: typeof en = {
     crumbPage: "Soyez trouvé",
     faqs: [
       {
-        q: "Qu'est-ce que la Fiche SEO m'apporte concrètement?",
+        q: "Qu'est-ce que l'inscription gratuite m'apporte concrètement?",
         a: "Une place sur les pages de PMRFP que les gestionnaires immobiliers trouvent quand ils cherchent votre corps de métier dans votre ville — plus votre propre page de profil avec vos services, vos secteurs desservis et votre note Google. Les moteurs de recherche et les assistants IA lisent ces pages parce qu'elles sont structurées autour des données et tenues honnêtes : une page n'existe que là où de vraies entreprises sont inscrites.",
       },
       {
@@ -1614,7 +1613,7 @@ const fr: typeof en = {
       },
       {
         q: "En quoi est-ce différent de Trade Pro?",
-        a: "La Fiche SEO, c'est de la visibilité seulement. Trade Pro ({annual} $/an) ajoute le tableau des appels d'offres : voyez les projets publiés, recevez des alertes correspondantes et manifestez votre intérêt. Vous pouvez commencer par la visibilité et passer à un forfait supérieur en tout temps.",
+        a: "L'inscription gratuite, c'est de la visibilité seulement. Trade Pro ({annual} $/an) ajoute le tableau des appels d'offres : voyez les projets publiés, recevez des alertes correspondantes et manifestez votre intérêt. En vedette ({featuredAnnual} $/an) ajoute une place en vedette dans vos catégories et régions. Vous pouvez commencer gratuitement et passer à un forfait supérieur en tout temps.",
       },
     ],
     eyebrow: "Pour les entrepreneurs et les entreprises de services",
@@ -1647,27 +1646,26 @@ const fr: typeof en = {
         lines: [
           "Profil d'entreprise dans le répertoire",
           "Présence dans la recherche par catégorie et par région sur le site",
+          "Présence sur les pages de votre corps de métier et de votre ville — celles que Google indexe",
           "Soumission d'études de cas de projets",
-        ],
-      },
-      seo: {
-        name: "Fiche SEO",
-        price: "{seoAnnual} $/an",
-        badge: "ou {seoMonthly} $/mois",
-        lines: [
-          "Place sur les pages de votre corps de métier et de votre ville — celles que Google indexe",
-          "Galerie de photos de projets illimitée sur votre profil",
-          "Note Google affichée sur votre profil (données officielles de Google Places)",
-          "Études de cas mises en avant sur les pages de votre ville",
-          "Classement prioritaire devant les inscriptions gratuites",
         ],
       },
       pro: {
         name: "Trade Pro — {annual} $/an",
         lines: [
-          "Tout ce qu'offre la Fiche SEO",
+          "Tout ce qu'offre l'inscription gratuite",
           "Accès complet au tableau des appels d'offres + alertes correspondantes",
           "Manifestation d'intérêt pour les projets publiés",
+          "Galerie de photos du profil, jusqu'à 12 photos",
+        ],
+      },
+      featured: {
+        name: "En vedette — {featuredAnnual} $/an",
+        lines: [
+          "Tout ce qu'offre Trade Pro",
+          "Placement en vedette dans vos catégories et vos régions de service",
+          "Badge En vedette sur votre profil",
+          "Classé devant les fiches standard dans le répertoire",
         ],
       },
     },
@@ -1939,7 +1937,7 @@ const es: typeof en = {
     sponsored: {
       title: "Patrocinios y ubicaciones pagadas",
       body: [
-        "Algunas ubicaciones en PMRFP son pagadas. Los patrocinios llevan la etiqueta “Patrocinado” en el idioma del lector y sus enlaces se marcan como patrocinados; las fichas Destacadas obtienen una ubicación prioritaria porque la empresa paga por ella. Una ubicación pagada no es una recomendación ni una verificación de PMRFP. Los patrocinadores son responsables de su propio contenido y de sus ofertas.",
+        "Algunas ubicaciones en PMRFP son pagadas. Los patrocinios llevan la etiqueta “Patrocinado” en el idioma del lector y sus enlaces se marcan como patrocinados; las fichas Destacadas aparecen antes que las fichas estándar porque la empresa paga por ella. Una ubicación pagada no es una recomendación ni una verificación de PMRFP. Los patrocinadores son responsables de su propio contenido y de sus ofertas.",
       ],
     },
     publicData: {
@@ -2498,7 +2496,7 @@ const es: typeof en = {
     crumbPage: "Hágase encontrar",
     faqs: [
       {
-        q: "¿Qué obtengo realmente con una Ficha SEO?",
+        q: "¿Qué obtengo realmente con una ficha gratuita?",
         a: "Presencia en las páginas de PMRFP que los administradores de propiedades encuentran cuando buscan su oficio en su ciudad, además de su propia página de perfil con sus servicios, zonas de servicio y calificación de Google. Los buscadores y los asistentes de IA leen estas páginas porque están estructuradas en torno a los datos y se mantienen honestas: una página solo existe donde hay empresas reales registradas.",
       },
       {
@@ -2511,7 +2509,7 @@ const es: typeof en = {
       },
       {
         q: "¿En qué se diferencia de Trade Pro?",
-        a: "La Ficha SEO es solo visibilidad. Trade Pro (${annual} al año) agrega el tablero de solicitudes de propuestas: vea los proyectos publicados, reciba alertas de coincidencias y manifieste interés. Puede empezar con visibilidad y mejorar su plan en cualquier momento.",
+        a: "La ficha gratuita es solo visibilidad. Trade Pro (${annual} al año) agrega el tablero de solicitudes de propuestas: vea los proyectos publicados, reciba alertas de coincidencias y manifieste interés. Destacado (${featuredAnnual} al año) agrega una ubicación destacada en sus categorías y regiones. Puede empezar gratis y mejorar su plan en cualquier momento.",
       },
     ],
     eyebrow: "Para contratistas y empresas de servicios",
@@ -2544,27 +2542,26 @@ const es: typeof en = {
         lines: [
           "Perfil de la empresa en el directorio",
           "Aparezca en las búsquedas por categoría y región del sitio",
-          "Envíe casos de estudio de proyectos",
-        ],
-      },
-      seo: {
-        name: "Ficha SEO",
-        price: "${seoAnnual} al año",
-        badge: "o ${seoMonthly} al mes",
-        lines: [
           "Presencia en las páginas de su oficio y su ciudad, las que Google indexa",
-          "Galería ilimitada de fotos de proyectos en su perfil",
-          "Calificación de Google en su perfil (datos oficiales de Places)",
-          "Casos de estudio destacados en las páginas de su ciudad",
-          "Prioridad de orden sobre las fichas gratuitas",
+          "Envíe casos de estudio de proyectos",
         ],
       },
       pro: {
         name: "Trade Pro — ${annual} al año",
         lines: [
-          "Todo lo incluido en la Ficha SEO",
+          "Todo lo incluido en la ficha gratuita",
           "Acceso completo al tablero de solicitudes de propuestas + alertas de coincidencias",
           "Manifieste interés en los proyectos publicados",
+          "Galería de fotos del perfil, hasta 12 fotos",
+        ],
+      },
+      featured: {
+        name: "Destacado — ${featuredAnnual} al año",
+        lines: [
+          "Todo lo de Trade Pro",
+          "Ubicación destacada en sus categorías y regiones de servicio",
+          "Insignia de destacado en su perfil",
+          "Antes que las fichas estándar en el directorio",
         ],
       },
     },

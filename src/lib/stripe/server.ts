@@ -46,13 +46,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
   // Tier drives entitlement: has_active_trade_access() only unlocks RFPs for
   // pro/featured. Without this, an active $99 SEO sub would silently grant
   // the $249 product.
-  const tier = isFeaturedPriceId(priceId)
-    ? "featured"
-    : isSeoPriceId(priceId)
-      ? "seo"
-      : isRealtorPriceId(priceId, item?.price.lookup_key)
-        ? "realtor"
-        : "pro";
+  const tier = tierForPrice(priceId, item?.price.lookup_key);
   const row = {
         organization_id: orgId,
         user_id: sub.metadata?.user_id ?? null,
@@ -88,6 +82,18 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
     const active = status === "active" || status === "trialing";
     await supabase.from("organizations").update({ featured: active }).eq("id", orgId);
   }
+}
+
+/**
+ * subscriptions.tier for a Stripe price. The retired SEO Listing prices still
+ * map to "seo" so grandfathered subscribers keep exactly what they bought
+ * (directory perks, no RFP access) on every renewal.
+ */
+export function tierForPrice(priceId: string | null | undefined, lookupKey?: string | null): "featured" | "seo" | "realtor" | "pro" {
+  if (isFeaturedPriceId(priceId)) return "featured";
+  if (isSeoPriceId(priceId)) return "seo";
+  if (isRealtorPriceId(priceId, lookupKey)) return "realtor";
+  return "pro";
 }
 
 /** A lifetime row is final: Stripe subscription sync must never overwrite it. */
@@ -133,7 +139,11 @@ export async function realtorPriceId(): Promise<string | null> {
   return realtorPriceCache.id;
 }
 
-/** True when the price id is the directory-only SEO tier (either interval). */
+/**
+ * True when the price id is the directory-only SEO tier (either interval).
+ * SEO Listing is retired: checkout never sells it, but renewals of existing
+ * subscriptions still arrive on these prices and must keep tier "seo".
+ */
 export function isSeoPriceId(priceId: string | null | undefined): boolean {
   if (!priceId) return false;
   const annual = process.env.STRIPE_PRICE_SEO_ANNUAL;

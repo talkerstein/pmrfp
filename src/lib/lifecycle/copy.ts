@@ -318,8 +318,8 @@ const EN: Strings = {
     cta2: "How reputation works",
   },
   founding: {
-    subject: "Founding 500: Trade Pro for life, one payment",
-    intro: (p) => `A plain offer while PMRFP is early: Founding 500 members pay once, ${p}, and keep Trade Pro for life. No renewals.`,
+    subject: "Founding 500: lifetime Trade Pro, one payment",
+    intro: (p) => `A plain offer while PMRFP is early: Founding 500 members pay once, ${p}, and keep Trade Pro for as long as PMRFP runs it. No renewals.`,
     regular: (a) => `Trade Pro is otherwise ${a} a year.`,
     low: (n) => `Fewer than ${n} spots are left.`,
     refund: `Not for you? Email us within ${FOUNDING.refundDays} days for a full refund.`,
@@ -353,7 +353,7 @@ const EN: Strings = {
     subject: ["{n} day left on your Trade Pro trial", "{n} days left on your Trade Pro trial"],
     intro: (d) => `Your trial ends ${d}. After that you're back on the free account: the first ${FREE} leads, no contractor names, no price ranges.`,
     keep: "To keep Trade Pro:",
-    founding: (p) => `Founding 500: ${p} once, Trade Pro for life (${FOUNDING.refundDays}-day refund)`,
+    founding: (p) => `Founding 500: ${p} once, lifetime Trade Pro (${FOUNDING.refundDays}-day refund)`,
     annual: (a) => (a ? `Or Trade Pro at ${a} a year` : "Or Trade Pro by the year"),
     cta: "See Founding 500",
     cta2: "Trade Pro yearly",
@@ -361,14 +361,14 @@ const EN: Strings = {
   trialExpired: {
     subject: "Your trial ended. Your free account stays.",
     intro: "Your Trade Pro trial ended today. No charge and nothing to cancel: your free account and profile stay as they are.",
-    offer: (p) => `If the leads were useful, Founding 500 is still open: ${p} once, Trade Pro for life, with a ${FOUNDING.refundDays}-day refund.`,
+    offer: (p) => `If the leads were useful, Founding 500 is still open: ${p} once, Trade Pro for as long as PMRFP runs it, with a ${FOUNDING.refundDays}-day refund.`,
     cta: "See Founding 500",
     cta2: "Trade Pro yearly",
   },
   winback: {
     subject: (t, a) => `Still looking for ${t} work${a ? ` in ${a}` : ""}?`,
     intro: (n, t, a) => `PMRFP has ${pl(n, "{n} lead", "{n} leads")} matched for ${t}${a ? ` in ${a}` : ""} right now. Your free account shows the first ${FREE}.`,
-    offer: (p, a) => `To see them all again: Founding 500 (${p} once, for life) or Trade Pro ${a ? `at ${a} a year` : "by the year"}.`,
+    offer: (p, a) => `To see them all again: Founding 500 (${p} once, lifetime) or Trade Pro ${a ? `at ${a} a year` : "by the year"}.`,
     last: "This is the last email about it. Your free account stays either way.",
     cta: "See Founding 500",
   },
@@ -456,7 +456,7 @@ const FR: Strings = {
   },
   founding: {
     subject: "Fondateurs 500 : Trade Pro à vie, un seul paiement",
-    intro: (p) => `Une offre simple pendant que PMRFP est jeune : les membres Fondateurs 500 paient une fois, ${p}, et gardent Trade Pro à vie. Aucun renouvellement.`,
+    intro: (p) => `Une offre simple pendant que PMRFP est jeune : les membres Fondateurs 500 paient une fois, ${p}, et gardent Trade Pro tant que PMRFP exploite le service. Aucun renouvellement.`,
     regular: (a) => `Sinon, Trade Pro coûte ${a} par année.`,
     low: (n) => `Il reste moins de ${n} places.`,
     refund: `Ce n'est pas pour vous? Écrivez-nous dans les ${FOUNDING.refundDays} jours pour un remboursement complet.`,
@@ -498,7 +498,7 @@ const FR: Strings = {
   trialExpired: {
     subject: "Votre essai est terminé. Votre compte gratuit reste.",
     intro: "Votre essai Trade Pro s'est terminé aujourd'hui. Aucuns frais, rien à annuler : votre compte gratuit et votre profil restent tels quels.",
-    offer: (p) => `Si les occasions vous ont été utiles, Fondateurs 500 est encore ouvert : ${p} une fois, Trade Pro à vie, remboursement sous ${FOUNDING.refundDays} jours.`,
+    offer: (p) => `Si les occasions vous ont été utiles, Fondateurs 500 est encore ouvert : ${p} une fois, Trade Pro tant que PMRFP exploite le service, remboursement sous ${FOUNDING.refundDays} jours.`,
     cta: "Voir Fondateurs 500",
     cta2: "Trade Pro à l'année",
   },
@@ -594,7 +594,7 @@ const ES: Strings = {
   },
   founding: {
     subject: "Fundadores 500: Trade Pro de por vida con un solo pago",
-    intro: (p) => `Una oferta sencilla mientras PMRFP es nuevo: los miembros Fundadores 500 pagan una vez, ${p}, y conservan Trade Pro de por vida. Sin renovaciones.`,
+    intro: (p) => `Una oferta sencilla mientras PMRFP es nuevo: los miembros Fundadores 500 pagan una vez, ${p}, y conservan Trade Pro mientras PMRFP opere el servicio. Sin renovaciones.`,
     regular: (a) => `De lo contrario, Trade Pro cuesta ${a} al año.`,
     low: (n) => `Quedan menos de ${n} lugares.`,
     refund: `¿No es para usted? Escríbanos dentro de ${FOUNDING.refundDays} días y le devolvemos todo.`,
@@ -636,7 +636,7 @@ const ES: Strings = {
   trialExpired: {
     subject: "Su prueba terminó. Su cuenta gratuita sigue.",
     intro: "Su prueba de Trade Pro terminó hoy. Sin cargos y nada que cancelar: su cuenta gratuita y su perfil siguen igual.",
-    offer: (p) => `Si las oportunidades le sirvieron, Fundadores 500 sigue abierto: ${p} una vez, Trade Pro de por vida, con reembolso en ${FOUNDING.refundDays} días.`,
+    offer: (p) => `Si las oportunidades le sirvieron, Fundadores 500 sigue abierto: ${p} una vez, Trade Pro mientras PMRFP opere el servicio, con reembolso en ${FOUNDING.refundDays} días.`,
     cta: "Ver Fundadores 500",
     cta2: "Trade Pro anual",
   },
