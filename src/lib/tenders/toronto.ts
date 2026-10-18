@@ -73,26 +73,176 @@ export function titleFromDescription(description: string): string | null {
 const SUPPLY_ONLY = /^(non-exclusive )?supply (and|&) delivery of|^(non-exclusive )?supply of /i;
 const HAS_SERVICE = /services?\b|maintenance|install|repair|replacement|renovat/i;
 
+/* ── Open solicitations ──────────────────────────────────────────────────
+ * Most rows open with procurement boilerplate ("This Request for Tender
+ * (RFT) is an invitation by the City of Toronto to prospective Suppliers…"),
+ * a location sentence, or both. Classifying only the first 400 characters
+ * after a single-pass strip dropped most of the building work, so the
+ * open-bid path works sentence by sentence: boilerplate sentences go,
+ * lead-in phrases come off the first real one, and trades are read from the
+ * whole description. Awards keep titleFromDescription/classifyTorontoAward. */
+
+/** Lead-in phrases removed (repeatedly) from the front of the first real sentence. */
+const LEAD_INS: RegExp[] = [
+  /^\.?\d+[.)]?\s+/,
+  /^this notice of intended procurement \(noip\) is to notify suppliers of the upcoming (negotiated )?(request for [a-z]+|n?rf[a-z]+)( \(n?[a-z]+\))? for (the )?/i,
+  /^((this|the) )?.{0,80}? is an invitation by the city of toronto.{0,40}? to prospective [^.]{0,60}?(to submit (bids?|bid\(s\)|quotations|proposals) for|to qualify for( future eligibility to provide)?|for) (the )?/i,
+  /^the city of toronto(['’]s)? .{0,80}? is bringing forward an? request for (tenders?|quotations?|proposals?) for (the )?/i,
+  /^the city of toronto invites [^.]{0,60}? to submit (bids|quotations|proposals) for (the )?/i,
+  /^this prequalified list will determine future eligibility to provide (the )?/i,
+  /^this (request for [a-z ]+?|rf[a-z]+)( \([a-z]+\))? (includes|is for|is issued (to|for)) (the )?/i,
+  /^request for (tenders?|quotations?|proposals?|supplier qualifications)( \([a-z]+\))? for (the )?/i,
+  /^for:?\s+(the )?/i,
+  /^(rfq|rft|rfp) for (the )?/i,
+  /^the (work|project) generally (consists of|includes) (the )?/i,
+  /^the scope of this rf[a-z]+ includes (the )?/i,
+  /^this project includes (the )?/i,
+  /^the successful (bidder|supplier|contractor) shall provide all labou?r, materials, equipment,? and services required to:?\s*/i,
+  /^(the )?provision of /i,
+  /^(the )?non-exclusive /i,
+  /^[–•\-:;\s]+/,
+];
+
+/** Whole sentences that carry no scope: legal terms, portal pointers, site description. */
+const NOISE_SENTENCE =
+  /^(see part \d|please review|to access|it is the (city'?s )?intention|notwithstanding|in accordance with|bids from|the successful supplier will be required|suppliers should|the term of the contract|the solicitation (is|will)|the submission deadline|rf[a-z]+ closing|[a-z0-9' .-]{2,60} is located at|it is a (small |large )?(park|site|building|facility)|the existing [^.]{0,80} has reached the end of its service life)|invitation by the city of toronto [^.]*?(roster|prequalified) list/i;
+
+function sentences(text: string): string[] {
+  return text
+    .split(/(?<=[a-z0-9)\]])\.(?:\s+|$)|\s+\.\d+\s+|(?<=[;:])\s+\d+\.\s+(?=[A-Z])/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function stripLeadIns(s: string): string {
+  for (let pass = 0; pass < 4; pass++) {
+    const before = s;
+    for (const re of LEAD_INS) s = s.replace(re, "");
+    if (s === before) break;
+  }
+  return s.trim();
+}
+
+/** The first sentence that says what the work is, lead-ins removed (untruncated). */
+export function torontoLead(description: string): string {
+  const text = clean(description).replace(/\s+/g, " ");
+  for (const raw of sentences(text)) {
+    if (NOISE_SENTENCE.test(raw)) continue;
+    const s = stripLeadIns(raw)
+      .split(/\s+as (?:further )?(?:described|explained)|\s+to access the documents|\s+please review all documentation|,?\s+for details,? please see/i)[0]
+      .replace(/\s*[–-]\s*including but not limited to:?\s*/i, ": ")
+      .replace(/[.;:,\s]+$/, "")
+      .trim();
+    if (s.length >= 12) return s;
+  }
+  return "";
+}
+
+/** "Clarinda Park is located at 31 Clarinda Dr…" → "Clarinda Park". */
+function placeName(description: string): string | null {
+  const m = /(?:^|\.\s+)([A-Z][\w'’.-]*(?: [A-Z][\w'’.-]*){0,5}) is located at\b/.exec(clean(description));
+  return m ? m[1] : null;
+}
+
+/** A board-ready title (max ~90 chars) for an open Toronto solicitation, or null. */
+export function torontoTitle(description: string): string | null {
+  let t = torontoLead(description);
+  if (t.length < 12) return null;
+  // The work sentence often skips the site the location sentence named.
+  const place = placeName(description);
+  if (place && !t.toLowerCase().includes(place.toLowerCase())) {
+    t = `${place}: ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
+  }
+  // "SITE WORK: concrete paving…": a shouted lead phrase, sentence-cased.
+  t = t.replace(/^[A-Z][A-Z &/-]{3,}(?=[:\s])/, (m) => m.charAt(0) + m.slice(1).toLowerCase());
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  if (t.length <= 90) return t;
+  const cut = t.slice(0, 89);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 60)).replace(/[\s,;:(–-]+$/, "")}…`;
+}
+
+// Hard civil: a building trade doesn't bid these, even in Construction Services.
+const HARD_CIVIL =
+  /culvert|bridge|watermain|water main|sewer|creek|trenchless|pipe lining|ttc track|track replacement|transit|overpass|dredg|treatment plant|pumping station/i;
+// Road and parking paving: paving trades are members, so this stays in
+// (under Concrete & Asphalt) even though the shared CIVIL list drops it.
+const ROAD_PAVING = /resurfacing|road paving|asphalt paving|parking lot|pavement (rehabilitation|repairs?)|guide rail/i;
+// Toronto-only exclusions on top of the shared EXCLUDE: professional
+// services, software, fleet and vehicles, plain goods.
+const TORONTO_EXCLUDE =
+  /professional (and technical |engineering )?(landscape )?(design )?services|appraisal|sponsorship|audit|assurance services|scheduler|technical advisor|licen[cs]es?\b|server hardware|tractors?\b|trailers?\b|vehicles?\b|\bfleet\b|\boem\b|bunker suits?|eyewear|interpretation services|litter bins?|food service equipment|chemicals?\b|lubricat|\bhay\b|forms and products|tents?\b/i;
+
+// Words that name a place, not the work ("Dufferin Waste Management Facility
+// Office Building", "rooftop HVAC systems"); neutralized before trade matching.
+const PLACE_NAMES: [RegExp, string][] = [
+  [/waste management (facility|yard|division|services)/gi, "site"],
+  [/roof-?top (hvac|units?|mechanical|equipment|air)/gi, "packaged $1"],
+  [/\brtus?\b/gi, "hvac units"],
+  // Part of a renovation scope, not a demolition job.
+  [/selective demolition/gi, "selective removals"],
+];
+
+// Toronto park and site work the shared RULES phrase differently.
+const TORONTO_RULES: [slug: string, pattern: RegExp][] = [
+  ["landscaping", /landscape (general )?contractor|construction of (two |three |\w+ )?parks?|park (construction|improvements?|revitali[sz]ation)|playground|play equipment|splash pad|tree planting|shrub planting|\bsod(ding)?\b|mulch/i],
+  ["concrete-and-asphalt", ROAD_PAVING],
+];
+
+// Clearly building / property / site construction: general contracting when
+// no specific trade is named, and first when the job spans many trades.
+const GC_SIGNAL =
+  /general construction|capital construction|state of good repair|\bsogr\b|construction management services|construction services for|general contractor|office building|staircase|stairway|site works?\b|building works|renovations?\b|accessibility (improvements|upgrades)|aoda/i;
+const MULTI_TRADE = /general construction|capital construction|state of good repair|\bsogr\b|construction management services/i;
+
+/** Trade slugs found in text, ordered by where they first appear. */
+function tradesByPosition(text: string): string[] {
+  const hits: [number, string][] = [];
+  for (const [slug, re] of [...RULES, ...TORONTO_RULES]) {
+    const m = re.exec(text);
+    if (m) hits.push([m.index, slug]);
+  }
+  return [...new Set(hits.sort((a, b) => a[0] - b[0]).map(([, slug]) => slug))];
+}
+
+function neutralize(text: string): string {
+  let t = text;
+  for (const [re, to] of PLACE_NAMES) t = t.replace(re, to);
+  return t;
+}
+
 /** PMRFP trade slugs for this Toronto solicitation (max 3), or [] to skip. */
 export function classifyToronto(r: TorontoRow, today: string): string[] {
   const deadline = (r[COL.deadline] ?? "").slice(0, 10);
   if (!deadline || deadline < today) return [];
   const cat = r[COL.category] ?? "";
-  if (cat !== "Construction Services" && cat !== "Goods and Services") return [];
-  const title = titleFromDescription(r[COL.description] ?? "");
-  if (!title) return [];
-  // Judge on the opening of the real description, not the truncated title —
-  // "…completion of the Work required on building repairs" is cut off there.
-  const head = stripBoilerplate(r[COL.description] ?? "").slice(0, 400).toLowerCase();
-  const t = title.toLowerCase();
-  if (EXCLUDE.test(t) || CIVIL.test(t)) return [];
-  if (SUPPLY_ONLY.test(t) && !HAS_SERVICE.test(head)) return [];
-  return RULES.filter(([, p]) => p.test(head)).map(([slug]) => slug).slice(0, 3);
+  const construction = cat === "Construction Services";
+  if (!construction && cat !== "Goods and Services") return [];
+  const description = r[COL.description] ?? "";
+  if (!torontoTitle(description)) return [];
+  const lead = torontoLead(description).toLowerCase();
+
+  // Exclusions judge the first real sentence (untruncated), never the long
+  // body: "testing, commissioning, training" sits in every building scope.
+  if (EXCLUDE.test(lead) || TORONTO_EXCLUDE.test(lead) || HARD_CIVIL.test(lead)) return [];
+  if (CIVIL.test(lead) && !ROAD_PAVING.test(lead)) return [];
+  if (SUPPLY_ONLY.test(lead) && !HAS_SERVICE.test(lead)) return [];
+
+  const leadTrades = tradesByPosition(neutralize(lead));
+  // Goods and Services: only when the work itself names a trade.
+  if (!construction) return leadTrades.slice(0, 3);
+
+  const body = tradesByPosition(neutralize(clean(description).replace(/\s+/g, " ").toLowerCase()));
+  const multi = MULTI_TRADE.test(lead);
+  const gc = multi || GC_SIGNAL.test(lead) || !leadTrades.length ? ["general-contracting"] : [];
+  const ordered = multi ? [...gc, ...body] : [...leadTrades, ...gc, ...body];
+  // High Level Category = Construction Services is a strong signal: clearly
+  // building/site work that names no specific trade is general contracting.
+  return [...new Set(ordered)].slice(0, 3);
 }
 
 export function torontoToRfpInsert(r: TorontoRow, today: string): TenderInsert | null {
   const doc = (r[COL.doc] ?? "").trim();
-  const title = titleFromDescription(r[COL.description] ?? "");
+  const title = torontoTitle(r[COL.description] ?? "");
   if (!doc || !title) return null;
   const description = clean(r[COL.description] ?? "");
   const division = clean(r[COL.division] ?? "") || "City of Toronto";
