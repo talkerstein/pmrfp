@@ -104,16 +104,11 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
     };
   };
 
-  // Fallback copy in the visitor's language too.
+  // Fallback navigation (trade names) in the visitor's language too. The
+  // fallback carries no numbers: a block whose data can't load is hidden.
   data.big.name = trade(data.big.name);
   data.tiles = data.tiles.map((x) => ({ ...x, name: trade(x.name) }));
-  data.chips = data.chips.map((x) => ({ ...x, name: trade(x.name) }));
   data.tradeOptions = data.tradeOptions.map((o) => ({ ...o, label: trade(o.label) }));
-  data.alertTrade = trade(data.alertTrade);
-  if (lang !== "en") {
-    data.winners.value = compactDollars(523e6, lang);
-    data.winners.top = data.winners.top.map((x) => ({ ...x, value: compactDollars(x.weight * 1e6, lang) }));
-  }
 
   const [rfpsR, catsR, regionsR, soldR, combosR] = await Promise.allSettled([
     listAllRfpsCached(),

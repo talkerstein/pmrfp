@@ -68,7 +68,7 @@ const en = {
   founding: {
     eyebrow: "Trade Pro · Ontario trades",
     headline: "Trade Pro for ${price}/year.",
-    sub: "Full RFP access, matching alerts and priority directory placement.",
+    sub: "Full RFP access, matching alerts and saved opportunities.",
     cta: "Claim your rate",
   },
   checklist: {
@@ -176,7 +176,7 @@ const fr: typeof en = {
   founding: {
     eyebrow: "Trade Pro · Entrepreneurs de l'Ontario",
     headline: "Trade Pro à {price} $/an.",
-    sub: "Accès complet aux appels d'offres, alertes ciblées et placement prioritaire dans le répertoire.",
+    sub: "Accès complet aux appels d'offres, alertes ciblées et occasions sauvegardées.",
     cta: "Réserver votre tarif",
   },
   checklist: {
@@ -313,7 +313,7 @@ const es: typeof en = {
   founding: {
     eyebrow: "Trade Pro · Contratistas de Ontario",
     headline: "Trade Pro por ${price} al año.",
-    sub: "Acceso completo a las RFP, alertas de coincidencias y ubicación prioritaria en el directorio.",
+    sub: "Acceso completo a las RFP, alertas de coincidencias y oportunidades guardadas.",
     cta: "Reserve su tarifa",
   },
   checklist: {

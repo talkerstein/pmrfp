@@ -21,15 +21,18 @@ export const PRICING = {
   proAnnual: 249,
   proMonthly: 29,
   featuredAnnual: 599,
+  /**
+   * SEO Listing is RETIRED (owner decision 2026-10-18): not sold, not on any
+   * page. These are the prices grandfathered subscribers still pay; Stripe
+   * keeps renewing them on STRIPE_PRICE_SEO_* (left set, unused by checkout).
+   */
   seoAnnual: 120,
   seoMonthly: 12,
   /** Realtor Pro: unlimited trusted trades + a contact button on the page. */
   realtorAnnual: 249,
-  seoNote:
-    "SEO Listing: your company on the trade + city pages property managers find on Google and in AI answers, plus an unlimited project photo gallery. Directory placement only — RFP access is Trade Pro.",
   currency: "CAD",
   featuredNote:
-    "Featured includes everything in Trade Pro, plus priority placement at the top of your categories and regions.",
+    "Featured includes everything in Trade Pro, plus featured placement in your categories and regions, ranked ahead of standard listings.",
   monthlyNote: "Try us month-to-month at $29/mo. Switch to annual any time and save $99.",
   // Policy: NO refunds (founder decision 2026-06-05). Subscriptions are
   // non-refundable; members cancel anytime and keep access to the end of the

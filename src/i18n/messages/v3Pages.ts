@@ -208,16 +208,9 @@ const en = {
       annualPlan: "Annual plan.",
       monthlyNote: "{total}/yr if held all year. Switch to annual any time to save {save}.",
       annualNote: "About {n}/mo, billed annually",
-      seoMonthlyNote: "{total}/yr if held all year. Switch to annual any time to save {save}.",
       plans: [
         // Card features match lib/pricing/plan-matrix (what code grants); keep them in step.
         { name: "Free", blurb: "Get listed and found. No RFP access.", cta: "Join free", features: ["Directory listing and company profile", "Appear in vendor searches", "Listed on your trade + city pages", "Save RFPs to your dashboard", "PMRFP badge for your website"] },
-        {
-          name: "SEO Listing",
-          blurb: "A bigger photo gallery on your company profile. No RFP access.",
-          cta: "Get an SEO Listing",
-          features: ["Everything in Free", "Profile photo gallery, up to 12 photos"],
-        },
         {
           name: "Trade Pro",
           blurb: "Full RFP access and the tools to go after commercial work.",
@@ -235,8 +228,8 @@ const en = {
     },
     found: {
       eyebrow: "Get found",
-      title: "More from your directory listing.",
-      body: "SEO Listing adds a bigger photo gallery to your free profile. Featured is everything in Trade Pro, plus featured placement in your categories and service regions.",
+      title: "Stand out in the directory.",
+      body: "Featured is everything in Trade Pro, plus featured placement in your categories and service regions, ranked ahead of standard listings.",
     },
     terms: {
       cancelTitle: "Cancelling",
@@ -343,7 +336,7 @@ const en = {
       label: "Featured",
       head: "Your company, seen first.",
       price: "{currency} / year",
-      body: "Everything in Trade Pro, plus featured placement in your categories and service regions and top search results.",
+      body: "Everything in Trade Pro, plus featured placement in your categories and service regions, ranked ahead of standard listings.",
       cta: "Get featured",
       ring: "THIS SLOT IS OPEN · THIS SLOT IS OPEN · ",
     },
@@ -685,7 +678,7 @@ const en = {
     pro: "Trade Pro",
     popular: "Recommended",
     proPer: "{currency}/year, or {price}/month",
-    proPoints: ["Full scope, documents and buyer contact", "An email the morning every match posts", "Save opportunities and express interest", "Priority placement and a website badge"],
+    proPoints: ["Full scope, documents and buyer contact", "An email the morning every match posts", "Save opportunities and express interest", "A PMRFP badge for your website"],
     noteFree: "Free is a full membership, not a trial. Your profile goes live and you can upgrade to Trade Pro any time.",
     notePro: "Trade Pro is paid at checkout, after this step. We do not ask for a card here. Cancel anytime, your access runs to the end of your billing period.",
     posterHead: "Your plan: free.",
@@ -1194,15 +1187,8 @@ const fr: typeof en = {
       annualPlan: "Forfait annuel.",
       monthlyNote: "{total}/an si conservé toute l'année. Passez à l'annuel pour économiser {save}.",
       annualNote: "Environ {n}/mois, facturé annuellement",
-      seoMonthlyNote: "{total}/an si conservé toute l'année. Passez à l'annuel pour économiser {save}.",
       plans: [
         { name: "Gratuit", blurb: "Soyez inscrit et trouvé. Sans accès aux appels d'offres.", cta: "Inscription gratuite", features: ["Fiche au répertoire et profil d'entreprise", "Présence dans les recherches de fournisseurs", "Présence sur vos pages métier + ville", "Enregistrer des appels dans votre tableau de bord", "Badge PMRFP pour votre site"] },
-        {
-          name: "Fiche SEO",
-          blurb: "Une plus grande galerie de photos sur votre profil d'entreprise. Sans accès aux appels d'offres.",
-          cta: "Obtenir une fiche SEO",
-          features: ["Tout ce qu'offre le forfait Gratuit", "Galerie de photos du profil, jusqu'à 12 photos"],
-        },
         {
           name: "Trade Pro",
           blurb: "Accès complet aux appels d'offres et les outils pour aller chercher des contrats commerciaux.",
@@ -1220,8 +1206,8 @@ const fr: typeof en = {
     },
     found: {
       eyebrow: "Être trouvé",
-      title: "Tirez plus de votre fiche au répertoire.",
-      body: "La fiche SEO ajoute une plus grande galerie de photos à votre profil gratuit. En vedette, c'est tout Trade Pro, plus une place en vedette dans vos catégories et vos régions de service.",
+      title: "Démarquez-vous dans le répertoire.",
+      body: "En vedette, c'est tout Trade Pro, plus une place en vedette dans vos catégories et vos régions de service, devant les fiches standard.",
     },
     terms: {
       cancelTitle: "Annulation",
@@ -1327,7 +1313,7 @@ const fr: typeof en = {
       label: "En vedette",
       head: "Votre entreprise, vue en premier.",
       price: "{currency} / an",
-      body: "Tout Trade Pro, plus une place en vedette dans vos catégories et régions desservies, et en tête des résultats.",
+      body: "Tout Trade Pro, plus une place en vedette dans vos catégories et régions desservies, devant les fiches standard.",
       cta: "Être en vedette",
       ring: "CETTE PLACE EST LIBRE · CETTE PLACE EST LIBRE · ",
     },
@@ -1668,7 +1654,7 @@ const fr: typeof en = {
     pro: "Trade Pro",
     popular: "Recommandé",
     proPer: "{currency}/an, ou {price}/mois",
-    proPoints: ["Portée complète, documents et contact de l'acheteur", "Un courriel le matin où chaque correspondance est publiée", "Enregistrer des occasions et manifester votre intérêt", "Placement prioritaire et badge pour votre site"],
+    proPoints: ["Portée complète, documents et contact de l'acheteur", "Un courriel le matin où chaque correspondance est publiée", "Enregistrer des occasions et manifester votre intérêt", "Un badge PMRFP pour votre site"],
     noteFree: "Le forfait gratuit est une adhésion complète, pas un essai. Votre profil est publié et vous pouvez passer à Trade Pro en tout temps.",
     notePro: "Trade Pro se paie au moment du paiement, après cette étape. Nous ne demandons pas de carte ici. Annulez en tout temps, votre accès dure jusqu'à la fin de la période payée.",
     posterHead: "Votre forfait : gratuit.",
@@ -2174,15 +2160,8 @@ const es: typeof en = {
       annualPlan: "Plan anual.",
       monthlyNote: "{total}/año si lo mantiene todo el año. Cambie al anual para ahorrar {save}.",
       annualNote: "Unos {n}/mes, facturado anualmente",
-      seoMonthlyNote: "{total}/año si lo mantiene todo el año. Cambie al anual para ahorrar {save}.",
       plans: [
         { name: "Gratis", blurb: "Aparezca y sea encontrado. Sin acceso a RFP.", cta: "Únase gratis", features: ["Ficha en el directorio y perfil de empresa", "Aparece en búsquedas de proveedores", "En sus páginas de oficio + ciudad", "Guarde RFP en su panel", "Insignia de PMRFP para su sitio"] },
-        {
-          name: "Ficha SEO",
-          blurb: "Una galería de fotos más grande en su perfil de empresa. Sin acceso a RFP.",
-          cta: "Obtener una ficha SEO",
-          features: ["Todo lo del plan Gratis", "Galería de fotos del perfil, hasta 12 fotos"],
-        },
         {
           name: "Trade Pro",
           blurb: "Acceso completo a RFP y las herramientas para buscar trabajo comercial.",
@@ -2200,8 +2179,8 @@ const es: typeof en = {
     },
     found: {
       eyebrow: "Ser encontrado",
-      title: "Saque más de su ficha en el directorio.",
-      body: "La ficha SEO agrega una galería de fotos más grande a su perfil gratis. Destacado es todo Trade Pro, más una ubicación destacada en sus categorías y regiones de servicio.",
+      title: "Destáquese en el directorio.",
+      body: "Destacado es todo Trade Pro, más una ubicación destacada en sus categorías y regiones de servicio, antes que las fichas estándar.",
     },
     terms: {
       cancelTitle: "Cancelación",
@@ -2307,7 +2286,7 @@ const es: typeof en = {
       label: "Destacado",
       head: "Su empresa, vista primero.",
       price: "{currency} / año",
-      body: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones de servicio y en los primeros resultados.",
+      body: "Todo lo de Trade Pro, más ubicación destacada en sus categorías y regiones de servicio, antes que las fichas estándar.",
       cta: "Destacarme",
       ring: "ESTE ESPACIO ESTÁ LIBRE · ESTE ESPACIO ESTÁ LIBRE · ",
     },
@@ -2648,7 +2627,7 @@ const es: typeof en = {
     pro: "Trade Pro",
     popular: "Recomendado",
     proPer: "{currency}/año, o {price}/mes",
-    proPoints: ["Alcance completo, documentos y contacto del comprador", "Un correo la mañana en que se publica cada coincidencia", "Guardar oportunidades y expresar interés", "Ubicación prioritaria e insignia para su sitio"],
+    proPoints: ["Alcance completo, documentos y contacto del comprador", "Un correo la mañana en que se publica cada coincidencia", "Guardar oportunidades y expresar interés", "Una insignia de PMRFP para su sitio"],
     noteFree: "Gratis es una membresía completa, no una prueba. Su perfil se publica y puede pasar a Trade Pro en cualquier momento.",
     notePro: "Trade Pro se paga en el pago, después de este paso. No pedimos tarjeta aquí. Cancele cuando quiera, su acceso dura hasta el final del período pagado.",
     posterHead: "Su plan: gratis.",

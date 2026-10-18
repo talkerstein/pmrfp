@@ -52,7 +52,7 @@ const en = {
     choseBody:
       "Create your free account first — no card needed now. We'll take you straight to billing to confirm {plan} before anything is charged.",
     changePlan: "Change plan",
-    plans: { featured: "Featured", seo: "SEO Listing", pro: "Trade Pro" },
+    plans: { featured: "Featured", pro: "Trade Pro" },
     priceYear: "${amount} {currency}/year",
     priceMonth: "${amount} {currency}/month",
     /** Legal text: keep in step with COPY.signupDisclaimer. */
@@ -318,7 +318,7 @@ const fr: typeof en = {
     choseBody:
       "Créez d'abord votre compte gratuit — aucune carte requise pour l'instant. Nous vous amènerons directement à la facturation pour confirmer {plan} avant tout paiement.",
     changePlan: "Changer de forfait",
-    plans: { featured: "En vedette", seo: "Fiche SEO", pro: "Trade Pro" },
+    plans: { featured: "En vedette", pro: "Trade Pro" },
     priceYear: "{amount} $ {currency}/an",
     priceMonth: "{amount} $ {currency}/mois",
     disclaimer:
@@ -581,7 +581,7 @@ const es: typeof en = {
     choseBody:
       "Primero cree su cuenta gratis; por ahora no necesita tarjeta. Lo llevaremos directamente a la facturación para confirmar {plan} antes de hacer cualquier cobro.",
     changePlan: "Cambiar de plan",
-    plans: { featured: "Destacado", seo: "Ficha SEO", pro: "Trade Pro" },
+    plans: { featured: "Destacado", pro: "Trade Pro" },
     priceYear: "${amount} {currency} al año",
     priceMonth: "${amount} {currency} al mes",
     disclaimer:

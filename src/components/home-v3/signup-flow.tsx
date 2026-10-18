@@ -114,7 +114,7 @@ export function SignUpFlow(p: SignupProps) {
     if (!p.intent) return null;
     if (!m.known) return <V3Skeleton w="8ch" />;
     const monthly = p.intent.interval === "monthly";
-    const cad = p.intent.plan === "featured" ? PRICING.featuredAnnual : p.intent.plan === "seo" ? (monthly ? PRICING.seoMonthly : PRICING.seoAnnual) : monthly ? PRICING.proMonthly : PRICING.proAnnual;
+    const cad = p.intent.plan === "featured" ? PRICING.featuredAnnual : monthly ? PRICING.proMonthly : PRICING.proAnnual;
     return `${m.money(cad)} ${m.currency}`;
   };
   const posterLine = isGc ? t.posterLines.gc : isLandlord ? t.posterLines.landlord : role === "visitor" ? t.posterLines.visitor : t.posterLines.default;

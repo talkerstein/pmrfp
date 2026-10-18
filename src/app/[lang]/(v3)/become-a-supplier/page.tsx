@@ -57,7 +57,6 @@ export default async function BecomeASupplierPage({ params }: { params: Promise<
   const sponsorFrom = lowestSponsorPrice("CA");
   const plans = [
     { ...p.plans.free, price: p.plans.free.price, per: "" },
-    { ...p.plans.seo, price: money(PRICING.seoAnnual), per: `${p.plans.perYear} · ${money(PRICING.seoMonthly)}${p.plans.perMonth}` },
     { ...p.plans.featured, price: money(PRICING.featuredAnnual), per: p.plans.perYear },
     { ...p.plans.sponsor, price: `${p.plans.from} ${money(sponsorFrom)}`, per: p.plans.perMonth },
     { ...p.plans.spotlight, price: money(SPOTLIGHT.priceCad), per: p.plans.oneTime },

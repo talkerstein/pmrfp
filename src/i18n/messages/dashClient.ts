@@ -66,7 +66,7 @@ const en = {
   },
   portfolio: {
     label: "Portfolio photos",
-    helpFree: "Show one photo of your best work — JPEG, PNG, or WebP, up to 5 MB. Upgrade for an unlimited gallery.",
+    helpFree: "Show one photo of your best work — JPEG, PNG, or WebP, up to 5 MB. Upgrade to Trade Pro for a gallery of up to 12 photos.",
     helpPaid: "Show past work — projects, sites, finished installs. JPEG, PNG, or WebP. Up to {limit} photos, 5 MB each.",
     loadFailed: "Could not load existing photos: {message}",
     loadFailedGeneric: "Could not load photos",
@@ -81,7 +81,7 @@ const en = {
     add: "Add photos",
     addMore: "Add more",
     count: "{n}/{limit} uploaded",
-    upgradeTip: " · Upgrade to SEO Listing for an unlimited gallery",
+    upgradeTip: " · Upgrade to Trade Pro for up to 12 photos",
     tip: " · Tip: 4-6 sharp project photos beat 12 mediocre ones",
     needsProfile: "Portfolio upload requires a saved profile.",
   },
@@ -245,7 +245,7 @@ const fr: typeof en = {
   portfolio: {
     label: "Photos de réalisations",
     helpFree:
-      "Montrez une photo de votre meilleur travail — JPEG, PNG ou WebP, jusqu'à 5 Mo. Passez à un forfait payant pour une galerie illimitée.",
+      "Montrez une photo de votre meilleur travail — JPEG, PNG ou WebP, jusqu'à 5 Mo. Passez à Trade Pro pour une galerie d'au plus 12 photos.",
     helpPaid:
       "Montrez vos réalisations — projets, chantiers, installations terminées. JPEG, PNG ou WebP. Jusqu'à {limit} photos, 5 Mo chacune.",
     loadFailed: "Impossible de charger les photos existantes : {message}",
@@ -261,7 +261,7 @@ const fr: typeof en = {
     add: "Ajouter des photos",
     addMore: "En ajouter",
     count: "{n}/{limit} téléversées",
-    upgradeTip: " · Passez à la Fiche SEO pour une galerie illimitée",
+    upgradeTip: " · Passez à Trade Pro pour au plus 12 photos",
     tip: " · Astuce : 4 à 6 photos nettes valent mieux que 12 photos moyennes",
     needsProfile: "Le téléversement de photos nécessite un profil enregistré.",
   },
@@ -427,7 +427,7 @@ const es: typeof en = {
   portfolio: {
     label: "Fotos del portafolio",
     helpFree:
-      "Muestre una foto de su mejor trabajo: JPEG, PNG o WebP, de hasta 5 MB. Mejore su plan para tener una galería ilimitada.",
+      "Muestre una foto de su mejor trabajo: JPEG, PNG o WebP, de hasta 5 MB. Pase a Trade Pro para tener una galería de hasta 12 fotos.",
     helpPaid:
       "Muestre trabajos anteriores: proyectos, obras, instalaciones terminadas. JPEG, PNG o WebP. Hasta {limit} fotos, de 5 MB cada una.",
     loadFailed: "No se pudieron cargar las fotos existentes: {message}",
@@ -443,7 +443,7 @@ const es: typeof en = {
     add: "Agregar fotos",
     addMore: "Agregar más",
     count: "{n}/{limit} subidas",
-    upgradeTip: " · Mejore a Ficha SEO para tener una galería ilimitada",
+    upgradeTip: " · Pase a Trade Pro para tener hasta 12 fotos",
     tip: " · Consejo: 4 a 6 fotos nítidas de proyectos valen más que 12 mediocres",
     needsProfile: "Para subir fotos al portafolio necesita un perfil guardado.",
   },

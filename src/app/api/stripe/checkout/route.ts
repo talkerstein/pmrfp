@@ -3,8 +3,6 @@ import { getSession } from "@/lib/access/access";
 import { getStripe, isStripeConfigured, realtorPriceId, SITE_URL } from "@/lib/stripe/server";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "checkout");
@@ -20,15 +18,17 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
+  // SEO Listing is retired: a stale "seo" plan (old link, cached page) is sold
+  // Trade Pro instead, never the retired price. Existing SEO subscribers are
+  // untouched: their Stripe subscription keeps renewing and isSeoPriceId()
+  // still maps it to tier "seo" in the webhook sync (grandfathered).
   const plan =
     body?.plan === "featured"
       ? "featured"
-      : body?.plan === "seo"
-        ? "seo"
-        : body?.plan === "realtor"
-          ? "realtor"
-          : "pro";
-  // Featured and Realtor Pro are annual-only. Pro and SEO support monthly/annual.
+      : body?.plan === "realtor"
+        ? "realtor"
+        : "pro";
+  // Featured and Realtor Pro are annual-only. Pro supports monthly/annual.
   const interval: "monthly" | "annual" =
     plan !== "featured" && plan !== "realtor" && body?.interval === "monthly" ? "monthly" : "annual";
 
@@ -41,13 +41,6 @@ export async function POST(request: Request) {
     price = (await realtorPriceId()) ?? undefined;
   } else if (plan === "featured") {
     price = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
-  } else if (plan === "seo") {
-    // Directory-only tier — gated on the env var like every other price, so
-    // it simply reports "not available" until the Stripe price exists.
-    price =
-      interval === "monthly"
-        ? process.env.STRIPE_PRICE_SEO_MONTHLY
-        : process.env.STRIPE_PRICE_SEO_ANNUAL;
   } else if (interval === "monthly") {
     price = process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY;
   } else {
@@ -55,19 +48,6 @@ export async function POST(request: Request) {
   }
   if (!price) {
     return NextResponse.json({ error: "That plan isn't available yet." }, { status: 400 });
-  }
-
-  // The SEO tier is directory-only, and that is enforced by subscriptions.tier
-  // (migration 20260819000001). If the column doesn't exist yet, every
-  // subscription is treated as Pro-equivalent — so selling SEO now would hand
-  // a $12/mo buyer the $249 RFP product. Refuse until the migration lands.
-  if (plan === "seo") {
-    const probe = isServiceConfigured()
-      ? await createServiceClient().from("subscriptions").select("tier").limit(1)
-      : { error: new Error("service client not configured") };
-    if (probe.error) {
-      return NextResponse.json({ error: "That plan isn't available yet." }, { status: 400 });
-    }
   }
 
   const metadata = {

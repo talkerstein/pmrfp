@@ -1,4 +1,4 @@
-/** Client-side sales strings: the Trade Pro and SEO Listing plan cards on /pricing. */
+/** Client-side sales strings: the Trade Pro plan card (and the Founding 500 feature list). */
 const en = {
   interval: {
     label: "Billing interval",
@@ -20,22 +20,9 @@ const en = {
       "Save opportunities",
       "Express interest",
       "Matching alerts",
-      "Priority placement",
       "PMRFP badge for your website",
     ],
     cta: "Join {site}",
-  },
-  seo: {
-    name: "SEO Listing",
-    blurb: "Get found where property managers actually search — no RFP access.",
-    features: [
-      "Listed on your trade + city pages",
-      "Unlimited project photo gallery",
-      "Case studies featured on your profile",
-      "Google rating displayed on your profile",
-      "Priority over free listings",
-    ],
-    cta: "Get an SEO Listing",
   },
 };
 
@@ -60,22 +47,9 @@ const fr: typeof en = {
       "Sauvegarde des occasions",
       "Manifestation d'intérêt",
       "Alertes sur mesure",
-      "Placement prioritaire",
       "Badge PMRFP pour votre site Web",
     ],
     cta: "S'inscrire à {site}",
-  },
-  seo: {
-    name: "Fiche SEO",
-    blurb: "Soyez trouvé là où les gestionnaires immobiliers cherchent vraiment — sans accès aux appels d'offres.",
-    features: [
-      "Présence sur les pages de votre corps de métier et de votre ville",
-      "Galerie de photos de projets illimitée",
-      "Études de cas mises en valeur sur votre profil",
-      "Note Google affichée sur votre profil",
-      "Priorité sur les fiches gratuites",
-    ],
-    cta: "Obtenir une fiche SEO",
   },
 };
 
@@ -100,22 +74,9 @@ const es: typeof en = {
       "Guardar oportunidades",
       "Expresar interés",
       "Alertas de oportunidades",
-      "Ubicación prioritaria",
       "Insignia de PMRFP para su sitio web",
     ],
     cta: "Únase a {site}",
-  },
-  seo: {
-    name: "Ficha SEO",
-    blurb: "Aparezca donde los administradores de propiedades realmente buscan — sin acceso a las RFP.",
-    features: [
-      "Presencia en las páginas de su oficio y su ciudad",
-      "Galería ilimitada de fotos de proyectos",
-      "Casos de éxito destacados en su perfil",
-      "Calificación de Google visible en su perfil",
-      "Prioridad sobre las fichas gratuitas",
-    ],
-    cta: "Obtener una Ficha SEO",
   },
 };
 

@@ -8,7 +8,7 @@ const en = {
   meta: {
     title: "Founding 500: lifetime Trade Pro for one payment",
     description:
-      "The first 500 trades and suppliers get PMRFP Trade Pro for life for one payment. Pay once instead of every year. Full RFP access, alerts and priority directory placement. 30-day refund.",
+      "The first 500 trades and suppliers get lifetime PMRFP Trade Pro, for as long as we run Trade Pro, for one payment. Pay once instead of every year. Full RFP access, matching alerts and saved opportunities. 30-day refund.",
   },
   eyebrow: "Founding 500",
   title: "Founding 500: lifetime Trade Pro for one payment",
@@ -62,7 +62,7 @@ const fr: typeof en = {
   meta: {
     title: "Fondateurs 500 : Trade Pro à vie pour un seul paiement",
     description:
-      "Les 500 premières entreprises de métiers et fournisseurs obtiennent Trade Pro de PMRFP à vie pour un paiement unique. Payez une fois au lieu de chaque année. Accès complet aux appels d'offres, alertes et placement prioritaire. Remboursement sous 30 jours.",
+      "Les 500 premières entreprises de métiers et fournisseurs obtiennent Trade Pro de PMRFP à vie, tant que nous exploitons Trade Pro, pour un paiement unique. Payez une fois au lieu de chaque année. Accès complet aux appels d'offres, alertes ciblées et occasions sauvegardées. Remboursement sous 30 jours.",
   },
   eyebrow: "Fondateurs 500",
   title: "Fondateurs 500 : Trade Pro à vie pour un seul paiement",
@@ -116,7 +116,7 @@ const es: typeof en = {
   meta: {
     title: "Fundadores 500: Trade Pro de por vida con un solo pago",
     description:
-      "Las primeras 500 empresas de oficios y proveedores obtienen Trade Pro de PMRFP de por vida con un pago único. Paga una vez en lugar de cada año. Acceso completo a licitaciones, alertas y posición prioritaria. Reembolso en 30 días.",
+      "Las primeras 500 empresas de oficios y proveedores obtienen Trade Pro de PMRFP de por vida, mientras operemos Trade Pro, con un pago único. Paga una vez en lugar de cada año. Acceso completo a licitaciones, alertas y oportunidades guardadas. Reembolso en 30 días.",
   },
   eyebrow: "Fundadores 500",
   title: "Fundadores 500: Trade Pro de por vida con un solo pago",
