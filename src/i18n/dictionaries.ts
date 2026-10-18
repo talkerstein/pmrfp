@@ -54,6 +54,7 @@ import intel from "./messages/intel";
 import bidResults from "./messages/bidResults";
 import policies from "./messages/policies";
 import correctionsClient from "./messages/correctionsClient";
+import buyers from "./messages/buyers";
 
 const NAMESPACES = {
   common,
@@ -103,6 +104,7 @@ const NAMESPACES = {
   bidResults,
   policies,
   correctionsClient,
+  buyers,
 };
 
 type Namespaces = typeof NAMESPACES;

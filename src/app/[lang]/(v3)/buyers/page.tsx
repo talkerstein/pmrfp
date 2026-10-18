@@ -1,0 +1,73 @@
+import type { Metadata } from "next";
+import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
+import { loadBuyers } from "@/lib/buyers/load";
+import { BUYERS_PATH, directoryIndex, isIndexableBuyer } from "@/lib/buyers/model";
+import { getLang, getT, setLangFrom } from "@/i18n/server";
+import { getDictionary } from "@/i18n/dictionaries";
+import { hasLocale, localizePath } from "@/i18n/config";
+import { alternatesFor } from "@/i18n/metadata";
+import { fmt, formatNumber } from "@/i18n/format";
+import { regionName } from "@/i18n/terms";
+import { SH2, SimplePage } from "@/components/v3/simple";
+
+export const revalidate = 3600;
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const l = hasLocale(lang) ? lang : "en";
+  const t = getDictionary(l).buyers.meta;
+  return { title: t.indexTitle, description: t.indexDescription, alternates: alternatesFor(l, BUYERS_PATH) };
+}
+
+/** "Where every buyer posts bids": Canadian public buyers by province, then by type. */
+export default async function BuyersIndex({ params }: { params: Promise<{ lang: string }> }) {
+  await setLangFrom(params);
+  const lang = getLang();
+  const t = getT("buyers");
+  const home = getT("v3Pages").simple.home;
+  const L = (p: string) => localizePath(p, lang);
+  const { pages } = await loadBuyers();
+  const index = directoryIndex(pages);
+  let no = 0;
+  return (
+    <>
+      <JsonLd data={breadcrumbSchema([{ name: home, path: L("/") }, { name: t.index.crumb, path: L(BUYERS_PATH) }])} />
+      <SimplePage lang={lang} current={null} group="company" crumbs={[]} tabs={false} aside={false} title={t.index.h1} lead={fmt(t.index.lead, { n: formatNumber(pages.length, lang) })}>
+        <p className="small muted" data-flag="link-only">{t.index.note}</p>
+        <nav className="s-links" aria-label={t.index.crumb}>
+          {index.map((p) => (
+            <a key={p.provinceSlug} href={`#${p.provinceSlug}`}>{regionName(p.province, lang)} ({formatNumber(p.total, lang)})</a>
+          ))}
+        </nav>
+        {index.map((p) => (
+          <section key={p.provinceSlug} data-province={p.provinceSlug}>
+            <SH2 no={++no} id={p.provinceSlug}>{fmt(t.index.provinceHead, { province: regionName(p.province, lang) })}</SH2>
+            <p className="small muted">{fmt(t.index.count, { n: formatNumber(p.total, lang) })}</p>
+            {p.groups.map((g) => (
+              <div key={g.group} data-group={g.group}>
+                <h3>{t.groups[g.group]}</h3>
+                <ul className="s-table" data-list="buyers">
+                  {g.buyers.map((b) => {
+                    const platforms = b.buyer.platforms.map((k) => t.platforms[k]).join(" · ");
+                    return (
+                      <li key={b.path}>
+                        <span className="code" aria-hidden>{b.buyer.name.slice(0, 1)}</span>
+                        <span>
+                          <a className="nm" href={L(b.path)}>{b.buyer.name}</a>
+                          <span className="lic">
+                            {platforms || t.index.unknown}
+                            {isIndexableBuyer(b) ? ` · ${t.index.withData}` : ""}
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </section>
+        ))}
+      </SimplePage>
+    </>
+  );
+}

@@ -5,6 +5,7 @@ import { classifyOntn, fetchOntnNotices, ontnToRfpInsert } from "@/lib/tenders/o
 import { FVRD, SAANICH, bcTableToRfpInsert, classifyBcTableRow, fetchBcTenderTable, type BcTableSite } from "@/lib/tenders/bc-tenders-table";
 import { classifySk, fetchSkOpen, skToRfpInsert } from "@/lib/tenders/sasktenders";
 import { classifyPlap, fetchPlapTenders, plapToRfpInsert } from "@/lib/tenders/portage-la-prairie";
+import { classifyGete, fetchGeteBids, geteToRfpInsert } from "@/lib/tenders/guelph-eramosa";
 import { syncPublicSources, type Candidate, type Source } from "@/lib/tenders/sync";
 
 /** Each source gets its own time budget; a slow one fails alone (sync skips it). */
@@ -60,6 +61,19 @@ const SOURCES: Source[] = [
           const categories = classifyPlap(t, today);
           const insert = categories.length ? plapToRfpInsert(t, today) : null;
           return insert ? [{ insert, categories, regionSlug: "manitoba" }] : [];
+        }),
+      ),
+  },
+  {
+    // Township of Guelph/Eramosa (ON) — the bid table on its own site.
+    key: "guelph-eramosa",
+    minMatchesToArchive: 1,
+    collect: async (today) =>
+      withBudget("guelph-eramosa", async (signal) =>
+        (await fetchGeteBids(signal)).flatMap((b): Candidate[] => {
+          const categories = classifyGete(b, today);
+          const insert = categories.length ? geteToRfpInsert(b, today) : null;
+          return insert ? [{ insert, categories, regionSlug: "ontario" }] : [];
         }),
       ),
   },

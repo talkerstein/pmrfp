@@ -20,6 +20,9 @@ import { PriceLine } from "@/components/v3-pages/price";
 import { winnerKey, winnersFromRfps } from "@/lib/data/winners";
 import { getFullRfp, getRfpTeaser } from "@/lib/data/rfps";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
+import { loadBuyers } from "@/lib/buyers/load";
+import { buyerPageForRfp } from "@/lib/buyers/model";
+import { buyerFromSummary as awardBuyerFromSummary } from "@/lib/data/monthly-winners";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -249,6 +252,11 @@ export default async function RfpDetailPage({
     [teaser.city, teaser.province && regionName(teaser.province, lang)].filter(Boolean).join(", ") ||
     (teaser.regionName ? regionName(teaser.regionName, lang) : teaser.regionName);
   const buyer = buyerFromSummary(teaser.summary) ?? (isGc ? t.facts.gc : isPublicTender ? null : t.facts.pm);
+  // Canadian public listings link to their buyer's "where they post bids" page (same cached snapshots, no new query).
+  const buyerPage =
+    isPublicTender && rfpMarket(teaser) === "CA"
+      ? buyerPageForRfp((await loadBuyers()).pages, teaser, buyerFromSummary(teaser.summary) ?? awardBuyerFromSummary(teaser.summary))
+      : null;
   const sourceLabel = isPublicTender ? portalName : isGc ? t.facts.gc : t.facts.pm;
   const days = !isAward && !isClosed ? daysUntil(teaser.deadline) : null;
   const soon = days === null || days < 0 || days > 7 ? null : days;
@@ -628,6 +636,11 @@ export default async function RfpDetailPage({
                 {!isAward && !(showFull && full) && source.attribution}
               </div>
             </div>
+          )}
+          {buyerPage && (
+            <p className="small" data-link="buyer">
+              <a href={L(buyerPage.path)}>{fill(getT("buyers").page.rfpLink, { name: buyerPage.buyer.name })} →</a>
+            </p>
           )}
           {/* Credits are printed above; this adds the correction / removal link. */}
           <RecordFooter credits={[]} lang={lang} kind="rfp" path={`/rfps/${teaser.slug}`} refId={teaser.slug} />

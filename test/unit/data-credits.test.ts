@@ -4,6 +4,7 @@ import { PUBLIC_TENDER_SOURCES } from "@/lib/tenders/sources";
 import { HISTORY_SOURCES } from "@/lib/contract-history/registry";
 import { LICENSES } from "@/lib/major-projects/sources";
 import { WAVE2_LICENSES } from "@/lib/major-projects/sources-wave2";
+import { CORRIDOR_LICENSES } from "@/lib/major-projects/sources-corridor";
 import { MANUAL_LICENSE } from "@/lib/major-projects/research-csv";
 import { TORONTO_ATTRIBUTION } from "@/lib/data/toronto-awards";
 
@@ -13,6 +14,7 @@ const registered: { key: string; credit: string }[] = [
   ...HISTORY_SOURCES.map((s) => ({ key: `history:${s.key}`, credit: s.attribution })),
   ...Object.entries(LICENSES).map(([k, v]) => ({ key: `major:${k}`, credit: v })),
   ...Object.entries(WAVE2_LICENSES).map(([k, v]) => ({ key: `major2:${k}`, credit: v })),
+  ...Object.entries(CORRIDOR_LICENSES).map(([k, v]) => ({ key: `corridor:${k}`, credit: v })),
   { key: "major:manual", credit: MANUAL_LICENSE },
   { key: "toronto-awards-pages", credit: TORONTO_ATTRIBUTION },
 ];

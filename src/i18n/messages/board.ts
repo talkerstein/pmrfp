@@ -575,6 +575,12 @@ const fr: typeof en = {
         bidLabel: "Ouvrir l'avis de la Ville",
         attribution: "Source : appels d'offres de la Ville de Portage la Prairie (city-plap.com) — avis d'appel d'offres public.",
       },
+      "guelph-eramosa": {
+        issuer: "le Canton de Guelph/Eramosa",
+        portal: "le site du Canton de Guelph/Eramosa",
+        bidLabel: "Ouvrir la page des appels d'offres du Canton",
+        attribution: "Source : appels d'offres du Canton de Guelph/Eramosa (get.on.ca) — avis d'appel d'offres public.",
+      },
       sasktenders: {
         issuer: "un organisme public de la Saskatchewan",
         portal: "SaskTenders",
@@ -941,6 +947,12 @@ const es: typeof en = {
         portal: "el sitio de la Ciudad de Portage la Prairie",
         bidLabel: "Abrir el aviso de la Ciudad",
         attribution: "Fuente: licitaciones de la Ciudad de Portage la Prairie (city-plap.com) — aviso de licitación pública.",
+      },
+      "guelph-eramosa": {
+        issuer: "el Municipio de Guelph/Eramosa",
+        portal: "el sitio del Municipio de Guelph/Eramosa",
+        bidLabel: "Abrir la página de licitaciones del Municipio",
+        attribution: "Fuente: licitaciones del Municipio de Guelph/Eramosa (get.on.ca) — aviso de licitación pública.",
       },
       sasktenders: {
         issuer: "un organismo público de Saskatchewan",
