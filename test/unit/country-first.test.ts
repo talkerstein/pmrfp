@@ -15,7 +15,7 @@ import {
 import { freeDigestMatches, listingCountry, orgCountries, regionCountryMap } from "@/lib/alerts/country";
 import { buildDigests, type DigestRfp } from "@/lib/alerts/digest";
 import { recentAwardsByUser, type DigestAward } from "@/lib/alerts/awards";
-import { boardStatsByCountry } from "@/lib/data/fomo";
+import { boardStatsByCountry } from "@/lib/data/site-counters";
 import { listRfps } from "@/lib/data/rfps";
 import { listVendors, vendorCountries } from "@/lib/data/directory";
 import { filterGallery, galleryCountry, type GalleryItem } from "@/lib/projects/gallery";

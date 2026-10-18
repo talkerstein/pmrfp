@@ -5,8 +5,11 @@ import { CA_PROVINCES, US_STATE_NAMES } from "@/lib/geo";
  * The free weekly email ("major projects + open bids + recent awards in your
  * province/state and trades"). Pure settings and checks, unit-tested.
  *
- * Nothing sends unless WEEKLY_DIGEST_ENABLED is "1" or "true": the sign-up
- * forms don't render, the sign-up action refuses, and the cron only dry-runs.
+ * Sign-up and sending are decoupled. The sign-up forms always render and
+ * store a pending, double opt-in subscriber; the one confirmation email is
+ * transactional and goes out whenever Resend is configured. Only the weekly
+ * email itself waits for WEEKLY_DIGEST_ENABLED ("1" or "true"): until then
+ * the cron only dry-runs.
  */
 
 export function weeklyDigestEnabled(env: string | undefined = process.env.WEEKLY_DIGEST_ENABLED): boolean {
@@ -48,7 +51,13 @@ export interface DigestSignupInput {
 export type DigestSignupError = "email" | "province" | "consent" | "trades";
 
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
-const SOURCES = new Set(["home", "major-projects", "benchmarks", "forum", "contract-winners", "contract-winner", "weekly-email"]);
+const SOURCES = new Set([
+  "home", "major-projects", "benchmarks", "forum", "contract-winners", "contract-winner", "weekly-email",
+  // The one-field "Email me bids like this" box (components/growth/bid-alert-box).
+  "bid-alert-rfp", "bid-alert-winner", "bid-alert-insights", "bid-alert-benchmark",
+]);
+/** The column allows up to 10 trades (a box can add one to a pending sign-up). */
+export const MAX_STORED_TRADES = 10;
 
 /** Form fields → a clean sign-up, or the first problem. `validTrades` = the trade slugs that exist. */
 export function parseDigestSignup(
@@ -68,6 +77,69 @@ export function parseDigestSignup(
   const lang: DigestLang = f.lang === "fr" || f.lang === "es" ? f.lang : "en";
   const source = SOURCES.has(String(f.source)) ? String(f.source) : "site";
   return { ok: true, value: { email, country, province, trades, lang, consent: true, source } };
+}
+
+/* ------------------------------------------------------------------ "email me bids like this" */
+
+const CA_CODES: Record<string, string> = {
+  ON: "Ontario", QC: "Quebec", BC: "British Columbia", AB: "Alberta", MB: "Manitoba",
+  SK: "Saskatchewan", NS: "Nova Scotia", NB: "New Brunswick", NL: "Newfoundland and Labrador",
+  PE: "Prince Edward Island", YT: "Yukon", NT: "Northwest Territories", NU: "Nunavut",
+};
+const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+
+/**
+ * A page's province/state (full name, code, any case or accents: "Québec",
+ * "QC", "texas") → the country and the exact name the sign-up stores, or
+ * null when it isn't one we serve (then the box doesn't render). Pure.
+ */
+export function bidAlertPlace(raw: string | null | undefined): { country: DigestCountry; province: string } | null {
+  const p = (raw ?? "").trim();
+  if (!p) return null;
+  const f = fold(p);
+  const ca = CA_PROVINCES.find((n) => fold(n) === f) ?? CA_CODES[p.toUpperCase()];
+  if (ca) return { country: "CA", province: ca };
+  const us = US_STATE_NAMES.find((n) => fold(n) === f);
+  if (us) return { country: "US", province: us };
+  return null;
+}
+
+/* ------------------------------------------------------------------ what a sign-up does */
+
+export interface ExistingSubscriber {
+  status: string;
+  confirm_sent_at: string | null;
+  trades?: string[] | null;
+}
+
+export type SubscribeDecision =
+  | { kind: "skip" }
+  | { kind: "write"; trades: string[]; sendConfirm: boolean };
+
+/**
+ * What a sign-up does to the stored row, whatever the form. Pure.
+ * - Suppressed, bounced or already active: nothing (the visitor still sees
+ *   "check your inbox", so the form never reveals who is subscribed).
+ * - Pending with a confirmation sent in the last 10 minutes: nothing.
+ * - Otherwise the row is written. A pending sign-up keeps its trades and
+ *   gains the new ones (a second "email me bids like this" adds a trade);
+ *   an unsubscribed one starts over with the new choice.
+ * - The confirmation email goes out only when email can actually send
+ *   (`emailReady`). If not, the row stays pending with no confirmation sent
+ *   (its token can't validate without a sent time) and the next sign-up
+ *   with that address sends it.
+ */
+export function decideSubscribe(
+  existing: ExistingSubscriber | null,
+  suppressed: boolean,
+  trades: readonly string[],
+  emailReady: boolean,
+  now = Date.now(),
+): SubscribeDecision {
+  if (suppressed || existing?.status === "bounced" || existing?.status === "active") return { kind: "skip" };
+  if (existing?.status === "pending" && existing.confirm_sent_at && now - Date.parse(existing.confirm_sent_at) < CONFIRM_RESEND_MS) return { kind: "skip" };
+  const merged = existing?.status === "pending" ? [...new Set([...(existing.trades ?? []), ...trades])] : [...trades];
+  return { kind: "write", trades: merged.slice(0, MAX_STORED_TRADES), sendConfirm: emailReady };
 }
 
 /* ------------------------------------------------------------------ double opt-in */

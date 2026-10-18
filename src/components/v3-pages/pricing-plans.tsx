@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { PRICING } from "@/lib/site";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { localizePath, type Locale } from "@/i18n/config";
@@ -30,31 +30,48 @@ export interface PricingPlansCopy {
   plans: { name: string; blurb: string; cta: string; features: string[] }[];
 }
 
+/** Card index in `t.plans`: 0 Free, 1 SEO Listing, 2 Trade Pro, 3 Featured. */
+export type PlanCard = 0 | 1 | 2 | 3;
+
 const Tick = ({ stroke }: { stroke: string }) => (
   <svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke={stroke} strokeWidth="2.5" aria-hidden><path d="M4 11.5l4.5 4.5L18 6.5" /></svg>
 );
 
 /**
- * The four plan cards with the annual / monthly switch. Plan CTAs carry the
- * plan + interval as sign-up intent (Stripe checkout resolves the price later).
+ * Plan cards with the annual / monthly switch. Plan CTAs carry the plan +
+ * interval as sign-up intent (Stripe checkout resolves the price later).
  * A plan without a configured monthly Stripe price stays annual.
+ * `show` picks the cards (the pricing hero shows Free + Trade Pro; SEO Listing
+ * and Featured sit in "Get found" below). `actions` fills the right side of
+ * the tool bar (the trial / Join free buttons), `actionsNote` goes under it.
  */
 export function PricingPlans({
   t,
   lang,
   seoMonthly,
   proMonthly,
+  show = [0, 1, 2, 3],
+  actions,
+  actionsNote,
+  steps = true,
 }: {
   t: PricingPlansCopy;
   lang: Locale;
   seoMonthly: boolean;
   proMonthly: boolean;
+  show?: PlanCard[];
+  actions?: ReactNode;
+  actionsNote?: ReactNode;
+  /** "Step 01", "Step 02" labels on the cards. */
+  steps?: boolean;
 }) {
   const m = useMoney(lang);
   const [monthly, setMonthly] = useState(false);
   const [tick, setTick] = useState(0);
   const L = (p: string) => localizePath(p, lang);
-  const anyMonthly = seoMonthly || proMonthly;
+  const hasSeo = show.includes(1) && seoMonthly;
+  const hasPro = show.includes(2) && proMonthly;
+  const anyMonthly = hasSeo || hasPro;
   const swap = tick % 2 ? "swapb" : "swapa";
   const price = (cad: number, w = "3.5ch") => (m.known ? m.money(cad) : <Sk w={w} />);
   const per = (isMonthly: boolean) => (m.known ? fmt(isMonthly ? t.perMonth : t.perYear, { currency: m.currency }) : <Sk w="5em" />);
@@ -68,6 +85,7 @@ export function PricingPlans({
   const proM = monthly && proMonthly;
   const proSave = PRICING.proMonthly * 12 - PRICING.proAnnual;
   const seoSave = PRICING.seoMonthly * 12 - PRICING.seoAnnual;
+  const toggleSave = hasPro ? proSave : seoSave;
   const note = (tpl: string, vals: Record<string, number>) => {
     if (!m.known) return <Sk w="12em" />;
     const out: Record<string, string> = {};
@@ -75,11 +93,11 @@ export function PricingPlans({
     return fmt(tpl, out);
   };
 
-  const cards = [
+  const all = [
     {
       i: 0, offset: 96, cls: "",
       price: lang === "fr" ? "0 $" : "$0", per: t.forever, note: t.freeNote,
-      href: "/sign-up", btn: "out",
+      href: "/sign-up?role=trade", btn: "out", swap: false,
     },
     {
       i: 1, offset: 64, cls: "",
@@ -97,9 +115,12 @@ export function PricingPlans({
       i: 3, offset: 32, cls: " feat",
       price: price(PRICING.featuredAnnual), per: per(false),
       note: monthly ? t.annualOnly : t.annualPlan,
-      href: signUpHrefForPlan("featured"), btn: "mintline",
+      href: signUpHrefForPlan("featured"), btn: "mintline", swap: false,
     },
   ];
+  const cards = all.filter((c) => show.includes(c.i as PlanCard));
+  // The staggered offsets are for the four-across row; fewer cards sit level, the tallest (Pro) aside.
+  const offset = (c: (typeof all)[number]) => (cards.length === 4 ? c.offset : c.i === 2 ? 0 : cards.some((x) => x.i === 2) ? 48 : 0);
 
   return (
     <>
@@ -109,27 +130,29 @@ export function PricingPlans({
             <div role="group" aria-label={t.interval} className="vp-toggle">
               <button type="button" aria-pressed={!monthly} onClick={() => pick(false)} className="tgl">
                 {t.annual}
-                <span className="sv">{m.known ? fmt(t.save, { n: m.money(proSave) }) : <Sk w="4em" />}</span>
+                <span className="sv">{m.known ? fmt(t.save, { n: m.money(toggleSave) }) : <Sk w="4em" />}</span>
               </button>
               <button type="button" aria-pressed={monthly} onClick={() => pick(true)} className="tgl">{t.monthly}</button>
             </div>
           )}
           <span className="vp-ptools-note">{m.known ? fmt(monthly ? t.noteMonthly : t.noteAnnual, { currency: m.currency }) : <Sk w="16em" />}</span>
         </div>
-        <div className="vp-ptools-r">
-          <a href={L("/sign-up?role=trade")} className="v3-pill mint">{t.joinFree}</a>
-          <a href={L("/sign-up?role=property_manager")} className="v3-pill ghost">{t.postFree}</a>
-        </div>
+        {actions !== undefined && (
+          <div className="vp-ptools-rr">
+            <div className="vp-ptools-r">{actions}</div>
+            {actionsNote && <div className="vp-ptools-an">{actionsNote}</div>}
+          </div>
+        )}
       </div>
 
-      <div className="v3-wrap vp-cards">
-        {cards.map((c) => {
+      <div className="v3-wrap vp-cards" style={{ ["--cols" as string]: String(cards.length) }}>
+        {cards.map((c, pos) => {
           const p = t.plans[c.i];
           return (
-            <div key={c.i} className="vp-cardcol rise" style={{ ["--off" as string]: `${c.offset}px`, animationDelay: `${c.i * 0.08}s` }}>
+            <div key={c.i} className="vp-cardcol rise" style={{ ["--off" as string]: `${offset(c)}px`, animationDelay: `${c.i * 0.08}s` }}>
               <div className={`vp-plan lift${c.cls}`}>
                 <div className="top">
-                  <span className="st">{fmt(t.step, { n: `0${c.i + 1}` })}</span>
+                  <span className="st">{steps ? fmt(t.step, { n: `0${pos + 1}` }) : null}</span>
                   {c.i === 2 && <span className="pop">{t.popular}</span>}
                 </div>
                 <h2 className="nm">{p.name}</h2>
@@ -140,7 +163,7 @@ export function PricingPlans({
                 <a href={L(c.href)} className={`cta ${c.btn}`}>{p.cta}</a>
                 <ul className="ft">
                   {p.features.map((f, k) => (
-                    <li key={f} className={c.i === 3 && k === 0 ? "b" : undefined}><Tick stroke={c.i === 2 ? "#1B1D3A" : c.i === 3 ? "#91F2CF" : "#282B59"} />{f}</li>
+                    <li key={f} className={c.i > 0 && k === 0 ? "b" : undefined}><Tick stroke={c.i === 2 ? "#1B1D3A" : c.i === 3 ? "#91F2CF" : "#282B59"} />{f}</li>
                   ))}
                 </ul>
               </div>

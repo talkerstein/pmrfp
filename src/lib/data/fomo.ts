@@ -1,5 +1,4 @@
 import type { RfpListItem } from "@/lib/data/types";
-import { inCountry, type CountryCode } from "@/lib/visitor-geo";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import type { Locale } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
@@ -41,36 +40,6 @@ export function closingLabel(days: number | null, lang: Locale = "en"): string |
   if (days === 0) return t.closesToday;
   if (days === 1) return t.closesTomorrow;
   return fmt(t.closesInDays, { n: days });
-}
-
-export interface BoardStats {
-  open: number;
-  closingThisWeek: number;
-  pastContracts: number;
-  awardedValue: number;
-}
-
-export function boardStats(rfps: RfpListItem[]): BoardStats {
-  let open = 0, closingThisWeek = 0, pastContracts = 0, awardedValue = 0;
-  for (const r of rfps) {
-    if (r.status === "open") {
-      open++;
-      const d = daysUntil(r.deadline);
-      if (d !== null && d >= 0 && d <= 7) closingThisWeek++;
-    } else if (isPastContract(r)) {
-      pastContracts++;
-      awardedValue += parseAward(r.summary).amount ?? 0;
-    }
-  }
-  return { open, closingThisWeek, pastContracts, awardedValue };
-}
-
-/**
- * Country-first headline numbers: the board's stats for Canada and for the
- * U.S. separately. Never add them together on a page; show the visitor's.
- */
-export function boardStatsByCountry(rfps: RfpListItem[]): Record<CountryCode, BoardStats> {
-  return { CA: boardStats(inCountry(rfps, "CA")), US: boardStats(inCountry(rfps, "US")) };
 }
 
 /**

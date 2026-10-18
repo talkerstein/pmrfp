@@ -14,11 +14,13 @@ import { whoElseBidForBoardSlug } from "@/lib/bid-results/load";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { getSponsorSnapshot } from "@/lib/sponsors/data";
 import { ListingMatches } from "@/components/public/listing-matches";
-import { EmailCapture } from "@/components/public/email-capture";
+import { BidAlertBox } from "@/components/growth/bid-alert-box";
+import { canOpenOfficialNotice, canSaveRfps, viewerOf } from "@/lib/access/free-actions";
+import { relatedOpenListings } from "@/lib/data/related-listings";
 import { PaywallPlans } from "@/components/v3-pages/paywall-plans";
 import { PriceLine } from "@/components/v3-pages/price";
 import { winnerKey, winnersFromRfps } from "@/lib/data/winners";
-import { getFullRfp, getRfpTeaser } from "@/lib/data/rfps";
+import { getFullRfp, getPublicTenderNoticeUrl, getRfpTeaser } from "@/lib/data/rfps";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
@@ -191,12 +193,10 @@ export default async function RfpDetailPage({
   ]);
   // Country-first: similar listings, winners and counts from the listing's own country only.
   const boardRfps = wholeBoard.filter((r) => rfpMarket(r) === rfpMarket(teaser));
-  const sameTrade = (r: RfpListItem) => teaser.categories.some((c) => r.categories.includes(c));
-  const similarOpen = boardRfps.filter((r) => r.status === "open" && sameTrade(r)).length;
-  const similar = boardRfps
-    .filter((r) => r.status === "open" && r.slug !== teaser.slug && sameTrade(r))
-    .sort((a, b) => Number(b.regionName === teaser.regionName) - Number(a.regionName === teaser.regionName) || (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"))
-    .slice(0, 4);
+  // Same province/state first, labelled by it; else the same trade in the same country (lib/data/related-listings).
+  const related = relatedOpenListings(boardRfps, teaser, new Map(regions.map((r) => [r.name, r.province ?? null])));
+  const similar = related.items;
+  const similarOpen = related.tradeCount;
   // Every named winner has a profile now (one-award ones are noindexed there).
   const winnerName = award?.winner ?? closedAward?.winner ?? null;
   const winnerPage = winnerName ? winnersFromRfps(boardRfps, 1).find((w) => winnerKey(w.name) === winnerKey(winnerName)) : undefined;
@@ -281,10 +281,19 @@ export default async function RfpDetailPage({
   ];
 
   // Primary action, by state.
-  const bidHref = showFull && full && isPublicTender ? full.sourceUrl : null;
-  const saveLink = (cls: string, stroke?: string) => (
-    <a href={L(upgradeHref)} className={cls}><Bookmark stroke={stroke} />{v.save}</a>
-  );
+  // Free with an account (lib/access/free-actions): save, and a public tender's official notice.
+  const viewer = viewerOf(session);
+  const canSave = configured && canSaveRfps(viewer);
+  const freeNoticeHref = locked && configured && canOpenOfficialNotice(viewer, teaser.sourceType) ? await getPublicTenderNoticeUrl(teaser.slug) : null;
+  const bidHref = showFull && full && isPublicTender ? full.sourceUrl : freeNoticeHref;
+  // Signed out: the free account is the first step ("save this bid and get alerts"), back to this page after.
+  const freeSignupHref = `/sign-up?role=trade&next=${encodeURIComponent(`/rfps/${teaser.slug}`)}`;
+  const saveLink = (cls: string, stroke?: string) =>
+    canSave ? (
+      <span className="v3-tw vp-tw-btn"><SaveButton rfpSlug={teaser.slug} /></span>
+    ) : (
+      <a href={L(session ? upgradeHref : freeSignupHref)} className={cls}><Bookmark stroke={stroke} />{v.save}</a>
+    );
 
   return (
     <>
@@ -345,11 +354,21 @@ export default async function RfpDetailPage({
                   <a href={closedNotice} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{t.closedArchive.official} ↗</a>
                 ) : isClosed ? (
                   <a href={L(annualHref)} className="v3-pill mint vp-big">{t.closed.cta}</a>
+                ) : locked && !session ? (
+                  <>
+                    <a href={L(freeSignupHref)} className="v3-pill mint vp-big vp-ic" data-cta="free-account"><Bookmark stroke="#1B1D3A" />{v.freeCta}</a>
+                    <a href={L(upgradeHref)} className="vp-ghost light vp-ic"><LockIcon stroke="#91F2CF" />{v.unlock}</a>
+                    <span className="vp-dnote">{v.freeNote}</span>
+                  </>
                 ) : locked ? (
                   <>
-                    <a href={L(upgradeHref)} className="v3-pill mint vp-big vp-ic"><LockIcon />{v.unlock}</a>
+                    {bidHref ? (
+                      <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{v.officialNotice} ↗</a>
+                    ) : (
+                      <a href={L(upgradeHref)} className="v3-pill mint vp-big vp-ic"><LockIcon />{v.unlock}</a>
+                    )}
                     {saveLink("vp-ghost light vp-ic")}
-                    <span className="vp-dnote">{v.saveNote}</span>
+                    {bidHref && <a href={L(upgradeHref)} className="vp-ghost light vp-ic"><LockIcon stroke="#91F2CF" />{v.unlock}</a>}
                   </>
                 ) : (
                   <>
@@ -608,6 +627,14 @@ export default async function RfpDetailPage({
             </>
           )}
 
+          {/* "Email me bids like this": this listing's trade and province/state, one field. */}
+          <BidAlertBox
+            source="rfp"
+            province={related.area ?? teaser.province}
+            trades={teaser.categories}
+            signedIn={Boolean(session)}
+          />
+
           {isPublicTender && !isAward && !isClosed && (
             <div className="v3-tw vp-tw-gap">
               <BidHelpCard rfpSlug={teaser.slug} rfpTitle={teaser.title} trade={firstTrade} portal={tenderSource.portal} />
@@ -656,22 +683,29 @@ export default async function RfpDetailPage({
                 )}
                 <span className="v3-tw"><SaveButton rfpId={full.id} /></span>
               </div>
+            ) : !isClosed && !session ? (
+              <>
+                <a href={L(freeSignupHref)} className="v3-pill navy vp-block-btn">{v.freeCta}</a>
+                <a href={L(upgradeHref)} className="vp-ghost vp-block-btn vp-ic"><LockIcon />{t.side.unlock}</a>
+                <p className="nt">{v.freeNote}</p>
+              </>
             ) : (
               <>
-                <a href={L(isClosed ? annualHref : upgradeHref)} className="v3-pill navy vp-block-btn">{isClosed ? t.side.alerts : t.side.unlock}</a>
+                {!isClosed && bidHref && <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{v.officialNotice} ↗</a>}
+                <a href={L(isClosed ? annualHref : upgradeHref)} className={!isClosed && bidHref ? "vp-ghost vp-block-btn vp-ic" : "v3-pill navy vp-block-btn"}>{isClosed ? t.side.alerts : t.side.unlock}</a>
                 {!isClosed && saveLink("vp-ghost vp-block-btn vp-ic", "#1B1D3A")}
                 <p className="nt">{isClosed ? t.side.closedNote : t.side.unlockNote}</p>
               </>
             )}
           </div>
 
-          {(similar.length > 0 || regionMatchCount > 0) && (
-            <div className="vp-similar">
+          {similar.length > 0 && (
+            <div className="vp-similar" data-scope={related.scope}>
               <div className="v3-label mint">{v.similar.eyebrow}</div>
-              {!showFull && regionMatchCount > 0 && teaser.regionName ? (
+              {related.scope === "area" && related.area ? (
                 <div className="cnt">
-                  <span className="n">{num(regionMatchCount + (teaserIsOpen ? 1 : 0))}</span>
-                  <span>{plural(regionMatchCount + (teaserIsOpen ? 1 : 0), v.similar.region, { region: regionName(teaser.regionName, lang) })}</span>
+                  <span className="n">{num(related.areaCount)}</span>
+                  <span>{plural(related.areaCount, v.similar.region, { region: regionName(related.area, lang) })}</span>
                 </div>
               ) : similarOpen > 0 && firstTrade ? (
                 <div className="cnt">
@@ -756,12 +790,6 @@ export default async function RfpDetailPage({
           ) : null}
         </div>
       </div>
-
-      <EmailCapture
-        trade={firstTrade ? trade(firstTrade) : null}
-        region={teaser.regionName ? regionName(teaser.regionName, lang) : null}
-        signedInHint={Boolean(session)}
-      />
     </>
   );
 }

@@ -57,7 +57,8 @@ export function SignUpFlow(p: SignupProps) {
   const [typed, setTyped] = useState({ name: "", email: "" });
   const [bizDismissed, setBizDismissed] = useState(false);
   const showBiz = role === "visitor" && !bizDismissed && looksLikeBusiness(typed);
-  const nameRef = useRef<HTMLInputElement>(null);
+  // Passwordless by default (Supabase emails a link); a password is optional.
+  const [method, setMethod] = useState<"link" | "password">("link");
   const emailRef = useRef<HTMLInputElement>(null);
   const passRef = useRef<HTMLInputElement>(null);
 
@@ -89,7 +90,7 @@ export function SignUpFlow(p: SignupProps) {
   summary.push({ k: t.sumPlan, v: isSeller ? (pro ? t.planPro : t.planFree) : t.planPoster, tone: "mint" });
 
   const goDetails = () => {
-    const fields = [nameRef.current, emailRef.current, passRef.current];
+    const fields = [emailRef.current, method === "password" ? passRef.current : null];
     const bad = fields.find((f) => f && !f.checkValidity());
     if (bad) {
       setDetailsError(true);
@@ -206,13 +207,7 @@ export function SignUpFlow(p: SignupProps) {
                 <ContinueWithGoogle next={onboardingPath({ role: parseRoleChoice(role || "trade"), award: p.award, next: nextPath })} />
               </div>
             )}
-            <div className="v3-su-two">
-              <label className="v3-su-fld"><span>{t.yourName}</span><input ref={nameRef} name="fullName" required autoComplete="name" onBlur={(e) => { const name = e.currentTarget.value; setTyped((x) => ({ ...x, name })); }} /></label>
-              {role !== "visitor" && (
-                <label className="v3-su-fld"><span>{tCompany(t, role)}</span><input name="pref_company" autoComplete="organization" maxLength={120} /></label>
-              )}
-            </div>
-
+            {/* Email + trade + region only: name and company are asked at onboarding. */}
             {pickTrades && p.trades.length > 0 && (
               <div className="v3-su-block">
                 <div className="hd"><b>{t.yourTrades}</b><span>{trades.length ? fmt(t.tradesCount, { n: num(trades.length), open: num(openInPicked) }) : t.pickSome}</span></div>
@@ -243,11 +238,18 @@ export function SignUpFlow(p: SignupProps) {
             )}
 
             <div className="v3-su-block">
+              <input type="hidden" name="method" value={method} />
               <div className="v3-su-two" style={{ marginTop: 0 }}>
-                <label className="v3-su-fld"><span>{t.workEmail}</span><input ref={emailRef} name="email" type="email" required autoComplete="email" placeholder="you@company.com" onBlur={(e) => { const email = e.currentTarget.value; setTyped((x) => ({ ...x, email })); }} /></label>
-                <label className="v3-su-fld"><span>{t.password}</span><input ref={passRef} name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+                <label className="v3-su-fld"><span>{t.workEmail}</span><input ref={emailRef} name="email" type="email" required autoComplete="email" placeholder="you@example.com" onBlur={(e) => { const email = e.currentTarget.value; setTyped((x) => ({ ...x, email })); }} /></label>
+                {method === "password" && (
+                  <label className="v3-su-fld"><span>{t.password}</span><input ref={passRef} name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+                )}
               </div>
-              <div className="v3-su-note">{t.emailNote} {t.passwordHint}</div>
+              <div role="group" aria-label={t.methodLabel} className="v3-su-chips" style={{ marginTop: 10 }}>
+                <button type="button" className="v3-su-chip" aria-pressed={method === "link"} onClick={() => setMethod("link")}>{t.methodLink}</button>
+                <button type="button" className="v3-su-chip" aria-pressed={method === "password"} onClick={() => setMethod("password")}>{t.methodPassword}</button>
+              </div>
+              <div className="v3-su-note">{t.emailNote} {method === "link" ? t.methodLinkNote : t.passwordHint}</div>
               {detailsError && <div className="v3-su-note" role="alert" style={{ color: "#9B1C1C", fontWeight: 700 }}>{t.fillIn}</div>}
             </div>
           </div>
@@ -337,8 +339,4 @@ export function SignUpFlow(p: SignupProps) {
       )}
     </>
   );
-}
-
-function tCompany(t: SignupCopy, role: SignupRole | ""): string {
-  return role === "talent" ? t.companyOptional : SELLERS.includes(role as SignupRole) || role === "" ? t.companyName : t.orgName;
 }

@@ -6,7 +6,7 @@ import { Container, Eyebrow } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { TorontoAttribution } from "@/components/public/toronto-attribution";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
-import { getTorontoSupplier, TORONTO_DATASET_URL } from "@/lib/data/toronto-awards";
+import { getTorontoSupplier, isTorontoSupplierIndexable, TORONTO_DATASET_URL } from "@/lib/data/toronto-awards";
 import { compactDollars } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
@@ -34,12 +34,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       s.total ? ` worth ${money(s.total)}` : ""
     }${s.topDivision ? `, mostly for ${s.topDivision}` : ""}. Award amounts, divisions and descriptions from TOBids open data.`,
     alternates: { canonical: `/toronto-contracts/${s.slug}` },
-    ...(s.indexable ? {} : { robots: { index: false, follow: true } }),
+    // Same predicate the sitemap filters on (torontoContractSlugsForSitemap).
+    ...(isTorontoSupplierIndexable(s) ? {} : { robots: { index: false, follow: true } }),
   };
 }
 
 export default async function TorontoSupplierPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  // null = the data loaded and there is no such supplier. A failed download
+  // throws instead, so ISR keeps the last good page rather than caching a 404.
   const s = await getTorontoSupplier(slug);
   if (!s) notFound();
   const disclosed = s.awards.filter((a) => a.amount);

@@ -363,7 +363,17 @@
 .vp-toggle button { font: inherit; font-weight: 700; padding: 11px 22px; border: 0; border-radius: 999px; background: transparent; color: #FFFFFF; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .25s ease, color .25s ease; }
 .vp-toggle button[aria-pressed="true"] { background: #FFFFFF; color: var(--ink); }
 .vp-toggle .sv { font-family: var(--fm); font-size: 12px; background: var(--ink); color: var(--mint); border-radius: 999px; padding: 2px 9px; }
-.vp-cards { padding-top: 36px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 16px; align-items: stretch; }
+.vp-ptools-r form { display: flex; }
+.vp-ptools-rr { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 0; }
+.vp-ptools-an { font-size: 14px; color: #C9CCE6; max-width: 420px; text-align: right; }
+/* --cols: how many plan cards the row holds (the hero shows 2, "Get found" 2). */
+.vp-cards { padding-top: 36px; display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); column-gap: 16px; align-items: stretch; }
+/* "Get found": the same cards on the light page, boxed instead of sitting on the band's edge. */
+.vp-found { padding-top: 96px; }
+.vp-found .vp-sechead .vp-lead { max-width: 460px; }
+.vp-found .vp-ptools-note { color: var(--sub); }
+.vp-found .vp-cards { padding-top: 24px; }
+.vp-found .vp-plan { border-radius: 24px; border: 2px solid var(--navy); }
 .vp-cardcol { margin-top: var(--off, 0px); display: flex; flex-direction: column; }
 .vp-plan { flex-grow: 1; background: #FFFFFF; color: var(--ink); border-radius: 24px 24px 0 0; padding: 26px 26px 30px; display: flex; flex-direction: column; transition: transform .25s ease, box-shadow .25s ease; }
 .pmrfp-v3 .vp-plan.lift:hover { transform: translateY(-6px); box-shadow: 0 22px 44px rgba(10,11,32,0.35); }
@@ -599,7 +609,7 @@
   .vp-mint .big { font-size: 112px; }
   .vp-mint .h { font-size: 30px; }
   .vp-mint .ctas .v3-pill, .vp-mint .ctas .vp-ghost { font-size: 17px; padding: 16px 20px; }
-  .pmrfp-v3 .v3-sticky a.v3-pill.mint { height: 48px; padding: 0 18px; display: flex; align-items: center; white-space: nowrap; }
+  .pmrfp-v3 .v3-sticky a.v3-pill.mint, .pmrfp-v3 .v3-sticky button.v3-pill.mint { height: 48px; padding: 0 18px; display: flex; align-items: center; white-space: nowrap; }
   .v3-sticky .d { display: none !important; }
 
   .vp-dhero { padding-top: 18px; padding-bottom: 48px; }
@@ -635,6 +645,10 @@
   .vp-pstats dd { font-size: 30px; }
   .vp-ptools { flex-direction: column; align-items: stretch; gap: 16px; padding-top: 28px; }
   .vp-ptools-r { flex-direction: column; }
+  .vp-ptools-r form > button { flex: 1 1 auto; }
+  .vp-ptools-rr { align-items: stretch; }
+  .vp-ptools-an { text-align: left; max-width: none; }
+  .vp-found { padding-top: 56px; }
   .vp-cards { grid-template-columns: minmax(0, 1fr); row-gap: 16px; padding-top: 24px; padding-bottom: 24px; }
   .vp-cardcol { margin-top: 0; }
   .vp-plan { border-radius: 24px; }

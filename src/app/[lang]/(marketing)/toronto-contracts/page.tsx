@@ -4,7 +4,7 @@ import { ArrowRight, Trophy } from "lucide-react";
 import { Container, Eyebrow } from "@/components/container";
 import { TorontoAttribution } from "@/components/public/toronto-attribution";
 import { JsonLd, breadcrumbSchema, itemListSchema } from "@/lib/seo/jsonld";
-import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
+import { getTorontoIndexSafe, torontoContractSlugsForSitemap } from "@/lib/data/toronto-awards";
 import { compactDollars } from "@/lib/data/fomo";
 
 export const revalidate = 86400;
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default async function TorontoContractsPage() {
   const idx = await getTorontoIndexSafe();
-  const listed = idx.suppliers.filter((s) => s.indexable).slice(0, LIST_LIMIT);
+  const listed = torontoContractSlugsForSitemap(idx, LIST_LIMIT);
   const year = (d: string | null) => (d ? d.slice(0, 4) : "—");
 
   return (

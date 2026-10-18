@@ -1,8 +1,9 @@
 import { cache } from "react";
 import { listRfps } from "@/lib/data/rfps";
-import { boardStats, daysUntil } from "@/lib/data/fomo";
+import { daysUntil } from "@/lib/data/fomo";
+import { boardStats } from "@/lib/data/site-counters";
 import type { RfpListItem } from "@/lib/data/types";
-import { rfpMarket } from "@/lib/visitor-geo";
+import { inCountry, rfpMarket, type CountryCode } from "@/lib/visitor-geo";
 
 export type ProofRow = Pick<RfpListItem, "slug" | "title" | "categories" | "regionName" | "deadline">;
 
@@ -20,9 +21,10 @@ export interface JoinProof {
  * computed in memory once per request.
  */
 export const getJoinProof = cache(
-  async (): Promise<JoinProof> => {
+  async (country: CountryCode = "CA"): Promise<JoinProof> => {
     const rfps = await listRfps();
-    const { open, awardedValue, pastContracts } = boardStats(rfps);
+    // Country-first: the headline numbers are one country's, never Canada + U.S.
+    const { open, awardedValue, pastContracts } = boardStats(inCountry(rfps, country));
     const seen = new Set<string>();
     const rows: ProofRow[] = [];
     const candidates = rfps

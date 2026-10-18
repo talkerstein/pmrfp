@@ -82,17 +82,11 @@ describe("sitemap languages", () => {
     for (const p of ["/sign-in", "/sign-up", "/fr/sign-in", "/es/sign-up", "/forgot-password", "/onboarding"]) expect(all).not.toContain(p);
   });
 
-  it("lists the weekly-email page only when the digest is on (it's noindexed otherwise)", async () => {
-    expect(urls()).not.toContain("/weekly-email");
-    process.env.WEEKLY_DIGEST_ENABLED = "1";
-    try {
-      const on = (await sitemap()).map((e) => e.url.slice(BASE.length));
-      expect(on).toContain("/weekly-email");
-      expect(on).toContain("/fr/weekly-email");
-      expect(on).toContain("/es/weekly-email");
-    } finally {
-      delete process.env.WEEKLY_DIGEST_ENABLED;
-    }
+  it("always lists the weekly-email page (its sign-up form is always shown and indexable)", () => {
+    const all = urls();
+    expect(all).toContain("/weekly-email");
+    expect(all).toContain("/fr/weekly-email");
+    expect(all).toContain("/es/weekly-email");
   });
 
   it("has no duplicate URLs and stays under one sitemap file's limit", () => {

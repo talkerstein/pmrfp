@@ -7,6 +7,7 @@ import {
   forgotPasswordAction,
   resetPasswordAction,
   signInAction,
+  signInLinkAction,
   signUpAction,
   type ActionState,
 } from "@/lib/auth/actions";
@@ -34,7 +35,50 @@ function LangField() {
   return <input type="hidden" name="lang" value={lang} />;
 }
 
-export function SignInForm({ next }: { next?: string | null }) {
+export function SignInForm({ next, startWithLink = false }: { next?: string | null; startWithLink?: boolean }) {
+  const t = useT("auth").forms;
+  const [useLink, setUseLink] = useState(startWithLink);
+  if (useLink) {
+    return (
+      <div className="space-y-3">
+        <SignInLinkForm next={next} />
+        <button type="button" className="w-full text-center text-sm font-medium text-teal-700 hover:underline" onClick={() => setUseLink(false)}>
+          {t.passwordInstead}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      <SignInPasswordForm next={next} />
+      <button type="button" className="w-full text-center text-sm font-medium text-teal-700 hover:underline" onClick={() => setUseLink(true)}>
+        {t.linkInstead}
+      </button>
+    </div>
+  );
+}
+
+/** Passwordless sign-in: Supabase emails a one-time link (lib/auth/magic-link). */
+function SignInLinkForm({ next }: { next?: string | null }) {
+  const t = useT("auth").forms;
+  const [state, action, pending] = useActionState(signInLinkAction, initial);
+  return (
+    <form action={action} className="space-y-4" data-form="sign-in-link">
+      <Alert state={state} />
+      <LangField />
+      {next && <input type="hidden" name="next" value={next} />}
+      <div className="space-y-1.5">
+        <Label htmlFor="link-email">{t.email}</Label>
+        <Input id="link-email" name="email" type="email" required autoComplete="email" />
+      </div>
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? t.sendingLink : t.sendLink}
+      </Button>
+    </form>
+  );
+}
+
+function SignInPasswordForm({ next }: { next?: string | null }) {
   const t = useT("auth").forms;
   const [state, action, pending] = useActionState(signInAction, initial);
   return (

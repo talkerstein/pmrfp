@@ -16,6 +16,10 @@ const en = {
     sentTitle: "Check your inbox",
     sentBody: "If {email} isn't already subscribed, a confirmation link is on its way. The weekly email starts after you click it.",
     again: "Use a different email",
+    heldTitle: "You're on the list",
+    heldBody: "We saved {email}. Confirmation emails aren't going out yet, so check back in a few days and sign up again to get your link.",
+    boxSubmit: "Email me bids",
+    boxConsent: "Email me the free weekly PMRFP digest for this trade and area. Unsubscribe anytime.",
     errors: {
       email: "Enter a valid email address.",
       province: "Choose your province or state.",
@@ -45,6 +49,10 @@ const fr: typeof en = {
     sentTitle: "Vérifiez votre boîte de réception",
     sentBody: "Si {email} n'est pas déjà abonné, un lien de confirmation s'en vient. Le courriel hebdomadaire commence après que vous aurez cliqué dessus.",
     again: "Utiliser un autre courriel",
+    heldTitle: "Vous êtes sur la liste",
+    heldBody: "Nous avons enregistré {email}. Les courriels de confirmation ne partent pas encore; revenez dans quelques jours et inscrivez-vous de nouveau pour recevoir votre lien.",
+    boxSubmit: "Recevoir les appels",
+    boxConsent: "Envoyez-moi le résumé hebdomadaire gratuit de PMRFP pour ce métier et ce secteur. Désabonnement en tout temps.",
     errors: {
       email: "Entrez une adresse courriel valide.",
       province: "Choisissez votre province ou État.",
@@ -74,6 +82,10 @@ const es: typeof en = {
     sentTitle: "Revise su bandeja de entrada",
     sentBody: "Si {email} no está suscrito todavía, le enviamos un enlace de confirmación. El correo semanal empieza cuando haga clic en él.",
     again: "Usar otro correo",
+    heldTitle: "Ya está en la lista",
+    heldBody: "Guardamos {email}. Los correos de confirmación todavía no salen; vuelva en unos días y suscríbase de nuevo para recibir su enlace.",
+    boxSubmit: "Recibir licitaciones",
+    boxConsent: "Envíenme el resumen semanal gratuito de PMRFP para este oficio y zona. Puede cancelar cuando quiera.",
     errors: {
       email: "Ingrese un correo electrónico válido.",
       province: "Elija su provincia o estado.",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RecordFooter } from "@/components/public/record-footer";
+import { BidAlertBox } from "@/components/growth/bid-alert-box";
 import { localizeCredits } from "@/lib/data-credits";
 import { notFound } from "next/navigation";
 import "@/components/benchmarks/benchmarks.css";
@@ -355,6 +356,7 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
             {localizeCredits(b.attributions, lang).map((a) => <p key={a} className="small muted">{a}</p>)}
           </>
         )}
+        <BidAlertBox source="benchmark" province={r.province} trades={[r.category.slug]} signedIn={Boolean(session)} />
         <RecordFooter credits={[]} lang={lang} kind="benchmark" path={`/benchmarks/${tradeSlug}/${provSlug}`} className="mt-2" />
 
         {(otherTrades.length > 0 || otherPlaces.length > 0) && (

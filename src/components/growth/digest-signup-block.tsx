@@ -1,5 +1,4 @@
 import { getCategories } from "@/lib/data/taxonomy";
-import { weeklyDigestEnabled } from "@/lib/digest/config";
 import { CA_PROVINCES, US_STATE_NAMES } from "@/lib/geo";
 import { getLang, getT } from "@/i18n/server";
 import { regionName, tradeName } from "@/i18n/terms";
@@ -7,13 +6,12 @@ import { DigestSignupForm } from "./digest-signup";
 
 /**
  * The free weekly email sign-up, for any page (homepage, major projects,
- * benchmarks, forum, contract winners). Renders NOTHING until
- * WEEKLY_DIGEST_ENABLED is on. Safe on cached pages: it reads only the
+ * benchmarks, forum, contract winners). Always renders: sign-up is decoupled
+ * from sending (lib/digest/config). Safe on cached pages: it reads only the
  * cached taxonomy, never cookies or headers (the visitor's country is
  * picked up in the browser).
  */
 export async function DigestSignupBlock({ source, className }: { source: string; className?: string }) {
-  if (!weeklyDigestEnabled()) return null;
   const lang = getLang();
   const t = getT("growth").digest;
   const categories = await getCategories().catch(() => []);

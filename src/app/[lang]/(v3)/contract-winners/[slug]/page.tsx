@@ -5,7 +5,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { listRfps } from "@/lib/data/rfps";
-import { MIN_INDEXED_AWARDS, winnersFromRfps, type Winner } from "@/lib/data/winners";
+import { isWinnerIndexable, winnerProfiles, type Winner } from "@/lib/data/winners";
 import { compactDollars, daysUntil } from "@/lib/data/fomo";
 import { money } from "@/lib/data/monthly-winners-load";
 import { listPackagesForAwardSlugs } from "@/lib/gc/data";
@@ -28,6 +28,10 @@ import { benchmarkForWinner, benchmarkPath } from "@/lib/data/price-benchmarks-l
 import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
 import { getWinnerClaim, websiteHref } from "@/lib/claims/data";
 import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
+import { BidAlertBox } from "@/components/growth/bid-alert-box";
+import { getRegions } from "@/lib/data/taxonomy";
+import { mostCommonArea } from "@/lib/data/related-listings";
+import { bidAlertPlace } from "@/lib/digest/config";
 
 export const revalidate = 3600;
 
@@ -63,10 +67,14 @@ function lowerTrades(names: string[], lang: Locale): string {
     .join(" ");
 }
 
-/** Every company with at least one published award has a profile (one-award ones noindexed). */
+/**
+ * Every company with at least one published award has a profile (one-award ones
+ * noindexed, isWinnerIndexable). A failed board read throws rather than
+ * resolving to "no such winner": notFound() would be cached by ISR as a 404.
+ */
 const load = cache(async (slug: string) => {
-  const rfps = await listRfps().catch(() => []);
-  const winner = winnersFromRfps(rfps, 1).find((w) => w.slug === slug) ?? null;
+  const rfps = await listRfps();
+  const winner = winnerProfiles(rfps).find((w) => w.slug === slug) ?? null;
   return { rfps, winner };
 });
 
@@ -78,7 +86,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { winner: w } = await load(slug);
   if (!w) return { title: t.notFound, robots: { index: false } };
   const n = w.awards.length;
-  const one = n < MIN_INDEXED_AWARDS;
+  const one = !isWinnerIndexable(w);
   const issuers = [...new Set(w.awards.map((a) => awardSourceCopy(a, l).issuer))];
   const value = w.totalValue ? ` (${compactDollars(w.totalValue, l)})` : "";
   const vars = {
@@ -129,6 +137,9 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
   const proHref = signUpHrefForPlan("pro", "monthly");
   // "What similar contracts sold for" in the trade and province this company wins most.
   const bench = await benchmarkForWinner(w.slug).catch(() => null);
+  // "Email me bids like this": the trade and province/state this company wins most.
+  const regionRows = await getRegions().catch(() => []);
+  const winsIn = bench?.benchmark.province ?? mostCommonArea(w.awards, new Map(regionRows.map((r) => [r.name, r.province ?? null])));
   const lead = [t.eyebrow, w.categories.slice(0, 4).map((c) => tradeName(c, lang)).join(" · ")].filter(Boolean).join(" — ");
   let no = 0;
 
@@ -300,7 +311,11 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
           </div>
         )}
 
-        <DigestSignupBlock source="contract-winner" />
+        {bidAlertPlace(winsIn) ? (
+          <BidAlertBox source="winner" province={winsIn} trades={w.categories.slice(0, 1)} />
+        ) : (
+          <DigestSignupBlock source="contract-winner" />
+        )}
 
         <p className="small muted">{fmt(t.footnote, { issuers: issuers.join(", "), attributions: attributions.join(" "), site: SITE.name })}</p>
         <RecordFooter credits={[]} lang={lang} kind="contract_winner" path={`/contract-winners/${(await params).slug}`} refId={(await params).slug} className="mt-2" />

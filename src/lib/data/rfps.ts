@@ -2,7 +2,8 @@ import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   DEMO_RFPS,
   categoryName,
@@ -230,6 +231,30 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     gcProjectName: r.gc_project_name ?? null,
     awardedRfpId: r.awarded_rfp_id ?? null,
   };
+}
+
+/**
+ * The issuer's own notice for a PUBLIC tender (source_type public_source),
+ * for signed-in free accounts (lib/access/free-actions). The link is public
+ * on the issuer's portal anyway; full rows stay paid-only, so this reads the
+ * one column with the service role, for public tenders only. Null for
+ * private RFPs, unknown slugs, non-http links or without a service key.
+ */
+export async function getPublicTenderNoticeUrl(slug: string): Promise<string | null> {
+  if (!isSupabaseConfigured() || !isServiceConfigured()) return null;
+  try {
+    const { data } = await createServiceClient()
+      .from("rfp_posts")
+      .select("source_url")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .eq("source_type", "public_source")
+      .maybeSingle<{ source_url: string | null }>();
+    const url = data?.source_url ?? null;
+    return url && /^https?:\/\//i.test(url) ? url : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

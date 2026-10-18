@@ -15,9 +15,13 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt } from "@/i18n/format";
+import { ServerMarketProvider } from "@/components/geo/server-market";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { getUsdPerCad } from "@/lib/fx";
 
-/** The availability state (quiet / fewer than 50 / sold out) refreshes about once a minute. */
-export const revalidate = 60;
+// Dynamic: the visitor's country comes from the request so the one-time
+// price is in the server HTML in one currency ($250 CAD or $200 USD). The
+// availability count is cached for a minute by cachedLifetimeCount.
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -30,7 +34,7 @@ export default async function FoundingPage({ params }: { params: Promise<object>
   await setLangFrom(params);
   const t = getT("founding");
   const features = getT("salesClient").tradePro.features;
-  const sold = await cachedLifetimeCount();
+  const [sold, visitor, fx] = await Promise.all([cachedLifetimeCount(), getVisitorCountry(), getUsdPerCad()]);
   const left = sold == null ? null : spotsLeft(sold);
   const soldOut = left === 0;
   const vars = {
@@ -56,6 +60,7 @@ export default async function FoundingPage({ params }: { params: Promise<object>
   };
 
   return (
+    <ServerMarketProvider value={{ market: visitor.country, usdPerCad: fx.usdPerCad }}>
     <Container size="narrow" className="py-14">
       <JsonLd data={breadcrumbSchema([{ name: "Home", path: "/" }, { name: t.eyebrow, path: FOUNDING_PATH }])} />
       <JsonLd data={faqSchema(faq)} />
@@ -126,5 +131,6 @@ export default async function FoundingPage({ params }: { params: Promise<object>
         <Link href="/terms#founding-500" className="mt-3 inline-block text-sm font-medium text-teal-ink underline">{t.fullTerms}</Link>
       </section>
     </Container>
+    </ServerMarketProvider>
   );
 }
