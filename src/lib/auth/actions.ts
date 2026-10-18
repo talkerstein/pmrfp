@@ -28,6 +28,8 @@ import { parsePrefSlugs } from "@/lib/auth/signup-prefs";
 import { recordSignupAttribution } from "@/lib/attribution/record";
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
 import { errorDetail } from "@/lib/onboarding/steps";
+import { linkDigestSubscriber } from "@/lib/digest/link";
+import { magicLinkRedirect, parseSignupMethod } from "@/lib/auth/magic-link";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 
@@ -85,15 +87,20 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   if (await checkRateLimitByIp(await authIp(), "auth")) {
     return { error: m.rateLimit };
   }
+  // "link": passwordless (Supabase emails a sign-in link). Older forms send no method: password.
+  const method = parseSignupMethod(formData.get("method"));
   const parsed = signUpSchema.safeParse({
-    fullName: formData.get("fullName"),
+    fullName: formData.get("fullName") ?? "",
     email: formData.get("email"),
-    password: formData.get("password"),
+    password: method === "link" ? undefined : (formData.get("password") ?? undefined),
     role: formData.get("role"),
     company_website: formData.get("company_website") ?? "",
   });
   if (!parsed.success) {
     return { error: translated("validation", parsed.error.issues[0]?.message, lang, m.checkDetails) };
+  }
+  if (method === "password" && !parsed.data.password) {
+    return { error: translated("validation", "Password must be at least 8 characters", lang, m.checkDetails) };
   }
   if (parsed.data.company_website) return { success: m.thanks }; // honeypot
   if (!isSupabaseConfigured()) return { error: m.demo };
@@ -116,20 +123,51 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   const wantsPro = formData.get("plan") === "pro";
 
   const supabase = await createClient();
+  const metadata = {
+    full_name: parsed.data.fullName ?? "",
+    primary_role: parsed.data.role,
+    ...(isGc ? { org_kind: "builder", ...(gcAward ? { gc_award: gcAward } : {}) } : {}),
+    ...(isLandlord ? { org_kind: "landlord" } : {}),
+    ...(prefCategories.length ? { pref_categories: prefCategories } : {}),
+    ...(prefRegions.length ? { pref_regions: prefRegions } : {}),
+    ...(prefCompany ? { pref_company: prefCompany } : {}),
+  };
+  const next = safeNextPath(formData.get("next")?.toString());
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+
+  if (method === "link") {
+    // Passwordless: Supabase creates the account (same metadata, same
+    // handle_new_user trigger) and emails one link; an existing address just
+    // gets a sign-in link, so the answer never reveals who has an account.
+    const linkNext = isTalent ? "/talent/edit" : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
+    const { error } = await supabase.auth.signInWithOtp({
+      email: parsed.data.email,
+      options: { shouldCreateUser: true, data: metadata, emailRedirectTo: magicLinkRedirect(siteUrl, linkNext) },
+    });
+    if (error) {
+      console.error("[signUp:link]", error.message);
+      return { error: m.signUpFailed };
+    }
+    await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord, method: "link" });
+    await sendAdminNewSignup({ email: parsed.data.email, name: parsed.data.fullName ?? "", role: parsed.data.role, method: "email", gc: isGc, landlord: isLandlord });
+    await syncPmrfpUserToGhl({
+      email: parsed.data.email,
+      fullName: parsed.data.fullName ?? "",
+      role: parsed.data.role,
+      subscriptionStatus: "none",
+    }, { extraTags: buyerTags("pmrfp-signup", buyerKind) });
+    // The user id isn't returned for OTP; attribution is recorded at onboarding (recordSignupAttribution there).
+    const done = new URLSearchParams({ email: parsed.data.email, role: isGc ? "general_contractor" : isLandlord ? "landlord" : parsed.data.role, method: "link" });
+    if (wantsPro) done.set("plan", "pro");
+    redirect(localizePath(`/check-email?${done.toString()}`, lang));
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
-    password: parsed.data.password,
+    password: parsed.data.password!,
     options: {
-      data: {
-        full_name: parsed.data.fullName,
-        primary_role: parsed.data.role,
-        ...(isGc ? { org_kind: "builder", ...(gcAward ? { gc_award: gcAward } : {}) } : {}),
-        ...(isLandlord ? { org_kind: "landlord" } : {}),
-        ...(prefCategories.length ? { pref_categories: prefCategories } : {}),
-        ...(prefRegions.length ? { pref_regions: prefRegions } : {}),
-        ...(prefCompany ? { pref_company: prefCompany } : {}),
-      },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}${isTalent ? "/talent/edit" : "/onboarding"}`,
+      data: metadata,
+      emailRedirectTo: `${siteUrl}${isTalent ? "/talent/edit" : "/onboarding"}`,
     },
   });
   if (error) {
@@ -143,7 +181,6 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     await recordSignupAttribution({ userId: data.user.id, method: "email" });
   }
   // No welcome email here: it goes out once onboarding completes.
-  const next = safeNextPath(formData.get("next")?.toString());
   await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord });
   await sendAdminNewSignup({ email: parsed.data.email, name: parsed.data.fullName, role: parsed.data.role, method: "email", gc: isGc, landlord: isLandlord });
   // Fire-and-forget GHL sync; no-ops if GHL_API_KEY unset.
@@ -190,6 +227,30 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
   }
   if (next) redirect(localizePath(next, lang));
   redirect(localizePath(session ? roleHome(session.profile.primary_role) : "/dashboard", lang));
+}
+
+/**
+ * "Email me a sign-in link" (passwordless sign-in). Never creates an
+ * account here, and answers the same whether or not the address has one.
+ */
+export async function signInLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const lang = formLang(formData);
+  const m = messages(lang);
+  if (await checkRateLimitByIp(await authIp(), "auth")) {
+    return { error: m.rateLimit };
+  }
+  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) return { error: m.enterValidEmail };
+  if (!isSupabaseConfigured()) return { error: m.demo };
+  const next = safeNextPath(formData.get("next")?.toString());
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
+    options: { shouldCreateUser: false, emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", next) },
+  });
+  // "No such user" is expected for unknown addresses: same answer either way.
+  if (error) console.info("[signInLink]", error.message);
+  return { success: m.linkSent };
 }
 
 export async function signOutAction(): Promise<void> {
@@ -338,6 +399,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     const supabase = await createClient();
     await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
     await recordSignupAttribution({ userId: session.userId });
+    await linkDigestSubscriber(session.userId, session.profile.email);
     redirect(localizePath(next ?? "/directory", lang));
   }
 
@@ -453,6 +515,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
   await recordSignupAttribution({ userId: session.userId, orgId: org.id });
+  await linkDigestSubscriber(session.userId, session.profile.email);
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord });
 
   // One welcome email per member, with the next step for their kind of account.

@@ -77,6 +77,25 @@ const uniq = <T,>(xs: T[]) => [...new Set(xs)];
  */
 export const MIN_INDEXED_AWARDS = 2;
 
+/**
+ * THE indexing rule for a /contract-winners/[slug] profile: 2+ published awards.
+ * The page sets noindex when this is false and the sitemap lists exactly the
+ * profiles where it's true (indexableWinners), so the two can't drift.
+ */
+export function isWinnerIndexable(w: Pick<Winner, "awards">): boolean {
+  return w.awards.length >= MIN_INDEXED_AWARDS;
+}
+
+/** Every profile page that exists (the page resolves its slug against this list). Pure. */
+export function winnerProfiles(rfps: RfpListItem[]): Winner[] {
+  return winnersFromRfps(rfps, 1);
+}
+
+/** The profiles the sitemap lists: the page's own list, filtered by isWinnerIndexable. Pure. */
+export function indexableWinners(rfps: RfpListItem[]): Winner[] {
+  return winnerProfiles(rfps).filter(isWinnerIndexable);
+}
+
 /** Group the board's past contracts by winning company. Pure — for pages that already have listRfps(). */
 export function winnersFromRfps(rfps: RfpListItem[], minAwards = MIN_INDEXED_AWARDS): Winner[] {
   const groups = new Map<string, { variants: Map<string, number>; awards: WinnerAward[] }>();

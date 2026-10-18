@@ -116,10 +116,17 @@ const en = {
       "Public contracts recently awarded in your trades, and who won them",
     ],
     confirmed: "You're subscribed. The first email goes out next week.",
+    confirmedSoon: "You're subscribed. The weekly email hasn't started yet; you'll get the first one when it does.",
     unsubscribed: "You're unsubscribed from the weekly email. Account and billing emails are unaffected.",
     invalid: "That link isn't valid or has expired. Sign up again below, or email info@pmrfp.com.",
     privacy: "We use your email only to send this digest. Unsubscribe from any email in one click.",
-    soon: "Sign-ups open soon.",
+    soon: "The weekly email hasn't started yet. Sign up now and you'll get the first one when it does.",
+  },
+  bidAlert: {
+    title: "Email me bids like this, free",
+    lead: "Open {trade} bids in {place} and recent awards, in the free weekly email.",
+    leadPlace: "Open bids in {place} and recent awards, in the free weekly email.",
+    account: "Want to save bids and open the official notice? Create a free account",
   },
 };
 
@@ -235,10 +242,17 @@ const fr: typeof en = {
       "Les contrats publics octroyés récemment dans vos corps de métier, et qui les a remportés",
     ],
     confirmed: "Vous êtes abonné. Le premier courriel partira la semaine prochaine.",
+    confirmedSoon: "Vous êtes abonné. Le courriel hebdomadaire n'a pas encore commencé; vous recevrez le premier dès son lancement.",
     unsubscribed: "Vous êtes désabonné du courriel hebdomadaire. Les courriels de compte et de facturation ne sont pas touchés.",
     invalid: "Ce lien n'est pas valide ou a expiré. Inscrivez-vous de nouveau ci-dessous, ou écrivez à info@pmrfp.com.",
     privacy: "Nous utilisons votre courriel seulement pour envoyer ce résumé. Désabonnez-vous de n'importe quel courriel en un clic.",
-    soon: "Les inscriptions ouvrent bientôt.",
+    soon: "Le courriel hebdomadaire n'a pas encore commencé. Inscrivez-vous maintenant et vous recevrez le premier dès son lancement.",
+  },
+  bidAlert: {
+    title: "Recevez des appels comme celui-ci par courriel, gratuitement",
+    lead: "Les appels d'offres ouverts en {trade} ({place}) et les octrois récents, dans le courriel hebdomadaire gratuit.",
+    leadPlace: "Les appels d'offres ouverts ({place}) et les octrois récents, dans le courriel hebdomadaire gratuit.",
+    account: "Vous voulez enregistrer des appels et ouvrir l'avis officiel? Créez un compte gratuit",
   },
 };
 
@@ -354,10 +368,17 @@ const es: typeof en = {
       "Contratos públicos adjudicados recientemente en sus oficios, y quién los ganó",
     ],
     confirmed: "Ya está suscrito. El primer correo sale la próxima semana.",
+    confirmedSoon: "Ya está suscrito. El correo semanal todavía no empezó; recibirá el primero cuando empiece.",
     unsubscribed: "Canceló su suscripción al correo semanal. Los correos de su cuenta y de facturación no cambian.",
     invalid: "Ese enlace no es válido o venció. Suscríbase de nuevo abajo, o escriba a info@pmrfp.com.",
     privacy: "Usamos su correo solo para enviar este resumen. Cancele la suscripción desde cualquier correo con un clic.",
-    soon: "Las suscripciones abren pronto.",
+    soon: "El correo semanal todavía no empezó. Suscríbase ahora y recibirá el primero cuando empiece.",
+  },
+  bidAlert: {
+    title: "Reciba licitaciones como esta por correo, gratis",
+    lead: "Licitaciones abiertas de {trade} en {place} y adjudicaciones recientes, en el correo semanal gratuito.",
+    leadPlace: "Licitaciones abiertas en {place} y adjudicaciones recientes, en el correo semanal gratuito.",
+    account: "¿Quiere guardar licitaciones y abrir el aviso oficial? Cree una cuenta gratuita",
   },
 };
 

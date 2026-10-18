@@ -10,10 +10,10 @@ import { resolveBoardCountry, type BoardCountry } from "@/lib/data/board-country
 import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
-import { awardTotals, winnersFromRfps } from "@/lib/data/winners";
 import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { boardStats, compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
+import { compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
+import { awardsOnRecord, boardStats, isOpenListing } from "@/lib/data/site-counters";
 import { isGcPackage } from "@/lib/gc/packages";
 import { provinceFirst, regionCountry, rfpMarket } from "@/lib/visitor-geo";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
@@ -113,14 +113,20 @@ export default async function RfpsPage({
     return d > 7;
   };
   const rfps = allRfps.filter(inCountry(country)).filter(inSource);
-  const openIn = (c: Country) => allRfps.filter((r) => r.status === "open" && inCountry(c)(r)).length;
+  const openIn = (c: Country) => allRfps.filter((r) => isOpenListing(r) && inCountry(c)(r)).length;
 
-  // Every number here is counted from the listings; the award total is the
-  // same one /contract-winners shows.
+  // Every number here is counted from the listings with the site-wide rules in
+  // lib/data/site-counters (open now, closing in 7 days, award notices on record).
   const locked = isSupabaseConfigured() ? !access : false;
   const stats = boardStats(rfps);
-  // Award totals for this country only (never Canada + U.S. added together).
-  const awards = awardTotals(winnersFromRfps(country === "all" ? board : board.filter(inCountry(country))));
+  // Every award notice on record in this country (lib/data/site-counters). Only
+  // the explicit "Canada and the U.S." view adds the two, like its open count.
+  const awards = (() => {
+    if (country !== "all") return awardsOnRecord(board, country === "us" ? "US" : "CA");
+    const ca = awardsOnRecord(board, "CA");
+    const us = awardsOnRecord(board, "US");
+    return { contracts: ca.contracts + us.contracts, value: ca.value + us.value };
+  })();
   // Country-first, then province/state-first: the visitor's own province leads
   // ("Ontario first, then the rest of Canada") unless they picked a region.
   const localProvince = !sp.region && country !== "all" && (country === "us") === (market === "US") ? visitor.province : null;
@@ -258,7 +264,7 @@ export default async function RfpsPage({
           )}
           <div className="vp-row-ctas">
             {locked && isOpen && (
-              <a href={proHref} className="vp-save" aria-label={v.row.save} title={v.row.save}>
+              <a href={link} className="vp-save" aria-label={v.row.save} title={v.row.save}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#1B1D3A" strokeWidth="1.8" aria-hidden><path d="M4 2h8v12l-4-3-4 3z" /></svg>
               </a>
             )}

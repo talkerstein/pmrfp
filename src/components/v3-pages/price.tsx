@@ -1,32 +1,21 @@
 "use client";
 
 import { useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
-import { FOUNDING } from "@/lib/founding/config";
-import { toUsd } from "@/lib/markets";
+import { marketMoney, priceLine } from "@/lib/pricing/money";
 import type { Locale } from "@/i18n/config";
-import { fmt, formatNumber } from "@/i18n/format";
 
 /**
  * Prices in ONE currency per visitor, same rule as the homepage: CAD in Canada,
- * USD in the U.S. (today's rate), and a neutral placeholder until the market is
- * known so a cached Canadian price never flashes for a U.S. visitor.
+ * USD in the U.S. (today's rate). On a cached page a neutral placeholder shows
+ * until the market is known, so a cached Canadian price never flashes for a
+ * U.S. visitor; under a ServerMarketProvider (dynamic pages such as /pricing)
+ * the market is known on the server and the price is in the HTML.
  */
 export function useMoney(lang: Locale) {
   const market = useVisitorMarket();
   const rate = useUsdPerCad();
-  const known = market != null;
-  const us = market === "US";
-  const currency = us ? "USD" : "CAD";
-  const fmtAmount = (n: number) => {
-    const s = formatNumber(n, lang);
-    return lang === "fr" ? `${s} $` : `$${s}`;
-  };
-  return {
-    known,
-    currency,
-    money: (cad: number) => fmtAmount(us ? toUsd(cad, rate) : cad),
-    founding: () => fmtAmount(us ? FOUNDING.priceUsd : FOUNDING.priceCad),
-  };
+  const m = marketMoney(market ?? "CA", rate, lang);
+  return { known: market != null, currency: m.currency, money: m.money, founding: m.founding, line: (tpl: string, cad: Record<string, number>) => priceLine(tpl, cad, m) };
 }
 
 /** Fixed-width placeholder while the currency is unknown. */
@@ -48,12 +37,10 @@ export function Currency({ lang }: { lang: Locale }) {
 
 /**
  * A sentence with prices in it: {name} placeholders take CAD amounts from
- * `cad`, {currency} is filled in. The whole line waits for the market.
+ * `cad`, {currency} and {founding} are filled in. The whole line waits for the market.
  */
 export function PriceLine({ tpl, cad, lang, w = "14em" }: { tpl: string; cad: Record<string, number>; lang: Locale; w?: string }) {
   const m = useMoney(lang);
   if (!m.known) return <Sk w={w} />;
-  const vals: Record<string, string> = { currency: m.currency, founding: m.founding() };
-  for (const [k, v] of Object.entries(cad)) vals[k] = m.money(v);
-  return <>{fmt(tpl, vals)}</>;
+  return <>{m.line(tpl, cad)}</>;
 }

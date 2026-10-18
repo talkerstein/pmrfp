@@ -6,11 +6,18 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n/provider";
 
+/**
+ * Save / unsave an RFP. Free for any signed-in trade or supplier account
+ * (Trade Pro not required). Pass the listing's id when the page has it, or
+ * its slug (free viewers only see the public teaser, which has no id).
+ */
 export function SaveButton({
   rfpId,
+  rfpSlug,
   initialSaved = false,
 }: {
-  rfpId: string;
+  rfpId?: string;
+  rfpSlug?: string;
   initialSaved?: boolean;
 }) {
   const t = useT("boardClient").save;
@@ -24,7 +31,7 @@ export function SaveButton({
       const res = await fetch("/api/save-rfp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rfpId, action: next ? "save" : "unsave" }),
+        body: JSON.stringify({ ...(rfpId ? { rfpId } : { rfpSlug }), action: next ? "save" : "unsave" }),
       });
       const json = await res.json().catch(() => ({}));
       if (res.status === 403) {

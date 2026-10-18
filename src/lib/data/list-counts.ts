@@ -2,11 +2,10 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { listVendors } from "@/lib/data/directory";
 import { listRfps } from "@/lib/data/rfps";
-import { winnersFromRfps } from "@/lib/data/winners";
-import { boardStatsByCountry } from "@/lib/data/fomo";
+import { boardStatsByCountry, repeatWinnerTotals } from "@/lib/data/site-counters";
 import { listOpenJobs } from "@/lib/jobs/data";
 import { listTalent } from "@/lib/talent/data";
-import { inCountry, type CountryCode } from "@/lib/visitor-geo";
+import type { CountryCode } from "@/lib/visitor-geo";
 
 export interface ListCounts {
   trades: number | null;
@@ -69,7 +68,7 @@ export const getListCounts = cache(async (): Promise<ListCountsByCountry> => {
   const one = (c: CountryCode): ListCounts => ({
     trades: dir?.[c].trades ?? null,
     suppliers: dir?.[c].suppliers ?? null,
-    winners: rfps?.length ? winnersFromRfps(inCountry(rfps, c)).length : null,
+    winners: rfps?.length ? repeatWinnerTotals(rfps, c).companies : null,
     jobs: dir?.[c].jobs ?? null,
     talent: dir?.[c].talent ?? null,
     open: stats ? stats[c].open : null,

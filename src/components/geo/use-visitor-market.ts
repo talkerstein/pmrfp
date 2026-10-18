@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { USD_PER_CAD } from "@/lib/markets";
+import { ServerMarketContext } from "./server-market";
 import {
   ACCOUNT_COOKIE,
   GEO_COOKIE,
@@ -67,8 +68,13 @@ export function useVisitorCountry(): ResolvedCountry | null {
   return value;
 }
 
-/** Null during the server render and first paint (cached pages show Canada), then the real market. */
+/**
+ * Null during the server render and first paint (cached pages show Canada),
+ * then the real market. Inside a ServerMarketProvider (dynamic pages) the
+ * server-resolved market stands in until the cookies are read.
+ */
 export function useVisitorMarket(): MarketCode | null {
+  const server = useContext(ServerMarketContext);
   const [market, setMarketState] = useState<MarketCode | null>(null);
   useEffect(() => {
     const sync = () => setMarketState(readMarket());
@@ -77,7 +83,7 @@ export function useVisitorMarket(): MarketCode | null {
     window.addEventListener(MARKET_EVENT, sync);
     return () => window.removeEventListener(MARKET_EVENT, sync);
   }, []);
-  return market;
+  return market ?? server?.market ?? null;
 }
 
 let rate: number | null = null;
@@ -85,9 +91,12 @@ let pending: Promise<number> | null = null;
 
 /** Today's USD-per-CAD rate (from /api/fx), fetched once per page; the fixed rate until it lands. */
 export function useUsdPerCad(): number {
-  const [value, setValue] = useState(rate ?? USD_PER_CAD);
+  const server = useContext(ServerMarketContext);
+  // A server-resolved rate (same Bank of Canada source as /api/fx) keeps the
+  // hydrated price identical to the server HTML, so no fetch is needed.
+  const [value, setValue] = useState(server?.usdPerCad ?? rate ?? USD_PER_CAD);
   useEffect(() => {
-    if (rate) return;
+    if (rate || server) return;
     pending ??= fetch("/api/fx")
       .then((r) => r.json())
       .then((j: { usdPerCad?: unknown }) => (rate = typeof j.usdPerCad === "number" ? j.usdPerCad : USD_PER_CAD))
@@ -97,6 +106,6 @@ export function useUsdPerCad(): number {
     return () => {
       live = false;
     };
-  }, []);
+  }, [server]);
   return value;
 }

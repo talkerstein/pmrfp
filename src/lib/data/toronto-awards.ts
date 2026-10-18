@@ -11,8 +11,8 @@ import { slugify } from "@/lib/tenders/shared";
  * No database: the CSV is fetched and aggregated by supplier, then cached for a
  * day. The raw file is ~2 MB (over the data-cache item limit), so the cache
  * holds a compact supplier index plus ~27 detail shards (by slug initial).
- * If the fetch fails every caller gets empty data and pages degrade to 404 /
- * an empty section — never an error.
+ * If the fetch fails, list sections degrade to empty (getTorontoIndexSafe) and
+ * supplier pages throw, so ISR keeps their last good copy — never a cached 404.
  *
  * Buyer names, emails and phone numbers in the file are City staff contacts:
  * deliberately dropped. Supplier names that look like a private individual are
@@ -303,25 +303,32 @@ export const shardOf = (slug: string) => (/^[a-z]/.test(slug) ? slug[0] : "0");
 let memo: { at: number; promise: Promise<TorontoSupplier[]> } | null = null;
 let rowsMemo: TorontoRow[] = [];
 
-/** One download serves every shard/index miss within ten minutes. */
+/**
+ * One download serves every shard/index miss within ten minutes.
+ *
+ * A failed download THROWS (it used to return []). The callers below are
+ * unstable_cache entries kept for a day: an empty result was cached as if the
+ * City had no suppliers, so every supplier page in that shard rendered
+ * notFound(), and the ISR cache kept serving those 404s (sitemap URLs sampled
+ * 2026-10-18: cached 404s up to two days old). A throw is never cached: the
+ * page keeps its last good copy and the next request retries.
+ */
 async function loadAll(): Promise<{ rows: TorontoRow[]; suppliers: TorontoSupplier[] }> {
   if (!memo || Date.now() - memo.at > 10 * 60_000) {
-    memo = {
-      at: Date.now(),
-      promise: (async () => {
-        try {
-          const res = await fetch(CSV_URL, { cache: "no-store", signal: AbortSignal.timeout(20_000) });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          rowsMemo = rowsFromCsv(await res.text());
-          return aggregateSuppliers(rowsMemo);
-        } catch (e) {
-          console.error("[toronto-awards] fetch failed:", e);
-          memo = null;
-          rowsMemo = [];
-          return [];
-        }
-      })(),
-    };
+    const promise = (async () => {
+      const res = await fetch(CSV_URL, { cache: "no-store", signal: AbortSignal.timeout(20_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rows = rowsFromCsv(await res.text());
+      const suppliers = aggregateSuppliers(rows);
+      if (!suppliers.length) throw new Error("no suppliers parsed (empty or changed file)");
+      rowsMemo = rows;
+      return suppliers;
+    })();
+    memo = { at: Date.now(), promise };
+    promise.catch((e) => {
+      console.error("[toronto-awards] fetch failed:", e);
+      if (memo?.promise === promise) memo = null;
+    });
   }
   const suppliers = await memo!.promise;
   return { rows: rowsMemo, suppliers };
@@ -329,28 +336,55 @@ async function loadAll(): Promise<{ rows: TorontoRow[]; suppliers: TorontoSuppli
 
 const DAY = 86_400;
 
+// v2: drops index/shard entries cached empty by the old swallow-and-return-[] loader.
 export const getTorontoIndex = unstable_cache(
   async (): Promise<TorontoIndex> => {
     const { rows, suppliers } = await loadAll();
     return buildIndex(rows, suppliers);
   },
-  ["toronto-awards-index-v1"],
+  ["toronto-awards-index-v2"],
   { revalidate: DAY, tags: ["toronto-awards"] },
 );
 
 const getShard = unstable_cache(
   async (shard: string): Promise<TorontoSupplier[]> => (await loadAll()).suppliers.filter((s) => shardOf(s.slug) === shard),
-  ["toronto-awards-shard-v1"],
+  ["toronto-awards-shard-v2"],
   { revalidate: DAY, tags: ["toronto-awards"] },
 );
 
+/** The slugs a supplier page accepts (anything else is notFound() without a lookup). */
+export const TORONTO_SLUG_RE = /^[a-z0-9-]{1,90}$/;
+
+/**
+ * THE rule for "this supplier page renders and is indexable": the slug passes
+ * the page's own slug check and the supplier clears the thin-content bar
+ * (2+ awards, or one award of INDEX_MIN_SINGLE_AWARD+). The page sets
+ * noindex when this is false; the sitemap lists only suppliers where it's true.
+ */
+export function isTorontoSupplierIndexable(s: Pick<TorontoSupplierSummary, "slug" | "indexable">): boolean {
+  return TORONTO_SLUG_RE.test(s.slug) && s.indexable;
+}
+
+/** Sitemap list: indexable suppliers from the same index the pages resolve against, biggest first. Pure. */
+export function torontoContractSlugsForSitemap(index: Pick<TorontoIndex, "suppliers">, limit: number): TorontoSupplierSummary[] {
+  return index.suppliers.filter(isTorontoSupplierIndexable).slice(0, limit);
+}
+
+/**
+ * One supplier, or null when the data loaded and there is no such supplier
+ * (the page's notFound()). THROWS when the data can't be loaded, so a failed
+ * download is an error (not cached) instead of a cached 404.
+ */
 export async function getTorontoSupplier(slug: string): Promise<TorontoSupplier | null> {
-  if (!/^[a-z0-9-]{1,90}$/.test(slug)) return null;
-  try {
-    return (await getShard(shardOf(slug))).find((s) => s.slug === slug) ?? null;
-  } catch {
-    return null;
-  }
+  if (!TORONTO_SLUG_RE.test(slug)) return null;
+  const hit = (await getShard(shardOf(slug))).find((s) => s.slug === slug);
+  if (hit) return hit;
+  // The index (sitemap, list page) and the shards are cached separately, so a
+  // day's data change can leave a listed slug missing from an older shard.
+  // When the index lists it, re-check against a fresh load before a 404.
+  const listed = (await getTorontoIndexSafe()).suppliers.some((s) => s.slug === slug);
+  if (!listed) return null;
+  return (await loadAll()).suppliers.find((s) => s.slug === slug) ?? null;
 }
 
 export async function getTorontoIndexSafe(): Promise<TorontoIndex> {

@@ -45,8 +45,8 @@ function SignupForm({ initialCountry, initialProvince, ...p }: DigestFormProps &
   if (state.ok && !again) {
     return (
       <div className="dg-box" role="status" data-digest="sent">
-        <div className="dg-hd">{t.sentTitle}</div>
-        <p className="dg-lead">{fmt(t.sentBody, { email: state.email ?? "" })}</p>
+        <div className="dg-hd">{state.held ? t.heldTitle : t.sentTitle}</div>
+        <p className="dg-lead">{fmt(state.held ? t.heldBody : t.sentBody, { email: state.email ?? "" })}</p>
         <button type="button" className="dg-link" onClick={() => setAgain(true)}>{t.again}</button>
       </div>
     );

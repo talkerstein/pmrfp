@@ -10,7 +10,8 @@ import { alternatesFor } from "@/i18n/metadata";
 /**
  * The free weekly email: what's in it, the sign-up form, and where the
  * confirm / unsubscribe links land (?confirmed=1, ?unsubscribed=1,
- * ?invalid=1). Indexed only once sign-ups are open.
+ * ?invalid=1). The form is always open (sign-up is decoupled from sending);
+ * until WEEKLY_DIGEST_ENABLED is on the page says the email hasn't started.
  */
 type SP = Promise<Record<string, string | undefined>>;
 
@@ -22,7 +23,6 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     title: t.metaTitle,
     description: t.metaDescription,
     alternates: alternatesFor(l, "/weekly-email"),
-    ...(weeklyDigestEnabled() ? {} : { robots: { index: false, follow: true } }),
   };
 }
 
@@ -31,8 +31,8 @@ export default async function WeeklyEmailPage({ params, searchParams }: { params
   const lang = getLang();
   const t = getT("growth").digest;
   const sp = await searchParams;
-  const notice = sp.confirmed ? t.confirmed : sp.unsubscribed ? t.unsubscribed : sp.invalid ? t.invalid : null;
   const enabled = weeklyDigestEnabled();
+  const notice = sp.confirmed ? (enabled ? t.confirmed : t.confirmedSoon) : sp.unsubscribed ? t.unsubscribed : sp.invalid ? t.invalid : null;
 
   return (
     <SimplePage lang={lang} current={null} group="company" crumbs={[{ label: t.pageTitle }]} tabs={false} aside={false} title={t.pageTitle} lead={t.pageLead}>
@@ -43,7 +43,8 @@ export default async function WeeklyEmailPage({ params, searchParams }: { params
       )}
       <SH2 no={1} id="what">{t.whatTitle}</SH2>
       <ul className="s-legal">{t.what.map((w) => <li key={w}>{w}</li>)}</ul>
-      {enabled ? <DigestSignupBlock source="weekly-email" /> : <p className="muted">{t.soon}</p>}
+      {!enabled && <p className="muted" data-digest="not-started">{t.soon}</p>}
+      <DigestSignupBlock source="weekly-email" />
     </SimplePage>
   );
 }

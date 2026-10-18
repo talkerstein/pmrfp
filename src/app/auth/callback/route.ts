@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession, roleHome } from "@/lib/access/access";
 import { postOAuthRedirect } from "@/lib/auth/oauth";
+import { callbackFailurePath } from "@/lib/auth/magic-link";
 import { safeNextPath } from "@/lib/auth/next";
 import { EVENT, trackEvent } from "@/lib/analytics";
 
@@ -15,7 +16,9 @@ import { EVENT, trackEvent } from "@/lib/analytics";
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const next = request.nextUrl.searchParams.get("next");
-  const failed = NextResponse.redirect(new URL("/sign-in?error=google", request.url));
+  // Google and emailed sign-in links (m=link, lib/auth/magic-link) both land here.
+  const method = request.nextUrl.searchParams.get("m");
+  const failed = NextResponse.redirect(new URL(callbackFailurePath(method), request.url));
   if (!code || !isSupabaseConfigured()) return failed;
 
   const supabase = await createClient();
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 
   const session = await getSession();
-  await trackEvent(EVENT.SIGNIN_COMPLETED, { method: "google", hasNext: !!safeNextPath(next) });
+  await trackEvent(EVENT.SIGNIN_COMPLETED, { method: method === "link" ? "link" : "google", hasNext: !!safeNextPath(next) });
   const to = postOAuthRedirect(
     next,
     session

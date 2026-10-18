@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/site";
 import { listRfps } from "@/lib/data/rfps";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
-import { winnersFromRfps } from "@/lib/data/winners";
+import { indexableWinners } from "@/lib/data/winners";
 import { monthlyAwards, reportMonths } from "@/lib/data/monthly-winners";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { listVendors } from "@/lib/data/directory";
@@ -20,12 +20,11 @@ import { listIndexableThreads } from "@/lib/forum/data";
 import { FORUM_CATEGORY_SLUGS, isFrenchForum } from "@/lib/forum/categories";
 import { listActiveListings } from "@/lib/marketplace/data";
 import { CATEGORIES, landingIndexable } from "@/lib/marketplace/rules";
-import { getTorontoIndexSafe } from "@/lib/data/toronto-awards";
+import { getTorontoIndexSafe, torontoContractSlugsForSitemap } from "@/lib/data/toronto-awards";
 import { PROVINCES } from "@/lib/data/province-hub";
 import { getMajorProjects } from "@/lib/major-projects/data";
 import { isThinProject } from "@/lib/major-projects/filters";
 import { FOUNDING_PATH } from "@/lib/founding/config";
-import { weeklyDigestEnabled } from "@/lib/digest/config";
 import { intelAwards } from "@/lib/intel/model";
 import { indexableMarkets } from "@/lib/insights/market";
 import { insightsMarketPath } from "@/lib/insights/paths";
@@ -70,8 +69,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/about", priority: 0.5, freq: "monthly" },
     { path: "/reputation", priority: 0.4, freq: "monthly" },
     { path: FOUNDING_PATH, priority: 0.7, freq: "weekly" },
-    // The weekly-email page is noindexed until the digest is switched on.
-    ...(weeklyDigestEnabled() ? [{ path: "/weekly-email", priority: 0.5, freq: "weekly" as const }] : []),
+    // Always indexable: the sign-up form always shows (sending is flag-gated separately).
+    { path: "/weekly-email", priority: 0.5, freq: "weekly" },
     { path: "/for-agencies", priority: 0.6, freq: "monthly" },
     { path: "/resources/contractor-directories", priority: 0.6, freq: "monthly" },
     { path: "/trades", priority: 0.8, freq: "weekly" },
@@ -122,9 +121,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   entries.push({ url: `${base}/reports/contract-winners`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const m of reportMonths(monthlyAwards(rfps), torontoToday()))
     entries.push({ url: `${base}/reports/contract-winners/${m.month}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
-  for (const w of winnersFromRfps(rfps)) entries.push({ url: `${base}/contract-winners/${w.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
-  // City of Toronto suppliers: thin ones (one small award) are noindexed, so they stay out.
-  for (const s of toronto.suppliers.filter((x) => x.indexable).slice(0, TORONTO_SITEMAP_LIMIT))
+  // Contract-winner profiles: every one the page renders AND indexes (isWinnerIndexable,
+  // 2+ awards). One-award profiles exist but are noindexed, so they stay out.
+  for (const w of indexableWinners(rfps)) entries.push({ url: `${base}/contract-winners/${w.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
+  // City of Toronto suppliers: the page's own rule (isTorontoSupplierIndexable); thin
+  // ones (one small award) are noindexed, so they stay out.
+  for (const s of torontoContractSlugsForSitemap(toronto, TORONTO_SITEMAP_LIMIT))
     entries.push({ url: `${base}/toronto-contracts/${s.slug}`, lastModified: s.latest ? new Date(`${s.latest}T12:00:00Z`) : now, changeFrequency: "monthly", priority: 0.5 });
   // Only open RFPs are indexable (see isIndexableRfp); everything else stays out.
   for (const r of rfps.filter(isIndexableRfp)) entries.push({ url: `${base}/rfps/${r.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });

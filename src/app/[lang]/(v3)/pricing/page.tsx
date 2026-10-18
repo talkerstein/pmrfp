@@ -5,10 +5,10 @@ import { ByMarket } from "@/components/geo/by-market";
 import { PricingPlans } from "@/components/v3-pages/pricing-plans";
 import { FaqTabs } from "@/components/v3-pages/faq-tabs";
 import { PriceLine } from "@/components/v3-pages/price";
-import { getPlatformStats, type PlatformStats } from "@/lib/data/stats";
+import { boardStatsByCountry, countPostedLastNDays, countWinnersLastNDays } from "@/lib/data/site-counters";
 import { getCategories } from "@/lib/data/taxonomy";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
-import { boardStatsByCountry, daysUntil, isPastContract } from "@/lib/data/fomo";
+import { daysUntil, isPastContract } from "@/lib/data/fomo";
 import { rfpMarket } from "@/lib/visitor-geo";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
@@ -24,13 +24,18 @@ import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { getMajorProjects } from "@/lib/major-projects/data";
 import { AWARD_DAYS, isLiveLeadProject } from "@/lib/leads/match";
-import { hubWins } from "@/lib/gc/hub";
-import { winnerKey } from "@/lib/data/winners";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { startTrialAction } from "@/lib/entitlement/actions";
+import { trialsOpen } from "@/lib/entitlement/server";
+import { ServerMarketProvider } from "@/components/geo/server-market";
+import { getVisitorCountry } from "@/lib/visitor-geo.server";
+import { getUsdPerCad } from "@/lib/fx";
+import { MATRIX_GROUPS, PLAN_MATRIX, TIERS, countCell } from "@/lib/pricing/plan-matrix";
 
-/** Board numbers and the Founding 500 copy refresh about once a minute. */
-export const revalidate = 60;
+// Dynamic: the visitor's country is read from the request (getVisitorCountry,
+// same as /advertise and /rfps), so prices render in the server HTML in ONE
+// currency, CAD in Canada and USD in the U.S. The board snapshot, Founding
+// count and FX rate underneath are cached by their own loaders.
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -63,7 +68,6 @@ function previewItems(rfps: RfpListItem[], country: "CA" | "US"): { items: RfpLi
   return items.length ? { items, trade } : null;
 }
 
-const Y = 1, N = 0;
 type Cell = 0 | 1 | string;
 const Mark = ({ c, pro }: { c: Cell; pro?: boolean }) =>
   typeof c === "string" ? <>{c}</> : c ? (
@@ -81,8 +85,14 @@ export default async function PricingPage({ params }: { params: Promise<object> 
   const founding = getT("founding");
   const v = getT("v3Pages").pricing;
   const tl = getT("leads").pricing;
-  const [stats, rfps, categories, sold, projects] = await Promise.all([
-    getPlatformStats().catch((): PlatformStats => ({ rfpsPostedLast30Days: 0, tradesListed: 0 })),
+  const [visitor, fx, trialOpen] = await Promise.all([
+    getVisitorCountry(),
+    getUsdPerCad(),
+    // No trade_trials table / service key yet: the page still renders, with Join free as the main button.
+    trialsOpen().catch(() => false),
+  ]);
+  const serverMarket = { market: visitor.country, usdPerCad: fx.usdPerCad };
+  const [rfps, categories, sold, projects] = await Promise.all([
     listAllRfpsCached().catch(() => [] as RfpListItem[]),
     getCategories().catch(() => []),
     cachedLifetimeCount().catch(() => null),
@@ -92,16 +102,13 @@ export default async function PricingPage({ params }: { params: Promise<object> 
   // Lead counts from the data, per country (projects and permits are Canada only).
   const today = torontoToday();
   const liveProjects = projects.filter((p) => isLiveLeadProject(p, today)).length;
-  const wins = hubWins(rfps, [], { today, days: AWARD_DAYS });
-  const winners = {
-    CA: new Set(wins.filter((w) => rfpMarket(w) === "CA").map((w) => winnerKey(w.winner))).size,
-    US: new Set(wins.filter((w) => rfpMarket(w) === "US").map((w) => winnerKey(w.winner))).size,
-  };
+  // Site-wide counter rules (lib/data/site-counters), all from the board snapshot.
+  const winners = { CA: countWinnersLastNDays(rfps, "CA", AWARD_DAYS, today), US: countWinnersLastNDays(rfps, "US", AWARD_DAYS, today) };
   // Country-first: the page is cached, so each country's numbers and preview
   // ship and the visitor's shows (ByMarket). Never the two added together.
   const boards = boardStatsByCountry(rfps);
   const previews = { CA: previewItems(rfps, "CA"), US: previewItems(rfps, "US") };
-  const posted = stats.rfpsPostedLast30DaysByCountry ?? null;
+  const posted = { CA: countPostedLastNDays(rfps, "CA", 30), US: countPostedLastNDays(rfps, "US", 30) };
   const byMarket = (f: (c: "CA" | "US") => ReactNode) => <ByMarket ca={f("CA")} us={f("US")} />;
   const mailPreview = (preview: NonNullable<(typeof previews)["CA"]>) => (
         <section className="v3-wrap vp-mail">
@@ -146,29 +153,34 @@ export default async function PricingPage({ params }: { params: Promise<object> 
   const proHref = L(signUpHrefForPlan("pro", "annual"));
   const fv = { months: FOUNDING.discontinueRefundMonths, days: FOUNDING.refundDays, cap: FOUNDING.cap, low: FOUNDING_LOW_SPOTS };
 
-  // Compare table: who gets what (labels from the plan cards).
+  // Compare table, straight from the plan matrix (lib/pricing/plan-matrix):
+  // a tick only where code grants it, and every tier includes the ones before it.
   const p = v.plans.plans;
-  const rows: ({ group: string } | { label: string; c: [Cell, Cell, Cell, Cell] })[] = [
-    { group: v.compare.groups.found },
-    { label: p[2].features[7], c: [Y, N, Y, Y] },
-    { label: p[0].features[1], c: [Y, N, N, N] },
-    { label: p[0].features[2], c: [Y, N, N, N] },
-    { label: p[2].features[6], c: [N, N, Y, Y] },
-    ...p[1].features.map((f) => ({ label: f, c: [N, Y, N, N] as [Cell, Cell, Cell, Cell] })),
-    { group: v.compare.groups.win },
-    { label: v.compare.rfpAccess, c: [v.compare.noAccess, v.compare.noAccess, v.compare.fullAccess, v.compare.fullAccess] },
-    ...p[2].features.slice(1, 6).map((f) => ({ label: f, c: [N, N, Y, Y] as [Cell, Cell, Cell, Cell] })),
-    { group: v.compare.groups.stand },
-    ...p[3].features.slice(1).map((f) => ({ label: f, c: [N, N, N, Y] as [Cell, Cell, Cell, Cell] })),
-  ];
+  const rows: ({ group: string } | { label: string; c: Cell[] })[] = MATRIX_GROUPS.flatMap((g) => [
+    { group: v.compare.groups[g] },
+    ...PLAN_MATRIX.filter((r) => r.group === g).map((r) => ({
+      label: v.compare.rows[r.id],
+      c: TIERS.map((tier): Cell => countCell(r, tier, v.compare.count, num) ?? (r.value[tier] > 0 ? 1 : 0)),
+    })),
+  ]);
+
+  // Trades lead with the no-card trial; if trials aren't open yet, Join free is the main button and we say why.
+  const trialForm = (cls: string) => (
+    <form action={startTrialAction}>
+      <input type="hidden" name="source" value="pricing" />
+      <input type="hidden" name="lang" value={lang} />
+      <button type="submit" className={cls} data-action="start-trial">{tl.trialCta}</button>
+    </form>
+  );
+  const joinFreeHref = L("/sign-up?role=trade");
 
   const faqTabs = [
-    { label: v.faq.tabPlans, items: v.faq.plans },
+    { label: v.faq.tabPlans, items: [{ q: v.faq.refund.q, a: fmt(v.faq.refund.a, fv) }, ...v.faq.plans] },
     { label: v.faq.tabFounding, items: founding.faq.map((f) => ({ q: fmt(f.q, fv), a: fmt(f.a, fv) })) },
   ];
 
   return (
-    <>
+    <ServerMarketProvider value={serverMarket}>
       <div className="v3-top">
         <section className="v3-wrap vp-phero">
           <div className="vp-phero-main">
@@ -186,7 +198,24 @@ export default async function PricingPage({ params }: { params: Promise<object> 
             )}
           </dl>
         </section>
-        <PricingPlans t={v.plans} lang={lang} seoMonthly={seoMonthly} proMonthly={proMonthly} />
+        <PricingPlans
+          t={v.plans}
+          lang={lang}
+          seoMonthly={seoMonthly}
+          proMonthly={proMonthly}
+          show={[0, 2]}
+          actions={
+            trialOpen ? (
+              <>
+                {trialForm("v3-pill mint")}
+                <a href={joinFreeHref} className="v3-pill ghost">{v.plans.joinFree}</a>
+              </>
+            ) : (
+              <a href={joinFreeHref} className="v3-pill mint">{v.plans.joinFree}</a>
+            )
+          }
+          actionsNote={trialOpen ? tl.trialNote : v.plans.trialOff}
+        />
       </div>
 
       <section className="v3-wrap vp-leads" data-section="pricing-leads">
@@ -195,12 +224,8 @@ export default async function PricingPage({ params }: { params: Promise<object> 
           <h2 className="vp-h2">{byMarket((c) => (c === "CA" && liveProjects > 0 ? tl.title : tl.titleUs))}</h2>
           <p className="vp-lead dark">{byMarket((c) => (c === "US" ? tl.bodyUs : liveProjects > 0 ? tl.body : tl.bodyNoProjects))}</p>
           <div className="ctas">
-            <form action={startTrialAction}>
-              <input type="hidden" name="source" value="pricing" />
-              <input type="hidden" name="lang" value={lang} />
-              <button type="submit" className="v3-pill navy vp-big" data-action="start-trial">{tl.trialCta}</button>
-            </form>
-            <span className="nt">{tl.trialNote}</span>
+            {trialOpen ? trialForm("v3-pill navy vp-big") : <a href={joinFreeHref} className="v3-pill navy vp-big">{v.mint.join}</a>}
+            <span className="nt">{trialOpen ? tl.trialNote : v.plans.trialOff}</span>
           </div>
         </div>
         <div className="vp-leads-r">
@@ -228,6 +253,17 @@ export default async function PricingPage({ params }: { params: Promise<object> 
             <div><div className="v3-label">{v.terms.postTitle}</div><p>{v.terms.post}</p></div>
           </div>
         </div>
+      </section>
+
+      <section className="vp-found" data-section="pricing-get-found">
+        <div className="v3-wrap vp-sechead">
+          <div>
+            <div className="v3-eyebrow">{v.found.eyebrow}</div>
+            <h2 className="vp-h2">{v.found.title}</h2>
+          </div>
+          <p className="vp-lead dark">{v.found.body}</p>
+        </div>
+        <PricingPlans t={v.plans} lang={lang} seoMonthly={seoMonthly} proMonthly={false} show={[1, 3]} steps={false} />
       </section>
 
       <section className="v3-wrap vp-compare">
@@ -272,8 +308,8 @@ export default async function PricingPage({ params }: { params: Promise<object> 
             </tbody>
             <tfoot>
               <tr>
-                <th scope="row" className="note"><PriceLine tpl={v.compare.currencyNote} cad={{}} lang={lang} w="16em" /></th>
-                <td><a href={L("/sign-up")}>{p[0].cta} →</a></td>
+                <th scope="row" className="note">{v.compare.cumulative} <PriceLine tpl={v.compare.currencyNote} cad={{}} lang={lang} w="16em" /></th>
+                <td><a href={joinFreeHref}>{p[0].cta} →</a></td>
                 <td><a href={L(signUpHrefForPlan("seo"))}>{p[1].cta} →</a></td>
                 <td className="pro"><a href={proHref} className="v3-pill ink">{p[2].cta}</a></td>
                 <td><a href={L(signUpHrefForPlan("featured"))}>{p[3].cta} →</a></td>
@@ -317,7 +353,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
               </div>
               <div className="fnd">
                 <div className="k">{founding.compareFounding}</div>
-                <div className="pv">{founding.compareFoundingPrice}</div>
+                <div className="pv"><PriceLine tpl={v.founding.once} cad={{}} lang={lang} w="7em" /></div>
                 <div className="bars">{[0, 1, 2, 3, 4].map((i) => <span key={i} className={i ? "lo" : undefined} />)}</div>
                 <div className="n">{founding.compareNote}</div>
               </div>
@@ -388,10 +424,10 @@ export default async function PricingPage({ params }: { params: Promise<object> 
             <b>Trade Pro: <PriceLine tpl={proMonthly ? v.lineAnnualFirst : v.lineAnnual} cad={{ monthly: PRICING.proMonthly, annual: PRICING.proAnnual }} lang={lang} /></b>{" "}
             <span className="c">{byMarket((c) => fmt(v.sticky, { n: num(boards[c].open) }))}</span>
           </div>
-          <a href={L("/sign-up?role=trade")} className="v3-pill ghost">{v.mint.join}</a>
-          <a href={proHref} className="v3-pill mint">{v.sticky2}</a>
+          <a href={joinFreeHref} className="v3-pill ghost">{v.mint.join}</a>
+          {trialOpen ? trialForm("v3-pill mint") : <a href={proHref} className="v3-pill mint">{v.sticky2}</a>}
         </div>
       </div>
-    </>
+    </ServerMarketProvider>
   );
 }

@@ -81,6 +81,33 @@ async function readTrialRow(
  * the table doesn't exist yet. For crons that build "Trade Pro members"
  * lists from subscriptions: add these so a trial gets what Pro gets.
  */
+let trialsProbe: { at: number; open: boolean } | null = null;
+
+/**
+ * Can a visitor start a trial at all right now? False when there is no
+ * service-role database or the trade_trials table isn't there yet (the same
+ * conditions startOrgTrial reports as "unavailable"). Probed at most once a
+ * minute per server instance; a transient read error does not close trials
+ * (the action still lands on ?trial=unavailable if the insert fails).
+ * Public pages use this to decide whether "Start free trial" is the main button.
+ */
+export async function trialsOpen(
+  db: SupabaseClient | null = isServiceConfigured() ? createServiceClient() : null,
+  now: number = Date.now(),
+): Promise<boolean> {
+  if (!db) return false;
+  if (trialsProbe && now - trialsProbe.at < 60_000) return trialsProbe.open;
+  let open = true;
+  try {
+    const { error } = await db.from("trade_trials").select("organization_id", { count: "exact", head: true }).limit(1);
+    if (error && isMissingTableError(error)) open = false;
+  } catch {
+    // Network trouble: keep the button; the action reports what happened.
+  }
+  trialsProbe = { at: now, open };
+  return open;
+}
+
 export async function activeTrialOrgIds(db: SupabaseClient, now: Date = new Date()): Promise<Set<string>> {
   const { data, error } = await db.from("trade_trials").select("organization_id").gt("ends_at", now.toISOString()).limit(5000);
   if (error || !data) return new Set();

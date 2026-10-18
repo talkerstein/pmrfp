@@ -31,9 +31,9 @@ export default async function SignInPage({
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
       <h1 className="text-2xl font-semibold tracking-tight">{t.heading}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{t.intro}</p>
-      {error === "google" && (
+      {(error === "google" || error === "link") && (
         <p className="mt-6 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {t.googleError}
+          {error === "link" ? t.linkError : t.googleError}
         </p>
       )}
       <div className="mt-6">
@@ -42,7 +42,7 @@ export default async function SignInPage({
             <ContinueWithGoogle next={next} />
           </div>
         )}
-        <SignInForm next={next} />
+        <SignInForm next={next} startWithLink={error === "link"} />
       </div>
       <DemoNotice />
       <p className="mt-6 text-center text-sm text-muted-foreground">

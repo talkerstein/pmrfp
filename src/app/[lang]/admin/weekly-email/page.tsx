@@ -60,8 +60,8 @@ export default async function WeeklyEmailAdminPage({ params }: { params: Promise
       {demo && <DemoBanner />}
       <p className={`mb-4 rounded-md px-3 py-2 text-sm ${enabled ? "bg-teal-50 text-teal-900" : "bg-amber-50 text-amber-900"}`}>
         {enabled
-          ? "WEEKLY_DIGEST_ENABLED is on: sign-up forms are live and the Tuesday cron sends."
-          : "WEEKLY_DIGEST_ENABLED is off: no sign-up forms, no emails. Set it to 1 in Vercel (and redeploy) to turn it on. /api/cron/weekly-digest?dry=1 previews a run."}
+          ? "WEEKLY_DIGEST_ENABLED is on: the Tuesday cron sends. Sign-up forms are always live."
+          : "WEEKLY_DIGEST_ENABLED is off: sign-ups are collected (pending, double opt-in; confirmation emails go out when Resend is configured) but no weekly email sends. Set it to 1 in Vercel (and redeploy) to start sending. /api/cron/weekly-digest?dry=1 previews a run."}
       </p>
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">

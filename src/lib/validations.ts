@@ -3,9 +3,12 @@ import { z } from "zod";
 /** Zod schemas — single source of truth for client + server validation (§24). */
 
 export const signUpSchema = z.object({
-  fullName: z.string().min(1, "Your name is required"),
+  // Optional: sign-up asks only email + trade + region (name comes later, or from Google).
+  fullName: z.string().trim().max(120).optional(),
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  // Optional here because the passwordless (magic link) sign-up has none;
+  // signUpAction requires it for the password method.
+  password: z.string().min(8, "Password must be at least 8 characters").optional(),
   role: z.enum(["trade", "property_manager", "visitor", "supplier", "real_estate_agent", "talent"]),
   // Honeypot — must stay empty.
   company_website: z.string().max(0).optional(),

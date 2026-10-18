@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/site";
 import { getSession } from "@/lib/access/access";
+import { BidAlertBox } from "@/components/growth/bid-alert-box";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { provinceSlug } from "@/lib/data/price-benchmarks";
@@ -178,6 +179,8 @@ export default async function InsightsMarketPage({ params, searchParams }: { par
             {intel.map((i) => <InsightBlock key={i.id} i={i} L={L} />)}
           </>
         )}
+
+        <BidAlertBox source="insights" province={m.province} trades={[m.trade.slug]} signedIn={Boolean(session)} />
 
         <SH2 no={++no} id="method">{t.sec.method}</SH2>
         <div className="s-callout"><p>{t.method}</p></div>
