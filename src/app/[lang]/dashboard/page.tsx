@@ -28,6 +28,7 @@ import { MarketPanel } from "@/components/leads/market-panel";
 import { TrialFlash, TrialStartForm, TrialStatus, canStartTrial } from "@/components/leads/trial";
 import { InsightsCard } from "@/components/insights/insights-card";
 import { dashboardInsights } from "@/lib/insights/dashboard";
+import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -39,7 +40,7 @@ export default async function TradeDashboardHome({
   searchParams,
 }: {
   params: Promise<object>;
-  searchParams?: Promise<{ trial?: string }>;
+  searchParams?: Promise<{ trial?: string; join?: string }>;
 }) {
   await setLangFrom(params);
   const t = getT("dash").home;
@@ -47,7 +48,8 @@ export default async function TradeDashboardHome({
   const session = await requireRole(["trade"]);
   const demo = isDemoMode();
   const org = session.organization;
-  const flash = (await searchParams)?.trial;
+  const sp = await searchParams;
+  const flash = sp?.trial;
   // Country-first: the company's own country (its profile, else the CA|US switch / IP).
   const { country, province } = await getVisitorCountry({ session });
   const [rfps, photoProjects, tradeSlugs, market] = await Promise.all([
@@ -85,6 +87,7 @@ export default async function TradeDashboardHome({
         description={t.description}
       />
 
+      {!demo && <JoinRequestsCard session={session} back="/dashboard" flash={sp?.join} />}
       <TrialFlash value={flash} />
       <TrialStatus trial={session.trial} paid={session.paid} country={country} />
 

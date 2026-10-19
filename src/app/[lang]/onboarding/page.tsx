@@ -22,6 +22,11 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isServiceConfigured } from "@/lib/supabase/config";
+import { pendingJoinRequestFor } from "@/lib/dedupe/join";
+import { cancelJoinRequestAction } from "@/lib/dedupe/actions";
+import { fmt } from "@/i18n/format";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -31,13 +36,13 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function OnboardingPage({
   searchParams, params }: {
-  searchParams: Promise<{ next?: string; kind?: string; award?: string; role?: string }>;
+  searchParams: Promise<{ next?: string; kind?: string; award?: string; role?: string; join_error?: string }>;
 } & { params: Promise<object> }) {
   const lang = await setLangFrom(params);
   const t = getT("auth").onboarding;
   const session = await requireUser();
   const role = session.profile.primary_role;
-  const { next: rawNext, kind, award: awardParam, role: roleParam } = await searchParams;
+  const { next: rawNext, kind, award: awardParam, role: roleParam, join_error: joinError } = await searchParams;
   const next = safeNextPath(rawNext);
   // What the sign-up page said (?role=). Only a pre-selection: never saved as-is.
   const choice = parseRoleChoice(roleParam, kind);
@@ -54,6 +59,25 @@ export default async function OnboardingPage({
       </Shell>
     );
   }
+
+  // Asked to join an existing company (lib/dedupe/join): wait for approval,
+  // or withdraw and create their own listing.
+  const td = getT("dedupeClient");
+  const pendingJoin = !session.profile.onboarding_completed && isServiceConfigured()
+    ? await pendingJoinRequestFor(createServiceClient(), session.userId)
+    : null;
+  if (pendingJoin) {
+    return (
+      <Shell lang={lang} heading={td.pending.heading} intro={fmt(td.pending.body, { company: pendingJoin.companyName })}>
+        <form action={cancelJoinRequestAction}>
+          <input type="hidden" name="lang" value={lang} />
+          <input type="hidden" name="requestId" value={pendingJoin.id} />
+          <button type="submit" className="text-sm font-medium text-teal-700 underline">{td.pending.cancel}</button>
+        </form>
+      </Shell>
+    );
+  }
+  const joinErrorText = joinError && joinError in td.joinErrors ? td.joinErrors[joinError as keyof typeof td.joinErrors] : null;
 
   if (!session.profile.onboarding_completed) after(() => recordOnboardingStep(session.userId, "form_viewed"));
   const [categories, allRegions, geo, prefs] = await Promise.all([getCategories(), getRegions(), getVisitorGeo(), getSignupPrefs()]);
@@ -103,6 +127,7 @@ export default async function OnboardingPage({
               : t.intros.buyer
       }
     >
+      {joinErrorText && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{joinErrorText}</p>}
       <OnboardingForm
         role={role}
         categories={categories}
