@@ -10,6 +10,7 @@ import { useLang, useT } from "@/i18n/provider";
 import { regionName, tradeName } from "@/i18n/terms";
 import { localizePath } from "@/i18n/config";
 import { VISITOR_UPGRADE_PATH } from "@/lib/auth/visitor-upgrade";
+import { DuplicateCompanyPanel } from "@/components/forms/duplicate-company-panel";
 
 type Option = { slug: string; name: string };
 
@@ -47,6 +48,13 @@ export function OnboardingForm({
   // Landlords may be individuals: company name optional (we use their name).
   const [kind, setKind] = useState(orgKind);
   const landlord = role === "property_manager" && kind === "landlord";
+  // "This company may already be on PMRFP": the panel replaces the form until
+  // they choose, or click "Edit my details" (the form comes back, refilled).
+  const [editing, setEditing] = useState<ActionState | null>(null);
+  const showMatches = !!state.duplicates?.length && editing !== state;
+  const echo = editing === state ? state.echo ?? [] : [];
+  const echoed = (name: string) => echo.find(([k]) => k === name)?.[1];
+  const echoedAll = (name: string) => echo.filter(([k]) => k === name).map(([, v]) => v);
 
   if (role === "visitor") {
     return (
@@ -68,8 +76,20 @@ export function OnboardingForm({
     );
   }
 
+  if (showMatches) {
+    return (
+      <DuplicateCompanyPanel
+        matches={state.duplicates!}
+        echo={state.echo ?? []}
+        action={action}
+        pending={pending}
+        onEdit={() => setEditing(state)}
+      />
+    );
+  }
+
   return (
-    <form action={action} className="space-y-6">
+    <form key={editing === state ? "edit" : "new"} action={action} className="space-y-6">
       {state.error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       <input type="hidden" name="lang" value={lang} />
       {next && <input type="hidden" name="next" value={next} />}
@@ -84,7 +104,7 @@ export function OnboardingForm({
                 key={value}
                 className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-sm has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50"
               >
-                <input type="radio" name="orgKind" value={value} defaultChecked={orgKind === value} onChange={() => setKind(value)} className="mt-0.5 size-4" />
+                <input type="radio" name="orgKind" value={value} defaultChecked={(echoed("orgKind") ?? orgKind) === value} onChange={() => setKind(value)} className="mt-0.5 size-4" />
                 <span>
                   <span className="block font-medium">{t.orgKinds[value].label}</span>
                   <span className="block text-xs text-muted-foreground">{t.orgKinds[value].hint}</span>
@@ -97,19 +117,19 @@ export function OnboardingForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         {landlord ? (
-          <Field label={t.landlordName}><Input name="name" placeholder={t.landlordNamePlaceholder} defaultValue={defaultName ?? undefined} /></Field>
+          <Field label={t.landlordName}><Input name="name" placeholder={t.landlordNamePlaceholder} defaultValue={echoed("name") ?? defaultName ?? undefined} /></Field>
         ) : (
-          <Field label={t.companyName} required><Input name="name" required defaultValue={defaultName ?? undefined} /></Field>
+          <Field label={t.companyName} required><Input name="name" required defaultValue={echoed("name") ?? defaultName ?? undefined} /></Field>
         )}
-        <Field label={t.website}><Input name="website" placeholder="https://" /></Field>
-        <Field label={t.phone}><Input name="phone" /></Field>
-        <Field label={t.email}><Input name="email" type="email" /></Field>
-        <Field label={t.city}><Input name="city" /></Field>
-        <Field label={t.province}><Input name="province" defaultValue="Ontario" /></Field>
+        <Field label={t.website}><Input name="website" placeholder="https://" defaultValue={echoed("website")} /></Field>
+        <Field label={t.phone}><Input name="phone" defaultValue={echoed("phone")} /></Field>
+        <Field label={t.email}><Input name="email" type="email" defaultValue={echoed("email")} /></Field>
+        <Field label={t.city}><Input name="city" defaultValue={echoed("city")} /></Field>
+        <Field label={t.province}><Input name="province" defaultValue={echoed("province") ?? "Ontario"} /></Field>
       </div>
 
       <Field label={t.shortDescription}>
-        <Textarea name="shortDescription" rows={2} maxLength={300} placeholder={landlord ? t.landlordDescriptionPlaceholder : t.shortDescriptionPlaceholder} />
+        <Textarea name="shortDescription" rows={2} maxLength={300} defaultValue={echoed("shortDescription")} placeholder={landlord ? t.landlordDescriptionPlaceholder : t.shortDescriptionPlaceholder} />
       </Field>
 
       {isListing && (
@@ -119,19 +139,19 @@ export function OnboardingForm({
             name="categories"
             options={categories.map((o) => ({ ...o, name: tradeName(o.name, lang) }))}
             required
-            preselected={preselectedCategories}
+            preselected={echo.length ? echoedAll("categories") : preselectedCategories}
           />
           <CheckboxGroup
             label={t.regions}
             name="regions"
             options={regions.map((o) => ({ ...o, name: regionName(o.name, lang) }))}
             required
-            preselected={preselectedRegions}
+            preselected={echo.length ? echoedAll("regions") : preselectedRegions}
           />
           <Field label={t.contact}>
             <select
               name="publicContactVisibility"
-              defaultValue="request_intro"
+              defaultValue={echoed("publicContactVisibility") ?? "request_intro"}
               className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
             >
               <option value="show_contact">{t.contactShow}</option>

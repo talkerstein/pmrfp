@@ -6,6 +6,7 @@ import { postOAuthRedirect } from "@/lib/auth/oauth";
 import { callbackFailurePath } from "@/lib/auth/magic-link";
 import { safeNextPath } from "@/lib/auth/next";
 import { EVENT, trackEvent } from "@/lib/analytics";
+import { FRESH_OAUTH_MS, blockDuplicateOAuthUser, existingAccountPath } from "@/lib/dedupe/signup";
 
 /**
  * Google sends people back here with a one-time `code` (PKCE). Swap it for a
@@ -26,6 +27,15 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error("[auth/callback]", error.message);
     return failed;
+  }
+
+  // One account per mailbox: a brand-new Google account for an address that
+  // already has a PMRFP account (a Gmail dot / +tag variant) is undone and
+  // sent to sign in. Never says which method the existing account uses.
+  const { data: fresh } = await supabase.auth.getUser();
+  if (fresh.user && method !== "link" && Date.now() - Date.parse(fresh.user.created_at) < FRESH_OAUTH_MS) {
+    const blocked = await blockDuplicateOAuthUser(fresh.user.id, { beforeRemove: () => supabase.auth.signOut() });
+    if (blocked) return NextResponse.redirect(new URL(existingAccountPath(safeNextPath(next)), request.url));
   }
 
   const session = await getSession();

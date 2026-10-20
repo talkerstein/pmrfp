@@ -31,6 +31,12 @@ import { errorDetail } from "@/lib/onboarding/steps";
 import { linkDigestSubscriber } from "@/lib/digest/link";
 import { magicLinkRedirect, parseSignupMethod } from "@/lib/auth/magic-link";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
+import { cleanEmail } from "@/lib/dedupe/email";
+import { existingAccountFor, existingAccountPath } from "@/lib/dedupe/signup";
+import { findCompanyMatches } from "@/lib/dedupe/lookup";
+import { isMissingRelation, orderedPair } from "@/lib/dedupe/review";
+import type { MatchReason } from "@/lib/dedupe/company";
+import { logAudit } from "@/lib/audit";
 import { getDictionary } from "@/i18n/dictionaries";
 
 async function authIp(): Promise<string> {
@@ -43,9 +49,55 @@ async function authIp(): Promise<string> {
   );
 }
 
+/** An existing listing that looks like the one being created (onboarding). */
+export interface DuplicateCompanyView {
+  id: string;
+  slug: string;
+  name: string;
+  city: string | null;
+  province: string | null;
+  /** Public in the directory (so "View listing" can link to it). */
+  listed: boolean;
+  reasons: MatchReason[];
+}
+
 export interface ActionState {
   error?: string;
   success?: string;
+  /** Onboarding: "This company may already be on PMRFP". */
+  duplicates?: DuplicateCompanyView[];
+  /** Onboarding: the submitted fields, replayed by "It's a different company". */
+  echo?: [string, string][];
+}
+
+/** The submitted fields minus Next's own and the acknowledgement, to resubmit as hidden inputs. */
+function formEcho(formData: FormData): [string, string][] {
+  const out: [string, string][] = [];
+  for (const [k, v] of formData.entries()) {
+    if (k.startsWith("$") || k === "dup_ack" || typeof v !== "string") continue;
+    out.push([k, v.slice(0, 2000)]);
+  }
+  return out.slice(0, 400);
+}
+
+/**
+ * They said "It's a different company": the new listing is created, and each
+ * pair goes to /admin/duplicates for a second look. Never blocks onboarding.
+ */
+async function flagDifferentCompany(newOrgId: string, otherIds: string[], userId: string): Promise<void> {
+  if (!isServiceConfigured()) return;
+  const rows = otherIds
+    .filter((id) => id !== newOrgId)
+    .map((id) => {
+      const [a_id, b_id] = orderedPair(newOrgId, id);
+      return { kind: "company", a_id, b_id, status: "open", source: "onboarding", note: "The new member said it's a different company." };
+    });
+  if (!rows.length) return;
+  const { error } = await createServiceClient()
+    .from("duplicate_reviews")
+    .upsert(rows, { onConflict: "kind,a_id,b_id", ignoreDuplicates: true });
+  if (error && !isMissingRelation(error)) console.error("[dedupe:flag]", error.message);
+  await logAudit({ actorUserId: userId, action: "company.duplicate_acknowledged", entityType: "organization", entityId: newOrgId, metadata: { similarTo: otherIds } });
 }
 
 /**
@@ -91,7 +143,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   const method = parseSignupMethod(formData.get("method"));
   const parsed = signUpSchema.safeParse({
     fullName: formData.get("fullName") ?? "",
-    email: formData.get("email"),
+    email: cleanEmail(String(formData.get("email") ?? "")),
     password: method === "link" ? undefined : (formData.get("password") ?? undefined),
     role: formData.get("role"),
     company_website: formData.get("company_website") ?? "",
@@ -104,6 +156,15 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   }
   if (parsed.data.company_website) return { success: m.thanks }; // honeypot
   if (!isSupabaseConfigured()) return { error: m.demo };
+
+  // One account per mailbox (lib/dedupe): an address that already has an
+  // account (same normalized email: case, Gmail dots and +tags) goes to sign
+  // in instead of creating a second one, whichever method it used.
+  const existing = await existingAccountFor(parsed.data.email);
+  if (existing) {
+    await logAudit({ actorUserId: null, action: "signup.duplicate_blocked", entityType: "user", entityId: existing.id, metadata: { method } });
+    redirect(localizePath(existingAccountPath(safeNextPath(formData.get("next")?.toString())), lang));
+  }
 
   // General contractors sign up as buyers (primary_role property_manager, so
   // they post exactly like a PM) and get a 'builder' organization at
@@ -209,7 +270,7 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
     return { error: m.rateLimit };
   }
   const parsed = signInSchema.safeParse({
-    email: formData.get("email"),
+    email: cleanEmail(String(formData.get("email") ?? "")),
     password: formData.get("password"),
   });
   if (!parsed.success) return { error: m.enterEmailPassword };
@@ -239,7 +300,7 @@ export async function signInLinkAction(_prev: ActionState, formData: FormData): 
   if (await checkRateLimitByIp(await authIp(), "auth")) {
     return { error: m.rateLimit };
   }
-  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  const parsed = forgotPasswordSchema.safeParse({ email: cleanEmail(String(formData.get("email") ?? "")) });
   if (!parsed.success) return { error: m.enterValidEmail };
   if (!isSupabaseConfigured()) return { error: m.demo };
   const next = safeNextPath(formData.get("next")?.toString());
@@ -269,7 +330,7 @@ export async function forgotPasswordAction(_prev: ActionState, formData: FormDat
   if (await checkRateLimitByIp(await authIp(), "auth")) {
     return { error: m.rateLimit };
   }
-  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  const parsed = forgotPasswordSchema.safeParse({ email: cleanEmail(String(formData.get("email") ?? "")) });
   if (!parsed.success) return { error: m.enterValidEmail };
   if (!isSupabaseConfigured()) return { error: m.demo };
   const supabase = await createClient();
@@ -434,6 +495,34 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   }
   const data = parsed.data;
 
+  // "This company may already be on PMRFP" (lib/dedupe): before creating a
+  // listing, look for one that matches (name, website, phone, company email
+  // domain). They choose "Request to join this company" or "It's a
+  // different company" (dup_ack, flagged for admin review). Never merged here.
+  const acknowledged = formData.getAll("dup_ack").map(String).filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 5);
+  if (!acknowledged.length && !(isLandlord && !rawName) && isServiceConfigured()) {
+    const matches = await findCompanyMatches(createServiceClient(), {
+      name: data.name,
+      website: data.website,
+      phone: data.phone,
+      email: data.email,
+    });
+    if (matches.length) {
+      return {
+        duplicates: matches.map(({ candidate: c, reasons }) => ({
+          id: c.id,
+          slug: c.slug,
+          name: c.name,
+          city: c.city ?? null,
+          province: c.province ?? null,
+          listed: c.profile_status === "approved" && c.status === "active",
+          reasons,
+        })),
+        echo: formEcho(formData),
+      };
+    }
+  }
+
   const admin = isServiceConfigured() ? createServiceClient() : await createClient();
 
   // Create org
@@ -497,6 +586,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     user_id: session.userId,
     role: "owner",
   });
+  if (acknowledged.length) await flagDifferentCompany(org.id, acknowledged, session.userId);
 
   if (isListing) {
     const { data: catRows } = await admin.from("trade_categories").select("id,slug").in("slug", categories);

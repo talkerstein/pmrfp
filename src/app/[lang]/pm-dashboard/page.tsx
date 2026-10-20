@@ -1,6 +1,7 @@
 import Link from "@/i18n/link";
 import { FileText, ArrowRight, Users } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
 import { createClient } from "@/lib/supabase/server";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,7 +19,13 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return { title: getDictionary(hasLocale(lang) ? lang : "en").pm.home.metaTitle };
 }
 
-export default async function PmDashboardHome({ params }: { params: Promise<object> }) {
+export default async function PmDashboardHome({
+  params,
+  searchParams,
+}: {
+  params: Promise<object>;
+  searchParams?: Promise<{ join?: string }>;
+}) {
   await setLangFrom(params);
   const t = getT("pm").home;
   const session = await requireRole(["property_manager", "real_estate_agent"]);
@@ -61,6 +68,8 @@ export default async function PmDashboardHome({ params }: { params: Promise<obje
         title={gc ? t.titleGc : t.title}
         description={gc ? t.descriptionGc : t.description}
       />
+
+      {!demo && <JoinRequestsCard session={session} back="/pm-dashboard" flash={(await searchParams)?.join} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t.stats.active} value={activeRfps} href="/pm-dashboard/rfps" />
