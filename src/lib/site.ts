@@ -120,6 +120,12 @@ export const PM_NAV = [
   { href: "/jobs/manage", label: "Hiring" },
 ] as const;
 
+/** Public-buyer dashboard sidebar (towns, cities, school boards…). Labels: towns.dashboard.nav. */
+export const PUBLIC_BUYER_NAV = [
+  { href: "/buyer-dashboard", key: "home" },
+  { href: "/buyer-dashboard/edit", key: "page" },
+] as const;
+
 /** Admin dashboard sidebar (§10.5) */
 export const ADMIN_NAV = [
   { href: "/admin", label: "Overview" },

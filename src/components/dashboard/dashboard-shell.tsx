@@ -66,17 +66,20 @@ export function DashboardShell({
   nav,
   area,
   accountCountry = null,
+  localized = false,
   children,
 }: {
   nav: readonly NavItem[];
   area: string;
+  /** The nav and area labels are already in the page language (the public-buyer dashboard): follow it instead of staying English. */
+  localized?: boolean;
   /** The company's location as the account cookie value ("CA-ON"), so public pages follow it. */
   accountCountry?: string | null;
   children: React.ReactNode;
 }) {
   const audience = audienceFor(nav);
   // The admin area stays English; trade and PM dashboards follow the page language.
-  const lang = audience === "other" ? "en" : getLang();
+  const lang = audience === "other" && !localized ? "en" : getLang();
   const t = getDictionary(lang).dash.shell;
   // English keeps the labels from src/lib/site.ts as they are.
   const items = lang === "en" ? nav : nav.map((item) => ({ ...item, label: NAV_KEY[item.href] ? t.nav[NAV_KEY[item.href]] : item.label }));

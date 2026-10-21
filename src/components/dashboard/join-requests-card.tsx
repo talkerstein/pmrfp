@@ -16,7 +16,7 @@ interface PendingRow {
  * (lib/dedupe/join). Owners and admins of the company only. Renders nothing
  * when there are none, or before the join-request migration.
  */
-export async function JoinRequestsCard({ session, back, flash }: { session: SessionContext; back: "/dashboard" | "/pm-dashboard"; flash?: string }) {
+export async function JoinRequestsCard({ session, back, flash }: { session: SessionContext; back: "/dashboard" | "/pm-dashboard" | "/buyer-dashboard"; flash?: string }) {
   const org = session.organization;
   if (!org || !isServiceConfigured()) return null;
   const t = getT("dedupeClient").card;

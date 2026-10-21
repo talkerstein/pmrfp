@@ -9,7 +9,7 @@
  * reaches the server, so every widget URL stays one cacheable ISR page.
  */
 
-export const WIDGET_KINDS = ["feed", "bids", "jobs", "company", "trusted"] as const;
+export const WIDGET_KINDS = ["feed", "bids", "jobs", "company", "trusted", "town-bids"] as const;
 export type WidgetKind = (typeof WIDGET_KINDS)[number];
 
 export const WIDGET_THEMES = ["light", "dark"] as const;
@@ -24,7 +24,14 @@ export type WidgetConfig =
   | { kind: "jobs" | "company"; slug: string }
   /** `key` proves the org itself made this widget (see ./keys): its bids aren't public by slug. */
   | { kind: "bids"; slug: string; key: string }
-  | { kind: "trusted"; handle: string };
+  | { kind: "trusted"; handle: string }
+  /** A public buyer's current bids (a town, city, school board…): its /buyers/<province>/<slug> page, in one language. */
+  | { kind: "town-bids"; province: string; slug: string; lang: WidgetLang };
+
+/** Languages the town-bids widget speaks (the other widgets are English). */
+export const WIDGET_LANGS = ["en", "fr", "es"] as const;
+export type WidgetLang = (typeof WIDGET_LANGS)[number];
+export const isWidgetLang = (v: unknown): v is WidgetLang => typeof v === "string" && (WIDGET_LANGS as readonly string[]).includes(v);
 
 export interface WidgetOptions {
   theme: WidgetTheme;
@@ -53,13 +60,15 @@ export function widgetPath(w: WidgetConfig): string {
       return `trusted/${w.handle}`;
     case "bids":
       return `bids/${w.slug}/${w.key}`;
+    case "town-bids":
+      return `town-bids/${w.lang}/${w.province}/${w.slug}`;
     default:
       return `${w.kind}/${w.slug}`;
   }
 }
 
 /** Same check the loader script runs before it frames anything. */
-export const WIDGET_PATH_RE = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+)$/;
+export const WIDGET_PATH_RE = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+|town-bids\/(en|fr|es)\/[a-z0-9-]+\/[a-z0-9-]+)$/;
 
 export function clampLimit(n: unknown, fallback = DEFAULT_LIMIT): number {
   const v = typeof n === "number" ? n : parseInt(String(n ?? ""), 10);
@@ -84,8 +93,18 @@ export function initialHeight(w: WidgetConfig, o: WidgetOptions): number {
   return 130 + clampLimit(o.limit) * 76;
 }
 
+/** The town-bids widget's title in its own language (towns.widget.label). */
+const TOWN_LABEL: Record<WidgetLang, string> = {
+  en: "Our current bids on PMRFP",
+  fr: "Nos appels d'offres en cours sur PMRFP",
+  es: "Nuestras licitaciones vigentes en PMRFP",
+};
+
+const labelOf = (w: WidgetConfig) => widgetLabel(w.kind, w.kind === "town-bids" ? w.lang : "en");
+
 /** Plain-language title for the iframe and the fallback link. */
-export function widgetLabel(kind: WidgetKind): string {
+export function widgetLabel(kind: WidgetKind, lang: WidgetLang = "en"): string {
+  if (kind === "town-bids") return TOWN_LABEL[lang];
   return {
     feed: "Open tenders on PMRFP",
     bids: "Our open bids on PMRFP",
@@ -113,6 +132,8 @@ export function fallbackHref(base: string, w: WidgetConfig): string {
       return `${base}/directory/${w.slug}`;
     case "trusted":
       return `${base}/trusted/${w.handle}`;
+    case "town-bids":
+      return `${base}${w.lang === "en" ? "" : `/${w.lang}`}/buyers/${w.province}/${w.slug}`;
   }
 }
 
@@ -122,7 +143,7 @@ export function scriptSnippet(base: string, w: WidgetConfig, o: WidgetOptions): 
   if (w.kind !== "company") attrs.push(`data-limit="${clampLimit(o.limit)}"`);
   return [
     `<div ${attrs.join(" ")}>`,
-    `  <a href="${fallbackHref(base, w)}" target="_blank" rel="noopener">${widgetLabel(w.kind)}</a>`,
+    `  <a href="${fallbackHref(base, w)}" target="_blank" rel="noopener">${labelOf(w)}</a>`,
     `</div>`,
     `<script async src="${base}/embed.js"></script>`,
   ].join("\n");
@@ -130,7 +151,7 @@ export function scriptSnippet(base: string, w: WidgetConfig, o: WidgetOptions): 
 
 /** Fallback for builders that only accept an iframe. Fixed height; no auto-resize. */
 export function iframeSnippet(base: string, w: WidgetConfig, o: WidgetOptions): string {
-  return `<iframe src="${iframeSrc(base, w, o)}" title="${widgetLabel(w.kind)}" width="100%" height="${initialHeight(w, o)}" style="border:0;max-width:640px" loading="lazy"></iframe>`;
+  return `<iframe src="${iframeSrc(base, w, o)}" title="${labelOf(w)}" width="100%" height="${initialHeight(w, o)}" style="border:0;max-width:640px" loading="lazy"></iframe>`;
 }
 
 /**

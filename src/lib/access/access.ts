@@ -292,6 +292,8 @@ export function roleHome(role: UserRole): string {
   if (role === "property_manager" || role === "real_estate_agent") return "/pm-dashboard";
   if (role === "trade" || role === "supplier") return "/dashboard";
   if (role === "talent") return "/talent/edit";
+  // Towns, cities, school boards, housing providers: their page, widget and claim status.
+  if (role === "public_buyer") return "/buyer-dashboard";
   return "/directory";
 }
 

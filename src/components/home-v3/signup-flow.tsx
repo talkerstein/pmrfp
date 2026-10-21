@@ -37,6 +37,8 @@ export interface SignupProps {
   stats: { open: number | null; closing7: number | null; trades: number; regions: number };
   trades: { slug: string; name: string; n: number }[];
   regions: { slug: string; name: string }[];
+  /** Regions picked before they arrive (a town page's "Follow this town"). */
+  initialRegions?: string[];
 }
 
 export function SignUpFlow(p: SignupProps) {
@@ -53,7 +55,7 @@ export function SignUpFlow(p: SignupProps) {
     if (audienceForRole(role) === "pm") rememberAudience("pm");
   }, [role]);
   const [trades, setTrades] = useState<string[]>([]);
-  const [regions, setRegions] = useState<string[]>([]);
+  const [regions, setRegions] = useState<string[]>(p.initialRegions ?? []);
   const [plan, setPlan] = useState<"free" | "pro">(p.intent ? "pro" : "free");
   const [allTrades, setAllTrades] = useState(false);
   const [allRegions, setAllRegions] = useState(false);

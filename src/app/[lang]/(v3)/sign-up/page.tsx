@@ -17,7 +17,14 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { regionName, tradeName } from "@/i18n/terms";
-
+import { redirect } from "next/navigation";
+import { getSession, roleHome } from "@/lib/access/access";
+import { loadBuyers } from "@/lib/buyers/load";
+import { findBuyerPage } from "@/lib/buyers/model";
+import { PublicBuyerSignUp } from "@/components/towns/public-buyer-signup";
+import { buyerDisplayName } from "@/lib/towns/claimable";
+import { parseBuyerKey } from "@/lib/towns/managed";
+import { PUBLIC_BUYER_ROLE, claimOnboardingHref } from "@/lib/towns/paths";
 
 type ValidRole = SignupLinkRole;
 
@@ -33,6 +40,10 @@ export async function generateMetadata({
   const [{ role }, { lang }] = await Promise.all([searchParams, params]);
   const l = hasLocale(lang) ? lang : "en";
   const t = getDictionary(l).auth.meta.signUp;
+  if (role === PUBLIC_BUYER_ROLE) {
+    const tt = getDictionary(l).towns.meta;
+    return { title: tt.signUpTitle, description: tt.signUpDescription, alternates: alternatesFor(l, "/sign-up"), robots: { index: false, follow: true } };
+  }
   const trade = role === "trade" || role === "supplier";
   const pm = role === "property_manager" || role === "real_estate_agent";
   const gc = role === "general_contractor";
@@ -54,13 +65,23 @@ export default async function SignUpPage({
   searchParams,
   params,
 }: {
-  searchParams: Promise<{ role?: string; kind?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string }>;
+  searchParams: Promise<{ role?: string; kind?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string; region?: string; claim?: string; sent?: string; error?: string }>;
   params: Promise<object>;
 }) {
   const lang = await setLangFrom(params);
   const t = getT("v3Pages").signup;
   const ta = getT("auth").signUp;
-  const { role: rawRole, kind, next: rawNext, template, plan, interval, award: rawAward } = await searchParams;
+  const { role: rawRole, kind, next: rawNext, template, plan, interval, award: rawAward, region: rawRegion, claim: rawClaim, sent, error } = await searchParams;
+  // Towns, cities, school boards, housing providers: their own one-field sign-up (PMRFP for Towns).
+  if (rawRole === PUBLIC_BUYER_ROLE) {
+    const key = parseBuyerKey(rawClaim);
+    const claim = key ? rawClaim! : null;
+    const session = await getSession().catch(() => null);
+    if (session) redirect(localizePath(session.profile.primary_role === PUBLIC_BUYER_ROLE ? claimOnboardingHref(claim) : roleHome(session.profile.primary_role), lang));
+    const page = key ? findBuyerPage((await loadBuyers()).pages, key.provinceSlug, key.slug) : null;
+    const claimName = page ? `${buyerDisplayName(page, lang)}, ${regionName(page.province, lang)}` : null;
+    return <PublicBuyerSignUp lang={lang} claim={page ? claim : null} claimName={claimName} sent={sent === "1"} error={error ?? null} />;
+  }
   // A GC arriving from a public award they won: their first package is prefilled.
   const award = parseAwardRef(rawAward);
   // Plan chosen on /pricing: re-validated against an allowlist; never trusted for price.
@@ -92,9 +113,12 @@ export default async function SignUpPage({
     .map((r) => ({ slug: r.slug, name: regionName(r.name, lang), n: open.regions[r.name] ?? 0, k: rank(r) }))
     .sort((a, b) => a.k - b.k || b.n - a.n || a.name.localeCompare(b.name))
     .map(({ slug, name }) => ({ slug, name }));
+  // "Follow this town" (a town page): its region comes pre-picked.
+  const initialRegions = rawRegion && regionChips.some((r) => r.slug === rawRegion) ? [rawRegion] : [];
 
   return (
     <SignUpFlow
+      initialRegions={initialRegions}
       lang={lang}
       t={{ ...t, linkNote: getT("agencies").signupLinkNote }}
       initialRole={initialRole as SignupRole | undefined}

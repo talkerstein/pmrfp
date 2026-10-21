@@ -24,6 +24,8 @@ import { slugify } from "@/lib/tenders/shared";
 import { buyerKeyOf, type IntelAward } from "@/lib/intel/model";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import type { RfpListItem } from "@/lib/data/types";
+import type { TownFacts } from "@/lib/towns/data";
+import { formalNameEn, formalNameFr, nameIn } from "@/lib/towns/names";
 import DIRECTORY_JSON from "./directory.json";
 
 export const BUYERS_PATH = "/buyers";
@@ -69,6 +71,12 @@ export interface DirectoryBuyer {
   emailSource: string | null;
   checkedOn: string;
   slug: string;
+  /**
+   * The buyer's own web and email domains (its bids page first), for
+   * verifying a clerk's work email (lib/towns/domains). Absent on buyers
+   * known only from the board.
+   */
+  domains?: string[];
 }
 
 export const DIRECTORY: readonly DirectoryBuyer[] = DIRECTORY_JSON as DirectoryBuyer[];
@@ -114,6 +122,34 @@ export function coreKey(name: string): string {
   }
   const place = k.replace(/\b(region|regional municipality|county|district)( of)?\b/g, "").replace(/\s+/g, " ").trim();
   return upper ? `${place} upper` : place;
+}
+
+/** "Ville de Saint-Hyacinthe" → "Saint-Hyacinthe", "Municipalité d'Ayer's Cliff" → "Ayer's Cliff". */
+const FRENCH_PREFIX = /^(la |le )?(ville|cite|cité|municipalite|municipalité|paroisse|canton|cantons unis|village|village nordique|village cri|village naskapi|gouvernement regional|gouvernement régional|municipalite regionale|municipalité régionale|communaute rurale|communauté rurale)( de la| de| d'| du| des)\s*/i;
+
+/** Statuses coreKey doesn't strip ("Resort Municipality of Whistler", "RM of Hanover"). */
+const MORE_PREFIX = /^(the )?(corporation of (the )?)?(resort municipality|rm|r\.m\.|summer village|resort village|northern village|northern hamlet|hamlet|charter community|community government|local government district|rural community|island municipality|specialized municipality) of (the )?/i;
+
+/**
+ * coreKey that also drops a French status and the statuses coreKey keeps
+ * ("Ville de Gatineau" ≡ "City of Gatineau" ≡ "Gatineau", "King Township" ≡
+ * "Township of King", "RM of Hanover" ≡ "Hanover").
+ */
+export function placeKey(name: string): string {
+  return coreKey(name.trim().replace(FRENCH_PREFIX, "").replace(MORE_PREFIX, "").replace(/\s+township$/i, ""));
+}
+
+/** Census types that are counties or regional governments in all but name: they also answer to "<place> County / Region". */
+const UPPER_LIKE = new Set(["Specialized municipality", "Municipal district", "County municipality", "Regional municipality", "District municipality", "Rural municipality", "Island municipality"]);
+
+/** The keys a municipality answers to: its formal name and its bare place name in each language. */
+export function townMatchKeys(t: Pick<TownFacts, "name" | "type" | "typeFr" | "provinceCode">): string[] {
+  const bare = [nameIn(t.name, "en"), nameIn(t.name, "fr")].map(placeKey);
+  const keys = [placeKey(formalNameEn(t)), ...bare];
+  // "Grande Prairie County No. 1" ≡ "County of Grande Prairie".
+  keys.push(...keys.map((k) => k.replace(/ no \d+( upper)?$/, "$1")));
+  if (UPPER_LIKE.has(t.type)) keys.push(...bare.map((k) => (k.endsWith(" upper") ? k : `${k} upper`)));
+  return [...new Set(keys)].filter(Boolean);
 }
 
 /** "Ville de Saint-Hyacinthe ." → "Ville de Saint-Hyacinthe"; "the City of Toronto (…)" keeps its division. */
@@ -184,6 +220,15 @@ export interface BuyerPage {
   path: string;
   /** Not in the research file: a buyer known only from awards on the board. */
   fromBoard: boolean;
+  /**
+   * "directory": a researched buyer; "town": a municipality known only from
+   * Statistics Canada's census subdivisions (lib/towns); "board": a buyer
+   * known only from awards on the board. Absent = "directory" or "board"
+   * (from `fromBoard`), as before towns.
+   */
+  kind?: "directory" | "town" | "board";
+  /** The municipality's 2021 Census facts, when the buyer is one (a town page, or a directory municipality matched to its census subdivision). */
+  town?: TownFacts | null;
   municipality: string | null;
   openBids: BuyerOpenBid[];
   awards: BuyerAwards;
@@ -192,6 +237,8 @@ export interface BuyerPage {
   /** The buyer's Award Intelligence slug, when it has one. */
   intelSlug: string | null;
 }
+
+export const pageKind = (p: Pick<BuyerPage, "kind" | "fromBoard">): "directory" | "town" | "board" => p.kind ?? (p.fromBoard ? "board" : "directory");
 
 const emptyAwards = (): BuyerAwards => ({ count: 0, valued: 0, totalValue: 0, first: null, last: null, topWinners: [], individuals: 0, recent: [], tradeSlugs: [] });
 
@@ -294,6 +341,26 @@ export function isIndexableBuyer(p: Pick<BuyerPage, "awards" | "openBids" | "pro
   return p.awards.count > 0 || p.openBids.length > 0 || p.projectsTotal > 0;
 }
 
+/** What a page has beyond its own data: a verified public buyer manages it, or the buyer said yes to listing its tenders. */
+export interface PageSignals {
+  managed: boolean;
+  permissionYes: boolean;
+}
+
+/**
+ * The one indexing rule for every buyer page. A claimed (managed) page or a
+ * buyer that gave permission is always indexable. A municipality known only
+ * from the census (a town page) is indexable once it has tenders on PMRFP
+ * (open bids or past awards); until then it is noindex,follow and out of the
+ * sitemap, so 3,500 empty pages never count as thin content. Directory and
+ * board buyers keep their rule (isIndexableBuyer).
+ */
+export function isIndexablePage(p: Pick<BuyerPage, "awards" | "openBids" | "projectsTotal" | "kind" | "fromBoard">, s: PageSignals): boolean {
+  if (s.managed || s.permissionYes) return true;
+  if (pageKind(p) === "town") return p.openBids.length > 0 || p.awards.count > 0;
+  return isIndexableBuyer(p);
+}
+
 /** True when every platform this buyer uses is a commercial one (we link, never list). */
 export function linkOnly(b: Pick<DirectoryBuyer, "platforms">): boolean {
   return b.platforms.length > 0 && b.platforms.every((p) => COMMERCIAL_PLATFORMS.has(p));
@@ -310,9 +377,86 @@ export interface BuildInput {
   intelSlugs?: ReadonlyMap<string, string>;
   /** A board buyer needs at least this many awards to get a page of its own. */
   boardMin?: number;
+  /**
+   * Municipalities (lib/towns, merged with the directory by lib/towns/merge):
+   * `byDirectory` adds census facts to a directory entry ("<provinceCode>/<slug>"
+   * keys), `unmerged` towns get pages of their own. Absent: no town pages
+   * (the directory and board buyers only, as before).
+   */
+  towns?: { byDirectory: ReadonlyMap<string, TownFacts>; unmerged: readonly TownFacts[] };
 }
 
-/** Every buyer page: the research directory plus buyers known only from board awards. */
+/** Words that never anchor a town name in free text ("town of", "ville de", "no 159"…). */
+const ANCHOR_STOP = new Set([
+  "of", "the", "de", "d", "du", "des", "la", "le", "les", "and", "no", "city", "town", "township", "village", "villages", "municipality",
+  "municipal", "rural", "district", "county", "regional", "region", "summer", "resort", "northern", "hamlet", "community", "government",
+  "chartered", "charter", "local", "island", "improvement", "specialized", "special", "area", "ville", "cite", "municipalite", "paroisse",
+  "canton", "cantons", "unis", "nordique", "cri", "naskapi", "gouvernement", "regionale", "regional", "comte", "rurale", "communaute",
+  "saint", "sainte", "st", "ste", "lac", "lake", "river", "north", "south", "east", "west", "mount", "port", "fort", "grand", "new",
+]);
+
+interface TownNeedle {
+  key: string;
+  province: string;
+  needle: string;
+}
+
+/**
+ * Open board bids naming each town ("Town of Cobourg" / "Ville de Cobourg" in
+ * the title, summary or issuer), same province. One pass over the board for
+ * all 3,500 towns: each name is anchored on its most distinctive word, so a
+ * bid is only checked against the few towns whose word it contains. A bid
+ * naming a longer town ("Township of Wellington North") isn't also given to
+ * a shorter one inside it.
+ */
+export function townOpenBids(needles: readonly TownNeedle[], open: readonly OpenText[]): Map<string, BuyerOpenBid[]> {
+  const byAnchor = new Map<string, TownNeedle[]>();
+  for (const n of needles) {
+    const words = n.needle.trim().split(" ");
+    if (words.length < 2) continue;
+    const anchor = [...words].filter((w) => !ANCHOR_STOP.has(w) && !/^\d+$/.test(w)).sort((a, b) => b.length - a.length)[0] ?? words[words.length - 1];
+    byAnchor.set(anchor, [...(byAnchor.get(anchor) ?? []), n]);
+  }
+  const out = new Map<string, BuyerOpenBid[]>();
+  for (const { r, text } of open) {
+    const hits: TownNeedle[] = [];
+    for (const word of new Set(text.trim().split(" "))) {
+      for (const n of byAnchor.get(word) ?? []) {
+        if (r.province && r.province !== n.province) continue;
+        if (text.includes(n.needle)) hits.push(n);
+      }
+    }
+    for (const n of hits) {
+      if (hits.some((m) => m.key !== n.key && m.needle.length > n.needle.length && m.needle.includes(n.needle.trim()))) continue;
+      const list = out.get(n.key) ?? [];
+      if (!list.some((b) => b.slug === r.slug)) list.push({ slug: r.slug, title: r.title, deadline: r.deadline });
+      out.set(n.key, list);
+    }
+  }
+  for (const [k, list] of out) out.set(k, list.sort((x, y) => (x.deadline ?? "9999").localeCompare(y.deadline ?? "9999")).slice(0, 12));
+  return out;
+}
+
+/** The directory-shaped buyer a town page renders (no research yet: no bids page, platforms or inbox). */
+export function townBuyer(t: TownFacts): DirectoryBuyer {
+  return {
+    name: formalNameEn(t),
+    provinceCode: t.provinceCode,
+    type: "municipality",
+    group: "municipality",
+    tendersUrl: null,
+    platforms: [],
+    portalUrl: null,
+    ownSiteList: false,
+    email: null,
+    emailSource: null,
+    checkedOn: "",
+    slug: t.slug,
+    domains: [],
+  };
+}
+
+/** Every buyer page: the research directory, the municipalities (when given), then buyers known only from board awards. */
 export function buildBuyerPages(input: BuildInput): BuyerPage[] {
   const directory = input.directory ?? DIRECTORY;
   const awardsCa = input.awards.filter((a) => a.country === "CA");
@@ -321,19 +465,31 @@ export function buildBuyerPages(input: BuildInput): BuyerPage[] {
   // Awards grouped by full key and by core key + province.
   const byFull = new Map<string, IntelAward[]>();
   const byCore = new Map<string, IntelAward[]>();
+  const byPlace = new Map<string, IntelAward[]>();
   for (const a of awardsCa) {
     if (!a.buyer || !a.buyerKey) continue;
     byFull.set(a.buyerKey, [...(byFull.get(a.buyerKey) ?? []), a]);
     const ck = `${coreKey(a.buyer)}|${a.province ?? ""}`;
     byCore.set(ck, [...(byCore.get(ck) ?? []), a]);
+    if (input.towns) {
+      const pk = `${placeKey(a.buyer)}|${a.province ?? ""}`;
+      byPlace.set(pk, [...(byPlace.get(pk) ?? []), a]);
+    }
   }
   const claimed = new Set<IntelAward>();
   const pages: BuyerPage[] = [];
   const usedPaths = new Set<string>();
 
-  const page = (buyer: DirectoryBuyer, province: string, matched: IntelAward[], fromBoard: boolean): BuyerPage => {
+  const page = (
+    buyer: DirectoryBuyer,
+    province: string,
+    matched: IntelAward[],
+    fromBoard: boolean,
+    extra: { kind?: BuyerPage["kind"]; town?: TownFacts | null; openBids?: BuyerOpenBid[] } = {},
+  ): BuyerPage => {
     const provinceSlug = provinceSlugOf(province);
-    const municipality = municipalityOf(buyer);
+    // A town's own place name ("Gatineau", not "Ville de Gatineau"), so its projects match.
+    const municipality = extra.town ? nameIn(extra.town.name, "en") : municipalityOf(buyer);
     const proj = projectsFor(municipality, province, byCity);
     const intelSlug = matched.map((a) => a.buyerKey && input.intelSlugs?.get(a.buyerKey)).find(Boolean) ?? null;
     const path = buyerPath(provinceSlug, buyer.slug);
@@ -344,8 +500,10 @@ export function buildBuyerPages(input: BuildInput): BuyerPage[] {
       provinceSlug,
       path,
       fromBoard,
+      ...(extra.kind ? { kind: extra.kind } : {}),
+      ...(extra.town !== undefined ? { town: extra.town } : {}),
       municipality,
-      openBids: openBidsFor(buyer, province, open),
+      openBids: extra.openBids ?? openBidsFor(buyer, province, open),
       awards: summarizeAwards(matched),
       projects: proj.rows,
       projectsTotal: proj.total,
@@ -361,13 +519,39 @@ export function buildBuyerPages(input: BuildInput): BuyerPage[] {
       (a) => !claimed.has(a) && (a.province == null || a.province === province),
     );
     for (const a of matched) claimed.add(a);
-    const p = page(b, province, matched, false);
-    // A research row with no bids page and no data says nothing: skip it.
-    if (!b.tendersUrl && !isIndexableBuyer(p)) {
+    const town = input.towns?.byDirectory.get(`${b.provinceCode}/${b.slug}`) ?? null;
+    const p = page(b, province, matched, false, input.towns ? { kind: "directory", town } : {});
+    // A research row with no bids page and no data says nothing: skip it
+    // (unless it is a municipality: every municipality has a page).
+    if (!b.tendersUrl && !isIndexableBuyer(p) && !town) {
       usedPaths.delete(p.path);
       continue;
     }
     pages.push(p);
+  }
+
+  // Municipalities the directory doesn't cover (Statistics Canada's census subdivisions, lib/towns).
+  if (input.towns) {
+    const towns = [...input.towns.unmerged]
+      .filter((t) => PROVINCE_NAMES[t.provinceCode])
+      // Two same-named places in one province: the bigger one gets an award that names neither more precisely.
+      .sort((a, b) => (b.population ?? 0) - (a.population ?? 0) || a.slug.localeCompare(b.slug));
+    const needles: TownNeedle[] = [];
+    for (const t of towns) {
+      const key = `${t.provinceCode}/${t.slug}`;
+      const province = PROVINCE_NAMES[t.provinceCode];
+      for (const n of new Set([buyerKeyOf(formalNameEn(t)), buyerKeyOf(formalNameFr(t))])) needles.push({ key, province, needle: ` ${n} ` });
+    }
+    const bids = townOpenBids(needles, open);
+    for (const t of towns) {
+      const province = PROVINCE_NAMES[t.provinceCode];
+      const buyer = townBuyer(t);
+      if (usedPaths.has(buyerPath(provinceSlugOf(province), buyer.slug))) buyer.slug = `${t.slug}-${t.id}`;
+      const keys = new Set(townMatchKeys(t).map((k) => `${k}|${province}`));
+      const matched = [...new Set([...keys].flatMap((k) => byPlace.get(k) ?? []))].filter((a) => !claimed.has(a));
+      for (const a of matched) claimed.add(a);
+      pages.push(page(buyer, province, matched, false, { kind: "town", town: t, openBids: bids.get(`${t.provinceCode}/${t.slug}`) ?? [] }));
+    }
   }
 
   // Buyers on the board that the research file doesn't cover (federal departments, agencies, cities elsewhere).
@@ -403,7 +587,7 @@ export function buildBuyerPages(input: BuildInput): BuyerPage[] {
       checkedOn: "",
       slug,
     };
-    pages.push(page(buyer, province, rows, true));
+    pages.push(page(buyer, province, rows, true, input.towns ? { kind: "board" } : {}));
   }
   return pages;
 }

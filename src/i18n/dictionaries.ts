@@ -58,6 +58,7 @@ import buyers from "./messages/buyers";
 import dedupeClient from "./messages/dedupeClient";
 import pmJobs from "./messages/pmJobs";
 import pmJobsClient from "./messages/pmJobsClient";
+import towns from "./messages/towns";
 
 const NAMESPACES = {
   common,
@@ -111,6 +112,7 @@ const NAMESPACES = {
   dedupeClient,
   pmJobs,
   pmJobsClient,
+  towns,
 };
 
 type Namespaces = typeof NAMESPACES;

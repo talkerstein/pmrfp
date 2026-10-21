@@ -19,7 +19,7 @@ import type { MatchReason } from "./company";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REASONS: MatchReason[] = ["name", "website", "phone", "email_domain", "similar_name"];
 /** Where a decision may send you back to. */
-const BACKS = ["/dashboard", "/pm-dashboard", "/admin/duplicates"] as const;
+const BACKS = ["/dashboard", "/pm-dashboard", "/buyer-dashboard", "/admin/duplicates"] as const;
 
 function formLang(formData: FormData): Locale {
   const v = formData.get("lang");

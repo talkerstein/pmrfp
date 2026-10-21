@@ -29,7 +29,7 @@ import { intelAwards } from "@/lib/intel/model";
 import { indexableMarkets } from "@/lib/insights/market";
 import { insightsMarketPath } from "@/lib/insights/paths";
 import { loadBuyers } from "@/lib/buyers/load";
-import { isIndexableBuyer } from "@/lib/buyers/model";
+import { indexablePages } from "@/lib/towns/page-data";
 
 /** Toronto supplier pages in the sitemap: indexable ones only, biggest first. */
 const TORONTO_SITEMAP_LIMIT = 2000;
@@ -119,9 +119,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   entries.push({ url: `${base}/major-projects`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
   for (const p of (await getMajorProjects()).filter((x) => !isThinProject(x)).slice(0, 5000))
     entries.push({ url: `${base}/major-projects/${p.slug}`, lastModified: new Date(`${p.lastSeen}T12:00:00Z`), changeFrequency: "weekly", priority: 0.5 });
-  // Buyer directory ("where every buyer posts bids"): the index plus buyer pages with PMRFP data (the rest are noindexed).
+  // Buyer directory ("where every buyer posts bids"): the index plus buyer pages with PMRFP data,
+  // a verified buyer or permission. Town pages with none of those are noindexed and stay out.
   entries.push({ url: `${base}/buyers`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
-  for (const b of (await loadBuyers()).pages.filter(isIndexableBuyer))
+  for (const b of await indexablePages((await loadBuyers()).pages))
     entries.push({ url: `${base}${b.path}`, lastModified: now, changeFrequency: "weekly", priority: 0.5 });
   entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   // Monthly contract-winner reports: only months that have a page (complete, 10+ awards).

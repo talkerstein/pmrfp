@@ -23,10 +23,13 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
 import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
+import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { pendingJoinRequestFor } from "@/lib/dedupe/join";
 import { cancelJoinRequestAction } from "@/lib/dedupe/actions";
 import { fmt } from "@/i18n/format";
+import { createClient } from "@/lib/supabase/server";
+import { BuyerClaimStep } from "@/components/towns/claim-step";
+import { BUYER_DASHBOARD_PATH } from "@/lib/towns/paths";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -36,13 +39,13 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function OnboardingPage({
   searchParams, params }: {
-  searchParams: Promise<{ next?: string; kind?: string; award?: string; role?: string; join_error?: string }>;
+  searchParams: Promise<{ next?: string; kind?: string; award?: string; role?: string; join_error?: string; claim?: string; q?: string; error?: string }>;
 } & { params: Promise<object> }) {
   const lang = await setLangFrom(params);
   const t = getT("auth").onboarding;
   const session = await requireUser();
   const role = session.profile.primary_role;
-  const { next: rawNext, kind, award: awardParam, role: roleParam, join_error: joinError } = await searchParams;
+  const { next: rawNext, kind, award: awardParam, role: roleParam, join_error: joinError, claim, q, error: claimError } = await searchParams;
   const next = safeNextPath(rawNext);
   // What the sign-up page said (?role=). Only a pre-selection: never saved as-is.
   const choice = parseRoleChoice(roleParam, kind);
@@ -78,6 +81,26 @@ export default async function OnboardingPage({
     );
   }
   const joinErrorText = joinError && joinError in td.joinErrors ? td.joinErrors[joinError as keyof typeof td.joinErrors] : null;
+
+  // Public buyers (towns, cities, school boards…): claim their page instead of listing a company (PMRFP for Towns).
+  if (role === "public_buyer") {
+    if (session.profile.onboarding_completed && session.organization) redirect(localizePath(BUYER_DASHBOARD_PATH, lang));
+    const tc = getT("towns").claim;
+    const user = isSupabaseConfigured() ? (await (await createClient()).auth.getUser()).data.user : null;
+    const metaClaim = typeof user?.user_metadata?.claim_buyer === "string" ? (user.user_metadata.claim_buyer as string) : null;
+    return (
+      <Shell lang={lang} heading={tc.heading} intro={tc.intro}>
+        <BuyerClaimStep
+          lang={lang}
+          claimKey={claim ?? (q ? null : metaClaim)}
+          q={q?.slice(0, 80) ?? null}
+          error={claimError ?? null}
+          email={user?.email ?? session.profile.email}
+          emailConfirmed={Boolean(user?.email_confirmed_at)}
+        />
+      </Shell>
+    );
+  }
 
   if (!session.profile.onboarding_completed) after(() => recordOnboardingStep(session.userId, "form_viewed"));
   const [categories, allRegions, geo, prefs] = await Promise.all([getCategories(), getRegions(), getVisitorGeo(), getSignupPrefs()]);

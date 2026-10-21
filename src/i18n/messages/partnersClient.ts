@@ -96,6 +96,11 @@ const en = {
         for: "For realtors",
         blurb: "The contractors you recommend, on your own site. Clients stop texting you for phone numbers.",
       },
+      "town-bids": {
+        label: "Town bids",
+        for: "For towns, cities and public buyers",
+        blurb: "Your current bids on your own website, with a link for local contractors to follow you on PMRFP. It updates itself every day.",
+      },
     },
     tablist: "Widget type",
     trade: "Trade",
@@ -135,6 +140,11 @@ const en = {
         in: "Publish your trusted trades page first, then your code appears here.",
         inCta: "Build my list",
         out: "Sign in to get the code for your trusted trades list.",
+      },
+      "town-bids": {
+        in: "This widget is for public buyers. Claim your organization's page, and its code appears here and on your page.",
+        inCta: "Claim your page",
+        out: "Towns, cities and public buyers: claim your page free, then come back for your code.",
       },
     },
   },
@@ -397,6 +407,11 @@ const fr: typeof en = {
         blurb:
           "Les entrepreneurs que vous recommandez, sur votre propre site. Vos clients cessent de vous texter pour obtenir des numéros de téléphone.",
       },
+      "town-bids": {
+        label: "Appels d'offres municipaux",
+        for: "Pour les municipalités, les villes et les organismes publics",
+        blurb: "Vos appels d'offres en cours sur votre propre site Web, avec un lien pour que les entrepreneurs de la région vous suivent sur PMRFP. Mise à jour automatique chaque jour.",
+      },
     },
     tablist: "Type de widget",
     trade: "Corps de métier",
@@ -438,6 +453,11 @@ const fr: typeof en = {
         in: "Publiez d'abord votre page d'entrepreneurs de confiance; votre code apparaîtra ensuite ici.",
         inCta: "Créer ma liste",
         out: "Connectez-vous pour obtenir le code de votre liste d'entrepreneurs de confiance.",
+      },
+      "town-bids": {
+        in: "Ce widget est réservé aux organismes publics. Réclamez la page de votre organisme : son code apparaîtra ici et sur votre page.",
+        inCta: "Réclamer votre page",
+        out: "Municipalités, villes et organismes publics : réclamez votre page gratuitement, puis revenez chercher votre code.",
       },
     },
   },
@@ -693,6 +713,11 @@ const es: typeof en = {
         blurb:
           "Los contratistas que usted recomienda, en su propio sitio. Sus clientes dejan de escribirle para pedirle números de teléfono.",
       },
+      "town-bids": {
+        label: "Licitaciones municipales",
+        for: "Para municipios, ciudades y organismos públicos",
+        blurb: "Sus licitaciones vigentes en su propio sitio web, con un enlace para que los contratistas de la zona lo sigan en PMRFP. Se actualiza solo todos los días.",
+      },
     },
     tablist: "Tipo de widget",
     trade: "Oficio",
@@ -733,6 +758,11 @@ const es: typeof en = {
         in: "Primero publique su página de contratistas de confianza; luego su código aparecerá aquí.",
         inCta: "Crear mi lista",
         out: "Inicie sesión para obtener el código de su lista de contratistas de confianza.",
+      },
+      "town-bids": {
+        in: "Este widget es para organismos públicos. Reclame la página de su organismo y su código aparecerá aquí y en su página.",
+        inCta: "Reclamar su página",
+        out: "Municipios, ciudades y organismos públicos: reclamen su página gratis y vuelvan por su código.",
       },
     },
   },

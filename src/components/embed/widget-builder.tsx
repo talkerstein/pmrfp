@@ -2,24 +2,26 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "@/i18n/link";
-import { Briefcase, Building2, ClipboardList, Lock, Radio, Users } from "lucide-react";
+import { Briefcase, Building2, ClipboardList, Landmark, Lock, Radio, Users } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Snippet } from "@/components/public/badge-embed";
 import { cn } from "@/lib/utils";
-import { useT } from "@/i18n/provider";
+import { useLang, useT } from "@/i18n/provider";
 import { fmt } from "@/i18n/format";
 import {
   DEFAULT_LIMIT,
   MAX_ITEMS,
   WIDGET_KINDS,
   iframeSnippet,
+  isWidgetLang,
   scriptSnippet,
   widgetPath,
   type WidgetConfig,
   type WidgetKind,
   type WidgetTheme,
 } from "@/lib/embed/widgets";
+import { BUYER_DASHBOARD_PATH, claimSignUpHref } from "@/lib/towns/paths";
 
 /** What the signed-in member can embed; null = not available to them yet. */
 export interface WidgetAccess {
@@ -27,6 +29,8 @@ export interface WidgetAccess {
   jobs: { slug: string } | null;
   company: { slug: string; ready: boolean } | null;
   trusted: { handle: string } | null;
+  /** A public buyer page: the signed-in buyer's own, or the one a town page linked to (?town=). */
+  townBids?: { province: string; slug: string } | null;
   signedIn: boolean;
 }
 
@@ -37,6 +41,7 @@ const TAB_ICONS: Record<WidgetKind, React.ReactNode> = {
   jobs: <Briefcase className="size-4" />,
   company: <Building2 className="size-4" />,
   trusted: <Users className="size-4" />,
+  "town-bids": <Landmark className="size-4" />,
 };
 
 function sign(next: string) {
@@ -57,6 +62,7 @@ export function WidgetBuilder({
   access: WidgetAccess;
 }) {
   const t = useT("partnersClient").widgets;
+  const pageLang = useLang();
   const [kind, setKind] = useState<WidgetKind>(initialKind);
   const [trade, setTrade] = useState<string | null>(null);
   const [region, setRegion] = useState<string | null>(null);
@@ -77,8 +83,11 @@ export function WidgetBuilder({
         return access.company ? { kind, slug: access.company.slug } : null;
       case "trusted":
         return access.trusted ? { kind, handle: access.trusted.handle } : null;
+      case "town-bids":
+        // The widget speaks the language of the page it was copied from.
+        return access.townBids ? { kind, ...access.townBids, lang: isWidgetLang(pageLang) ? pageLang : "en" } : null;
     }
-  }, [kind, trade, region, access]);
+  }, [kind, trade, region, access, pageLang]);
 
   const options = { theme, limit };
   // Relative src so the preview works on preview deploys too; the copied code uses the real site.
@@ -247,6 +256,9 @@ function Locked({ kind, signedIn }: { kind: WidgetKind; signedIn: boolean }) {
     trusted: signedIn
       ? { text: l.trusted.in, cta: l.trusted.inCta, href: "/pm-dashboard/saved-vendors" }
       : { text: l.trusted.out, cta: t.signIn, href: sign(next) },
+    "town-bids": signedIn
+      ? { text: l["town-bids"].in, cta: l["town-bids"].inCta, href: BUYER_DASHBOARD_PATH }
+      : { text: l["town-bids"].out, cta: l["town-bids"].inCta, href: claimSignUpHref(null) },
   };
   if (kind === "feed") return null;
   const c = copy[kind];
