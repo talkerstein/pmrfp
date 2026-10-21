@@ -87,3 +87,8 @@ mobile/.env
 mobile/.expo/
 mobile/android/
 mobile/ios/
+
+# D1 rehearsals: database exports and backups contain production user data
+/d1/.wrangler/
+/.d1-private/
+**/__pycache__/

@@ -1,0 +1,1209 @@
+{
+  "tables": {
+    "contact_requests": [
+      "src/app/[lang]/(v3)/advertise/actions.ts:121",
+      "src/app/[lang]/admin/contact-requests/page.tsx:35",
+      "src/app/api/bid-help/route.ts:62",
+      "src/app/api/contact/route.ts:41",
+      "src/app/api/cron/admin-weekly/route.ts:50",
+      "src/app/api/trusted/quote/route.ts:68"
+    ],
+    "sponsors": [
+      "src/app/[lang]/(v3)/advertise/actions.ts:200",
+      "src/app/[lang]/(v3)/advertise/actions.ts:238",
+      "src/lib/sponsors/actions.ts:124",
+      "src/lib/sponsors/actions.ts:137",
+      "src/lib/sponsors/actions.ts:138",
+      "src/lib/sponsors/actions.ts:207",
+      "src/lib/sponsors/actions.ts:232",
+      "src/lib/sponsors/admin.ts:34",
+      "src/lib/sponsors/admin.ts:39",
+      "src/lib/sponsors/stripe.ts:40",
+      "src/lib/sponsors/stripe.ts:69",
+      "src/lib/sponsors/stripe.ts:75"
+    ],
+    "forum_profiles": [
+      "src/app/[lang]/(v3)/forum/[category]/new/page.tsx:44",
+      "src/lib/forum/actions.ts:89",
+      "src/lib/forum/actions.ts:108",
+      "src/lib/forum/actions.ts:129",
+      "src/lib/forum/actions.ts:222",
+      "src/lib/forum/actions.ts:543",
+      "src/lib/forum/auto-threads-server.ts:48",
+      "src/lib/forum/auto-threads-server.ts:50",
+      "src/lib/forum/auto-threads-server.ts:77",
+      "src/lib/forum/data.ts:162",
+      "src/lib/forum/data.ts:528",
+      "src/lib/forum/data.ts:554",
+      "src/lib/forum/data.ts:652",
+      "src/lib/forum/data.ts:661",
+      "src/lib/forum/notify.ts:40",
+      "src/lib/forum/staff-guides-server.ts:30",
+      "src/lib/forum/staff-guides-server.ts:32",
+      "src/lib/forum/staff-guides-server.ts:57",
+      "src/lib/karma/sync.ts:80",
+      "src/lib/karma/sync.ts:273"
+    ],
+    "audit_logs": [
+      "src/app/[lang]/admin/audit-logs/page.tsx:24",
+      "src/lib/audit.ts:18"
+    ],
+    "award_history": [
+      "src/app/[lang]/admin/award-history/page.tsx:39",
+      "src/app/[lang]/admin/award-history/page.tsx:40",
+      "src/lib/contract-history/load.ts:73",
+      "src/lib/contract-history/load.ts:98",
+      "src/lib/contract-history/sync.ts:46"
+    ],
+    "bid_results": [
+      "src/app/[lang]/admin/award-history/page.tsx:46",
+      "src/lib/contract-history/load.ts:85",
+      "src/lib/contract-history/sync.ts:64"
+    ],
+    "badge_hits": [
+      "src/app/[lang]/admin/badge-installs/page.tsx:57",
+      "src/lib/lifecycle/server.ts:312"
+    ],
+    "case_studies": [
+      "src/app/[lang]/admin/case-studies/page.tsx:38",
+      "src/app/api/projects/[id]/photo/[file]/route.ts:31",
+      "src/lib/case-studies/actions.ts:75",
+      "src/lib/case-studies/actions.ts:105",
+      "src/lib/data/case-studies.ts:136",
+      "src/lib/data/case-studies.ts:165",
+      "src/lib/data/portfolio.ts:42",
+      "src/lib/data/projects.ts:19",
+      "src/lib/data/projects.ts:83",
+      "src/lib/data/projects.ts:150",
+      "src/lib/data/projects.ts:180",
+      "src/lib/karma/sync.ts:90",
+      "src/lib/lifecycle/server.ts:311",
+      "src/lib/projects/attach.ts:31",
+      "src/lib/projects/attach.ts:71",
+      "src/lib/projects/manage.ts:56",
+      "src/lib/projects/manage.ts:133",
+      "src/lib/projects/manage.ts:311",
+      "src/lib/projects/manage.ts:358",
+      "src/lib/projects/manage.ts:448",
+      "src/lib/projects/photo-storage.ts:280",
+      "src/lib/projects/photo-storage.ts:300",
+      "src/lib/projects/photo-storage.ts:365",
+      "src/lib/projects/publish.ts:134",
+      "src/lib/projects/publish.ts:215",
+      "src/lib/projects/server.ts:61",
+      "src/lib/projects/server.ts:110",
+      "src/lib/projects/server.ts:248",
+      "src/lib/projects/server.ts:359",
+      "src/lib/projects/server.ts:383",
+      "src/lib/projects/share.ts:46",
+      "src/lib/reviews/actions.ts:77"
+    ],
+    "trade_categories": [
+      "src/app/[lang]/admin/categories/page.tsx:31",
+      "src/app/api/cron/rfp-alerts/route.ts:334",
+      "src/lib/auth/actions.ts:592",
+      "src/lib/case-studies/actions.ts:68",
+      "src/lib/dashboard/actions.ts:164",
+      "src/lib/dashboard/actions.ts:265",
+      "src/lib/dashboard/actions.ts:357",
+      "src/lib/forum/auto-threads-server.ts:118",
+      "src/lib/jobs/actions.ts:84",
+      "src/lib/projects/manage.ts:245",
+      "src/lib/projects/publish.ts:92",
+      "src/lib/talent/actions.ts:66",
+      "src/lib/talent/data.ts:67",
+      "src/lib/tenders/sync.ts:69",
+      "mobile/src/lib/projects.ts:138",
+      "scripts/import-public-tenders.mjs:205"
+    ],
+    "correction_requests": [
+      "src/app/[lang]/admin/corrections/page.tsx:49",
+      "src/app/api/admin/corrections/route.ts:28",
+      "src/app/api/corrections/route.ts:32"
+    ],
+    "forum_threads": [
+      "src/app/[lang]/admin/forum/page.tsx:36",
+      "src/lib/forum/actions.ts:143",
+      "src/lib/forum/actions.ts:145",
+      "src/lib/forum/actions.ts:147",
+      "src/lib/forum/actions.ts:233",
+      "src/lib/forum/actions.ts:278",
+      "src/lib/forum/actions.ts:327",
+      "src/lib/forum/actions.ts:362",
+      "src/lib/forum/actions.ts:376",
+      "src/lib/forum/actions.ts:387",
+      "src/lib/forum/actions.ts:449",
+      "src/lib/forum/actions.ts:454",
+      "src/lib/forum/auto-threads-server.ts:42",
+      "src/lib/forum/auto-threads-server.ts:159",
+      "src/lib/forum/auto-threads-server.ts:223",
+      "src/lib/forum/data.ts:235",
+      "src/lib/forum/data.ts:290",
+      "src/lib/forum/data.ts:297",
+      "src/lib/forum/data.ts:359",
+      "src/lib/forum/data.ts:372",
+      "src/lib/forum/data.ts:388",
+      "src/lib/forum/data.ts:401",
+      "src/lib/forum/data.ts:430",
+      "src/lib/forum/data.ts:538",
+      "src/lib/forum/data.ts:539",
+      "src/lib/forum/data.ts:603",
+      "src/lib/forum/data.ts:674",
+      "src/lib/forum/data.ts:701",
+      "src/lib/forum/data.ts:731",
+      "src/lib/forum/data.ts:753",
+      "src/lib/forum/data.ts:768",
+      "src/lib/forum/data.ts:801",
+      "src/lib/forum/data.ts:871",
+      "src/lib/forum/notify.ts:24",
+      "src/lib/forum/recurring-server.ts:37",
+      "src/lib/forum/recurring-server.ts:117",
+      "src/lib/forum/schema-v2.ts:18",
+      "src/lib/forum/staff-guides-server.ts:68",
+      "src/lib/forum/staff-guides-server.ts:99",
+      "src/lib/karma/sync.ts:88"
+    ],
+    "forum_posts": [
+      "src/app/[lang]/admin/forum/page.tsx:37",
+      "src/lib/forum/actions.ts:144",
+      "src/lib/forum/actions.ts:146",
+      "src/lib/forum/actions.ts:148",
+      "src/lib/forum/actions.ts:296",
+      "src/lib/forum/actions.ts:341",
+      "src/lib/forum/actions.ts:359",
+      "src/lib/forum/actions.ts:371",
+      "src/lib/forum/actions.ts:372",
+      "src/lib/forum/actions.ts:377",
+      "src/lib/forum/actions.ts:391",
+      "src/lib/forum/actions.ts:469",
+      "src/lib/forum/data.ts:480",
+      "src/lib/forum/data.ts:488",
+      "src/lib/forum/data.ts:536",
+      "src/lib/forum/data.ts:537",
+      "src/lib/forum/data.ts:793",
+      "src/lib/karma/sync.ts:86",
+      "src/lib/karma/sync.ts:89",
+      "src/lib/lifecycle/server.ts:300"
+    ],
+    "insight_rejections": [
+      "src/app/[lang]/admin/insights/page.tsx:77",
+      "src/lib/insights/server.ts:397"
+    ],
+    "intel_access": [
+      "src/app/[lang]/admin/intel/page.tsx:45",
+      "src/app/api/stripe/intel-portal/route.ts:21",
+      "src/lib/access/access.ts:95",
+      "src/lib/admin/intel-actions.ts:35",
+      "src/lib/admin/intel-actions.ts:59",
+      "src/lib/insights/server.ts:412",
+      "src/lib/intel/stripe.ts:23",
+      "src/lib/intel/stripe.ts:28"
+    ],
+    "organizations": [
+      "src/app/[lang]/admin/intel/page.tsx:54",
+      "src/app/[lang]/admin/organizations/page.tsx:36",
+      "src/app/[lang]/admin/page.tsx:65",
+      "src/app/[lang]/admin/signups/page.tsx:94",
+      "src/app/[lang]/admin/trials/page.tsx:48",
+      "src/app/api/contact/route.ts:35",
+      "src/app/api/cron/lead-alerts/route.ts:78",
+      "src/app/api/cron/tender-digest/route.ts:70",
+      "src/app/api/stripe/webhook/route.ts:206",
+      "src/app/api/stripe/webhook/route.ts:306",
+      "src/app/api/stripe/webhook/route.ts:317",
+      "src/app/api/trusted/quote/route.ts:55",
+      "src/lib/access/access.ts:73",
+      "src/lib/admin/intel-actions.ts:31",
+      "src/lib/admin/org-actions.ts:22",
+      "src/lib/auth/actions.ts:559",
+      "src/lib/auth/actions.ts:569",
+      "src/lib/badge/data.ts:53",
+      "src/lib/claims/actions.ts:104",
+      "src/lib/dashboard/actions.ts:135",
+      "src/lib/data/directory.ts:132",
+      "src/lib/data/directory.ts:150",
+      "src/lib/data/directory.ts:205",
+      "src/lib/data/directory.ts:227",
+      "src/lib/data/directory.ts:267",
+      "src/lib/data/directory.ts:284",
+      "src/lib/data/trade-city.ts:76",
+      "src/lib/dedupe/admin-actions.ts:61",
+      "src/lib/dedupe/admin-data.ts:54",
+      "src/lib/dedupe/join.ts:44",
+      "src/lib/dedupe/lookup.ts:52",
+      "src/lib/dedupe/merge.ts:201",
+      "src/lib/dedupe/merge.ts:204",
+      "src/lib/embed/data.ts:20",
+      "src/lib/forum/data.ts:553",
+      "src/lib/founding/server.ts:117",
+      "src/lib/insights/server.ts:197",
+      "src/lib/insights/server.ts:363",
+      "src/lib/karma/data.ts:59",
+      "src/lib/karma/sync.ts:78",
+      "src/lib/lifecycle/server.ts:272",
+      "src/lib/reviews/actions.ts:78",
+      "src/lib/stripe/server.ts:83",
+      "src/lib/trusted/actions.ts:87",
+      "scripts/seed-founding-orgs.mjs:163",
+      "scripts/seed-regions-and-tag-orgs.mjs:98",
+      "scripts/sync-google-ratings.mjs:72",
+      "scripts/sync-google-ratings.mjs:91",
+      "scripts/sync-google-ratings.mjs:105"
+    ],
+    "rfp_interests": [
+      "src/app/[lang]/admin/interests/page.tsx:38",
+      "src/app/[lang]/admin/page.tsx:76",
+      "src/app/[lang]/dashboard/interests/page.tsx:45",
+      "src/app/[lang]/pm-dashboard/page.tsx:53",
+      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:63",
+      "src/app/api/cron/admin-weekly/route.ts:48",
+      "src/app/api/cron/admin-weekly/route.ts:49",
+      "src/app/api/rfp-interest/route.ts:71",
+      "src/app/api/rfp-interest/route.ts:74",
+      "src/lib/karma/sync.ts:96",
+      "src/lib/lifecycle/server.ts:711",
+      "mobile/src/lib/rfps.ts:98"
+    ],
+    "org_karma": [
+      "src/app/[lang]/admin/karma/page.tsx:51",
+      "src/lib/karma/sync.ts:259"
+    ],
+    "lifecycle_sends": [
+      "src/app/[lang]/admin/lifecycle/page.tsx:58",
+      "src/app/api/email/resend-webhook/route.ts:41",
+      "src/lib/lifecycle/server.ts:297",
+      "src/lib/lifecycle/server.ts:501",
+      "src/lib/lifecycle/server.ts:741",
+      "src/lib/lifecycle/server.ts:815",
+      "src/lib/lifecycle/server.ts:856",
+      "src/lib/lifecycle/server.ts:874"
+    ],
+    "major_projects": [
+      "src/app/[lang]/admin/major-projects/[id]/page.tsx:61",
+      "src/app/[lang]/admin/major-projects/page.tsx:80",
+      "src/app/[lang]/admin/major-projects/page.tsx:81",
+      "src/app/api/cron/lead-alerts/route.ts:237",
+      "src/app/api/cron/rfp-alerts/route.ts:327",
+      "src/lib/insights/server.ts:434",
+      "src/lib/leads/load.ts:97",
+      "src/lib/major-projects/actions.ts:41",
+      "src/lib/major-projects/actions.ts:51",
+      "src/lib/major-projects/actions.ts:94",
+      "src/lib/major-projects/actions.ts:98",
+      "src/lib/major-projects/data.ts:217",
+      "src/lib/major-projects/links.ts:152",
+      "src/lib/major-projects/links.ts:174",
+      "src/lib/major-projects/sync.ts:195",
+      "src/lib/major-projects/sync.ts:224",
+      "src/lib/major-projects/sync.ts:231",
+      "src/lib/major-projects/sync.ts:237",
+      "src/lib/major-projects/sync.ts:244"
+    ],
+    "major_project_source_counts": [
+      "src/app/[lang]/admin/major-projects/page.tsx:82"
+    ],
+    "users_profile": [
+      "src/app/[lang]/admin/page.tsx:58",
+      "src/app/[lang]/admin/page.tsx:78",
+      "src/app/[lang]/admin/signups/page.tsx:64",
+      "src/app/[lang]/admin/users/page.tsx:35",
+      "src/app/api/cron/admin-weekly/route.ts:34",
+      "src/app/api/cron/lead-alerts/route.ts:110",
+      "src/app/api/cron/rfp-alerts/route.ts:128",
+      "src/app/api/cron/rfp-expiry/route.ts:67",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:85",
+      "src/app/api/cron/tender-digest/route.ts:116",
+      "src/app/api/cron/weekly-digest/route.ts:85",
+      "src/app/api/jobs/apply/route.ts:64",
+      "src/app/api/rfp-interest/route.ts:93",
+      "src/app/api/talent/contact/route.ts:53",
+      "src/app/api/trusted/quote/route.ts:59",
+      "src/components/home-v3/account-link.tsx:25",
+      "src/lib/access/access.ts:56",
+      "src/lib/admin/rfp-actions.ts:35",
+      "src/lib/auth/actions.ts:401",
+      "src/lib/auth/actions.ts:461",
+      "src/lib/auth/actions.ts:606",
+      "src/lib/auth/visitor-upgrade-actions.ts:36",
+      "src/lib/auth/visitor-upgrade-actions.ts:95",
+      "src/lib/dedupe/admin-actions.ts:91",
+      "src/lib/dedupe/admin-actions.ts:95",
+      "src/lib/dedupe/admin-actions.ts:117",
+      "src/lib/dedupe/admin-data.ts:51",
+      "src/lib/dedupe/join.ts:116",
+      "src/lib/dedupe/lookup.ts:31",
+      "src/lib/dedupe/signup.ts:85",
+      "src/lib/forum/notify.ts:41",
+      "src/lib/insights/server.ts:214",
+      "src/lib/lifecycle/server.ts:291",
+      "src/lib/lifecycle/server.ts:477",
+      "src/lib/marketplace/data.ts:204",
+      "src/lib/talent/actions.ts:104",
+      "src/lib/talent/actions.ts:150",
+      "src/lib/talent/data.ts:195",
+      "src/lib/talent/data.ts:206"
+    ],
+    "subscriptions": [
+      "src/app/[lang]/admin/page.tsx:61",
+      "src/app/[lang]/admin/subscriptions/page.tsx:35",
+      "src/app/[lang]/admin/trials/page.tsx:49",
+      "src/app/[lang]/dashboard/billing/page.tsx:55",
+      "src/app/api/cron/admin-weekly/route.ts:36",
+      "src/app/api/cron/lead-alerts/route.ts:203",
+      "src/app/api/cron/lead-alerts/route.ts:205",
+      "src/app/api/cron/rfp-alerts/route.ts:87",
+      "src/app/api/cron/tender-digest/route.ts:75",
+      "src/app/api/stripe/portal/route.ts:18",
+      "src/app/api/stripe/webhook/route.ts:367",
+      "src/lib/access/access.ts:150",
+      "src/lib/access/access.ts:163",
+      "src/lib/access/access.ts:196",
+      "src/lib/founding/server.ts:12",
+      "src/lib/founding/server.ts:56",
+      "src/lib/founding/server.ts:91",
+      "src/lib/founding/server.ts:107",
+      "src/lib/founding/server.ts:111",
+      "src/lib/insights/server.ts:405",
+      "src/lib/jobs/data.ts:104",
+      "src/lib/lifecycle/server.ts:302",
+      "src/lib/stripe/server.ts:37",
+      "src/lib/stripe/server.ts:65",
+      "src/lib/stripe/server.ts:73",
+      "src/lib/trusted/data.ts:79"
+    ],
+    "rfp_posts": [
+      "src/app/[lang]/admin/page.tsx:69",
+      "src/app/[lang]/admin/page.tsx:73",
+      "src/app/[lang]/admin/rfps/page.tsx:37",
+      "src/app/[lang]/admin/rfps/page.tsx:44",
+      "src/app/[lang]/pm-dashboard/page.tsx:45",
+      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:70",
+      "src/app/[lang]/pm-dashboard/rfps/page.tsx:51",
+      "src/app/api/cron/admin-weekly/route.ts:40",
+      "src/app/api/cron/admin-weekly/route.ts:45",
+      "src/app/api/cron/admin-weekly/route.ts:47",
+      "src/app/api/cron/bid-checks/route.ts:52",
+      "src/app/api/cron/bid-checks/route.ts:79",
+      "src/app/api/cron/rfp-alerts/route.ts:76",
+      "src/app/api/cron/rfp-alerts/route.ts:281",
+      "src/app/api/cron/rfp-expiry/route.ts:37",
+      "src/app/api/cron/rfp-expiry/route.ts:47",
+      "src/app/api/cron/rfp-expiry/route.ts:56",
+      "src/app/api/cron/rfp-expiry/route.ts:78",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:44",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:51",
+      "src/app/api/cron/tender-digest/route.ts:62",
+      "src/app/api/rfp/keep-alive/route.ts:25",
+      "src/app/api/rfp/keep-alive/route.ts:39",
+      "src/app/api/rfp-interest/route.ts:45",
+      "src/lib/admin/rfp-actions.ts:24",
+      "src/lib/dashboard/actions.ts:209",
+      "src/lib/dashboard/actions.ts:227",
+      "src/lib/dashboard/actions.ts:319",
+      "src/lib/data/rfps.ts:247",
+      "src/lib/data/rfps.ts:270",
+      "src/lib/embed/data.ts:61",
+      "src/lib/forum/auto-threads-server.ts:101",
+      "src/lib/karma/sync.ts:94",
+      "src/lib/tenders/sync.ts:197",
+      "src/lib/tenders/sync.ts:207",
+      "src/lib/tenders/sync.ts:227",
+      "src/lib/tenders/sync.ts:279",
+      "mobile/src/lib/rfps.ts:56",
+      "scripts/import-public-tenders.mjs:215",
+      "scripts/import-public-tenders.mjs:219"
+    ],
+    "regions": [
+      "src/app/[lang]/admin/regions/page.tsx:32",
+      "src/app/api/cron/rfp-alerts/route.ts:97",
+      "src/app/api/cron/tender-digest/route.ts:76",
+      "src/lib/auth/actions.ts:593",
+      "src/lib/case-studies/actions.ts:71",
+      "src/lib/dashboard/actions.ts:165",
+      "src/lib/dashboard/actions.ts:311",
+      "src/lib/data/liquidity.ts:63",
+      "src/lib/gc/data.ts:51",
+      "src/lib/jobs/actions.ts:85",
+      "src/lib/major-projects/sync.ts:212",
+      "src/lib/match/data.ts:24",
+      "src/lib/projects/manage.ts:248",
+      "src/lib/projects/publish.ts:95",
+      "src/lib/talent/actions.ts:67",
+      "src/lib/tenders/sync.ts:70",
+      "src/lib/waitlist/actions.ts:84",
+      "mobile/src/lib/projects.ts:140",
+      "scripts/import-public-tenders.mjs:204",
+      "scripts/seed-regions-and-tag-orgs.mjs:24",
+      "scripts/seed-regions-and-tag-orgs.mjs:44",
+      "scripts/seed-regions-and-tag-orgs.mjs:60",
+      "scripts/seed-regions-and-tag-orgs.mjs:71"
+    ],
+    "resources": [
+      "src/app/[lang]/admin/resources/page.tsx:34",
+      "src/lib/data/resources.ts:17",
+      "src/lib/data/resources.ts:43"
+    ],
+    "vendor_reviews": [
+      "src/app/[lang]/admin/reviews/page.tsx:49",
+      "src/lib/karma/sync.ts:92",
+      "src/lib/projects/server.ts:295",
+      "src/lib/projects/share.ts:58",
+      "src/lib/reviews/actions.ts:82",
+      "src/lib/reviews/actions.ts:119"
+    ],
+    "platform_settings": [
+      "src/app/[lang]/admin/settings/page.tsx:31",
+      "src/lib/data/liquidity.ts:47"
+    ],
+    "signup_attribution": [
+      "src/app/[lang]/admin/signups/page.tsx:71",
+      "src/lib/attribution/record.ts:30",
+      "src/lib/attribution/record.ts:36",
+      "src/lib/insights/server.ts:216",
+      "src/lib/lifecycle/server.ts:299",
+      "src/lib/lifecycle/server.ts:502"
+    ],
+    "landing_counts": [
+      "src/app/[lang]/admin/signups/page.tsx:77"
+    ],
+    "trade_trials": [
+      "src/app/[lang]/admin/trials/page.tsx:38",
+      "src/lib/access/access.ts:137",
+      "src/lib/entitlement/server.ts:50",
+      "src/lib/entitlement/server.ts:71",
+      "src/lib/entitlement/server.ts:102",
+      "src/lib/entitlement/server.ts:112",
+      "src/lib/lifecycle/server.ts:260",
+      "src/lib/lifecycle/server.ts:305"
+    ],
+    "digest_subscribers": [
+      "src/app/[lang]/admin/weekly-email/page.tsx:44",
+      "src/app/api/cron/weekly-digest/route.ts:71",
+      "src/app/api/cron/weekly-digest/route.ts:139",
+      "src/app/api/digest/confirm/route.ts:24",
+      "src/app/api/digest/confirm/route.ts:34",
+      "src/app/api/digest/unsubscribe/route.ts:22",
+      "src/app/api/email/resend-webhook/route.ts:57",
+      "src/lib/digest/actions.ts:53",
+      "src/lib/digest/actions.ts:82",
+      "src/lib/digest/actions.ts:83",
+      "src/lib/digest/link.ts:15",
+      "src/lib/lifecycle/server.ts:322",
+      "src/lib/lifecycle/server.ts:505"
+    ],
+    "winner_claims": [
+      "src/app/[lang]/admin/winner-claims/page.tsx:55",
+      "src/lib/claims/actions.ts:64",
+      "src/lib/claims/actions.ts:89",
+      "src/lib/claims/actions.ts:96",
+      "src/lib/claims/actions.ts:97",
+      "src/lib/claims/actions.ts:131",
+      "src/lib/claims/actions.ts:137",
+      "src/lib/claims/data.ts:77"
+    ],
+    "organization_categories": [
+      "src/app/[lang]/dashboard/company/page.tsx:57",
+      "src/app/[lang]/dashboard/page.tsx:281",
+      "src/app/[lang]/dashboard/projects/capability-sheet/page.tsx:29",
+      "src/app/api/cron/lead-alerts/route.ts:79",
+      "src/app/api/cron/rfp-alerts/route.ts:94",
+      "src/app/api/cron/tender-digest/route.ts:101",
+      "src/components/forum/this-week.tsx:26",
+      "src/lib/auth/actions.ts:595",
+      "src/lib/dashboard/actions.ts:169",
+      "src/lib/dashboard/actions.ts:174",
+      "src/lib/insights/server.ts:198",
+      "src/lib/insights/server.ts:364",
+      "src/lib/leads/load.ts:76",
+      "src/lib/lifecycle/server.ts:308"
+    ],
+    "organization_regions": [
+      "src/app/[lang]/dashboard/company/page.tsx:58",
+      "src/app/[lang]/dashboard/projects/capability-sheet/page.tsx:30",
+      "src/app/api/cron/lead-alerts/route.ts:80",
+      "src/app/api/cron/rfp-alerts/route.ts:95",
+      "src/app/api/cron/tender-digest/route.ts:102",
+      "src/lib/auth/actions.ts:600",
+      "src/lib/dashboard/actions.ts:170",
+      "src/lib/dashboard/actions.ts:176",
+      "src/lib/insights/server.ts:199",
+      "src/lib/insights/server.ts:365",
+      "src/lib/leads/load.ts:77",
+      "src/lib/lifecycle/server.ts:310",
+      "src/lib/visitor-geo.server.ts:61",
+      "scripts/seed-regions-and-tag-orgs.mjs:114",
+      "scripts/seed-regions-and-tag-orgs.mjs:115"
+    ],
+    "organization_property_types": [
+      "src/app/[lang]/dashboard/company/page.tsx:59",
+      "src/lib/dashboard/actions.ts:171",
+      "src/lib/dashboard/actions.ts:178"
+    ],
+    "saved_rfps": [
+      "src/app/[lang]/dashboard/saved-rfps/page.tsx:26",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:72",
+      "src/app/api/save-rfp/route.ts:49",
+      "src/app/api/save-rfp/route.ts:53",
+      "src/app/api/save-rfp/route.ts:57",
+      "src/lib/lifecycle/server.ts:710"
+    ],
+    "rfp_public": [
+      "src/app/[lang]/dashboard/saved-rfps/page.tsx:30",
+      "src/app/api/cron/indexnow/route.ts:28",
+      "src/app/api/save-rfp/route.ts:43",
+      "src/lib/data/rfps.ts:206",
+      "src/lib/data/rfps.ts:376",
+      "src/lib/forum/data.ts:711",
+      "src/lib/forum/data.ts:733",
+      "src/lib/gc/data.ts:44",
+      "src/lib/gc/data.ts:58",
+      "src/lib/gc/data.ts:72",
+      "src/lib/gc/data.ts:76",
+      "src/lib/gc/data.ts:97",
+      "src/lib/gc/data.ts:101",
+      "mobile/src/lib/rfps.ts:35",
+      "mobile/src/lib/rfps.ts:66"
+    ],
+    "rfp_bid_checks": [
+      "src/app/api/cron/bid-checks/route.ts:68",
+      "src/app/api/cron/bid-checks/route.ts:111",
+      "src/app/api/cron/rfp-alerts/route.ts:100",
+      "src/lib/bid-check/data.ts:13"
+    ],
+    "organization_members": [
+      "src/app/api/cron/lead-alerts/route.ts:81",
+      "src/app/api/cron/rfp-alerts/route.ts:96",
+      "src/app/api/cron/tender-digest/route.ts:103",
+      "src/components/dashboard/join-requests-card.tsx:26",
+      "src/lib/access/access.ts:65",
+      "src/lib/auth/actions.ts:584",
+      "src/lib/dedupe/admin-data.ts:52",
+      "src/lib/dedupe/join.ts:33",
+      "src/lib/dedupe/join.ts:48",
+      "src/lib/dedupe/join.ts:110",
+      "src/lib/dedupe/merge.ts:151",
+      "src/lib/dedupe/merge.ts:152",
+      "src/lib/dedupe/merge.ts:168",
+      "src/lib/dedupe/signup.ts:84",
+      "src/lib/insights/server.ts:200",
+      "src/lib/karma/sync.ts:79",
+      "src/lib/lifecycle/server.ts:255",
+      "src/lib/lifecycle/server.ts:265",
+      "src/lib/lifecycle/server.ts:488",
+      "mobile/src/lib/rfps.ts:88"
+    ],
+    "notification_preferences": [
+      "src/app/api/cron/lead-alerts/route.ts:111",
+      "src/app/api/cron/rfp-alerts/route.ts:129",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:86",
+      "src/app/api/cron/tender-digest/route.ts:117",
+      "src/app/api/cron/weekly-digest/route.ts:92",
+      "src/app/api/email/lifecycle-unsubscribe/route.ts:20",
+      "src/app/api/email/unsubscribe/route.ts:17",
+      "src/app/api/forum/unsubscribe/route.ts:15",
+      "src/components/forum/thread-view.tsx:189",
+      "src/lib/forum/actions.ts:528",
+      "src/lib/forum/notify.ts:38",
+      "src/lib/insights/server.ts:215",
+      "src/lib/lifecycle/server.ts:294",
+      "src/lib/lifecycle/server.ts:499"
+    ],
+    "notifications": [
+      "src/app/api/cron/lead-alerts/route.ts:113",
+      "src/app/api/cron/lead-alerts/route.ts:184",
+      "src/app/api/cron/rfp-alerts/route.ts:131",
+      "src/app/api/cron/rfp-alerts/route.ts:235",
+      "src/app/api/cron/rfp-alerts/route.ts:246",
+      "src/app/api/cron/rfp-alerts/route.ts:336",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:88",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:128",
+      "src/app/api/cron/tender-digest/route.ts:119",
+      "src/app/api/cron/tender-digest/route.ts:169",
+      "src/lib/dedupe/join.ts:69",
+      "src/lib/dedupe/join.ts:127",
+      "src/lib/insights/server.ts:320"
+    ],
+    "lead_alert_log": [
+      "src/app/api/cron/lead-alerts/route.ts:170",
+      "src/app/api/cron/lead-alerts/route.ts:227",
+      "src/lib/insights/server.ts:316",
+      "src/lib/insights/server.ts:425",
+      "src/lib/lifecycle/server.ts:709"
+    ],
+    "email_suppressions": [
+      "src/app/api/cron/weekly-digest/route.ts:84",
+      "src/app/api/email/resend-webhook/route.ts:54",
+      "src/lib/digest/actions.ts:57",
+      "src/lib/lifecycle/server.ts:320",
+      "src/lib/lifecycle/server.ts:504"
+    ],
+    "job_posts": [
+      "src/app/api/jobs/apply/route.ts:33",
+      "src/lib/jobs/actions.ts:79",
+      "src/lib/jobs/actions.ts:94",
+      "src/lib/jobs/actions.ts:138",
+      "src/lib/jobs/actions.ts:147",
+      "src/lib/jobs/actions.ts:158",
+      "src/lib/jobs/data.ts:126",
+      "src/lib/jobs/data.ts:148",
+      "src/lib/jobs/data.ts:179",
+      "src/lib/talent/actions.ts:153"
+    ],
+    "job_applications": [
+      "src/app/api/jobs/apply/route.ts:50",
+      "src/lib/jobs/data.ts:189",
+      "src/lib/talent/actions.ts:159"
+    ],
+    "marketplace_listings": [
+      "src/app/api/marketplace/featured/route.ts:27",
+      "src/app/api/stripe/webhook/route.ts:164",
+      "src/app/api/stripe/webhook/route.ts:171",
+      "src/lib/marketplace/actions.ts:82",
+      "src/lib/marketplace/actions.ts:117",
+      "src/lib/marketplace/actions.ts:124",
+      "src/lib/marketplace/actions.ts:127",
+      "src/lib/marketplace/actions.ts:152",
+      "src/lib/marketplace/actions.ts:168",
+      "src/lib/marketplace/actions.ts:182",
+      "src/lib/marketplace/actions.ts:208",
+      "src/lib/marketplace/actions.ts:248",
+      "src/lib/marketplace/data.ts:118",
+      "src/lib/marketplace/data.ts:147",
+      "src/lib/marketplace/data.ts:161",
+      "src/lib/marketplace/data.ts:178",
+      "src/lib/marketplace/data.ts:191"
+    ],
+    "stripe_webhook_events": [
+      "src/app/api/stripe/webhook/route.ts:109",
+      "src/app/api/stripe/webhook/route.ts:382"
+    ],
+    "talent_profiles": [
+      "src/app/api/talent/contact/route.ts:35",
+      "src/lib/talent/actions.ts:74",
+      "src/lib/talent/actions.ts:143",
+      "src/lib/talent/data.ts:110",
+      "src/lib/talent/data.ts:133",
+      "src/lib/talent/data.ts:143",
+      "src/lib/talent/data.ts:194",
+      "src/lib/talent/data.ts:209"
+    ],
+    "talent_contacts": [
+      "src/app/api/talent/contact/route.ts:56",
+      "src/lib/talent/actions.ts:152",
+      "src/lib/talent/data.ts:182"
+    ],
+    "trusted_lists": [
+      "src/app/api/trusted/quote/route.ts:40",
+      "src/lib/trusted/actions.ts:46",
+      "src/lib/trusted/actions.ts:57",
+      "src/lib/trusted/actions.ts:129",
+      "src/lib/trusted/actions.ts:174",
+      "src/lib/trusted/data.ts:97",
+      "src/lib/trusted/data.ts:115"
+    ],
+    "trusted_list_items": [
+      "src/app/api/trusted/quote/route.ts:49",
+      "src/lib/trusted/actions.ts:81",
+      "src/lib/trusted/actions.ts:95",
+      "src/lib/trusted/actions.ts:104",
+      "src/lib/trusted/actions.ts:115",
+      "src/lib/trusted/actions.ts:135",
+      "src/lib/trusted/actions.ts:207",
+      "src/lib/trusted/data.ts:101",
+      "src/lib/trusted/data.ts:122",
+      "src/lib/trusted/data.ts:139"
+    ],
+    "organization_join_requests": [
+      "src/components/dashboard/join-requests-card.tsx:34",
+      "src/lib/dedupe/admin-data.ts:60",
+      "src/lib/dedupe/join.ts:56",
+      "src/lib/dedupe/join.ts:96",
+      "src/lib/dedupe/join.ts:121",
+      "src/lib/dedupe/join.ts:142",
+      "src/lib/dedupe/join.ts:157"
+    ],
+    "logos": [
+      "src/components/forms/logo-uploader.tsx:117",
+      "src/components/forms/logo-uploader.tsx:126",
+      "src/components/forms/portfolio-uploader.tsx:67",
+      "src/components/forms/portfolio-uploader.tsx:135",
+      "src/components/forms/portfolio-uploader.tsx:144",
+      "src/components/forms/portfolio-uploader.tsx:157",
+      "src/lib/data/directory.ts:112"
+    ],
+    "rfp-photos": [
+      "src/components/forms/rfp-photo-uploader.tsx:87",
+      "src/components/forms/rfp-photo-uploader.tsx:97",
+      "src/components/forms/rfp-photo-uploader.tsx:113"
+    ],
+    "duplicate_reviews": [
+      "src/lib/auth/actions.ts:97",
+      "src/lib/dedupe/admin-actions.ts:44",
+      "src/lib/dedupe/admin-data.ts:58"
+    ],
+    "org_karma_public": [
+      "src/lib/badge/data.ts:83",
+      "src/lib/karma/data.ts:21",
+      "src/lib/karma/data.ts:144"
+    ],
+    "winner_claims_public": [
+      "src/lib/claims/data.ts:37"
+    ],
+    "property_types": [
+      "src/lib/dashboard/actions.ts:166",
+      "src/lib/dashboard/actions.ts:313",
+      "src/lib/projects/manage.ts:251",
+      "src/lib/projects/publish.ts:98",
+      "mobile/src/lib/projects.ts:139"
+    ],
+    "rfp_categories": [
+      "src/lib/dashboard/actions.ts:359",
+      "src/lib/data/rfps.ts:403",
+      "src/lib/forum/auto-threads-server.ts:123",
+      "src/lib/tenders/sync.ts:218",
+      "scripts/import-public-tenders.mjs:223"
+    ],
+    "rfp_documents": [
+      "src/lib/dashboard/actions.ts:402",
+      "src/lib/data/rfps.ts:422"
+    ],
+    "region_liquidity": [
+      "src/lib/data/liquidity.ts:71"
+    ],
+    "region_category_liquidity": [
+      "src/lib/data/liquidity.ts:95"
+    ],
+    "vendor_reviews_public": [
+      "src/lib/data/projects.ts:26",
+      "src/lib/data/projects.ts:218",
+      "src/lib/projects/server.ts:162"
+    ],
+    "forum_category_mods": [
+      "src/lib/forum/actions.ts:135",
+      "src/lib/forum/actions.ts:549",
+      "src/lib/forum/actions.ts:551",
+      "src/lib/forum/data.ts:205",
+      "src/lib/forum/data.ts:540",
+      "src/lib/forum/data.ts:640",
+      "src/lib/forum/eligibility.ts:16"
+    ],
+    "forum_categories": [
+      "src/lib/forum/actions.ts:183",
+      "src/lib/forum/auto-threads-server.ts:199",
+      "src/lib/forum/data.ts:221",
+      "src/lib/forum/data.ts:327",
+      "src/lib/forum/data.ts:340",
+      "src/lib/forum/data.ts:416",
+      "src/lib/forum/data.ts:541",
+      "src/lib/forum/data.ts:610",
+      "src/lib/forum/recurring-server.ts:76",
+      "src/lib/forum/staff-guides-server.ts:82"
+    ],
+    "forum_polls": [
+      "src/lib/forum/actions.ts:257",
+      "src/lib/forum/actions.ts:483",
+      "src/lib/forum/data.ts:843",
+      "src/lib/forum/data.ts:894",
+      "src/lib/forum/recurring-server.ts:131"
+    ],
+    "forum_poll_options": [
+      "src/lib/forum/actions.ts:258",
+      "src/lib/forum/recurring-server.ts:132"
+    ],
+    "forum_thread_ratings": [
+      "src/lib/forum/actions.ts:330",
+      "src/lib/forum/data.ts:627",
+      "src/lib/karma/sync.ts:84"
+    ],
+    "forum_post_votes": [
+      "src/lib/forum/actions.ts:344",
+      "src/lib/forum/actions.ts:346",
+      "src/lib/forum/actions.ts:348",
+      "src/lib/forum/data.ts:628",
+      "src/lib/karma/sync.ts:82"
+    ],
+    "forum_reports": [
+      "src/lib/forum/actions.ts:409",
+      "src/lib/forum/actions.ts:413",
+      "src/lib/forum/actions.ts:439",
+      "src/lib/forum/actions.ts:444"
+    ],
+    "forum_mod_log": [
+      "src/lib/forum/actions.ts:419",
+      "src/lib/forum/actions.ts:459",
+      "src/lib/forum/actions.ts:553",
+      "src/lib/karma/sync.ts:87"
+    ],
+    "forum_poll_votes": [
+      "src/lib/forum/actions.ts:490",
+      "src/lib/forum/actions.ts:501",
+      "src/lib/forum/data.ts:911"
+    ],
+    "forum_room_follows": [
+      "src/lib/forum/actions.ts:516",
+      "src/lib/forum/actions.ts:517",
+      "src/lib/forum/data.ts:920"
+    ],
+    "forum_reply_notifications": [
+      "src/lib/forum/notify.ts:39",
+      "src/lib/forum/notify.ts:61",
+      "src/lib/forum/notify.ts:62"
+    ],
+    "rfp_award_links": [
+      "src/lib/gc/official.ts:85"
+    ],
+    "insight_brief_log": [
+      "src/lib/insights/server.ts:217",
+      "src/lib/insights/server.ts:292",
+      "src/lib/insights/server.ts:319"
+    ],
+    "karma_events": [
+      "src/lib/karma/actions.ts:35",
+      "src/lib/karma/actions.ts:64",
+      "src/lib/karma/data.ts:113",
+      "src/lib/karma/sync.ts:141",
+      "src/lib/karma/sync.ts:147",
+      "src/lib/karma/sync.ts:223",
+      "src/lib/karma/sync.ts:233",
+      "src/lib/karma/sync.ts:237",
+      "src/lib/karma/sync.ts:241"
+    ],
+    "gc_package_levels": [
+      "src/lib/karma/data.ts:38"
+    ],
+    "onboarding_steps": [
+      "src/lib/lifecycle/server.ts:503",
+      "src/lib/onboarding/progress.ts:17"
+    ],
+    "major_projects_public": [
+      "src/lib/major-projects/data.ts:157"
+    ],
+    "marketplace_messages": [
+      "src/lib/marketplace/actions.ts:217"
+    ],
+    "case_study_share_links": [
+      "src/lib/projects/attach.ts:90",
+      "src/lib/projects/manage.ts:398",
+      "src/lib/projects/manage.ts:460",
+      "src/lib/projects/manage.ts:473",
+      "src/lib/projects/manage.ts:496",
+      "src/lib/projects/manage.ts:518",
+      "src/lib/projects/manage.ts:528",
+      "src/lib/projects/server.ts:283",
+      "src/lib/projects/share.ts:38",
+      "src/lib/projects/share.ts:67"
+    ],
+    "review_invites": [
+      "src/lib/projects/publish.ts:225",
+      "src/lib/projects/publish.ts:241",
+      "src/lib/projects/server.ts:185",
+      "src/lib/reviews/actions.ts:67",
+      "src/lib/reviews/actions.ts:98",
+      "src/lib/reviews/invite.ts:28"
+    ],
+    "sponsor_impressions": [
+      "src/lib/sponsors/admin.ts:60"
+    ],
+    "sponsor_clicks": [
+      "src/lib/sponsors/admin.ts:61"
+    ],
+    "sponsors_public": [
+      "src/lib/sponsors/data.ts:74"
+    ],
+    "talent_private": [
+      "src/lib/talent/actions.ts:102",
+      "src/lib/talent/data.ts:144",
+      "src/lib/talent/data.ts:196"
+    ],
+    "talent_endorsements": [
+      "src/lib/talent/actions.ts:169",
+      "src/lib/talent/data.ts:152"
+    ],
+    "regional_waitlist": [
+      "src/lib/waitlist/actions.ts:96"
+    ],
+    "device_push_tokens": [
+      "mobile/src/lib/push.ts:90"
+    ]
+  },
+  "rpcs": {
+    "record_sponsor_click": [
+      "src/app/go/[sponsor]/route.ts:29"
+    ],
+    "forum_bump_view": [
+      "src/components/forum/thread-view.tsx:151"
+    ],
+    "record_landings": [
+      "src/lib/attribution/landings.ts:55"
+    ],
+    "record_badge_hits": [
+      "src/lib/badge/hits.ts:53"
+    ],
+    "award_history_intel_slice": [
+      "src/lib/contract-history/load.ts:32"
+    ],
+    "forum_poll_results": [
+      "src/lib/forum/data.ts:913"
+    ],
+    "marketplace_increment_views": [
+      "src/lib/marketplace/data.ts:212"
+    ],
+    "rate_limit_hit": [
+      "src/lib/rate-limit.ts:166"
+    ],
+    "record_sponsor_impressions": [
+      "src/lib/sponsors/impressions.ts:61"
+    ],
+    "has_active_trade_access": [
+      "mobile/src/lib/auth.tsx:27"
+    ]
+  },
+  "storage": [
+    "src/app/api/marketplace/photos/route.ts:44",
+    "src/app/api/projects/photos/route.ts:86",
+    "src/app/api/projects/photos/route.ts:99",
+    "src/components/forms/logo-uploader.tsx:117",
+    "src/components/forms/logo-uploader.tsx:126",
+    "src/components/forms/portfolio-uploader.tsx:135",
+    "src/components/forms/portfolio-uploader.tsx:144",
+    "src/components/forms/portfolio-uploader.tsx:157",
+    "src/components/forms/rfp-photo-uploader.tsx:87",
+    "src/components/forms/rfp-photo-uploader.tsx:97",
+    "src/components/forms/rfp-photo-uploader.tsx:113",
+    "src/lib/data/directory.ts:112",
+    "src/lib/forum/photos-server.ts:23",
+    "src/lib/forum/photos-server.ts:36",
+    "src/lib/forum/photos-server.ts:45",
+    "src/lib/forum/photos-server.ts:53",
+    "src/lib/forum/photos-server.ts:54",
+    "src/lib/projects/photo-storage.ts:62",
+    "src/lib/projects/photo-storage.ts:80",
+    "src/lib/projects/photo-storage.ts:92",
+    "src/lib/projects/photo-storage.ts:93"
+  ],
+  "auth": [
+    "src/app/[lang]/(auth)/forgot-password/page.tsx:12",
+    "src/app/[lang]/(auth)/reset-password/page.tsx:11",
+    "src/app/[lang]/(auth)/sign-in/page.tsx:16",
+    "src/app/[lang]/(v3)/check-email/page.tsx:15",
+    "src/app/[lang]/(v3)/forum/[category]/new/page.tsx:52",
+    "src/app/[lang]/(v3)/sign-up/opengraph-image.tsx:18",
+    "src/app/[lang]/(v3)/sign-up/page.tsx:34",
+    "src/app/[lang]/account/list-business/page.tsx:14",
+    "src/app/[lang]/onboarding/page.tsx:34",
+    "src/app/api/forum/photos/route.ts:45",
+    "src/app/auth/callback/route.ts:26",
+    "src/app/auth/callback/route.ts:35",
+    "src/app/auth/callback/route.ts:37",
+    "src/components/forms/google-button.tsx:22",
+    "src/components/forum/thread-view.tsx:141",
+    "src/components/home-v3/account-link.tsx:22",
+    "src/components/public/email-capture.tsx:38",
+    "src/lib/access/access.ts:30",
+    "src/lib/access/access.ts:51",
+    "src/lib/auth/actions.ts:114",
+    "src/lib/auth/actions.ts:204",
+    "src/lib/auth/actions.ts:226",
+    "src/lib/auth/actions.ts:280",
+    "src/lib/auth/actions.ts:308",
+    "src/lib/auth/actions.ts:320",
+    "src/lib/auth/actions.ts:337",
+    "src/lib/auth/actions.ts:353",
+    "src/lib/auth/actions.ts:373",
+    "src/lib/auth/actions.ts:412",
+    "src/lib/auth/actions.ts:574",
+    "src/lib/auth/google.ts:32",
+    "src/lib/auth/signup-prefs.ts:31",
+    "src/lib/auth/visitor-upgrade-actions.ts:48",
+    "src/lib/auth/visitor-upgrade-actions.ts:66",
+    "src/lib/auth/visitor-upgrade-actions.ts:67",
+    "src/lib/dedupe/admin-actions.ts:97",
+    "src/lib/dedupe/admin-actions.ts:119",
+    "src/lib/dedupe/signup.ts:77",
+    "src/lib/dedupe/signup.ts:90",
+    "src/lib/forum/actions.ts:120",
+    "src/lib/forum/auto-threads-server.ts:55",
+    "src/lib/forum/auto-threads-server.ts:67",
+    "src/lib/forum/staff-guides-server.ts:36",
+    "src/lib/forum/staff-guides-server.ts:46",
+    "src/lib/gc/intent.ts:13",
+    "src/lib/supabase/middleware.ts:58",
+    "mobile/src/lib/api.ts:29",
+    "mobile/src/lib/auth.tsx:40",
+    "mobile/src/lib/auth.tsx:47",
+    "mobile/src/lib/auth.tsx:64",
+    "mobile/src/lib/auth.tsx:68",
+    "mobile/src/lib/push.ts:86",
+    "mobile/src/lib/rfps.ts:80"
+  ],
+  "realtime": [],
+  "dynamicTables": [
+    "src/app/api/forum/photos/route.ts:62",
+    "src/app/api/marketplace/photos/route.ts:37",
+    "src/app/api/marketplace/photos/route.ts:44",
+    "src/app/api/projects/photos/route.ts:62",
+    "src/app/api/projects/photos/route.ts:86",
+    "src/app/api/projects/photos/route.ts:99",
+    "src/app/api/spotlight/submit/route.ts:66",
+    "src/components/admin/canadabuys-upload.tsx:76",
+    "src/components/forms/portfolio-uploader.tsx:112",
+    "src/components/forms/rfp-photo-uploader.tsx:64",
+    "src/components/forum/rework-client.tsx:40",
+    "src/components/marketplace/marketplace-forms.tsx:86",
+    "src/components/projects/case-study-builder.tsx:203",
+    "src/components/projects/project-capture.tsx:216",
+    "src/lib/data/board-snapshot.ts:104",
+    "src/lib/data/rfps.ts:344",
+    "src/lib/data/taxonomy.ts:32",
+    "src/lib/dedupe/merge.ts:92",
+    "src/lib/dedupe/merge.ts:106",
+    "src/lib/dedupe/merge.ts:108",
+    "src/lib/dedupe/merge.ts:120",
+    "src/lib/dedupe/merge.ts:121",
+    "src/lib/digest/config.ts:161",
+    "src/lib/digest/config.ts:162",
+    "src/lib/digest/webhook.ts:23",
+    "src/lib/digest/webhook.ts:28",
+    "src/lib/digest/webhook.ts:33",
+    "src/lib/email/unsubscribe.ts:36",
+    "src/lib/email/unsubscribe.ts:37",
+    "src/lib/email/unsubscribe.ts:44",
+    "src/lib/email/unsubscribe.ts:45",
+    "src/lib/email/unsubscribe.ts:67",
+    "src/lib/email/unsubscribe.ts:68",
+    "src/lib/embed/keys.ts:26",
+    "src/lib/forum/actions.ts:416",
+    "src/lib/forum/actions.ts:438",
+    "src/lib/forum/actions.ts:443",
+    "src/lib/forum/notify-rules.ts:56",
+    "src/lib/forum/notify-rules.ts:57",
+    "src/lib/forum/photos-server.ts:36",
+    "src/lib/forum/photos-server.ts:45",
+    "src/lib/forum/photos-server.ts:53",
+    "src/lib/forum/photos-server.ts:54",
+    "src/lib/forum/photos-server.ts:86",
+    "src/lib/forum/photos-server.ts:89",
+    "src/lib/projects/ai.ts:60",
+    "src/lib/projects/photo-storage.ts:80",
+    "src/lib/projects/photo-storage.ts:92",
+    "src/lib/projects/photo-storage.ts:93",
+    "src/lib/projects/slug.ts:25",
+    "src/lib/tenders/granular-feeds.test.ts:76",
+    "src/lib/tenders/nc-evp.ts:148",
+    "scripts/attach-rfp-photos.mjs:98"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/public-tenders",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/us-tenders",
+      "schedule": "15 12 * * *"
+    },
+    {
+      "path": "/api/cron/sc-tenders",
+      "schedule": "20 12 * * *"
+    },
+    {
+      "path": "/api/cron/us-state-tenders",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/cron/closed-tenders",
+      "schedule": "0 11 * * 1"
+    },
+    {
+      "path": "/api/cron/us-local-tenders",
+      "schedule": "40 12 * * *"
+    },
+    {
+      "path": "/api/cron/canada-local-tenders",
+      "schedule": "48 12 * * *"
+    },
+    {
+      "path": "/api/cron/periscope-tenders",
+      "schedule": "45 12 * * *"
+    },
+    {
+      "path": "/api/cron/rfp-alerts",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/indexnow",
+      "schedule": "45 13 * * *"
+    },
+    {
+      "path": "/api/cron/saved-rfp-alerts",
+      "schedule": "52 13 * * *"
+    },
+    {
+      "path": "/api/cron/rfp-expiry",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/tender-digest",
+      "schedule": "30 13 * * 1"
+    },
+    {
+      "path": "/api/cron/admin-weekly",
+      "schedule": "50 12 * * 1"
+    },
+    {
+      "path": "/api/cron/bid-checks",
+      "schedule": "7,22,37,52 * * * *"
+    },
+    {
+      "path": "/api/cron/karma",
+      "schedule": "10 8 * * *"
+    },
+    {
+      "path": "/api/cron/major-projects",
+      "schedule": "26 9 * * 0"
+    },
+    {
+      "path": "/api/cron/major-projects/funding",
+      "schedule": "41 9 * * 0"
+    },
+    {
+      "path": "/api/cron/major-projects/local",
+      "schedule": "56 9 * * 0"
+    },
+    {
+      "path": "/api/cron/major-projects/corridor",
+      "schedule": "11 10 * * 0"
+    },
+    {
+      "path": "/api/cron/lead-alerts",
+      "schedule": "20 14 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-digest",
+      "schedule": "5,20,35,50 14 * * 2"
+    },
+    {
+      "path": "/api/cron/forum-recurring",
+      "schedule": "38 13 * * *"
+    },
+    {
+      "path": "/api/cron/lifecycle",
+      "schedule": "33 * * * *"
+    },
+    {
+      "path": "/api/cron/award-history/weekly",
+      "schedule": "5 10 * * 1"
+    },
+    {
+      "path": "/api/cron/award-history/monthly",
+      "schedule": "20 10 3 * *"
+    },
+    {
+      "path": "/api/cron/award-history/federal",
+      "schedule": "35 10 5 * *"
+    },
+    {
+      "path": "/api/cron/insights-brief",
+      "schedule": "40 13 * * 1"
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "master": "7449a5537dca7f0fa49860229f9dc7c7bbe1736b",
+  "audit_date": "2026-10-21",
+  "repo_tables": 83,
+  "production_tables": 59,
+  "repo_only_tables": [
+    "award_history",
+    "badge_hits",
+    "bid_results",
+    "correction_requests",
+    "digest_subscribers",
+    "duplicate_reviews",
+    "email_suppressions",
+    "forum_category_redirects",
+    "forum_poll_options",
+    "forum_poll_votes",
+    "forum_polls",
+    "forum_reply_notifications",
+    "forum_room_follows",
+    "insight_brief_log",
+    "insight_rejections",
+    "intel_access",
+    "landing_counts",
+    "lead_alert_log",
+    "lifecycle_sends",
+    "onboarding_steps",
+    "organization_join_requests",
+    "signup_attribution",
+    "trade_trials",
+    "winner_claims"
+  ],
+  "production_only_tables": [],
+  "repo_only_columns": [
+    [
+      "forum_posts",
+      "images"
+    ],
+    [
+      "forum_threads",
+      "country"
+    ],
+    [
+      "forum_threads",
+      "images"
+    ],
+    [
+      "notification_preferences",
+      "forum_replies"
+    ],
+    [
+      "notification_preferences",
+      "lifecycle_emails"
+    ],
+    [
+      "organizations",
+      "merged_into"
+    ]
+  ],
+  "production_only_columns": [],
+  "changed_columns": [],
+  "functions": {
+    "repo_only": [
+      "award_history_intel_slice",
+      "forum_poll_results",
+      "has_intel_access",
+      "normalize_email",
+      "record_badge_hits",
+      "record_landings"
+    ],
+    "production_only": [
+      "rls_auto_enable"
+    ]
+  },
+  "views": {
+    "repo_only": [
+      "winner_claims_public"
+    ],
+    "production_only": []
+  },
+  "policies": {
+    "repo_only": [
+      "award history intel read",
+      "badge hits admin read",
+      "bid results intel read",
+      "corrections admin read",
+      "corrections admin update",
+      "digest subscribers admin read",
+      "duplicate reviews admin read",
+      "email suppressions admin read",
+      "forum category redirects read",
+      "forum follows own read",
+      "forum poll options read",
+      "forum poll votes own read",
+      "forum polls read",
+      "intel access member read",
+      "join requests read",
+      "landing counts admin read",
+      "lifecycle sends admin read",
+      "onboarding steps admin read",
+      "rfp-photos public read",
+      "saved insert own",
+      "signup attribution admin read",
+      "trade trials member read",
+      "winner claims own or admin read"
+    ],
+    "production_only": [
+      "saved insert paid"
+    ]
+  }
+}
