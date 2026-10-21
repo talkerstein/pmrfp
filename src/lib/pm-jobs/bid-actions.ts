@@ -49,6 +49,12 @@ async function run(kind: Kind, formData: FormData): Promise<BidActionState> {
   revalidatePath("/pm-dashboard/rfps");
   revalidatePath("/dashboard/interests");
   if (kind === "pick" && job.slug) revalidatePath(`/rfps/${job.slug}`);
+  // A town's job is handled from its own dashboard (lib/town-jobs).
+  if (job.source_type === "public_buyer_direct") {
+    revalidatePath(`/buyer-dashboard/jobs/${rfpId}/responses`);
+    revalidatePath(`/buyer-dashboard/jobs/${rfpId}`);
+    revalidatePath("/buyer-dashboard/jobs");
+  }
   return { done: kind };
 }
 

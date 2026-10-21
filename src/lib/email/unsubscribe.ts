@@ -47,6 +47,29 @@ export function verifyUnsubscribe(userId: string | null, token: string | null): 
 }
 
 /*
+ * A town's invitation to a contractor who isn't on PMRFP (lib/town-jobs):
+ * keyed by the invitation's id, so the address never sits in the link. The
+ * route puts the address on the do-not-contact list (email_suppressions).
+ */
+function signInvite(inviteId: string, key: string): string {
+  return createHmac("sha256", key).update(`invite-unsub:${inviteId}`).digest("base64url");
+}
+
+export function inviteUnsubscribeUrl(base: string, inviteId: string): string | null {
+  const key = secret();
+  if (!key) return null;
+  return `${base}/api/email/invite-unsubscribe?i=${encodeURIComponent(inviteId)}&t=${signInvite(inviteId, key)}`;
+}
+
+export function verifyInviteUnsubscribe(inviteId: string | null, token: string | null): boolean {
+  const key = secret();
+  if (!key || !inviteId || !token) return false;
+  const expected = Buffer.from(signInvite(inviteId, key));
+  const given = Buffer.from(token);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}
+
+/*
  * The lifecycle sequence (lib/lifecycle: onboarding tips, trial and offer
  * emails): same secret, its own prefix, so this link only stops those emails
  * and can't turn off someone's alerts (or the other way round).

@@ -92,7 +92,7 @@ function permissionOf(slug: string): { buyerSlug: string; provinceCode: string }
   return perm && city ? { buyerSlug: perm.buyerSlug, provinceCode: city.provinceCode } : null;
 }
 
-const LISTING_COLS = "id,slug,title,summary,deadline,province,source_type,posted_by_organization_id,published_at";
+const LISTING_COLS = "id,slug,title,summary,deadline,province,source_type,posted_by_organization_id,buyer_key,published_at";
 
 /** Published, open, non-demo listings since `since` (newest first). U.S. ones are dropped when matching (lib/follows/alerts). */
 async function recentListings(db: Db, since: string, today: string, limit = 2000): Promise<{ rows: FollowListing[]; error: boolean }> {
@@ -119,6 +119,7 @@ async function recentListings(db: Db, since: string, today: string, limit = 2000
       province: (r.province as string | null) ?? null,
       sourceType: (r.source_type as string | null) ?? null,
       postedByOrganizationId: (r.posted_by_organization_id as string | null) ?? null,
+      buyerKey: (r.buyer_key as string | null) ?? null,
       publishedAt: (r.published_at as string | null) ?? null,
     })),
     error: false,

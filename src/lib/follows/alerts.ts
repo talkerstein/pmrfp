@@ -4,8 +4,8 @@
  * The database side is ./alerts-server.ts.
  *
  * A listing belongs to a buyer page when:
- *   1. a verified public buyer posted it (posted_by_organization_id is the
- *      organization that manages the page: B2's town job posts);
+ *   1. a public buyer posted it on its page (B2's town jobs: rfp_posts.buyer_key,
+ *      or posted_by_organization_id is the organization managing the page);
  *   2. it was imported with the buyer's permission (the city flow: the
  *      source's permission names the buyer);
  *   3. it's an imported public tender naming the buyer, by the same rules
@@ -41,6 +41,8 @@ export interface FollowListing {
   province: string | null;
   sourceType: string | null;
   postedByOrganizationId: string | null;
+  /** A public buyer's own post names its page (rfp_posts.buyer_key, PMRFP for Towns Part B2). */
+  buyerKey?: string | null;
   publishedAt: string | null;
 }
 
@@ -72,7 +74,8 @@ export function listingBuyerKeys(listings: readonly FollowListing[], ctx: MatchC
   const wantedPages = ctx.pages.filter((p) => ctx.wanted.has(pageKeyOf(p)));
 
   for (const l of canadian) {
-    // 1. A verified public buyer's own post.
+    // 1. A public buyer's own post on its page.
+    if (l.buyerKey) add(l.id, l.buyerKey);
     if (l.postedByOrganizationId) {
       const key = ctx.managedByOrg.get(l.postedByOrganizationId);
       if (key) add(l.id, key);

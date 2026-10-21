@@ -14,7 +14,8 @@ import { COPY, SITE } from "@/lib/site";
 import { emailBox, emailButton, escHtml } from "@/lib/email/parts";
 import type { ContactCard } from "./rules";
 
-export type PosterKind = "pm" | "gc";
+/** Who posted the job: a property manager (or landlord, owner), a general contractor, or a town (a public buyer). */
+export type PosterKind = "pm" | "gc" | "town";
 
 export interface BuiltEmail {
   subject: string;
@@ -25,8 +26,8 @@ export interface BuiltEmail {
 
 const COPY_BY_LANG = {
   en: {
-    poster: { pm: "the property manager", gc: "the general contractor" },
-    Poster: { pm: "The property manager", gc: "The general contractor" },
+    poster: { pm: "the property manager", gc: "the general contractor", town: "the town" },
+    Poster: { pm: "The property manager", gc: "The general contractor", town: "The town" },
     labels: { quote: "Quote", estimate: "estimate", firm: "firm price", start: "Can start", notes: "Notes", availability: "Availability", name: "Name", company: "Company", email: "Email", phone: "Phone" },
     seeResponses: "See your responses",
     seeOpen: "See open jobs",
@@ -58,6 +59,10 @@ const COPY_BY_LANG = {
       noDue: "No fixed deadline",
       free: "Free accounts can respond to {limit} jobs a month. Trade Pro is unlimited.",
       pro: "Your Trade Pro membership lets you respond to as many jobs as you like.",
+      town: "Posted by {buyer}. Responding to a town's job is always free and never counts toward your monthly limit.",
+      townMirror: "An official tender from {buyer}. Bids go to {portal}; PMRFP shows the summary and the link, free.",
+      portal: "its official portal",
+      mirrorButton: "See the tender",
       button: "See the job and respond",
       why: "You're receiving this because your company is listed on PMRFP in this trade and area",
       settings: "Change your trades or areas",
@@ -109,8 +114,8 @@ const COPY_BY_LANG = {
     },
   },
   fr: {
-    poster: { pm: "le gestionnaire immobilier", gc: "l'entrepreneur général" },
-    Poster: { pm: "Le gestionnaire immobilier", gc: "L'entrepreneur général" },
+    poster: { pm: "le gestionnaire immobilier", gc: "l'entrepreneur général", town: "la municipalité" },
+    Poster: { pm: "Le gestionnaire immobilier", gc: "L'entrepreneur général", town: "La municipalité" },
     labels: { quote: "Prix", estimate: "estimation", firm: "prix ferme", start: "Peut commencer le", notes: "Notes", availability: "Disponibilité", name: "Nom", company: "Entreprise", email: "Courriel", phone: "Téléphone" },
     seeResponses: "Voir vos réponses",
     seeOpen: "Voir les appels d'offres ouverts",
@@ -142,6 +147,10 @@ const COPY_BY_LANG = {
       noDue: "Sans date limite",
       free: "Un compte gratuit peut répondre à {limit} appels d'offres par mois. Trade Pro est illimité.",
       pro: "Votre abonnement Trade Pro vous permet de répondre à autant d'appels d'offres que vous voulez.",
+      town: "Publié par {buyer}. Répondre à un appel d'offres municipal est toujours gratuit et ne compte jamais dans votre limite mensuelle.",
+      townMirror: "Un appel d'offres officiel de {buyer}. Les soumissions se déposent sur {portal}; PMRFP en affiche le résumé et le lien, gratuitement.",
+      portal: "son portail officiel",
+      mirrorButton: "Voir l'appel d'offres",
       button: "Voir l'appel d'offres et répondre",
       why: "Vous recevez ce courriel parce que votre entreprise est inscrite sur PMRFP dans ce corps de métier et cette région",
       settings: "Modifier vos corps de métier ou vos régions",
@@ -193,8 +202,8 @@ const COPY_BY_LANG = {
     },
   },
   es: {
-    poster: { pm: "el administrador de propiedades", gc: "el contratista general" },
-    Poster: { pm: "El administrador de propiedades", gc: "El contratista general" },
+    poster: { pm: "el administrador de propiedades", gc: "el contratista general", town: "el municipio" },
+    Poster: { pm: "El administrador de propiedades", gc: "El contratista general", town: "El municipio" },
     labels: { quote: "Cotización", estimate: "estimado", firm: "precio firme", start: "Puede empezar", notes: "Notas", availability: "Disponibilidad", name: "Nombre", company: "Empresa", email: "Correo electrónico", phone: "Teléfono" },
     seeResponses: "Ver sus respuestas",
     seeOpen: "Ver trabajos abiertos",
@@ -226,6 +235,10 @@ const COPY_BY_LANG = {
       noDue: "Sin fecha límite",
       free: "Las cuentas gratuitas pueden responder a {limit} trabajos al mes. Trade Pro es ilimitado.",
       pro: "Su membresía Trade Pro le permite responder a todos los trabajos que quiera.",
+      town: "Publicado por {buyer}. Responder a un trabajo municipal siempre es gratis y nunca cuenta para su límite mensual.",
+      townMirror: "Una licitación oficial de {buyer}. Las ofertas se presentan en {portal}; PMRFP muestra el resumen y el enlace, gratis.",
+      portal: "su portal oficial",
+      mirrorButton: "Ver la licitación",
       button: "Ver el trabajo y responder",
       why: "Recibe este correo porque su empresa está registrada en PMRFP en este oficio y esta zona",
       settings: "Cambiar sus oficios o zonas",
@@ -336,18 +349,23 @@ const p = (html: string) => `<p>${html}</p>`;
 
 // ── To the poster ────────────────────────────────────────────────────
 
-export function newInterestEmail(lang: EmailLang, x: { base: string; vendorName: string; rfpTitle: string; rfpId: string; quote?: QuoteInfo }): BuiltEmail {
+/** Where the poster handles responses: the PM dashboard, or a town's own (lib/town-jobs). */
+export function responsesPath(rfpId: string, posterKind: PosterKind = "pm"): string {
+  return posterKind === "town" ? `/buyer-dashboard/jobs/${rfpId}/responses` : `/pm-dashboard/rfps/${rfpId}/interests`;
+}
+
+export function newInterestEmail(lang: EmailLang, x: { base: string; vendorName: string; rfpTitle: string; rfpId: string; quote?: QuoteInfo; posterKind?: PosterKind }): BuiltEmail {
   const c = COPY_BY_LANG[lang].newInterest;
   const vars = { vendor: escHtml(x.vendorName), title: escHtml(x.rfpTitle) };
   return {
     subject: plain(fmt(c.subject, { title: x.rfpTitle })),
     title: c.title,
-    bodyHtml: [p(fmt(c.intro, vars)), quoteBox(x.quote, lang), p(c.outro), p(emailButton(link(x.base, `/pm-dashboard/rfps/${x.rfpId}/interests`, lang), c.button))].join("\n"),
+    bodyHtml: [p(fmt(c.intro, vars)), quoteBox(x.quote, lang), p(c.outro), p(emailButton(link(x.base, responsesPath(x.rfpId, x.posterKind), lang), c.button))].join("\n"),
     footnote: c.foot,
   };
 }
 
-export function publishedEmail(lang: EmailLang, x: { base: string; title: string; slug: string; rfpId: string; alertsOn: boolean }): BuiltEmail {
+export function publishedEmail(lang: EmailLang, x: { base: string; title: string; slug: string; rfpId: string; alertsOn: boolean; posterKind?: PosterKind }): BuiltEmail {
   const c = COPY_BY_LANG[lang].published;
   return {
     subject: plain(fmt(c.subject, { title: x.title })),
@@ -358,7 +376,7 @@ export function publishedEmail(lang: EmailLang, x: { base: string; title: string
       p(c.outro),
       p(
         `${emailButton(link(x.base, `/rfps/${x.slug}`, lang), c.button)}${
-          x.rfpId ? `&nbsp; <a href="${link(x.base, `/pm-dashboard/rfps/${x.rfpId}/interests`, lang)}" style="color:#282B59;font-weight:600">${c.responses}</a>` : ""
+          x.rfpId ? `&nbsp; <a href="${link(x.base, responsesPath(x.rfpId, x.posterKind), lang)}" style="color:#282B59;font-weight:600">${c.responses}</a>` : ""
         }`,
       ),
     ].join("\n"),
@@ -366,13 +384,14 @@ export function publishedEmail(lang: EmailLang, x: { base: string; title: string
   };
 }
 
-export function rejectedEmail(lang: EmailLang, x: { base: string; title: string; reason: string | null }): BuiltEmail {
+export function rejectedEmail(lang: EmailLang, x: { base: string; title: string; reason: string | null; posterKind?: PosterKind }): BuiltEmail {
   const c = COPY_BY_LANG[lang].rejected;
   const reason = x.reason?.trim() ? `${p(`<strong>${c.reason}</strong>`)}${emailBox(escHtml(x.reason.trim()).replace(/\n/g, "<br>"))}` : "";
+  const again = x.posterKind === "town" ? "/buyer-dashboard/jobs/new" : "/pm-dashboard/rfps/new";
   return {
     subject: plain(fmt(c.subject, { title: x.title })),
     title: c.title,
-    bodyHtml: [p(fmt(c.body, { title: escHtml(x.title) })), reason, p(c.outro), p(emailButton(link(x.base, "/pm-dashboard/rfps/new", lang), c.button))].join("\n"),
+    bodyHtml: [p(fmt(c.body, { title: escHtml(x.title) })), reason, p(c.outro), p(emailButton(link(x.base, again, lang), c.button))].join("\n"),
     footnote: c.foot,
   };
 }
@@ -408,9 +427,17 @@ export function jobAlertEmail(
     freeLimit: number;
     unsubscribeUrl: string;
     mailingAddress: string;
+    /** A public buyer's job (lib/town-jobs): who posted it, and whether it's a mirror of a formal tender. */
+    town?: { buyer: string | null; mirror: boolean; portal: string | null };
   },
 ): BuiltEmail {
   const c = COPY_BY_LANG[lang].jobAlert;
+  const buyer = escHtml(x.town?.buyer?.trim() || COPY_BY_LANG[lang].poster.town);
+  const townLine = x.town
+    ? x.town.mirror
+      ? fmt(c.townMirror, { buyer, portal: x.town.portal?.trim() ? escHtml(x.town.portal.trim()) : c.portal })
+      : fmt(c.town, { buyer })
+    : null;
   const subjectTpl = x.trade && x.place ? c.subject : x.trade ? c.subjectNoPlace : x.place ? c.subjectNoTrade : `${c.title}: {title}`;
   const subject = fmt(subjectTpl, { trade: x.trade ?? "", place: x.place ?? "", title: x.title });
   const meta = [x.trade, x.place, x.deadline ? fmt(c.due, { date: formatDate(x.deadline, lang, { month: "short", day: "numeric", year: "numeric" }) }) : c.noDue]
@@ -431,8 +458,8 @@ export function jobAlertEmail(
       p(c.intro),
       `<p style="margin:12px 0 4px"><a href="${link(x.base, `/rfps/${x.slug}`, lang)}" style="color:#282B59;font-weight:700;font-size:17px">${escHtml(x.title)}</a><br><span style="color:#0C7A5A;font-size:12px;text-transform:uppercase;letter-spacing:.04em">${meta}</span></p>`,
       summary,
-      p(emailButton(link(x.base, `/rfps/${x.slug}`, lang), c.button)),
-      `<p style="font-size:14px;color:#475569">${x.pro ? c.pro : fmt(c.free, { limit: x.freeLimit })}</p>`,
+      p(emailButton(link(x.base, `/rfps/${x.slug}`, lang), x.town?.mirror ? c.mirrorButton : c.button)),
+      `<p style="font-size:14px;color:#475569">${townLine ?? (x.pro ? c.pro : fmt(c.free, { limit: x.freeLimit }))}</p>`,
     ].join("\n"),
     footnote: `${footer}.`,
   };

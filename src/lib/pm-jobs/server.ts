@@ -117,13 +117,21 @@ export interface JobRow {
   posted_by_user_id: string | null;
   posted_by_organization_id: string | null;
   published_at?: string | null;
+  /** Public buyers' jobs (migration 20261021000060): the town's name and the kind of post. */
+  buyer_name?: string | null;
+  post_kind?: string | null;
+  official_portal?: string | null;
   rfp_categories: { category_id: string; trade_categories: { name: string } | null }[];
 }
 
 const JOB_COLS =
   "id,title,slug,summary,status,source_type,region_id,city,province,deadline,posted_by_user_id,posted_by_organization_id,published_at, rfp_categories(category_id, trade_categories(name))";
+const TOWN_COLS = "buyer_name,post_kind,official_portal";
 
 export async function loadJob(db: Db, rfpId: string): Promise<JobRow | null> {
+  const first = await db.from("rfp_posts").select(`${JOB_COLS},${TOWN_COLS}`).eq("id", rfpId).maybeSingle();
+  if (!first.error) return (first.data as unknown as JobRow | null) ?? null;
+  // Before migration 20261021000060 (no town columns).
   const { data } = await db.from("rfp_posts").select(JOB_COLS).eq("id", rfpId).maybeSingle();
   return (data as unknown as JobRow | null) ?? null;
 }
@@ -135,10 +143,21 @@ export interface AudienceResult {
   /** lead_alert_log is missing (migration 20261016000002): nothing can be recorded, so nothing is sent. */
   logMissing: boolean;
   placeName: string | null;
+  /** loadAlertAudience(…, { forInvites: true }): each matching company's people, their emails and who opted out. */
+  people?: {
+    usersByOrg: ReadonlyMap<string, readonly string[]>;
+    users: ReadonlyMap<string, { email: string | null; status: string | null }>;
+    optedOut: ReadonlySet<string>;
+  };
 }
 
-/** Who a published (or about-to-be-published) job would email right now. */
-export async function loadAlertAudience(db: Db, job: JobRow): Promise<AudienceResult> {
+/**
+ * Who a published (or about-to-be-published) job would email right now.
+ * `forInvites` (a town inviting matching trades, lib/town-jobs): the same
+ * matching companies, but nobody is skipped for the weekly preference or an
+ * earlier job alert, and each company's people come back for the caller.
+ */
+export async function loadAlertAudience(db: Db, job: JobRow, opts: { forInvites?: boolean } = {}): Promise<AudienceResult> {
   const categoryIds = job.rfp_categories.map((c) => c.category_id);
   const { data: regionData } = await db.from("regions").select("id,name,slug,parent_id,province,country");
   const regions = (regionData ?? []) as RegionRow[];
@@ -178,10 +197,14 @@ export async function loadAlertAudience(db: Db, job: JobRow): Promise<AudienceRe
     inChunks<{ user_id: string; new_rfps: string | null; channel_email: boolean | null }>(userIds, (c) =>
       db.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", c),
     ),
-    inChunks<{ user_id: string }>(userIds, (c) => db.from("lead_alert_log").select("user_id").eq("lead_key", pmJobAlertKey(job.id)).in("user_id", c)),
+    opts.forInvites
+      ? Promise.resolve({ rows: [] as { user_id: string }[], error: null })
+      : inChunks<{ user_id: string }>(userIds, (c) => db.from("lead_alert_log").select("user_id").eq("lead_key", pmJobAlertKey(job.id)).in("user_id", c)),
     proOrgIds(db),
   ]);
   const logMissing = Boolean(sentRes.error && isMissingTableError(sentRes.error));
+  const users = new Map(profiles.map((p) => [p.id, { email: p.email, status: p.status }]));
+  const optedOut = optedOutUsers(prefs);
 
   const orgs: AlertOrg[] = orgRows.map((o) => ({
     id: String(o.id),
@@ -212,9 +235,9 @@ export async function loadAlertAudience(db: Db, job: JobRow): Promise<AudienceRe
       catsByOrg,
       regionsByOrg,
       usersByOrg,
-      users: new Map(profiles.map((p) => [p.id, { email: p.email, status: p.status }])),
-      optedOut: optedOutUsers(prefs),
-      weekly: weeklyUsers(prefs),
+      users,
+      optedOut,
+      weekly: opts.forInvites ? new Set<string>() : weeklyUsers(prefs),
       // An unknown error reading the log: treat everyone as sent (never repeat).
       alreadySent: sentRes.error && !logMissing ? new Set(userIds) : new Set(sentRes.rows.map((r) => r.user_id)),
       proOrgIds: pro,
@@ -222,7 +245,7 @@ export async function loadAlertAudience(db: Db, job: JobRow): Promise<AudienceRe
     MAX_ALERTS_PER_JOB,
   );
   const placeRow = audience.place ? regions.find((r) => r.id === audience.place) : null;
-  return { job, country, audience, logMissing, placeName: placeRow?.name ?? null };
+  return { job, country, audience, logMissing, placeName: placeRow?.name ?? null, ...(opts.forInvites ? { people: { usersByOrg, users, optedOut } } : {}) };
 }
 
 export type AlertRunState = "sent" | "off" | "dry" | "blocked";
@@ -310,6 +333,10 @@ export async function runPmJobAlerts(
       freeLimit: FREE_MONTHLY_RESPONSES,
       unsubscribeUrl: unsub,
       mailingAddress,
+      // A public buyer's job: "posted by the Town of X", free to answer (or bid on its official portal).
+      ...(job.source_type === "public_buyer_direct"
+        ? { town: { buyer: job.buyer_name ?? null, mirror: job.post_kind === "tender_mirror", portal: job.official_portal ?? null } }
+        : {}),
     });
     // In-app, and the daily Pro digest skips what this already sent (same type + link).
     await db.from("notifications").insert({
@@ -333,6 +360,8 @@ export interface RespondState {
   free: boolean;
   allowance: Allowance;
   currency: "CAD" | "USD";
+  /** A public buyer's job: responding is free and never counted (allowance shows as unlimited). */
+  town?: boolean;
 }
 
 /**
@@ -341,6 +370,7 @@ export interface RespondState {
  * Null when it doesn't apply (no company, a public tender, not a PM job for a
  * free account). Reads with the service role: a free account can't read the
  * full listing row, and only the listing id and title reach the page.
+ * A public buyer's job never counts toward the free allowance.
  */
 export async function respondStateFor(
   db: Db,
@@ -349,17 +379,18 @@ export async function respondStateFor(
 ): Promise<RespondState | null> {
   // Only companies that respond to jobs (a poster viewing a job gets no box).
   if (!viewer.org || !(RESPONDER_ORG_TYPES as readonly string[]).includes(viewer.org.organization_type)) return null;
-  const { data } = await db
-    .from("rfp_posts")
-    .select("id,title,status,source_type,province,posted_by_user_id,posted_by_organization_id")
-    .eq("slug", slug)
-    .maybeSingle();
-  const rfp = data as { id: string; title: string; status: string; source_type: string | null; province: string | null; posted_by_user_id: string | null; posted_by_organization_id: string | null } | null;
+  const cols = "id,title,status,source_type,province,posted_by_user_id,posted_by_organization_id";
+  const read = (c: string) => db.from("rfp_posts").select(c).eq("slug", slug).maybeSingle();
+  // post_kind: migration 20261021000060; older databases have no public buyers' jobs.
+  const first = await read(`${cols},post_kind`);
+  const data = first.error ? (await read(cols)).data : first.data;
+  const rfp = data as unknown as { id: string; title: string; status: string; source_type: string | null; province: string | null; posted_by_user_id: string | null; posted_by_organization_id: string | null; post_kind?: string | null } | null;
   if (!rfp || rfp.source_type === "public_source") return null;
   if (!viewer.pro && !isPmJob(rfp)) return null;
+  const town = rfp.source_type === "public_buyer_direct";
   const [{ data: mine }, used] = await Promise.all([
     db.from("rfp_interests").select("created_at").eq("rfp_id", rfp.id).eq("trade_organization_id", viewer.org.id).maybeSingle(),
-    viewer.pro ? Promise.resolve(0) : freeResponsesUsed(db, viewer.org.id),
+    viewer.pro || town ? Promise.resolve(0) : freeResponsesUsed(db, viewer.org.id),
   ]);
   const decision = respondDecision({ signedIn: true, org: viewer.org, pro: viewer.pro, rfp, userId: viewer.userId, usedThisMonth: used ?? Infinity });
   // Before the migration (used === null) a free account can't respond yet: no box.
@@ -370,8 +401,9 @@ export async function respondStateFor(
     already: (mine as { created_at: string } | null)?.created_at ?? null,
     refusal: decision.refusal,
     free: decision.free,
-    allowance: responseAllowance({ pro: viewer.pro, usedThisMonth: used ?? 0 }),
+    allowance: responseAllowance({ pro: viewer.pro || town, usedThisMonth: used ?? 0 }),
     currency: isUsState(rfp.province) ? "USD" : "CAD",
+    ...(town ? { town: true } : {}),
   };
 }
 

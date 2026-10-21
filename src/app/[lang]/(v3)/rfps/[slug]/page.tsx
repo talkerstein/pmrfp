@@ -23,7 +23,8 @@ import { winnerKey, winnersFromRfps } from "@/lib/data/winners";
 import { getFullRfp, getPublicTenderNoticeUrl, getRfpTeaser } from "@/lib/data/rfps";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { loadBuyers } from "@/lib/buyers/load";
-import { buyerPageForRfp } from "@/lib/buyers/model";
+import { buyerPageForRfp, findBuyerPage } from "@/lib/buyers/model";
+import { parseBuyerKey } from "@/lib/towns/managed";
 import { FollowPill } from "@/components/follows/blocks";
 import { buyerDisplayName } from "@/lib/towns/claimable";
 import { inSentence } from "@/lib/towns/names";
@@ -34,6 +35,9 @@ import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config
 import { createServiceClient } from "@/lib/supabase/service";
 import { isPmJobSource } from "@/lib/pm-jobs/rules";
 import { respondStateFor } from "@/lib/pm-jobs/server";
+import { isTownSource } from "@/lib/town-jobs/rules";
+import { getTownListing } from "@/lib/town-jobs/public-data";
+import { TownAsideCtas, TownHeroCtas, TownListingBody, townTag } from "@/components/towns/jobs/listing";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { localizeCredit } from "@/lib/data-credits";
 import { RecordFooter } from "@/components/public/record-footer";
@@ -148,6 +152,19 @@ export default async function RfpDetailPage({
   const configured = isSupabaseConfigured();
   const session = await getSession();
   const access = await hasActiveTradeAccess();
+  // A public buyer's job (PMRFP for Towns): free and never behind the paywall, with its Q&A and addenda.
+  const town = isTownSource(teaser.sourceType) ? await getTownListing(slug) : null;
+  // The posting town sees "Manage this post" instead of the respond button.
+  const townManageHref =
+    town && session?.organization?.organization_type === "public_buyer" && isServiceConfigured()
+      ? await createServiceClient()
+          .from("rfp_posts")
+          .select("posted_by_organization_id")
+          .eq("id", town.post.id)
+          .maybeSingle<{ posted_by_organization_id: string | null }>()
+          .then(({ data }) => (data?.posted_by_organization_id && data.posted_by_organization_id === session.organization?.id ? `/buyer-dashboard/jobs/${town.post.id}` : null))
+      : null;
+  const townViewer = { signedIn: Boolean(session), userId: session?.userId ?? null, organizationId: session?.organization?.id ?? null };
   const forceLocked = sp.view === "locked";
   const showFull = configured ? access : !forceLocked;
   const full = showFull ? await getFullRfp(slug) : null;
@@ -191,7 +208,7 @@ export default async function RfpDetailPage({
   const closedArchive = isClosed && isPublicTender && Boolean(tenderSource.closedArchive);
   const closedNotice = closedArchive ? closedArchiveNoticeUrl(teaser.slug) : null;
   const closedAward = closedArchive ? closedArchiveAward(teaser.summary) : null;
-  const locked = !isAward && !isClosed && !(showFull && full);
+  const locked = !town && !isAward && !isClosed && !(showFull && full);
   const bidCheck = !isAward && !isClosed ? await getBidCheckBySlug(teaser.slug) : null;
   const upgradeHref = session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly");
   const annualHref = session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro", "annual");
@@ -257,17 +274,22 @@ export default async function RfpDetailPage({
   const tradeSlug = firstTrade ? categories.find((c) => c.name === firstTrade)?.slug : undefined;
   const regionSlug = teaser.regionName ? regions.find((r) => r.name === teaser.regionName)?.slug : undefined;
   const heroPhoto = teaser.photoUrls[0] ? { src: teaser.photoUrls[0], alt: "" } : tradePhotoForName(firstTrade);
-  const noticeKind = isAward ? t.kind.award : isGc ? t.kind.gc : isPublicTender ? t.kind.public : t.kind.private;
+  const noticeKind = town
+    ? getT("townJobs").listing.kind[town.post.post_kind === "tender_mirror" ? "tender_mirror" : "quote_request"]
+    : isAward ? t.kind.award : isGc ? t.kind.gc : isPublicTender ? t.kind.public : t.kind.private;
   const place =
     [teaser.city, teaser.province && regionName(teaser.province, lang)].filter(Boolean).join(", ") ||
     (teaser.regionName ? regionName(teaser.regionName, lang) : teaser.regionName);
-  const buyer = buyerFromSummary(teaser.summary) ?? (isGc ? t.facts.gc : isPublicTender ? null : t.facts.pm);
+  const buyer = town?.post.buyer_name ?? buyerFromSummary(teaser.summary) ?? (isGc ? t.facts.gc : isPublicTender ? null : t.facts.pm);
   // Canadian public listings link to their buyer's "where they post bids" page (same cached snapshots, no new query).
-  const buyerPage =
-    isPublicTender && rfpMarket(teaser) === "CA"
+  // A town's own post names its page (rfp_posts.buyer_key), so it gets the same link and Follow button.
+  const townKey = town?.post.buyer_key ? parseBuyerKey(town.post.buyer_key) : null;
+  const buyerPage = townKey
+    ? findBuyerPage((await loadBuyers()).pages, townKey.provinceSlug, townKey.slug)
+    : isPublicTender && rfpMarket(teaser) === "CA"
       ? buyerPageForRfp((await loadBuyers()).pages, teaser, buyerFromSummary(teaser.summary) ?? awardBuyerFromSummary(teaser.summary))
       : null;
-  const sourceLabel = isPublicTender ? portalName : isGc ? t.facts.gc : t.facts.pm;
+  const sourceLabel = town ? townTag(town) : isPublicTender ? portalName : isGc ? t.facts.gc : t.facts.pm;
   const days = !isAward && !isClosed ? daysUntil(teaser.deadline) : null;
   const soon = days === null || days < 0 || days > 7 ? null : days;
   const daysLeft = soon === null ? null : soon === 0 ? t.daysLeft.today : soon === 1 ? t.daysLeft.tomorrow : fill(t.daysLeft.n, { n: soon });
@@ -402,7 +424,9 @@ export default async function RfpDetailPage({
                 <div><dt>{t.facts.reference}</dt><dd className="ref">{teaser.reference ?? t.facts.notPublished}</dd></div>
               </dl>
               <div className="vp-dctas">
-                {isAward ? (
+                {town ? (
+                  <TownHeroCtas listing={town} respond={respond} viewer={townViewer} slug={teaser.slug} manageHref={townManageHref} />
+                ) : isAward ? (
                   awardUrl ? <a href={awardUrl} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{t.award.official} ↗</a> : <a href={L(annualHref)} className="v3-pill mint vp-big">{t.award.cta}</a>
                 ) : closedNotice ? (
                   <a href={closedNotice} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{t.closedArchive.official} ↗</a>
@@ -472,7 +496,7 @@ export default async function RfpDetailPage({
                 </div>
                 <p>
                   {teaser.deadline ? `${fmt(teaser.deadline, lang)}. ` : ""}
-                  {isPublicTender && !isAward ? v.directToIssuer : isAward ? v.awardNote : v.viaPmrfp}
+                  {(isPublicTender && !isAward) || town?.post.post_kind === "tender_mirror" ? v.directToIssuer : isAward ? v.awardNote : v.viaPmrfp}
                 </p>
               </div>
             </div>
@@ -556,7 +580,9 @@ export default async function RfpDetailPage({
             </div>
           )}
 
-          {isAward ? (
+          {town ? (
+            <TownListingBody listing={town} viewer={townViewer} slug={teaser.slug} manageHref={townManageHref} />
+          ) : isAward ? (
             <div className="vp-awardbox">
               {award?.winner && (
                 <div className="vp-winner">
@@ -767,7 +793,9 @@ export default async function RfpDetailPage({
               {closesIn && <span className="badge">{closesIn}</span>}
             </div>
             <div className="dt">{teaser.deadline ? fmt(teaser.deadline, lang) : t.facts.ongoing}</div>
-            {isAward ? (
+            {town ? (
+              <div className="vp-tw-col"><TownAsideCtas listing={town} respond={respond} viewer={townViewer} slug={teaser.slug} /></div>
+            ) : isAward ? (
               awardUrl && <a href={awardUrl} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{t.award.official} ↗</a>
             ) : closedArchive ? (
               <>
@@ -876,7 +904,7 @@ export default async function RfpDetailPage({
         </aside>
       </section>
 
-      {!(showFull && full) && (
+      {!town && !(showFull && full) && (
         <section className="vp-mint">
           <div className="v3-wrap vp-mint-in two">
             <div>
@@ -900,7 +928,9 @@ export default async function RfpDetailPage({
             <b>{shortTitle}{buyer ? ` · ${buyer}.` : "."}</b>{" "}
             <span className="c">{status}{teaser.deadline && !isAward && !isClosed ? `, ${formatDate(teaser.deadline, lang, { month: "long", day: "numeric" })}.` : "."}</span>
           </div>
-          {isAward || isClosed ? (
+          {town?.post.post_kind === "tender_mirror" && town.post.official_url ? (
+            <a href={town.post.official_url} target="_blank" rel="noopener noreferrer nofollow" className="v3-pill mint">{townTag(town)} ↗</a>
+          ) : isAward || isClosed ? (
             <a href={L(tradeSlug ? `/rfps?category=${tradeSlug}` : "/rfps")} className="v3-pill mint">{t.closed.seeOpen} →</a>
           ) : locked && !(permission && bidHref) ? (
             <>

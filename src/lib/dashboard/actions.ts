@@ -3,6 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { finishTownPost, townPageFor, type TownPage } from "@/lib/town-jobs/server";
+import { parseTownPostFields, townPostColumns, type TownPostFields } from "@/lib/town-jobs/post";
+import { TOWN_SOURCE } from "@/lib/town-jobs/rules";
 import { createClient } from "@/lib/supabase/server";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -308,10 +312,14 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   const supabase = await createClient();
   const gc = await gcPackageFields(supabase, formData, categories, t);
   if (gc && "error" in gc) return { error: gc.error };
+  // A public buyer (a town) posts as its page (lib/town-jobs). A mirror of a
+  // formal tender has no scope of its own: its summary stands in for it.
+  const isTown = session.profile.primary_role === "public_buyer";
+  const mirror = isTown && formData.get("postKind") === "tender_mirror";
   const parsed = rfpPostSchema.safeParse({
     title: gc ? gc.title : formData.get("title"),
     summary: formData.get("summary"),
-    scope: formData.get("scope"),
+    scope: mirror ? String(formData.get("scope") ?? "").trim() || formData.get("summary") : formData.get("scope"),
     requirements: formData.get("requirements") ?? "",
     categories,
     propertyType: formData.get("propertyType") || undefined,
@@ -331,6 +339,18 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   });
   if (!parsed.success) return { error: validationMessage(lang, parsed.error.issues[0]?.message, t.requiredFields) };
   const d = parsed.data;
+
+  // The town's page (verified: it goes live at once; claimed: PMRFP reviews it) and its extra fields.
+  let town: { page: TownPage; fields: TownPostFields; organizationId: string } | null = null;
+  if (isTown) {
+    const te = getDictionary(lang).townJobs.post.errors;
+    if (!session.organization || session.organization.organization_type !== "public_buyer" || !isServiceConfigured()) return { error: te.noPage };
+    const page = await townPageFor(createServiceClient(), session.organization.id, session.userId);
+    if (!page) return { error: te.noPage };
+    const f = parseTownPostFields(formData, d.deadline.toISOString().slice(0, 10));
+    if (!f.ok) return { error: te[f.error] };
+    town = { page, fields: f.fields, organizationId: session.organization.id };
+  }
 
   const [{ data: region }, { data: pt }] = await Promise.all([
     supabase.from("regions").select("id").eq("slug", d.regionSlug).maybeSingle<{ id: string }>(),
@@ -361,12 +381,15 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
       contact_phone: d.contactPhone || null,
       posted_by_user_id: session.userId,
       posted_by_organization_id: session.organization?.id ?? null,
-      source_type: gc
-        ? GC_PACKAGE
-        : session.profile.primary_role === "admin" || session.profile.primary_role === "super_admin"
-          ? "admin_seeded"
-          : "property_manager_direct",
+      source_type: town
+        ? TOWN_SOURCE
+        : gc
+          ? GC_PACKAGE
+          : session.profile.primary_role === "admin" || session.profile.primary_role === "super_admin"
+            ? "admin_seeded"
+            : "property_manager_direct",
       ...(gc ? { gc_project_name: gc.gcProjectName, awarded_rfp_id: gc.awardedRfpId } : {}),
+      ...(town ? townPostColumns(town.fields, town.page) : {}),
       status: "pending_review",
   };
   const insert = (row: Record<string, unknown>) => supabase.from("rfp_posts").insert(row).select("id").single<{ id: string }>();
@@ -374,6 +397,8 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   let { data: rfp, error } = await insert({ ...insertRow, poster_lang: lang });
   if (error && isSchemaMissing(error)) ({ data: rfp, error } = await insert(insertRow));
   if (error || !rfp) {
+    // Before the towns migration (20261021000060) runs, say so plainly.
+    if (town) return { error: getDictionary(lang).townJobs.post.errors.unavailable };
     // Before the GC-package migration runs, say so plainly instead of failing vaguely.
     const unavailable = lang === DEFAULT_LOCALE ? GC_UNAVAILABLE_MESSAGE : t.gcUnavailable;
     return { error: gc && isGcSchemaMissingError(error) ? unavailable : t.createFailed };
@@ -426,6 +451,28 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
       });
       await supabase.from("rfp_documents").insert(rows);
     }
+  }
+
+  // A town's job: a verified town goes live now (alerts after the response), anyone else waits for review.
+  if (town) {
+    const done = await finishTownPost(createServiceClient(), {
+      rfpId: rfp.id,
+      page: town.page,
+      organizationId: town.organizationId,
+      actorUserId: session.userId,
+      title: d.title,
+      slug,
+      postKind: town.fields.postKind,
+      postedBy: session.organization?.name ?? null,
+      region: d.regionSlug,
+      categories: categories.join(", "),
+      schedule: (task) => after(task),
+    });
+    revalidatePath("/buyer-dashboard");
+    revalidatePath("/buyer-dashboard/jobs");
+    // The town's page and widget list its own posts (lib/town-jobs/merge).
+    revalidatePath(`/buyers/${town.page.buyerKey}`);
+    redirect(localizePath(`/buyer-dashboard/jobs/${rfp.id}?posted=${done.status === "published" ? "live" : "review"}&alerts=${done.alerts}&n=${done.wouldEmail}`, lang));
   }
 
   // Admin heads-up (ADMIN_NOTIFICATION_EMAIL, else info@pmrfp.com), with how many are now waiting.

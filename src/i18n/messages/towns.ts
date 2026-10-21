@@ -110,7 +110,7 @@ const en = {
   },
   dashboard: {
     area: "Public buyer",
-    nav: { home: "Home", page: "Edit page", view: "View page", widgets: "Website widget" },
+    nav: { home: "Home", jobs: "Quote requests", page: "Edit page", view: "View page", widgets: "Website widget" },
     title: "Your page on PMRFP",
     status: {
       verified: "Verified · managed by {name}",
@@ -295,7 +295,7 @@ const fr: typeof en = {
   },
   dashboard: {
     area: "Organisme public",
-    nav: { home: "Accueil", page: "Modifier la page", view: "Voir la page", widgets: "Widget pour votre site" },
+    nav: { home: "Accueil", jobs: "Demandes de prix", page: "Modifier la page", view: "Voir la page", widgets: "Widget pour votre site" },
     title: "Votre page sur PMRFP",
     status: {
       verified: "Vérifiée · page gérée par {name}",
@@ -480,7 +480,7 @@ const es: typeof en = {
   },
   dashboard: {
     area: "Organismo público",
-    nav: { home: "Inicio", page: "Editar página", view: "Ver página", widgets: "Widget para su sitio" },
+    nav: { home: "Inicio", jobs: "Solicitudes de cotización", page: "Editar página", view: "Ver página", widgets: "Widget para su sitio" },
     title: "Su página en PMRFP",
     status: {
       verified: "Verificada · administrada por {name}",

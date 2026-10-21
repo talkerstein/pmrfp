@@ -10,12 +10,12 @@ import { fakeDb, type FakeDb } from "./fake-supabase";
  * lib/email/send only logs "[email:noop] to=… subject=…".
  */
 
-const h = vi.hoisted(() => ({ db: null as unknown, pages: [] as unknown[] }));
+const h = vi.hoisted(() => ({ db: null as unknown, pages: [] as unknown[], service: true }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn, revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 vi.mock("@/lib/buyers/load", () => ({ loadBuyers: async () => ({ pages: h.pages, categories: [] }) }));
-vi.mock("@/lib/supabase/config", () => ({ isSupabaseConfigured: () => true, isServiceConfigured: () => true }));
+vi.mock("@/lib/supabase/config", () => ({ isSupabaseConfigured: () => true, isServiceConfigured: () => h.service }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: () => h.db }));
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: async () => null, checkRateLimitByIp: async () => false, rateLimitResponse: () => new Response(null, { status: 429 }) }));
 
@@ -51,6 +51,7 @@ import { magicLinkRedirect } from "@/lib/auth/magic-link";
 import { localizePath } from "@/i18n/config";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { hasSessionCookie } from "@/components/follows/use-follows";
+import { getBuyerFollowerIds } from "@/lib/town-jobs/followers";
 
 type Row = Record<string, unknown>;
 
@@ -248,6 +249,12 @@ describe("which listings a follow catches", () => {
       "l-co": [COBOURG],
       "l-na": [NANAIMO],
     });
+  });
+
+  it("a town's own post (B2) belongs to the page it names, even before the town is verified", () => {
+    const post = listing({ id: "l-tj", slug: "snow-plowing-mn34", title: "Snow plowing", sourceType: "public_buyer_direct", postedByOrganizationId: "org-pending", buyerKey: WELLINGTON_NORTH });
+    const keys = listingBuyerKeys([post], { pages, wanted: new Set([WELLINGTON_NORTH]), managedByOrg: new Map(), permissionOf });
+    expect(keys.get("l-tj")).toEqual([WELLINGTON_NORTH]);
   });
 
   it("finds nothing for pages nobody follows", () => {
@@ -615,5 +622,37 @@ describe("admin emails on claims and requests", () => {
       provinceCode: "BC",
     });
     expect(mails()[0].subject).toBe("Public buyer wants to list its tenders (2 waiting): City of Nanaimo (BC)");
+  });
+});
+
+/* ------------------------------------------------------------------ B2's follower hook */
+
+describe("a town's followers for B2 (lib/town-jobs/followers)", () => {
+  afterEach(() => {
+    h.service = true;
+  });
+
+  it("lists each follower of that page once, and nobody else's", async () => {
+    h.db = fakeDb({
+      buyer_follows: [
+        { user_id: "u1", buyer_slug: WELLINGTON_NORTH },
+        { user_id: "u2", buyer_slug: WELLINGTON_NORTH },
+        { user_id: "u1", buyer_slug: WELLINGTON_NORTH },
+        { user_id: "u3", buyer_slug: GUELPH },
+        // Same slug, other province: a different town.
+        { user_id: "u4", buyer_slug: "alberta/township-of-wellington-north" },
+      ],
+    });
+    expect(await getBuyerFollowerIds(WELLINGTON_NORTH)).toEqual(["u1", "u2"]);
+    expect(await getBuyerFollowerIds("ontario/nobody-follows")).toEqual([]);
+  });
+
+  it("is empty without the service client, before the migration, or for no key", async () => {
+    h.db = fakeDb({});
+    expect(await getBuyerFollowerIds(WELLINGTON_NORTH)).toEqual([]);
+    h.db = fakeDb({ buyer_follows: [{ user_id: "u1", buyer_slug: WELLINGTON_NORTH }] });
+    expect(await getBuyerFollowerIds("")).toEqual([]);
+    h.service = false;
+    expect(await getBuyerFollowerIds(WELLINGTON_NORTH)).toEqual([]);
   });
 });

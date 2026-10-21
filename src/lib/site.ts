@@ -125,6 +125,7 @@ export const PM_NAV = [
 /** Public-buyer dashboard sidebar (towns, cities, school boards…). Labels: towns.dashboard.nav. */
 export const PUBLIC_BUYER_NAV = [
   { href: "/buyer-dashboard", key: "home" },
+  { href: "/buyer-dashboard/jobs", key: "jobs" },
   { href: "/buyer-dashboard/edit", key: "page" },
 ] as const;
 

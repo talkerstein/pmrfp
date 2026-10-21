@@ -5,6 +5,9 @@ import { getMajorProjects } from "@/lib/major-projects/data";
 import { buyerRefs, intelAwards } from "@/lib/intel/model";
 import { allTowns } from "@/lib/towns/data";
 import { mergeTownsWithDirectory, type TownMerge } from "@/lib/towns/merge";
+import { getTownPostsSnapshot } from "@/lib/town-jobs/posts-data";
+import { mergeTownPosts } from "@/lib/town-jobs/merge";
+import { todayToronto } from "@/lib/town-jobs/rules";
 import { DIRECTORY, buildBuyerPages, type BuyerPage } from "./model";
 
 export interface BuyerData {
@@ -33,11 +36,13 @@ export function townMerge(): TownMerge {
  * when the research covers it, else a town page from the 2021 Census.
  */
 export const loadBuyers = cache(async (): Promise<BuyerData> => {
-  const [rfps, regions, categories, projects] = await Promise.all([
+  const [rfps, regions, categories, projects, townPosts] = await Promise.all([
     listAllRfpsCached().catch(() => []),
     getRegions().catch(() => []),
     getCategories().catch(() => [] as CategoryOption[]),
     getMajorProjects().catch(() => []),
+    // Towns' own posts (PMRFP for Towns, Part B2): one shared snapshot, linked by page key.
+    getTownPostsSnapshot().catch(() => []),
   ]);
   const all = intelAwards(rfps, {
     regionProvince: new Map(regions.map((r) => [r.name, r.province] as const)),
@@ -47,5 +52,6 @@ export const loadBuyers = cache(async (): Promise<BuyerData> => {
   // Same refs as the public /intel pages (board awards, both countries), so the slug matches.
   const intelSlugs = new Map(buyerRefs(all).filter((r) => r.country === "CA").map((r) => [r.key, r.slug] as const));
   const { byDirectory, unmerged } = townMerge();
-  return { pages: buildBuyerPages({ awards, rfps, projects, intelSlugs, towns: { byDirectory, unmerged } }), categories };
+  const pages = buildBuyerPages({ awards, rfps, projects, intelSlugs, towns: { byDirectory, unmerged } });
+  return { pages: mergeTownPosts(pages, townPosts, todayToronto()), categories };
 });

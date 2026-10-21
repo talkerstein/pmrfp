@@ -2,13 +2,19 @@
  * The PM job flow's rules (pure, unit-tested in test/unit/pm-job-flow.test.ts).
  *
  * A "PM job" is a listing a member posted on PMRFP: a property manager,
- * landlord or owner RFP (source_type 'property_manager_direct') or a GC
- * sub-trade package ('gc_package'), with a poster on file. Imported public
- * tenders are never PM jobs: they're answered on the buyer's own portal.
+ * landlord or owner RFP (source_type 'property_manager_direct'), a GC
+ * sub-trade package ('gc_package') or a public buyer's job
+ * ('public_buyer_direct': a town's quote request or tender mirror,
+ * lib/town-jobs), with a poster on file. Imported public tenders are never
+ * PM jobs: they're answered on the buyer's own portal.
  *
  *   Responding   any approved trade company (or supplier) can respond to a
  *                PM job. Free accounts get FREE_MONTHLY_RESPONSES a calendar
  *                month (Toronto time); Trade Pro and trials are unlimited.
+ *                A public buyer's quote request is always free, for every
+ *                trade or supplier, and never uses the allowance; a public
+ *                buyer's tender mirror takes no responses at all (bids go to
+ *                the official portal).
  *                Trade Pro also keeps responding to other private listings,
  *                as before. The database enforces the same limit (trigger in
  *                migration 20261021000020).
@@ -20,7 +26,10 @@
  *                always sees each other.
  */
 
-export const PM_JOB_SOURCES = ["property_manager_direct", "gc_package"] as const;
+export const PM_JOB_SOURCES = ["property_manager_direct", "gc_package", "public_buyer_direct"] as const;
+
+/** A public buyer's job (a town, county, school board…): lib/town-jobs. */
+const PUBLIC_BUYER_SOURCE = "public_buyer_direct";
 
 /** Free trade accounts: responses to PM jobs per calendar month. Keep in step with the SQL trigger. */
 export const FREE_MONTHLY_RESPONSES = 3;
@@ -90,6 +99,7 @@ export type RespondRefusal =
   | "role"
   | "suspended"
   | "public_tender"
+  | "official_portal"
   | "not_open"
   | "own_job"
   | "pro_required"
@@ -107,6 +117,8 @@ export interface RespondInput {
     source_type: string | null;
     posted_by_user_id: string | null;
     posted_by_organization_id: string | null;
+    /** Public buyers' jobs: 'quote_request' or 'tender_mirror' (lib/town-jobs). */
+    post_kind?: string | null;
   };
   userId?: string | null;
   usedThisMonth: number;
@@ -123,6 +135,8 @@ export function respondDecision(p: RespondInput): { refusal: RespondRefusal; fre
   if (!(RESPONDER_ORG_TYPES as readonly string[]).includes(p.org.organization_type)) return no("role");
   if (p.org.status === "suspended") return no("suspended");
   if (p.rfp.source_type === "public_source") return no("public_tender");
+  // A public buyer's formal tender: bids go to the official portal, never here.
+  if (p.rfp.source_type === PUBLIC_BUYER_SOURCE && p.rfp.post_kind === "tender_mirror") return no("official_portal");
   if (p.rfp.status !== "published") return no("not_open");
   if (
     (p.rfp.posted_by_organization_id && p.rfp.posted_by_organization_id === p.org.id) ||
@@ -130,6 +144,8 @@ export function respondDecision(p: RespondInput): { refusal: RespondRefusal; fre
   ) {
     return no("own_job");
   }
+  // A public buyer's quote request: always free, for every trade and supplier, never counted.
+  if (p.rfp.source_type === PUBLIC_BUYER_SOURCE && p.rfp.posted_by_user_id) return { refusal: null, free: false };
   // Trade Pro: any private listing, no limit (as before).
   if (p.pro) return { refusal: null, free: false };
   if (!isPmJob(p.rfp)) return no("pro_required");
@@ -145,6 +161,7 @@ export const REFUSAL_STATUS: Record<Exclude<RespondRefusal, null>, number> = {
   role: 403,
   suspended: 403,
   public_tender: 403,
+  official_portal: 403,
   not_open: 404,
   own_job: 403,
   pro_required: 403,
