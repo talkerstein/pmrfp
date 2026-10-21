@@ -1,6 +1,7 @@
 import { RFP_TEMPLATES, type RfpTemplate } from "@/lib/seo/rfp-templates";
 import { TIMING_LABEL, WEIGHTS, type RfpDraft, type WizardInput } from "./schema";
 import { isUsState } from "@/lib/geo";
+import { confirmBlank, finalizeDraft, properCase, siteAccessBlock, tidyUserText } from "./postprocess";
 
 /**
  * Template-based RFP composer — no AI, always available. Starts from the
@@ -9,12 +10,22 @@ import { isUsState } from "@/lib/geo";
  * writer never shows an error to a property manager.
  */
 
-export function pickTemplate(input: Pick<WizardInput, "tradeSlug" | "templateSlug">): RfpTemplate | undefined {
+/** An urgent leak or failure: the trade's emergency-repair template fits better than a full replacement. */
+const URGENT_REPAIR = /\bleak|\bfui(?:t|te|tes|ent)\b|\bgotera|\bfiltra|\bburst|\bflood|\binfiltr|\bemergenc|\burgen/i;
+
+export function pickTemplate(
+  input: Pick<WizardInput, "tradeSlug" | "templateSlug"> & Partial<Pick<WizardInput, "timing" | "description">>,
+): RfpTemplate | undefined {
   if (input.templateSlug) {
     const t = RFP_TEMPLATES.find((x) => x.slug === input.templateSlug);
     if (t) return t;
   }
-  return RFP_TEMPLATES.find((x) => x.tradeSlug === input.tradeSlug);
+  const forTrade = RFP_TEMPLATES.filter((x) => x.tradeSlug === input.tradeSlug);
+  if (input.timing === "asap" && URGENT_REPAIR.test(input.description ?? "")) {
+    const emergency = forTrade.find((x) => x.slug.includes("emergency"));
+    if (emergency) return emergency;
+  }
+  return forTrade[0];
 }
 
 const money = (n: number) => `$${n.toLocaleString("en-CA")}`;
@@ -37,7 +48,7 @@ function questionCutoff(deadline: string): string {
 }
 
 function where(input: WizardInput): string {
-  return [input.city, input.province].filter(Boolean).join(", ");
+  return [input.city ? properCase(input.city) : undefined, input.province].filter(Boolean).join(", ");
 }
 
 /** "18,000 sq ft roof, 9 storeys" → "18,000 sq ft"; null if no area was given. */
@@ -48,7 +59,7 @@ function area(size: string | undefined): string | null {
 /** "a condominium in Mississauga" — for running sentences. */
 function placePhrase(input: WizardInput): string {
   const type = input.propertyType ? input.propertyType.toLowerCase() : "property";
-  const at = input.city ?? input.province;
+  const at = input.city ? properCase(input.city) : input.province;
   return `a ${type}${at ? ` in ${at}` : ""}`;
 }
 
@@ -80,7 +91,18 @@ const US_TERMS: [RegExp, string][] = [
   [/\(CAD, before tax\)/g, "(USD, before tax)"],
 ];
 
+// A Québec property: CNESST instead of WSIB (finalizeDraft adds the RBQ licence).
+const QC_TERMS: [RegExp, string][] = [
+  [/WSIB clearance certificate in good standing(?: \(or provincial WCB equivalent\))?\.?/g, "CNESST certificate of compliance (attestation de conformité) in good standing."],
+  [/WSIB clearance(?: in good standing)?\.?/g, "CNESST certificate of compliance (attestation de conformité) in good standing."],
+  [/WSIB \(or provincial WCB\) clearance/g, "CNESST certificate of compliance"],
+  [/\bWSIB\b/g, "CNESST"],
+];
+
+const isQuebec = (p: string | undefined) => (p ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase() === "quebec";
+
 export function localize(text: string, input: Pick<WizardInput, "province">): string {
+  if (isQuebec(input.province)) return QC_TERMS.reduce((out, [p, r]) => out.replace(p, r), text);
   if (!isUsState(input.province)) return text;
   return US_TERMS.reduce((out, [p, r]) => out.replace(p, r), text);
 }
@@ -88,8 +110,8 @@ export function localize(text: string, input: Pick<WizardInput, "province">): st
 /** Replace template placeholders with answers where we have them. */
 function fill(text: string, input: WizardInput): string {
   return text
-    .replace(/\[(?:size|X)\]\s*sq ?ft/gi, area(input.size) ?? "[area to confirm] sq ft")
-    .replace(/\[size\]/gi, input.size ?? "[size to confirm]")
+    .replace(/\[(?:size|X)\]\s*sq ?ft/gi, area(input.size) ?? `${confirmBlank("en", "area")} sq ft`)
+    .replace(/\[size\]/gi, input.size ?? confirmBlank("en", "size"))
     .replace(/\[Property Name \/ Address\]/gi, [input.propertyType, where(input)].filter(Boolean).join(", ") || "our property")
     // Templates were written for posting on PMRFP; in a property manager's own RFP
     // the owner / condo corporation is the additional insured.
@@ -114,7 +136,7 @@ export function submissionInstructions(input: WizardInput): string {
       ? "Submit pricing for the service contract (annual price, plus any per-visit or per-event rates), with any add-alternates priced separately."
       : "Submit a lump-sum price for the base scope, with each add-alternate priced separately.",
   );
-  lines.push("Include: certificate of insurance, WSIB (or provincial WCB) clearance, relevant licences, a proposed schedule, and three references for comparable work.");
+  lines.push(`Include: certificate of insurance, WSIB (or provincial WCB) clearance, relevant licences${isQuebec(input.province) ? " (including the RBQ licence)" : ""}, a proposed schedule, and three references for comparable work.`);
   if (input.siteVisit) {
     lines.push(
       input.siteVisitDate
@@ -153,21 +175,33 @@ const GENERIC_QUESTIONS = [
   "What is your hourly or unit rate for work outside the base scope?",
 ];
 
+/** "Flat Roof Replacement" → "Flat roof replacement"; "HVAC Rooftop Unit Replacement" keeps "HVAC". */
+function sentenceCase(noun: string): string {
+  return noun
+    .split(" ")
+    .map((w, i) => (i > 0 && /^[A-Z][a-z]+$/.test(w) ? w.toLowerCase() : w))
+    .join(" ");
+}
+
+/** The summary, from the structured answers only: the manager's own words appear once, under "What we need". */
+export function structuredSummary(input: WizardInput, noun: string): string {
+  return `${sentenceCase(noun)} at ${placePhrase(input)}. Work to take place ${TIMING_LABEL[input.timing]}.`;
+}
+
 export function composeRfp(input: WizardInput): RfpDraft {
   const t = pickTemplate(input);
-  const place = [input.propertyType, input.city ?? input.province].filter(Boolean).join(", ");
+  const place = [input.propertyType, input.city ? properCase(input.city) : input.province].filter(Boolean).join(", ");
   const noun = t ? t.name.replace(/ RFP Template$/, "") : `${input.tradeName} ${input.contractType === "service-contract" ? "Service Contract" : "Project"}`;
   const title = place ? `${noun} — ${place}` : noun;
-
-  const firstSentence = input.description.split(/(?<=[.!?])\s/)[0].slice(0, 220);
-  const summary = `${firstSentence}${/[.!?]$/.test(firstSentence) ? "" : "."} Work to take place ${TIMING_LABEL[input.timing]} at ${placePhrase(input)}.`;
+  const summary = structuredSummary(input, noun);
 
   const scope = [
     `About the property:\n${propertyParagraph(input)}`,
-    `What we need:\n${input.description}`,
+    `What we need:\n${tidyUserText(input.description, input, "en")}`,
     fill(t ? t.scope : genericScope(), input),
-    t?.siteAccess ? `Site access (to confirm for this property):\n${fill(t.siteAccess, input)}` : null,
-  ].filter(Boolean).join("\n\n");
+    // Never the template's sample site facts: visible blanks to confirm.
+    siteAccessBlock("en", input, t?.siteAccess),
+  ].join("\n\n");
 
   const requirements = localize(t
     ? fill(t.requirements, input)
@@ -177,13 +211,17 @@ export function composeRfp(input: WizardInput): RfpDraft {
 - Three references for comparable work completed in the last 24 months.
 - A named project lead or site contact for the duration of the work.`, input);
 
-  return {
-    title,
-    summary,
-    scope: localize(scope, input),
-    requirements,
-    submissionInstructions: submissionInstructions(input),
-    evaluationCriteria: WEIGHTS[input.priority].map(([k, v]) => `${k} (${v}%)`),
-    questionsForBidders: t?.questions.length ? t.questions : GENERIC_QUESTIONS,
-  };
+  return finalizeDraft(
+    {
+      title,
+      summary,
+      scope: localize(scope, input),
+      requirements,
+      submissionInstructions: submissionInstructions(input),
+      evaluationCriteria: WEIGHTS[input.priority].map(([k, v]) => `${k} (${v}%)`),
+      questionsForBidders: t?.questions.length ? t.questions : GENERIC_QUESTIONS,
+    },
+    input,
+    { lang: "en", structuredSummary: summary },
+  );
 }

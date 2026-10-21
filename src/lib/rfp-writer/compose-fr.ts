@@ -4,6 +4,7 @@ import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 import { pickTemplate } from "./compose";
 import { RFP_TEMPLATES_FR, type RfpTemplateFr } from "./templates-fr";
 import { WEIGHTS, type RfpDraft, type WizardInput } from "./schema";
+import { confirmBlank, finalizeDraft, properCase, siteAccessBlock, tidyUserText } from "./postprocess";
 
 /**
  * French (Quebec) version of compose.ts: same structure and rules, written in
@@ -63,7 +64,7 @@ function de(word: string): string {
 const norm = (s: string | undefined) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
 
 function where(input: WizardInput): string {
-  return [input.city, input.province ? regionName(input.province, "fr") : undefined].filter(Boolean).join(", ");
+  return [input.city ? properCase(input.city) : undefined, input.province ? regionName(input.province, "fr") : undefined].filter(Boolean).join(", ");
 }
 
 function propertyTypeFr(input: WizardInput): string | undefined {
@@ -127,8 +128,8 @@ export function localizeFr(text: string, input: Pick<WizardInput, "province">): 
 /** Replace French template placeholders with answers where we have them. */
 export function fillFr(text: string, input: WizardInput): string {
   return text
-    .replace(/\[(?:size|X)\]\s*pi²/gi, area(input.size) ?? "[superficie à confirmer] pi²")
-    .replace(/\[size\]/gi, input.size ?? "[dimensions à confirmer]")
+    .replace(/\[(?:size|X)\]\s*pi²/gi, area(input.size) ?? `${confirmBlank("fr", "superficie")} pi²`)
+    .replace(/\[size\]/gi, input.size ?? confirmBlank("fr", "dimensions"))
     .replace(/responsabilité civile générale de [25] M\$/g, `responsabilité civile générale de ${input.insurance === "5m" ? "5 M$" : "2 M$"}`);
 }
 
@@ -136,7 +137,7 @@ export function propertyParagraphFr(input: WizardInput): string {
   const parts: string[] = [];
   const type = propertyTypeFr(input);
   const place = [type ? lowerFirst(type) : undefined, where(input)].filter(Boolean).join(" — ");
-  parts.push(`Immeuble : ${place || "[type d'immeuble et emplacement à préciser]"}${input.size ? ` (${input.size})` : ""}.`);
+  parts.push(`Immeuble : ${place || confirmBlank("fr", "type d'immeuble et emplacement")}${input.size ? ` (${input.size})` : ""}.`);
   if (input.occupied === true) parts.push("L'immeuble demeure occupé pendant les travaux : le bruit, l'accès et la sécurité doivent être planifiés en fonction des résidents et des locataires.");
   if (input.occupied === false) parts.push("L'immeuble ne sera pas occupé pendant les travaux.");
   parts.push(`Les travaux devraient avoir lieu ${TIMING_LABEL_FR[input.timing]}.`);
@@ -150,7 +151,7 @@ export function submissionInstructionsFr(input: WizardInput): string {
       ? "Soumettez un prix pour le contrat de service (prix annuel, plus les taux par visite ou par intervention, le cas échéant), avec chaque option à prix séparé."
       : "Soumettez un prix forfaitaire pour la portée de base, avec chaque option à prix séparé.",
   );
-  lines.push(`Joignez : certificat d'assurance, ${lowerFirst(wcb(input.province)).replace(/ en vigueur$/, "")}, licences pertinentes, échéancier proposé et trois références pour des travaux comparables.`);
+  lines.push(`Joignez : certificat d'assurance, ${lowerFirst(wcb(input.province)).replace(/ en vigueur$/, "")}, licences pertinentes${norm(input.province) === "quebec" ? " (dont la licence RBQ)" : ""}, échéancier proposé et trois références pour des travaux comparables.`);
   if (input.siteVisit) {
     lines.push(
       input.siteVisitDate
@@ -194,23 +195,24 @@ export function composeRfpFr(input: WizardInput): RfpDraft {
   const tf = frenchTemplate(t);
   const trade = lowerFirst(tradeName(input.tradeName, "fr"));
   const type = propertyTypeFr(input);
-  const city = input.city ?? (input.province ? regionName(input.province, "fr") : undefined);
+  const city = input.city ? properCase(input.city) : input.province ? regionName(input.province, "fr") : undefined;
   const place = [type, city].filter(Boolean).join(", ");
   const noun = tf
     ? tf.name
     : `${input.contractType === "service-contract" ? "Contrat de service" : "Projet"} ${de(trade)}`;
   const title = place ? `${noun} — ${place}` : noun;
 
-  const firstSentence = input.description.split(/(?<=[.!?])\s/)[0].slice(0, 220);
+  // From the structured answers only: the manager's own words appear once, under "Ce dont nous avons besoin".
   const placeInSentence = [type ? lowerFirst(type) : undefined, city].filter(Boolean).join(", ");
-  const summary = `${firstSentence}${/[.!?]$/.test(firstSentence) ? "" : "."} Travaux à réaliser ${TIMING_LABEL_FR[input.timing]}${placeInSentence ? ` (${placeInSentence})` : ""}.`;
+  const summary = `${noun}${placeInSentence ? ` (${placeInSentence})` : ""}. Travaux à réaliser ${TIMING_LABEL_FR[input.timing]}.`;
 
   const scope = [
     `À propos de l'immeuble :\n${propertyParagraphFr(input)}`,
-    `Ce dont nous avons besoin :\n${input.description}`,
+    `Ce dont nous avons besoin :\n${tidyUserText(input.description, input, "fr")}`,
     fillFr(tf ? tf.scope : genericScopeFr(), input),
-    tf?.siteAccess ? `Accès au site (à confirmer pour cet immeuble) :\n${fillFr(tf.siteAccess, input)}` : null,
-  ].filter(Boolean).join("\n\n");
+    // Never the template's sample site facts: visible blanks to confirm.
+    siteAccessBlock("fr", input, tf?.siteAccess ?? t?.siteAccess),
+  ].join("\n\n");
 
   const requirements = localizeFr(tf
     ? fillFr(tf.requirements, input)
@@ -220,13 +222,17 @@ export function composeRfpFr(input: WizardInput): RfpDraft {
 - Trois références pour des travaux comparables réalisés au cours des 24 derniers mois.
 - Un chargé de projet ou responsable de chantier désigné pour toute la durée des travaux.`, input);
 
-  return {
-    title,
-    summary,
-    scope: localizeFr(scope, input),
-    requirements,
-    submissionInstructions: submissionInstructionsFr(input),
-    evaluationCriteria: WEIGHTS[input.priority].map(([k, v]) => `${CRITERIA_FR[k] ?? k} (${v} %)`),
-    questionsForBidders: tf?.questions.length ? tf.questions : GENERIC_QUESTIONS_FR,
-  };
+  return finalizeDraft(
+    {
+      title,
+      summary,
+      scope: localizeFr(scope, input),
+      requirements,
+      submissionInstructions: submissionInstructionsFr(input),
+      evaluationCriteria: WEIGHTS[input.priority].map(([k, v]) => `${CRITERIA_FR[k] ?? k} (${v} %)`),
+      questionsForBidders: tf?.questions.length ? tf.questions : GENERIC_QUESTIONS_FR,
+    },
+    input,
+    { lang: "fr", structuredSummary: summary },
+  );
 }

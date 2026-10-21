@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { getVisitorGeo } from "@/lib/visitor-geo.server";
+import { defaultProvinceFor } from "@/lib/geo-defaults";
 import { Container, Eyebrow } from "@/components/container";
 import { Markdown } from "@/components/public/markdown";
 import { RfpWizard } from "@/components/rfp-writer/wizard";
@@ -101,7 +102,14 @@ export default async function RfpWriterPage({ params }: { params: Promise<object
       </section>
 
       <Container className="py-10">
-        <RfpWizard categories={categories} propertyTypes={propertyTypes} templates={templates} postHref={postHref} defaultProvince={geo.province ?? undefined} />
+        <RfpWizard
+          categories={categories}
+          propertyTypes={propertyTypes}
+          templates={templates}
+          postHref={postHref}
+          // French page: Québec first, whatever the visitor's IP says (lib/geo-defaults).
+          defaultProvince={defaultProvinceFor(lang, geo.province)}
+        />
       </Container>
 
       <Container size="narrow" className="pb-16">
