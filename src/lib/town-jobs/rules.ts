@@ -513,5 +513,21 @@ export const LOG_EVENTS = [
   "invites_off",
   "invite_email_sent",
   "broadcast",
+  // Part C: the sealed box (written by the database itself), results, the award, records.
+  "sealed_quote_received",
+  "sealed_quote_replaced",
+  "sealed_quote_withdrawn",
+  "sealed_quote_late",
+  "opening_requested",
+  "opening_cancelled",
+  "opening_expired",
+  "opening_confirmed",
+  "opening_witnessed",
+  "opening_link_resent",
+  "quotes_opened",
+  "sealed_break_glass",
+  "recommendation_saved",
+  "award_published",
+  "records_exported",
 ] as const;
 export type LogEvent = (typeof LOG_EVENTS)[number];

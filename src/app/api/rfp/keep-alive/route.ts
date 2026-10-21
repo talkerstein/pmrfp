@@ -28,6 +28,10 @@ export async function GET(request: Request) {
     .maybeSingle<{ id: string; status: string }>();
   if (!rfp) return NextResponse.redirect(`${base}/rfp/kept?status=invalid`);
 
+  // A town's sealed quote box can't be kept alive by link: after closing its date is fixed (the database refuses it too).
+  const { data: box } = await supabase.from("rfp_posts").select("sealed").eq("id", rfp.id).maybeSingle<{ sealed: boolean | null }>();
+  if (box?.sealed) return NextResponse.redirect(`${base}/rfp/kept?status=notlive`);
+
   // Revive only a live or recently-auto-expired listing — never silently
   // un-close one the PM genuinely awarded / closed / archived.
   if (rfp.status !== "published" && rfp.status !== "expired") {

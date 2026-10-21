@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { BadgeCheck, Clock, Code2, Globe, Landmark, Users } from "lucide-react";
 import { TownPostsCard } from "@/components/towns/jobs/home-card";
-import { PartCComingSoon } from "@/components/towns/jobs/part-c";
+import { MonthlyReachCard, RecordsRangeCard } from "@/components/towns/jobs/part-c-cards";
+import { monthlyReach } from "@/lib/town-jobs/reach";
 import { townJobsFor } from "@/lib/town-jobs/server";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
@@ -64,6 +65,8 @@ export default async function BuyerDashboardHome({ params, searchParams }: { par
   const followers = page && !demo && isServiceConfigured() ? await followersOf(createServiceClient(), buyerKey(page.provinceSlug, page.buyer.slug)) : null;
   const day = (d: string) => formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang);
   const jobs = !demo && session.organization && isServiceConfigured() ? await townJobsFor(createServiceClient(), session.organization.id).catch(() => []) : [];
+  // Part C: this month's reach against the same month last year (counts only).
+  const monthly = !demo && isServiceConfigured() ? await monthlyReach(createServiceClient(), jobs).catch(() => null) : null;
 
   return (
     <div>
@@ -123,11 +126,10 @@ export default async function BuyerDashboardHome({ params, searchParams }: { par
           </Card>
         )}
 
-        {/* PMRFP for Towns, Part B2: posts, then what Part C adds. */}
+        {/* PMRFP for Towns, Part B2: posts; Part C: the monthly reach roll-up and the records export. */}
         <TownPostsCard jobs={jobs} />
-        <div className="lg:col-span-2">
-          <PartCComingSoon />
-        </div>
+        {monthly && <MonthlyReachCard current={monthly.current} lastYear={monthly.lastYear} />}
+        {!demo && <RecordsRangeCard />}
       </div>
     </div>
   );

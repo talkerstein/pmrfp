@@ -281,7 +281,8 @@ describe("a town posts a job", () => {
     expect(scheduled).toHaveLength(0);
     expect(h.db.tables.rfp_posts.find((x) => x.id === "new-1")).toMatchObject({ status: "published" });
     expect(log()).toEqual(["posted", "published"]);
-    expect(h.db.tables.town_job_log[1].detail).toEqual({ auto: true });
+    // Part C: the follower count at posting time rides along (the reach report).
+    expect(h.db.tables.town_job_log[1].detail).toEqual({ auto: true, followers: 1 });
     expect(h.db.tables.notifications).toEqual([expect.objectContaining({ user_id: "u-follower", type: "town_new_job", link_url: "/rfps/new-1" })]);
     expect(h.sent.find((s) => s.fn === "adminNewRfp")?.p).toMatchObject({ autoPublished: true, kind: "public_buyer_direct" });
   });
@@ -380,7 +381,7 @@ describe("a town posts a job", () => {
     expect(parseTownPostFields(fd({ postKind: "tender_mirror", officialUrl: "javascript:alert(1)" }), "2099-05-01")).toEqual({ ok: false, error: "url" });
     expect(parseTownPostFields(fd({ postKind: "tender_mirror", officialUrl: "https://apc.example/1", officialPortal: "APC", questionDeadline: "2099-04-01" }), "2099-05-01")).toEqual({
       ok: true,
-      fields: { postKind: "tender_mirror", officialUrl: "https://apc.example/1", officialPortal: "APC", questionDeadline: null },
+      fields: { postKind: "tender_mirror", officialUrl: "https://apc.example/1", officialPortal: "APC", questionDeadline: null, sealed: false },
     });
     expect(parseTownPostFields(fd({ postKind: "quote_request", questionDeadline: "2099-06-01" }), "2099-05-01")).toEqual({ ok: false, error: "question_deadline" });
     expect(parseTownPostFields(fd({ postKind: "quote_request", questionDeadline: "2099-04-20" }), "2099-05-01")).toMatchObject({ ok: true, fields: { questionDeadline: "2099-04-20", officialUrl: null } });

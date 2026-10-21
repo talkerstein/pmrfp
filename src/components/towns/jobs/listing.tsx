@@ -1,5 +1,11 @@
 import { ExpressInterestDialog } from "@/components/forms/express-interest-dialog";
 import { AskQuestionForm } from "@/components/towns/jobs/manage-forms";
+import { SealedQuoteBox } from "@/components/towns/jobs/sealed-forms";
+import { isServiceConfigured } from "@/lib/supabase/config";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isClosed } from "@/lib/town-jobs/sealed";
+import { closingLabel } from "@/lib/town-jobs/sealed-email-copy";
+import { ownSealedQuote } from "@/lib/town-jobs/sealed-server";
 import type { RespondState } from "@/lib/pm-jobs/server";
 import type { TownListing } from "@/lib/town-jobs/public-data";
 import { askDecision, townCta, townLabel, todayToronto } from "@/lib/town-jobs/rules";
@@ -32,14 +38,22 @@ export function townTag(listing: TownListing): string {
   return fmt(l.verified ? t.posted : t.postedUnverified, { buyer: l.buyer || t.kind.quote_request });
 }
 
+/** A listing's call to action; a sealed box closes at its own instant (the end of the closing day in the town's zone). */
+function ctaOf(listing: TownListing): "respond" | "official" | "closed" {
+  const cta = townCta(listing.post, todayToronto());
+  if (!listing.sealed || cta === "official") return cta;
+  return listing.post.status === "published" && !isClosed(listing.sealed.closesAt) ? "respond" : "closed";
+}
+
 /** The hero's buttons: respond free (quote request), or go to the official portal (mirror). */
 export function TownHeroCtas({ listing, respond, viewer, slug, manageHref }: { listing: TownListing; respond: RespondState | null; viewer: TownViewer; slug: string; manageHref: string | null }) {
   const lang = getLang();
   const t = getT("townJobs").listing;
   const tr = getT("pmJobs").respond;
+  const ts = getT("townResults").listing;
   const L = (p: string) => localizePath(p, lang);
   const p = listing.post;
-  const cta = townCta(p, todayToronto());
+  const cta = ctaOf(listing);
   const portal = p.official_portal?.trim() || t.officialPortal;
   if (cta === "official" && p.official_url) {
     return (
@@ -49,11 +63,13 @@ export function TownHeroCtas({ listing, respond, viewer, slug, manageHref }: { l
       </>
     );
   }
-  if (cta === "closed") return <span className="vp-dnote">{t.closed}</span>;
+  if (cta === "closed") return <span className="vp-dnote">{listing.sealed ? fmt(ts.closedSealed, { date: closingLabel(listing.sealed.closesAt, listing.sealed.timeZone, lang) }) : t.closed}</span>;
   if (manageHref) return <a href={L(manageHref)} className="v3-pill mint vp-big" data-cta="manage">{getT("townJobs").listing.ask.manage}</a>;
   return (
     <>
-      {respond?.already ? (
+      {listing.sealed && respond && respond.refusal === null ? (
+        <a href="#sealed-quote" className="v3-pill mint vp-big" data-cta="sealed-quote">{ts.yourQuote}</a>
+      ) : respond?.already ? (
         <a href={L("/dashboard/interests")} className="v3-pill mint vp-big">{tr.seeResponses}</a>
       ) : respond && respond.refusal === null ? (
         <span className="v3-tw vp-tw-btn" data-respond="town">
@@ -75,9 +91,10 @@ export function TownAsideCtas({ listing, respond, viewer, slug }: { listing: Tow
   const lang = getLang();
   const t = getT("townJobs").listing;
   const tr = getT("pmJobs").respond;
+  const ts = getT("townResults").listing;
   const L = (p: string) => localizePath(p, lang);
   const p = listing.post;
-  const cta = townCta(p, todayToronto());
+  const cta = ctaOf(listing);
   const portal = p.official_portal?.trim() || t.officialPortal;
   if (cta === "official" && p.official_url) {
     return (
@@ -87,10 +104,12 @@ export function TownAsideCtas({ listing, respond, viewer, slug }: { listing: Tow
       </>
     );
   }
-  if (cta === "closed") return <p className="nt">{t.closed}</p>;
+  if (cta === "closed") return <p className="nt">{listing.sealed ? fmt(ts.closedSealed, { date: closingLabel(listing.sealed.closesAt, listing.sealed.timeZone, lang) }) : t.closed}</p>;
   return (
     <>
-      {respond?.already ? (
+      {listing.sealed && respond && respond.refusal === null ? (
+        <a href="#sealed-quote" className="v3-pill navy vp-block-btn">{ts.yourQuote}</a>
+      ) : respond?.already ? (
         <a href={L("/dashboard/interests")} className="v3-pill navy vp-block-btn">{tr.seeResponses}</a>
       ) : respond && respond.refusal === null ? (
         <span className="v3-tw vp-block-btn"><ExpressInterestDialog rfpId={respond.rfpId} rfpTitle={respond.title} currency={respond.currency} allowance={null} /></span>
@@ -108,12 +127,15 @@ export function TownListingBody({
   viewer,
   slug,
   manageHref,
+  respond = null,
 }: {
   listing: TownListing;
   viewer: TownViewer;
   slug: string;
   /** Set when the viewer belongs to the posting town (they manage it from their dashboard). */
   manageHref: string | null;
+  /** The viewer's company may respond here (a sealed box shows its own quote form). */
+  respond?: RespondState | null;
 }) {
   const lang = getLang();
   const t = getT("townJobs").listing;
@@ -142,6 +164,9 @@ export function TownListingBody({
         <br />
         {mirror ? fmt(t.mirror, { buyer: p.buyer_name ?? "", portal }) : t.free}
       </p>
+
+      {listing.award && <TownAward award={listing.award} />}
+      {listing.sealed && !manageHref && <SealedQuoteSection listing={listing} viewer={viewer} slug={slug} canRespond={Boolean(respond && respond.refusal === null)} />}
 
       {!mirror && (
         <>
@@ -229,6 +254,52 @@ function Block({ title, body }: { title: string; body: string | null }) {
     <section className="vp-block">
       <h2>{title}</h2>
       <p className="pre">{body}</p>
+    </section>
+  );
+}
+
+/** "Awarded to X" (and the amount when the town published it). */
+function TownAward({ award }: { award: NonNullable<TownListing["award"]> }) {
+  const lang = getLang();
+  const t = getT("townResults").listing;
+  const money = (n: number) => n.toLocaleString(lang === "fr" ? "fr-CA" : lang === "es" ? "es-US" : "en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
+  return (
+    <section className="vp-block" id="award" data-award="published">
+      <h2>{award.amount != null ? fmt(t.awardedAmount, { winner: award.winner, amount: money(award.amount) }) : fmt(t.awarded, { winner: award.winner })}</h2>
+      <p className="small muted">{fmt(t.awardedOn, { date: day(award.date ?? award.publishedAt, lang) })}</p>
+    </section>
+  );
+}
+
+/**
+ * A sealed box on the listing: when it closes, and (for a company that can
+ * respond) its own quote to send, replace or withdraw until then. Counts and
+ * other companies' quotes are never shown here.
+ */
+async function SealedQuoteSection({ listing, viewer, slug, canRespond }: { listing: TownListing; viewer: TownViewer; slug: string; canRespond: boolean }) {
+  const lang = getLang();
+  const t = getT("townResults").listing;
+  const tc = getT("townResults").sealed;
+  const tl = getT("townJobs").listing;
+  const L = (p: string) => localizePath(p, lang);
+  const sealed = listing.sealed!;
+  const closes = closingLabel(sealed.closesAt, sealed.timeZone, lang);
+  const closed = isClosed(sealed.closesAt) || listing.post.status !== "published";
+  const own = viewer.signedIn && viewer.userId && viewer.organizationId && isServiceConfigured() ? await ownSealedQuote(createServiceClient(), listing.post.id, viewer.userId, viewer.organizationId).catch(() => null) : null;
+  return (
+    <section className="vp-block" id="sealed-quote" data-sealed={closed ? "closed" : "open"}>
+      <h2>{t.sealed}</h2>
+      <p>{t.sealedBody}</p>
+      <p className="small muted">{sealed.openedAt ? fmt(t.opened, { date: day(sealed.openedAt, lang) }) : fmt(closed ? t.closedSealed : t.closesAt, { date: closes })}</p>
+      {(canRespond || own) && (
+        <div style={{ marginTop: 12 }}>
+          <h3 className="vp-h3">{t.yourQuote}</h3>
+          <SealedQuoteBox rfpId={listing.post.id} own={own} closed={closed} closesLabel={fmt(tc.closes, { date: closes })} timeZone={sealed.timeZone} />
+        </div>
+      )}
+      {!viewer.signedIn && !closed && (
+        <p><a href={L(`/sign-up?role=trade&next=${encodeURIComponent(L(`/rfps/${slug}`))}`)} className="v3-pill navy">{tl.signUp}</a></p>
+      )}
     </section>
   );
 }

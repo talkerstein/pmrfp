@@ -8,15 +8,19 @@ import { StatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AddendumForm, AnswerForm, InviteByEmailForm, InviteTradesButton, QuestionDeadlineForm } from "@/components/towns/jobs/manage-forms";
-import { PartCComingSoon } from "@/components/towns/jobs/part-c";
+import { ReachCard, RecordsCard, ResultsCard, SealedBoxCard } from "@/components/towns/jobs/part-c-cards";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { INVITE_DAILY_MAX, todayToronto } from "@/lib/town-jobs/rules";
-import { loadTownJob, previewTradeInvites, townJobDetail, type InvitePreview } from "@/lib/town-jobs/server";
+import { loadTownJob, previewTradeInvites, townJobDetail, townJobsFor, type InvitePreview } from "@/lib/town-jobs/server";
+import { sealedStateFor } from "@/lib/town-jobs/sealed-server";
+import { isOpened } from "@/lib/town-jobs/sealed";
+import { loadResults } from "@/lib/town-jobs/results-server";
+import { reachForPost } from "@/lib/town-jobs/reach";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
-import { fmt, formatDate } from "@/i18n/format";
+import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -59,10 +63,19 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
   if (!job || !session.organization || job.posted_by_organization_id !== session.organization.id) notFound();
   const mirror = job.post_kind === "tender_mirror";
   const live = job.status === "published";
-  const [detail, preview] = await Promise.all([
+  const tc = getT("townResults");
+  // Part C: the sealed box (counts only until two people open it), results, reach.
+  const sealedState = job.sealed ? await sealedStateFor(db, job.id, session.userId) : null;
+  const sealedShut = Boolean(job.sealed) && !isOpened(sealedState);
+  const [detail, preview, results, allJobs] = await Promise.all([
     townJobDetail(db, job),
     live ? previewTradeInvites(db, job).catch(() => null) : Promise.resolve<InvitePreview | null>(null),
+    mirror ? Promise.resolve(null) : loadResults(db, job, session.userId, sealedState).catch(() => null),
+    townJobsFor(db, session.organization.id).catch(() => []),
   ]);
+  const responseCount = sealedShut ? (sealedState?.received ?? 0) : detail.responses;
+  const reachJob = allJobs.find((j) => j.id === job.id) ?? { ...job, responses: responseCount, questions: detail.questions.length, invites: detail.invites.length };
+  const reach = await reachForPost(db, reachJob, allJobs).catch(() => null);
   const today = todayToronto();
   const n = Number(sp.n) || 0;
   const alerts = sp.alerts as keyof typeof m.flash.alerts | undefined;
@@ -82,11 +95,16 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
                 {m.viewListing} <ExternalLink className="size-3.5" />
               </Link>
             )}
-            {!mirror && (
-              <Link href={`/buyer-dashboard/jobs/${job.id}/responses`} className={cn(buttonVariants({ size: "sm" }))}>
-                {m.responses} ({detail.responses})
-              </Link>
-            )}
+            {!mirror &&
+              (sealedShut ? (
+                <span className={cn(buttonVariants({ size: "sm", variant: "outline" }), "pointer-events-none opacity-70")} data-responses="sealed">
+                  {tc.sealed.responsesSealed} ({responseCount})
+                </span>
+              ) : (
+                <Link href={`/buyer-dashboard/jobs/${job.id}/responses`} className={cn(buttonVariants({ size: "sm" }))}>
+                  {m.responses} ({detail.responses})
+                </Link>
+              ))}
           </div>
         }
       />
@@ -106,13 +124,17 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
         {mirror ? (
           <Fact k={m.facts.official} v={job.official_url ? <a href={job.official_url} target="_blank" rel="noopener noreferrer" className="text-teal-700 underline">{job.official_portal || new URL(job.official_url).host}</a> : "—"} />
         ) : (
-          <Fact k={m.facts.responses} v={String(detail.responses)} />
+          <Fact k={m.facts.responses} v={sealedShut ? `${responseCount} · ${tc.sealed.badge}` : String(detail.responses)} />
         )}
       </dl>
       {mirror && <p className="-mt-5 mb-8 text-sm text-muted-foreground">{m.responsesMirror}</p>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="space-y-6">
+          {/* Part C: the sealed box, then results (after opening, or after closing when not sealed). */}
+          {sealedState && <SealedBoxCard job={job} state={sealedState} me={session.userId} />}
+          {results && <ResultsCard job={job} results={results} />}
+
           {/* Questions */}
           <Card id="questions" title={m.questions.title} intro={mirror ? m.questions.mirror : m.questions.intro}>
             {!mirror &&
@@ -225,8 +247,9 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
                 {detail.log.map((l) => (
                   <li key={l.id} className="flex flex-wrap justify-between gap-2 border-b border-border/60 pb-1.5 last:border-0">
                     <span>
-                      {m.log.events[l.event] ?? l.event}
+                      {m.log.events[l.event] ?? tc.log.events[l.event] ?? l.event}
                       {logDetail(l.event, l.detail, m.log.detail, lang)}
+                      {partCDetail(l.event, l.detail, tc.log.detail, lang)}
                     </span>
                     <time className="text-xs text-muted-foreground" dateTime={l.created_at}>{when(l.created_at, lang)}</time>
                   </li>
@@ -243,7 +266,8 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
               {live && <QuestionDeadlineForm rfpId={job.id} value={job.question_deadline} min={today} max={job.deadline} />}
             </Card>
           )}
-          <PartCComingSoon />
+          {reach && <ReachCard reach={reach} />}
+          <RecordsCard rfpId={job.id} />
         </aside>
       </div>
     </div>
@@ -284,6 +308,18 @@ function logDetail(event: string, d: Record<string, unknown>, t: Record<string, 
   if ((event === "addendum_issued" || event === "deadline_changed") && num("number") != null) parts.push(fmt(t.number, { n: num("number")! }));
   if (event === "deadline_changed" && typeof d.from === "string" && typeof d.to === "string") {
     parts.push(fmt(t.moved, { from: formatDate(`${d.from}T12:00:00Z`, lang), to: formatDate(`${d.to}T12:00:00Z`, lang) }));
+  }
+  return parts.length ? ` · ${parts.join(" · ")}` : "";
+}
+
+/** Part C's record entries: how many quotes opened, the witness, a break-glass reason. Never a company or a price. */
+function partCDetail(event: string, d: Record<string, unknown>, t: { count: { one: string; other: string }; witness: string; reason: string; by: string }, lang: Locale): string {
+  const parts: string[] = [];
+  if (event === "quotes_opened" && typeof d.count === "number") parts.push(plural(d.count, t.count, { n: formatNumber(d.count, lang) }));
+  if ((event === "opening_witnessed" || event === "opening_requested" || event === "opening_link_resent") && typeof d.witness === "string" && d.witness) parts.push(fmt(t.witness, { name: d.witness }));
+  if (event === "sealed_break_glass") {
+    if (typeof d.admin === "string") parts.push(fmt(t.by, { name: d.admin }));
+    if (typeof d.reason === "string") parts.push(fmt(t.reason, { reason: d.reason }));
   }
   return parts.length ? ` · ${parts.join(" · ")}` : "";
 }
