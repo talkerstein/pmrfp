@@ -1,5 +1,5 @@
 import { revalidateTag } from "next/cache";
-import { FORUM_DATA_TAG, MAJOR_PROJECTS_TAG, PUBLIC_DATA_TAG, RFPS_TAG, RFP_TABLES, SPONSORS_TAG, TAXONOMY_DATA_TAG, TAXONOMY_TABLES, isForumTable } from "./public-cache";
+import { BUYER_PERMISSIONS_TAG, FORUM_DATA_TAG, MAJOR_PROJECTS_TAG, PUBLIC_DATA_TAG, RFPS_TAG, RFP_TABLES, SPONSORS_TAG, TAXONOMY_DATA_TAG, TAXONOMY_TABLES, isForumTable } from "./public-cache";
 
 // Invalidate shared public reads after relevant server writes, including admin
 // moderation and tender imports. User/private queries themselves stay uncached.
@@ -36,6 +36,9 @@ export function createWriteFetch(baseUrl: string, transport: typeof fetch = (...
     } else if (table === "sponsors") {
       // Admin approves/pauses a sponsor: rare, and it should show (or stop) now.
       revalidateTag(SPONSORS_TAG, { expire: 0 });
+    } else if (table === "buyer_permissions") {
+      // Admin approves a public buyer at /admin/buyer-sources: rare, show it now.
+      revalidateTag(BUYER_PERMISSIONS_TAG, { expire: 0 });
     } else if (PUBLIC_TABLES.has(table)) {
       revalidateTag(PUBLIC_DATA_TAG, { expire: 0 });
       if (TAXONOMY_TABLES.has(table)) revalidateTag(TAXONOMY_DATA_TAG, { expire: 0 });

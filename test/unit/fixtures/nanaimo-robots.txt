@@ -1,0 +1,13 @@
+Sitemap: https://www.nanaimo.ca/sitemap.xml
+
+User-Agent: *
+Disallow: /user/*
+Disallow: /dashboard/*
+Disallow: /RestApi/*
+Disallow: /city-services/online-services/search-result
+Disallow: /Forms/Submit
+Disallow: /docs/property-development/reimagine-nanaimo/draft-city-plan-maps.pdf
+Disallow: /docs/property-development/reimagine-nanaimo/draft-city-plan.pdf
+Disallow: /bylaws/Search
+Disallow: /business_report/Default.aspx?*caller=csv*
+Disallow: /public-safety/community-safety-and-wellbeing/services-and-supports/lists/*

@@ -1,7 +1,8 @@
 /**
  * Source labels for Canadian buyer-website tender feeds (Ontario Northland,
  * District of Saanich, Fraser Valley Regional District, City of Portage la
- * Prairie, SaskTenders). Kept
+ * Prairie, SaskTenders) and the city flow's permission sources
+ * (city-sources.ts). Kept
  * out of sources.ts, like us-state-sources.ts; sources.ts spreads these in.
  *
  * Every slug ends `-<marker>-<ref>` where ref is either the 12-hex urlRef()
@@ -9,6 +10,7 @@
  * dashes — hex only, so no other importer's marker can hide inside it.
  */
 import type { PublicTenderSource } from "./sources";
+import { CITY_SOURCE_LABELS } from "./city-sources";
 
 export const ONTARIO_NORTHLAND_ATTRIBUTION =
   "Source: Ontario Northland Transportation Commission (ontarionorthland.ca) — public procurement notice.";
@@ -30,4 +32,6 @@ export const CANADA_LOCAL_SOURCES: [suffix: RegExp, source: PublicTenderSource][
   [/-plap-[a-f0-9]{12}$/, { key: "portage-la-prairie", past: false, badge: "Public tender · City of Portage la Prairie", issuer: "the City of Portage la Prairie", portal: "the City of Portage la Prairie website", bidLabel: "Open the City notice", attribution: PORTAGE_ATTRIBUTION }],
   [/-gete-[a-f0-9]{12}$/, { key: "guelph-eramosa", past: false, badge: "Public tender · Township of Guelph/Eramosa", issuer: "the Township of Guelph/Eramosa", portal: "the Township of Guelph/Eramosa website", bidLabel: "Open the Township's bids page", attribution: GUELPH_ERAMOSA_ATTRIBUTION }],
   [/-sktn-[a-f0-9]{32}$/, { key: "sasktenders", past: false, badge: "Public tender · Saskatchewan", issuer: "a Saskatchewan public body", portal: "SaskTenders", bidLabel: "Open on SaskTenders", attribution: SASKTENDERS_ATTRIBUTION }],
+  // Buyers who said yes to being listed (the city flow): `-<marker>-<12 hex>`.
+  ...CITY_SOURCE_LABELS,
 ];

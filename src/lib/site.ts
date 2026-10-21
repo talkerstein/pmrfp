@@ -132,6 +132,7 @@ export const ADMIN_NAV = [
   { href: "/admin/award-history", label: "Award History" },
   { href: "/admin/canadabuys", label: "CanadaBuys Upload" },
   { href: "/admin/corrections", label: "Corrections" },
+  { href: "/admin/buyer-sources", label: "Buyer Sources" },
   { href: "/admin/insights", label: "Insights" },
   { href: "/admin/interests", label: "Interests" },
   { href: "/admin/contact-requests", label: "Contact Requests" },

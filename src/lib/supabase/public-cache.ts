@@ -15,6 +15,8 @@ export const RFPS_TAG = "rfps";
 export const MAJOR_PROJECTS_TAG = "major-projects";
 /** The shared sponsor snapshot (lib/sponsors/data). */
 export const SPONSORS_TAG = "sponsors";
+/** The shared public-buyer permission snapshot (lib/buyers/permissions-data). */
+export const BUYER_PERMISSIONS_TAG = "buyer-permissions";
 /** Tables whose writes change the public board. */
 export const RFP_TABLES = new Set(["rfp_posts", "rfp_categories", "rfp_documents"]);
 

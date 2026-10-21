@@ -15,7 +15,7 @@ import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { getSponsorSnapshot } from "@/lib/sponsors/data";
 import { ListingMatches } from "@/components/public/listing-matches";
 import { BidAlertBox } from "@/components/growth/bid-alert-box";
-import { canOpenOfficialNotice, canSaveRfps, viewerOf } from "@/lib/access/free-actions";
+import { canOpenOfficialLink, canSaveRfps, viewerOf } from "@/lib/access/free-actions";
 import { relatedOpenListings } from "@/lib/data/related-listings";
 import { PaywallPlans } from "@/components/v3-pages/paywall-plans";
 import { PriceLine } from "@/components/v3-pages/price";
@@ -164,6 +164,10 @@ export default async function RfpDetailPage({
   const sourceCopy = t.sources[tenderSource.key] as (typeof t.sources)[string] | undefined;
   const source = { ...tenderSource, ...sourceCopy, attribution: sourceCopy?.attribution ?? localizeCredit(tenderSource.attribution, lang) };
   const portalName = source.portal.replace(/^(the|le|la|les|el|los|las) /i, "");
+  // Listed with the buyer's own permission (lib/tenders/city-sources): the
+  // official posting and the procurement contact are open to every visitor,
+  // signed in or not, free or paid.
+  const permission = isPublicTender ? (tenderSource.permission ?? null) : null;
   // Quebec SEAO notices are published in French; say so to Google and screen readers.
   const noticeLang = isPublicTender && tenderSource.key === "seao" ? "fr" : undefined;
   // Past public contracts aren't biddable: show who won and for how much, never a paywall or a "bid" button.
@@ -292,7 +296,7 @@ export default async function RfpDetailPage({
   // Free with an account (lib/access/free-actions): save, and a public tender's official notice.
   const viewer = viewerOf(session);
   const canSave = configured && canSaveRfps(viewer);
-  const freeNoticeHref = locked && configured && canOpenOfficialNotice(viewer, teaser.sourceType) ? await getPublicTenderNoticeUrl(teaser.slug) : null;
+  const freeNoticeHref = locked && configured && canOpenOfficialLink(viewer, teaser.sourceType, Boolean(permission)) ? await getPublicTenderNoticeUrl(teaser.slug) : null;
   const bidHref = showFull && full && isPublicTender ? full.sourceUrl : freeNoticeHref;
   // Signed out: the free account is the first step ("save this bid and get alerts"), back to this page after.
   const freeSignupHref = `/sign-up?role=trade&next=${encodeURIComponent(`/rfps/${teaser.slug}`)}`;
@@ -362,6 +366,12 @@ export default async function RfpDetailPage({
                   <a href={closedNotice} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{t.closedArchive.official} ↗</a>
                 ) : isClosed ? (
                   <a href={L(annualHref)} className="v3-pill mint vp-big">{t.closed.cta}</a>
+                ) : locked && !session && permission && bidHref ? (
+                  <>
+                    <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big" data-cta="official-posting">{source.bidLabel} ↗</a>
+                    <a href={L(freeSignupHref)} className="vp-ghost light vp-ic" data-cta="free-account"><Bookmark stroke="#91F2CF" />{v.freeCta}</a>
+                    <span className="vp-dnote">{t.permission.free}</span>
+                  </>
                 ) : locked && !session ? (
                   <>
                     <a href={L(freeSignupHref)} className="v3-pill mint vp-big vp-ic" data-cta="free-account"><Bookmark stroke="#1B1D3A" />{v.freeCta}</a>
@@ -371,7 +381,7 @@ export default async function RfpDetailPage({
                 ) : locked ? (
                   <>
                     {bidHref ? (
-                      <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{v.officialNotice} ↗</a>
+                      <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{permission ? source.bidLabel : v.officialNotice} ↗</a>
                     ) : (
                       <a href={L(upgradeHref)} className="v3-pill mint vp-big vp-ic"><LockIcon />{v.unlock}</a>
                     )}
@@ -441,6 +451,26 @@ export default async function RfpDetailPage({
                   {gcAward.winner ? fill(t.gcNote.wonBy, { winner: gcAward.winner }) : ""}
                   {gcAward.value ? fill(t.gcNote.value, { value: money(gcAward.value) }) : ""}
                   {t.gcNote.end}
+                </>
+              )}
+            </p>
+          )}
+          {permission && !isAward && (
+            <p className="vp-note teal" data-permission={permission.buyerSlug}>
+              <b>{fill(t.permission.listed, { buyer: source.issuer })}</b>
+              {!isClosed && (
+                <>
+                  {" · "}
+                  <a href={bidHref ?? permission.officialUrl} target="_blank" rel="noopener noreferrer" data-link="official-posting">{t.permission.view} ↗</a>
+                </>
+              )}
+              {(permission.contactEmail || permission.contactPhone) && (
+                <>
+                  <br />
+                  {t.permission.contact}:{" "}
+                  {permission.contactEmail && <a href={`mailto:${permission.contactEmail}`}>{permission.contactEmail}</a>}
+                  {permission.contactEmail && permission.contactPhone && " · "}
+                  {permission.contactPhone}
                 </>
               )}
             </p>
@@ -696,6 +726,12 @@ export default async function RfpDetailPage({
                 )}
                 <span className="v3-tw"><SaveButton rfpId={full.id} /></span>
               </div>
+            ) : !isClosed && !session && permission && bidHref ? (
+              <>
+                <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{source.bidLabel} ↗</a>
+                <a href={L(freeSignupHref)} className="vp-ghost vp-block-btn">{v.freeCta}</a>
+                <p className="nt">{t.permission.free}</p>
+              </>
             ) : !isClosed && !session ? (
               <>
                 <a href={L(freeSignupHref)} className="v3-pill navy vp-block-btn">{v.freeCta}</a>
@@ -704,7 +740,7 @@ export default async function RfpDetailPage({
               </>
             ) : (
               <>
-                {!isClosed && bidHref && <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{v.officialNotice} ↗</a>}
+                {!isClosed && bidHref && <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{permission ? source.bidLabel : v.officialNotice} ↗</a>}
                 <a href={L(isClosed ? annualHref : upgradeHref)} className={!isClosed && bidHref ? "vp-ghost vp-block-btn vp-ic" : "v3-pill navy vp-block-btn"}>{isClosed ? t.side.alerts : t.side.unlock}</a>
                 {!isClosed && saveLink("vp-ghost vp-block-btn vp-ic", "#1B1D3A")}
                 <p className="nt">{isClosed ? t.side.closedNote : t.side.unlockNote}</p>
@@ -793,7 +829,7 @@ export default async function RfpDetailPage({
           </div>
           {isAward || isClosed ? (
             <a href={L(tradeSlug ? `/rfps?category=${tradeSlug}` : "/rfps")} className="v3-pill mint">{t.closed.seeOpen} →</a>
-          ) : locked ? (
+          ) : locked && !(permission && bidHref) ? (
             <>
               {saveLink("v3-pill ghost vp-ic d")}
               <a href={L(upgradeHref)} className="v3-pill mint">{v.unlockArrow}</a>

@@ -26,6 +26,21 @@ export function canOpenOfficialNotice(v: FreeActionViewer | null | undefined, so
   return Boolean(v) && sourceType === "public_source";
 }
 
+/**
+ * The official link on an RFP page that's locked for this viewer. A public
+ * buyer's listing never needs a paid plan: any account opens it, and a
+ * listing published with the buyer's own permission (the city flow) opens
+ * for every visitor, signed in or not.
+ */
+export function canOpenOfficialLink(
+  v: FreeActionViewer | null | undefined,
+  sourceType: string | null | undefined,
+  listedWithPermission: boolean,
+): boolean {
+  if (sourceType !== "public_source") return false;
+  return listedWithPermission || canOpenOfficialNotice(v, sourceType);
+}
+
 /** Session → the two facts the rules need. */
 export function viewerOf(session: { profile: { primary_role: string }; hasTradeAccess: boolean } | null | undefined): FreeActionViewer | null {
   return session ? { primaryRole: session.profile.primary_role, hasTradeAccess: session.hasTradeAccess } : null;
