@@ -7,6 +7,8 @@ import { classifySk, fetchSkOpen, skToRfpInsert } from "@/lib/tenders/sasktender
 import { classifyPlap, fetchPlapTenders, plapToRfpInsert } from "@/lib/tenders/portage-la-prairie";
 import { classifyGete, fetchGeteBids, geteToRfpInsert } from "@/lib/tenders/guelph-eramosa";
 import { syncPublicSources, type Candidate, type Source } from "@/lib/tenders/sync";
+import { citySyncSources } from "@/lib/tenders/city-run";
+import { loadPermissionRegistry } from "@/lib/buyers/permissions-data";
 
 /** Each source gets its own time budget; a slow one fails alone (sync skips it). */
 const SOURCE_BUDGET_MS = 30_000;
@@ -107,6 +109,12 @@ export const maxDuration = 60;
  * the buyer's or province's own site (not a commercial bid platform), read
  * once a day, politely, as "PMRFP tender indexer". Rows stay Canadian: each
  * candidate carries a Canadian region and sync falls back to "canada".
+ *
+ * The city flow (lib/tenders/city-sources) runs here too: a city that said
+ * yes runs only when the permission registry (code seed + buyer_permissions)
+ * says "yes" with the matching method; a "no" never runs, and a city whose
+ * bids live on a bid platform (Nanaimo: bids&tenders) is link-out only.
+ * `citySources` in the response says which cities ran and why the others didn't.
  * `?dry=1` reports what would change without writing. CRON_SECRET-protected.
  */
 export async function GET(request: Request) {
@@ -116,9 +124,12 @@ export async function GET(request: Request) {
   }
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 
-  const { status, body } = await syncPublicSources(createServiceClient(), activeSources(), {
+  const supabase = createServiceClient();
+  const { registry } = await loadPermissionRegistry(supabase);
+  const city = citySyncSources(registry);
+  const { status, body } = await syncPublicSources(supabase, [...activeSources(), ...city.sources], {
     today: new Date().toISOString().slice(0, 10),
     dry: new URL(request.url).searchParams.get("dry") === "1",
   });
-  return NextResponse.json(body, { status });
+  return NextResponse.json({ ...body, citySources: { running: city.sources.map((s) => s.key), skipped: city.skipped } }, { status });
 }

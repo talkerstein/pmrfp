@@ -10,8 +10,9 @@
  * shown; test/unit/data-credits.test.ts fails if any registered source's
  * credit is missing here or lacks a French or Spanish version.
  *
- * Pure: no imports, safe anywhere.
+ * Pure: its one import (the city-flow config) is pure data, so it's safe anywhere.
  */
+import { cityCredits } from "@/lib/tenders/city-sources";
 
 export type CreditLang = "en" | "fr" | "es";
 export interface Credit {
@@ -185,6 +186,8 @@ export const CREDITS: readonly Credit[] = [
     fr: "Source : SaskTenders (sasktenders.ca), gouvernement de la Saskatchewan — avis public de concours.",
     es: "Fuente: SaskTenders (sasktenders.ca), Gobierno de Saskatchewan — aviso público de concurso.",
   },
+  // ---- Buyers who said yes to being listed (lib/tenders/city-sources, each with its fr/es copy)
+  ...cityCredits(),
   // ---- United States
   {
     en: "Source: SAM.gov Contract Opportunities, U.S. General Services Administration (U.S. federal government data, public domain).",

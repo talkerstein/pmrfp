@@ -44,6 +44,19 @@ export interface PublicTenderSource {
    * its deadline is the real closing date, always in the past).
    */
   closedArchive?: boolean;
+  /**
+   * Listed with the buyer's own permission (the city flow, lib/tenders/
+   * city-sources). The page says so, links the official posting for every
+   * visitor (no account or plan needed) and shows the buyer's procurement
+   * contact.
+   */
+  permission?: {
+    buyerSlug: string;
+    issuer: string;
+    officialUrl: string;
+    contactEmail: string | null;
+    contactPhone: string | null;
+  };
 }
 
 // Slug suffix → source. Each importer builds `${slugify(title)}-<marker>-<ref>`,

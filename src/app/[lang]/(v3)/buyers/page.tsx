@@ -9,6 +9,7 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatNumber } from "@/i18n/format";
 import { regionName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
+import { FOR_PUBLIC_BUYERS_PATH } from "@/lib/buyers/source-links";
 
 export const revalidate = 3600;
 
@@ -34,6 +35,7 @@ export default async function BuyersIndex({ params }: { params: Promise<{ lang: 
       <JsonLd data={breadcrumbSchema([{ name: home, path: L("/") }, { name: t.index.crumb, path: L(BUYERS_PATH) }])} />
       <SimplePage lang={lang} current={null} group="company" crumbs={[]} tabs={false} aside={false} title={t.index.h1} lead={fmt(t.index.lead, { n: formatNumber(pages.length, lang) })}>
         <p className="small muted" data-flag="link-only">{t.index.note}</p>
+        <p className="small" data-cta="list-your-tenders"><a href={L(FOR_PUBLIC_BUYERS_PATH)}>{t.index.listYours} →</a></p>
         <nav className="s-links" aria-label={t.index.crumb}>
           {index.map((p) => (
             <a key={p.provinceSlug} href={`#${p.provinceSlug}`}>{regionName(p.province, lang)} ({formatNumber(p.total, lang)})</a>

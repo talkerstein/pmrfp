@@ -1,4 +1,5 @@
 /** Strings for this area. `fr` is typed against `en`, so every key must exist in both. */
+import { cityCopy } from "@/lib/tenders/city-sources";
 
 /** Per-source overrides for lib/tenders/sources (keyed by source `key`). English uses the lib as-is. */
 type SourceCopy = { issuer: string; portal: string; bidLabel: string; attribution: string };
@@ -220,6 +221,13 @@ const en = {
     },
     /** Money from award summaries ("$120,000 CAD"), reformatted outside English. */
     moneyCad: "${n} CAD",
+    /** Listed with the buyer's own permission (the city flow): official link and contact for every visitor. */
+    permission: {
+      listed: "Listed with permission from {buyer}",
+      view: "View and bid on the official posting",
+      contact: "Procurement contact",
+      free: "Opening the official posting is free. No account or plan needed.",
+    },
     /** Public-source labels; empty in English (lib/tenders/sources is used as-is). */
     sources: {} as Record<string, SourceCopy>,
   },
@@ -471,6 +479,12 @@ const fr: typeof en = {
       unlockNote: "La portée, les documents, le contact de l'acheteur et la possibilité de manifester votre intérêt sont inclus avec Trade Pro.",
     },
     moneyCad: "{n} $ CAD",
+    permission: {
+      listed: "Publié avec l'autorisation de {buyer}",
+      view: "Consulter l'avis officiel et soumissionner",
+      contact: "Contact pour l'approvisionnement",
+      free: "L'avis officiel est gratuit. Aucun compte ni forfait requis.",
+    },
     sources: {
       canadabuys: CANADA_FR,
       awards: CANADA_FR,
@@ -593,6 +607,7 @@ const fr: typeof en = {
         bidLabel: "Ouvrir sur COMMBUYS",
         attribution: "Source : COMMBUYS (Commonwealth of Massachusetts) — avis d'appel d'offres public",
       },
+      ...cityCopy("fr"),
     },
   },
 
@@ -844,6 +859,12 @@ const es: typeof en = {
       unlockNote: "El alcance, los documentos, el contacto del comprador y la posibilidad de manifestar interés están incluidos con Trade Pro.",
     },
     moneyCad: "${n} CAD",
+    permission: {
+      listed: "Publicado con permiso de {buyer}",
+      view: "Ver la publicación oficial y presentar una oferta",
+      contact: "Contacto de compras",
+      free: "Abrir la publicación oficial es gratis. No necesita cuenta ni plan.",
+    },
     sources: {
       canadabuys: CANADA_ES,
       awards: CANADA_ES,
@@ -966,6 +987,7 @@ const es: typeof en = {
         bidLabel: "Abrir en COMMBUYS",
         attribution: "Fuente: COMMBUYS (Commonwealth of Massachusetts) — aviso de licitación pública",
       },
+      ...cityCopy("es"),
     },
   },
 

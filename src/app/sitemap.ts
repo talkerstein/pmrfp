@@ -74,6 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Always indexable: the sign-up form always shows (sending is flag-gated separately).
     { path: "/weekly-email", priority: 0.5, freq: "weekly" },
     { path: "/for-agencies", priority: 0.6, freq: "monthly" },
+    { path: "/for-public-buyers", priority: 0.6, freq: "monthly" },
     { path: "/resources/contractor-directories", priority: 0.6, freq: "monthly" },
     { path: "/trades", priority: 0.8, freq: "weekly" },
     { path: "/regions", priority: 0.8, freq: "weekly" },

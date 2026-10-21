@@ -8,6 +8,10 @@ import { AND, buyerFaq, commercialOf, platformList } from "@/lib/buyers/faq";
 import { compactDollars } from "@/lib/data/fomo";
 import { benchmarkPath, insightsMarketPath } from "@/lib/insights/paths";
 import { publicTenderSource } from "@/lib/tenders/sources";
+import { getBuyerPermissionSnapshot } from "@/lib/buyers/permissions-data";
+import { buyerPageCta, buyerPermission } from "@/lib/buyers/permissions";
+import { cityByBuyer } from "@/lib/tenders/city-sources";
+import { listYourTendersHref } from "@/lib/buyers/source-links";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
@@ -65,6 +69,15 @@ export default async function BuyerPageView({ params }: { params: Params }) {
   const trades = p.awards.tradeSlugs.map((s) => ({ slug: s, name: tradeBySlug.get(s) })).filter((x): x is { slug: string; name: string } => Boolean(x.name)).slice(0, 3);
   const alertsHref = `${L("/sign-up")}?next=${encodeURIComponent(`${L("/rfps")}?q=${name}`)}`;
   const intelHref = L(p.intelSlug ? `/intel/buyers/${p.intelSlug}` : "/intel");
+  // The city flow: a buyer that said yes gets the "Listed with permission"
+  // card; one that said no gets nothing new (the plain links, as before);
+  // everyone else gets the "list your tenders free" link.
+  const permission = buyerPermission(await getBuyerPermissionSnapshot(), b.slug);
+  const city = cityByBuyer(b.slug);
+  const cta = buyerPageCta(permission);
+  const listedWithPermission = cta === "listed";
+  const officialPosting = (city?.list.kind === "platform" ? city.list.portalUrl : null) ?? b.portalUrl ?? b.tendersUrl;
+  const showListYours = cta === "invite";
   const credits = new Set<string>();
   for (const o of p.openBids) credits.add(publicTenderSource(o.slug).attribution);
   for (const a of p.awards.recent) credits.add(publicTenderSource(a.slug).attribution);
@@ -126,6 +139,23 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         </div>
         {commercial.length > 0 && <p className="small muted" data-flag="link-only">{fmt(t.page.linkOnly, { platform: platformList(commercial, t, and) })}</p>}
         {b.checkedOn && <p className="small muted">{fmt(t.page.checked, { date: day(b.checkedOn, lang) })}</p>}
+        {listedWithPermission && (
+          <div className="s-callout" data-permission="yes">
+            <p>
+              <b>{fmt(t.page.permission.listed, { name })}</b>
+              {permission?.grantedOn ? ` (${fmt(t.page.permission.since, { date: day(permission.grantedOn, lang) })})` : ""}
+            </p>
+            <p>{city?.list.kind === "platform" ? fmt(t.page.permission.platform, { name, platform: t.platforms[city.list.platform] }) : t.page.permission.own}</p>
+            {officialPosting && (
+              <p><a className="ext" href={officialPosting} target="_blank" rel="noopener noreferrer nofollow" data-link="official-posting">{t.page.permission.view} ↗</a></p>
+            )}
+          </div>
+        )}
+        {showListYours && (
+          <p className="small" data-cta="list-your-tenders">
+            <a href={L(listYourTendersHref({ buyerSlug: b.slug, provinceCode: b.provinceCode }))}>{t.page.listYours} →</a>
+          </p>
+        )}
 
         <SH2 no={++no} id="register">{t.page.registerTitle}</SH2>
         {(b.platforms.length ? b.platforms.slice(0, 3) : (["unknown"] as const)).map((k) => (
