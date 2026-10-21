@@ -20,7 +20,10 @@ import type { RfpListItem } from "@/lib/data/types";
  */
 /** One country's live board numbers. */
 export interface CountryBoard {
+  /** Open listings: public tenders + property-manager RFPs. */
   open: number;
+  /** The part of `open` posted by property managers (open - openPm = public tenders). */
+  openPm: number;
   closing7: number;
 }
 
@@ -44,8 +47,8 @@ export const loadV3Board = cache(async (): Promise<V3Board> => {
   return {
     byCountry: stats
       ? {
-          CA: { open: stats.CA.open, closing7: stats.CA.closingThisWeek },
-          US: { open: stats.US.open, closing7: stats.US.closingThisWeek },
+          CA: { open: stats.CA.open, openPm: stats.CA.openPm, closing7: stats.CA.closingThisWeek },
+          US: { open: stats.US.open, openPm: stats.US.openPm, closing7: stats.US.closingThisWeek },
         }
       : null,
     trades: catsR.status === "fulfilled" && catsR.value.length ? catsR.value.length : null,

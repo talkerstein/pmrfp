@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/browser";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { CONSENT_EVENT, consentPending } from "@/components/analytics-consent";
+import { usePathname } from "next/navigation";
+import { splitLocale } from "@/i18n/config";
+import { isPmAudiencePath } from "@/lib/audience/pm";
 
 const SEEN_KEY = "pmrfp-capture-seen";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -44,10 +47,18 @@ async function signedIn(): Promise<boolean> {
 
 /**
  * "Get new [trade/region] tenders by email" prompt for the RFP board and RFP
- * pages. Appears after 5 s or half-way down the page, whichever is first, at
- * most once every 7 days, never to signed-in members. A small card on desktop,
- * a slim bar on phones (no full-screen interstitial). Stores the address in
- * the existing regional_waitlist via joinRegionalWaitlistAction.
+ * pages, never to signed-in members and never on property-manager pages or
+ * the RFP writer. Stores the address in the existing regional_waitlist via
+ * joinRegionalWaitlistAction.
+ *
+ * `inline` (the /rfps filter sidebar): a card in the page flow, so it never
+ * covers results or the sticky CTAs; dismissing it hides it for 7 days.
+ * Floating (default): appears half-way down the page (never before the
+ * visitor scrolls), at most once every 7 days, as a small card on desktop
+ * and a slim bar on phones.
+ *
+ * Persona QA 2026-10-21: the floating bar (shown after 5 s) covered the
+ * bottom of the results and the sticky CTAs on a phone.
  */
 export function EmailCapture({
   trade,
@@ -55,6 +66,7 @@ export function EmailCapture({
   categorySlug,
   regionSlug,
   signedInHint = false,
+  inline = false,
 }: {
   /** Display names, already translated. */
   trade?: string | null;
@@ -63,16 +75,28 @@ export function EmailCapture({
   regionSlug?: string | null;
   /** Server already knows the visitor is signed in. */
   signedInHint?: boolean;
+  /** In the page flow (no overlay, no timer). */
+  inline?: boolean;
 }) {
   const t = useT("sharedClient").capture;
   const inputId = useId();
   const titleId = useId();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const pmPage = isPmAudiencePath(splitLocale(usePathname() ?? "/").path);
 
   useEffect(() => {
-    if (signedInHint || recentlySeen()) return;
+    if (signedInHint || pmPage || recentlySeen()) return;
     let cancelled = false;
+    if (inline) {
+      void signedIn().then((s) => {
+        // Browser storage and the auth cookie only exist client-side.
+        if (!cancelled && !s) setOpen(true);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     const cleanup = () => {
@@ -101,13 +125,13 @@ export function EmailCapture({
       if (max > 0 && window.scrollY / max >= 0.5) void show();
     }
 
-    timer = setTimeout(show, 5000);
+    // No timer: only once the visitor has scrolled half-way.
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       cancelled = true;
       cleanup();
     };
-  }, [signedInHint]);
+  }, [signedInHint, pmPage, inline]);
 
   useEffect(() => {
     if (!open) return;
@@ -144,17 +168,25 @@ export function EmailCapture({
     <aside
       role="complementary"
       aria-labelledby={titleId}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card px-3 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[340px] sm:rounded-xl sm:border sm:p-4 sm:shadow-lg"
+      className={
+        inline
+          ? "relative rounded-xl border border-border bg-card p-4"
+          : "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card px-3 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[340px] sm:rounded-xl sm:border sm:p-4 sm:shadow-lg"
+      }
     >
       <button
         type="button"
-        onClick={() => setOpen(false)}
+        onClick={() => {
+          setOpen(false);
+          // Dismissed: not again for 7 days.
+          markSeen();
+        }}
         aria-label={t.dismiss}
-        className="absolute right-1.5 top-1.5 rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="absolute right-1 top-1 flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <X className="size-4" />
       </button>
-      <p id={titleId} className="pr-8 text-sm font-semibold leading-snug">
+      <p id={titleId} className="pr-10 text-sm font-semibold leading-snug">
         {title}
       </p>
       {status === "done" ? (

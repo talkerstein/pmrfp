@@ -13,6 +13,7 @@ import type { V3Data } from "./home-v3";
  */
 export const V3_FALLBACK: V3Data = {
   open: null,
+  openPm: null,
   closing7: null,
   trades: null,
   regions: null,

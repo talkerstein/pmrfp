@@ -212,6 +212,14 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-close .left { font-size: 14px; font-weight: 700; }
 .v3-close .tag { font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); margin-top: 18px; }
 .v3-close .ti { font-weight: 700; font-size: 17px; line-height: 1.35; margin-top: 4px; }
+/* No property-manager RFP open: invite the first one (links to the free writer). */
+.v3-pmcard { margin-top: 40px; border: 2px solid var(--mint); border-radius: 24px; padding: 24px 28px; background: #F5FDF9; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.v3-pmcard .hd { margin: 6px 0 0; font-family: var(--fp); font-weight: 700; font-size: 24px; line-height: 1.2; letter-spacing: -.02em; color: var(--navy); }
+.v3-pmcard p { margin: 6px 0 0; color: var(--sub); max-width: 600px; }
+.v3-pmcard .v3-pill { flex-shrink: 0; min-height: 44px; }
+@media (max-width: 1023px) {
+  .v3-pmcard { flex-direction: column; align-items: flex-start; padding: 18px; gap: 14px; }
+}
 .v3-src { margin-top: 56px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 24px; }
 .v3-src .note { color: var(--sub); font-size: 14px; }
 .v3-src-grid { grid-column: 1 / -1; margin-top: 20px; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border: 2px solid var(--navy); border-radius: 20px; overflow: hidden; }

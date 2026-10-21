@@ -324,7 +324,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
             <h2 className="vp-h2 light">{v.post.title}</h2>
             <p>{v.post.body}</p>
             <div className="ctas">
-              <a href={L("/sign-up?role=property_manager")} className="v3-pill mint">{v.post.cta}</a>
+              <a href={L("/rfp-writer")} className="v3-pill mint">{v.post.cta}</a>
               <a href={L("/rfp-writer")} className="lnk">{v.post.writer}</a>
             </div>
           </div>

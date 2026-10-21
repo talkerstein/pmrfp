@@ -106,9 +106,21 @@ export function repeatWinnerTotals(rows: readonly Row[], country: CountryCode): 
   return awardTotals(winnersFromRfps(inCountry(rows, country)));
 }
 
+/** A real listing posted on PMRFP by a property manager, landlord, board or builder (not an imported public tender, not a demo). */
+export function isPmListing(r: Pick<Row, "sourceType" | "isDemo">): boolean {
+  return r.sourceType !== "public_source" && !r.isDemo;
+}
+
 export interface BoardStats {
   /** countOpenListings */
   open: number;
+  /**
+   * The part of `open` posted on PMRFP by property managers (isPmListing).
+   * open - openPm = open public tenders. Labels must say which one they show:
+   * "261 open public tenders · 0 property-manager RFPs", never "261 contracts"
+   * next to copy about property managers posting RFPs (persona QA 2026-10-21).
+   */
+  openPm: number;
   /** countClosingWithinDays(…, 7) */
   closingThisWeek: number;
   /** awardsOnRecord().contracts */
@@ -122,18 +134,19 @@ export interface BoardStats {
  * filter with inCountry first). Same rules as the functions above.
  */
 export function boardStats(rows: readonly Row[], now = new Date()): BoardStats {
-  let open = 0, closingThisWeek = 0, pastContracts = 0, awardedValue = 0;
+  let open = 0, openPm = 0, closingThisWeek = 0, pastContracts = 0, awardedValue = 0;
   for (const r of rows) {
     if (isPastContract(r)) {
       pastContracts++;
       awardedValue += parseAward(r.summary).amount ?? 0;
     } else if (r.status === "open") {
       open++;
+      if (isPmListing(r)) openPm++;
       const d = daysUntil(r.deadline, now);
       if (d !== null && d >= 0 && d <= 7) closingThisWeek++;
     }
   }
-  return { open, closingThisWeek, pastContracts, awardedValue };
+  return { open, openPm, closingThisWeek, pastContracts, awardedValue };
 }
 
 /** boardStats for Canada and for the U.S. separately. Never add them together on a page; show the visitor's. */

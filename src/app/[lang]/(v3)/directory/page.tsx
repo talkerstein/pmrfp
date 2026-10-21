@@ -118,7 +118,7 @@ export default async function DirectoryPage({
           { n: n(regions.length), l: t.stats.regions },
         ]}
         search={{ q: sp.q ?? "", placeholder: t.searchPh, button: t.searchBtn, keep }}
-        ctas={[{ href: "/sign-up?role=property_manager", label: t.cta1 }, { href: "/sign-up?role=trade", label: t.cta2 }]}
+        ctas={[{ href: "/rfp-writer", label: t.cta1 }, { href: "/sign-up?role=trade", label: t.cta2 }]}
         tabs={{ trades: pool.length, suppliers: counts.suppliers, winners: counts.winners, jobs: counts.jobs, talent: counts.talent }}
         filters={[
           { name: "category", label: all.filters.category, value: sp.category ?? "", options: [{ value: "", label: all.filters.allCategories }, ...categories.map((c) => ({ value: c.slug, label: tradeName(c.name, lang) }))] },
@@ -175,7 +175,7 @@ export default async function DirectoryPage({
         noMatch={!rows.length && !feat ? { clearHref: "/directory" } : null}
         empty={null}
         close={{ eyebrow: t.closeEyebrow, head: t.closeHead, text: t.closeText, cta1: { href: "/pricing", label: t.closeCta1 }, cta2: { href: "/sign-up?role=trade", label: t.closeCta2 } }}
-        sticky={{ a: fmt(t.stickyA, { n: n(pool.length) }), b: t.stickyB, cta1: { href: "/sign-up?role=trade", label: t.stickyCta1 }, cta2: { href: "/sign-up?role=property_manager", label: t.stickyCta2 } }}
+        sticky={{ a: fmt(t.stickyA, { n: n(pool.length) }), b: t.stickyB, cta1: { href: "/sign-up?role=trade", label: t.stickyCta1 }, cta2: { href: "/rfp-writer", label: t.stickyCta2 } }}
       />
     </>
   );

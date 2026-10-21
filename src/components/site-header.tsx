@@ -19,6 +19,7 @@ const NAV_KEY = {
   "/forum": "forum",
   "/marketplace": "marketplace",
   "/for-property-managers": "forPms",
+  "/rfp-writer": "writer",
   "/pricing": "pricing",
 } as const;
 import { cn } from "@/lib/utils";

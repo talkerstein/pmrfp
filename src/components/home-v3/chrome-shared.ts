@@ -22,6 +22,10 @@ export const V3H = {
   marketplace: "/marketplace",
   signIn: "/sign-in",
   joinTrade: "/sign-up?role=trade",
+  /** Property managers and condo boards (a board signs up as a property manager). */
+  joinPm: "/sign-up?role=property_manager",
+  /** The free RFP writer: property managers start here, sign-up only at "Post it free". */
+  writer: "/rfp-writer",
   landlord: "/sign-up?role=landlord",
   forRealEstate: "/for/real-estate",
   advertise: "/advertise",

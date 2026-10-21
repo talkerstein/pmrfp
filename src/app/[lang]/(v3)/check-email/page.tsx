@@ -115,7 +115,7 @@ export default async function CheckEmailPage({
           a={fmt(t.stickyA, { n: num(counts.open) })}
           b={counts.closing7 != null ? fmt(t.stickyB, { n: num(counts.closing7) }) : ""}
           meta={t.done}
-          cta={{ href: L("/sign-up?role=property_manager"), label: t.postFree }}
+          cta={{ href: L("/rfp-writer"), label: t.postFree }}
         />
       )}
     </>

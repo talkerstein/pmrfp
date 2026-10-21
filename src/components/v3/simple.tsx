@@ -160,7 +160,7 @@ export async function SimplePage({
           </div>
           <div className="cta">
             <a href={L("/sign-up?role=trade")} className="btn ink xl">{h.cta.join}</a>
-            <a href={L("/sign-up?role=property_manager")} className="btn line-ink xl">{h.cta.post}</a>
+            <a href={L("/rfp-writer")} className="btn line-ink xl">{h.cta.post}</a>
           </div>
         </div>
       </section>

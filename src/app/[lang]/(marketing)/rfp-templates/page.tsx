@@ -165,7 +165,7 @@ export default async function RfpTemplatesIndexPage({ params }: { params: Promis
       <CTASection
         title={t.cta.title}
         description={fmt(t.cta.description, { brand: SITE.name })}
-        primaryHref="/sign-up?role=property_manager"
+        primaryHref="/rfp-writer"
         primaryLabel={t.cta.primary}
         secondaryHref="/directory"
         secondaryLabel={t.cta.secondary}

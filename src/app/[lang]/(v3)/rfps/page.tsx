@@ -13,7 +13,8 @@ import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
-import { awardsOnRecord, boardStats, isOpenListing } from "@/lib/data/site-counters";
+import { awardsOnRecord, boardStats, isOpenListing, isPmListing } from "@/lib/data/site-counters";
+import { matchesSource, parseBoardSource, sourceLinkTarget, type BoardSource } from "@/lib/data/board-source";
 import { isGcPackage } from "@/lib/gc/packages";
 import { provinceFirst, regionCountry, rfpMarket } from "@/lib/visitor-geo";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
@@ -52,7 +53,6 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
 
 type Country = BoardCountry;
 type Closing = "all" | "today" | "tomorrow" | "week" | "later";
-type Source = "all" | "public" | "pm";
 
 /** "$498,992" / "498 992 $". */
 function dollars(n: number, lang: Locale): string {
@@ -100,9 +100,9 @@ export default async function RfpsPage({
   // already picks a place, so it shows every country.
   const country = resolveBoardCountry(sp, market);
   const closing: Closing = (["today", "tomorrow", "week", "later"] as const).find((c) => c === sp.closing) ?? "all";
-  const source: Source = sp.source === "public" || sp.source === "pm" ? sp.source : "all";
+  const source: BoardSource = parseBoardSource(sp.source);
   const inCountry = (c: Country) => (r: RfpListItem) => c === "all" || (rfpMarket(r) === "US") === (c === "us");
-  const inSource = (r: RfpListItem) => source === "all" || (r.sourceType === "public_source") === (source === "public");
+  const inSource = (r: RfpListItem) => matchesSource(r, source);
   const inClosing = (r: RfpListItem) => {
     if (closing === "all") return true;
     const d = daysUntil(r.deadline);
@@ -114,6 +114,10 @@ export default async function RfpsPage({
   };
   const rfps = allRfps.filter(inCountry(country)).filter(inSource);
   const openIn = (c: Country) => allRfps.filter((r) => isOpenListing(r) && inCountry(c)(r)).length;
+  // Honest split of the headline: public tenders vs RFPs posted by property managers.
+  const openPmIn = (c: Country) => allRfps.filter((r) => isOpenListing(r) && isPmListing(r) && inCountry(c)(r)).length;
+  // Property-manager RFPs open anywhere in this country (whatever the trade/area filter).
+  const pmOpenCountry = board.filter((r) => isOpenListing(r) && isPmListing(r) && inCountry(country)(r)).length;
 
   // Every number here is counted from the listings with the site-wide rules in
   // lib/data/site-counters (open now, closing in 7 days, award notices on record).
@@ -302,6 +306,11 @@ export default async function RfpsPage({
             <div className="vp-hero-stats">
               <div className="big">{num(openIn(country))}</div>
               <div className="sub">{v.openIn[country]}</div>
+              <div className="split">
+                {plural(openIn(country) - openPmIn(country), v.openSplit.public, { n: num(openIn(country) - openPmIn(country)) })}
+                {" · "}
+                {plural(openPmIn(country), v.openSplit.pm, { n: num(openPmIn(country)) })}
+              </div>
               <div className="two">
                 <div><span className="n">{num(stats.closingThisWeek)}</span><div className="l">{v.closing7}</div></div>
                 <div>
@@ -410,15 +419,14 @@ export default async function RfpsPage({
 
               <div>
                 <div className="v3-label">{v.filters.source}</div>
-                <div className="vp-checks">
-                  {(["public", "pm"] as const).map((s) => {
-                    const checked = source === "all" || source === s;
-                    // Unticking one leaves the other; ticking back shows both.
-                    const next = checked ? (source === "all" ? (s === "public" ? "pm" : "public") : "all") : "all";
+                {/* Each option shows that source only (lib/data/board-source); the active one links back to all. */}
+                <div className="vp-wins">
+                  {(["all", "public", "pm"] as const).map((s) => {
+                    const target = sourceLinkTarget(source, s);
+                    const label = s === "all" ? v.filters.sourceAll : s === "public" ? v.filters.sourcePublic : v.filters.sourcePm;
                     return (
-                      <a key={s} href={href({ source: next === "all" ? null : next })} role="checkbox" aria-checked={checked}>
-                        <span className="bx" aria-hidden>{checked && <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#FFFFFF" strokeWidth="2.5"><path d="M2.5 7.5l3 3 6-6.5" /></svg>}</span>
-                        {s === "public" ? v.filters.sourcePublic : v.filters.sourcePm}
+                      <a key={s} href={href({ source: target === "all" ? null : target })} aria-current={source === s ? "true" : undefined}>
+                        {label}
                       </a>
                     );
                   })}
@@ -451,6 +459,16 @@ export default async function RfpsPage({
                 <span className="p"><PriceLine tpl={v.promo.price} cad={{ monthly: PRICING.proMonthly, annual: PRICING.proAnnual }} lang={lang} /></span>
                 <span className="b">{v.promo.cta}</span>
               </a>
+
+              {/* In the page flow, never over the results or the sticky CTAs; dismissible. */}
+              <EmailCapture
+                inline
+                trade={category ? trade(category.name) : null}
+                region={region ? regionName(region.name, lang) : null}
+                categorySlug={category?.slug}
+                regionSlug={region?.slug}
+                signedInHint={access}
+              />
             </aside>
           </div>
 
@@ -466,7 +484,19 @@ export default async function RfpsPage({
               </div>
             )}
 
-            {pageItems.length > 0 ? (
+            {/* No property-manager RFPs open in this country: say so, and invite the first one (never a made-up listing). */}
+            {pmOpenCountry === 0 && !showAwarded && source !== "public" && (
+              <div className="vp-pmcard">
+                <div>
+                  <div className="v3-label">{v.pmEmpty.eyebrow}</div>
+                  <h2 className="h">{v.pmEmpty.title}</h2>
+                  <p className="b">{v.pmEmpty.body}</p>
+                </div>
+                <a href={L("/rfp-writer")} className="v3-pill navy">{v.pmEmpty.cta}</a>
+              </div>
+            )}
+
+            {pageItems.length === 0 && source === "pm" && pmOpenCountry === 0 && !showAwarded ? null : pageItems.length > 0 ? (
               <>
                 <div className="vp-rows">
                   {pageItems.slice(0, 5).map(row)}
@@ -568,18 +598,11 @@ export default async function RfpsPage({
             <b>{fmt(v.sticky.open[country], { n: num(openIn(country)) })}</b>{" "}
             <span className="c">{fmt(v.sticky.closing, { n: num(stats.closingThisWeek) })}</span>
           </div>
-          <a href={L("/sign-up?role=property_manager")} className="v3-pill ghost">{v.sticky.post}</a>
+          {/* Property managers write their RFP first; sign-up only at "Post it free". */}
+          <a href={L("/rfp-writer")} className="v3-pill ghost">{v.sticky.post}</a>
           <a href={proHref} className="v3-pill mint">{v.sticky.cta}</a>
         </div>
       </div>
-
-      <EmailCapture
-        trade={category ? trade(category.name) : null}
-        region={region ? regionName(region.name, lang) : null}
-        categorySlug={category?.slug}
-        regionSlug={region?.slug}
-        signedInHint={access}
-      />
     </>
   );
 }

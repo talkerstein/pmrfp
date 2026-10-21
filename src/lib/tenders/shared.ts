@@ -9,8 +9,11 @@ export const RULES: [slug: string, pattern: RegExp][] = [
   ["snow-removal", /snow (removal|clearing|plow)|de-?icing|winter maintenance/],
   ["cleaning-janitorial", /janitor|custodial|cleaning services?|building cleaning|window cleaning/],
   ["landscaping", /landscap|grounds? maintenance|\blawn|mowing|grass cutting|tree (removal|pruning|trimming)/],
-  ["hvac", /\bhvac\b|heating|ventilation|air condition|chiller|cooling tower|boiler|furnace|refrigeration/],
-  ["roofing", /\broof/],
+  ["hvac", /\bhvac\b|heating|ventilation|air condition|chiller|cooling tower|boiler|furnace|refrigeration|roof-?\s?top units?\b|\brtus?\b|make-?up air units?/],
+  // "Rooftop HVAC / units / equipment" names where HVAC sits, not roofing work:
+  // HVAC terms win over "rooftop" (persona QA 2026-10-21: York Civic Centre
+  // rooftop HVAC was tagged Roofing). "Roof replacement" still matches.
+  ["roofing", /\broof(?!-?\s?top\s+(?:hvac|units?|mechanical|equipment|air|a\/?c\b|chillers?|exhaust|fans?|rtus?|make-?up|condens|heat pumps?|packaged))/],
   ["electrical", /electrical|electrician|generator|switchgear|power distribution/],
   ["plumbing", /plumbing|plumber|backflow|water heater|hot water tank|sewer|septic|cistern/],
   ["painting", /\bpainting\b|paint services/],

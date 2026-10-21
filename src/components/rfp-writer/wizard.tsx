@@ -14,6 +14,7 @@ import { localizePath } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 import { orderTrades } from "@/lib/trades/order";
+import { rememberAudience } from "@/lib/audience/pm";
 import { countBlanks, defaultDeadlineDays } from "@/lib/rfp-writer/postprocess";
 
 type Option = { slug: string; name: string };
@@ -134,6 +135,9 @@ export function RfpWizard({
   const [email, setEmail] = useState("");
   const [emailing, setEmailing] = useState(false);
   const [emailed, setEmailed] = useState(false);
+
+  // Someone writing an RFP is on the property-manager side: no trade popups for them.
+  useEffect(() => rememberAudience("pm"), []);
 
   // Back from sign-up (?tailor=1): re-run the saved answers, now AI-tailored.
   useEffect(() => {

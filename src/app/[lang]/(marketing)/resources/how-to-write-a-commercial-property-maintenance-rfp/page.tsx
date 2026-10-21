@@ -300,7 +300,7 @@ export default async function RfpGuidePage({ params }: { params: Promise<object>
       <CTASection
         title={g.cta.title}
         description={g.cta.description}
-        primaryHref="/sign-up?role=property_manager"
+        primaryHref="/rfp-writer"
         primaryLabel={g.cta.primaryLabel}
         secondaryHref="/rfp-templates"
         secondaryLabel={g.cta.secondaryLabel}

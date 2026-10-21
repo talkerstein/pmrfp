@@ -292,7 +292,7 @@ export default async function QualityRfpGuidePage({ params }: { params: Promise<
       <CTASection
         title={g.cta.title}
         description={g.cta.description}
-        primaryHref="/sign-up?role=property_manager"
+        primaryHref="/rfp-writer"
         primaryLabel={g.cta.primaryLabel}
         secondaryHref="/rfp-templates"
         secondaryLabel={g.cta.secondaryLabel}
