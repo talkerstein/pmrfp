@@ -6,6 +6,8 @@ from schema import generate
 
 class FixtureMixin:
     def setUp(self):
+        self.addCleanup(setattr,m,'CATALOG',m.CATALOG);self.addCleanup(setattr,m,'SCHEMA',m.SCHEMA)
+        m.CATALOG=m.ROOT/'d1/postgres-catalog.json';m.SCHEMA=m.ROOT/'d1/0001-staging-copy.sql'
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.root=Path(self.tmp.name);self.target=self.root/'target.sqlite';self.cat=m.load_catalog();self.specs=m.table_specs(self.cat)
     def seed(self,version=1):
@@ -31,10 +33,10 @@ class FixtureMixin:
 class MigrationTests(FixtureMixin, unittest.TestCase):
     def test_deterministic_schema_and_all_tables(self):
         sql,gaps=generate(self.cat);self.assertEqual(sql,m.SCHEMA.read_text());self.assertTrue(gaps)
-        self.assertEqual(len(self.specs),84)
+        self.assertEqual(len(self.specs),86)
     def test_initial_copy_and_all_record_hashes(self):
         s=self.snapshot(self.seed());result=m.sync(s,self.target)
-        self.assertEqual(len(result['validated']),84);self.assertFalse(result['cutover_ready']);m.validate(s,self.target)
+        self.assertEqual(len(result['validated']),86);self.assertFalse(result['cutover_ready']);m.validate(s,self.target)
     def test_incremental_insert_update_delete_and_noop(self):
         s1=self.snapshot(self.seed());m.sync(s1,self.target)
         s2=self.snapshot(self.seed(2),'next.jsonl');b=self.root/'backup.sqlite';r=m.sync(s2,self.target,b)

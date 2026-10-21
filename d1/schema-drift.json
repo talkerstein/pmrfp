@@ -1,12 +1,14 @@
 {
-  "master": "7449a5537dca7f0fa49860229f9dc7c7bbe1736b",
+  "master": "f8bca9fb92fda4ceda8b781b904e38191aa72b32",
   "audit_date": "2026-10-21",
-  "repo_tables": 83,
+  "repo_tables": 85,
   "production_tables": 59,
   "repo_only_tables": [
     "award_history",
     "badge_hits",
     "bid_results",
+    "buyer_permissions",
+    "buyer_source_requests",
     "correction_requests",
     "digest_subscribers",
     "duplicate_reviews",
@@ -73,6 +75,7 @@
   },
   "views": {
     "repo_only": [
+      "buyer_permissions_public",
       "winner_claims_public"
     ],
     "production_only": []
@@ -82,6 +85,11 @@
       "award history intel read",
       "badge hits admin read",
       "bid results intel read",
+      "buyer permissions admin insert",
+      "buyer permissions admin read",
+      "buyer permissions admin update",
+      "buyer source requests admin read",
+      "buyer source requests admin update",
       "corrections admin read",
       "corrections admin update",
       "digest subscribers admin read",

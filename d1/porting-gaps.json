@@ -30,6 +30,48 @@
     "definition": "gen_random_uuid()"
   },
   {
+    "kind": "check",
+    "table": "buyer_permissions",
+    "name": "buyer_permissions_buyer_slug_check",
+    "definition": "CHECK ((buyer_slug ~ '^[a-z0-9][a-z0-9-]{1,119}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_permissions",
+    "name": "buyer_permissions_feed_url_check",
+    "definition": "CHECK (((feed_url IS NULL) OR ((char_length(feed_url) <= 500) AND (feed_url ~* '^https?://'::text))))"
+  },
+  {
+    "kind": "default",
+    "table": "buyer_source_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_buyer_slug_check",
+    "definition": "CHECK (((buyer_slug IS NULL) OR (buyer_slug ~ '^[a-z0-9][a-z0-9-]{1,119}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_feed_url_check",
+    "definition": "CHECK (((feed_url IS NULL) OR ((char_length(feed_url) <= 500) AND (feed_url ~* '^https?://'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_tenders_url_check",
+    "definition": "CHECK (((char_length(tenders_url) <= 500) AND (tenders_url ~* '^https?://'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_work_email_check",
+    "definition": "CHECK ((((char_length(work_email) >= 3) AND (char_length(work_email) <= 254)) AND (work_email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'::text)))"
+  },
+  {
     "kind": "default",
     "table": "case_studies",
     "column": "id",
@@ -566,6 +608,71 @@
     "cmd": "SELECT",
     "qual": "( SELECT has_intel_access(auth.uid()) AS has_intel_access)",
     "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_permissions",
+    "policyname": "buyer permissions admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_permissions",
+    "policyname": "buyer permissions admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_permissions",
+    "policyname": "buyer permissions admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_source_requests",
+    "policyname": "buyer source requests admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_source_requests",
+    "policyname": "buyer source requests admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
   },
   {
     "kind": "policy",
@@ -2781,6 +2888,11 @@
     "table_name": "users_profile",
     "schema": "public",
     "definition": "CREATE TRIGGER users_profile_set_updated BEFORE UPDATE ON public.users_profile FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "view",
+    "viewname": "buyer_permissions_public",
+    "definition": " SELECT buyer_slug,\n    scope,\n    status,\n    method,\n    granted_on\n   FROM buyer_permissions;"
   },
   {
     "kind": "view",

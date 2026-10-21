@@ -64,6 +64,13 @@
       "src/app/[lang]/admin/badge-installs/page.tsx:57",
       "src/lib/lifecycle/server.ts:312"
     ],
+    "buyer_source_requests": [
+      "src/app/[lang]/admin/buyer-sources/page.tsx:61",
+      "src/app/api/admin/buyer-sources/route.ts:45",
+      "src/app/api/admin/buyer-sources/route.ts:57",
+      "src/app/api/admin/buyer-sources/route.ts:76",
+      "src/app/api/buyer-sources/route.ts:38"
+    ],
     "case_studies": [
       "src/app/[lang]/admin/case-studies/page.tsx:38",
       "src/app/api/projects/[id]/photo/[file]/route.ts:31",
@@ -307,6 +314,7 @@
       "src/app/[lang]/admin/page.tsx:78",
       "src/app/[lang]/admin/signups/page.tsx:64",
       "src/app/[lang]/admin/users/page.tsx:35",
+      "src/app/api/buyer-sources/route.ts:59",
       "src/app/api/cron/admin-weekly/route.ts:34",
       "src/app/api/cron/lead-alerts/route.ts:110",
       "src/app/api/cron/rfp-alerts/route.ts:128",
@@ -564,6 +572,26 @@
       "mobile/src/lib/rfps.ts:35",
       "mobile/src/lib/rfps.ts:66"
     ],
+    "buyer_permissions": [
+      "src/app/api/admin/buyer-sources/route.ts:70",
+      "src/lib/buyers/permissions-data.ts:76"
+    ],
+    "notifications": [
+      "src/app/api/buyer-sources/route.ts:65",
+      "src/app/api/cron/lead-alerts/route.ts:113",
+      "src/app/api/cron/lead-alerts/route.ts:184",
+      "src/app/api/cron/rfp-alerts/route.ts:131",
+      "src/app/api/cron/rfp-alerts/route.ts:235",
+      "src/app/api/cron/rfp-alerts/route.ts:246",
+      "src/app/api/cron/rfp-alerts/route.ts:336",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:88",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:128",
+      "src/app/api/cron/tender-digest/route.ts:119",
+      "src/app/api/cron/tender-digest/route.ts:169",
+      "src/lib/dedupe/join.ts:69",
+      "src/lib/dedupe/join.ts:127",
+      "src/lib/insights/server.ts:320"
+    ],
     "rfp_bid_checks": [
       "src/app/api/cron/bid-checks/route.ts:68",
       "src/app/api/cron/bid-checks/route.ts:111",
@@ -607,21 +635,6 @@
       "src/lib/insights/server.ts:215",
       "src/lib/lifecycle/server.ts:294",
       "src/lib/lifecycle/server.ts:499"
-    ],
-    "notifications": [
-      "src/app/api/cron/lead-alerts/route.ts:113",
-      "src/app/api/cron/lead-alerts/route.ts:184",
-      "src/app/api/cron/rfp-alerts/route.ts:131",
-      "src/app/api/cron/rfp-alerts/route.ts:235",
-      "src/app/api/cron/rfp-alerts/route.ts:246",
-      "src/app/api/cron/rfp-alerts/route.ts:336",
-      "src/app/api/cron/saved-rfp-alerts/route.ts:88",
-      "src/app/api/cron/saved-rfp-alerts/route.ts:128",
-      "src/app/api/cron/tender-digest/route.ts:119",
-      "src/app/api/cron/tender-digest/route.ts:169",
-      "src/lib/dedupe/join.ts:69",
-      "src/lib/dedupe/join.ts:127",
-      "src/lib/insights/server.ts:320"
     ],
     "lead_alert_log": [
       "src/app/api/cron/lead-alerts/route.ts:170",
@@ -745,6 +758,9 @@
       "src/lib/badge/data.ts:83",
       "src/lib/karma/data.ts:21",
       "src/lib/karma/data.ts:144"
+    ],
+    "buyer_permissions_public": [
+      "src/lib/buyers/permissions-data.ts:95"
     ],
     "winner_claims_public": [
       "src/lib/claims/data.ts:37"
@@ -949,7 +965,7 @@
       "src/lib/marketplace/data.ts:212"
     ],
     "rate_limit_hit": [
-      "src/lib/rate-limit.ts:166"
+      "src/lib/rate-limit.ts:168"
     ],
     "record_sponsor_impressions": [
       "src/lib/sponsors/impressions.ts:61"

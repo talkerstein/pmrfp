@@ -10,7 +10,7 @@ def convert_expr(s):
     s=re.sub(r'<> ALL \(ARRAY\[(.*?)\]\)',r'NOT IN (\1)',s)
     for a,b in [('char_length(', 'length('),('jsonb_typeof(', 'json_type('),('jsonb_array_length(', 'json_array_length('),('cardinality(', 'json_array_length(')]:s=s.replace(a,b)
     s=s.replace(' ~~ ', ' LIKE ')
-    if any(t in s for t in ['::',' ~ ','<@','ARRAY[','ANY (','ALL (']):raise ValueError('Postgres expression requires explicit port')
+    if any(t in s for t in ['::','~','<@','@>','&&','ARRAY[','ANY (','ALL (']):raise ValueError('Postgres expression requires explicit port')
     return s
 
 def generate(c):

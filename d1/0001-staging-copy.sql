@@ -103,6 +103,72 @@ CREATE TABLE "bid_results" (
   CONSTRAINT "bid_results_status_label_check" CHECK ((status_label IN ('awarded', 'apparent_low', 'not_awarded', 'submitted')))
 );
 
+CREATE TABLE "buyer_permissions" (
+  "buyer_slug" TEXT NOT NULL,
+  "buyer_name" TEXT NOT NULL,
+  "province_code" TEXT,
+  "country" TEXT NOT NULL DEFAULT 'CA',
+  "scope" TEXT NOT NULL DEFAULT 'buyer',
+  "hosts" TEXT NOT NULL DEFAULT '[]' CHECK ("hosts" IS NULL OR json_valid("hosts")) CHECK (json_type("hosts")='array'),
+  "status" TEXT NOT NULL,
+  "method" TEXT,
+  "feed_url" TEXT,
+  "granted_on" TEXT,
+  "contact" TEXT,
+  "reply_quote" TEXT,
+  "notes" TEXT,
+  "source_request_id" TEXT,
+  "updated_by" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "buyer_permissions_buyer_name_check" CHECK (((length(buyer_name) >= 1) AND (length(buyer_name) <= 200))),
+  CONSTRAINT "buyer_permissions_contact_check" CHECK (((contact IS NULL) OR (length(contact) <= 300))),
+  CONSTRAINT "buyer_permissions_country_check" CHECK ((country = 'CA')),
+  CONSTRAINT "buyer_permissions_method_check" CHECK (((method IS NULL) OR (method IN ('read_public_page', 'email_notices', 'feed')))),
+  CONSTRAINT "buyer_permissions_notes_check" CHECK (((notes IS NULL) OR (length(notes) <= 4000))),
+  CONSTRAINT "buyer_permissions_pkey" PRIMARY KEY (buyer_slug),
+  CONSTRAINT "buyer_permissions_province_code_check" CHECK (((province_code IS NULL) OR (province_code IN ('ON', 'BC', 'AB', 'NS', 'MB', 'SK', 'QC', 'NB', 'PE', 'NL', 'YT', 'NT', 'NU')))),
+  CONSTRAINT "buyer_permissions_reply_quote_check" CHECK (((reply_quote IS NULL) OR (length(reply_quote) <= 2000))),
+  CONSTRAINT "buyer_permissions_scope_check" CHECK ((scope IN ('buyer', 'platform'))),
+  CONSTRAINT "buyer_permissions_source_request_id_fkey" FOREIGN KEY (source_request_id) REFERENCES buyer_source_requests(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_permissions_status_check" CHECK ((status IN ('yes', 'link_only', 'no', 'pending'))),
+  CONSTRAINT "buyer_permissions_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL
+);
+
+CREATE TABLE "buyer_source_requests" (
+  "id" TEXT NOT NULL,
+  "organization" TEXT NOT NULL,
+  "contact_name" TEXT NOT NULL,
+  "work_email" TEXT NOT NULL,
+  "tenders_url" TEXT NOT NULL,
+  "method" TEXT NOT NULL,
+  "feed_url" TEXT,
+  "province_code" TEXT NOT NULL,
+  "country" TEXT NOT NULL DEFAULT 'CA',
+  "buyer_slug" TEXT,
+  "authorized" INTEGER NOT NULL CHECK ("authorized" IN (0,1)),
+  "lang" TEXT NOT NULL DEFAULT 'en',
+  "status" TEXT NOT NULL DEFAULT 'new',
+  "admin_notes" TEXT,
+  "decided_by" TEXT,
+  "decided_at" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "buyer_source_requests_admin_notes_check" CHECK (((admin_notes IS NULL) OR (length(admin_notes) <= 4000))),
+  CONSTRAINT "buyer_source_requests_authorized_check" CHECK (authorized),
+  CONSTRAINT "buyer_source_requests_contact_name_check" CHECK (((length(contact_name) >= 2) AND (length(contact_name) <= 200))),
+  CONSTRAINT "buyer_source_requests_country_check" CHECK ((country = 'CA')),
+  CONSTRAINT "buyer_source_requests_decided" CHECK (((status = 'new') OR (decided_at IS NOT NULL))),
+  CONSTRAINT "buyer_source_requests_decided_by_fkey" FOREIGN KEY (decided_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_source_requests_feed" CHECK (((method <> 'feed') OR (feed_url IS NOT NULL))),
+  CONSTRAINT "buyer_source_requests_lang_check" CHECK ((lang IN ('en', 'fr', 'es'))),
+  CONSTRAINT "buyer_source_requests_method_check" CHECK ((method IN ('read_public_page', 'email_notices', 'feed'))),
+  CONSTRAINT "buyer_source_requests_organization_check" CHECK (((length(organization) >= 2) AND (length(organization) <= 200))),
+  CONSTRAINT "buyer_source_requests_pkey" PRIMARY KEY (id),
+  CONSTRAINT "buyer_source_requests_province_code_check" CHECK ((province_code IN ('ON', 'BC', 'AB', 'NS', 'MB', 'SK', 'QC', 'NB', 'PE', 'NL', 'YT', 'NT', 'NU'))),
+  CONSTRAINT "buyer_source_requests_status_check" CHECK ((status IN ('new', 'approved', 'rejected')))
+);
+
 CREATE TABLE "case_studies" (
   "id" TEXT NOT NULL,
   "organization_id" TEXT NOT NULL,
@@ -1675,6 +1741,10 @@ CREATE INDEX badge_hits_referrer_idx ON badge_hits (referrer, day DESC);
 CREATE INDEX bid_results_award_idx ON bid_results (award_history_id);
 
 CREATE INDEX bid_results_bidder_idx ON bid_results (bidder_key);
+
+CREATE INDEX buyer_permissions_status_idx ON buyer_permissions (status);
+
+CREATE INDEX buyer_source_requests_status_idx ON buyer_source_requests (status, created_at DESC);
 
 CREATE INDEX case_studies_cat_region_idx ON case_studies (category_id, region_id);
 
