@@ -1,6 +1,6 @@
 /**
  * A tiny in-memory stand-in for the supabase-js query builder, enough for
- * the dedupe code: select / insert / update / upsert with eq, neq, in, is,
+ * the dedupe code: select / insert / update / upsert / delete with eq, neq, in, is,
  * ilike, order, limit, single, maybeSingle, count+head. A table missing from
  * `tables` answers like a missing relation (42P01).
  */
@@ -44,7 +44,7 @@ function likeToRegex(pattern: string): RegExp {
 }
 
 class Builder implements PromiseLike<{ data: unknown; error: unknown; count?: number | null }> {
-  private op: "select" | "insert" | "update" | "upsert" = "select";
+  private op: "select" | "insert" | "update" | "upsert" | "delete" = "select";
   private filters: ((r: Row) => boolean)[] = [];
   private patch: Row | Row[] | null = null;
   private max: number | null = null;
@@ -75,6 +75,10 @@ class Builder implements PromiseLike<{ data: unknown; error: unknown; count?: nu
   update(patch: Row) {
     this.op = "update";
     this.patch = patch;
+    return this;
+  }
+  delete() {
+    this.op = "delete";
     return this;
   }
   eq(c: string, v: unknown) {
@@ -154,6 +158,10 @@ class Builder implements PromiseLike<{ data: unknown; error: unknown; count?: nu
     if (this.op === "update") {
       out = rows.filter(match);
       for (const r of out) Object.assign(r, this.patch);
+    }
+    if (this.op === "delete") {
+      out = rows.filter(match);
+      this.db.tables[this.table] = rows.filter((r) => !match(r));
     }
     if (this.op === "insert" || this.op === "upsert") {
       const incoming = (Array.isArray(this.patch) ? this.patch : [this.patch!]).map((r) => ({ id: `id-${Math.random().toString(36).slice(2, 10)}`, ...this.opts.defaults?.[this.table], ...r }));

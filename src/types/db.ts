@@ -68,6 +68,12 @@ export interface Organization {
   profile_completion_score: number;
   public_contact_visibility: ContactVisibility;
   status: UserStatus;
+  /** When it last became approved (migration 20261021000030; null before it). */
+  approved_at?: string | null;
+  /** Set when a member edits a trust field of an approved company; an admin clears it (lib/organizations/profile-review). */
+  review_flagged_at?: string | null;
+  /** {"field": {"from", "to"}} since the last admin check. */
+  review_changes?: Record<string, { from: unknown; to: unknown }> | null;
   created_at: string;
   updated_at: string;
 }

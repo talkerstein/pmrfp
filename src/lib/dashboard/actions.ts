@@ -22,6 +22,8 @@ import {
 import { getLinkableAward } from "@/lib/gc/data";
 import type { ActionState } from "@/lib/auth/actions";
 import { getDictionary } from "@/i18n/dictionaries";
+import { logAudit } from "@/lib/audit";
+import { profileStatusPatch, reviewChanges } from "@/lib/organizations/profile-review";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, splitLocale, type Locale } from "@/i18n/config";
 
 /**
@@ -134,33 +136,53 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
     }
   }
 
-  const { error } = await supabase
-    .from("organizations")
-    .update({
-      name: d.name,
-      website: d.website || null,
-      phone: d.phone || null,
-      email: d.email,
-      address_line_1: d.addressLine1 || null,
-      city: d.city || null,
-      province: d.province || null,
-      // Country-first: keep the country in step with the province/state.
-      ...(d.province ? { country: isUsState(d.province) ? "United States" : "Canada" } : {}),
-      postal_code: d.postalCode || null,
-      short_description: d.shortDescription || null,
-      full_description: d.fullDescription || null,
-      years_in_business: d.yearsInBusiness ?? null,
-      employee_count_range: d.employeeCountRange || null,
-      insurance_status: d.insuranceStatus || null,
-      wsib_status: d.wsibStatus || null,
-      emergency_service: d.emergencyService ?? false,
-      public_contact_visibility: d.publicContactVisibility,
-      logo_url: logoUrl,
-      profile_completion_score: score,
-      profile_status: "pending_review",
-    })
-    .eq("id", orgId);
+  // Approved stays approved: an edit no longer takes a company out of the
+  // directory, PM job alerts or free responses. Trust-field edits are flagged
+  // for an admin's look by the database (lib/organizations/profile-review).
+  // Draft, pending, rejected and suspended companies go to pending_review as
+  // before, so an edit never approves anyone.
+  const before = session.organization;
+  const nextStatus = profileStatusPatch(before.profile_status);
+  const patch = {
+    name: d.name,
+    website: d.website || null,
+    phone: d.phone || null,
+    email: d.email,
+    address_line_1: d.addressLine1 || null,
+    city: d.city || null,
+    province: d.province || null,
+    // Country-first: keep the country in step with the province/state.
+    ...(d.province ? { country: isUsState(d.province) ? "United States" : "Canada" } : {}),
+    postal_code: d.postalCode || null,
+    short_description: d.shortDescription || null,
+    full_description: d.fullDescription || null,
+    years_in_business: d.yearsInBusiness ?? null,
+    employee_count_range: d.employeeCountRange || null,
+    insurance_status: d.insuranceStatus || null,
+    wsib_status: d.wsibStatus || null,
+    emergency_service: d.emergencyService ?? false,
+    public_contact_visibility: d.publicContactVisibility,
+    logo_url: logoUrl,
+    profile_completion_score: score,
+    ...(nextStatus ? { profile_status: nextStatus } : {}),
+  };
+  const { error } = await supabase.from("organizations").update(patch).eq("id", orgId);
   if (error) return { error: t.saveFailed };
+
+  const stayedLive = before.profile_status === "approved";
+  if (stayedLive) {
+    // One audit entry per flagged edit (the trigger keeps the running diff).
+    const changes = reviewChanges(before, patch);
+    if (changes.length) {
+      await logAudit({
+        actorUserId: session.userId,
+        action: "organization.profile_edited",
+        entityType: "organization",
+        entityId: orgId,
+        metadata: { changes },
+      });
+    }
+  }
 
   // Replace taxonomy links.
   const [{ data: catRows }, { data: regRows }, { data: ptRows }] = await Promise.all([
@@ -181,7 +203,7 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
     await supabase.from("organization_property_types").insert(ptRows.map((p: { id: string }) => ({ organization_id: orgId, property_type_id: p.id })));
 
   revalidatePath("/dashboard/company");
-  return { success: t.saved };
+  return { success: stayedLive ? t.savedLive : t.saved };
 }
 
 /**
