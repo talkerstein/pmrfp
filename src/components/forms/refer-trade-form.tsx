@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { REFERRAL } from "@/lib/site";
 import { useLang, useT } from "@/i18n/provider";
+import { defaultProvinceFor } from "@/lib/geo-defaults";
 import { fmt } from "@/i18n/format";
 import { regionName } from "@/i18n/terms";
 import { referServerMessageKey } from "@/i18n/messages/miscClient";
@@ -94,7 +95,7 @@ export function ReferTradeForm() {
             <select
               name="tradeProvince"
               required
-              defaultValue="Ontario"
+              defaultValue={defaultProvinceFor(lang)}
               className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
             >
               {PROVINCES.map((p) => (
