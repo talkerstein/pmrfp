@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trimmed from Statistics Canada's Census Profile SDMX codelist CL_GEO_CD (2021), for test/unit/towns.test.ts. -->
+<message:Structure xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:structure="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure" xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <message:Structures>
+    <structure:Codelists>
+      <structure:Codelist id="CL_GEO_CD" agencyID="STC_CP" version="1.0" isFinal="true">
+        <structure:Code id="2021A00032420">
+          <common:Name xml:lang="en">Lotbinière</common:Name>
+          <common:Name xml:lang="fr">Lotbinière</common:Name>
+        </structure:Code>
+        <structure:Code id="2021A00032454">
+          <common:Name xml:lang="en">Les Maskoutains</common:Name>
+          <common:Name xml:lang="fr">Les Maskoutains</common:Name>
+        </structure:Code>
+        <structure:Code id="2021A00033514">
+          <common:Name xml:lang="en">Northumberland</common:Name>
+          <common:Name xml:lang="fr">Northumberland</common:Name>
+        </structure:Code>
+      </structure:Codelist>
+    </structure:Codelists>
+  </message:Structures>
+</message:Structure>

@@ -452,6 +452,8 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   const role = session.profile.primary_role;
   const intent = formData.get("intent");
+  // Public buyers set up through the claim step (lib/towns/actions), never a company listing.
+  if (role === "public_buyer") redirect(localizePath("/onboarding", lang));
 
   const next = safeNextPath(formData.get("next")?.toString());
 

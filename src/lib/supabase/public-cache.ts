@@ -17,6 +17,8 @@ export const MAJOR_PROJECTS_TAG = "major-projects";
 export const SPONSORS_TAG = "sponsors";
 /** The shared public-buyer permission snapshot (lib/buyers/permissions-data). */
 export const BUYER_PERMISSIONS_TAG = "buyer-permissions";
+/** The shared managed buyer-page snapshot (lib/towns/managed-data). */
+export const BUYER_PAGES_TAG = "buyer-pages";
 /** Tables whose writes change the public board. */
 export const RFP_TABLES = new Set(["rfp_posts", "rfp_categories", "rfp_documents"]);
 

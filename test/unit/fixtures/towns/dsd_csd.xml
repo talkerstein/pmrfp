@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trimmed from Statistics Canada's Census Profile SDMX structure (DSD_CSD, 2021), for test/unit/towns.test.ts. -->
+<message:Structure xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:structure="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure" xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <message:Structures>
+    <structure:Codelists>
+      <structure:Codelist id="CL_GEO_CSD" agencyID="STC_CP" version="1.0" isFinal="true">
+        <common:Name xml:lang="en">Census subdivision</common:Name>
+        <structure:Code id="2021A00053514021">
+          <common:Name xml:lang="en">Cobourg</common:Name>
+          <common:Name xml:lang="fr">Cobourg</common:Name>
+          <common:Description xml:lang="en">Cobourg, Town [Census subdivision], Ontario</common:Description>
+          <common:Description xml:lang="fr">Cobourg, Town [Subdivision de recensement], Ontario</common:Description>
+        </structure:Code>
+        <structure:Code id="2021A00053553005">
+          <common:Name xml:lang="en">Greater Sudbury / Grand Sudbury</common:Name>
+          <common:Name xml:lang="fr">Greater Sudbury / Grand Sudbury</common:Name>
+          <common:Description xml:lang="en">Greater Sudbury / Grand Sudbury, City [Census subdivision], Ontario</common:Description>
+          <common:Description xml:lang="fr">Greater Sudbury / Grand Sudbury, Ville [Subdivision de recensement], Ontario</common:Description>
+        </structure:Code>
+        <structure:Code id="2021A00051205001">
+          <common:Name xml:lang="en">Annapolis, Subd. D</common:Name>
+          <common:Name xml:lang="fr">Annapolis, Subd. D</common:Name>
+          <common:Description xml:lang="en">Annapolis, Subd. D, Subdivision of county municipality [Census subdivision], Nova Scotia</common:Description>
+          <common:Description xml:lang="fr">Annapolis, Subd. D, Subdivision municipalité de comté [Subdivision de recensement], Nouvelle-Écosse</common:Description>
+        </structure:Code>
+        <structure:Code id="2021A00051205004">
+          <common:Name xml:lang="en">Annapolis, Subd. A</common:Name>
+          <common:Name xml:lang="fr">Annapolis, Subd. A</common:Name>
+          <common:Description xml:lang="en">Annapolis, Subd. A, Subdivision of county municipality [Census subdivision], Nova Scotia</common:Description>
+          <common:Description xml:lang="fr">Annapolis, Subd. A, Subdivision municipalité de comté [Subdivision de recensement], Nouvelle-Écosse</common:Description>
+        </structure:Code>
+        <structure:Code id="2021A00052420025">
+          <common:Name xml:lang="en">Saint-Louis</common:Name>
+          <common:Name xml:lang="fr">Saint-Louis</common:Name>
+          <common:Description xml:lang="en">Saint-Louis, Municipalité [Census subdivision], Quebec</common:Description>
+          <common:Description xml:lang="fr">Saint-Louis, Municipalité [Subdivision de recensement], Québec</common:Description>
+        </structure:Code>
+        <structure:Code id="2021A00052454030">
+          <common:Name xml:lang="en">Saint-Louis</common:Name>
+          <common:Name xml:lang="fr">Saint-Louis</common:Name>
+          <common:Description xml:lang="en">Saint-Louis, Municipalité [Census subdivision], Quebec</common:Description>
+          <common:Description xml:lang="fr">Saint-Louis, Municipalité [Subdivision de recensement], Québec</common:Description>
+        </structure:Code>
+        <structure:Code id="2021A00053514800">
+          <common:Name xml:lang="en">Alderville First Nation</common:Name>
+          <common:Name xml:lang="fr">Alderville First Nation</common:Name>
+          <common:Description xml:lang="en">Alderville First Nation, Indian reserve [Census subdivision], Ontario</common:Description>
+          <common:Description xml:lang="fr">Alderville First Nation, Réserve indienne [Subdivision de recensement], Ontario</common:Description>
+        </structure:Code>
+        <structure:Code id="2021A00053557096">
+          <common:Name xml:lang="en">Unorganized Area</common:Name>
+          <common:Name xml:lang="fr">Unorganized Area</common:Name>
+          <common:Description xml:lang="en">Unorganized Area, Unorganized [Census subdivision], Ontario</common:Description>
+          <common:Description xml:lang="fr">Unorganized Area, Non organisé [Subdivision de recensement], Ontario</common:Description>
+        </structure:Code>
+      </structure:Codelist>
+    </structure:Codelists>
+  </message:Structures>
+</message:Structure>

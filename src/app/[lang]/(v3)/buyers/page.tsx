@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { loadBuyers } from "@/lib/buyers/load";
-import { BUYERS_PATH, directoryIndex, isIndexableBuyer } from "@/lib/buyers/model";
+import { BUYERS_PATH, directoryIndex, isIndexableBuyer, pageKind } from "@/lib/buyers/model";
+import { indexablePages } from "@/lib/towns/page-data";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
@@ -27,7 +28,11 @@ export default async function BuyersIndex({ params }: { params: Promise<{ lang: 
   const t = getT("buyers");
   const home = getT("v3Pages").simple.home;
   const L = (p: string) => localizePath(p, lang);
-  const { pages } = await loadBuyers();
+  const { pages: all } = await loadBuyers();
+  // Every municipality has a page; the index lists the researched buyers plus the towns with bids or a verified buyer.
+  const shownTowns = new Set(await indexablePages(all.filter((p) => pageKind(p) === "town")));
+  const pages = all.filter((p) => pageKind(p) !== "town" || shownTowns.has(p));
+  const hiddenTowns = all.length - pages.length;
   const index = directoryIndex(pages);
   let no = 0;
   return (
@@ -35,6 +40,7 @@ export default async function BuyersIndex({ params }: { params: Promise<{ lang: 
       <JsonLd data={breadcrumbSchema([{ name: home, path: L("/") }, { name: t.index.crumb, path: L(BUYERS_PATH) }])} />
       <SimplePage lang={lang} current={null} group="company" crumbs={[]} tabs={false} aside={false} title={t.index.h1} lead={fmt(t.index.lead, { n: formatNumber(pages.length, lang) })}>
         <p className="small muted" data-flag="link-only">{t.index.note}</p>
+        {hiddenTowns > 0 && <p className="small muted" data-flag="towns">{fmt(getT("towns").page.townsNote, { n: formatNumber(hiddenTowns, lang) })}</p>}
         <p className="small" data-cta="list-your-tenders"><a href={L(FOR_PUBLIC_BUYERS_PATH)}>{t.index.listYours} →</a></p>
         <nav className="s-links" aria-label={t.index.crumb}>
           {index.map((p) => (

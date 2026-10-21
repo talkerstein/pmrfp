@@ -14,7 +14,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "alberta-health-services"
+  "slug": "alberta-health-services",
+  "domains": [
+   "albertahealthservices.ca"
+  ]
  },
  {
   "name": "Alberta Infrastructure (GoA)",
@@ -30,7 +33,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "alberta-infrastructure-goa"
+  "slug": "alberta-infrastructure-goa",
+  "domains": [
+   "alberta.ca"
+  ]
  },
  {
   "name": "Athabasca University",
@@ -46,7 +52,10 @@
   "email": "aupurchasing@athabascau.ca",
   "emailSource": "https://www.athabascau.ca/finance/contact-us.html",
   "checkedOn": "2026-10-15",
-  "slug": "athabasca-university"
+  "slug": "athabasca-university",
+  "domains": [
+   "athabascau.ca"
+  ]
  },
  {
   "name": "Bow Valley College",
@@ -60,7 +69,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "bow-valley-college"
+  "slug": "bow-valley-college",
+  "domains": [
+   "bowvalleycollege.ca"
+  ]
  },
  {
   "name": "Calgary Airport Authority (YYC)",
@@ -76,7 +88,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "calgary-airport-authority-yyc"
+  "slug": "calgary-airport-authority-yyc",
+  "domains": [
+   "yyc.com"
+  ]
  },
  {
   "name": "Calgary Housing Company",
@@ -92,7 +107,11 @@
   "email": "chcsupplymanagement@calgary.ca",
   "emailSource": "https://calgaryhousingcompany.org/suppliers/",
   "checkedOn": "2026-10-15",
-  "slug": "calgary-housing-company"
+  "slug": "calgary-housing-company",
+  "domains": [
+   "calgaryhousingcompany.org",
+   "calgary.ca"
+  ]
  },
  {
   "name": "Calgary Public Library",
@@ -106,7 +125,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "calgary-public-library"
+  "slug": "calgary-public-library",
+  "domains": [
+   "calgarylibrary.ca"
+  ]
  },
  {
   "name": "Civida (Capital Region Housing)",
@@ -123,7 +145,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "civida-capital-region-housing"
+  "slug": "civida-capital-region-housing",
+  "domains": [
+   "civida.ca"
+  ]
  },
  {
   "name": "Covenant Health",
@@ -137,7 +162,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "covenant-health"
+  "slug": "covenant-health",
+  "domains": [
+   "covenanthealth.ca"
+  ]
  },
  {
   "name": "Edmonton Airports",
@@ -153,7 +181,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "edmonton-airports"
+  "slug": "edmonton-airports",
+  "domains": [
+   "flyyeg.com"
+  ]
  },
  {
   "name": "Edmonton Public Library",
@@ -169,7 +200,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "edmonton-public-library"
+  "slug": "edmonton-public-library",
+  "domains": [
+   "epl.ca"
+  ]
  },
  {
   "name": "ENMAX",
@@ -183,7 +217,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "enmax"
+  "slug": "enmax",
+  "domains": [
+   "enmax.com"
+  ]
  },
  {
   "name": "EPCOR",
@@ -199,7 +236,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "epcor"
+  "slug": "epcor",
+  "domains": [
+   "epcor.com"
+  ]
  },
  {
   "name": "Lakeland College",
@@ -213,7 +253,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lakeland-college"
+  "slug": "lakeland-college",
+  "domains": [
+   "lakelandcollege.ca"
+  ]
  },
  {
   "name": "Lethbridge Polytechnic",
@@ -229,7 +272,10 @@
   "email": "purchasing@lethpolytech.ca",
   "emailSource": "https://lethpolytech.ca/departments/financial-services/request-tender",
   "checkedOn": "2026-10-15",
-  "slug": "lethbridge-polytechnic"
+  "slug": "lethbridge-polytechnic",
+  "domains": [
+   "lethpolytech.ca"
+  ]
  },
  {
   "name": "MacEwan University",
@@ -245,7 +291,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "macewan-university"
+  "slug": "macewan-university",
+  "domains": [
+   "macewan.ca"
+  ]
  },
  {
   "name": "Medicine Hat College",
@@ -259,7 +308,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "medicine-hat-college"
+  "slug": "medicine-hat-college",
+  "domains": [
+   "mhc.ab.ca"
+  ]
  },
  {
   "name": "Mount Royal University",
@@ -276,7 +328,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mount-royal-university"
+  "slug": "mount-royal-university",
+  "domains": [
+   "mtroyal.ca"
+  ]
  },
  {
   "name": "NAIT",
@@ -292,7 +347,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nait"
+  "slug": "nait",
+  "domains": [
+   "nait.ca"
+  ]
  },
  {
   "name": "NorQuest College",
@@ -306,7 +364,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "norquest-college"
+  "slug": "norquest-college",
+  "domains": [
+   "norquest.ca"
+  ]
  },
  {
   "name": "Northwestern Polytechnic",
@@ -320,7 +381,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "northwestern-polytechnic"
+  "slug": "northwestern-polytechnic",
+  "domains": [
+   "nwpolytech.ca"
+  ]
  },
  {
   "name": "Olds College",
@@ -334,7 +398,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "olds-college"
+  "slug": "olds-college",
+  "domains": [
+   "oldscollege.ca"
+  ]
  },
  {
   "name": "Red Deer Polytechnic",
@@ -348,7 +415,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "red-deer-polytechnic"
+  "slug": "red-deer-polytechnic",
+  "domains": [
+   "rdpolytech.ca"
+  ]
  },
  {
   "name": "SAIT",
@@ -365,7 +435,10 @@
   "email": "purchasing@sait.ca",
   "emailSource": "https://www.sait.ca/about-sait/contact-us/doing-business-with-sait",
   "checkedOn": "2026-10-15",
-  "slug": "sait"
+  "slug": "sait",
+  "domains": [
+   "sait.ca"
+  ]
  },
  {
   "name": "University of Alberta",
@@ -381,7 +454,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-of-alberta"
+  "slug": "university-of-alberta",
+  "domains": [
+   "ualberta.ca"
+  ]
  },
  {
   "name": "University of Calgary",
@@ -398,7 +474,10 @@
   "email": "uofcsuppliers@ucalgary.ca",
   "emailSource": "https://www.ucalgary.ca/finance/purchasing-distribution/suppliers",
   "checkedOn": "2026-10-15",
-  "slug": "university-of-calgary"
+  "slug": "university-of-calgary",
+  "domains": [
+   "ucalgary.ca"
+  ]
  },
  {
   "name": "University of Lethbridge",
@@ -414,7 +493,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-of-lethbridge"
+  "slug": "university-of-lethbridge",
+  "domains": [
+   "ulethbridge.ca"
+  ]
  },
  {
   "name": "City of Airdrie",
@@ -430,7 +512,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-airdrie"
+  "slug": "city-of-airdrie",
+  "domains": [
+   "airdrie.ca"
+  ]
  },
  {
   "name": "City of Beaumont",
@@ -446,7 +531,10 @@
   "email": "corporateprocurement@beaumont.ab.ca",
   "emailSource": "https://www.beaumont.ab.ca/business-economy/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-beaumont"
+  "slug": "city-of-beaumont",
+  "domains": [
+   "beaumont.ab.ca"
+  ]
  },
  {
   "name": "City of Brooks",
@@ -462,7 +550,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-brooks"
+  "slug": "city-of-brooks",
+  "domains": [
+   "brooks.ca"
+  ]
  },
  {
   "name": "City of Calgary",
@@ -479,7 +570,10 @@
   "email": "supplier.ariba@calgary.ca",
   "emailSource": "https://www.calgary.ca/buy-sell/supply-to-city/bidding-system.html",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-calgary"
+  "slug": "city-of-calgary",
+  "domains": [
+   "calgary.ca"
+  ]
  },
  {
   "name": "City of Calgary (open data)",
@@ -493,7 +587,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-calgary-open-data"
+  "slug": "city-of-calgary-open-data",
+  "domains": [
+   "calgary.ca"
+  ]
  },
  {
   "name": "City of Camrose",
@@ -510,7 +607,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-camrose"
+  "slug": "city-of-camrose",
+  "domains": [
+   "camrose.ca"
+  ]
  },
  {
   "name": "City of Chestermere",
@@ -527,7 +627,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-chestermere"
+  "slug": "city-of-chestermere",
+  "domains": [
+   "thecityofchestermere.ca"
+  ]
  },
  {
   "name": "City of Cold Lake",
@@ -545,7 +648,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-cold-lake"
+  "slug": "city-of-cold-lake",
+  "domains": [
+   "coldlake.com"
+  ]
  },
  {
   "name": "City of Edmonton",
@@ -562,7 +668,10 @@
   "email": "procurement@edmonton.ca",
   "emailSource": "https://www.edmonton.ca/business_economy/selling-to-the-city",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-edmonton"
+  "slug": "city-of-edmonton",
+  "domains": [
+   "edmonton.ca"
+  ]
  },
  {
   "name": "City of Edmonton (open data)",
@@ -576,7 +685,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-edmonton-open-data"
+  "slug": "city-of-edmonton-open-data",
+  "domains": [
+   "edmonton.ca"
+  ]
  },
  {
   "name": "City of Fort Saskatchewan",
@@ -593,7 +705,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-fort-saskatchewan"
+  "slug": "city-of-fort-saskatchewan",
+  "domains": [
+   "fortsask.ca"
+  ]
  },
  {
   "name": "City of Grande Prairie",
@@ -610,7 +725,10 @@
   "email": "procurement@cityofgp.com",
   "emailSource": "https://cityofgp.com/business-development/business-services/procurement-and-surplus",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-grande-prairie"
+  "slug": "city-of-grande-prairie",
+  "domains": [
+   "cityofgp.com"
+  ]
  },
  {
   "name": "City of Lacombe",
@@ -626,7 +744,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-lacombe"
+  "slug": "city-of-lacombe",
+  "domains": [
+   "lacombe.ca"
+  ]
  },
  {
   "name": "City of Leduc",
@@ -643,7 +764,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-leduc"
+  "slug": "city-of-leduc",
+  "domains": [
+   "leduc.ca"
+  ]
  },
  {
   "name": "City of Lethbridge",
@@ -660,7 +784,10 @@
   "email": "tenders@lethbridge.ca",
   "emailSource": "https://www.lethbridge.ca/business-in-lethbridge/doing-business-with-the-city/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-lethbridge"
+  "slug": "city-of-lethbridge",
+  "domains": [
+   "lethbridge.ca"
+  ]
  },
  {
   "name": "City of Lloydminster",
@@ -676,7 +803,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-lloydminster"
+  "slug": "city-of-lloydminster",
+  "domains": [
+   "lloydminster.ca"
+  ]
  },
  {
   "name": "City of Medicine Hat",
@@ -693,7 +823,10 @@
   "email": "purchasing@medicinehat.ca",
   "emailSource": "https://www.medicinehat.ca/government-city-hall/applications-licenses-permits/bidding-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-medicine-hat"
+  "slug": "city-of-medicine-hat",
+  "domains": [
+   "medicinehat.ca"
+  ]
  },
  {
   "name": "City of Red Deer",
@@ -710,7 +843,10 @@
   "email": "purchasing@reddeer.ca",
   "emailSource": "https://www.reddeer.ca/business/selling-to-the-city---procurement/contact-purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-red-deer"
+  "slug": "city-of-red-deer",
+  "domains": [
+   "reddeer.ca"
+  ]
  },
  {
   "name": "City of Spruce Grove",
@@ -726,7 +862,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-spruce-grove"
+  "slug": "city-of-spruce-grove",
+  "domains": [
+   "sprucegrove.org"
+  ]
  },
  {
   "name": "City of St. Albert",
@@ -742,7 +881,10 @@
   "email": "purchasing@stalbert.ca",
   "emailSource": "https://stalbert.ca/cosa/contact/departments/purchasing-services/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-st-albert"
+  "slug": "city-of-st-albert",
+  "domains": [
+   "stalbert.ca"
+  ]
  },
  {
   "name": "City of Wetaskiwin",
@@ -758,7 +900,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-wetaskiwin"
+  "slug": "city-of-wetaskiwin",
+  "domains": [
+   "wetaskiwin.ca"
+  ]
  },
  {
   "name": "County of Grande Prairie",
@@ -775,7 +920,10 @@
   "email": "procurement@countygp.ab.ca",
   "emailSource": "https://www.countygp.ab.ca/business-building-development/bidding-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "county-of-grande-prairie"
+  "slug": "county-of-grande-prairie",
+  "domains": [
+   "countygp.ab.ca"
+  ]
  },
  {
   "name": "Foothills County",
@@ -791,7 +939,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "foothills-county"
+  "slug": "foothills-county",
+  "domains": [
+   "foothillscountyab.ca"
+  ]
  },
  {
   "name": "Leduc County",
@@ -808,7 +959,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "leduc-county"
+  "slug": "leduc-county",
+  "domains": [
+   "leduc-county.com"
+  ]
  },
  {
   "name": "Lethbridge County",
@@ -822,7 +976,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lethbridge-county"
+  "slug": "lethbridge-county",
+  "domains": [
+   "lethcounty.ca"
+  ]
  },
  {
   "name": "Mountain View County",
@@ -838,7 +995,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mountain-view-county"
+  "slug": "mountain-view-county",
+  "domains": [
+   "mountainviewcounty.com"
+  ]
  },
  {
   "name": "Parkland County",
@@ -855,7 +1015,10 @@
   "email": "procurementservices@parklandcounty.com",
   "emailSource": "https://www.parklandcounty.com/county-government/bids-and-tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "parkland-county"
+  "slug": "parkland-county",
+  "domains": [
+   "parklandcounty.com"
+  ]
  },
  {
   "name": "Red Deer County",
@@ -871,7 +1034,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "red-deer-county"
+  "slug": "red-deer-county",
+  "domains": [
+   "rdcounty.ca"
+  ]
  },
  {
   "name": "Regional Municipality of Wood Buffalo",
@@ -888,7 +1054,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "regional-municipality-of-wood-buffalo"
+  "slug": "regional-municipality-of-wood-buffalo",
+  "domains": [
+   "rmwb.ca"
+  ]
  },
  {
   "name": "Rocky View County",
@@ -904,7 +1073,10 @@
   "email": "purchasing@rockyview.ca",
   "emailSource": "https://www.rockyview.ca/government/budget-finance-strategic-plan/procurement-and-supply-chain",
   "checkedOn": "2026-10-15",
-  "slug": "rocky-view-county"
+  "slug": "rocky-view-county",
+  "domains": [
+   "rockyview.ca"
+  ]
  },
  {
   "name": "Strathcona County",
@@ -921,7 +1093,10 @@
   "email": "purchasing.inquiries@strathcona.ca",
   "emailSource": "https://www.strathcona.ca/business-and-development/business/business-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "strathcona-county"
+  "slug": "strathcona-county",
+  "domains": [
+   "strathcona.ca"
+  ]
  },
  {
   "name": "Sturgeon County",
@@ -938,7 +1113,10 @@
   "email": "procurement@sturgeoncounty.ca",
   "emailSource": "https://www.sturgeoncounty.ca/business-investment/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "sturgeon-county"
+  "slug": "sturgeon-county",
+  "domains": [
+   "sturgeoncounty.ca"
+  ]
  },
  {
   "name": "Town of Banff",
@@ -954,7 +1132,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-banff"
+  "slug": "town-of-banff",
+  "domains": [
+   "banff.ca"
+  ]
  },
  {
   "name": "Town of Canmore",
@@ -972,7 +1153,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-canmore"
+  "slug": "town-of-canmore",
+  "domains": [
+   "canmore.ca"
+  ]
  },
  {
   "name": "Town of High River",
@@ -989,7 +1173,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-high-river"
+  "slug": "town-of-high-river",
+  "domains": [
+   "highriver.ca"
+  ]
  },
  {
   "name": "Town of Hinton",
@@ -1005,7 +1192,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-hinton"
+  "slug": "town-of-hinton",
+  "domains": [
+   "hinton.ca"
+  ]
  },
  {
   "name": "Town of Morinville",
@@ -1021,7 +1211,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-morinville"
+  "slug": "town-of-morinville",
+  "domains": [
+   "morinville.ca"
+  ]
  },
  {
   "name": "Town of Okotoks",
@@ -1038,7 +1231,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-okotoks"
+  "slug": "town-of-okotoks",
+  "domains": [
+   "okotoks.ca"
+  ]
  },
  {
   "name": "Town of Stony Plain",
@@ -1055,7 +1251,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-stony-plain"
+  "slug": "town-of-stony-plain",
+  "domains": [
+   "stonyplain.com"
+  ]
  },
  {
   "name": "Town of Strathmore",
@@ -1072,7 +1271,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-strathmore"
+  "slug": "town-of-strathmore",
+  "domains": [
+   "strathmore.ca"
+  ]
  },
  {
   "name": "Town of Sylvan Lake",
@@ -1090,7 +1292,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-sylvan-lake"
+  "slug": "town-of-sylvan-lake",
+  "domains": [
+   "sylvanlake.ca"
+  ]
  },
  {
   "name": "Town of Whitecourt",
@@ -1106,7 +1311,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-whitecourt"
+  "slug": "town-of-whitecourt",
+  "domains": [
+   "whitecourt.ca"
+  ]
  },
  {
   "name": "Black Gold School Division",
@@ -1123,7 +1331,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "black-gold-school-division"
+  "slug": "black-gold-school-division",
+  "domains": [
+   "blackgold.ca"
+  ]
  },
  {
   "name": "Calgary Board of Education",
@@ -1140,7 +1351,10 @@
   "email": "procurementservices@cbe.ab.ca",
   "emailSource": "https://www.cbe.ab.ca/vendors",
   "checkedOn": "2026-10-15",
-  "slug": "calgary-board-of-education"
+  "slug": "calgary-board-of-education",
+  "domains": [
+   "cbe.ab.ca"
+  ]
  },
  {
   "name": "Calgary Catholic School District",
@@ -1154,7 +1368,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "calgary-catholic-school-district"
+  "slug": "calgary-catholic-school-district",
+  "domains": [
+   "cssd.ab.ca"
+  ]
  },
  {
   "name": "Edmonton Catholic Schools",
@@ -1170,7 +1387,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "edmonton-catholic-schools"
+  "slug": "edmonton-catholic-schools",
+  "domains": [
+   "ecsd.net"
+  ]
  },
  {
   "name": "Edmonton Public Schools",
@@ -1186,7 +1406,10 @@
   "email": "pcs.general.information@epsb.ca",
   "emailSource": "https://www.epsb.ca/ourdistrict/departments/purchasingandcontractservices/",
   "checkedOn": "2026-10-15",
-  "slug": "edmonton-public-schools"
+  "slug": "edmonton-public-schools",
+  "domains": [
+   "epsb.ca"
+  ]
  },
  {
   "name": "Elk Island Public Schools",
@@ -1202,7 +1425,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "elk-island-public-schools"
+  "slug": "elk-island-public-schools",
+  "domains": [
+   "eips.ca"
+  ]
  },
  {
   "name": "Foothills School Division",
@@ -1216,7 +1442,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "foothills-school-division"
+  "slug": "foothills-school-division",
+  "domains": [
+   "foothillsschooldivision.ca"
+  ]
  },
  {
   "name": "Fort McMurray Catholic Schools",
@@ -1230,7 +1459,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fort-mcmurray-catholic-schools"
+  "slug": "fort-mcmurray-catholic-schools",
+  "domains": [
+   "fmcschools.ca"
+  ]
  },
  {
   "name": "Fort McMurray Public School Division",
@@ -1244,7 +1476,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fort-mcmurray-public-school-division"
+  "slug": "fort-mcmurray-public-school-division",
+  "domains": [
+   "fmpsd.ab.ca"
+  ]
  },
  {
   "name": "Golden Hills School Division",
@@ -1258,7 +1493,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "golden-hills-school-division"
+  "slug": "golden-hills-school-division",
+  "domains": [
+   "ghsd75.ca"
+  ]
  },
  {
   "name": "Grande Prairie Public School Division",
@@ -1272,7 +1510,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "grande-prairie-public-school-division"
+  "slug": "grande-prairie-public-school-division",
+  "domains": [
+   "gppsd.ab.ca"
+  ]
  },
  {
   "name": "Holy Spirit Catholic School Division",
@@ -1286,7 +1527,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "holy-spirit-catholic-school-division"
+  "slug": "holy-spirit-catholic-school-division",
+  "domains": [
+   "holyspirit.ab.ca"
+  ]
  },
  {
   "name": "Lethbridge School Division",
@@ -1300,7 +1544,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lethbridge-school-division"
+  "slug": "lethbridge-school-division",
+  "domains": [
+   "lethsd.ab.ca"
+  ]
  },
  {
   "name": "Medicine Hat Public School Division",
@@ -1314,7 +1561,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "medicine-hat-public-school-division"
+  "slug": "medicine-hat-public-school-division",
+  "domains": [
+   "mhpsd.ca"
+  ]
  },
  {
   "name": "Parkland School Division",
@@ -1330,7 +1580,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "parkland-school-division"
+  "slug": "parkland-school-division",
+  "domains": [
+   "psd.ca"
+  ]
  },
  {
   "name": "Red Deer Catholic Regional Schools",
@@ -1344,7 +1597,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "red-deer-catholic-regional-schools"
+  "slug": "red-deer-catholic-regional-schools",
+  "domains": [
+   "rdcrs.ca"
+  ]
  },
  {
   "name": "Red Deer Public Schools",
@@ -1358,7 +1614,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "red-deer-public-schools"
+  "slug": "red-deer-public-schools",
+  "domains": [
+   "rdpsd.ab.ca"
+  ]
  },
  {
   "name": "Rocky View Schools",
@@ -1374,7 +1633,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rocky-view-schools"
+  "slug": "rocky-view-schools",
+  "domains": [
+   "rockyview.ab.ca"
+  ]
  },
  {
   "name": "St. Albert Public Schools",
@@ -1388,7 +1650,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "st-albert-public-schools"
+  "slug": "st-albert-public-schools",
+  "domains": [
+   "spschools.org"
+  ]
  },
  {
   "name": "Sturgeon Public School Division",
@@ -1402,7 +1667,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sturgeon-public-school-division"
+  "slug": "sturgeon-public-school-division",
+  "domains": [
+   "sturgeon.ab.ca"
+  ]
  },
  {
   "name": "BC Housing",
@@ -1418,7 +1686,10 @@
   "email": "purchasing@bchousing.org",
   "emailSource": "https://www.bchousing.org/about/doing-business/bid-centre",
   "checkedOn": "2026-10-15",
-  "slug": "bc-housing"
+  "slug": "bc-housing",
+  "domains": [
+   "bchousing.org"
+  ]
  },
  {
   "name": "BC Pavilion Corporation (PavCo)",
@@ -1432,7 +1703,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "bc-pavilion-corporation-pavco"
+  "slug": "bc-pavilion-corporation-pavco",
+  "domains": []
  },
  {
   "name": "CivicInfo BC (aggregator)",
@@ -1449,7 +1721,8 @@
   "email": "bids@civicinfo.bc.ca",
   "emailSource": "https://www.civicinfo.bc.ca/rss/bids",
   "checkedOn": "2026-10-15",
-  "slug": "civicinfo-bc-aggregator"
+  "slug": "civicinfo-bc-aggregator",
+  "domains": []
  },
  {
   "name": "TransLink",
@@ -1465,7 +1738,10 @@
   "email": "procurement@translink.ca",
   "emailSource": "https://www.translink.ca/about-us/doing-business-with-translink/bidding-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "translink"
+  "slug": "translink",
+  "domains": [
+   "translink.ca"
+  ]
  },
  {
   "name": "Vancouver Airport Authority (YVR)",
@@ -1481,7 +1757,10 @@
   "email": "purchasing@yvr.ca",
   "emailSource": "https://www.yvr.ca/en/business/work-with-yvr/airport-suppliers",
   "checkedOn": "2026-10-15",
-  "slug": "vancouver-airport-authority-yvr"
+  "slug": "vancouver-airport-authority-yvr",
+  "domains": [
+   "yvr.ca"
+  ]
  },
  {
   "name": "Vancouver Public Library",
@@ -1495,7 +1774,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "vancouver-public-library"
+  "slug": "vancouver-public-library",
+  "domains": []
  },
  {
   "name": "Fraser Health",
@@ -1511,7 +1791,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fraser-health"
+  "slug": "fraser-health",
+  "domains": [
+   "phsa.ca"
+  ]
  },
  {
   "name": "Interior Health",
@@ -1527,7 +1810,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "interior-health"
+  "slug": "interior-health",
+  "domains": [
+   "phsa.ca"
+  ]
  },
  {
   "name": "Island Health",
@@ -1543,7 +1829,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "island-health"
+  "slug": "island-health",
+  "domains": [
+   "phsa.ca"
+  ]
  },
  {
   "name": "Northern Health",
@@ -1559,7 +1848,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "northern-health"
+  "slug": "northern-health",
+  "domains": [
+   "phsa.ca"
+  ]
  },
  {
   "name": "Provincial Health Services Authority",
@@ -1575,7 +1867,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "provincial-health-services-authority"
+  "slug": "provincial-health-services-authority",
+  "domains": [
+   "phsa.ca"
+  ]
  },
  {
   "name": "Vancouver Coastal Health",
@@ -1591,7 +1886,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "vancouver-coastal-health"
+  "slug": "vancouver-coastal-health",
+  "domains": [
+   "phsa.ca"
+  ]
  },
  {
   "name": "Metro Vancouver Housing",
@@ -1607,7 +1905,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "metro-vancouver-housing"
+  "slug": "metro-vancouver-housing",
+  "domains": [
+   "metrovancouver.org"
+  ]
  },
  {
   "name": "City of Abbotsford",
@@ -1624,7 +1925,10 @@
   "email": "purchasing@abbotsford.ca",
   "emailSource": "https://www.abbotsford.ca/city-hall/procurement-services",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-abbotsford"
+  "slug": "city-of-abbotsford",
+  "domains": [
+   "abbotsford.ca"
+  ]
  },
  {
   "name": "City of Burnaby",
@@ -1640,7 +1944,10 @@
   "email": "purchasing@burnaby.ca",
   "emailSource": "https://www.burnaby.ca/business/doing-business-with-the-city/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-burnaby"
+  "slug": "city-of-burnaby",
+  "domains": [
+   "burnaby.ca"
+  ]
  },
  {
   "name": "City of Campbell River",
@@ -1657,7 +1964,10 @@
   "email": "purchasing@campbellriver.ca",
   "emailSource": "https://www.campbellriver.ca/business-economy/do-business-city/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-campbell-river"
+  "slug": "city-of-campbell-river",
+  "domains": [
+   "campbellriver.ca"
+  ]
  },
  {
   "name": "City of Chilliwack",
@@ -1673,7 +1983,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-chilliwack"
+  "slug": "city-of-chilliwack",
+  "domains": [
+   "chilliwack.com"
+  ]
  },
  {
   "name": "City of Colwood",
@@ -1690,7 +2003,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-colwood"
+  "slug": "city-of-colwood",
+  "domains": [
+   "colwood.ca"
+  ]
  },
  {
   "name": "City of Coquitlam",
@@ -1707,7 +2023,10 @@
   "email": "bid@coquitlam.ca",
   "emailSource": "https://www.coquitlam.ca/Bids.aspx",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-coquitlam"
+  "slug": "city-of-coquitlam",
+  "domains": [
+   "coquitlam.ca"
+  ]
  },
  {
   "name": "City of Courtenay",
@@ -1724,7 +2043,10 @@
   "email": "purchasing@courtenay.ca",
   "emailSource": "https://www.courtenay.ca/business-and-building/business-resources/doing-business-city/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-courtenay"
+  "slug": "city-of-courtenay",
+  "domains": [
+   "courtenay.ca"
+  ]
  },
  {
   "name": "City of Cranbrook",
@@ -1740,7 +2062,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-cranbrook"
+  "slug": "city-of-cranbrook",
+  "domains": [
+   "cranbrook.ca"
+  ]
  },
  {
   "name": "City of Delta",
@@ -1756,7 +2081,10 @@
   "email": "purchasing@delta.ca",
   "emailSource": "https://www.delta.ca/city-hall/doing-business/bidding-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-delta"
+  "slug": "city-of-delta",
+  "domains": [
+   "delta.ca"
+  ]
  },
  {
   "name": "City of Fort St. John",
@@ -1773,7 +2101,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-fort-st-john"
+  "slug": "city-of-fort-st-john",
+  "domains": [
+   "fortstjohn.ca"
+  ]
  },
  {
   "name": "City of Kamloops",
@@ -1790,7 +2121,10 @@
   "email": "procurement@kamloops.ca",
   "emailSource": "https://www.kamloops.ca/city-hall/procurement-services/bid-tender-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-kamloops"
+  "slug": "city-of-kamloops",
+  "domains": [
+   "kamloops.ca"
+  ]
  },
  {
   "name": "City of Kelowna",
@@ -1808,7 +2142,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-kelowna"
+  "slug": "city-of-kelowna",
+  "domains": [
+   "kelowna.ca"
+  ]
  },
  {
   "name": "City of Langford",
@@ -1824,7 +2161,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-langford"
+  "slug": "city-of-langford",
+  "domains": [
+   "langford.ca"
+  ]
  },
  {
   "name": "City of Langley",
@@ -1841,7 +2181,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-langley"
+  "slug": "city-of-langley",
+  "domains": []
  },
  {
   "name": "City of Maple Ridge",
@@ -1858,7 +2199,10 @@
   "email": "procurement@mapleridge.ca",
   "emailSource": "https://www.mapleridge.ca/build-do-business/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-maple-ridge"
+  "slug": "city-of-maple-ridge",
+  "domains": [
+   "mapleridge.ca"
+  ]
  },
  {
   "name": "City of Mission",
@@ -1874,7 +2218,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-mission"
+  "slug": "city-of-mission",
+  "domains": []
  },
  {
   "name": "City of Nanaimo",
@@ -1890,7 +2235,10 @@
   "email": "procurement@nanaimo.ca",
   "emailSource": "https://www.nanaimo.ca/doing-business/procurement-services/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-nanaimo"
+  "slug": "city-of-nanaimo",
+  "domains": [
+   "nanaimo.ca"
+  ]
  },
  {
   "name": "City of Nelson",
@@ -1908,7 +2256,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-nelson"
+  "slug": "city-of-nelson",
+  "domains": [
+   "nelson.ca"
+  ]
  },
  {
   "name": "City of New Westminster",
@@ -1924,7 +2275,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-new-westminster"
+  "slug": "city-of-new-westminster",
+  "domains": [
+   "newwestcity.ca"
+  ]
  },
  {
   "name": "City of North Vancouver",
@@ -1941,7 +2295,10 @@
   "email": "purchasing@cnv.org",
   "emailSource": "https://www.cnv.org/Business-Development/Bid-Notices",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-north-vancouver"
+  "slug": "city-of-north-vancouver",
+  "domains": [
+   "cnv.org"
+  ]
  },
  {
   "name": "City of Penticton",
@@ -1960,7 +2317,10 @@
   "email": "procurement@penticton.ca",
   "emailSource": "https://www.penticton.ca/business-building/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-penticton"
+  "slug": "city-of-penticton",
+  "domains": [
+   "penticton.ca"
+  ]
  },
  {
   "name": "City of Pitt Meadows",
@@ -1977,7 +2337,10 @@
   "email": "purchasing@pittmeadows.ca",
   "emailSource": "https://www.pittmeadows.ca/business-and-building/doing-business-city/bids-and-rfps",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-pitt-meadows"
+  "slug": "city-of-pitt-meadows",
+  "domains": [
+   "pittmeadows.ca"
+  ]
  },
  {
   "name": "City of Port Coquitlam",
@@ -1993,7 +2356,10 @@
   "email": "purchasing@portcoquitlam.ca",
   "emailSource": "https://www.portcoquitlam.ca/contact-us/purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-port-coquitlam"
+  "slug": "city-of-port-coquitlam",
+  "domains": [
+   "portcoquitlam.ca"
+  ]
  },
  {
   "name": "City of Port Moody",
@@ -2010,7 +2376,10 @@
   "email": "purchasing@portmoody.ca",
   "emailSource": "https://www.portmoody.ca/business-development-and-planning/bids-and-contracts/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-port-moody"
+  "slug": "city-of-port-moody",
+  "domains": [
+   "portmoody.ca"
+  ]
  },
  {
   "name": "City of Prince George",
@@ -2026,7 +2395,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-prince-george"
+  "slug": "city-of-prince-george",
+  "domains": [
+   "princegeorge.ca"
+  ]
  },
  {
   "name": "City of Prince Rupert",
@@ -2042,7 +2414,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-prince-rupert"
+  "slug": "city-of-prince-rupert",
+  "domains": [
+   "princerupert.ca"
+  ]
  },
  {
   "name": "City of Richmond",
@@ -2059,7 +2434,10 @@
   "email": "purchasing@richmond.ca",
   "emailSource": "https://www.richmond.ca/business-development/tenders.htm",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-richmond"
+  "slug": "city-of-richmond",
+  "domains": [
+   "richmond.ca"
+  ]
  },
  {
   "name": "City of Salmon Arm",
@@ -2075,7 +2453,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-salmon-arm"
+  "slug": "city-of-salmon-arm",
+  "domains": [
+   "salmonarm.ca"
+  ]
  },
  {
   "name": "City of Surrey",
@@ -2091,7 +2472,10 @@
   "email": "purchasing@surrey.ca",
   "emailSource": "https://www.surrey.ca/business-economy/tenders-rfqs-rfps/cloverdale-arena-dehumidifier-replacement",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-surrey"
+  "slug": "city-of-surrey",
+  "domains": [
+   "surrey.ca"
+  ]
  },
  {
   "name": "City of Terrace",
@@ -2108,7 +2492,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-terrace"
+  "slug": "city-of-terrace",
+  "domains": [
+   "terrace.ca"
+  ]
  },
  {
   "name": "City of Vancouver",
@@ -2124,7 +2511,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-vancouver"
+  "slug": "city-of-vancouver",
+  "domains": [
+   "vancouver.ca"
+  ]
  },
  {
   "name": "City of Vernon",
@@ -2143,7 +2533,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-vernon"
+  "slug": "city-of-vernon",
+  "domains": [
+   "vernon.ca"
+  ]
  },
  {
   "name": "City of Victoria",
@@ -2159,7 +2552,10 @@
   "email": "purchasing@victoria.ca",
   "emailSource": "https://www.victoria.ca/building-business/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-victoria"
+  "slug": "city-of-victoria",
+  "domains": [
+   "victoria.ca"
+  ]
  },
  {
   "name": "City of White Rock",
@@ -2175,7 +2571,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-white-rock"
+  "slug": "city-of-white-rock",
+  "domains": [
+   "whiterockcity.ca"
+  ]
  },
  {
   "name": "City of Williams Lake",
@@ -2191,7 +2590,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-williams-lake"
+  "slug": "city-of-williams-lake",
+  "domains": [
+   "williamslake.ca"
+  ]
  },
  {
   "name": "District of North Vancouver",
@@ -2207,7 +2609,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "district-of-north-vancouver"
+  "slug": "district-of-north-vancouver",
+  "domains": []
  },
  {
   "name": "District of Saanich",
@@ -2225,7 +2628,10 @@
   "email": "purchase@saanich.ca",
   "emailSource": "https://www.saanich.ca/EN/main/business/selling-to-saanich/bid-opportunities.html",
   "checkedOn": "2026-10-15",
-  "slug": "district-of-saanich"
+  "slug": "district-of-saanich",
+  "domains": [
+   "saanich.ca"
+  ]
  },
  {
   "name": "District of Squamish",
@@ -2241,7 +2647,10 @@
   "email": "procurement@squamish.ca",
   "emailSource": "https://squamish.ca/business-permits-and-services/business-development/doing-business-with-the-district/",
   "checkedOn": "2026-10-15",
-  "slug": "district-of-squamish"
+  "slug": "district-of-squamish",
+  "domains": [
+   "squamish.ca"
+  ]
  },
  {
   "name": "District of West Vancouver",
@@ -2257,7 +2666,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "district-of-west-vancouver"
+  "slug": "district-of-west-vancouver",
+  "domains": [
+   "westvancouver.ca"
+  ]
  },
  {
   "name": "Municipality of North Cowichan",
@@ -2273,7 +2685,10 @@
   "email": "procurement@northcowichan.ca",
   "emailSource": "https://www.northcowichan.ca/business-development/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-north-cowichan"
+  "slug": "municipality-of-north-cowichan",
+  "domains": [
+   "northcowichan.ca"
+  ]
  },
  {
   "name": "Resort Municipality of Whistler",
@@ -2289,7 +2704,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "resort-municipality-of-whistler"
+  "slug": "resort-municipality-of-whistler",
+  "domains": [
+   "whistler.ca"
+  ]
  },
  {
   "name": "Township of Langley",
@@ -2305,7 +2723,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "township-of-langley"
+  "slug": "township-of-langley",
+  "domains": [
+   "tol.ca"
+  ]
  },
  {
   "name": "BCIT",
@@ -2319,7 +2740,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "bcit"
+  "slug": "bcit",
+  "domains": []
  },
  {
   "name": "Camosun College",
@@ -2335,7 +2757,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "camosun-college"
+  "slug": "camosun-college",
+  "domains": [
+   "camosun.ca"
+  ]
  },
  {
   "name": "Capilano University",
@@ -2349,7 +2774,10 @@
   "email": "purchasing@capilanou.ca",
   "emailSource": "https://www.capilanou.ca/about-capu/connect-with-capu/supplier-information/doing-business-with-capilano-university/",
   "checkedOn": "2026-10-15",
-  "slug": "capilano-university"
+  "slug": "capilano-university",
+  "domains": [
+   "capilanou.ca"
+  ]
  },
  {
   "name": "Douglas College",
@@ -2366,7 +2794,10 @@
   "email": "procurement@douglascollege.ca",
   "emailSource": "https://www.douglascollege.ca/about-douglas/campus-information/finance-and-procurement/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "douglas-college"
+  "slug": "douglas-college",
+  "domains": [
+   "douglascollege.ca"
+  ]
  },
  {
   "name": "Kwantlen Polytechnic University",
@@ -2382,7 +2813,10 @@
   "email": "procurement@kpu.ca",
   "emailSource": "https://www.kpu.ca/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "kwantlen-polytechnic-university"
+  "slug": "kwantlen-polytechnic-university",
+  "domains": [
+   "kpu.ca"
+  ]
  },
  {
   "name": "Langara College",
@@ -2399,7 +2833,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "langara-college"
+  "slug": "langara-college",
+  "domains": [
+   "langara.ca"
+  ]
  },
  {
   "name": "Okanagan College",
@@ -2413,7 +2850,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "okanagan-college"
+  "slug": "okanagan-college",
+  "domains": []
  },
  {
   "name": "Simon Fraser University",
@@ -2430,7 +2868,10 @@
   "email": "procurement@sfu.ca",
   "emailSource": "https://www.sfu.ca/finance/services/procurement/competitive-bidding.html",
   "checkedOn": "2026-10-15",
-  "slug": "simon-fraser-university"
+  "slug": "simon-fraser-university",
+  "domains": [
+   "sfu.ca"
+  ]
  },
  {
   "name": "Thompson Rivers University",
@@ -2444,7 +2885,10 @@
   "email": "purchasing@tru.ca",
   "emailSource": "https://www.tru.ca/purchasing/contact-us.html",
   "checkedOn": "2026-10-15",
-  "slug": "thompson-rivers-university"
+  "slug": "thompson-rivers-university",
+  "domains": [
+   "tru.ca"
+  ]
  },
  {
   "name": "University of British Columbia",
@@ -2461,7 +2905,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-of-british-columbia"
+  "slug": "university-of-british-columbia",
+  "domains": [
+   "ubc.ca"
+  ]
  },
  {
   "name": "University of Northern British Columbia",
@@ -2477,7 +2924,10 @@
   "email": "purchasing@unbc.ca",
   "emailSource": "https://www.unbc.ca/contracts-supply-chain-management",
   "checkedOn": "2026-10-15",
-  "slug": "university-of-northern-british-columbia"
+  "slug": "university-of-northern-british-columbia",
+  "domains": [
+   "unbc.ca"
+  ]
  },
  {
   "name": "University of Victoria",
@@ -2495,7 +2945,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-of-victoria"
+  "slug": "university-of-victoria",
+  "domains": [
+   "uvic.ca"
+  ]
  },
  {
   "name": "Vancouver Community College",
@@ -2511,7 +2964,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "vancouver-community-college"
+  "slug": "vancouver-community-college",
+  "domains": [
+   "vcc.ca"
+  ]
  },
  {
   "name": "Vancouver Island University",
@@ -2525,7 +2981,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "vancouver-island-university"
+  "slug": "vancouver-island-university",
+  "domains": []
  },
  {
   "name": "Government of British Columbia",
@@ -2542,7 +2999,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-09",
-  "slug": "government-of-british-columbia"
+  "slug": "government-of-british-columbia",
+  "domains": [
+   "gov.bc.ca"
+  ]
  },
  {
   "name": "Capital Regional District",
@@ -2558,7 +3018,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "capital-regional-district"
+  "slug": "capital-regional-district",
+  "domains": [
+   "crd.ca"
+  ]
  },
  {
   "name": "Fraser Valley Regional District",
@@ -2575,7 +3038,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fraser-valley-regional-district"
+  "slug": "fraser-valley-regional-district",
+  "domains": [
+   "fvrd.ca"
+  ]
  },
  {
   "name": "Metro Vancouver",
@@ -2591,7 +3057,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "metro-vancouver"
+  "slug": "metro-vancouver",
+  "domains": [
+   "metrovancouver.org"
+  ]
  },
  {
   "name": "Regional District of Central Okanagan",
@@ -2607,7 +3076,10 @@
   "email": "purchasing@rdco.com",
   "emailSource": "https://www.rdco.com/your-government/bid-opportunities-and-purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "regional-district-of-central-okanagan"
+  "slug": "regional-district-of-central-okanagan",
+  "domains": [
+   "rdco.com"
+  ]
  },
  {
   "name": "Regional District of Nanaimo",
@@ -2623,7 +3095,10 @@
   "email": "finance@rdn.bc.ca",
   "emailSource": "https://rdn.bc.ca/current-bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "regional-district-of-nanaimo"
+  "slug": "regional-district-of-nanaimo",
+  "domains": [
+   "rdn.bc.ca"
+  ]
  },
  {
   "name": "SD23 Central Okanagan",
@@ -2637,7 +3112,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd23-central-okanagan"
+  "slug": "sd23-central-okanagan",
+  "domains": [
+   "sd23.bc.ca"
+  ]
  },
  {
   "name": "SD33 Chilliwack",
@@ -2653,7 +3131,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd33-chilliwack"
+  "slug": "sd33-chilliwack",
+  "domains": [
+   "sd33.bc.ca"
+  ]
  },
  {
   "name": "SD34 Abbotsford",
@@ -2667,7 +3148,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd34-abbotsford"
+  "slug": "sd34-abbotsford",
+  "domains": []
  },
  {
   "name": "SD35 Langley",
@@ -2683,7 +3165,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd35-langley"
+  "slug": "sd35-langley",
+  "domains": [
+   "sd35.bc.ca"
+  ]
  },
  {
   "name": "SD36 Surrey",
@@ -2699,7 +3184,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd36-surrey"
+  "slug": "sd36-surrey",
+  "domains": [
+   "surreyschools.ca"
+  ]
  },
  {
   "name": "SD37 Delta",
@@ -2713,7 +3201,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd37-delta"
+  "slug": "sd37-delta",
+  "domains": []
  },
  {
   "name": "SD38 Richmond",
@@ -2727,7 +3216,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd38-richmond"
+  "slug": "sd38-richmond",
+  "domains": []
  },
  {
   "name": "SD39 Vancouver",
@@ -2743,7 +3233,10 @@
   "email": "purchasing@vsb.bc.ca",
   "emailSource": "https://www.vsb.bc.ca/purchasing-and-administrative-services",
   "checkedOn": "2026-10-15",
-  "slug": "sd39-vancouver"
+  "slug": "sd39-vancouver",
+  "domains": [
+   "vsb.bc.ca"
+  ]
  },
  {
   "name": "SD41 Burnaby",
@@ -2757,7 +3250,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd41-burnaby"
+  "slug": "sd41-burnaby",
+  "domains": []
  },
  {
   "name": "SD42 Maple Ridge-Pitt Meadows",
@@ -2771,7 +3265,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd42-maple-ridge-pitt-meadows"
+  "slug": "sd42-maple-ridge-pitt-meadows",
+  "domains": []
  },
  {
   "name": "SD43 Coquitlam",
@@ -2785,7 +3280,10 @@
   "email": "purchasing@sd43.bc.ca",
   "emailSource": "https://www.sd43.bc.ca/purchasing-transportation",
   "checkedOn": "2026-10-15",
-  "slug": "sd43-coquitlam"
+  "slug": "sd43-coquitlam",
+  "domains": [
+   "sd43.bc.ca"
+  ]
  },
  {
   "name": "SD44 North Vancouver",
@@ -2799,7 +3297,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd44-north-vancouver"
+  "slug": "sd44-north-vancouver",
+  "domains": []
  },
  {
   "name": "SD57 Prince George",
@@ -2813,7 +3312,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd57-prince-george"
+  "slug": "sd57-prince-george",
+  "domains": []
  },
  {
   "name": "SD61 Greater Victoria",
@@ -2829,7 +3329,10 @@
   "email": "purchasing@sd61.bc.ca",
   "emailSource": "https://www.sd61.bc.ca/our-district/departments-services/financial-services/purchasing-services/sd61-bid-opportunites/",
   "checkedOn": "2026-10-15",
-  "slug": "sd61-greater-victoria"
+  "slug": "sd61-greater-victoria",
+  "domains": [
+   "sd61.bc.ca"
+  ]
  },
  {
   "name": "SD62 Sooke",
@@ -2843,7 +3346,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd62-sooke"
+  "slug": "sd62-sooke",
+  "domains": []
  },
  {
   "name": "SD63 Saanich",
@@ -2857,7 +3361,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd63-saanich"
+  "slug": "sd63-saanich",
+  "domains": []
  },
  {
   "name": "SD68 Nanaimo-Ladysmith",
@@ -2873,7 +3378,10 @@
   "email": "purchasing@sd68.bc.ca",
   "emailSource": "https://www.sd68.bc.ca/departments/purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "sd68-nanaimo-ladysmith"
+  "slug": "sd68-nanaimo-ladysmith",
+  "domains": [
+   "sd68.bc.ca"
+  ]
  },
  {
   "name": "SD73 Kamloops-Thompson",
@@ -2887,7 +3395,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sd73-kamloops-thompson"
+  "slug": "sd73-kamloops-thompson",
+  "domains": []
  },
  {
   "name": "Manitoba Hydro",
@@ -2903,7 +3412,10 @@
   "email": "purchasing@hydro.mb.ca",
   "emailSource": "https://www.hydro.mb.ca/corporate/purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "manitoba-hydro"
+  "slug": "manitoba-hydro",
+  "domains": [
+   "hydro.mb.ca"
+  ]
  },
  {
   "name": "Manitoba Liquor & Lotteries",
@@ -2919,7 +3431,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "manitoba-liquor-and-lotteries"
+  "slug": "manitoba-liquor-and-lotteries",
+  "domains": [
+   "mbllpartners.ca"
+  ]
  },
  {
   "name": "Winnipeg Airports Authority",
@@ -2933,7 +3448,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "winnipeg-airports-authority"
+  "slug": "winnipeg-airports-authority",
+  "domains": [
+   "waa.ca"
+  ]
  },
  {
   "name": "Shared Health Manitoba",
@@ -2949,7 +3467,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "shared-health-manitoba"
+  "slug": "shared-health-manitoba",
+  "domains": [
+   "sharedhealthmb.ca"
+  ]
  },
  {
   "name": "Winnipeg Regional Health Authority",
@@ -2965,7 +3486,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "winnipeg-regional-health-authority"
+  "slug": "winnipeg-regional-health-authority",
+  "domains": [
+   "wrha.mb.ca"
+  ]
  },
  {
   "name": "Manitoba Housing",
@@ -2982,7 +3506,10 @@
   "email": "mhprocurement@gov.mb.ca",
   "emailSource": "https://www.gov.mb.ca/housing/business/procurement.html",
   "checkedOn": "2026-10-15",
-  "slug": "manitoba-housing"
+  "slug": "manitoba-housing",
+  "domains": [
+   "gov.mb.ca"
+  ]
  },
  {
   "name": "City of Brandon",
@@ -2998,7 +3525,10 @@
   "email": "purchasing@brandon.ca",
   "emailSource": "https://purchasing.brandon.ca/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-brandon"
+  "slug": "city-of-brandon",
+  "domains": [
+   "brandon.ca"
+  ]
  },
  {
   "name": "City of Dauphin",
@@ -3014,7 +3544,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-dauphin"
+  "slug": "city-of-dauphin",
+  "domains": [
+   "dauphin.ca"
+  ]
  },
  {
   "name": "City of Morden",
@@ -3028,7 +3561,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-morden"
+  "slug": "city-of-morden",
+  "domains": [
+   "mymorden.ca"
+  ]
  },
  {
   "name": "City of Portage la Prairie",
@@ -3044,7 +3580,10 @@
   "email": "tenders@city-plap.com",
   "emailSource": "https://www.city-plap.com/news/posts/tender-for-the-supply-and-installation-of-one-back-up-generator/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-portage-la-prairie"
+  "slug": "city-of-portage-la-prairie",
+  "domains": [
+   "city-plap.com"
+  ]
  },
  {
   "name": "City of Selkirk",
@@ -3060,7 +3599,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-selkirk"
+  "slug": "city-of-selkirk",
+  "domains": [
+   "myselkirk.ca"
+  ]
  },
  {
   "name": "City of Steinbach",
@@ -3074,7 +3616,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-steinbach"
+  "slug": "city-of-steinbach",
+  "domains": [
+   "steinbach.ca"
+  ]
  },
  {
   "name": "City of Thompson",
@@ -3090,7 +3635,10 @@
   "email": "purchasingagent@thompson.ca",
   "emailSource": "https://www.thompson.ca/p/tender-rfp",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-thompson"
+  "slug": "city-of-thompson",
+  "domains": [
+   "thompson.ca"
+  ]
  },
  {
   "name": "City of Winkler",
@@ -3106,7 +3654,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-winkler"
+  "slug": "city-of-winkler",
+  "domains": [
+   "cityofwinkler.ca"
+  ]
  },
  {
   "name": "City of Winnipeg",
@@ -3123,7 +3674,10 @@
   "email": "purchasing@winnipeg.ca",
   "emailSource": "https://legacy.winnipeg.ca/matmgt/contact.stm",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-winnipeg"
+  "slug": "city-of-winnipeg",
+  "domains": [
+   "winnipeg.ca"
+  ]
  },
  {
   "name": "RM of East St. Paul",
@@ -3137,7 +3691,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rm-of-east-st-paul"
+  "slug": "rm-of-east-st-paul",
+  "domains": [
+   "eaststpaul.com"
+  ]
  },
  {
   "name": "RM of Hanover",
@@ -3153,7 +3710,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rm-of-hanover"
+  "slug": "rm-of-hanover",
+  "domains": [
+   "hanovermb.ca"
+  ]
  },
  {
   "name": "RM of Macdonald",
@@ -3167,7 +3727,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rm-of-macdonald"
+  "slug": "rm-of-macdonald",
+  "domains": [
+   "rmofmacdonald.com"
+  ]
  },
  {
   "name": "RM of Springfield",
@@ -3184,7 +3747,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rm-of-springfield"
+  "slug": "rm-of-springfield",
+  "domains": [
+   "rmofspringfield.ca"
+  ]
  },
  {
   "name": "RM of St. Andrews",
@@ -3198,7 +3764,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rm-of-st-andrews"
+  "slug": "rm-of-st-andrews",
+  "domains": [
+   "rmofstandrews.com"
+  ]
  },
  {
   "name": "RM of West St. Paul",
@@ -3214,7 +3783,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rm-of-west-st-paul"
+  "slug": "rm-of-west-st-paul",
+  "domains": [
+   "weststpaul.com"
+  ]
  },
  {
   "name": "Assiniboine College (ACC)",
@@ -3228,7 +3800,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "assiniboine-college-acc"
+  "slug": "assiniboine-college-acc",
+  "domains": [
+   "assiniboine.net"
+  ]
  },
  {
   "name": "Brandon University",
@@ -3242,7 +3817,10 @@
   "email": "purchasing@brandonu.ca",
   "emailSource": "https://www.brandonu.ca/finance/faculty-staff-resources/purchasing-department/",
   "checkedOn": "2026-10-15",
-  "slug": "brandon-university"
+  "slug": "brandon-university",
+  "domains": [
+   "brandonu.ca"
+  ]
  },
  {
   "name": "Red River College Polytechnic",
@@ -3258,7 +3836,10 @@
   "email": "procurement@rrc.ca",
   "emailSource": "https://www.rrc.ca/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "red-river-college-polytechnic"
+  "slug": "red-river-college-polytechnic",
+  "domains": [
+   "rrc.ca"
+  ]
  },
  {
   "name": "University of Manitoba",
@@ -3275,7 +3856,10 @@
   "email": "purchasing@umanitoba.ca",
   "emailSource": "https://umanitoba.ca/finance/suppliers",
   "checkedOn": "2026-10-15",
-  "slug": "university-of-manitoba"
+  "slug": "university-of-manitoba",
+  "domains": [
+   "umanitoba.ca"
+  ]
  },
  {
   "name": "University of Winnipeg",
@@ -3289,7 +3873,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-of-winnipeg"
+  "slug": "university-of-winnipeg",
+  "domains": [
+   "uwinnipeg.ca"
+  ]
  },
  {
   "name": "Province of Manitoba",
@@ -3305,7 +3892,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "province-of-manitoba"
+  "slug": "province-of-manitoba",
+  "domains": [
+   "gov.mb.ca"
+  ]
  },
  {
   "name": "Brandon School Division",
@@ -3322,7 +3912,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "brandon-school-division"
+  "slug": "brandon-school-division",
+  "domains": [
+   "bsd.ca"
+  ]
  },
  {
   "name": "Louis Riel School Division",
@@ -3338,7 +3931,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "louis-riel-school-division"
+  "slug": "louis-riel-school-division",
+  "domains": [
+   "lrsd.net"
+  ]
  },
  {
   "name": "Pembina Trails School Division",
@@ -3355,7 +3951,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "pembina-trails-school-division"
+  "slug": "pembina-trails-school-division",
+  "domains": [
+   "pembinatrails.ca"
+  ]
  },
  {
   "name": "River East Transcona School Division",
@@ -3371,7 +3970,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "river-east-transcona-school-division"
+  "slug": "river-east-transcona-school-division",
+  "domains": [
+   "retsd.mb.ca"
+  ]
  },
  {
   "name": "Seven Oaks School Division",
@@ -3387,7 +3989,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "seven-oaks-school-division"
+  "slug": "seven-oaks-school-division",
+  "domains": [
+   "7oaks.org"
+  ]
  },
  {
   "name": "St. James-Assiniboia School Division",
@@ -3403,7 +4008,10 @@
   "email": "purchasing@sjasd.ca",
   "emailSource": "https://www.sjasd.ca/AboutUs/TendersandPurchasing/Pages/default.aspx",
   "checkedOn": "2026-10-15",
-  "slug": "st-james-assiniboia-school-division"
+  "slug": "st-james-assiniboia-school-division",
+  "domains": [
+   "sjasd.ca"
+  ]
  },
  {
   "name": "Winnipeg School Division",
@@ -3419,7 +4027,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "winnipeg-school-division"
+  "slug": "winnipeg-school-division",
+  "domains": [
+   "winnipegsd.ca"
+  ]
  },
  {
   "name": "Government of New Brunswick",
@@ -3436,7 +4047,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-09",
-  "slug": "government-of-new-brunswick"
+  "slug": "government-of-new-brunswick",
+  "domains": [
+   "gnb.ca"
+  ]
  },
  {
   "name": "Government of Newfoundland and Labrador",
@@ -3453,7 +4067,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-09",
-  "slug": "government-of-newfoundland-and-labrador"
+  "slug": "government-of-newfoundland-and-labrador",
+  "domains": [
+   "gov.nl.ca"
+  ]
  },
  {
   "name": "Halifax Port Authority",
@@ -3469,7 +4086,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "halifax-port-authority"
+  "slug": "halifax-port-authority",
+  "domains": [
+   "portofhalifax.ca"
+  ]
  },
  {
   "name": "Halifax Stanfield International Airport (HIAA)",
@@ -3485,7 +4105,10 @@
   "email": "info@halifaxstanfield.ca",
   "emailSource": "https://halifaxstanfield.ca/business/business-opportunities/rfps-tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "halifax-stanfield-international-airport-hiaa"
+  "slug": "halifax-stanfield-international-airport-hiaa",
+  "domains": [
+   "halifaxstanfield.ca"
+  ]
  },
  {
   "name": "Halifax Water",
@@ -3502,7 +4125,10 @@
   "email": "procurement@halifaxwater.ca",
   "emailSource": "https://halifaxwater.ca/procurement-tender-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "halifax-water"
+  "slug": "halifax-water",
+  "domains": [
+   "halifaxwater.ca"
+  ]
  },
  {
   "name": "IWK Health",
@@ -3518,7 +4144,11 @@
   "email": "procurement@iwk.nshealth.ca",
   "emailSource": "https://iwkhealth.ca/about/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "iwk-health"
+  "slug": "iwk-health",
+  "domains": [
+   "iwkhealth.ca",
+   "nshealth.ca"
+  ]
  },
  {
   "name": "Nova Scotia Health",
@@ -3534,7 +4164,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nova-scotia-health"
+  "slug": "nova-scotia-health",
+  "domains": [
+   "nshealth.ca"
+  ]
  },
  {
   "name": "Nova Scotia Provincial Housing Agency (Housing Nova Scotia)",
@@ -3550,7 +4183,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nova-scotia-provincial-housing-agency-housing-nova-scotia"
+  "slug": "nova-scotia-provincial-housing-agency-housing-nova-scotia",
+  "domains": []
  },
  {
   "name": "Cape Breton Regional Municipality",
@@ -3566,7 +4200,10 @@
   "email": "purchase@cbrm.ns.ca",
   "emailSource": "https://cbrm.ns.ca/business/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "cape-breton-regional-municipality"
+  "slug": "cape-breton-regional-municipality",
+  "domains": [
+   "cbrm.ns.ca"
+  ]
  },
  {
   "name": "Halifax Regional Municipality",
@@ -3583,7 +4220,10 @@
   "email": "procure@halifax.ca",
   "emailSource": "https://www.halifax.ca/business/doing-business-halifax/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "halifax-regional-municipality"
+  "slug": "halifax-regional-municipality",
+  "domains": [
+   "halifax.ca"
+  ]
  },
  {
   "name": "Municipality of Colchester",
@@ -3600,7 +4240,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-colchester"
+  "slug": "municipality-of-colchester",
+  "domains": [
+   "colchester.ca"
+  ]
  },
  {
   "name": "Municipality of East Hants",
@@ -3616,7 +4259,10 @@
   "email": "procurement@easthants.ca",
   "emailSource": "https://www.easthants.ca/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-east-hants"
+  "slug": "municipality-of-east-hants",
+  "domains": [
+   "easthants.ca"
+  ]
  },
  {
   "name": "Municipality of Pictou County",
@@ -3632,7 +4278,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-pictou-county"
+  "slug": "municipality-of-pictou-county",
+  "domains": [
+   "munpict.ca"
+  ]
  },
  {
   "name": "Municipality of the County of Antigonish",
@@ -3649,7 +4298,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-the-county-of-antigonish"
+  "slug": "municipality-of-the-county-of-antigonish",
+  "domains": [
+   "antigonishcounty.ca"
+  ]
  },
  {
   "name": "Municipality of the County of Kings",
@@ -3666,7 +4318,10 @@
   "email": "procurement@countyofkings.ca",
   "emailSource": "https://www.countyofkings.ca/business/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-the-county-of-kings"
+  "slug": "municipality-of-the-county-of-kings",
+  "domains": [
+   "countyofkings.ca"
+  ]
  },
  {
   "name": "Municipality of the District of Lunenburg",
@@ -3682,7 +4337,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-the-district-of-lunenburg"
+  "slug": "municipality-of-the-district-of-lunenburg",
+  "domains": [
+   "modl.ca"
+  ]
  },
  {
   "name": "Town of Amherst",
@@ -3699,7 +4357,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-amherst"
+  "slug": "town-of-amherst",
+  "domains": [
+   "amherst.ca"
+  ]
  },
  {
   "name": "Town of Antigonish",
@@ -3715,7 +4376,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-antigonish"
+  "slug": "town-of-antigonish",
+  "domains": [
+   "townofantigonish.ca"
+  ]
  },
  {
   "name": "Town of Bridgewater",
@@ -3732,7 +4396,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-bridgewater"
+  "slug": "town-of-bridgewater",
+  "domains": [
+   "bridgewater.ca"
+  ]
  },
  {
   "name": "Town of Kentville",
@@ -3749,7 +4416,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-kentville"
+  "slug": "town-of-kentville",
+  "domains": [
+   "kentville.ca"
+  ]
  },
  {
   "name": "Town of Lunenburg",
@@ -3765,7 +4435,10 @@
   "email": "purchasing@townoflunenburg.ca",
   "emailSource": "https://www.townoflunenburg.ca/purchasing.html",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-lunenburg"
+  "slug": "town-of-lunenburg",
+  "domains": [
+   "townoflunenburg.ca"
+  ]
  },
  {
   "name": "Town of New Glasgow",
@@ -3781,7 +4454,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-new-glasgow"
+  "slug": "town-of-new-glasgow",
+  "domains": [
+   "newglasgow.ca"
+  ]
  },
  {
   "name": "Town of Truro",
@@ -3797,7 +4473,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-truro"
+  "slug": "town-of-truro",
+  "domains": [
+   "truro.ca"
+  ]
  },
  {
   "name": "Town of Wolfville",
@@ -3814,7 +4493,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-wolfville"
+  "slug": "town-of-wolfville",
+  "domains": [
+   "wolfville.ca"
+  ]
  },
  {
   "name": "Town of Yarmouth",
@@ -3831,7 +4513,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-yarmouth"
+  "slug": "town-of-yarmouth",
+  "domains": [
+   "townofyarmouth.ca"
+  ]
  },
  {
   "name": "West Hants Regional Municipality",
@@ -3847,7 +4532,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "west-hants-regional-municipality"
+  "slug": "west-hants-regional-municipality",
+  "domains": [
+   "westhants.ca"
+  ]
  },
  {
   "name": "Acadia University",
@@ -3863,7 +4551,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "acadia-university"
+  "slug": "acadia-university",
+  "domains": []
  },
  {
   "name": "Cape Breton University",
@@ -3880,7 +4569,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "cape-breton-university"
+  "slug": "cape-breton-university",
+  "domains": [
+   "cbu.ca"
+  ]
  },
  {
   "name": "Dalhousie University",
@@ -3897,7 +4589,10 @@
   "email": "procurement@dal.ca",
   "emailSource": "https://www.dal.ca/dept/procurement/contact-us.html",
   "checkedOn": "2026-10-15",
-  "slug": "dalhousie-university"
+  "slug": "dalhousie-university",
+  "domains": [
+   "dal.ca"
+  ]
  },
  {
   "name": "Mount Saint Vincent University",
@@ -3913,7 +4608,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mount-saint-vincent-university"
+  "slug": "mount-saint-vincent-university",
+  "domains": []
  },
  {
   "name": "Nova Scotia Community College (NSCC)",
@@ -3929,7 +4625,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nova-scotia-community-college-nscc"
+  "slug": "nova-scotia-community-college-nscc",
+  "domains": []
  },
  {
   "name": "NSCAD University",
@@ -3945,7 +4642,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nscad-university"
+  "slug": "nscad-university",
+  "domains": []
  },
  {
   "name": "Saint Mary's University",
@@ -3961,7 +4659,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "saint-mary-s-university"
+  "slug": "saint-mary-s-university",
+  "domains": []
  },
  {
   "name": "St. Francis Xavier University",
@@ -3977,7 +4676,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "st-francis-xavier-university"
+  "slug": "st-francis-xavier-university",
+  "domains": []
  },
  {
   "name": "Nova Scotia Procurement Portal (all NS public sector)",
@@ -3993,7 +4693,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nova-scotia-procurement-portal-all-ns-public-sector"
+  "slug": "nova-scotia-procurement-portal-all-ns-public-sector",
+  "domains": [
+   "novascotia.ca"
+  ]
  },
  {
   "name": "Annapolis Valley Regional Centre for Education",
@@ -4010,7 +4713,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "annapolis-valley-regional-centre-for-education"
+  "slug": "annapolis-valley-regional-centre-for-education",
+  "domains": [
+   "avrce.ca"
+  ]
  },
  {
   "name": "Cape Breton-Victoria Regional Centre for Education",
@@ -4026,7 +4732,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "cape-breton-victoria-regional-centre-for-education"
+  "slug": "cape-breton-victoria-regional-centre-for-education",
+  "domains": [
+   "cbvrce.ca"
+  ]
  },
  {
   "name": "Chignecto-Central Regional Centre for Education",
@@ -4042,7 +4751,10 @@
   "email": "tenders@ccrce.ca",
   "emailSource": "https://www.ccrce.ca/about_us/purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "chignecto-central-regional-centre-for-education"
+  "slug": "chignecto-central-regional-centre-for-education",
+  "domains": [
+   "ccrce.ca"
+  ]
  },
  {
   "name": "Halifax Regional Centre for Education",
@@ -4059,7 +4771,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "halifax-regional-centre-for-education"
+  "slug": "halifax-regional-centre-for-education",
+  "domains": [
+   "hrce.ca"
+  ]
  },
  {
   "name": "Strait Regional Centre for Education",
@@ -4075,7 +4790,10 @@
   "email": "procurement@srce.ca",
   "emailSource": "https://www.srce.ca/about_us/departments/finance_department/purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "strait-regional-centre-for-education"
+  "slug": "strait-regional-centre-for-education",
+  "domains": [
+   "srce.ca"
+  ]
  },
  {
   "name": "Tri-County Regional Centre for Education",
@@ -4091,7 +4809,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "tri-county-regional-centre-for-education"
+  "slug": "tri-county-regional-centre-for-education",
+  "domains": [
+   "tcrce.ca"
+  ]
  },
  {
   "name": "Government of Northwest Territories",
@@ -4108,7 +4829,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-09",
-  "slug": "government-of-northwest-territories"
+  "slug": "government-of-northwest-territories",
+  "domains": [
+   "gov.nt.ca"
+  ]
  },
  {
   "name": "Government of Nunavut",
@@ -4125,7 +4849,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-09",
-  "slug": "government-of-nunavut"
+  "slug": "government-of-nunavut",
+  "domains": [
+   "nunavuttenders.ca"
+  ]
  },
  {
   "name": "Alectra Utilities",
@@ -4139,7 +4866,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "alectra-utilities"
+  "slug": "alectra-utilities",
+  "domains": []
  },
  {
   "name": "CreateTO",
@@ -4155,7 +4883,10 @@
   "email": "procurement@createto.ca",
   "emailSource": "https://createto.ca/our-work/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "createto"
+  "slug": "createto",
+  "domains": [
+   "createto.ca"
+  ]
  },
  {
   "name": "Greater Toronto Airports Authority (Pearson)",
@@ -4169,7 +4900,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "greater-toronto-airports-authority-pearson"
+  "slug": "greater-toronto-airports-authority-pearson",
+  "domains": [
+   "torontopearson.com"
+  ]
  },
  {
   "name": "Hamilton-Oshawa Port Authority (HOPA)",
@@ -4185,7 +4919,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hamilton-oshawa-port-authority-hopa"
+  "slug": "hamilton-oshawa-port-authority-hopa",
+  "domains": [
+   "hopaports.ca"
+  ]
  },
  {
   "name": "Hydro One",
@@ -4201,7 +4938,10 @@
   "email": "suppliercontact@hydroone.com",
   "emailSource": "https://www.hydroone.com/about/suppliers",
   "checkedOn": "2026-10-15",
-  "slug": "hydro-one"
+  "slug": "hydro-one",
+  "domains": [
+   "hydroone.com"
+  ]
  },
  {
   "name": "Hydro Ottawa",
@@ -4217,7 +4957,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hydro-ottawa"
+  "slug": "hydro-ottawa",
+  "domains": [
+   "hydroottawa.com"
+  ]
  },
  {
   "name": "Infrastructure Ontario",
@@ -4233,7 +4976,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "infrastructure-ontario"
+  "slug": "infrastructure-ontario",
+  "domains": []
  },
  {
   "name": "Niagara Parks Commission",
@@ -4249,7 +4993,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-parks-commission"
+  "slug": "niagara-parks-commission",
+  "domains": [
+   "niagaraparks.com"
+  ]
  },
  {
   "name": "OECM",
@@ -4266,7 +5013,10 @@
   "email": "supplierpartner@oecm.ca",
   "emailSource": "https://oecm.ca/suppliers/",
   "checkedOn": "2026-10-15",
-  "slug": "oecm"
+  "slug": "oecm",
+  "domains": [
+   "oecm.ca"
+  ]
  },
  {
   "name": "Ontario Clean Water Agency",
@@ -4282,7 +5032,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ontario-clean-water-agency"
+  "slug": "ontario-clean-water-agency",
+  "domains": []
  },
  {
   "name": "Ontario Northland",
@@ -4298,7 +5049,10 @@
   "email": "vendorservices@ontarionorthland.ca",
   "emailSource": "https://www.ontarionorthland.ca/en/company/doing-business-ontc",
   "checkedOn": "2026-10-15",
-  "slug": "ontario-northland"
+  "slug": "ontario-northland",
+  "domains": [
+   "ontarionorthland.ca"
+  ]
  },
  {
   "name": "Ontario Place (Infrastructure Ontario)",
@@ -4314,7 +5068,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ontario-place-infrastructure-ontario"
+  "slug": "ontario-place-infrastructure-ontario",
+  "domains": []
  },
  {
   "name": "Ontario Power Generation",
@@ -4328,7 +5083,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ontario-power-generation"
+  "slug": "ontario-power-generation",
+  "domains": [
+   "opg.com"
+  ]
  },
  {
   "name": "Ontario Science Centre",
@@ -4342,7 +5100,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ontario-science-centre"
+  "slug": "ontario-science-centre",
+  "domains": []
  },
  {
   "name": "Ottawa International Airport Authority",
@@ -4359,7 +5118,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ottawa-international-airport-authority"
+  "slug": "ottawa-international-airport-authority",
+  "domains": [
+   "yow.ca"
+  ]
  },
  {
   "name": "Ottawa Public Library",
@@ -4375,7 +5137,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ottawa-public-library"
+  "slug": "ottawa-public-library",
+  "domains": []
  },
  {
   "name": "PortsToronto (Toronto Port Authority)",
@@ -4389,7 +5152,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "portstoronto-toronto-port-authority"
+  "slug": "portstoronto-toronto-port-authority",
+  "domains": []
  },
  {
   "name": "Royal Botanical Gardens",
@@ -4403,7 +5167,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "royal-botanical-gardens"
+  "slug": "royal-botanical-gardens",
+  "domains": []
  },
  {
   "name": "St. Lawrence Parks Commission",
@@ -4419,7 +5184,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "st-lawrence-parks-commission"
+  "slug": "st-lawrence-parks-commission",
+  "domains": [
+   "parks.on.ca"
+  ]
  },
  {
   "name": "Toronto Hydro",
@@ -4433,7 +5201,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "toronto-hydro"
+  "slug": "toronto-hydro",
+  "domains": []
  },
  {
   "name": "Toronto Parking Authority",
@@ -4447,7 +5216,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "toronto-parking-authority"
+  "slug": "toronto-parking-authority",
+  "domains": [
+   "greenp.com"
+  ]
  },
  {
   "name": "Toronto Public Library",
@@ -4464,7 +5236,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "toronto-public-library"
+  "slug": "toronto-public-library",
+  "domains": []
  },
  {
   "name": "Toronto Zoo",
@@ -4480,7 +5253,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "toronto-zoo"
+  "slug": "toronto-zoo",
+  "domains": [
+   "torontozoo.com"
+  ]
  },
  {
   "name": "Ausable Bayfield Conservation Authority",
@@ -4496,7 +5272,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ausable-bayfield-conservation-authority"
+  "slug": "ausable-bayfield-conservation-authority",
+  "domains": [
+   "abca.ca"
+  ]
  },
  {
   "name": "Cataraqui Conservation",
@@ -4513,7 +5292,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "cataraqui-conservation"
+  "slug": "cataraqui-conservation",
+  "domains": [
+   "cataraquiconservation.ca"
+  ]
  },
  {
   "name": "Catfish Creek Conservation Authority",
@@ -4527,7 +5309,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "catfish-creek-conservation-authority"
+  "slug": "catfish-creek-conservation-authority",
+  "domains": []
  },
  {
   "name": "Central Lake Ontario Conservation (CLOCA)",
@@ -4543,7 +5326,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "central-lake-ontario-conservation-cloca"
+  "slug": "central-lake-ontario-conservation-cloca",
+  "domains": []
  },
  {
   "name": "Conservation Halton",
@@ -4559,7 +5343,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "conservation-halton"
+  "slug": "conservation-halton",
+  "domains": [
+   "conservationhalton.ca"
+  ]
  },
  {
   "name": "Credit Valley Conservation",
@@ -4575,7 +5362,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "credit-valley-conservation"
+  "slug": "credit-valley-conservation",
+  "domains": []
  },
  {
   "name": "Essex Region Conservation Authority",
@@ -4591,7 +5379,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "essex-region-conservation-authority"
+  "slug": "essex-region-conservation-authority",
+  "domains": [
+   "essexregionconservation.ca"
+  ]
  },
  {
   "name": "Ganaraska Region Conservation Authority",
@@ -4608,7 +5399,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ganaraska-region-conservation-authority"
+  "slug": "ganaraska-region-conservation-authority",
+  "domains": [
+   "grca.on.ca"
+  ]
  },
  {
   "name": "Grand River Conservation Authority",
@@ -4624,7 +5418,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "grand-river-conservation-authority"
+  "slug": "grand-river-conservation-authority",
+  "domains": [
+   "grandriver.ca"
+  ]
  },
  {
   "name": "Grey Sauble Conservation Authority",
@@ -4640,7 +5437,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "grey-sauble-conservation-authority"
+  "slug": "grey-sauble-conservation-authority",
+  "domains": [
+   "greysauble.on.ca"
+  ]
  },
  {
   "name": "Hamilton Conservation Authority",
@@ -4654,7 +5454,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hamilton-conservation-authority"
+  "slug": "hamilton-conservation-authority",
+  "domains": []
  },
  {
   "name": "Kawartha Conservation",
@@ -4670,7 +5471,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kawartha-conservation"
+  "slug": "kawartha-conservation",
+  "domains": [
+   "kawarthaconservation.com"
+  ]
  },
  {
   "name": "Kettle Creek Conservation Authority",
@@ -4684,7 +5488,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kettle-creek-conservation-authority"
+  "slug": "kettle-creek-conservation-authority",
+  "domains": []
  },
  {
   "name": "Long Point Region Conservation Authority",
@@ -4700,7 +5505,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "long-point-region-conservation-authority"
+  "slug": "long-point-region-conservation-authority",
+  "domains": [
+   "lprca.on.ca"
+  ]
  },
  {
   "name": "Lower Thames Valley Conservation Authority",
@@ -4716,7 +5524,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lower-thames-valley-conservation-authority"
+  "slug": "lower-thames-valley-conservation-authority",
+  "domains": [
+   "lowerthames-conservation.on.ca"
+  ]
  },
  {
   "name": "Maitland Valley Conservation Authority",
@@ -4732,7 +5543,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "maitland-valley-conservation-authority"
+  "slug": "maitland-valley-conservation-authority",
+  "domains": [
+   "mvca.on.ca"
+  ]
  },
  {
   "name": "Mississippi Valley Conservation Authority",
@@ -4746,7 +5560,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mississippi-valley-conservation-authority"
+  "slug": "mississippi-valley-conservation-authority",
+  "domains": [
+   "mvc.on.ca"
+  ]
  },
  {
   "name": "Niagara Peninsula Conservation Authority",
@@ -4762,7 +5579,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-peninsula-conservation-authority"
+  "slug": "niagara-peninsula-conservation-authority",
+  "domains": [
+   "npca.ca"
+  ]
  },
  {
   "name": "Nottawasaga Valley Conservation Authority",
@@ -4778,7 +5598,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nottawasaga-valley-conservation-authority"
+  "slug": "nottawasaga-valley-conservation-authority",
+  "domains": [
+   "nvca.on.ca"
+  ]
  },
  {
   "name": "Quinte Conservation",
@@ -4794,7 +5617,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "quinte-conservation"
+  "slug": "quinte-conservation",
+  "domains": [
+   "quinteconservation.ca"
+  ]
  },
  {
   "name": "Raisin Region Conservation Authority",
@@ -4810,7 +5636,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "raisin-region-conservation-authority"
+  "slug": "raisin-region-conservation-authority",
+  "domains": [
+   "rrca.on.ca"
+  ]
  },
  {
   "name": "Rideau Valley Conservation Authority",
@@ -4826,7 +5655,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "rideau-valley-conservation-authority"
+  "slug": "rideau-valley-conservation-authority",
+  "domains": [
+   "rvca.ca"
+  ]
  },
  {
   "name": "Saugeen Valley Conservation Authority",
@@ -4842,7 +5674,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "saugeen-valley-conservation-authority"
+  "slug": "saugeen-valley-conservation-authority",
+  "domains": [
+   "saugeenconservation.ca"
+  ]
  },
  {
   "name": "South Nation Conservation",
@@ -4858,7 +5693,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "south-nation-conservation"
+  "slug": "south-nation-conservation",
+  "domains": []
  },
  {
   "name": "St. Clair Region Conservation Authority",
@@ -4874,7 +5710,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "st-clair-region-conservation-authority"
+  "slug": "st-clair-region-conservation-authority",
+  "domains": [
+   "scrca.on.ca"
+  ]
  },
  {
   "name": "Upper Thames River Conservation Authority",
@@ -4890,7 +5729,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "upper-thames-river-conservation-authority"
+  "slug": "upper-thames-river-conservation-authority",
+  "domains": [
+   "thamesriver.on.ca"
+  ]
  },
  {
   "name": "CAMH",
@@ -4904,7 +5746,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "camh"
+  "slug": "camh",
+  "domains": []
  },
  {
   "name": "Grand River Hospital / WRHN",
@@ -4918,7 +5761,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "grand-river-hospital-wrhn"
+  "slug": "grand-river-hospital-wrhn",
+  "domains": []
  },
  {
   "name": "Halton Healthcare",
@@ -4932,7 +5776,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "halton-healthcare"
+  "slug": "halton-healthcare",
+  "domains": []
  },
  {
   "name": "Hamilton Health Sciences",
@@ -4948,7 +5793,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hamilton-health-sciences"
+  "slug": "hamilton-health-sciences",
+  "domains": []
  },
  {
   "name": "Health Sciences North",
@@ -4965,7 +5811,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "health-sciences-north"
+  "slug": "health-sciences-north",
+  "domains": []
  },
  {
   "name": "Healthcare Materials Management Services (HMMS)",
@@ -4981,7 +5828,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "healthcare-materials-management-services-hmms"
+  "slug": "healthcare-materials-management-services-hmms",
+  "domains": []
  },
  {
   "name": "Humber River Health",
@@ -4995,7 +5843,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "humber-river-health"
+  "slug": "humber-river-health",
+  "domains": []
  },
  {
   "name": "Kingston Health Sciences Centre",
@@ -5009,7 +5858,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kingston-health-sciences-centre"
+  "slug": "kingston-health-sciences-centre",
+  "domains": []
  },
  {
   "name": "Lakeridge Health",
@@ -5023,7 +5873,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lakeridge-health"
+  "slug": "lakeridge-health",
+  "domains": []
  },
  {
   "name": "London Health Sciences Centre",
@@ -5039,7 +5890,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "london-health-sciences-centre"
+  "slug": "london-health-sciences-centre",
+  "domains": []
  },
  {
   "name": "Mackenzie Health",
@@ -5053,7 +5905,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mackenzie-health"
+  "slug": "mackenzie-health",
+  "domains": []
  },
  {
   "name": "Michael Garron Hospital",
@@ -5067,7 +5920,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "michael-garron-hospital"
+  "slug": "michael-garron-hospital",
+  "domains": []
  },
  {
   "name": "Mohawk Medbuy",
@@ -5083,7 +5937,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mohawk-medbuy"
+  "slug": "mohawk-medbuy",
+  "domains": []
  },
  {
   "name": "Niagara Health",
@@ -5097,7 +5952,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-health"
+  "slug": "niagara-health",
+  "domains": []
  },
  {
   "name": "North York General Hospital",
@@ -5111,7 +5967,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "north-york-general-hospital"
+  "slug": "north-york-general-hospital",
+  "domains": []
  },
  {
   "name": "Plexxus / HealthPRO Canada",
@@ -5125,7 +5982,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "plexxus-healthpro-canada"
+  "slug": "plexxus-healthpro-canada",
+  "domains": []
  },
  {
   "name": "Scarborough Health Network",
@@ -5139,7 +5997,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "scarborough-health-network"
+  "slug": "scarborough-health-network",
+  "domains": []
  },
  {
   "name": "Sinai Health",
@@ -5156,7 +6015,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sinai-health"
+  "slug": "sinai-health",
+  "domains": [
+   "bridgepointhealth.ca"
+  ]
  },
  {
   "name": "Southlake Health",
@@ -5170,7 +6032,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "southlake-health"
+  "slug": "southlake-health",
+  "domains": []
  },
  {
   "name": "St. Joseph's Healthcare Hamilton",
@@ -5184,7 +6047,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "st-joseph-s-healthcare-hamilton"
+  "slug": "st-joseph-s-healthcare-hamilton",
+  "domains": []
  },
  {
   "name": "Sunnybrook Health Sciences Centre",
@@ -5198,7 +6062,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sunnybrook-health-sciences-centre"
+  "slug": "sunnybrook-health-sciences-centre",
+  "domains": []
  },
  {
   "name": "The Hospital for Sick Children (SickKids)",
@@ -5214,7 +6079,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "the-hospital-for-sick-children-sickkids"
+  "slug": "the-hospital-for-sick-children-sickkids",
+  "domains": [
+   "sickkids.ca"
+  ]
  },
  {
   "name": "The Ottawa Hospital",
@@ -5231,7 +6099,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "the-ottawa-hospital"
+  "slug": "the-ottawa-hospital",
+  "domains": [
+   "ottawahospital.on.ca"
+  ]
  },
  {
   "name": "Thunder Bay Regional Health Sciences Centre",
@@ -5245,7 +6116,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "thunder-bay-regional-health-sciences-centre"
+  "slug": "thunder-bay-regional-health-sciences-centre",
+  "domains": []
  },
  {
   "name": "Trillium Health Partners",
@@ -5259,7 +6131,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "trillium-health-partners"
+  "slug": "trillium-health-partners",
+  "domains": []
  },
  {
   "name": "Unity Health Toronto",
@@ -5273,7 +6146,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "unity-health-toronto"
+  "slug": "unity-health-toronto",
+  "domains": []
  },
  {
   "name": "University Health Network",
@@ -5287,7 +6161,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-health-network"
+  "slug": "university-health-network",
+  "domains": []
  },
  {
   "name": "William Osler Health System",
@@ -5303,7 +6178,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "william-osler-health-system"
+  "slug": "william-osler-health-system",
+  "domains": [
+   "williamoslerhs.ca"
+  ]
  },
  {
   "name": "Windsor Regional Hospital",
@@ -5319,7 +6197,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "windsor-regional-hospital"
+  "slug": "windsor-regional-hospital",
+  "domains": []
  },
  {
   "name": "Durham Region Housing (Durham Regional Local Housing Corporation)",
@@ -5335,7 +6214,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "durham-region-housing-durham-regional-local-housing-corporation"
+  "slug": "durham-region-housing-durham-regional-local-housing-corporation",
+  "domains": [
+   "durham.ca"
+  ]
  },
  {
   "name": "Halton Community Housing Corporation",
@@ -5351,7 +6233,10 @@
   "email": "vendorquestions@halton.ca",
   "emailSource": "https://www.halton.ca/the-region/finance-and-transparency/doing-business-with-the-region",
   "checkedOn": "2026-10-15",
-  "slug": "halton-community-housing-corporation"
+  "slug": "halton-community-housing-corporation",
+  "domains": [
+   "halton.ca"
+  ]
  },
  {
   "name": "Hamilton CityHousing",
@@ -5367,7 +6252,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hamilton-cityhousing"
+  "slug": "hamilton-cityhousing",
+  "domains": [
+   "hamilton.ca"
+  ]
  },
  {
   "name": "Housing York Inc.",
@@ -5383,7 +6271,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "housing-york-inc"
+  "slug": "housing-york-inc",
+  "domains": [
+   "york.ca"
+  ]
  },
  {
   "name": "Kingston & Frontenac Housing Corporation",
@@ -5399,7 +6290,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kingston-and-frontenac-housing-corporation"
+  "slug": "kingston-and-frontenac-housing-corporation",
+  "domains": [
+   "kfhc.ca"
+  ]
  },
  {
   "name": "London & Middlesex Community Housing",
@@ -5415,7 +6309,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "london-and-middlesex-community-housing"
+  "slug": "london-and-middlesex-community-housing",
+  "domains": [
+   "lmch.ca"
+  ]
  },
  {
   "name": "Niagara Regional Housing",
@@ -5431,7 +6328,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-regional-housing"
+  "slug": "niagara-regional-housing",
+  "domains": [
+   "niagararegion.ca"
+  ]
  },
  {
   "name": "Peel Housing Corporation (Peel Living)",
@@ -5447,7 +6347,10 @@
   "email": "procurement@peelregion.ca",
   "emailSource": "https://peelregion.ca/business/procurement/how-do-business-us",
   "checkedOn": "2026-10-15",
-  "slug": "peel-housing-corporation-peel-living"
+  "slug": "peel-housing-corporation-peel-living",
+  "domains": [
+   "peelregion.ca"
+  ]
  },
  {
   "name": "Simcoe County Housing Corporation",
@@ -5463,7 +6366,10 @@
   "email": "simcoe.purchasing@simcoe.ca",
   "emailSource": "https://simcoe.ca/simcoe-business/doing-business/doing-business-with-the-county-of-simcoe/",
   "checkedOn": "2026-10-15",
-  "slug": "simcoe-county-housing-corporation"
+  "slug": "simcoe-county-housing-corporation",
+  "domains": [
+   "simcoe.ca"
+  ]
  },
  {
   "name": "Waterloo Region Housing",
@@ -5479,7 +6385,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "waterloo-region-housing"
+  "slug": "waterloo-region-housing",
+  "domains": [
+   "regionofwaterloo.ca"
+  ]
  },
  {
   "name": "Windsor Essex Community Housing Corporation",
@@ -5495,7 +6404,10 @@
   "email": "vendorsupport@wechc.com",
   "emailSource": "https://www.wechc.com/procurement-information",
   "checkedOn": "2026-10-15",
-  "slug": "windsor-essex-community-housing-corporation"
+  "slug": "windsor-essex-community-housing-corporation",
+  "domains": [
+   "wechc.com"
+  ]
  },
  {
   "name": "Amherstburg",
@@ -5512,7 +6424,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "amherstburg"
+  "slug": "amherstburg",
+  "domains": []
  },
  {
   "name": "Bracebridge",
@@ -5529,7 +6442,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "bracebridge"
+  "slug": "bracebridge",
+  "domains": [
+   "bracebridge.ca"
+  ]
  },
  {
   "name": "Brant County",
@@ -5545,7 +6461,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "brant-county"
+  "slug": "brant-county",
+  "domains": []
  },
  {
   "name": "Brockville",
@@ -5562,7 +6479,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "brockville"
+  "slug": "brockville",
+  "domains": [
+   "brockville.com"
+  ]
  },
  {
   "name": "Carleton Place",
@@ -5578,7 +6498,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "carleton-place"
+  "slug": "carleton-place",
+  "domains": [
+   "carletonplace.ca"
+  ]
  },
  {
   "name": "Centre Wellington",
@@ -5594,7 +6517,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "centre-wellington"
+  "slug": "centre-wellington",
+  "domains": [
+   "centrewellington.ca"
+  ]
  },
  {
   "name": "City of Barrie",
@@ -5610,7 +6536,10 @@
   "email": "purchasing@barrie.ca",
   "emailSource": "https://www.barrie.ca/business-economy/bids-tenders",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-barrie"
+  "slug": "city-of-barrie",
+  "domains": [
+   "barrie.ca"
+  ]
  },
  {
   "name": "City of Belleville",
@@ -5626,7 +6555,10 @@
   "email": "finpurchasing@belleville.ca",
   "emailSource": "https://www.belleville.ca/council-and-administration/bids-tenders-and-purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-belleville"
+  "slug": "city-of-belleville",
+  "domains": [
+   "belleville.ca"
+  ]
  },
  {
   "name": "City of Brampton",
@@ -5642,7 +6574,10 @@
   "email": "purchasing@brampton.ca",
   "emailSource": "https://www.brampton.ca/EN/Business/Doing-Business-with-the-City/Pages/Understanding-Procurement.aspx",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-brampton"
+  "slug": "city-of-brampton",
+  "domains": [
+   "brampton.ca"
+  ]
  },
  {
   "name": "City of Brantford",
@@ -5658,7 +6593,10 @@
   "email": "purchasing@brantford.ca",
   "emailSource": "https://www.brantford.ca/business-and-development/bids-and-tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-brantford"
+  "slug": "city-of-brantford",
+  "domains": [
+   "brantford.ca"
+  ]
  },
  {
   "name": "City of Burlington",
@@ -5674,7 +6612,10 @@
   "email": "procurement@burlington.ca",
   "emailSource": "https://www.burlington.ca/en/business-in-burlington/bid-opportunities.aspx",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-burlington"
+  "slug": "city-of-burlington",
+  "domains": [
+   "burlington.ca"
+  ]
  },
  {
   "name": "City of Cambridge",
@@ -5691,7 +6632,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-cambridge"
+  "slug": "city-of-cambridge",
+  "domains": [
+   "cambridge.ca"
+  ]
  },
  {
   "name": "City of Cornwall",
@@ -5707,7 +6651,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-cornwall"
+  "slug": "city-of-cornwall",
+  "domains": [
+   "cornwall.ca"
+  ]
  },
  {
   "name": "City of Greater Sudbury",
@@ -5723,7 +6670,10 @@
   "email": "purchasing@greatersudbury.ca",
   "emailSource": "https://www.greatersudbury.ca/do-business/purchasing-section-and-procurement-opportunities/procurement-opportunities-and-contract-awards/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-greater-sudbury"
+  "slug": "city-of-greater-sudbury",
+  "domains": [
+   "greatersudbury.ca"
+  ]
  },
  {
   "name": "City of Guelph",
@@ -5739,7 +6689,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-guelph"
+  "slug": "city-of-guelph",
+  "domains": [
+   "guelph.ca"
+  ]
  },
  {
   "name": "City of Hamilton",
@@ -5755,7 +6708,10 @@
   "email": "procurement@hamilton.ca",
   "emailSource": "https://www.hamilton.ca/build-invest-grow/buying-selling-city/bids-and-tenders",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-hamilton"
+  "slug": "city-of-hamilton",
+  "domains": [
+   "hamilton.ca"
+  ]
  },
  {
   "name": "City of Kawartha Lakes",
@@ -5771,7 +6727,10 @@
   "email": "vendors@kawarthalakes.ca",
   "emailSource": "https://www.kawarthalakes.ca/business-development/doing-business-with-the-city/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-kawartha-lakes"
+  "slug": "city-of-kawartha-lakes",
+  "domains": [
+   "kawarthalakes.ca"
+  ]
  },
  {
   "name": "City of Kingston",
@@ -5787,7 +6746,10 @@
   "email": "procurement@cityofkingston.ca",
   "emailSource": "https://www.cityofkingston.ca/council-and-city-administration/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-kingston"
+  "slug": "city-of-kingston",
+  "domains": [
+   "cityofkingston.ca"
+  ]
  },
  {
   "name": "City of Kitchener",
@@ -5803,7 +6765,10 @@
   "email": "procurement@kitchener.ca",
   "emailSource": "https://www.kitchener.ca/contacts-directory/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-kitchener"
+  "slug": "city-of-kitchener",
+  "domains": [
+   "kitchener.ca"
+  ]
  },
  {
   "name": "City of London",
@@ -5819,7 +6784,10 @@
   "email": "purchasing@london.ca",
   "emailSource": "https://london.ca/business-development/procurement-supply",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-london"
+  "slug": "city-of-london",
+  "domains": [
+   "london.ca"
+  ]
  },
  {
   "name": "City of Markham",
@@ -5835,7 +6803,10 @@
   "email": "customerservice@markham.ca",
   "emailSource": "https://www.markham.ca/economic-development-business/bids-tenders",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-markham"
+  "slug": "city-of-markham",
+  "domains": [
+   "markham.ca"
+  ]
  },
  {
   "name": "City of Mississauga",
@@ -5852,7 +6823,10 @@
   "email": "purchasing@mississauga.ca",
   "emailSource": "https://www.mississauga.ca/services-and-programs/business/doing-business-with-the-city/bid-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-mississauga"
+  "slug": "city-of-mississauga",
+  "domains": [
+   "mississauga.ca"
+  ]
  },
  {
   "name": "City of Niagara Falls",
@@ -5868,7 +6842,10 @@
   "email": "procurement@niagarafalls.ca",
   "emailSource": "https://niagarafalls.ca/building-planning-and-business/procurement-services/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-niagara-falls"
+  "slug": "city-of-niagara-falls",
+  "domains": [
+   "niagarafalls.ca"
+  ]
  },
  {
   "name": "City of North Bay",
@@ -5884,7 +6861,10 @@
   "email": "purchasing@northbay.ca",
   "emailSource": "https://northbay.ca/business/bid-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-north-bay"
+  "slug": "city-of-north-bay",
+  "domains": [
+   "northbay.ca"
+  ]
  },
  {
   "name": "City of Oshawa",
@@ -5900,7 +6880,10 @@
   "email": "purchasing@oshawa.ca",
   "emailSource": "https://www.oshawa.ca/contacts-directory/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-oshawa"
+  "slug": "city-of-oshawa",
+  "domains": [
+   "oshawa.ca"
+  ]
  },
  {
   "name": "City of Ottawa",
@@ -5916,7 +6899,10 @@
   "email": "bidresults@ottawa.ca",
   "emailSource": "https://ottawa.ca/en/business/procurement/contact-supply-services",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-ottawa"
+  "slug": "city-of-ottawa",
+  "domains": [
+   "ottawa.ca"
+  ]
  },
  {
   "name": "City of Peterborough",
@@ -5932,7 +6918,10 @@
   "email": "procurement@peterborough.ca",
   "emailSource": "https://www.peterborough.ca/business-building-development/bids-and-tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-peterborough"
+  "slug": "city-of-peterborough",
+  "domains": [
+   "peterborough.ca"
+  ]
  },
  {
   "name": "City of Pickering",
@@ -5948,7 +6937,10 @@
   "email": "supply@pickering.ca",
   "emailSource": "https://corporate.pickering.ca/WebLink/1/edoc/243451/CAO%2006-22.pdf",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-pickering"
+  "slug": "city-of-pickering",
+  "domains": [
+   "pickering.ca"
+  ]
  },
  {
   "name": "City of Quinte West",
@@ -5964,7 +6956,10 @@
   "email": "purchasing@quintewest.ca",
   "emailSource": "https://quintewest.ca/council-city-administration/corporate-directory/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-quinte-west"
+  "slug": "city-of-quinte-west",
+  "domains": [
+   "quintewest.ca"
+  ]
  },
  {
   "name": "City of Richmond Hill",
@@ -5980,7 +6975,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-richmond-hill"
+  "slug": "city-of-richmond-hill",
+  "domains": [
+   "richmondhill.ca"
+  ]
  },
  {
   "name": "City of Sarnia",
@@ -5996,7 +6994,10 @@
   "email": "purchasing@sarnia.ca",
   "emailSource": "https://www.sarnia.ca/working-here/bids-and-tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-sarnia"
+  "slug": "city-of-sarnia",
+  "domains": [
+   "sarnia.ca"
+  ]
  },
  {
   "name": "City of Sault Ste. Marie",
@@ -6012,7 +7013,11 @@
   "email": "purchasing@cityssm.on.ca",
   "emailSource": "https://saultstemarie.ca/work/tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-sault-ste-marie"
+  "slug": "city-of-sault-ste-marie",
+  "domains": [
+   "saultstemarie.ca",
+   "cityssm.on.ca"
+  ]
  },
  {
   "name": "City of St. Catharines",
@@ -6028,7 +7033,10 @@
   "email": "purchasing@stcatharines.ca",
   "emailSource": "https://www.stcatharines.ca/business-and-economic-development/vendor-and-purchasing-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-st-catharines"
+  "slug": "city-of-st-catharines",
+  "domains": [
+   "stcatharines.ca"
+  ]
  },
  {
   "name": "City of St. Thomas",
@@ -6044,7 +7052,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-st-thomas"
+  "slug": "city-of-st-thomas",
+  "domains": [
+   "stthomas.ca"
+  ]
  },
  {
   "name": "City of Stratford",
@@ -6060,7 +7071,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-stratford"
+  "slug": "city-of-stratford",
+  "domains": [
+   "stratford.ca"
+  ]
  },
  {
   "name": "City of Thunder Bay",
@@ -6076,7 +7090,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-thunder-bay"
+  "slug": "city-of-thunder-bay",
+  "domains": [
+   "thunderbay.ca"
+  ]
  },
  {
   "name": "City of Timmins",
@@ -6092,7 +7109,10 @@
   "email": "purchasing@timmins.ca",
   "emailSource": "https://www.timmins.ca/doing_business/tenders_bids_and_rfps",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-timmins"
+  "slug": "city-of-timmins",
+  "domains": [
+   "timmins.ca"
+  ]
  },
  {
   "name": "City of Vaughan",
@@ -6108,7 +7128,10 @@
   "email": "procurement@vaughan.ca",
   "emailSource": "https://www.vaughan.ca/about-city-vaughan/departments/procurement-services/about-procurement-services",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-vaughan"
+  "slug": "city-of-vaughan",
+  "domains": [
+   "vaughan.ca"
+  ]
  },
  {
   "name": "City of Waterloo",
@@ -6124,7 +7147,10 @@
   "email": "procurement@waterloo.ca",
   "emailSource": "https://www.waterloo.ca/business-support/doing-business-with-the-city/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-waterloo"
+  "slug": "city-of-waterloo",
+  "domains": [
+   "waterloo.ca"
+  ]
  },
  {
   "name": "City of Welland",
@@ -6141,7 +7167,10 @@
   "email": "purchasing@welland.ca",
   "emailSource": "https://www.welland.ca/business-and-development/for-development/purchasing-services-information/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-welland"
+  "slug": "city-of-welland",
+  "domains": [
+   "welland.ca"
+  ]
  },
  {
   "name": "City of Windsor",
@@ -6158,7 +7187,10 @@
   "email": "purchasing@citywindsor.ca",
   "emailSource": "https://opendata.citywindsor.ca/Tools/BidsAndTenders",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-windsor"
+  "slug": "city-of-windsor",
+  "domains": [
+   "citywindsor.ca"
+  ]
  },
  {
   "name": "City of Woodstock",
@@ -6174,7 +7206,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "city-of-woodstock"
+  "slug": "city-of-woodstock",
+  "domains": [
+   "cityofwoodstock.ca"
+  ]
  },
  {
   "name": "Clarence-Rockland",
@@ -6190,7 +7225,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "clarence-rockland"
+  "slug": "clarence-rockland",
+  "domains": [
+   "clarence-rockland.com"
+  ]
  },
  {
   "name": "Clearview",
@@ -6206,7 +7244,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "clearview"
+  "slug": "clearview",
+  "domains": [
+   "clearview.ca"
+  ]
  },
  {
   "name": "Cobourg",
@@ -6222,7 +7263,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "cobourg"
+  "slug": "cobourg",
+  "domains": [
+   "cobourg.ca"
+  ]
  },
  {
   "name": "Collingwood",
@@ -6238,7 +7282,10 @@
   "email": "purchasing@collingwood.ca",
   "emailSource": "https://www.collingwood.ca/bids",
   "checkedOn": "2026-10-15",
-  "slug": "collingwood"
+  "slug": "collingwood",
+  "domains": [
+   "collingwood.ca"
+  ]
  },
  {
   "name": "Dryden",
@@ -6254,7 +7301,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "dryden"
+  "slug": "dryden",
+  "domains": [
+   "dryden.ca"
+  ]
  },
  {
   "name": "East Gwillimbury",
@@ -6270,7 +7320,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "east-gwillimbury"
+  "slug": "east-gwillimbury",
+  "domains": [
+   "eastgwillimbury.ca"
+  ]
  },
  {
   "name": "Elliot Lake",
@@ -6286,7 +7339,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "elliot-lake"
+  "slug": "elliot-lake",
+  "domains": []
  },
  {
   "name": "Erin",
@@ -6302,7 +7356,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "erin"
+  "slug": "erin",
+  "domains": [
+   "erin.ca"
+  ]
  },
  {
   "name": "Essa",
@@ -6318,7 +7375,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "essa"
+  "slug": "essa",
+  "domains": [
+   "essatownship.on.ca"
+  ]
  },
  {
   "name": "Essex",
@@ -6334,7 +7394,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "essex"
+  "slug": "essex",
+  "domains": []
  },
  {
   "name": "Fort Erie",
@@ -6350,7 +7411,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fort-erie"
+  "slug": "fort-erie",
+  "domains": [
+   "forterie.ca"
+  ]
  },
  {
   "name": "Fort Frances",
@@ -6366,7 +7430,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fort-frances"
+  "slug": "fort-frances",
+  "domains": []
  },
  {
   "name": "Gravenhurst",
@@ -6382,7 +7447,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "gravenhurst"
+  "slug": "gravenhurst",
+  "domains": [
+   "gravenhurst.ca"
+  ]
  },
  {
   "name": "Grimsby",
@@ -6398,7 +7466,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "grimsby"
+  "slug": "grimsby",
+  "domains": [
+   "grimsby.ca"
+  ]
  },
  {
   "name": "Guelph/Eramosa",
@@ -6414,7 +7485,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "guelph-eramosa"
+  "slug": "guelph-eramosa",
+  "domains": [
+   "get.on.ca"
+  ]
  },
  {
   "name": "Hawkesbury",
@@ -6431,7 +7505,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hawkesbury"
+  "slug": "hawkesbury",
+  "domains": [
+   "hawkesbury.ca"
+  ]
  },
  {
   "name": "Huntsville",
@@ -6447,7 +7524,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "huntsville"
+  "slug": "huntsville",
+  "domains": []
  },
  {
   "name": "Ingersoll",
@@ -6463,7 +7541,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ingersoll"
+  "slug": "ingersoll",
+  "domains": [
+   "ingersoll.ca"
+  ]
  },
  {
   "name": "Kapuskasing",
@@ -6479,7 +7560,10 @@
   "email": "tenders@kapuskasing.ca",
   "emailSource": "https://www.kapuskasing.ca/business-building-development/bids-and-tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "kapuskasing"
+  "slug": "kapuskasing",
+  "domains": [
+   "kapuskasing.ca"
+  ]
  },
  {
   "name": "Kenora",
@@ -6495,7 +7579,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kenora"
+  "slug": "kenora",
+  "domains": [
+   "kenora.ca"
+  ]
  },
  {
   "name": "Kincardine",
@@ -6511,7 +7598,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kincardine"
+  "slug": "kincardine",
+  "domains": [
+   "kincardine.ca"
+  ]
  },
  {
   "name": "King Township",
@@ -6527,7 +7617,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "king-township"
+  "slug": "king-township",
+  "domains": [
+   "king.ca"
+  ]
  },
  {
   "name": "Kingsville",
@@ -6543,7 +7636,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kingsville"
+  "slug": "kingsville",
+  "domains": [
+   "kingsville.ca"
+  ]
  },
  {
   "name": "Kirkland Lake",
@@ -6559,7 +7655,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kirkland-lake"
+  "slug": "kirkland-lake",
+  "domains": [
+   "kirklandlake.ca"
+  ]
  },
  {
   "name": "Lakeshore",
@@ -6575,7 +7674,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lakeshore"
+  "slug": "lakeshore",
+  "domains": [
+   "lakeshore.ca"
+  ]
  },
  {
   "name": "LaSalle",
@@ -6591,7 +7693,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lasalle"
+  "slug": "lasalle",
+  "domains": []
  },
  {
   "name": "Leamington",
@@ -6607,7 +7710,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "leamington"
+  "slug": "leamington",
+  "domains": [
+   "leamington.ca"
+  ]
  },
  {
   "name": "Lincoln",
@@ -6623,7 +7729,10 @@
   "email": "procurement@lincoln.ca",
   "emailSource": "https://www.lincoln.ca/services/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "lincoln"
+  "slug": "lincoln",
+  "domains": [
+   "lincoln.ca"
+  ]
  },
  {
   "name": "Middlesex Centre",
@@ -6639,7 +7748,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "middlesex-centre"
+  "slug": "middlesex-centre",
+  "domains": [
+   "middlesexcentre.ca"
+  ]
  },
  {
   "name": "Midland",
@@ -6655,7 +7767,10 @@
   "email": "procurement@midland.ca",
   "emailSource": "https://www.midland.ca/build-invest/business-opportunities/bid-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "midland"
+  "slug": "midland",
+  "domains": [
+   "midland.ca"
+  ]
  },
  {
   "name": "Mississippi Mills",
@@ -6671,7 +7786,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mississippi-mills"
+  "slug": "mississippi-mills",
+  "domains": [
+   "mississippimills.ca"
+  ]
  },
  {
   "name": "Municipality of Chatham-Kent",
@@ -6687,7 +7805,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-chatham-kent"
+  "slug": "municipality-of-chatham-kent",
+  "domains": [
+   "chatham-kent.ca"
+  ]
  },
  {
   "name": "Municipality of Clarington",
@@ -6703,7 +7824,10 @@
   "email": "purchasing@clarington.net",
   "emailSource": "https://www.clarington.net/contacts-directory/",
   "checkedOn": "2026-10-15",
-  "slug": "municipality-of-clarington"
+  "slug": "municipality-of-clarington",
+  "domains": [
+   "clarington.net"
+  ]
  },
  {
   "name": "New Tecumseth",
@@ -6719,7 +7843,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "new-tecumseth"
+  "slug": "new-tecumseth",
+  "domains": [
+   "newtecumseth.ca"
+  ]
  },
  {
   "name": "Niagara-on-the-Lake",
@@ -6736,7 +7863,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-on-the-lake"
+  "slug": "niagara-on-the-lake",
+  "domains": [
+   "notl.com"
+  ]
  },
  {
   "name": "North Grenville",
@@ -6752,7 +7882,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "north-grenville"
+  "slug": "north-grenville",
+  "domains": [
+   "northgrenville.ca"
+  ]
  },
  {
   "name": "Orangeville",
@@ -6768,7 +7901,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "orangeville"
+  "slug": "orangeville",
+  "domains": [
+   "orangeville.ca"
+  ]
  },
  {
   "name": "Orillia",
@@ -6784,7 +7920,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "orillia"
+  "slug": "orillia",
+  "domains": [
+   "orillia.ca"
+  ]
  },
  {
   "name": "Oro-Medonte",
@@ -6800,7 +7939,10 @@
   "email": "procurement@oro-medonte.ca",
   "emailSource": "https://www.oro-medonte.ca/our-government/procurement-services/",
   "checkedOn": "2026-10-15",
-  "slug": "oro-medonte"
+  "slug": "oro-medonte",
+  "domains": [
+   "oro-medonte.ca"
+  ]
  },
  {
   "name": "Owen Sound",
@@ -6816,7 +7958,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "owen-sound"
+  "slug": "owen-sound",
+  "domains": []
  },
  {
   "name": "Pelham",
@@ -6832,7 +7975,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "pelham"
+  "slug": "pelham",
+  "domains": [
+   "pelham.ca"
+  ]
  },
  {
   "name": "Pembroke",
@@ -6849,7 +7995,10 @@
   "email": "purchasing@pembroke.ca",
   "emailSource": "https://www.pembroke.ca/city-government/purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "pembroke"
+  "slug": "pembroke",
+  "domains": [
+   "pembroke.ca"
+  ]
  },
  {
   "name": "Penetanguishene",
@@ -6865,7 +8014,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "penetanguishene"
+  "slug": "penetanguishene",
+  "domains": []
  },
  {
   "name": "Petawawa",
@@ -6881,7 +8031,10 @@
   "email": "pwpurchasing@petawawa.ca",
   "emailSource": "https://petawawa.ca/public-tender-pw-20-2026-snow-plowing-municipal-buildings/",
   "checkedOn": "2026-10-15",
-  "slug": "petawawa"
+  "slug": "petawawa",
+  "domains": [
+   "petawawa.ca"
+  ]
  },
  {
   "name": "Port Colborne",
@@ -6897,7 +8050,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "port-colborne"
+  "slug": "port-colborne",
+  "domains": [
+   "portcolborne.ca"
+  ]
  },
  {
   "name": "Port Hope",
@@ -6913,7 +8069,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "port-hope"
+  "slug": "port-hope",
+  "domains": []
  },
  {
   "name": "Prince Edward County",
@@ -6929,7 +8086,11 @@
   "email": "purchasing@pecounty.on.ca",
   "emailSource": "https://www.thecounty.ca/residents/services/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "prince-edward-county"
+  "slug": "prince-edward-county",
+  "domains": [
+   "thecounty.ca",
+   "pecounty.on.ca"
+  ]
  },
  {
   "name": "Russell",
@@ -6945,7 +8106,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "russell"
+  "slug": "russell",
+  "domains": [
+   "russell.ca"
+  ]
  },
  {
   "name": "Saugeen Shores",
@@ -6961,7 +8125,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "saugeen-shores"
+  "slug": "saugeen-shores",
+  "domains": [
+   "saugeenshores.ca"
+  ]
  },
  {
   "name": "Scugog",
@@ -6977,7 +8144,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "scugog"
+  "slug": "scugog",
+  "domains": [
+   "scugog.ca"
+  ]
  },
  {
   "name": "Smiths Falls",
@@ -6993,7 +8163,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "smiths-falls"
+  "slug": "smiths-falls",
+  "domains": [
+   "smithsfalls.ca"
+  ]
  },
  {
   "name": "South Frontenac",
@@ -7010,7 +8183,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "south-frontenac"
+  "slug": "south-frontenac",
+  "domains": [
+   "southfrontenac.net"
+  ]
  },
  {
   "name": "Springwater",
@@ -7026,7 +8202,10 @@
   "email": "procurement@springwater.ca",
   "emailSource": "https://www.springwater.ca/contacts-directory/",
   "checkedOn": "2026-10-15",
-  "slug": "springwater"
+  "slug": "springwater",
+  "domains": [
+   "springwater.ca"
+  ]
  },
  {
   "name": "Tecumseh",
@@ -7042,7 +8221,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "tecumseh"
+  "slug": "tecumseh",
+  "domains": [
+   "tecumseh.ca"
+  ]
  },
  {
   "name": "Thorold",
@@ -7058,7 +8240,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "thorold"
+  "slug": "thorold",
+  "domains": [
+   "thorold.ca"
+  ]
  },
  {
   "name": "Tillsonburg",
@@ -7075,7 +8260,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "tillsonburg"
+  "slug": "tillsonburg",
+  "domains": [
+   "tillsonburg.ca"
+  ]
  },
  {
   "name": "Town of Ajax",
@@ -7091,7 +8279,10 @@
   "email": "procurement@ajax.ca",
   "emailSource": "https://ajax.ca/build-invest/for-businesses-investors/bids-tenders-procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-ajax"
+  "slug": "town-of-ajax",
+  "domains": [
+   "ajax.ca"
+  ]
  },
  {
   "name": "Town of Aurora",
@@ -7107,7 +8298,10 @@
   "email": "procurement@aurora.ca",
   "emailSource": "https://www.aurora.ca/business-and-development/procurement-services/",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-aurora"
+  "slug": "town-of-aurora",
+  "domains": [
+   "aurora.ca"
+  ]
  },
  {
   "name": "Town of Bradford West Gwillimbury",
@@ -7123,7 +8317,10 @@
   "email": "purchasing@townofbwg.com",
   "emailSource": "https://www.townofbwg.com/business-development/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-bradford-west-gwillimbury"
+  "slug": "town-of-bradford-west-gwillimbury",
+  "domains": [
+   "townofbwg.com"
+  ]
  },
  {
   "name": "Town of Caledon",
@@ -7139,7 +8336,10 @@
   "email": "purchasing@caledon.ca",
   "emailSource": "https://forms.caledon.ca/do.aspx?interviewID=E000019_CaledonSupplierList&lang=en&AppName=E000019_CaledonSupplierList",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-caledon"
+  "slug": "town-of-caledon",
+  "domains": [
+   "caledon.ca"
+  ]
  },
  {
   "name": "Town of Georgina",
@@ -7155,7 +8355,10 @@
   "email": "purchasing@georgina.ca",
   "emailSource": "https://www.georgina.ca/doing-business/bids-and-tenders",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-georgina"
+  "slug": "town-of-georgina",
+  "domains": [
+   "georgina.ca"
+  ]
  },
  {
   "name": "Town of Halton Hills",
@@ -7171,7 +8374,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-halton-hills"
+  "slug": "town-of-halton-hills",
+  "domains": [
+   "haltonhills.ca"
+  ]
  },
  {
   "name": "Town of Innisfil",
@@ -7187,7 +8393,10 @@
   "email": "purchasing@innisfil.ca",
   "emailSource": "https://www.innisfil.ca/government-administration/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-innisfil"
+  "slug": "town-of-innisfil",
+  "domains": [
+   "innisfil.ca"
+  ]
  },
  {
   "name": "Town of Milton",
@@ -7203,7 +8412,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "town-of-milton"
+  "slug": "town-of-milton",
+  "domains": [
+   "milton.ca"
+  ]
  },
  {
   "name": "Town of Newmarket",
@@ -7219,7 +8431,10 @@
   "email": "procurement@newmarket.ca",
   "emailSource": "https://www.newmarket.ca/business-development/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-newmarket"
+  "slug": "town-of-newmarket",
+  "domains": [
+   "newmarket.ca"
+  ]
  },
  {
   "name": "Town of Oakville",
@@ -7235,7 +8450,10 @@
   "email": "purchasing@oakville.ca",
   "emailSource": "https://www.oakville.ca/business-development/business/purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-oakville"
+  "slug": "town-of-oakville",
+  "domains": [
+   "oakville.ca"
+  ]
  },
  {
   "name": "Town of Whitby",
@@ -7251,7 +8469,10 @@
   "email": "purchasing@whitby.ca",
   "emailSource": "https://www.whitby.ca/media/2s2buz33/f-080-001-appendix-c-department-procurement-procedure.pdf",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-whitby"
+  "slug": "town-of-whitby",
+  "domains": [
+   "whitby.ca"
+  ]
  },
  {
   "name": "Town of Whitchurch-Stouffville",
@@ -7267,7 +8488,10 @@
   "email": "procurement@townofws.ca",
   "emailSource": "https://www.townofws.ca/work/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "town-of-whitchurch-stouffville"
+  "slug": "town-of-whitchurch-stouffville",
+  "domains": [
+   "townofws.ca"
+  ]
  },
  {
   "name": "Uxbridge",
@@ -7283,7 +8507,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "uxbridge"
+  "slug": "uxbridge",
+  "domains": [
+   "uxbridge.ca"
+  ]
  },
  {
   "name": "Wasaga Beach",
@@ -7299,7 +8526,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "wasaga-beach"
+  "slug": "wasaga-beach",
+  "domains": [
+   "wasagabeach.com"
+  ]
  },
  {
   "name": "Wilmot",
@@ -7315,7 +8545,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "wilmot"
+  "slug": "wilmot",
+  "domains": [
+   "wilmot.ca"
+  ]
  },
  {
   "name": "Woolwich",
@@ -7331,7 +8564,10 @@
   "email": "finance@woolwich.ca",
   "emailSource": "https://www.woolwich.ca/learn-about/budget-financials/purchasing-and-accounts-payable/",
   "checkedOn": "2026-10-15",
-  "slug": "woolwich"
+  "slug": "woolwich",
+  "domains": [
+   "woolwich.ca"
+  ]
  },
  {
   "name": "Algoma University",
@@ -7347,7 +8583,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "algoma-university"
+  "slug": "algoma-university",
+  "domains": []
  },
  {
   "name": "Algonquin College",
@@ -7364,7 +8601,10 @@
   "email": "purchasing@algonquincollege.com",
   "emailSource": "https://www.algonquincollege.com/purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "algonquin-college"
+  "slug": "algonquin-college",
+  "domains": [
+   "algonquincollege.com"
+  ]
  },
  {
   "name": "Brock University",
@@ -7380,7 +8620,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "brock-university"
+  "slug": "brock-university",
+  "domains": [
+   "brocku.ca"
+  ]
  },
  {
   "name": "Cambrian College",
@@ -7397,7 +8640,10 @@
   "email": "purchasing@cambriancollege.ca",
   "emailSource": "https://cambriancollege.ca/supports-services/procurement-services",
   "checkedOn": "2026-10-15",
-  "slug": "cambrian-college"
+  "slug": "cambrian-college",
+  "domains": [
+   "cambriancollege.ca"
+  ]
  },
  {
   "name": "Canadore College",
@@ -7413,7 +8659,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "canadore-college"
+  "slug": "canadore-college",
+  "domains": []
  },
  {
   "name": "Carleton University",
@@ -7430,7 +8677,10 @@
   "email": "procurementservices@carleton.ca",
   "emailSource": "https://carleton.ca/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "carleton-university"
+  "slug": "carleton-university",
+  "domains": [
+   "carleton.ca"
+  ]
  },
  {
   "name": "Centennial College",
@@ -7446,7 +8696,10 @@
   "email": "purchasing@centennialcollege.ca",
   "emailSource": "https://www.centennialcollege.ca/about-centennial/college-improvements/procurement-services/",
   "checkedOn": "2026-10-15",
-  "slug": "centennial-college"
+  "slug": "centennial-college",
+  "domains": [
+   "centennialcollege.ca"
+  ]
  },
  {
   "name": "Collège Boréal",
@@ -7460,7 +8713,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "college-boreal"
+  "slug": "college-boreal",
+  "domains": []
  },
  {
   "name": "Collège La Cité",
@@ -7474,7 +8728,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "college-la-cite"
+  "slug": "college-la-cite",
+  "domains": []
  },
  {
   "name": "Conestoga College",
@@ -7491,7 +8746,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "conestoga-college"
+  "slug": "conestoga-college",
+  "domains": [
+   "conestogac.on.ca"
+  ]
  },
  {
   "name": "Confederation College",
@@ -7509,7 +8767,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "confederation-college"
+  "slug": "confederation-college",
+  "domains": [
+   "confederationcollege.ca"
+  ]
  },
  {
   "name": "Durham College",
@@ -7523,7 +8784,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "durham-college"
+  "slug": "durham-college",
+  "domains": []
  },
  {
   "name": "Fanshawe College",
@@ -7540,7 +8802,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fanshawe-college"
+  "slug": "fanshawe-college",
+  "domains": [
+   "fanshawec.ca"
+  ]
  },
  {
   "name": "Fleming College",
@@ -7557,7 +8822,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "fleming-college"
+  "slug": "fleming-college",
+  "domains": [
+   "flemingcollege.ca"
+  ]
  },
  {
   "name": "George Brown Polytechnic",
@@ -7571,7 +8839,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "george-brown-polytechnic"
+  "slug": "george-brown-polytechnic",
+  "domains": [
+   "georgebrown.ca"
+  ]
  },
  {
   "name": "Humber Polytechnic",
@@ -7587,7 +8858,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "humber-polytechnic"
+  "slug": "humber-polytechnic",
+  "domains": [
+   "humber.ca"
+  ]
  },
  {
   "name": "Lakehead University",
@@ -7603,7 +8877,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lakehead-university"
+  "slug": "lakehead-university",
+  "domains": []
  },
  {
   "name": "Lambton College",
@@ -7617,7 +8892,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lambton-college"
+  "slug": "lambton-college",
+  "domains": [
+   "lambtoncollege.ca"
+  ]
  },
  {
   "name": "Laurentian University",
@@ -7634,7 +8912,10 @@
   "email": "purchasing@laurentian.ca",
   "emailSource": "https://laurentian.ca/about/policies-accountability/purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "laurentian-university"
+  "slug": "laurentian-university",
+  "domains": [
+   "laurentian.ca"
+  ]
  },
  {
   "name": "Loyalist College",
@@ -7651,7 +8932,10 @@
   "email": "purchase@loyalistcollege.com",
   "emailSource": "https://loyalistcollege.com/about/organization/procurement-services/",
   "checkedOn": "2026-10-15",
-  "slug": "loyalist-college"
+  "slug": "loyalist-college",
+  "domains": [
+   "loyalistcollege.com"
+  ]
  },
  {
   "name": "McMaster University",
@@ -7667,7 +8951,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "mcmaster-university"
+  "slug": "mcmaster-university",
+  "domains": [
+   "mcmaster.ca"
+  ]
  },
  {
   "name": "Mohawk College",
@@ -7681,7 +8968,10 @@
   "email": "purchasing@mohawkcollege.ca",
   "emailSource": "https://www.mohawkcollege.ca/sites/default/files/accessible-pdf/policies/Purchase-Order-Terms-and-Conditions_2026-05-01_UA.pdf",
   "checkedOn": "2026-10-15",
-  "slug": "mohawk-college"
+  "slug": "mohawk-college",
+  "domains": [
+   "mohawkcollege.ca"
+  ]
  },
  {
   "name": "Niagara College",
@@ -7697,7 +8987,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-college"
+  "slug": "niagara-college",
+  "domains": [
+   "niagaracollege.ca"
+  ]
  },
  {
   "name": "Nipissing University",
@@ -7714,7 +9007,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nipissing-university"
+  "slug": "nipissing-university",
+  "domains": [
+   "nipissingu.ca"
+  ]
  },
  {
   "name": "Northern College",
@@ -7730,7 +9026,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "northern-college"
+  "slug": "northern-college",
+  "domains": [
+   "northerncollege.ca"
+  ]
  },
  {
   "name": "OCAD University",
@@ -7744,7 +9043,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ocad-university"
+  "slug": "ocad-university",
+  "domains": [
+   "ocadu.ca"
+  ]
  },
  {
   "name": "Ontario Tech University",
@@ -7760,7 +9062,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ontario-tech-university"
+  "slug": "ontario-tech-university",
+  "domains": [
+   "ontariotechu.ca"
+  ]
  },
  {
   "name": "Queen's University",
@@ -7777,7 +9082,10 @@
   "email": "buying@queensu.ca",
   "emailSource": "https://www.queensu.ca/procurement/suppliers/info",
   "checkedOn": "2026-10-15",
-  "slug": "queen-s-university"
+  "slug": "queen-s-university",
+  "domains": [
+   "queensu.ca"
+  ]
  },
  {
   "name": "Sault College",
@@ -7793,7 +9101,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sault-college"
+  "slug": "sault-college",
+  "domains": []
  },
  {
   "name": "Seneca Polytechnic",
@@ -7809,7 +9118,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "seneca-polytechnic"
+  "slug": "seneca-polytechnic",
+  "domains": []
  },
  {
   "name": "Sheridan College",
@@ -7825,7 +9135,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sheridan-college"
+  "slug": "sheridan-college",
+  "domains": []
  },
  {
   "name": "St. Clair College",
@@ -7842,7 +9153,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "st-clair-college"
+  "slug": "st-clair-college",
+  "domains": [
+   "stclaircollege.ca"
+  ]
  },
  {
   "name": "St. Lawrence College",
@@ -7858,7 +9172,11 @@
   "email": "purchasing@sl.on.ca",
   "emailSource": "https://www.stlawrencecollege.ca/about/purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "st-lawrence-college"
+  "slug": "st-lawrence-college",
+  "domains": [
+   "stlawrencecollege.ca",
+   "sl.on.ca"
+  ]
  },
  {
   "name": "Toronto Metropolitan University",
@@ -7875,7 +9193,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "toronto-metropolitan-university"
+  "slug": "toronto-metropolitan-university",
+  "domains": []
  },
  {
   "name": "Trent University",
@@ -7892,7 +9211,10 @@
   "email": "purchasing@trentu.ca",
   "emailSource": "https://www.trentu.ca/purchasing/doing-business-trent",
   "checkedOn": "2026-10-15",
-  "slug": "trent-university"
+  "slug": "trent-university",
+  "domains": [
+   "trentu.ca"
+  ]
  },
  {
   "name": "University of Guelph",
@@ -7909,7 +9231,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-of-guelph"
+  "slug": "university-of-guelph",
+  "domains": [
+   "uoguelph.ca"
+  ]
  },
  {
   "name": "University of Ottawa",
@@ -7925,7 +9250,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "university-of-ottawa"
+  "slug": "university-of-ottawa",
+  "domains": [
+   "uottawa.ca"
+  ]
  },
  {
   "name": "University of Toronto",
@@ -7943,7 +9271,10 @@
   "email": "procurement.utm@utoronto.ca",
   "emailSource": "https://www.procurement.utoronto.ca/about-procurement/contact-us",
   "checkedOn": "2026-10-15",
-  "slug": "university-of-toronto"
+  "slug": "university-of-toronto",
+  "domains": [
+   "utoronto.ca"
+  ]
  },
  {
   "name": "University of Waterloo",
@@ -7960,7 +9291,10 @@
   "email": "procure@uwaterloo.ca",
   "emailSource": "https://uwaterloo.ca/procurement/suppliers/bidding",
   "checkedOn": "2026-10-15",
-  "slug": "university-of-waterloo"
+  "slug": "university-of-waterloo",
+  "domains": [
+   "uwaterloo.ca"
+  ]
  },
  {
   "name": "University of Windsor",
@@ -7976,7 +9310,10 @@
   "email": "procurement@uwindsor.ca",
   "emailSource": "https://www.uwindsor.ca/finance/procurement",
   "checkedOn": "2026-10-15",
-  "slug": "university-of-windsor"
+  "slug": "university-of-windsor",
+  "domains": [
+   "uwindsor.ca"
+  ]
  },
  {
   "name": "Western University",
@@ -7992,7 +9329,10 @@
   "email": "procurement@uwo.ca",
   "emailSource": "https://www.uwo.ca/finance/procurement/vendors/index.html",
   "checkedOn": "2026-10-15",
-  "slug": "western-university"
+  "slug": "western-university",
+  "domains": [
+   "uwo.ca"
+  ]
  },
  {
   "name": "Wilfrid Laurier University",
@@ -8008,7 +9348,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "wilfrid-laurier-university"
+  "slug": "wilfrid-laurier-university",
+  "domains": [
+   "wlu.ca"
+  ]
  },
  {
   "name": "York University",
@@ -8025,7 +9368,10 @@
   "email": "purchase@yorku.ca",
   "emailSource": "https://www.yorku.ca/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "york-university"
+  "slug": "york-university",
+  "domains": [
+   "yorku.ca"
+  ]
  },
  {
   "name": "Algoma District Services Administration Board",
@@ -8041,7 +9387,10 @@
   "email": "bids@adsab.on.ca",
   "emailSource": "https://www.adsab.on.ca/en/administration/tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "algoma-district-services-administration-board"
+  "slug": "algoma-district-services-administration-board",
+  "domains": [
+   "adsab.on.ca"
+  ]
  },
  {
   "name": "Bruce County",
@@ -8057,7 +9406,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "bruce-county"
+  "slug": "bruce-county",
+  "domains": [
+   "brucecounty.on.ca"
+  ]
  },
  {
   "name": "Cochrane District Services Board (CDSB, formerly Cochrane DSSAB)",
@@ -8073,7 +9425,10 @@
   "email": "procurement@cdsb.care",
   "emailSource": "https://cdsb.care/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "cochrane-district-services-board-cdsb-formerly-cochrane-dssab"
+  "slug": "cochrane-district-services-board-cdsb-formerly-cochrane-dssab",
+  "domains": [
+   "cdsb.care"
+  ]
  },
  {
   "name": "District Municipality of Muskoka",
@@ -8090,7 +9445,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "district-municipality-of-muskoka"
+  "slug": "district-municipality-of-muskoka",
+  "domains": [
+   "muskoka.on.ca"
+  ]
  },
  {
   "name": "District of Parry Sound Social Services Administration Board",
@@ -8106,7 +9464,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "district-of-parry-sound-social-services-administration-board"
+  "slug": "district-of-parry-sound-social-services-administration-board",
+  "domains": [
+   "psdssab.org"
+  ]
  },
  {
   "name": "Durham Region",
@@ -8122,7 +9483,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "durham-region"
+  "slug": "durham-region",
+  "domains": [
+   "durham.ca"
+  ]
  },
  {
   "name": "Essex County",
@@ -8138,7 +9502,10 @@
   "email": "procurement@countyofessex.ca",
   "emailSource": "https://www.countyofessex.ca/doing-business/procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "essex-county"
+  "slug": "essex-county",
+  "domains": [
+   "countyofessex.ca"
+  ]
  },
  {
   "name": "Frontenac County",
@@ -8154,7 +9521,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "frontenac-county"
+  "slug": "frontenac-county",
+  "domains": [
+   "frontenaccounty.ca"
+  ]
  },
  {
   "name": "Grey County",
@@ -8170,7 +9540,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "grey-county"
+  "slug": "grey-county",
+  "domains": [
+   "grey.ca"
+  ]
  },
  {
   "name": "Haliburton County",
@@ -8186,7 +9559,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "haliburton-county"
+  "slug": "haliburton-county",
+  "domains": [
+   "haliburtoncounty.ca"
+  ]
  },
  {
   "name": "Halton Region",
@@ -8202,7 +9578,10 @@
   "email": "vendorquestions@halton.ca",
   "emailSource": "https://www.halton.ca/the-region/finance-and-transparency/doing-business-with-the-region",
   "checkedOn": "2026-10-15",
-  "slug": "halton-region"
+  "slug": "halton-region",
+  "domains": [
+   "halton.ca"
+  ]
  },
  {
   "name": "Hastings County",
@@ -8218,7 +9597,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hastings-county"
+  "slug": "hastings-county",
+  "domains": [
+   "hastingscounty.com"
+  ]
  },
  {
   "name": "Huron County",
@@ -8236,7 +9618,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "huron-county"
+  "slug": "huron-county",
+  "domains": [
+   "huroncounty.ca"
+  ]
  },
  {
   "name": "Kenora District Services Board",
@@ -8252,7 +9637,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "kenora-district-services-board"
+  "slug": "kenora-district-services-board",
+  "domains": [
+   "kdsb.on.ca"
+  ]
  },
  {
   "name": "Lambton County",
@@ -8268,7 +9656,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lambton-county"
+  "slug": "lambton-county",
+  "domains": [
+   "lambtoncounty.ca"
+  ]
  },
  {
   "name": "Lanark County",
@@ -8284,7 +9675,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lanark-county"
+  "slug": "lanark-county",
+  "domains": [
+   "lanarkcounty.ca"
+  ]
  },
  {
   "name": "Lennox and Addington County",
@@ -8301,7 +9695,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lennox-and-addington-county"
+  "slug": "lennox-and-addington-county",
+  "domains": [
+   "lennox-addington.on.ca"
+  ]
  },
  {
   "name": "Manitoulin-Sudbury District Services Board",
@@ -8317,7 +9714,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "manitoulin-sudbury-district-services-board"
+  "slug": "manitoulin-sudbury-district-services-board",
+  "domains": [
+   "msdsb.net"
+  ]
  },
  {
   "name": "Middlesex County",
@@ -8333,7 +9733,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "middlesex-county"
+  "slug": "middlesex-county",
+  "domains": [
+   "middlesex.ca"
+  ]
  },
  {
   "name": "Niagara Region",
@@ -8349,7 +9752,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-region"
+  "slug": "niagara-region",
+  "domains": [
+   "niagararegion.ca"
+  ]
  },
  {
   "name": "Northumberland County",
@@ -8365,7 +9771,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "northumberland-county"
+  "slug": "northumberland-county",
+  "domains": [
+   "northumberland.ca"
+  ]
  },
  {
   "name": "Oxford County",
@@ -8381,7 +9790,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "oxford-county"
+  "slug": "oxford-county",
+  "domains": [
+   "oxfordcounty.ca"
+  ]
  },
  {
   "name": "Perth County",
@@ -8397,7 +9809,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "perth-county"
+  "slug": "perth-county",
+  "domains": [
+   "perthcounty.ca"
+  ]
  },
  {
   "name": "Peterborough County",
@@ -8413,7 +9828,10 @@
   "email": "purchasing@ptbocounty.ca",
   "emailSource": "https://www.ptbocounty.ca/county-government/departments/legislative-services-caos-office/bid-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "peterborough-county"
+  "slug": "peterborough-county",
+  "domains": [
+   "ptbocounty.ca"
+  ]
  },
  {
   "name": "Region of Waterloo",
@@ -8429,7 +9847,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "region-of-waterloo"
+  "slug": "region-of-waterloo",
+  "domains": [
+   "regionofwaterloo.ca"
+  ]
  },
  {
   "name": "Simcoe County",
@@ -8445,7 +9866,10 @@
   "email": "simcoe.purchasing@simcoe.ca",
   "emailSource": "https://simcoe.ca/simcoe-business/doing-business/doing-business-with-the-county-of-simcoe/",
   "checkedOn": "2026-10-15",
-  "slug": "simcoe-county"
+  "slug": "simcoe-county",
+  "domains": [
+   "simcoe.ca"
+  ]
  },
  {
   "name": "United Counties of Leeds and Grenville",
@@ -8461,7 +9885,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "united-counties-of-leeds-and-grenville"
+  "slug": "united-counties-of-leeds-and-grenville",
+  "domains": [
+   "leedsgrenville.com"
+  ]
  },
  {
   "name": "United Counties of Prescott and Russell",
@@ -8477,7 +9904,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "united-counties-of-prescott-and-russell"
+  "slug": "united-counties-of-prescott-and-russell",
+  "domains": [
+   "prescott-russell.on.ca"
+  ]
  },
  {
   "name": "United Counties of Stormont, Dundas and Glengarry",
@@ -8494,7 +9924,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "united-counties-of-stormont-dundas-and-glengarry"
+  "slug": "united-counties-of-stormont-dundas-and-glengarry",
+  "domains": [
+   "sdgcounties.ca"
+  ]
  },
  {
   "name": "Wellington County",
@@ -8510,7 +9943,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "wellington-county"
+  "slug": "wellington-county",
+  "domains": [
+   "wellington.ca"
+  ]
  },
  {
   "name": "York Region",
@@ -8526,7 +9962,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "york-region"
+  "slug": "york-region",
+  "domains": [
+   "york.ca"
+  ]
  },
  {
   "name": "Algoma DSB",
@@ -8542,7 +9981,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "algoma-dsb"
+  "slug": "algoma-dsb",
+  "domains": [
+   "adsb.on.ca"
+  ]
  },
  {
   "name": "Algonquin and Lakeshore Catholic DSB",
@@ -8556,7 +9998,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "algonquin-and-lakeshore-catholic-dsb"
+  "slug": "algonquin-and-lakeshore-catholic-dsb",
+  "domains": [
+   "alcdsb.on.ca"
+  ]
  },
  {
   "name": "Avon Maitland DSB",
@@ -8572,7 +10017,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "avon-maitland-dsb"
+  "slug": "avon-maitland-dsb",
+  "domains": [
+   "amdsb.ca"
+  ]
  },
  {
   "name": "Bluewater DSB",
@@ -8589,7 +10037,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "bluewater-dsb"
+  "slug": "bluewater-dsb",
+  "domains": [
+   "bwdsb.on.ca"
+  ]
  },
  {
   "name": "Brant Haldimand Norfolk Catholic DSB",
@@ -8603,7 +10054,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "brant-haldimand-norfolk-catholic-dsb"
+  "slug": "brant-haldimand-norfolk-catholic-dsb",
+  "domains": [
+   "bhncdsb.ca"
+  ]
  },
  {
   "name": "Bruce-Grey Catholic DSB",
@@ -8619,7 +10073,11 @@
   "email": "purchasing@sharedschoolservices.ca",
   "emailSource": "https://www.bgcdsb.org/apps/pages/index.jsp?uREC_ID=1101059&type=d&pREC_ID=1378784",
   "checkedOn": "2026-10-15",
-  "slug": "bruce-grey-catholic-dsb"
+  "slug": "bruce-grey-catholic-dsb",
+  "domains": [
+   "bgcdsb.org",
+   "sharedschoolservices.ca"
+  ]
  },
  {
   "name": "Catholic DSB of Eastern Ontario",
@@ -8633,7 +10091,10 @@
   "email": "purchasing@cdsbeo.on.ca",
   "emailSource": "https://www.cdsbeo.on.ca/our-board/departments/business/",
   "checkedOn": "2026-10-15",
-  "slug": "catholic-dsb-of-eastern-ontario"
+  "slug": "catholic-dsb-of-eastern-ontario",
+  "domains": [
+   "cdsbeo.on.ca"
+  ]
  },
  {
   "name": "CECCE",
@@ -8647,7 +10108,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "cecce"
+  "slug": "cecce",
+  "domains": [
+   "ecolecatholique.ca"
+  ]
  },
  {
   "name": "CEPEO",
@@ -8663,7 +10127,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "cepeo"
+  "slug": "cepeo",
+  "domains": [
+   "cepeo.on.ca"
+  ]
  },
  {
   "name": "Conseil scolaire Viamonde",
@@ -8679,7 +10146,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "conseil-scolaire-viamonde"
+  "slug": "conseil-scolaire-viamonde",
+  "domains": [
+   "csviamonde.ca"
+  ]
  },
  {
   "name": "CS catholique Providence",
@@ -8695,7 +10165,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "cs-catholique-providence"
+  "slug": "cs-catholique-providence",
+  "domains": [
+   "cscprovidence.ca"
+  ]
  },
  {
   "name": "CSC du Nouvel-Ontario",
@@ -8711,7 +10184,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "csc-du-nouvel-ontario"
+  "slug": "csc-du-nouvel-ontario",
+  "domains": [
+   "nouvelon.ca"
+  ]
  },
  {
   "name": "CSC Franco-Nord",
@@ -8727,7 +10203,11 @@
   "email": "info@francoachat.ca",
   "emailSource": "https://www.franco-nord.ca/Conseil/Nous-joindre/Soumission",
   "checkedOn": "2026-10-15",
-  "slug": "csc-franco-nord"
+  "slug": "csc-franco-nord",
+  "domains": [
+   "franco-nord.ca",
+   "francoachat.ca"
+  ]
  },
  {
   "name": "CSC MonAvenir",
@@ -8743,7 +10223,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "csc-monavenir"
+  "slug": "csc-monavenir",
+  "domains": [
+   "cscmonavenir.ca"
+  ]
  },
  {
   "name": "CSDC de l'Est ontarien",
@@ -8759,7 +10242,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "csdc-de-l-est-ontarien"
+  "slug": "csdc-de-l-est-ontarien",
+  "domains": [
+   "csdceo.ca"
+  ]
  },
  {
   "name": "CSP du Nord-Est",
@@ -8775,7 +10261,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "csp-du-nord-est"
+  "slug": "csp-du-nord-est",
+  "domains": [
+   "cspne.ca"
+  ]
  },
  {
   "name": "CSP Grand Nord",
@@ -8789,7 +10278,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "csp-grand-nord"
+  "slug": "csp-grand-nord",
+  "domains": [
+   "cspgno.ca"
+  ]
  },
  {
   "name": "District School Board of Niagara",
@@ -8805,7 +10297,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "district-school-board-of-niagara"
+  "slug": "district-school-board-of-niagara",
+  "domains": [
+   "dsbn.org"
+  ]
  },
  {
   "name": "District School Board Ontario North East",
@@ -8821,7 +10316,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "district-school-board-ontario-north-east"
+  "slug": "district-school-board-ontario-north-east",
+  "domains": [
+   "dsb1.ca"
+  ]
  },
  {
   "name": "Dufferin-Peel Catholic DSB",
@@ -8837,7 +10335,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "dufferin-peel-catholic-dsb"
+  "slug": "dufferin-peel-catholic-dsb",
+  "domains": [
+   "dpcdsb.org"
+  ]
  },
  {
   "name": "Durham Catholic DSB",
@@ -8853,7 +10354,10 @@
   "email": "purchasing@dcdsb.ca",
   "emailSource": "https://www.dcdsb.ca/our-board/bid-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "durham-catholic-dsb"
+  "slug": "durham-catholic-dsb",
+  "domains": [
+   "dcdsb.ca"
+  ]
  },
  {
   "name": "Durham DSB",
@@ -8869,7 +10373,8 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "durham-dsb"
+  "slug": "durham-dsb",
+  "domains": []
  },
  {
   "name": "Grand Erie DSB",
@@ -8885,7 +10390,10 @@
   "email": "purchasing@granderie.ca",
   "emailSource": "https://granderie.ca/board/departments/business-services/purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "grand-erie-dsb"
+  "slug": "grand-erie-dsb",
+  "domains": [
+   "granderie.ca"
+  ]
  },
  {
   "name": "Greater Essex County DSB",
@@ -8902,7 +10410,10 @@
   "email": "purchasingdept@publicboard.ca",
   "emailSource": "https://www.publicboard.ca/en/about-gecdsb/purchasing-and-procurement.aspx",
   "checkedOn": "2026-10-15",
-  "slug": "greater-essex-county-dsb"
+  "slug": "greater-essex-county-dsb",
+  "domains": [
+   "publicboard.ca"
+  ]
  },
  {
   "name": "Halton Catholic DSB",
@@ -8918,7 +10429,10 @@
   "email": "purchasing@hcdsb.org",
   "emailSource": "https://www.hcdsb.org/our-board/tenders-and-vendor-information/",
   "checkedOn": "2026-10-15",
-  "slug": "halton-catholic-dsb"
+  "slug": "halton-catholic-dsb",
+  "domains": [
+   "hcdsb.org"
+  ]
  },
  {
   "name": "Halton DSB",
@@ -8934,7 +10448,10 @@
   "email": "purchasing@hdsb.ca",
   "emailSource": "https://www.hdsb.ca/our-board/departments/business-services/purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "halton-dsb"
+  "slug": "halton-dsb",
+  "domains": [
+   "hdsb.ca"
+  ]
  },
  {
   "name": "Hamilton-Wentworth Catholic DSB",
@@ -8950,7 +10467,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hamilton-wentworth-catholic-dsb"
+  "slug": "hamilton-wentworth-catholic-dsb",
+  "domains": [
+   "hwcdsb.ca"
+  ]
  },
  {
   "name": "Hamilton-Wentworth DSB",
@@ -8966,7 +10486,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hamilton-wentworth-dsb"
+  "slug": "hamilton-wentworth-dsb",
+  "domains": [
+   "hwdsb.on.ca"
+  ]
  },
  {
   "name": "Hastings and Prince Edward DSB",
@@ -8982,7 +10505,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "hastings-and-prince-edward-dsb"
+  "slug": "hastings-and-prince-edward-dsb",
+  "domains": [
+   "hpedsb.on.ca"
+  ]
  },
  {
   "name": "Huron-Perth Catholic DSB",
@@ -8996,7 +10522,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "huron-perth-catholic-dsb"
+  "slug": "huron-perth-catholic-dsb",
+  "domains": [
+   "hpcdsb.ca"
+  ]
  },
  {
   "name": "Huron-Superior Catholic DSB",
@@ -9012,7 +10541,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "huron-superior-catholic-dsb"
+  "slug": "huron-superior-catholic-dsb",
+  "domains": [
+   "hscdsb.on.ca"
+  ]
  },
  {
   "name": "Kawartha Pine Ridge DSB",
@@ -9028,7 +10560,11 @@
   "email": "purchase_dept@kprdsb.ca",
   "emailSource": "https://www.kprschools.ca/our-board/bid-opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "kawartha-pine-ridge-dsb"
+  "slug": "kawartha-pine-ridge-dsb",
+  "domains": [
+   "kprschools.ca",
+   "kprdsb.ca"
+  ]
  },
  {
   "name": "Keewatin-Patricia DSB",
@@ -9042,7 +10578,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "keewatin-patricia-dsb"
+  "slug": "keewatin-patricia-dsb",
+  "domains": [
+   "kpdsb.ca"
+  ]
  },
  {
   "name": "Lakehead DSB",
@@ -9058,7 +10597,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "lakehead-dsb"
+  "slug": "lakehead-dsb",
+  "domains": [
+   "lakeheadschools.ca"
+  ]
  },
  {
   "name": "Lambton Kent DSB",
@@ -9074,7 +10616,10 @@
   "email": "purchasing@lkdsb.net",
   "emailSource": "https://www.lkdsb.net/page/purchasing-tenders/",
   "checkedOn": "2026-10-15",
-  "slug": "lambton-kent-dsb"
+  "slug": "lambton-kent-dsb",
+  "domains": [
+   "lkdsb.net"
+  ]
  },
  {
   "name": "Limestone DSB",
@@ -9090,7 +10635,10 @@
   "email": "purchasing@limestone.on.ca",
   "emailSource": "https://www.limestone.on.ca/procurement__vendors",
   "checkedOn": "2026-10-15",
-  "slug": "limestone-dsb"
+  "slug": "limestone-dsb",
+  "domains": [
+   "limestone.on.ca"
+  ]
  },
  {
   "name": "London District Catholic SB",
@@ -9106,7 +10654,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "london-district-catholic-sb"
+  "slug": "london-district-catholic-sb",
+  "domains": [
+   "ldcsb.ca"
+  ]
  },
  {
   "name": "Near North DSB",
@@ -9122,7 +10673,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "near-north-dsb"
+  "slug": "near-north-dsb",
+  "domains": [
+   "nearnorthschools.ca"
+  ]
  },
  {
   "name": "Niagara Catholic DSB",
@@ -9136,7 +10690,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "niagara-catholic-dsb"
+  "slug": "niagara-catholic-dsb",
+  "domains": [
+   "niagaracatholic.ca"
+  ]
  },
  {
   "name": "Nipissing-Parry Sound Catholic DSB",
@@ -9150,7 +10707,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "nipissing-parry-sound-catholic-dsb"
+  "slug": "nipissing-parry-sound-catholic-dsb",
+  "domains": [
+   "npsc.ca"
+  ]
  },
  {
   "name": "Ottawa Catholic SB",
@@ -9166,7 +10726,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "ottawa-catholic-sb"
+  "slug": "ottawa-catholic-sb",
+  "domains": [
+   "ocsb.ca"
+  ]
  },
  {
   "name": "Ottawa-Carleton DSB",
@@ -9182,7 +10745,10 @@
   "email": "supplychainmanagement@ocdsb.ca",
   "emailSource": "https://www.ocdsb.ca/about-us/departments/supply-chain-management-department",
   "checkedOn": "2026-10-15",
-  "slug": "ottawa-carleton-dsb"
+  "slug": "ottawa-carleton-dsb",
+  "domains": [
+   "ocdsb.ca"
+  ]
  },
  {
   "name": "Peel DSB",
@@ -9196,7 +10762,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "peel-dsb"
+  "slug": "peel-dsb",
+  "domains": [
+   "peelschools.org"
+  ]
  },
  {
   "name": "Peterborough Victoria Northumberland and Clarington Catholic DSB",
@@ -9212,7 +10781,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "peterborough-victoria-northumberland-and-clarington-catholic-dsb"
+  "slug": "peterborough-victoria-northumberland-and-clarington-catholic-dsb",
+  "domains": [
+   "pvnccdsb.on.ca"
+  ]
  },
  {
   "name": "Rainbow DSB",
@@ -9228,7 +10800,10 @@
   "email": "bids@rainbowschools.ca",
   "emailSource": "https://www.rainbowschools.ca/bid-opportunities/",
   "checkedOn": "2026-10-15",
-  "slug": "rainbow-dsb"
+  "slug": "rainbow-dsb",
+  "domains": [
+   "rainbowschools.ca"
+  ]
  },
  {
   "name": "Renfrew County Catholic DSB",
@@ -9242,7 +10817,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "renfrew-county-catholic-dsb"
+  "slug": "renfrew-county-catholic-dsb",
+  "domains": [
+   "rccdsb.ca"
+  ]
  },
  {
   "name": "Renfrew County DSB",
@@ -9258,7 +10836,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "renfrew-county-dsb"
+  "slug": "renfrew-county-dsb",
+  "domains": [
+   "rcdsb.on.ca"
+  ]
  },
  {
   "name": "Simcoe County DSB",
@@ -9274,7 +10855,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "simcoe-county-dsb"
+  "slug": "simcoe-county-dsb",
+  "domains": [
+   "scdsb.on.ca"
+  ]
  },
  {
   "name": "Simcoe Muskoka Catholic DSB",
@@ -9290,7 +10874,10 @@
   "email": "purchasing@smcdsb.on.ca",
   "emailSource": "https://www.smcdsb.on.ca/our_board/purchasing_department/bid_opportunities",
   "checkedOn": "2026-10-15",
-  "slug": "simcoe-muskoka-catholic-dsb"
+  "slug": "simcoe-muskoka-catholic-dsb",
+  "domains": [
+   "smcdsb.on.ca"
+  ]
  },
  {
   "name": "St. Clair Catholic DSB",
@@ -9306,7 +10893,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "st-clair-catholic-dsb"
+  "slug": "st-clair-catholic-dsb",
+  "domains": [
+   "sccdsb.net"
+  ]
  },
  {
   "name": "Sudbury Catholic DSB",
@@ -9323,7 +10913,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sudbury-catholic-dsb"
+  "slug": "sudbury-catholic-dsb",
+  "domains": [
+   "sudburycatholicschools.ca"
+  ]
  },
  {
   "name": "Thames Valley DSB",
@@ -9339,7 +10932,10 @@
   "email": "purchasing@tvdsb.ca",
   "emailSource": "https://www.tvdsb.ca/our-board/business-services/purchasing/",
   "checkedOn": "2026-10-15",
-  "slug": "thames-valley-dsb"
+  "slug": "thames-valley-dsb",
+  "domains": [
+   "tvdsb.ca"
+  ]
  },
  {
   "name": "Thunder Bay Catholic DSB",
@@ -9355,7 +10951,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "thunder-bay-catholic-dsb"
+  "slug": "thunder-bay-catholic-dsb",
+  "domains": [
+   "tbcschools.ca"
+  ]
  },
  {
   "name": "Toronto Catholic DSB",
@@ -9371,7 +10970,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "toronto-catholic-dsb"
+  "slug": "toronto-catholic-dsb",
+  "domains": [
+   "tcdsb.org"
+  ]
  },
  {
   "name": "Toronto DSB",
@@ -9387,7 +10989,10 @@
   "email": "purchasing@tdsb.on.ca",
   "emailSource": "https://www.tdsb.on.ca/About-Us/Business-Services/Purchasing",
   "checkedOn": "2026-10-15",
-  "slug": "toronto-dsb"
+  "slug": "toronto-dsb",
+  "domains": [
+   "tdsb.on.ca"
+  ]
  },
  {
   "name": "Trillium Lakelands DSB",
@@ -9403,7 +11008,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "trillium-lakelands-dsb"
+  "slug": "trillium-lakelands-dsb",
+  "domains": [
+   "tldsb.ca"
+  ]
  },
  {
   "name": "Upper Canada DSB",
@@ -9419,7 +11027,10 @@
   "email": "purchasing@ucdsb.on.ca",
   "emailSource": "https://www.ucdsb.on.ca/our_board/district_plans/financial_information/purchasing_services",
   "checkedOn": "2026-10-15",
-  "slug": "upper-canada-dsb"
+  "slug": "upper-canada-dsb",
+  "domains": [
+   "ucdsb.on.ca"
+  ]
  },
  {
   "name": "Upper Grand DSB",
@@ -9436,7 +11047,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "upper-grand-dsb"
+  "slug": "upper-grand-dsb",
+  "domains": [
+   "ugdsb.ca"
+  ]
  },
  {
   "name": "Waterloo Catholic DSB",
@@ -9452,7 +11066,10 @@
   "email": "purchasing@wcdsb.ca",
   "emailSource": "https://www.wcdsb.ca/about-us/cs/purchasing-services/",
   "checkedOn": "2026-10-15",
-  "slug": "waterloo-catholic-dsb"
+  "slug": "waterloo-catholic-dsb",
+  "domains": [
+   "wcdsb.ca"
+  ]
  },
  {
   "name": "Waterloo Region DSB",
@@ -9468,7 +11085,10 @@
   "email": "procurement@wrdsb.ca",
   "emailSource": "https://www.wrdsb.ca/about-the-wrdsb/procurement-services/",
   "checkedOn": "2026-10-15",
-  "slug": "waterloo-region-dsb"
+  "slug": "waterloo-region-dsb",
+  "domains": [
+   "wrdsb.ca"
+  ]
  },
  {
   "name": "Wellington Catholic DSB",
@@ -9484,7 +11104,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "wellington-catholic-dsb"
+  "slug": "wellington-catholic-dsb",
+  "domains": [
+   "wellingtoncdsb.ca"
+  ]
  },
  {
   "name": "Windsor-Essex Catholic DSB",
@@ -9500,7 +11123,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "windsor-essex-catholic-dsb"
+  "slug": "windsor-essex-catholic-dsb",
+  "domains": [
+   "wecdsb.on.ca"
+  ]
  },
  {
   "name": "York Catholic DSB",
@@ -9516,7 +11142,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "york-catholic-dsb"
+  "slug": "york-catholic-dsb",
+  "domains": [
+   "ycdsb.ca"
+  ]
  },
  {
   "name": "York Region DSB",
@@ -9532,7 +11161,10 @@
   "email": "purchasing.services@yrdsb.ca",
   "emailSource": "https://www2.yrdsb.ca/about-us/departments",
   "checkedOn": "2026-10-15",
-  "slug": "york-region-dsb"
+  "slug": "york-region-dsb",
+  "domains": [
+   "yrdsb.ca"
+  ]
  },
  {
   "name": "Government of Prince Edward Island",
@@ -9549,7 +11181,10 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-09",
-  "slug": "government-of-prince-edward-island"
+  "slug": "government-of-prince-edward-island",
+  "domains": [
+   "princeedwardisland.ca"
+  ]
  },
  {
   "name": "City of Regina",
@@ -9565,7 +11200,10 @@
   "email": "procurement@regina.ca",
   "emailSource": "https://www.regina.ca/business-development/tenders-procurement/",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-regina"
+  "slug": "city-of-regina",
+  "domains": [
+   "regina.ca"
+  ]
  },
  {
   "name": "City of Saskatoon",
@@ -9582,7 +11220,10 @@
   "email": "purchasingadmin@saskatoon.ca",
   "emailSource": "https://www.saskatoon.ca/business-development/doing-business-city/bid-vendor-information",
   "checkedOn": "2026-10-15",
-  "slug": "city-of-saskatoon"
+  "slug": "city-of-saskatoon",
+  "domains": [
+   "saskatoon.ca"
+  ]
  },
  {
   "name": "SaskTenders (all SK public sector)",
@@ -9598,6 +11239,7 @@
   "email": null,
   "emailSource": null,
   "checkedOn": "2026-10-15",
-  "slug": "sasktenders-all-sk-public-sector"
+  "slug": "sasktenders-all-sk-public-sector",
+  "domains": []
  }
 ]

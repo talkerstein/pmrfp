@@ -31,9 +31,15 @@ export function WidgetShell({
   footerLinks,
   list = true,
   media,
+  homeHref,
+  lang,
   children,
 }: {
   kind: WidgetKind;
+  /** Where "Powered by PMRFP" points (default: the last footer link's site, which must then be ours). */
+  homeHref?: string;
+  /** The widget's language when it isn't English (the town-bids widget). */
+  lang?: string;
   /** Optional logo/avatar shown left of the title. */
   media?: React.ReactNode;
   eyebrow?: string;
@@ -50,6 +56,7 @@ export function WidgetShell({
       <div
         id="pmrfp-w"
         suppressHydrationWarning
+        lang={lang}
         data-kind={kind}
         data-default-limit={list ? DEFAULT_LIMIT : undefined}
         className="overflow-hidden rounded-[14px] border border-border bg-card font-sans text-card-foreground"
@@ -82,7 +89,7 @@ export function WidgetShell({
               </a>
             ))}
           </div>
-          <PoweredBy href={footerLinks[footerLinks.length - 1]?.href ?? "https://pmrfp.com"} />
+          <PoweredBy href={homeHref ?? footerLinks[footerLinks.length - 1]?.href ?? "https://pmrfp.com"} />
         </div>
       </div>
       <script dangerouslySetInnerHTML={{ __html: RUNTIME }} />

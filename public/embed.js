@@ -23,7 +23,7 @@
   }
 
   // Keep in sync with WIDGET_PATH_RE in src/lib/embed/widgets.ts.
-  var PATH = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+)$/;
+  var PATH = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+|town-bids\/(en|fr|es)\/[a-z0-9-]+\/[a-z0-9-]+)$/;
   var frames = [];
 
   function mount(el) {

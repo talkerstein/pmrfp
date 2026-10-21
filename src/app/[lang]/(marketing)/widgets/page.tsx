@@ -12,6 +12,9 @@ import { WIDGET_KINDS, type WidgetKind } from "@/lib/embed/widgets";
 import { getMyTrustedList } from "@/lib/trusted/data";
 import { TRUSTED_ROLES } from "@/lib/trusted/rules";
 import { SITE } from "@/lib/site";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isServiceConfigured } from "@/lib/supabase/config";
+import { parseBuyerKey } from "@/lib/towns/managed";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
@@ -31,7 +34,7 @@ const LISTED = new Set(["trade_company", "supplier"]);
 
 export default async function WidgetsPage({
   searchParams, params }: {
-  searchParams: Promise<{ w?: string; company?: string }>;
+  searchParams: Promise<{ w?: string; company?: string; town?: string }>;
 } & { params: Promise<object> }) {
   await setLangFrom(params);
   const lang = getLang();
@@ -46,6 +49,15 @@ export default async function WidgetsPage({
   const trusted =
     session && role && (TRUSTED_ROLES as readonly string[]).includes(role) ? await getMyTrustedList(session.userId) : null;
   const bidsKey = org && POSTERS.has(org.organization_type) ? bidsWidgetKey(org.id) : null;
+  // Town bids: a verified public buyer's own page, else the page a town page linked from (?town=<province>/<slug>; the data is public).
+  let townBids: { province: string; slug: string } | null = null;
+  if (org?.organization_type === "public_buyer" && isServiceConfigured()) {
+    const { data } = await createServiceClient().from("buyer_pages").select("buyer_key").eq("organization_id", org.id).maybeSingle<{ buyer_key: string }>();
+    const k = parseBuyerKey(data?.buyer_key);
+    if (k) townBids = { province: k.provinceSlug, slug: k.slug };
+  }
+  const linkedTown = parseBuyerKey(sp.town);
+  if (!townBids && linkedTown) townBids = { province: linkedTown.provinceSlug, slug: linkedTown.slug };
 
   const access: WidgetAccess = {
     signedIn: !!session,
@@ -58,13 +70,14 @@ export default async function WidgetsPage({
           ? { slug: linked.slug, ready: true }
           : null,
     trusted: trusted?.list?.published ? { handle: trusted.list.handle } : null,
+    townBids,
   };
 
   // Open on the tab the member can actually use, unless a link asked for one.
   const asked = WIDGET_KINDS.find((k) => k === sp.w);
   const initialKind: WidgetKind =
     asked ??
-    (access.company ? "company" : access.bids ? "bids" : access.trusted ? "trusted" : "feed");
+    (townBids ? "town-bids" : access.company ? "company" : access.bids ? "bids" : access.trusted ? "trusted" : "feed");
 
   // Code copied on production always points at pmrfp.com; previews and local
   // dev point at themselves so the widgets can be tried before release.

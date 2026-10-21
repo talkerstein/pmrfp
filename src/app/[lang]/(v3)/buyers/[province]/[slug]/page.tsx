@@ -3,15 +3,21 @@ import { notFound } from "next/navigation";
 import { RecordFooter } from "@/components/public/record-footer";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
 import { loadBuyers } from "@/lib/buyers/load";
-import { BUYERS_PATH, findBuyerPage, isIndexableBuyer } from "@/lib/buyers/model";
+import { BUYERS_PATH, findBuyerPage, pageKind } from "@/lib/buyers/model";
 import { AND, buyerFaq, commercialOf, platformList } from "@/lib/buyers/faq";
 import { compactDollars } from "@/lib/data/fomo";
+import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { benchmarkPath, insightsMarketPath } from "@/lib/insights/paths";
 import { publicTenderSource } from "@/lib/tenders/sources";
-import { getBuyerPermissionSnapshot } from "@/lib/buyers/permissions-data";
-import { buyerPageCta, buyerPermission } from "@/lib/buyers/permissions";
+import { buyerPageCta } from "@/lib/buyers/permissions";
 import { cityByBuyer } from "@/lib/tenders/city-sources";
 import { listYourTendersHref } from "@/lib/buyers/source-links";
+import { buyerDisplayName } from "@/lib/towns/claimable";
+import { townType } from "@/lib/towns/data";
+import { nearbyOpenBids, placeOf } from "@/lib/towns/nearby";
+import { buyerPageExtras, followRegionSlug } from "@/lib/towns/page-data";
+import { ClaimCta, ManagedRows, TownWidgetCode, UpcomingPurchases, VerifiedBadge } from "@/components/towns/blocks";
+import { TownPageView } from "@/components/towns/town-page";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
@@ -23,7 +29,9 @@ import { SH2, SimplePage } from "@/components/v3/simple";
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  return []; // rendered on first visit, then cached — no build-time prebuild (DB-load incident 2026-10-09)
+  // Rendered on first visit, then cached (ISR): no build-time prebuild of the
+  // ~3,800 buyer and town pages (DB-load incident 2026-10-09, build budget).
+  return [];
 }
 
 type Params = Promise<{ lang: string; province: string; slug: string }>;
@@ -36,13 +44,25 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const t = getDictionary(l).buyers;
   const p = findBuyerPage((await loadBuyers()).pages, province, slug);
   if (!p) return { title: t.index.h1, robots: { index: false } };
+  const { indexable } = await buyerPageExtras(p);
+  // Only pages with PMRFP data beyond the link (or a verified buyer, or permission) are indexed; the rest stay out.
+  const robots = indexable ? {} : { robots: { index: false, follow: true } };
+  if (pageKind(p) === "town" && p.town) {
+    const tt = getDictionary(l).towns.meta;
+    const name = buyerDisplayName(p, l);
+    return {
+      title: fmt(tt.townTitle, { name }),
+      description: fmt(tt.townDescription, { name, type: townType(p.town, l).toLowerCase(), province: regionName(p.province, l) }),
+      alternates: alternatesFor(l, p.path),
+      ...robots,
+    };
+  }
   const platform = platformList(p.buyer.platforms, t, AND[l] ?? "and") || t.index.unknown.toLowerCase();
   return {
     title: fmt(t.meta.buyerTitle, { name: p.buyer.name }),
     description: fmt(t.meta.buyerDescription, { name: p.buyer.name, province: regionName(p.province, l), platform }),
     alternates: alternatesFor(l, p.path),
-    // Only pages with PMRFP data beyond the link are indexed; link-and-tips pages stay out.
-    ...(isIndexableBuyer(p) ? {} : { robots: { index: false, follow: true } }),
+    ...robots,
   };
 }
 
@@ -57,6 +77,16 @@ export default async function BuyerPageView({ params }: { params: Params }) {
   const { pages, categories } = await loadBuyers();
   const p = findBuyerPage(pages, provSlug, slug);
   if (!p) notFound();
+  // PMRFP for Towns: who manages the page and whether the buyer said yes, from the shared snapshots.
+  const { key, managed, permission } = await buyerPageExtras(p);
+
+  // A municipality only Statistics Canada knows (no research yet): its own town page.
+  if (pageKind(p) === "town" && p.town) {
+    const place = placeOf(p, lang);
+    const [rfps, regionSlug] = await Promise.all([listAllRfpsCached().catch(() => []), followRegionSlug(p)]);
+    const nearby = nearbyOpenBids(rfps, { province: p.province, place, exclude: new Set(p.openBids.map((o) => o.slug)) });
+    return <TownPageView page={p} name={buyerDisplayName(p, lang)} place={place} managed={managed} permission={permission} nearby={nearby} regionSlug={regionSlug} />;
+  }
 
   const b = p.buyer;
   const name = b.name;
@@ -71,9 +101,10 @@ export default async function BuyerPageView({ params }: { params: Params }) {
   const intelHref = L(p.intelSlug ? `/intel/buyers/${p.intelSlug}` : "/intel");
   // The city flow: a buyer that said yes gets the "Listed with permission"
   // card; one that said no gets nothing new (the plain links, as before);
-  // everyone else gets the "list your tenders free" link.
-  const permission = buyerPermission(await getBuyerPermissionSnapshot(), b.slug);
+  // everyone else gets the "list your tenders free" link (and, unless the
+  // page is managed already, "Claim this page free").
   const city = cityByBuyer(b.slug);
+  const tt = getT("towns").page;
   const cta = buyerPageCta(permission);
   const listedWithPermission = cta === "listed";
   const officialPosting = (city?.list.kind === "platform" ? city.list.portalUrl : null) ?? b.portalUrl ?? b.tendersUrl;
@@ -101,7 +132,11 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         tabs={false}
         aside={false}
         title={name}
-        lead={fmt(t.page.lead, { type: t.groupSingular[b.group].replace(/^./, (c) => c.toUpperCase()), province })}
+        lead={
+          p.town?.population != null
+            ? fmt(tt.leadPopulation, { type: townType(p.town, lang), province, n: formatNumber(p.town.population, lang) })
+            : fmt(t.page.lead, { type: t.groupSingular[b.group].replace(/^./, (c) => c.toUpperCase()), province })
+        }
       >
         <div className="s-facts">
           <div><div className="k">{t.page.facts.platform}</div><div className="v" data-stat="platform">{platform || t.index.unknown}</div></div>
@@ -109,6 +144,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
           <div><div className="k">{t.page.facts.open}</div><div className="v" data-stat="open">{formatNumber(p.openBids.length, lang)}</div></div>
         </div>
 
+        {managed && <div style={{ marginTop: 18 }}><VerifiedBadge managed={managed} name={managed.organizationName || buyerDisplayName(p, lang)} /></div>}
         {p.fromBoard && <p className="small muted" style={{ marginTop: 18 }}>{t.page.fromBoard}</p>}
 
         <SH2 no={++no} id="where">{fmt(t.page.whereTitle, { name })}</SH2>
@@ -116,6 +152,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         <div className="s-dtw">
           <table className="s-dt" data-list="where">
             <tbody>
+              {managed && <ManagedRows managed={managed} />}
               {b.tendersUrl && (
                 <tr>
                   <th scope="row">{t.page.official}</th>
@@ -156,6 +193,8 @@ export default async function BuyerPageView({ params }: { params: Params }) {
             <a href={L(listYourTendersHref({ buyerSlug: b.slug, provinceCode: b.provinceCode }))}>{t.page.listYours} →</a>
           </p>
         )}
+        {/* A buyer that said no gets nothing new; a managed page is already claimed. */}
+        {!managed && cta !== "none" && <ClaimCta name={buyerDisplayName(p, lang)} buyerKey={key} />}
 
         <SH2 no={++no} id="register">{t.page.registerTitle}</SH2>
         {(b.platforms.length ? b.platforms.slice(0, 3) : (["unknown"] as const)).map((k) => (
@@ -184,6 +223,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         ) : (
           <p className="muted">{fmt(t.page.openNone, { name })}</p>
         )}
+        {managed && managed.upcoming.length > 0 && <UpcomingPurchases managed={managed} no={++no} />}
 
         <SH2 no={++no} id="awards">{fmt(t.page.awardsTitle, { name })}</SH2>
         {p.awards.count ? (
@@ -280,6 +320,13 @@ export default async function BuyerPageView({ params }: { params: Params }) {
             <a href={alertsHref} className="btn mint lg">{t.page.alertsBtn}</a>
           </div>
         </div>
+
+        {managed && (
+          <>
+            <SH2 no={++no} id="widget">{tt.widgetTitle}</SH2>
+            <TownWidgetCode provinceSlug={p.provinceSlug} slug={b.slug} lang={lang} title={tt.widgetTitle} body={tt.widgetBody} />
+          </>
+        )}
 
         <SH2 no={++no} id="faq">{t.page.faqTitle}</SH2>
         <dl data-list="faq">

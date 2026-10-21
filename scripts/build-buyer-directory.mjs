@@ -15,7 +15,9 @@
  * Only what a contractor needs is kept: the buyer, where it posts bids
  * (official page + platform), and a role-based procurement inbox when the
  * buyer's own page shows one (personal staff addresses are dropped). Internal
- * research notes and verdicts are not published.
+ * research notes and verdicts are not published. `domains` (the buyer's own
+ * web and email domains) lets a clerk with a matching work email claim the
+ * buyer's page on the spot (src/lib/towns/domains.ts).
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -150,6 +152,50 @@ export function groupOf(type) {
   return "agency";
 }
 
+/** Two-label public suffixes (on.ca, gc.ca…): the registrable domain is one label deeper. */
+const MULTI_SUFFIX = new Set(["on.ca", "qc.ca", "bc.ca", "ab.ca", "mb.ca", "sk.ca", "ns.ca", "nb.ca", "nl.ca", "nf.ca", "pe.ca", "yk.ca", "nt.ca", "nu.ca", "gc.ca"]);
+
+/**
+ * Domains that never prove someone works for a buyer: bid platforms, website
+ * builders and social sites a bids page or contact can sit on.
+ */
+const NOT_A_BUYER_DOMAIN = new Set([
+  "bidsandtenders.ca", "bidsandtenders.com", "bonfirehub.ca", "bonfirehub.com", "biddingo.com", "merx.com", "ariba.com",
+  "jaggaer.com", "civicinfo.bc.ca", "sasktenders.ca", "google.com", "facebook.com", "linkedin.com", "wixsite.com",
+  "squarespace.com", "wordpress.com", "weebly.com", "godaddysites.com", "eventbrite.com", "esolutionsgroup.ca",
+]);
+
+/** "https://www.city.oakville.on.ca/x" → "oakville.on.ca"; null for anything that isn't a hostname. */
+export function registrableDomain(input) {
+  const raw = (input ?? "").trim().toLowerCase();
+  if (!raw) return null;
+  let host = raw.includes("@") ? raw.split("@").pop() : raw;
+  try {
+    host = new URL(/^[a-z][a-z0-9+.-]*:\/\//.test(host) ? host : `https://${host}`).hostname;
+  } catch {
+    return null;
+  }
+  host = host.replace(/\.$/, "");
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)) return null;
+  const parts = host.split(".");
+  const lastTwo = parts.slice(-2).join(".");
+  return MULTI_SUFFIX.has(lastTwo) && parts.length >= 3 ? parts.slice(-3).join(".") : lastTwo;
+}
+
+/**
+ * The buyer's own domains, for verifying a clerk's work email (lib/towns/domains):
+ * its official bids page's domain first, then the domain of its role inbox and
+ * of the page that inbox was read on. Platforms and site builders are dropped.
+ */
+export function buyerDomains(b) {
+  const out = [];
+  for (const src of [b.tendersUrl, b.email, b.emailSource]) {
+    const d = registrableDomain(src);
+    if (d && !NOT_A_BUYER_DOMAIN.has(d) && !out.includes(d)) out.push(d);
+  }
+  return out;
+}
+
 /** A role inbox (purchasing@, bids@, procurement@…), never a person's address. */
 const ROLE = /purchas|procure|bid|tender|suppl|vendor|contract|finance|buy|sourc|customerservice|^info|general|^supply/i;
 export function roleEmail(e) {
@@ -225,6 +271,7 @@ function build() {
   }
 
   out.sort((a, b) => a.provinceCode.localeCompare(b.provinceCode) || a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
+  for (const b of out) b.domains = buyerDomains(b);
   return out;
 }
 
