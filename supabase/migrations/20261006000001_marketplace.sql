@@ -141,3 +141,12 @@ create policy "marketplace listings admin all" on public.marketplace_listings
 -- Check after running:
 -- select count(*) from public.marketplace_listings;
 -- select proname from pg_proc where proname in ('marketplace_listings_guard','marketplace_increment_views');
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.marketplace_listings to service_role;
+grant select, insert, update, delete on public.marketplace_messages to service_role;
+grant select on public.marketplace_listings to anon, authenticated;
+grant insert on public.marketplace_listings to authenticated;
+grant update on public.marketplace_listings to authenticated;
+grant delete on public.marketplace_listings to authenticated;
+grant select, insert, update, delete on public.marketplace_listings to authenticated;

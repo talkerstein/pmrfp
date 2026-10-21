@@ -23,3 +23,7 @@ create policy "bid checks: members and admins read" on public.rfp_bid_checks
 
 -- Verify: expect 0 on first run.
 select count(*) as bid_checks from public.rfp_bid_checks;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.rfp_bid_checks to service_role;
+grant select on public.rfp_bid_checks to anon, authenticated;

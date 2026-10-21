@@ -56,3 +56,7 @@ alter table public.notification_preferences
 --   from public.lifecycle_sends group by 1, 2 order by 1, 2;
 -- select count(*) filter (where not lifecycle_emails) as unsubscribed from public.notification_preferences;
 select count(*) as lifecycle_sends from public.lifecycle_sends;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.lifecycle_sends to service_role;
+grant select on public.lifecycle_sends to authenticated;

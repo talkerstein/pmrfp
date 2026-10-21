@@ -157,3 +157,11 @@ grant select on public.major_project_source_counts to authenticated;
 
 -- Verify: expect 0 rows before the first import.
 select count(*) as major_projects from public.major_projects;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.major_projects to service_role;
+grant select on public.major_projects to authenticated;
+grant update on public.major_projects to authenticated;
+grant insert on public.major_projects to authenticated;
+grant select on public.major_project_source_counts to service_role;
+grant select on public.major_projects_public to service_role;

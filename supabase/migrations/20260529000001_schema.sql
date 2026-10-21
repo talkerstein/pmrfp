@@ -498,3 +498,27 @@ language sql stable security definer set search_path = public as $$
     where om.user_id = uid and om.organization_id = org
   );
 $$;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.audit_logs to service_role;
+grant select, insert, update, delete on public.contact_requests to service_role;
+grant select, insert, update, delete on public.notifications to service_role;
+grant select, insert, update, delete on public.organization_categories to service_role;
+grant select, insert, update, delete on public.organization_members to service_role;
+grant select, insert, update, delete on public.organization_property_types to service_role;
+grant select, insert, update, delete on public.organization_regions to service_role;
+grant select, insert, update, delete on public.organizations to service_role;
+grant select, insert, update, delete on public.platform_settings to service_role;
+grant select, insert, update, delete on public.profile_views to service_role;
+grant select, insert, update, delete on public.property_types to service_role;
+grant select, insert, update, delete on public.regions to service_role;
+grant select, insert, update, delete on public.resources to service_role;
+grant select, insert, update, delete on public.rfp_categories to service_role;
+grant select, insert, update, delete on public.rfp_documents to service_role;
+grant select, insert, update, delete on public.rfp_interests to service_role;
+grant select, insert, update, delete on public.rfp_posts to service_role;
+grant select, insert, update, delete on public.rfp_views to service_role;
+grant select, insert, update, delete on public.saved_rfps to service_role;
+grant select, insert, update, delete on public.subscriptions to service_role;
+grant select, insert, update, delete on public.trade_categories to service_role;
+grant select, insert, update, delete on public.users_profile to service_role;

@@ -18,3 +18,6 @@ create policy "saved insert own" on public.saved_rfps
 -- Verify: expect one row, "saved insert own".
 select policyname from pg_policies
 where schemaname = 'public' and tablename = 'saved_rfps' and cmd = 'INSERT';
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant insert on public.saved_rfps to authenticated;

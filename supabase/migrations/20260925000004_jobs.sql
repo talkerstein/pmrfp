@@ -78,3 +78,9 @@ create policy "job applications employer read" on public.job_applications
         and (public.is_org_member(auth.uid(), j.organization_id) or public.is_admin(auth.uid()))
     )
   );
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.job_applications to service_role;
+grant select, insert, update, delete on public.job_posts to service_role;
+grant select on public.job_posts to anon, authenticated;
+grant select on public.job_applications to authenticated;

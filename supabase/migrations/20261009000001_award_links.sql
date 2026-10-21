@@ -30,3 +30,6 @@ grant select on public.rfp_award_links to anon, authenticated;
 
 -- Verify: expect several hundred rows (one per published award notice).
 select count(*) as award_links from public.rfp_award_links;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select on public.rfp_award_links to service_role;

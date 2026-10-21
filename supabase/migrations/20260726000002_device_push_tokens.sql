@@ -40,3 +40,10 @@ create policy "push tokens self delete" on public.device_push_tokens
 
 -- The alerts cron runs with the service-role key, which bypasses RLS, so it
 -- needs no policy of its own to read every token.
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.device_push_tokens to service_role;
+grant select on public.device_push_tokens to authenticated;
+grant insert on public.device_push_tokens to authenticated;
+grant update on public.device_push_tokens to authenticated;
+grant delete on public.device_push_tokens to authenticated;

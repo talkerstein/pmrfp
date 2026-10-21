@@ -74,3 +74,7 @@ $$;
 
 -- Verify: expect 0 rows right after the first run.
 select count(*) as intel_access_rows from public.intel_access;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.intel_access to service_role;
+grant select on public.intel_access to authenticated;

@@ -145,3 +145,9 @@ grant execute on function public.award_history_intel_slice(text, date, integer) 
 -- Verify: expect 0 and 0 right after the first run.
 select (select count(*) from public.award_history) as award_history_rows,
        (select count(*) from public.bid_results) as bid_results_rows;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.award_history to service_role;
+grant select, insert, update, delete on public.bid_results to service_role;
+grant select on public.award_history to authenticated;
+grant select on public.bid_results to authenticated;

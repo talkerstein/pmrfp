@@ -140,3 +140,16 @@ create policy "talent contacts org read" on public.talent_contacts
   for select to authenticated using (
     public.is_org_member(auth.uid(), organization_id) or public.is_admin(auth.uid())
   );
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.talent_contacts to service_role;
+grant select, insert, update, delete on public.talent_endorsements to service_role;
+grant select, insert, update, delete on public.talent_private to service_role;
+grant select, insert, update, delete on public.talent_profiles to service_role;
+grant select on public.talent_profiles to anon, authenticated;
+grant insert on public.talent_profiles to authenticated;
+grant update on public.talent_profiles to authenticated;
+grant delete on public.talent_profiles to authenticated;
+grant select, insert, update, delete on public.talent_private to authenticated;
+grant select on public.talent_endorsements to anon, authenticated;
+grant select on public.talent_contacts to authenticated;

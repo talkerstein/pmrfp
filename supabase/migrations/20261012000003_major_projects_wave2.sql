@@ -45,3 +45,6 @@ grant select on public.major_projects_public to anon, authenticated;
 
 -- Verify: projects per status (expect no 'application' rows before the first wave-2 import).
 select status, count(*) from public.major_projects group by status order by status;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select on public.major_projects_public to service_role;

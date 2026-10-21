@@ -193,3 +193,13 @@ grant execute on function public.record_sponsor_click(text, text, text, text) to
 
 -- Verify: expect 0 sponsors before the first sale.
 select count(*) as sponsors from public.sponsors;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.sponsor_impressions to service_role;
+grant select, insert, update, delete on public.sponsors to service_role;
+grant select on public.sponsors to authenticated;
+grant insert on public.sponsors to authenticated;
+grant update on public.sponsors to authenticated;
+grant delete on public.sponsors to authenticated;
+grant select on public.sponsor_impressions to authenticated;
+grant select on public.sponsors_public to service_role;

@@ -78,3 +78,7 @@ $$;
 
 -- Verify: expect 0 trials right after the first run.
 select count(*) as trade_trials from public.trade_trials;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.trade_trials to service_role;
+grant select on public.trade_trials to authenticated;

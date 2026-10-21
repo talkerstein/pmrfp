@@ -26,3 +26,6 @@ revoke all on public.lead_alert_log from anon, authenticated;
 
 -- Verify: expect 0 rows before the first send.
 select count(*) as lead_alerts_logged from public.lead_alert_log;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.lead_alert_log to service_role;

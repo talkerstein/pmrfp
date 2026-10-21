@@ -45,3 +45,6 @@ grant select on public.rfp_public to anon, authenticated;
 select column_name from information_schema.columns
 where table_schema = 'public' and table_name = 'rfp_public'
   and column_name in ('gc_project_name','awarded_rfp_id');
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select on public.rfp_public to service_role;

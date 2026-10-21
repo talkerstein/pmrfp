@@ -64,3 +64,9 @@ create policy "trusted list items read" on public.trusted_list_items
 alter table public.subscriptions drop constraint if exists subscriptions_tier_check;
 alter table public.subscriptions
   add constraint subscriptions_tier_check check (tier in ('seo', 'pro', 'featured', 'realtor'));
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.trusted_list_items to service_role;
+grant select, insert, update, delete on public.trusted_lists to service_role;
+grant select on public.trusted_lists to anon, authenticated;
+grant select on public.trusted_list_items to anon, authenticated;
