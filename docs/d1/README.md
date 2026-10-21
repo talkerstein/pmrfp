@@ -156,7 +156,7 @@ reviewed before concluding there are no runtime Realtime dependencies. The
 Supabase overview reported no Edge Function requests; this is not a full remote
 Edge Function code inventory.
 
-Production has five buckets: public `logos`, `rfp-photos`, `project-photos`; private
+At the snapshot export, production had five buckets: public `logos`, `rfp-photos`, `project-photos`; private
 `rfp-documents`, `capability-statements`. The repository additionally expects
 private project/forum-photo buckets which are absent live. Preserve existing
 URLs, object paths, MIME/size rules, private signed URLs and ownership checks.
