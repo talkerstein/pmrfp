@@ -10,7 +10,7 @@ import { getDictionary, type Messages } from "@/i18n/dictionaries";
 import { getLang } from "@/i18n/server";
 import { fmt } from "@/i18n/format";
 
-type NavItem = { href: string; label: string };
+type NavItem = { href: string; label: string; badge?: number };
 type Shell = Messages["dash"]["shell"];
 
 /** TRADE_NAV / PM_NAV hrefs (src/lib/site.ts) -> translated label. Admin stays English. */

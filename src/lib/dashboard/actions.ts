@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isSchemaMissing } from "@/lib/projects/compat";
+import { pendingReviewCount } from "@/lib/pm-jobs/server";
 import { getSession } from "@/lib/access/access";
 import { isUsState } from "@/lib/geo";
 import { companyProfileSchema, rfpPostSchema } from "@/lib/validations";
@@ -315,9 +318,7 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   ]);
 
   const slug = `${slugify(d.title)}-${Math.random().toString(36).slice(2, 6)}`;
-  const { data: rfp, error } = await supabase
-    .from("rfp_posts")
-    .insert({
+  const insertRow = {
       title: d.title,
       slug,
       summary: d.summary,
@@ -345,9 +346,11 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
           : "property_manager_direct",
       ...(gc ? { gc_project_name: gc.gcProjectName, awarded_rfp_id: gc.awardedRfpId } : {}),
       status: "pending_review",
-    })
-    .select("id")
-    .single<{ id: string }>();
+  };
+  const insert = (row: Record<string, unknown>) => supabase.from("rfp_posts").insert(row).select("id").single<{ id: string }>();
+  // The poster's language, for the emails about this listing (migration 20261021000020; older databases skip it).
+  let { data: rfp, error } = await insert({ ...insertRow, poster_lang: lang });
+  if (error && isSchemaMissing(error)) ({ data: rfp, error } = await insert(insertRow));
   if (error || !rfp) {
     // Before the GC-package migration runs, say so plainly instead of failing vaguely.
     const unavailable = lang === DEFAULT_LOCALE ? GC_UNAVAILABLE_MESSAGE : t.gcUnavailable;
@@ -403,7 +406,16 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
     }
   }
 
-  await sendAdminNewRfp({ title: d.title, postedBy: session.organization?.name, region: d.regionSlug });
+  // Admin heads-up (ADMIN_NOTIFICATION_EMAIL, else info@pmrfp.com), with how many are now waiting.
+  const pending = isServiceConfigured() ? await pendingReviewCount(createServiceClient()).catch(() => null) : null;
+  await sendAdminNewRfp({
+    title: d.title,
+    postedBy: session.organization?.name,
+    region: d.regionSlug,
+    category: categories.join(", ") || null,
+    kind: gc ? GC_PACKAGE : "property_manager_direct",
+    pending,
+  });
 
   redirect(localizePath("/pm-dashboard/rfps?posted=1", lang));
 }

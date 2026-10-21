@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { ApiError, apiFetch } from "./api";
 
 /** Teaser columns — what `rfp_public` exposes to anyone, subscribed or not. */
 export type RfpTeaser = {
@@ -72,42 +73,23 @@ export async function getRfp(
 }
 
 /**
- * Express interest. The web app's /api/rfp-interest route re-checks access
- * server-side; here the `rfp_interests` RLS policy is the equivalent guard, so
- * an unsubscribed user's insert is rejected by the database.
+ * Express interest, through the web app's /api/rfp-interest route (bearer
+ * token). Responses are written server-side only (the database no longer
+ * takes them from the app directly): the route checks access, the free
+ * monthly allowance on property-manager jobs, and emails the poster.
+ * Interest is recorded against the company, once per listing.
  */
 export async function expressInterest(rfpId: string, message: string) {
-  const { data: userRes } = await supabase.auth.getUser();
-  const userId = userRes.user?.id;
-  if (!userId) return { error: "You need to sign in first." };
-
-  // Interest is recorded against the ORGANISATION, not the person — the table
-  // requires trade_organization_id and is unique on (rfp_id, org), so two
-  // people from the same company can't double-submit.
-  const { data: membership } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-
-  if (!membership?.organization_id) {
-    return { error: "Your account isn't linked to a company yet." };
+  try {
+    await apiFetch("/api/rfp-interest", { method: "POST", body: { rfpId, message, acceptDisclaimer: true } });
+    return { error: null };
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 409) return { error: "You've already expressed interest in this one." };
+      return { error: e.message };
+    }
+    return { error: "That didn't work. Try again." };
   }
-
-  const { error } = await supabase.from("rfp_interests").insert({
-    rfp_id: rfpId,
-    trade_organization_id: membership.organization_id,
-    submitted_by_user_id: userId,
-    message,
-  });
-
-  if (error) {
-    // The unique constraint is the expected collision here, not a real failure.
-    if (error.code === "23505") return { error: "You've already expressed interest in this one." };
-    return { error: error.message };
-  }
-  return { error: null };
 }
 
 export function deadlineLabel(deadline: string | null): string {

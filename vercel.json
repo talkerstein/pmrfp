@@ -112,6 +112,10 @@
     {
       "path": "/api/cron/insights-brief",
       "schedule": "40 13 * * 1"
+    },
+    {
+      "path": "/api/cron/pm-job-alerts",
+      "schedule": "27 * * * *"
     }
   ]
 }

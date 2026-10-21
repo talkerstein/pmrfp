@@ -48,6 +48,7 @@ class Builder implements PromiseLike<{ data: unknown; error: unknown; count?: nu
   private filters: ((r: Row) => boolean)[] = [];
   private patch: Row | Row[] | null = null;
   private max: number | null = null;
+  private offset = 0;
   private mode: "many" | "single" | "maybe" = "many";
   private wantCount = false;
   private head = false;
@@ -97,7 +98,34 @@ class Builder implements PromiseLike<{ data: unknown; error: unknown; count?: nu
     this.filters.push((r) => typeof r[c] === "string" && re.test(r[c] as string));
     return this;
   }
+  /** Comparisons (ISO dates compare as strings, numbers as numbers). */
+  gt(c: string, v: string | number) {
+    this.filters.push((r) => r[c] != null && (r[c] as string | number) > v);
+    return this;
+  }
+  gte(c: string, v: string | number) {
+    this.filters.push((r) => r[c] != null && (r[c] as string | number) >= v);
+    return this;
+  }
+  lt(c: string, v: string | number) {
+    this.filters.push((r) => r[c] != null && (r[c] as string | number) < v);
+    return this;
+  }
+  lte(c: string, v: string | number) {
+    this.filters.push((r) => r[c] != null && (r[c] as string | number) <= v);
+    return this;
+  }
+  /** Only `not(col, "is", null)`. */
+  not(c: string, op: string, v: unknown) {
+    if (op === "is") this.filters.push((r) => (r[c] ?? null) !== v);
+    return this;
+  }
   order() {
+    return this;
+  }
+  range(from: number, to: number) {
+    this.offset = from;
+    this.max = to - from + 1;
     return this;
   }
   limit(n: number) {
@@ -143,6 +171,7 @@ class Builder implements PromiseLike<{ data: unknown; error: unknown; count?: nu
         out.push(r);
       }
     }
+    if (this.offset) out = out.slice(this.offset);
     if (this.max !== null) out = out.slice(0, this.max);
     const count = this.wantCount ? out.length : null;
     if (this.head) return { data: null, error: null, count };

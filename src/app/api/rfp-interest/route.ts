@@ -1,15 +1,30 @@
 import { NextResponse } from "next/server";
 import { interestSchema } from "@/lib/validations";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createClient } from "@/lib/supabase/server";
-import { getSession } from "@/lib/access/access";
-import { sendAdminNewInterest, sendInterestConfirmation, sendPmNewInterest } from "@/lib/email/send";
+import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getSessionFromRequest } from "@/lib/access/request-session";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { karmaSyncAfter } from "@/lib/karma/sync";
 import { validAttachments } from "@/lib/projects/attach";
 import { isSchemaMissing } from "@/lib/projects/compat";
+import { isEnabledLocale } from "@/i18n/config";
+import { REFUSAL_STATUS, isFreeLimitError, parseQuoteAmount, parseQuoteKind, respondDecision, responseAllowance } from "@/lib/pm-jobs/rules";
+import { freeResponsesUsed } from "@/lib/pm-jobs/server";
+import { loadJobForDecision, notifyNewInterest } from "@/lib/pm-jobs/decisions";
 
+/**
+ * A trade responds to a listing ("Express interest" / "Respond").
+ *
+ * Who: Trade Pro (and trials) on any private listing, as before; any
+ * approved trade company or supplier on a PM job, free accounts up to 3 a
+ * calendar month (lib/pm-jobs/rules; the database enforces the same limit).
+ * The row is written with the service role after these checks (signed-in
+ * users can't write rfp_interests directly since migration 20261021000020).
+ * Then, only once the row exists, the poster is emailed and notified in-app
+ * (their address is read server-side: the trade's session can't read it).
+ * The mobile app calls this too, with its Supabase access token as a bearer.
+ */
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "rfp-interest");
   if (limited) return rateLimitResponse(limited);
@@ -31,89 +46,132 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, demo: true });
   }
 
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
-  if (!session.hasTradeAccess) {
-    return NextResponse.json({ error: "Trade Pro membership required" }, { status: 403 });
-  }
+  // The web's cookie session, or the mobile app's bearer token (verified with Supabase Auth).
+  const session = (await getSessionFromRequest(request))?.session ?? null;
+  if (!session) return NextResponse.json({ error: "Sign in required", reason: "signin" }, { status: 401 });
   if (!session.organization) {
-    return NextResponse.json({ error: "Complete your company profile first" }, { status: 400 });
+    return NextResponse.json({ error: "Complete your company profile first", reason: "org" }, { status: 400 });
   }
+  if (!isServiceConfigured()) return NextResponse.json({ error: "Not available right now" }, { status: 503 });
 
-  const supabase = await createClient();
-  const { data: rfp } = await supabase
-    .from("rfp_posts")
-    .select("id,title,posted_by_user_id")
-    .eq("id", data.rfpId)
-    .maybeSingle<{ id: string; title: string; posted_by_user_id: string | null }>();
-  if (!rfp) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+  const db = createServiceClient();
+  const rfp = await loadJobForDecision(db, data.rfpId);
+  if (!rfp) return NextResponse.json({ error: "Opportunity not found", reason: "not_open" }, { status: 404 });
+
+  const org = session.organization;
+  const pro = session.hasTradeAccess;
+  const used = pro ? 0 : await freeResponsesUsed(db, org.id);
+  const decision = respondDecision({
+    signedIn: true,
+    org: { id: org.id, organization_type: org.organization_type, status: org.status, profile_status: org.profile_status },
+    pro,
+    rfp,
+    userId: session.userId,
+    // Before the migration there's no allowance to count: free responses stay unavailable.
+    usedThisMonth: used ?? Infinity,
+  });
+  if (decision.refusal) {
+    const reason = used === null && decision.refusal === "limit" ? "pro_required" : decision.refusal;
+    return NextResponse.json({ error: refusalMessage(reason), reason }, { status: REFUSAL_STATUS[reason] });
+  }
 
   // Projects the trade chose to show this buyer: only its own published ones
   // (private ones get a share link so the PM can open them).
   const caseStudyIds = data.caseStudyIds?.length
     ? await validAttachments({
-        organizationId: session.organization.id,
+        organizationId: org.id,
         userId: session.userId,
         ids: data.caseStudyIds,
         label: `Interest: ${rfp.title}`,
       })
     : [];
-  const row = {
+  const lang = isEnabledLocale(data.lang) ? data.lang : "en";
+  const quote = {
+    amount: parseQuoteAmount(data.quoteAmount),
+    kind: parseQuoteKind(data.quoteKind),
+    notes: data.quoteNotes?.trim() || null,
+    startDate: data.startDate || null,
+  };
+  const legacyRow = {
     rfp_id: rfp.id,
-    trade_organization_id: session.organization.id,
+    trade_organization_id: org.id,
     submitted_by_user_id: session.userId,
     message: data.message,
     relevant_experience: data.relevantExperience ?? null,
     availability: data.availability ?? null,
     attachment_url: data.attachmentUrl ?? null,
   };
-  const withProjects: typeof row & { case_study_ids?: string[] } = caseStudyIds.length ? { ...row, case_study_ids: caseStudyIds } : row;
-  let { error } = await supabase.from("rfp_interests").insert(withProjects);
-  // Before the portfolio migration there's no case_study_ids column: send the interest without them.
-  if (error && caseStudyIds.length && isSchemaMissing(error)) {
-    ({ error } = await supabase.from("rfp_interests").insert(row));
+  const row = {
+    ...legacyRow,
+    ...(caseStudyIds.length ? { case_study_ids: caseStudyIds } : {}),
+    quote_amount: quote.amount,
+    quote_kind: quote.amount != null ? quote.kind : null,
+    quote_notes: quote.notes,
+    start_date: quote.startDate,
+    used_free_allowance: decision.free,
+    lang,
+  };
+  let { data: inserted, error } = await db.from("rfp_interests").insert(row).select("id").maybeSingle();
+  // Before migration 20261021000020: Pro responses go in the old shape (free ones were refused above).
+  if (error && isSchemaMissing(error) && pro) {
+    const withProjects: Record<string, unknown> = caseStudyIds.length ? { ...legacyRow, case_study_ids: caseStudyIds } : legacyRow;
+    ({ data: inserted, error } = await db.from("rfp_interests").insert(withProjects).select("id").maybeSingle());
+    if (error && caseStudyIds.length && isSchemaMissing(error)) {
+      ({ data: inserted, error } = await db.from("rfp_interests").insert(legacyRow).select("id").maybeSingle());
+    }
   }
 
-  if (error) {
-    if (error.code === "23505") {
-      return NextResponse.json({ error: "You've already expressed interest in this opportunity." }, { status: 409 });
+  if (error || !inserted) {
+    if (error?.code === "23505") {
+      return NextResponse.json({ error: "You've already expressed interest in this opportunity.", reason: "already" }, { status: 409 });
+    }
+    if (isFreeLimitError(error)) {
+      return NextResponse.json({ error: refusalMessage("limit"), reason: "limit" }, { status: REFUSAL_STATUS.limit });
     }
     return NextResponse.json({ error: "Could not submit interest" }, { status: 500 });
   }
+  const interestId = (inserted as { id: string }).id;
 
   // An RFP/package that draws interest from another company earns its poster
   // reputation; re-sync that company after the response.
   await karmaSyncAfter({ userIds: [rfp.posted_by_user_id] });
 
-  // Look up the PM's email so we can notify them directly (Quest 1.7).
-  // Falls back gracefully if the RFP was admin-seeded with no posted_by_user_id.
-  let pmEmail: string | null = null;
-  if (rfp.posted_by_user_id) {
-    const { data: pmProfile } = await supabase
-      .from("users_profile")
-      .select("email")
-      .eq("id", rfp.posted_by_user_id)
-      .maybeSingle<{ email: string | null }>();
-    pmEmail = pmProfile?.email ?? null;
-  }
-
-  await Promise.all([
-    sendInterestConfirmation(session.profile.email, rfp.title),
-    sendAdminNewInterest({ vendor: esc(session.organization.name), rfpTitle: esc(rfp.title), message: esc(data.message ?? "") }),
-    pmEmail
-      ? sendPmNewInterest(pmEmail, {
-          vendorName: session.organization.name,
-          rfpTitle: rfp.title,
-          rfpId: rfp.id,
-        })
-      : Promise.resolve(),
-  ]);
+  const allowance = responseAllowance({ pro, usedThisMonth: (used ?? 0) + (decision.free ? 1 : 0) });
+  await notifyNewInterest(db, {
+    interestId,
+    job: rfp,
+    vendorName: org.name,
+    message: data.message,
+    quote: { ...quote, availability: data.availability ?? null },
+    trade: { userId: session.userId, email: session.profile.email || null, lang },
+    allowance,
+  }).catch((e) => console.error("[rfp-interest] notify failed", e instanceof Error ? e.message : e));
   await trackEvent(EVENT.RFP_INTEREST_SUBMITTED, { rfpId: rfp.id });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    allowance: allowance.unlimited ? { unlimited: true } : { unlimited: false, left: allowance.left, limit: allowance.limit },
+  });
 }
 
-/** The admin email is HTML: escape member-typed text so it can't inject markup. */
-function esc(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+/** English API messages (the dialog shows its own copy per `reason`). */
+function refusalMessage(reason: string): string {
+  switch (reason) {
+    case "role":
+      return "Only trade and supplier companies can respond to jobs.";
+    case "suspended":
+      return "This account is suspended.";
+    case "public_tender":
+      return "Public tenders are answered on the buyer's own portal.";
+    case "not_open":
+      return "This job isn't open for responses.";
+    case "own_job":
+      return "You can't respond to your own job.";
+    case "not_approved":
+      return "Your company profile is waiting for approval. You can respond once it's approved.";
+    case "limit":
+      return "You've used your 3 free responses this month. Trade Pro is unlimited.";
+    default:
+      return "Trade Pro membership required";
+  }
 }

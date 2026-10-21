@@ -29,33 +29,62 @@ interface AttachOption {
   visibility: string;
 }
 
+/** Free accounts: responses left this month (lib/pm-jobs/rules). Null = Trade Pro (unlimited) or unknown. */
+export interface DialogAllowance {
+  unlimited: boolean;
+  left: number;
+  limit: number;
+}
+
+const REASON_KEY = {
+  limit: "limit",
+  not_approved: "notApproved",
+  role: "role",
+  own_job: "ownJob",
+  not_open: "notOpen",
+  public_tender: "publicTender",
+  suspended: "suspended",
+  org: "org",
+} as const;
+
 export function ExpressInterestDialog({
   rfpId,
   rfpTitle,
+  allowance = null,
+  currency = "CAD",
+  upgradeHref = "/dashboard/billing?plan=pro&interval=monthly",
 }: {
   rfpId: string;
   rfpTitle: string;
+  /** Shown for free accounts on PM jobs: "2 of 3 free responses left this month". */
+  allowance?: DialogAllowance | null;
+  currency?: "CAD" | "USD";
+  upgradeHref?: string;
 }) {
   const t = useT("boardClient").interest;
+  const r = useT("pmJobsClient").respond;
   const ta = useT("portfolioClient").attach;
   const lang = useLang();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [done, setDone] = useState(false);
+  const [left, setLeft] = useState<DialogAllowance | null>(allowance);
   // The company's published projects, loaded when the dialog first opens.
   const [projects, setProjects] = useState<AttachOption[] | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const [noAccount, setNoAccount] = useState(false);
+  const free = left && !left.unlimited ? left : null;
+  const outOfFree = Boolean(free && free.left <= 0);
 
   useEffect(() => {
     if (!open || projects !== null) return;
     let live = true;
     fetch("/api/projects", { headers: { Accept: "application/json" } })
-      .then((r) => {
+      .then((res) => {
         // Not a company account (or signed out): no projects section at all.
-        if (!r.ok) setNoAccount(true);
-        return r.ok ? r.json() : { projects: [] };
+        if (!res.ok) setNoAccount(true);
+        return res.ok ? res.json() : { projects: [] };
       })
       .then((body: { projects?: { id: string; title: string; status: string; visibility?: string }[] }) => {
         if (!live) return;
@@ -78,6 +107,7 @@ export function ExpressInterestDialog({
       return;
     }
     const fd = new FormData(e.currentTarget);
+    const amount = String(fd.get("quoteAmount") ?? "").trim();
     setBusy(true);
     try {
       const res = await fetch("/api/rfp-interest", {
@@ -88,16 +118,27 @@ export function ExpressInterestDialog({
           message: fd.get("message"),
           relevantExperience: fd.get("relevantExperience") || undefined,
           availability: fd.get("availability") || undefined,
+          quoteAmount: amount || undefined,
+          quoteKind: amount ? fd.get("quoteKind") || "estimate" : undefined,
+          quoteNotes: fd.get("quoteNotes") || undefined,
+          startDate: fd.get("startDate") || undefined,
           caseStudyIds: picked.length ? picked : undefined,
+          lang,
           acceptDisclaimer: true,
         }),
       });
-      const json = await res.json().catch(() => ({}));
-      if (res.status === 403) return toast.error(t.proRequired);
+      const json = (await res.json().catch(() => ({}))) as { error?: string; reason?: string; demo?: boolean; allowance?: DialogAllowance };
       if (res.status === 401) return toast.error(t.signIn);
       // The API's message is English; other languages use their own copy.
       if (res.status === 409) return toast.error(lang === "en" ? (json.error ?? t.already) : t.already);
+      const key = json.reason ? REASON_KEY[json.reason as keyof typeof REASON_KEY] : undefined;
+      if (!res.ok && key) {
+        if (json.reason === "limit") setLeft({ unlimited: false, left: 0, limit: free?.limit ?? 3 });
+        return toast.error(fmt(r.errors[key], { limit: free?.limit ?? 3 }));
+      }
+      if (res.status === 403) return toast.error(t.proRequired);
       if (!res.ok) throw new Error();
+      if (json.allowance) setLeft(json.allowance.unlimited ? null : json.allowance);
       setDone(true);
       toast.success(t.submitted, {
         description: json.demo ? t.demo : t.notified,
@@ -109,12 +150,21 @@ export function ExpressInterestDialog({
     }
   }
 
+  const allowanceLine = free ? (
+    <p className="rounded-md border border-teal-300/60 bg-teal-50/60 px-3 py-2 text-xs text-foreground" data-allowance={free.left}>
+      {free.left > 0 ? fmt(r.left, { left: free.left, limit: free.limit }) : fmt(r.none, { limit: free.limit })}{" "}
+      <a href={localizePath(upgradeHref, lang)} className="font-semibold text-teal-ink underline">
+        {r.upgrade}
+      </a>
+    </p>
+  ) : null;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button><Send className="size-4" /> {t.trigger}</Button>} />
-      <DialogContent className="sm:max-w-lg">
+      <DialogTrigger render={<Button><Send className="size-4" /> {allowance ? r.trigger : t.trigger}</Button>} />
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t.title}</DialogTitle>
+          <DialogTitle>{allowance ? r.title : t.title}</DialogTitle>
           <DialogDescription>{rfpTitle}</DialogDescription>
         </DialogHeader>
 
@@ -124,20 +174,55 @@ export function ExpressInterestDialog({
             <p className="mt-1 text-sm text-muted-foreground">
               {t.doneBody}
             </p>
+            {free && <div className="mt-3">{allowanceLine}</div>}
             <DialogFooter className="mt-6">
               <Button onClick={() => setOpen(false)}>{t.close}</Button>
             </DialogFooter>
           </div>
+        ) : outOfFree ? (
+          <div className="space-y-4 py-2">
+            {allowanceLine}
+            <DialogFooter>
+              <a href={localizePath(upgradeHref, lang)} className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                {r.upgrade}
+              </a>
+            </DialogFooter>
+          </div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
+            {allowanceLine}
             <Field label={t.message} hint={t.messageHint}>
               <Textarea name="message" rows={4} required maxLength={2000} />
             </Field>
+            <fieldset className="rounded-lg border border-border p-3">
+              <legend className="px-1 text-sm font-medium">{r.quoteTitle}</legend>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <Field label={r.quoteAmount} hint={fmt(r.quoteAmountHint, { currency })}>
+                  <Input name="quoteAmount" inputMode="decimal" placeholder={currency === "USD" ? "12,500" : lang === "fr" ? "12 500" : "12,500"} maxLength={20} pattern="[0-9$,. ]*" />
+                </Field>
+                <Field label={r.kind}>
+                  <select name="quoteKind" defaultValue="estimate" className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+                    <option value="estimate">{r.estimate}</option>
+                    <option value="firm">{r.firm}</option>
+                  </select>
+                </Field>
+              </div>
+              <div className="mt-3">
+                <Field label={r.quoteNotes}>
+                  <Textarea name="quoteNotes" rows={2} maxLength={2000} />
+                </Field>
+              </div>
+            </fieldset>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label={r.startDate}>
+                <Input type="date" name="startDate" />
+              </Field>
+              <Field label={t.availability}>
+                <Input name="availability" maxLength={500} />
+              </Field>
+            </div>
             <Field label={t.experience}>
               <Textarea name="relevantExperience" rows={2} maxLength={2000} />
-            </Field>
-            <Field label={t.availability}>
-              <Input name="availability" />
             </Field>
             {!noAccount && <fieldset className="rounded-lg border border-border p-3">
               <legend className="px-1 text-sm font-medium">{ta.title}</legend>
@@ -178,6 +263,7 @@ export function ExpressInterestDialog({
                 </ul>
               )}
             </fieldset>}
+            <p className="text-xs text-muted-foreground">{r.contactNote}</p>
             <label className="flex items-start gap-2 text-sm text-muted-foreground">
               <Checkbox checked={accepted} onCheckedChange={(v) => setAccepted(v === true)} className="mt-0.5" />
               <span>{t.disclaimer}</span>

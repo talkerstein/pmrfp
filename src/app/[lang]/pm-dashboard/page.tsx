@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { gcFormPath } from "@/lib/gc/packages";
 import { getMyTrustedList } from "@/lib/trusted/data";
 import { ReputationCard } from "@/components/karma/reputation-card";
+import { POSTER_NOTICE_TYPES, RecentUpdates } from "@/components/pm-jobs/recent-updates";
 import type { Metadata } from "next";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -77,6 +78,8 @@ export default async function PmDashboardHome({
         <StatCard label={t.stats.interested} value={interestedVendors} href="/pm-dashboard/rfps" />
         <StatCard label={t.stats.trusted} value={trusted?.trades.length ?? 0} href="/pm-dashboard/saved-vendors" />
       </div>
+
+      {!demo && <RecentUpdates userId={session.userId} types={POSTER_NOTICE_TYPES} />}
 
       {!demo && <ReputationCard orgId={session.organization?.id} audience={gc ? "trade" : "pm"} />}
 

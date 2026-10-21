@@ -144,6 +144,10 @@ export default function RfpDetailScreen() {
                   value={message}
                   onChangeText={setMessage}
                 />
+                <Text style={styles.meta}>
+                  By expressing interest, you understand that PMRFP does not represent either party as a
+                  broker, procurement agent, legal advisor, or guarantor of work.
+                </Text>
                 <Pressable
                   style={[styles.primaryBtn, sending && styles.btnDisabled]}
                   disabled={sending}

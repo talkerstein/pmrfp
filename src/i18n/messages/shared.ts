@@ -98,7 +98,7 @@ const en = {
   },
   gcCta: {
     title: "Won this contract?",
-    body: "Post your sub-trade packages free and get quotes from local trades. One package per trade — subscribed trades in that trade and region get it in their morning email.",
+    body: "Post your sub-trade packages free and get quotes from local trades. One package per trade — matching local trades are emailed the same day it's published.",
     cta: "Post sub-trade packages — free",
   },
   /**
@@ -205,7 +205,7 @@ const fr: typeof en = {
   },
   gcCta: {
     title: "Vous avez remporté ce contrat?",
-    body: "Publiez gratuitement vos lots de sous-traitance et recevez des prix d'entrepreneurs de votre région. Un lot par corps de métier — les entrepreneurs abonnés de ce corps de métier et de cette région le reçoivent dans leur courriel du matin.",
+    body: "Publiez gratuitement vos lots de sous-traitance et recevez des prix d'entrepreneurs de votre région. Un lot par corps de métier — les entrepreneurs locaux correspondants reçoivent un courriel le jour même de sa publication.",
     cta: "Publier des lots de sous-traitance — gratuit",
   },
   status: {
@@ -242,6 +242,8 @@ const fr: typeof en = {
     hidden: "Masqué",
     founding: "Fondateur",
     incomplete: "Incomplet",
+    picked: "Retenu",
+    not_selected: "Non retenu",
   },
 };
 
@@ -342,7 +344,7 @@ const es: typeof en = {
   },
   gcCta: {
     title: "¿Ganó este contrato?",
-    body: "Publique gratis sus paquetes de subcontratación y reciba cotizaciones de contratistas locales. Un paquete por oficio — los contratistas suscritos de ese oficio y esa región lo reciben en su correo de la mañana.",
+    body: "Publique gratis sus paquetes de subcontratación y reciba cotizaciones de contratistas locales. Un paquete por oficio — los contratistas locales que coinciden reciben un correo el mismo día en que se publica.",
     cta: "Publicar paquetes de subcontratación — gratis",
   },
   status: {
@@ -379,6 +381,8 @@ const es: typeof en = {
     hidden: "Oculto",
     founding: "Fundador",
     incomplete: "Incompleto",
+    picked: "Elegido",
+    not_selected: "No elegido",
   },
 };
 

@@ -12,6 +12,7 @@ import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-ca
 import { ActivateButton } from "@/components/dashboard/billing-actions";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
 import { ReputationCard } from "@/components/karma/reputation-card";
+import { RecentUpdates, TRADE_NOTICE_TYPES } from "@/components/pm-jobs/recent-updates";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -101,6 +102,8 @@ export default async function TradeDashboardHome({
           to do next." Replaces the previous trio (stat / checklist / recommended-
           action) which were spread across the page and visually inconsistent. */}
       <ProfileCompletionCard org={org} hasActiveSub={session.hasTradeAccess} />
+
+      {!demo && <RecentUpdates userId={session.userId} types={TRADE_NOTICE_TYPES} />}
 
       {!demo && <ReputationCard orgId={org?.id} audience="trade" />}
 

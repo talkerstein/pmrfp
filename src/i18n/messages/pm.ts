@@ -57,7 +57,7 @@ const en = {
     descriptionTemplate: 'Pre-filled from the "{name}" template. Edit any field before submitting.',
     gcTitle: "Post a sub-trade package",
     gcDescription:
-      "One package per trade. Local trades in that trade and region get it in their daily email. Free for contractors. We review every package before it goes live.",
+      "One package per trade. Matching local trades are emailed the same day it's published. Free for contractors. We review every package before it goes live.",
     /** Appended to the linked award's title: "Roof replacement — won by Acme". */
     gcWonBy: " — won by {winner}",
   },
@@ -166,7 +166,7 @@ const fr: typeof en = {
     descriptionTemplate: "Prérempli à partir du modèle « {name} ». Modifiez n'importe quel champ avant de soumettre.",
     gcTitle: "Publier un lot de sous-traitance",
     gcDescription:
-      "Un lot par corps de métier. Les gens de métier de ce corps de métier et de cette région le reçoivent dans leur courriel quotidien. Gratuit pour les entrepreneurs. Nous vérifions chaque lot avant sa mise en ligne.",
+      "Un lot par corps de métier. Les entrepreneurs locaux correspondants reçoivent un courriel le jour même de sa publication. Gratuit pour les entrepreneurs. Nous vérifions chaque lot avant sa mise en ligne.",
     gcWonBy: " — remporté par {winner}",
   },
   interests: {
@@ -275,7 +275,7 @@ const es: typeof en = {
     descriptionTemplate: "Prellenado con la plantilla \"{name}\". Edite cualquier campo antes de enviarlo.",
     gcTitle: "Publicar un paquete de subcontratación",
     gcDescription:
-      "Un paquete por oficio. Los contratistas locales de ese oficio y esa región lo reciben en su correo electrónico diario. Gratis para contratistas. Revisamos cada paquete antes de que aparezca en línea.",
+      "Un paquete por oficio. Los contratistas locales que coinciden reciben un correo el mismo día en que se publica. Gratis para contratistas. Revisamos cada paquete antes de que aparezca en línea.",
     gcWonBy: " — ganado por {winner}",
   },
   interests: {
