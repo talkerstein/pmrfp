@@ -124,16 +124,25 @@ create policy "major projects admin insert" on public.major_projects
 
 -- Public teaser (security definer, like rfp_public): publishable rows only,
 -- no Trade Pro fields — just whether they exist.
-create or replace view public.major_projects_public as
-  select
-    id, slug, source, country, name, description, category, owner, city, province, region_id,
-    est_value_cad, size, status, status_raw, status_date, timeline, trades_needed, sources,
-    license, evidence, caveats, first_seen, last_seen, stale, stale_since, status_changed_at,
-    updated_at,
-    (general_contractor is not null) as has_gc,
-    (bid_list_url is not null or bid_route is not null) as has_bid_route
-  from public.major_projects
-  where public.major_project_is_public(source, approved, review_status);
+-- A manually installed wave-2 view may already have appended columns while
+-- this version is missing from migration history. Keep that newer projection;
+-- 20261012000003 applies the canonical final definition later in the replay.
+do $initial_view$
+begin
+  if to_regclass('public.major_projects_public') is null then
+    create view public.major_projects_public as
+      select
+        id, slug, source, country, name, description, category, owner, city, province, region_id,
+        est_value_cad, size, status, status_raw, status_date, timeline, trades_needed, sources,
+        license, evidence, caveats, first_seen, last_seen, stale, stale_since, status_changed_at,
+        updated_at,
+        (general_contractor is not null) as has_gc,
+        (bid_list_url is not null or bid_route is not null) as has_bid_route
+      from public.major_projects
+      where public.major_project_is_public(source, approved, review_status);
+  end if;
+end
+$initial_view$;
 
 grant select on public.major_projects_public to anon, authenticated;
 revoke all on public.major_projects from anon;
