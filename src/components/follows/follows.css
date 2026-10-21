@@ -1,0 +1,51 @@
+/* Follow buttons and the province pages (PMRFP for Towns, Part B1). Scoped to .v3p like landing.css. */
+.v3p .fl-block .acts { margin-top: 18px; }
+.v3p .fl-block button { cursor: pointer; font-family: inherit; }
+.v3p .fl-link { border: 0; }
+.v3p .fl-block .btn.ghost { background: transparent; }
+.v3p .fl-block button:disabled { opacity: .7; cursor: progress; }
+.v3p .fl-link { background: none; color: #D9DBEE; text-decoration: underline; font-weight: 600; padding: 0; }
+.v3p .fl-link:hover { color: #FFFFFF; }
+.v3p .s-art .g-cta .fl-sub { margin-top: 10px; color: #C3C6E0; font-size: 15px; }
+.v3p .s-art .g-cta .fl-note { margin-top: 12px; color: var(--mint); font-size: 15px; font-weight: 600; }
+.v3p .s-art .g-cta p.small { font-size: 15px; }
+
+.pmrfp-v3 .fl-compact { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.pmrfp-v3 .fl-pill { cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; line-height: 1; padding: 7px 14px; border-radius: 999px; border: 2px solid var(--navy); background: #FFFFFF; color: var(--navy); white-space: nowrap; }
+.pmrfp-v3 .fl-pill:hover { background: #F5F5FA; }
+.pmrfp-v3 .fl-pill.on { background: var(--navy); color: #FFFFFF; }
+.pmrfp-v3 .fl-pill:disabled { opacity: .6; cursor: progress; }
+.pmrfp-v3 .fl-compact .fl-note { color: var(--sub); }
+
+/* /buyers/<province> */
+.v3p .pv-tools { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.v3p .pv-search { flex: 1 1 280px; display: flex; flex-direction: column; gap: 6px; }
+.v3p .pv-search label { font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
+.v3p .pv-search input { font: inherit; font-size: 17px; padding: 12px 16px; border: 2px solid var(--navy); border-radius: 14px; background: #FFFFFF; color: var(--ink); width: 100%; min-width: 0; }
+.v3p .pv-search input:focus { outline: 3px solid var(--mint); outline-offset: 1px; }
+.v3p .pv-check { display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; }
+.v3p .pv-check input { width: 18px; height: 18px; accent-color: var(--navy); }
+.v3p .pv-shown { margin-top: 10px; font-size: 14px; color: var(--sub); }
+.v3p .pv-jump { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 15px; }
+.v3p .pv-jump a { font-weight: 600; }
+.v3p .pv-group { margin-top: 30px; scroll-margin-top: 90px; }
+.v3p .pv-group h3 { font-family: var(--fp); font-weight: 700; font-size: 22px; color: var(--navy); }
+.v3p .pv-group h3 .n { font-family: var(--fm); font-size: 13px; font-weight: 400; color: var(--sub); margin-left: 8px; }
+.v3p .pv-list { margin: 12px 0 0; padding: 0; list-style: none; border: 2px solid var(--navy); border-radius: 20px; overflow: hidden; }
+.v3p .pv-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 20px; border-top: 1px solid var(--line); }
+.v3p .pv-list li:first-child { border-top: 0; }
+.v3p .pv-list .nm { font-weight: 700; }
+.v3p .pv-list .meta { display: block; font-family: var(--fm); font-size: 12px; letter-spacing: .04em; color: var(--sub); margin-top: 2px; }
+.v3p .pv-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 8px; vertical-align: middle; }
+.v3p .pv-badge { font-size: 12px; font-weight: 700; line-height: 1; padding: 4px 9px; border-radius: 999px; background: var(--soft); color: var(--navy); white-space: nowrap; }
+.v3p .pv-badge.ok { background: #DDFBF0; color: #0C5A43; }
+.v3p .pv-badge.perm { background: #E7E9FB; color: var(--navy); }
+.v3p .pv-badge.open { background: #FDF0DC; color: #8A3F06; }
+.v3p .pv-provinces { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 20px; padding: 0; list-style: none; }
+.v3p .pv-provinces a { font-weight: 700; }
+.v3p .pv-provinces .n { color: var(--sub); font-size: 14px; }
+@media (max-width: 640px) {
+  .v3p .pv-list li { padding: 12px 16px; }
+}
+.v3p form.g-cta button { cursor: pointer; font-family: inherit; }
+.v3p form.g-cta .btn.mint, .v3p .fl-block .btn.mint { border: 0; }

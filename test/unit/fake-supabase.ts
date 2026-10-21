@@ -127,6 +127,10 @@ class Builder implements PromiseLike<{ data: unknown; error: unknown; count?: nu
   order() {
     return this;
   }
+  /** PostgREST `or` filters aren't modelled: tests seed only rows that pass them. */
+  or() {
+    return this;
+  }
   range(from: number, to: number) {
     this.offset = from;
     this.max = to - from + 1;

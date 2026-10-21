@@ -30,6 +30,7 @@ import { indexableMarkets } from "@/lib/insights/market";
 import { insightsMarketPath } from "@/lib/insights/paths";
 import { loadBuyers } from "@/lib/buyers/load";
 import { indexablePages } from "@/lib/towns/page-data";
+import { provinceList, provincePath } from "@/lib/buyers/province";
 
 /** Toronto supplier pages in the sitemap: indexable ones only, biggest first. */
 const TORONTO_SITEMAP_LIMIT = 2000;
@@ -122,7 +123,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Buyer directory ("where every buyer posts bids"): the index plus buyer pages with PMRFP data,
   // a verified buyer or permission. Town pages with none of those are noindexed and stay out.
   entries.push({ url: `${base}/buyers`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
-  for (const b of await indexablePages((await loadBuyers()).pages))
+  const buyerPages = (await loadBuyers()).pages;
+  // Province pages (/buyers/<province>): every town and buyer in the province, always indexable.
+  for (const p of provinceList(buyerPages)) entries.push({ url: `${base}${provincePath(p.provinceSlug)}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
+  // Followers don't count here: a town page is listed only by its own content (isIndexablePage).
+  for (const b of await indexablePages(buyerPages))
     entries.push({ url: `${base}${b.path}`, lastModified: now, changeFrequency: "weekly", priority: 0.5 });
   entries.push({ url: `${base}/reports/public-building-contracts`, lastModified: now, changeFrequency: "weekly", priority: 0.8 });
   // Monthly contract-winner reports: only months that have a page (complete, 10+ awards).

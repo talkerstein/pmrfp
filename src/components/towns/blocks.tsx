@@ -7,7 +7,7 @@ import { scriptSnippet } from "@/lib/embed/widgets";
 import { SITE } from "@/lib/site";
 import type { ManagedPage } from "@/lib/towns/managed";
 import { inSentence } from "@/lib/towns/names";
-import { claimSignUpHref, followTownHref } from "@/lib/towns/paths";
+import { claimSignUpHref } from "@/lib/towns/paths";
 import { getLang, getT } from "@/i18n/server";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatDate, formatNumber } from "@/i18n/format";
@@ -15,8 +15,9 @@ import { regionName } from "@/i18n/terms";
 
 /**
  * The pieces every buyer page shares for PMRFP for Towns: the verified
- * badge and what the buyer manages, the claim and follow calls to action,
- * nearby bids from the shared snapshot and the website-widget code.
+ * badge and what the buyer manages, the claim call to action, nearby bids
+ * from the shared snapshot and the website-widget code (the Follow button
+ * is components/follows).
  * Server components; copy in towns (en/fr/es).
  */
 
@@ -121,21 +122,6 @@ export function ClaimCta({ name, buyerKey }: { name: string; buyerKey: string })
       <p>{t.claimBody}</p>
       <div className="acts">
         <a href={localizePath(claimSignUpHref(buyerKey), lang)} className="btn mint lg" rel="nofollow">{t.claimBtn}</a>
-      </div>
-    </div>
-  );
-}
-
-/** "Contractor near X? Follow this town": a free trade sign-up with the town's region preference (following itself is Part B). */
-export function FollowCta({ name, place, province, path, regionSlug }: { name: string; place: string; province: string; path: string; regionSlug: string | null }) {
-  const t = getT("towns").page;
-  const lang = getLang();
-  return (
-    <div className="g-cta" data-cta="follow">
-      <h3 className="hd">{fmt(t.followTitle, { place })}</h3>
-      <p>{fmt(t.followBody, { name, province })}</p>
-      <div className="acts">
-        <a href={localizePath(followTownHref(localizePath(path, lang), regionSlug), lang)} className="btn mint lg" rel="nofollow">{t.followBtn}</a>
       </div>
     </div>
   );

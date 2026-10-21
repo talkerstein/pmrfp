@@ -24,6 +24,9 @@ import { getFullRfp, getPublicTenderNoticeUrl, getRfpTeaser } from "@/lib/data/r
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { loadBuyers } from "@/lib/buyers/load";
 import { buyerPageForRfp } from "@/lib/buyers/model";
+import { FollowPill } from "@/components/follows/blocks";
+import { buyerDisplayName } from "@/lib/towns/claimable";
+import { inSentence } from "@/lib/towns/names";
 import { buyerFromSummary as awardBuyerFromSummary } from "@/lib/data/monthly-winners";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
@@ -748,7 +751,9 @@ export default async function RfpDetailPage({
           )}
           {buyerPage && (
             <p className="small" data-link="buyer">
-              <a href={L(buyerPage.path)}>{fill(getT("buyers").page.rfpLink, { name: buyerPage.buyer.name })} →</a>
+              <a href={L(buyerPage.path)}>{fill(getT("buyers").page.rfpLink, { name: buyerPage.buyer.name })} →</a>{" "}
+              {/* Follow the buyer: its next bids by email (PMRFP for Towns, Part B1). */}
+              <FollowPill page={buyerPage} name={inSentence(buyerDisplayName(buyerPage, lang), lang)} />
             </p>
           )}
           {/* Credits are printed above; this adds the correction / removal link. */}

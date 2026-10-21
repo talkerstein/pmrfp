@@ -19,6 +19,7 @@ const NAV_KEY: Record<string, keyof Shell["nav"]> = {
   "/dashboard/company": "company",
   "/dashboard/rfps": "rfps",
   "/dashboard/saved-rfps": "savedRfps",
+  "/dashboard/following": "following",
   "/dashboard/interests": "interests",
   "/dashboard/projects": "projects",
   "/jobs/manage": "hiring",

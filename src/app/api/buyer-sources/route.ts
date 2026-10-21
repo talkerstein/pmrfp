@@ -4,12 +4,15 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { isMissingTableError } from "@/lib/entitlement/trial";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { METHOD_WORDS, notifyAdminOfSourceRequest } from "@/lib/buyers/admin-notify";
 
 /**
  * "List your tenders on PMRFP, free" (POST, JSON) from /for-public-buyers.
  * Same-origin only, rate-limited per IP, honeypot. Stores the request in
- * buyer_source_requests with the service role and tells admins in-app
- * (notifications → /admin/buyer-sources). Sends no email.
+ * buyer_source_requests with the service role, tells admins in-app
+ * (notifications → /admin/buyer-sources) and emails the admin inbox
+ * (ADMIN_NOTIFICATION_EMAIL, else info@pmrfp.com; lib/buyers/admin-notify).
+ * Nothing is sent to the requester.
  *
  * When the table isn't there yet (migration 20261021000010 pending) or
  * Supabase isn't configured, it answers 503 with `fallback: "email"` and the
@@ -44,14 +47,17 @@ export async function POST(request: Request) {
   await notifyAdmins(db, parsed.data.organization, parsed.data.method).catch((err) =>
     console.error("[buyer-sources] admin notification failed:", err instanceof Error ? err.message : err),
   );
+  await notifyAdminOfSourceRequest(db, {
+    organization: parsed.data.organization,
+    contactName: parsed.data.contactName,
+    workEmail: parsed.data.workEmail,
+    tendersUrl: parsed.data.tendersUrl,
+    method: parsed.data.method,
+    provinceCode: parsed.data.provinceCode,
+    buyerSlug: parsed.data.buyerSlug || null,
+  });
   return NextResponse.json({ ok: true });
 }
-
-const METHOD_WORDS: Record<string, string> = {
-  read_public_page: "we read their public page daily",
-  email_notices: "they email notices",
-  feed: "a feed",
-};
 
 /** In-app notification for every active admin. */
 async function notifyAdmins(db: ReturnType<typeof createServiceClient>, organization: string, method: string) {

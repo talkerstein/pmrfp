@@ -18,14 +18,16 @@ import { DEFAULT_LOCALE, LOCALES, isEnabledLocale, localizePath, type Locale } f
 import { claimContext } from "./claim-context";
 import { claimableFrom } from "./claimable";
 import { submitBuyerClaim } from "./claims";
+import { notifyAdminOfClaim } from "@/lib/buyers/admin-notify";
 import { changedFields, managedPageSchema, ownLogoUrl, pageUpdateRow, parseBuyerKey, readManagedForm } from "./managed";
 import { BUYER_DASHBOARD_PATH, BUYER_PAGE_EDIT_PATH, PUBLIC_BUYER_ROLE, claimOnboardingHref } from "./paths";
 
 /**
  * The public-buyer flow's server actions: sign-up (a passwordless link),
- * the claim at onboarding, and edits to the managed page. No emails beyond
- * the sign-in link Supabase sends; claims waiting for review show up at
- * /admin/buyer-sources.
+ * the claim at onboarding, and edits to the managed page. Every claim also
+ * emails the admin inbox (lib/buyers/admin-notify); claims waiting for
+ * review show up at /admin/buyer-sources. The claimant gets no email beyond
+ * the sign-in link Supabase sends.
  */
 
 function formLang(fd: FormData): Locale {
@@ -124,6 +126,12 @@ export async function claimBuyerPageAction(formData: FormData): Promise<void> {
     now: new Date().toISOString(),
   });
   if (result.status === "error") fail(result.reason);
+  await notifyAdminOfClaim(createServiceClient(), {
+    status: result.status,
+    reason: result.status === "pending" ? result.reason : null,
+    buyer: { name: buyer.name, key: buyer.key, provinceCode: buyer.provinceCode },
+    who: { email: user.email, fullName, jobTitle: text(formData, "jobTitle", 120) },
+  });
   await logAudit({
     actorUserId: session.userId,
     action: `buyer_claim.${result.status}`,

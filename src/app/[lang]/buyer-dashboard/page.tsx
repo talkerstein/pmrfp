@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "@/i18n/link";
-import { BadgeCheck, Clock, Code2, FileText, Globe, Landmark } from "lucide-react";
+import { BadgeCheck, Clock, Code2, FileText, Globe, Landmark, Users } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
@@ -15,7 +15,11 @@ import { BUYER_PAGE_EDIT_PATH, claimOnboardingHref } from "@/lib/towns/paths";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
-import { fmt, formatDate } from "@/i18n/format";
+import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isServiceConfigured } from "@/lib/supabase/config";
+import { buyerKey } from "@/lib/towns/managed";
+import { followersOf } from "@/lib/follows/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -51,6 +55,9 @@ export default async function BuyerDashboardHome({ params, searchParams }: { par
   const name = own?.buyer_name ?? (page ? buyerDisplayName(page, lang) : claim?.buyer_name ?? session.organization?.name ?? "");
   const status: "verified" | "pending" | "rejected" | "none" = own ? "verified" : claim?.status === "pending" ? "pending" : claim?.status === "rejected" ? "rejected" : "none";
   const permission = extras?.permission ?? null;
+  // "N contractors follow this town": counts only, never who (PMRFP for Towns, Part B1).
+  const tf = getT("follows").buyerDashboard;
+  const followers = page && !demo && isServiceConfigured() ? await followersOf(createServiceClient(), buyerKey(page.provinceSlug, page.buyer.slug)) : null;
   const day = (d: string) => formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang);
 
   return (
@@ -103,6 +110,13 @@ export default async function BuyerDashboardHome({ params, searchParams }: { par
             </>
           )}
         </Card>
+
+        {page && (
+          <Card icon={<Users className="size-4" />} title={tf.title}>
+            <p data-followers={followers ?? 0}>{followers ? plural(followers, tf.body, { n: formatNumber(followers, lang), name }) : tf.none}</p>
+            <p className="text-xs text-muted-foreground">{tf.note}</p>
+          </Card>
+        )}
 
         <Card icon={<FileText className="size-4" />} title={t.postTitle}>
           <p className="text-muted-foreground">{t.postBody}</p>

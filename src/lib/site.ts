@@ -100,6 +100,8 @@ export const TRADE_NAV = [
   { href: "/dashboard/company", label: "Company Profile" },
   { href: "/dashboard/rfps", label: "RFP Feed" },
   { href: "/dashboard/saved-rfps", label: "Saved RFPs" },
+  // Buyers and towns the company follows (PMRFP for Towns, Part B1).
+  { href: "/dashboard/following", label: "Following" },
   { href: "/dashboard/interests", label: "My Interests" },
   // Projects covers both the photo capture and the typed case-study form
   // (linked from the Projects page), so one entry instead of two.

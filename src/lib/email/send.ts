@@ -19,6 +19,7 @@ import {
   type BuiltEmail,
   type EmailLang,
 } from "@/lib/pm-jobs/email-copy";
+import { followAlertEmail, type FollowEmailItem } from "@/lib/follows/email-copy";
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset
@@ -487,6 +488,92 @@ export async function sendAdminNewRfp(rfp: {
 }
 
 /**
+ * Admin heads-up: someone claimed a public-buyer page (PMRFP for Towns,
+ * lib/towns/actions). Every claim: verified on the spot (FYI), waiting for
+ * review (act), or turned into a join request to the page's managing
+ * organization (FYI). Same inbox as new posts (ADMIN_NOTIFICATION_EMAIL,
+ * else info@pmrfp.com). Built by lib/buyers/admin-notify.
+ */
+export async function sendAdminBuyerClaim(c: {
+  status: "verified" | "pending" | "join_requested";
+  buyerName: string;
+  buyerKey: string;
+  provinceCode: string;
+  email: string;
+  fullName?: string | null;
+  jobTitle?: string | null;
+  /** Why it waits (plain English), for a pending claim. */
+  reason?: string | null;
+  /** Claims and requests now waiting at /admin/buyer-sources. */
+  waiting?: number | null;
+}): Promise<void> {
+  const waiting = c.waiting && c.waiting > 1 ? ` (${c.waiting} waiting)` : "";
+  const subject =
+    c.status === "pending"
+      ? `Buyer page claim to check${waiting}: ${c.buyerName.slice(0, 90)} (${c.provinceCode})`
+      : c.status === "verified"
+        ? `Buyer page claimed and verified: ${c.buyerName.slice(0, 90)} (${c.provinceCode})`
+        : `Join request for a managed buyer page: ${c.buyerName.slice(0, 90)} (${c.provinceCode})`;
+  const what =
+    c.status === "pending"
+      ? "It waits for you: verify the claimant works there (staff page, a reply from the purchasing inbox), or reject it."
+      : c.status === "verified"
+        ? "Verified on the spot by the work email's domain. Nothing to do unless it looks wrong."
+        : "The page already has a managing organization, so this went to them as a join request. Nothing to do unless they ask.";
+  await send(
+    adminInbox(),
+    subject,
+    layout(
+      c.status === "pending" ? "A buyer page claim is waiting" : "A buyer page was claimed",
+      `<ul>
+        <li><strong>Page:</strong> <a href="${BASE}/buyers/${esc(c.buyerKey)}">${esc(c.buyerName)}</a> (${esc(c.provinceCode)})</li>
+        <li><strong>Claimant:</strong> ${esc(c.fullName || "—")}${c.jobTitle ? `, ${esc(c.jobTitle)}` : ""}</li>
+        <li><strong>Email:</strong> ${esc(c.email)}</li>
+        ${c.reason ? `<li><strong>Why it waits:</strong> ${esc(c.reason)}</li>` : ""}
+        ${c.waiting ? `<li><strong>Waiting for review:</strong> ${c.waiting}</li>` : ""}
+       </ul>
+       <p>${what}</p>
+       <p>${btn(`${BASE}/admin/buyer-sources`, "Open buyer sources")}</p>`,
+    ),
+  );
+}
+
+/**
+ * Admin heads-up: a public buyer asked to list its tenders from
+ * /for-public-buyers (/api/buyer-sources). Nothing imports until an admin
+ * approves it at /admin/buyer-sources. Same inbox as new posts.
+ */
+export async function sendAdminBuyerSourceRequest(r: {
+  organization: string;
+  contactName: string;
+  workEmail: string;
+  tendersUrl: string;
+  /** Plain English ("we read their public page daily"). */
+  method: string;
+  provinceCode: string;
+  buyerSlug?: string | null;
+  waiting?: number | null;
+}): Promise<void> {
+  const waiting = r.waiting && r.waiting > 1 ? ` (${r.waiting} waiting)` : "";
+  await send(
+    adminInbox(),
+    `Public buyer wants to list its tenders${waiting}: ${r.organization.slice(0, 90)} (${r.provinceCode})`,
+    layout(
+      "A public buyer asked to list its tenders",
+      `<ul>
+        <li><strong>Organization:</strong> ${esc(r.organization)} (${esc(r.provinceCode)})${r.buyerSlug ? ` · ${esc(r.buyerSlug)}` : ""}</li>
+        <li><strong>Contact:</strong> ${esc(r.contactName)} · ${esc(r.workEmail)}</li>
+        <li><strong>Tenders page:</strong> ${esc(r.tendersUrl)}</li>
+        <li><strong>How:</strong> ${esc(r.method)}</li>
+        ${r.waiting ? `<li><strong>Waiting for review:</strong> ${r.waiting}</li>` : ""}
+       </ul>
+       <p>Nothing is imported until you approve it. Check the email matches the organization before you do.</p>
+       <p>${btn(`${BASE}/admin/buyer-sources`, "Review in admin")}</p>`,
+    ),
+  );
+}
+
+/**
  * To the poster (PM, landlord, GC, owner): a trade responded. Looked up and
  * sent server-side after the response row exists (lib/pm-jobs/notify). In
  * the poster's language, with the trade's quote when it gave one.
@@ -534,8 +621,24 @@ export async function sendPmJobAlert(
   });
 }
 
+/**
+ * Same-day "New from buyers you follow" to a Trade Pro or trial member
+ * (lib/follows/alerts-server, behind BUYER_FOLLOW_ALERTS_ENABLED).
+ * Commercial: CASL footer with the mailing address and a one-click
+ * unsubscribe (link + RFC 8058 headers). The caller refuses to send without both.
+ */
+export async function sendFollowAlert(
+  to: string,
+  params: { lang: EmailLang; items: FollowEmailItem[]; unsubscribeUrl: string; mailingAddress: string },
+): Promise<void> {
+  await sendBuilt(to, followAlertEmail(params.lang, { base: BASE, items: params.items, unsubscribeUrl: params.unsubscribeUrl, mailingAddress: params.mailingAddress }), params.lang, "follow-alert", {
+    "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  });
+}
+
 type PosterKind = "pm" | "gc";
-type Contact = { name: string | null; company: string | null; email: string | null; phone: string | null };
+type Contact ={ name: string | null; company: string | null; email: string | null; phone: string | null };
 
 /** To a trade whose response the poster declined (with their optional note). */
 export async function sendTradeDeclined(to: string, p: { lang: EmailLang; rfpTitle: string; posterKind: PosterKind; note: string | null }): Promise<void> {
@@ -802,6 +905,8 @@ export async function sendTenderDigest(
     mailingAddress: string;
     /** One relevant sponsor row (lib/sponsors/email), or "". */
     sponsorHtml?: string;
+    /** "From buyers you follow" (lib/follows/email-copy weeklyFollowSectionHtml), or "". */
+    followedHtml?: string;
   },
 ): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -822,13 +927,20 @@ export async function sendTenderDigest(
       : "";
   const check = (t: string) =>
     `<tr><td valign="top" style="padding:0 10px 8px 0;color:#0C7A5A;font-weight:700">&#10003;</td><td style="padding:0 0 8px 0;font-size:15px;line-height:22px;color:#1B1E45">${t}</td></tr>`;
+  // A week with nothing in their trades but news from buyers they follow: just that section.
+  const headline = params.count > 0 ? `${params.count} new ${params.tradeLabel} ${noun} this week` : "New bids from buyers you follow";
+  const matches =
+    params.count > 0
+      ? `<p>Public tenders matching your trade and area, posted in the last 7 days.${urgency}</p>
+       <ul style="padding-left:18px;margin:16px 0">${list}</ul>${more}`
+      : "";
   await send(
     to,
-    `${params.count} new ${params.tradeLabel} ${noun} this week`,
+    headline,
     layout(
-      `${params.count} new ${params.tradeLabel} ${noun} this week`,
-      `<p>Public tenders matching your trade and area, posted in the last 7 days.${urgency}</p>
-       <ul style="padding-left:18px;margin:16px 0">${list}</ul>${more}
+      headline,
+      `${matches}
+       ${params.followedHtml ?? ""}
        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 8px;background:#F6F7FB;border:1px solid #E6E8F0;border-radius:12px;">
          <tr><td style="padding:20px 20px 12px 20px;">
            <p style="margin:0 0 12px;font-weight:700;color:#1B1E45;font-size:16px">What Trade Pro adds</p>

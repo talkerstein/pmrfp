@@ -11,6 +11,7 @@ import { fmt, formatNumber } from "@/i18n/format";
 import { regionName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
 import { FOR_PUBLIC_BUYERS_PATH } from "@/lib/buyers/source-links";
+import { inProvince, provinceList, provincePath } from "@/lib/buyers/province";
 
 export const revalidate = 3600;
 
@@ -34,6 +35,10 @@ export default async function BuyersIndex({ params }: { params: Promise<{ lang: 
   const pages = all.filter((p) => pageKind(p) !== "town" || shownTowns.has(p));
   const hiddenTowns = all.length - pages.length;
   const index = directoryIndex(pages);
+  // Every province page (/buyers/<province>) lists all its towns and buyers, shown here or not.
+  const provinces = provinceList(all);
+  const allIn = new Map(provinces.map((p) => [p.provinceSlug, p.total]));
+  const tf = getT("follows").index;
   let no = 0;
   return (
     <>
@@ -42,15 +47,18 @@ export default async function BuyersIndex({ params }: { params: Promise<{ lang: 
         <p className="small muted" data-flag="link-only">{t.index.note}</p>
         {hiddenTowns > 0 && <p className="small muted" data-flag="towns">{fmt(getT("towns").page.townsNote, { n: formatNumber(hiddenTowns, lang) })}</p>}
         <p className="small" data-cta="list-your-tenders"><a href={L(FOR_PUBLIC_BUYERS_PATH)}>{t.index.listYours} →</a></p>
-        <nav className="s-links" aria-label={t.index.crumb}>
-          {index.map((p) => (
-            <a key={p.provinceSlug} href={`#${p.provinceSlug}`}>{regionName(p.province, lang)} ({formatNumber(p.total, lang)})</a>
+        <nav className="s-links" aria-label={tf.provinces} data-list="provinces">
+          {provinces.map((p) => (
+            <a key={p.provinceSlug} href={L(provincePath(p.provinceSlug))}>{regionName(p.province, lang)} ({formatNumber(p.total, lang)})</a>
           ))}
         </nav>
         {index.map((p) => (
           <section key={p.provinceSlug} data-province={p.provinceSlug}>
             <SH2 no={++no} id={p.provinceSlug}>{fmt(t.index.provinceHead, { province: regionName(p.province, lang) })}</SH2>
-            <p className="small muted">{fmt(t.index.count, { n: formatNumber(p.total, lang) })}</p>
+            <p className="small muted">
+              {fmt(t.index.count, { n: formatNumber(p.total, lang) })} ·{" "}
+              <a href={L(provincePath(p.provinceSlug))} data-link="province">{fmt(tf.provinceLink, { n: formatNumber(allIn.get(p.provinceSlug) ?? p.total, lang), inProvince: inProvince(p.province, lang, regionName(p.province, lang)) })} →</a>
+            </p>
             {p.groups.map((g) => (
               <div key={g.group} data-group={g.group}>
                 <h3>{t.groups[g.group]}</h3>

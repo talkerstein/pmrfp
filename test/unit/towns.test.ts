@@ -8,7 +8,8 @@ import { decideClaim, domainOwners, isFreeMail, registrableOf, type DomainHolder
 import { domainHolderOf, searchBuyerPages } from "@/lib/towns/claimable";
 import { cleanUpcoming, managedPageSchema, ownLogoUrl, permissionFor, readManagedForm, changedFields } from "@/lib/towns/managed";
 import { nearbyOpenBids, townWidgetData } from "@/lib/towns/nearby";
-import { claimSignUpHref, followTownHref } from "@/lib/towns/paths";
+import { claimSignUpHref } from "@/lib/towns/paths";
+import { followIntentPath, followSignUpHref } from "@/lib/follows/rules";
 import { DIRECTORY, buildBuyerPages, isIndexablePage, type DirectoryBuyer } from "@/lib/buyers/model";
 import { mergePermissions, type BuyerPermission } from "@/lib/buyers/permissions";
 import { WIDGET_PATH_RE, fallbackHref, scriptSnippet, widgetPath } from "@/lib/embed/widgets";
@@ -362,8 +363,9 @@ describe("the town-bids widget and the town page's lists", () => {
 
   it("links the claim and follow calls to action", () => {
     expect(claimSignUpHref("ontario/town-of-cobourg")).toBe("/sign-up?role=public_buyer&claim=ontario%2Ftown-of-cobourg");
-    expect(followTownHref("/buyers/ontario/town-of-cobourg", "ontario")).toBe("/sign-up?role=trade&region=ontario&next=%2Fbuyers%2Fontario%2Ftown-of-cobourg");
-    expect(followTownHref("/buyers/ontario/town-of-cobourg", null)).toBe("/sign-up?role=trade&next=%2Fbuyers%2Fontario%2Ftown-of-cobourg");
+    // Follow is a real follow now (Part B1): sign-up keeps it in `next` (/follow?buyer=…).
+    expect(followSignUpHref(followIntentPath("ontario/town-of-cobourg"), "ontario")).toBe("/sign-up?role=trade&region=ontario&next=%2Ffollow%3Fbuyer%3Dontario%252Ftown-of-cobourg");
+    expect(followSignUpHref(followIntentPath("ontario/town-of-cobourg"), null)).toBe("/sign-up?role=trade&next=%2Ffollow%3Fbuyer%3Dontario%252Ftown-of-cobourg");
   });
 
   it("finds a buyer page by name for the claim step", () => {
