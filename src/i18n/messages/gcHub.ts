@@ -27,7 +27,7 @@ const en = {
   },
   packages: {
     intro:
-      "Packages posted by general contractors on PMRFP, one trade each. Trade Pro members in that trade and region get them in their morning email.",
+      "Packages posted by general contractors on PMRFP, one trade each. Matching local trades are emailed the same day each one is published.",
     none: "No open packages right now. When a contractor posts one, it shows up here the day it goes live.",
     quotesDue: "Quotes due {date}",
     project: "Project: {name}",
@@ -67,7 +67,7 @@ const en = {
     steps: [
       "Open your contract in the list above to post packages linked to it, or start from scratch. Linking the public award is optional.",
       "Post one package per trade: scope, site and quotes-due date.",
-      "After a quick review it goes on the board, and Trade Pro members in that trade and region get it in their morning email.",
+      "After a quick review it goes on the board, and matching local trades are emailed the same day it's published.",
     ],
     free: "Free for contractors. No fees, no contract, no per-lead charges.",
     cta: "Post a sub-trade package — free",
@@ -93,7 +93,7 @@ const en = {
     packagesIntro: "Posted on PMRFP for contracts listed above.",
     gcTitle: "Is this your company?",
     gcBody:
-      "Post a sub-trade package for any of these contracts, free. It shows the public contract it belongs to, so trades know the job is real, and Trade Pro members in that trade and region get it in their morning email.",
+      "Post a sub-trade package for any of these contracts, free. It shows the public contract it belongs to, so trades know the job is real, and matching local trades are emailed the same day it's published.",
     gcCta: "Post a sub-trade package — free",
     gcPick: "Or start from one contract:",
     gcFor: "Post packages for this contract",
@@ -126,7 +126,7 @@ const fr: typeof en = {
   },
   packages: {
     intro:
-      "Lots publiés par des entrepreneurs généraux sur PMRFP, un corps de métier par lot. Les membres Trade Pro de ce métier et de cette région les reçoivent dans leur courriel du matin.",
+      "Lots publiés par des entrepreneurs généraux sur PMRFP, un corps de métier par lot. Les entrepreneurs locaux correspondants reçoivent un courriel le jour même de la publication de chaque lot.",
     none: "Aucun lot ouvert pour le moment. Dès qu'un entrepreneur en publie un, il apparaît ici le jour de sa mise en ligne.",
     quotesDue: "Prix demandés pour le {date}",
     project: "Projet : {name}",
@@ -166,7 +166,7 @@ const fr: typeof en = {
     steps: [
       "Ouvrez votre contrat dans la liste ci-dessus pour publier des lots qui y sont liés, ou partez de zéro. Lier l'adjudication publique est facultatif.",
       "Publiez un lot par corps de métier : portée, chantier et date limite des prix.",
-      "Après une brève vérification, il est mis en ligne, et les membres Trade Pro de ce métier et de cette région le reçoivent dans leur courriel du matin.",
+      "Après une brève vérification, il est mis en ligne, et les entrepreneurs locaux correspondants reçoivent un courriel le jour même de sa publication.",
     ],
     free: "Gratuit pour les entrepreneurs. Aucuns frais, aucun contrat, aucun paiement par demande.",
     cta: "Publier un lot de sous-traitance — gratuit",
@@ -192,7 +192,7 @@ const fr: typeof en = {
     packagesIntro: "Publiés sur PMRFP pour des contrats de la liste ci-dessus.",
     gcTitle: "C'est votre entreprise?",
     gcBody:
-      "Publiez gratuitement un lot de sous-traitance pour n'importe lequel de ces contrats. Il affiche le contrat public auquel il se rattache, pour que les sous-traitants sachent que le chantier est réel, et les membres Trade Pro de ce métier et de cette région le reçoivent dans leur courriel du matin.",
+      "Publiez gratuitement un lot de sous-traitance pour n'importe lequel de ces contrats. Il affiche le contrat public auquel il se rattache, pour que les sous-traitants sachent que le chantier est réel, et les entrepreneurs locaux correspondants reçoivent un courriel le jour même de sa publication.",
     gcCta: "Publier un lot de sous-traitance — gratuit",
     gcPick: "Ou partez d'un contrat :",
     gcFor: "Publier des lots pour ce contrat",
@@ -225,7 +225,7 @@ const es: typeof en = {
   },
   packages: {
     intro:
-      "Paquetes publicados en PMRFP por contratistas generales, un oficio por paquete. Los miembros de Trade Pro de ese oficio y esa región los reciben en su correo de la mañana.",
+      "Paquetes publicados en PMRFP por contratistas generales, un oficio por paquete. Los contratistas locales que coinciden reciben un correo el mismo día en que se publica cada uno.",
     none: "No hay paquetes abiertos en este momento. Cuando un contratista publique uno, aparecerá aquí el día en que se publique.",
     quotesDue: "Cotizaciones hasta el {date}",
     project: "Proyecto: {name}",
@@ -265,7 +265,7 @@ const es: typeof en = {
     steps: [
       "Abra su contrato en la lista de arriba para publicar paquetes vinculados a él, o empiece desde cero. Vincular la adjudicación pública es opcional.",
       "Publique un paquete por oficio: alcance, obra y fecha límite de cotizaciones.",
-      "Tras una revisión rápida se publica en el tablero, y los miembros de Trade Pro de ese oficio y esa región lo reciben en su correo de la mañana.",
+      "Tras una revisión rápida se publica en el tablero, y los contratistas locales que coinciden reciben un correo el mismo día en que se publica.",
     ],
     free: "Gratis para contratistas. Sin tarifas, sin contrato, sin cobros por contacto.",
     cta: "Publicar un paquete de subcontratación — gratis",
@@ -291,7 +291,7 @@ const es: typeof en = {
     packagesIntro: "Publicados en PMRFP para contratos de la lista de arriba.",
     gcTitle: "¿Es su empresa?",
     gcBody:
-      "Publique gratis un paquete de subcontratación para cualquiera de estos contratos. Muestra el contrato público al que pertenece, para que los oficios sepan que la obra es real, y los miembros de Trade Pro de ese oficio y esa región lo reciben en su correo de la mañana.",
+      "Publique gratis un paquete de subcontratación para cualquiera de estos contratos. Muestra el contrato público al que pertenece, para que los oficios sepan que la obra es real, y los contratistas locales que coinciden reciben un correo el mismo día en que se publica.",
     gcCta: "Publicar un paquete de subcontratación — gratis",
     gcPick: "O empiece desde un contrato:",
     gcFor: "Publicar paquetes para este contrato",

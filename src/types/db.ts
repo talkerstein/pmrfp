@@ -17,7 +17,7 @@ export type RfpSourceType =
   | "property_manager_direct" | "admin_seeded" | "public_source" | "partner_referral" | "gc_package";
 export type DocVisibility = "public" | "paid_users" | "admin_only";
 export type InterestStatus =
-  | "submitted" | "viewed" | "contact_revealed" | "shortlisted" | "declined" | "closed";
+  | "submitted" | "viewed" | "contact_revealed" | "shortlisted" | "declined" | "closed" | "picked" | "not_selected";
 export type SubscriptionStatus =
   | "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "comped" | "inactive";
 export type ContactRequestType =
@@ -190,6 +190,17 @@ export interface RfpInterest {
   admin_notes: string | null;
   created_at: string;
   updated_at: string;
+  /** Migration 20261021000020 (PM job flow). */
+  quote_amount?: number | null;
+  quote_kind?: "estimate" | "firm" | null;
+  quote_notes?: string | null;
+  start_date?: string | null;
+  used_free_allowance?: boolean;
+  lang?: string | null;
+  pm_contact_shared?: boolean;
+  decision_note?: string | null;
+  decided_at?: string | null;
+  outcome_notified_at?: string | null;
 }
 
 export interface ContactRequest {

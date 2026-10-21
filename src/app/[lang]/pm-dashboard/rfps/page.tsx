@@ -18,7 +18,8 @@ import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
-import { formatDate } from "@/i18n/format";
+import { fmt, formatDate } from "@/i18n/format";
+import { isSchemaMissing } from "@/lib/projects/compat";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -32,6 +33,8 @@ interface PostRow {
   status: string;
   deadline: string | null;
   created_at: string;
+  /** Why the admin didn't publish it (migration 20261021000020). */
+  review_note?: string | null;
 }
 
 export default async function PmRfpsPage({
@@ -47,13 +50,13 @@ export default async function PmRfpsPage({
   let posts: PostRow[] = [];
   if (!isDemoMode()) {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("rfp_posts")
-      .select("id,title,slug,status,deadline,created_at")
-      .eq("posted_by_user_id", session.userId)
-      .order("created_at", { ascending: false });
-    posts = (data as PostRow[] | null) ?? [];
+    const read = (cols: string) =>
+      supabase.from("rfp_posts").select(cols).eq("posted_by_user_id", session.userId).order("created_at", { ascending: false });
+    const first = await read("id,title,slug,status,deadline,created_at,review_note");
+    const data = isSchemaMissing(first.error) ? (await read("id,title,slug,status,deadline,created_at")).data : first.data;
+    posts = (data as unknown as PostRow[] | null) ?? [];
   }
+  const tj = getT("pmJobs").pmRfps;
 
   return (
     <div>
@@ -101,7 +104,12 @@ export default async function PmRfpsPage({
             <TableBody>
               {posts.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.title}</TableCell>
+                  <TableCell className="font-medium">
+                    {p.title}
+                    {p.status === "rejected" && p.review_note && (
+                      <span className="block max-w-md whitespace-normal text-xs font-normal text-red-700">{fmt(tj.rejected, { reason: p.review_note })}</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={p.status} />
                   </TableCell>

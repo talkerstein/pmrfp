@@ -27,7 +27,10 @@ import { buyerPageForRfp } from "@/lib/buyers/model";
 import { buyerFromSummary as awardBuyerFromSummary } from "@/lib/data/monthly-winners";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isPmJobSource } from "@/lib/pm-jobs/rules";
+import { respondStateFor } from "@/lib/pm-jobs/server";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { localizeCredit } from "@/lib/data-credits";
 import { RecordFooter } from "@/components/public/record-footer";
@@ -300,6 +303,42 @@ export default async function RfpDetailPage({
   const bidHref = showFull && full && isPublicTender ? full.sourceUrl : freeNoticeHref;
   // Signed out: the free account is the first step ("save this bid and get alerts"), back to this page after.
   const freeSignupHref = `/sign-up?role=trade&next=${encodeURIComponent(`/rfps/${teaser.slug}`)}`;
+  // PM jobs (lib/pm-jobs): any approved company responds, free accounts 3 a month. Public tenders never.
+  const respond =
+    configured && session?.organization && !isPublicTender && !isAward && !isClosed && isServiceConfigured() && (isPmJobSource(teaser.sourceType) || session.hasTradeAccess)
+      ? await respondStateFor(createServiceClient(), teaser.slug, {
+          userId: session.userId,
+          pro: session.hasTradeAccess,
+          org: session.organization,
+        }).catch(() => null)
+      : null;
+  const tr = getT("pmJobs").respond;
+  const respondNote = respond
+    ? respond.already
+      ? fill(tr.already, { date: fmt(respond.already, lang) })
+      : respond.refusal === "not_approved"
+        ? tr.notApproved
+        : respond.allowance.unlimited
+          ? tr.unlimited
+          : respond.allowance.left > 0
+            ? fill(tr.left, { left: respond.allowance.left, limit: respond.allowance.limit })
+            : fill(tr.none, { limit: respond.allowance.limit })
+    : null;
+  // A free account on a PM job: the respond button (or "you responded" / out of free responses), not the paywall button.
+  const freeRespond = Boolean(locked && respond && !respond.allowance.unlimited && (respond.already || respond.refusal === null || respond.refusal === "limit" || respond.refusal === "not_approved"));
+  const respondButton = (cls: string, linkCls: string) =>
+    respond && !respond.already && (respond.refusal === null || respond.refusal === "limit") ? (
+      <span className={cls}>
+        <ExpressInterestDialog
+          rfpId={respond.rfpId}
+          rfpTitle={respond.title}
+          currency={respond.currency}
+          allowance={respond.allowance.unlimited ? null : { unlimited: false, left: respond.allowance.left, limit: respond.allowance.limit }}
+        />
+      </span>
+    ) : respond?.already ? (
+      <a href={L("/dashboard/interests")} className={linkCls}>{tr.seeResponses}</a>
+    ) : null;
   const saveLink = (cls: string, stroke?: string) =>
     canSave ? (
       <span className="v3-tw vp-tw-btn"><SaveButton rfpSlug={teaser.slug} /></span>
@@ -378,6 +417,15 @@ export default async function RfpDetailPage({
                     <a href={L(upgradeHref)} className="vp-ghost light vp-ic"><LockIcon stroke="#91F2CF" />{v.unlock}</a>
                     <span className="vp-dnote">{v.freeNote}</span>
                   </>
+                ) : freeRespond ? (
+                  <>
+                    {respondButton("v3-tw vp-tw-btn", "v3-pill mint vp-big")}
+                    {saveLink("vp-ghost light vp-ic")}
+                    <span className="vp-dnote" data-respond="free">
+                      {respondNote}{" "}
+                      {!respond?.already && respond?.refusal !== "not_approved" && <a href={L(upgradeHref)}>{tr.upgrade}</a>}
+                    </span>
+                  </>
                 ) : locked ? (
                   <>
                     {bidHref ? (
@@ -393,7 +441,11 @@ export default async function RfpDetailPage({
                     {bidHref ? (
                       <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{source.bidLabel} ↗</a>
                     ) : full && !isPublicTender ? (
-                      <span className="v3-tw vp-tw-btn"><ExpressInterestDialog rfpId={full.id} rfpTitle={full.title} /></span>
+                      respond?.already ? (
+                        <a href={L("/dashboard/interests")} className="vp-ghost light vp-ic">{tr.seeResponses}</a>
+                      ) : (
+                        <span className="v3-tw vp-tw-btn"><ExpressInterestDialog rfpId={full.id} rfpTitle={full.title} currency={respond?.currency} /></span>
+                      )
                     ) : null}
                     {full && <span className="v3-tw vp-tw-btn"><SaveButton rfpId={full.id} /></span>}
                   </>
@@ -721,11 +773,27 @@ export default async function RfpDetailPage({
               <div className="vp-tw-col">
                 {isPublicTender ? (
                   full.sourceUrl && <a href={full.sourceUrl} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{source.bidLabel} ↗</a>
+                ) : respond?.already ? (
+                  <p className="nt">{respondNote} <a href={L("/dashboard/interests")}>{tr.seeResponses}</a></p>
                 ) : (
-                  <span className="v3-tw"><ExpressInterestDialog rfpId={full.id} rfpTitle={full.title} /></span>
+                  <span className="v3-tw"><ExpressInterestDialog rfpId={full.id} rfpTitle={full.title} currency={respond?.currency} /></span>
                 )}
                 <span className="v3-tw"><SaveButton rfpId={full.id} /></span>
               </div>
+            ) : !isClosed && freeRespond ? (
+              <>
+                {respondButton("v3-tw vp-block-btn", "v3-pill navy vp-block-btn")}
+                {saveLink("vp-ghost vp-block-btn vp-ic", "#1B1D3A")}
+                <p className="nt" data-respond="free">
+                  {respondNote}
+                  {!respond?.already && respond?.refusal !== "not_approved" && (
+                    <>
+                      {" "}
+                      <a href={L(upgradeHref)}>{tr.upgrade}</a>
+                    </>
+                  )}
+                </p>
+              </>
             ) : !isClosed && !session && permission && bidHref ? (
               <>
                 <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill navy vp-block-btn">{source.bidLabel} ↗</a>

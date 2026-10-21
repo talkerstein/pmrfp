@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { SignUpFlow, type SignupRole } from "@/components/home-v3/signup-flow";
 import { safeNextPath } from "@/lib/auth/next";
+import { signupRoleFromLink, type SignupLinkRole } from "@/lib/auth/signup-link";
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { billingPathForIntent, parsePlanIntent } from "@/lib/billing/plan-intent";
 import { parseAwardRef } from "@/lib/gc/packages";
@@ -17,8 +18,8 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { regionName, tradeName } from "@/i18n/terms";
 
-const VALID_ROLES = ["trade", "supplier", "property_manager", "visitor", "real_estate_agent", "general_contractor", "landlord", "talent"] as const;
-type ValidRole = (typeof VALID_ROLES)[number];
+
+type ValidRole = SignupLinkRole;
 
 /** Role-aware share card: link previews (WhatsApp/iMessage/LinkedIn) fetch the
  *  full URL including ?role=, so invites speak to the right audience. */
@@ -53,19 +54,19 @@ export default async function SignUpPage({
   searchParams,
   params,
 }: {
-  searchParams: Promise<{ role?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string }>;
+  searchParams: Promise<{ role?: string; kind?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string }>;
   params: Promise<object>;
 }) {
   const lang = await setLangFrom(params);
   const t = getT("v3Pages").signup;
   const ta = getT("auth").signUp;
-  const { role: rawRole, next: rawNext, template, plan, interval, award: rawAward } = await searchParams;
+  const { role: rawRole, kind, next: rawNext, template, plan, interval, award: rawAward } = await searchParams;
   // A GC arriving from a public award they won: their first package is prefilled.
   const award = parseAwardRef(rawAward);
   // Plan chosen on /pricing: re-validated against an allowlist; never trusted for price.
   const intent = parsePlanIntent(plan, interval);
-  // Never start on "just looking" (visitor), even from ?role=visitor: it has to be a deliberate pick.
-  const linkedRole: ValidRole | undefined = rawRole && rawRole !== "visitor" && (VALID_ROLES as readonly string[]).includes(rawRole) ? (rawRole as ValidRole) : undefined;
+  // ?role=property_manager / ?role=landlord (or &kind=landlord|gc) start with that role picked; never on "just looking".
+  const linkedRole: ValidRole | undefined = signupRoleFromLink(rawRole, kind);
   // No role in the link: start on "I do the work" when they came from a trade page or trade outreach.
   const initialRole: ValidRole | undefined = linkedRole ?? (!intent && (await cameFromTradeSide()) ? "trade" : undefined);
   // Back-compat: older links pass ?template=X; promote it to a `next` path.

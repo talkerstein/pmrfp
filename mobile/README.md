@@ -21,7 +21,7 @@ screens without a device. Push notifications do not work there or in a simulator
 |---|---|---|
 | RFP board | `app/index.tsx` | Live. Reads `rfp_public`, hides closed posts, soonest deadline first. |
 | RFP detail + paywall | `app/rfp/[id].tsx` | Live. Full row when entitled, teaser + unlock prompt otherwise. |
-| Express interest | `app/rfp/[id].tsx` | Live. Writes to `rfp_interests` against the user's org. |
+| Express interest | `app/rfp/[id].tsx` | Live. Posts to `/api/rfp-interest` (bearer token): the server writes the row and emails the poster. |
 | Sign in | `app/sign-in.tsx` | Live. Same credentials as pmrfp.com. |
 | Account + push toggle | `app/account.tsx` | Live, but push needs an EAS project — see below. |
 | Projects list | `app/projects/index.tsx` | Live. The company's projects, hero thumbnail + status. Linked from the board header. |

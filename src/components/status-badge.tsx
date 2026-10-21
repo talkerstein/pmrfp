@@ -11,6 +11,7 @@ const TONE: Record<string, string> = {
   paid: "bg-green-100 text-green-800",
   shortlisted: "bg-green-100 text-green-800",
   contact_revealed: "bg-green-100 text-green-800",
+  picked: "bg-green-100 text-green-800",
   // ambers
   pending_review: "bg-amber-100 text-amber-800",
   draft: "bg-amber-100 text-amber-800",
@@ -28,6 +29,7 @@ const TONE: Record<string, string> = {
   spam: "bg-red-100 text-red-800",
   // neutrals
   closed: "bg-slate-200 text-slate-700",
+  not_selected: "bg-slate-200 text-slate-700",
   archived: "bg-slate-200 text-slate-700",
   awarded: "bg-blue-100 text-blue-800",
   inactive: "bg-slate-200 text-slate-700",

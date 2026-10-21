@@ -84,8 +84,8 @@ describe("October 30 explicit Data API permissions", () => {
   it("preserves correction-request column restrictions after a repeated backfill", async () => {
     await db.exec(patch);
     expect(await permission("authenticated","correction_requests","UPDATE")).toBe(false);
-    expect((await db.query("select has_column_privilege('authenticated','public.correction_requests','status','UPDATE') as ok")).rows[0].ok).toBe(true);
-    expect((await db.query("select has_column_privilege('authenticated','public.correction_requests','details','UPDATE') as ok")).rows[0].ok).toBe(false);
+    expect((await db.query<{ ok: boolean }>("select has_column_privilege('authenticated','public.correction_requests','status','UPDATE') as ok")).rows[0].ok).toBe(true);
+    expect((await db.query<{ ok: boolean }>("select has_column_privilege('authenticated','public.correction_requests','details','UPDATE') as ok")).rows[0].ok).toBe(false);
     expect(await permission("anon","correction_requests","SELECT")).toBe(false);
   });
   it("allows anonymous teaser reads while withholding full RFP rows", async () => {
@@ -103,7 +103,7 @@ describe("October 30 explicit Data API permissions", () => {
     try {
       await old.exec("create role anon; create role authenticated; create role service_role bypassrls; create table public.rfp_posts(id uuid); alter table public.rfp_posts enable row level security;");
       await old.exec(patch);
-      expect((await old.query("select has_table_privilege('service_role','public.rfp_posts','INSERT') as ok")).rows[0].ok).toBe(true);
+      expect((await old.query<{ ok: boolean }>("select has_table_privilege('service_role','public.rfp_posts','INSERT') as ok")).rows[0].ok).toBe(true);
       await old.exec(patch);
     } finally { await old.close(); }
   });

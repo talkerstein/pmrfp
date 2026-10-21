@@ -100,6 +100,18 @@ export const interestSchema = z.object({
   attachmentUrl: z.string().optional(),
   /** Up to three of the company's published projects to show the PM. */
   caseStudyIds: z.array(z.string().uuid()).max(3, "Attach up to three projects").optional(),
+  /** Optional price: "12500", "$12,500" or a number (lib/pm-jobs/rules parseQuoteAmount). */
+  quoteAmount: z.union([z.string().max(40), z.number().nonnegative().max(1_000_000_000)]).optional(),
+  quoteKind: z.enum(["estimate", "firm"]).optional(),
+  quoteNotes: z.string().max(2000, "Keep this under 2000 characters").optional(),
+  /** When the trade can start (YYYY-MM-DD). */
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a start date")
+    .optional()
+    .or(z.literal("")),
+  /** The page's language, for the emails about this response. */
+  lang: z.string().max(5).optional(),
   acceptDisclaimer: z.literal(true, {
     message: "Please confirm you understand PMRFP does not guarantee the job",
   }),

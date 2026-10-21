@@ -5,6 +5,20 @@ import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
 import { recentAwardsHtml } from "@/lib/alerts/awards";
 import { majorProjectsHtml } from "@/lib/major-projects/alerts";
 import { tagEmailLinks } from "@/lib/email/utm";
+import { adminNotificationEmail } from "@/lib/pm-jobs/rules";
+import {
+  confirmationEmail,
+  contactSharedEmail,
+  declinedEmail,
+  jobAlertEmail,
+  newInterestEmail,
+  notSelectedEmail,
+  pickedEmail,
+  publishedEmail,
+  rejectedEmail,
+  type BuiltEmail,
+  type EmailLang,
+} from "@/lib/pm-jobs/email-copy";
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset
@@ -13,7 +27,8 @@ import { tagEmailLinks } from "@/lib/email/utm";
  */
 
 const FROM = process.env.RESEND_FROM_EMAIL || "PMRFP <info@pmrfp.com>";
-const ADMIN = process.env.ADMIN_NOTIFICATION_EMAIL || "info@pmrfp.com";
+/** The admin inbox: ADMIN_NOTIFICATION_EMAIL, else info@pmrfp.com (read per email, lib/pm-jobs/rules). */
+const adminInbox = () => adminNotificationEmail();
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
 
 function client(): Resend | null {
@@ -159,14 +174,14 @@ export async function sendWelcomeEmail(
        <p>${btn(`${BASE}/dashboard/projects/new`, "Add your first project")}</p>
        <p style="margin:16px 0 0">Then see the open tenders in your trade: <a href="${BASE}/rfps${opts.tradeSlug ? `?category=${opts.tradeSlug}` : ""}" style="color:#282B59">browse open work</a>. Trade Pro ($249 a year) opens the full details and emails you every new match each morning.</p>`;
   } else if (opts.kind === "general_contractor") {
-    body = `<p>Post each sub-trade package for free, for example "Roofing package, quotes due Oct 10". Local trades in that trade see it in their morning email and send you quotes. Their profiles show photos of past work and reviews.</p>
+    body = `<p>Post each sub-trade package for free, for example "Roofing package, quotes due Oct 10". Matching local trades are emailed the same day it's published and send you quotes. Their profiles show photos of past work and reviews.</p>
        <p>${btn(`${BASE}/gc-packages/new`, "Post a sub-trade package")}</p>`;
   } else if (opts.kind === "landlord") {
-    body = `<p>Need a roof patched, a boiler serviced, or a unit turned over? Post the job on PMRFP for free, once. Local trades in that trade see it in their morning email and send you interest, so you're not chasing quotes one call at a time.</p>
+    body = `<p>Need a roof patched, a boiler serviced, or a unit turned over? Post the job on PMRFP for free, once. Matching local trades are emailed the same day it's published and send you their price, so you're not chasing quotes one call at a time.</p>
        <p>${btn(`${BASE}/pm-dashboard/rfps/new`, "Post your first repair or maintenance job")}</p>
        <p style="margin:16px 0 0">Not sure how to describe it? The <a href="${BASE}/rfp-writer" style="color:#282B59">free RFP writer</a> drafts one for you. You can also invite the trades you already use from your dashboard.</p>`;
   } else {
-    body = `<p>Posting an RFP on PMRFP is free. Describe the job once, and local trades in that trade see it in their morning email and send you interest.</p>
+    body = `<p>Posting an RFP on PMRFP is free. Describe the job once, and matching local trades are emailed the same day it's published and send you their price.</p>
        <p>${btn(`${BASE}/pm-dashboard/rfps/new`, "Post your first RFP")}</p>
        <p style="margin:16px 0 0">Not sure how to write it? The <a href="${BASE}/rfp-writer" style="color:#282B59">free RFP writer</a> drafts one for you.</p>`;
   }
@@ -190,7 +205,7 @@ export async function sendSubscriptionActivatedEmail(to: string): Promise<void> 
 
 /** The owner's inbox(es): the admin mailbox and the sign-up alert address, once each. */
 async function sendToOwners(subject: string, html: string, opts?: { replyTo?: string; attachments?: { filename: string; content: Buffer }[] }): Promise<void> {
-  const addrs = [...new Set([ADMIN, SIGNUP_ALERT].map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  const addrs = [...new Set([adminInbox(), SIGNUP_ALERT].map((e) => e.trim().toLowerCase()).filter(Boolean))];
   await Promise.all(addrs.map((addr) => send(addr, subject, html, undefined, opts)));
 }
 
@@ -428,62 +443,128 @@ export async function sendRfpExpiryNotice(
   );
 }
 
-export async function sendInterestConfirmation(to: string, rfpTitle: string): Promise<void> {
-  await send(
-    to,
-    `Interest Submitted: ${rfpTitle}`,
-    layout(
-      "Your interest was submitted",
-      `<p>We received your interest in <strong>${rfpTitle}</strong>. PMRFP and the property manager (if attached) will receive your submission.</p>`,
-      COPY.interestDisclaimer,
-    ),
-  );
+/** One PM-job-flow email (lib/pm-jobs/email-copy) in the shared shell, in its language. */
+async function sendBuilt(to: string, e: BuiltEmail, lang: EmailLang, utm: string, headers?: Record<string, string>): Promise<void> {
+  await send(to, e.subject, layout(e.title, e.bodyHtml, e.footnote, { lang }), headers, { utm });
 }
 
-export async function sendAdminNewRfp(rfp: { title: string; postedBy?: string; region?: string | null; category?: string | null }): Promise<void> {
+/** To the trade, right after it responds: sent, what happens next, and (free accounts) the responses left this month. */
+export async function sendInterestConfirmation(
+  to: string,
+  rfpTitle: string,
+  opts: { lang?: EmailLang; posterKind?: "pm" | "gc"; allowance?: { unlimited: boolean; left: number; limit: number } } = {},
+): Promise<void> {
+  const lang = opts.lang ?? "en";
+  await sendBuilt(to, confirmationEmail(lang, { base: BASE, rfpTitle, posterKind: opts.posterKind ?? "pm", allowance: opts.allowance }), lang, "response-sent");
+}
+
+/** Admin heads-up: a member's listing is waiting at /admin/rfps (ADMIN_NOTIFICATION_EMAIL, else info@pmrfp.com). */
+export async function sendAdminNewRfp(rfp: {
+  title: string;
+  postedBy?: string;
+  region?: string | null;
+  category?: string | null;
+  kind?: string | null;
+  pending?: number | null;
+}): Promise<void> {
+  const waiting = rfp.pending && rfp.pending > 1 ? ` (${rfp.pending} waiting)` : "";
   await send(
-    ADMIN,
-    "New RFP Pending Review",
+    adminInbox(),
+    `New ${rfp.kind === "gc_package" ? "GC package" : "RFP"} to review${waiting}: ${rfp.title.slice(0, 90)}`,
     layout(
-      "New RFP pending review",
+      "New post waiting for review",
       `<ul>
-        <li><strong>Title:</strong> ${rfp.title}</li>
-        ${rfp.postedBy ? `<li><strong>Posted by:</strong> ${rfp.postedBy}</li>` : ""}
-        ${rfp.category ? `<li><strong>Category:</strong> ${rfp.category}</li>` : ""}
-        ${rfp.region ? `<li><strong>Region:</strong> ${rfp.region}</li>` : ""}
+        <li><strong>Title:</strong> ${esc(rfp.title)}</li>
+        ${rfp.postedBy ? `<li><strong>Posted by:</strong> ${esc(rfp.postedBy)}</li>` : ""}
+        ${rfp.category ? `<li><strong>Category:</strong> ${esc(rfp.category)}</li>` : ""}
+        ${rfp.region ? `<li><strong>Region:</strong> ${esc(rfp.region)}</li>` : ""}
+        ${rfp.pending ? `<li><strong>Waiting for review:</strong> ${rfp.pending}</li>` : ""}
        </ul>
+       <p>It stays hidden, and no trade hears about it, until you publish it.</p>
        <p>${btn(`${BASE}/admin/rfps`, "Review in admin")}</p>`,
     ),
   );
 }
 
 /**
- * Notify the PM who posted the RFP that a new vendor expressed interest.
- * (Quest 1.7) Without this, vendors express interest and the PM never knows —
- * deal dies in silence. This is the single highest-leverage notification on
- * the platform.
+ * To the poster (PM, landlord, GC, owner): a trade responded. Looked up and
+ * sent server-side after the response row exists (lib/pm-jobs/notify). In
+ * the poster's language, with the trade's quote when it gave one.
  */
 export async function sendPmNewInterest(
   to: string,
-  params: { vendorName: string; rfpTitle: string; rfpId: string },
+  params: {
+    vendorName: string;
+    rfpTitle: string;
+    rfpId: string;
+    lang?: EmailLang;
+    quote?: { amount?: number | null; kind?: "estimate" | "firm" | null; notes?: string | null; startDate?: string | null; availability?: string | null; currency?: "CAD" | "USD" };
+  },
 ): Promise<void> {
-  await send(
-    to,
-    `New vendor interested: ${params.rfpTitle}`,
-    layout(
-      "A vendor expressed interest",
-      `<p><strong>${params.vendorName}</strong> is interested in your RFP:</p>
-       <p style="font-weight:600;font-size:16px;margin:8px 0 16px">${params.rfpTitle}</p>
-       <p>Review their full message + capability statement, and contact them directly if it's a fit.</p>
-       <p>${btn(`${BASE}/pm-dashboard/rfps/${params.rfpId}/interests`, "View vendor interest")}</p>`,
-      COPY.interestDisclaimer,
-    ),
-  );
+  const lang = params.lang ?? "en";
+  await sendBuilt(to, newInterestEmail(lang, { base: BASE, vendorName: params.vendorName, rfpTitle: params.rfpTitle, rfpId: params.rfpId, quote: params.quote }), lang, "new-response");
+}
+
+/**
+ * Same-day "new job" email to a matching trade (lib/pm-jobs/server, behind
+ * PM_JOB_ALERTS_ENABLED). Commercial message: CASL footer with the mailing
+ * address and a one-click unsubscribe (link + RFC 8058 headers). The caller
+ * refuses to send without both.
+ */
+export async function sendPmJobAlert(
+  to: string,
+  params: {
+    lang: EmailLang;
+    title: string;
+    slug: string;
+    trade: string | null;
+    place: string | null;
+    deadline: string | null;
+    summary: string | null;
+    pro: boolean;
+    freeLimit: number;
+    unsubscribeUrl: string;
+    mailingAddress: string;
+  },
+): Promise<void> {
+  const { lang, ...rest } = params;
+  await sendBuilt(to, jobAlertEmail(lang, { base: BASE, ...rest }), lang, "pm-job-alert", {
+    "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  });
+}
+
+type PosterKind = "pm" | "gc";
+type Contact = { name: string | null; company: string | null; email: string | null; phone: string | null };
+
+/** To a trade whose response the poster declined (with their optional note). */
+export async function sendTradeDeclined(to: string, p: { lang: EmailLang; rfpTitle: string; posterKind: PosterKind; note: string | null }): Promise<void> {
+  await sendBuilt(to, declinedEmail(p.lang, { base: BASE, ...p }), p.lang, "response-declined");
+}
+
+/** To the picked trade: the poster's contact. */
+export async function sendTradePicked(to: string, p: { lang: EmailLang; rfpTitle: string; posterKind: PosterKind; company: string; contact: Contact }): Promise<void> {
+  await sendBuilt(to, pickedEmail(p.lang, { base: BASE, ...p }), p.lang, "response-picked");
+}
+
+/** To every other trade that responded: thanks, the job went to another company. */
+export async function sendTradeNotSelected(to: string, p: { lang: EmailLang; rfpTitle: string; posterKind: PosterKind }): Promise<void> {
+  await sendBuilt(to, notSelectedEmail(p.lang, { base: BASE, ...p }), p.lang, "response-not-selected");
+}
+
+/** To a trade the poster shared their contact with ("Share my contact"). */
+export async function sendTradeContactShared(to: string, p: { lang: EmailLang; rfpTitle: string; posterKind: PosterKind; company: string; contact: Contact }): Promise<void> {
+  await sendBuilt(to, contactSharedEmail(p.lang, { base: BASE, ...p }), p.lang, "contact-shared");
+}
+
+/** To the poster: the admin rejected the listing, with a short reason. */
+export async function sendPmRfpRejected(to: string, p: { lang: EmailLang; title: string; reason: string | null }): Promise<void> {
+  await sendBuilt(to, rejectedEmail(p.lang, { base: BASE, ...p }), p.lang, "rfp-rejected");
 }
 
 export async function sendAdminNewInterest(params: { vendor: string; rfpTitle: string; message: string }): Promise<void> {
   await send(
-    ADMIN,
+    adminInbox(),
     "New Vendor Interest Submitted",
     layout(
       "New vendor interest",
@@ -497,18 +578,17 @@ export async function sendAdminNewInterest(params: { vendor: string; rfpTitle: s
   );
 }
 
-export async function sendPmRfpPublished(to: string, rfp: { title: string; slug: string }): Promise<void> {
-  await send(
+/** To the poster: their listing is live. Says whether matching trades are being emailed today (PM_JOB_ALERTS_ENABLED). */
+export async function sendPmRfpPublished(
+  to: string,
+  rfp: { title: string; slug: string; id?: string; lang?: EmailLang; alertsOn?: boolean },
+): Promise<void> {
+  const lang = rfp.lang ?? "en";
+  await sendBuilt(
     to,
-    "Your PMRFP Listing is Published",
-    layout(
-      "Your RFP is published",
-      `<p>Your RFP <strong>${rfp.title}</strong> is now live on PMRFP. Interested vendors can express interest, and you'll be able to review them.</p>
-       <p>${btn(`${BASE}/rfps/${rfp.slug}`, "View your listing")}</p>`,
-      COPY.disclaimer,
-    ),
-    undefined,
-    { utm: "rfp-published" },
+    publishedEmail(lang, { base: BASE, title: rfp.title, slug: rfp.slug, rfpId: rfp.id ?? "", alertsOn: Boolean(rfp.alertsOn) }),
+    lang,
+    "rfp-published",
   );
 }
 
@@ -535,7 +615,7 @@ export async function sendAdminReferral(params: {
       ? `<li><strong>Owner / contact:</strong> ${[params.ownerName, params.ownerEmail, params.ownerPhone].filter(Boolean).join(" · ")}</li>`
       : `<li><em>Owner contact not provided — referrer will introduce.</em></li>`;
   await send(
-    ADMIN,
+    adminInbox(),
     `New project referral · ${params.projectCity}, ${params.projectProvince}`,
     layout(
       "New project referral",
@@ -605,7 +685,7 @@ export async function sendAdminTradeReferral(params: {
       ? `<li><strong>Trade contact:</strong> ${[params.tradeContactName, params.tradeContactEmail, params.tradeContactPhone].filter(Boolean).join(" · ")}</li>`
       : `<li><em>Trade contact not provided — referrer will introduce.</em></li>`;
   await send(
-    ADMIN,
+    adminInbox(),
     `New TRADE referral · ${params.tradeCompanyName} · ${params.tradeCity}, ${params.tradeProvince}`,
     layout(
       "New trade referral (direct-revenue lane)",
@@ -688,7 +768,7 @@ export async function sendAdminNewSignup(p: {
 
 export async function sendAdminContactEmail(params: { name: string; email: string; requestType: string; message: string }): Promise<void> {
   await send(
-    ADMIN,
+    adminInbox(),
     `New contact request (${params.requestType})`,
     layout(
       "New contact request",
@@ -902,7 +982,7 @@ export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
     <p>${btn(`${BASE}/admin`, "Open admin")}</p>`;
 
   await send(
-    ADMIN,
+    adminInbox(),
     `PMRFP weekly: ${r.signups.count} signups, ${s ? `${fmtByCurrency(s.moneyIn7d)} in` : "revenue: check Stripe"}`,
     layout(`Your week: ${r.period.from} → ${r.period.to}`, body),
   );
@@ -940,7 +1020,7 @@ export async function sendReviewRequest(
 /** Admin heads-up: a project review is waiting for moderation. */
 export async function sendAdminNewReview(params: { tradeName: string; projectTitle: string; rating: number }): Promise<void> {
   await send(
-    ADMIN,
+    adminInbox(),
     `New review to check (${params.rating}/5) · ${params.tradeName}`,
     layout(
       "New review waiting",
@@ -969,7 +1049,7 @@ export async function sendTrustedQuoteRequest(params: {
   cc: string[];
 }): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const to = params.to ?? ADMIN;
+  const to = params.to ?? adminInbox();
   const who = `${esc(params.requester.name)} &lt;${esc(params.requester.email)}&gt;${params.requester.phone ? ` · ${esc(params.requester.phone)}` : ""}`;
   await send(
     to,
@@ -1201,7 +1281,7 @@ export async function sendAdminMarketplaceReport(params: {
 /** Admin heads-up: a forum post is waiting in the mod queue (held link or auto-hidden by reports). */
 export async function sendAdminForumQueue(params: { reason: "held" | "reported"; title: string; author: string }): Promise<void> {
   await send(
-    ADMIN,
+    adminInbox(),
     `Forum ${params.reason === "held" ? "post held for review" : "post auto-hidden by reports"} · ${params.title.slice(0, 80)}`,
     layout(
       params.reason === "held" ? "Forum post held" : "Forum post auto-hidden",

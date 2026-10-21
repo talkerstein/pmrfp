@@ -11,6 +11,8 @@ import { countImpression, flushImpressions } from "@/lib/sponsors/impressions";
 import { dominantPlace } from "@/lib/sponsors/model";
 import { freeDigestMatches, orgCountries, regionCountryMap } from "@/lib/alerts/country";
 import { activeTrialOrgIds } from "@/lib/entitlement/server";
+import { pmJobAlertKey } from "@/lib/pm-jobs/alerts";
+import { isPmJobSource } from "@/lib/pm-jobs/rules";
 
 export const maxDuration = 60;
 
@@ -133,6 +135,13 @@ export async function GET(request: Request) {
       .map((p) => p.user_id),
   );
   const alreadySent = new Set(((recent ?? []) as { user_id: string }[]).map((r) => r.user_id));
+  // PM jobs a person already got by same-day email (lib/pm-jobs, lead_alert_log "pmjob:<id>") don't come again here.
+  const pmJobKeys = openRfps.filter((r) => isPmJobSource(r.source_type)).map((r) => pmJobAlertKey(r.id));
+  const sentPmJobs = new Set<string>();
+  if (pmJobKeys.length) {
+    const { data: logRows } = await supabase.from("lead_alert_log").select("user_id,lead_key").in("lead_key", pmJobKeys).limit(20_000);
+    for (const l of (logRows ?? []) as { user_id: string; lead_key: string }[]) sentPmJobs.add(`${l.user_id}|${l.lead_key.slice("pmjob:".length)}`);
+  }
 
   let sent = 0;
   const paidSponsors = await getSponsorSnapshot();
@@ -142,25 +151,27 @@ export async function GET(request: Request) {
     if (!cats?.size) continue;
     const regs = regsByOrg.get(org.id) ?? new Set<string>();
     const countries = orgCountries(org, ownRegsByOrg.get(org.id) ?? [], countryByRegion);
-    const matches = freeDigestMatches(openRfps, { categories: cats, regions: regs, countries }, nationalIds, countryByRegion);
-    if (!matches.length) continue;
+    const orgMatches = freeDigestMatches(openRfps, { categories: cats, regions: regs, countries }, nationalIds, countryByRegion);
+    if (!orgMatches.length) continue;
 
     // Label by the trade that matched most often ("snow removal tenders").
     const counts = new Map<string, number>();
-    for (const r of matches)
+    for (const r of orgMatches)
       for (const c of r.rfp_categories)
         if (cats.has(c.category_id) && c.trade_categories?.name)
           counts.set(c.trade_categories.name, (counts.get(c.trade_categories.name) ?? 0) + 1);
     const trade = ([...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "commercial").toLowerCase();
-    preview.push({ org: org.name, count: matches.length, trade });
+    preview.push({ org: org.name, count: orgMatches.length, trade });
     // Sponsor slot: this trade × the province most of these tenders are in.
-    const place = dominantPlace(matches.map((m) => ({ province: m.province })));
+    const place = dominantPlace(orgMatches.map((m) => ({ province: m.province })));
 
     for (const userId of usersByOrg.get(org.id) ?? []) {
       const email = emailById.get(userId);
       if (!email || optedOut.has(userId) || alreadySent.has(userId) || sent >= MAX_RECIPIENTS) continue;
       const unsub = unsubscribeUrl(base, userId);
       if (!unsub) continue;
+      const matches = sentPmJobs.size ? orgMatches.filter((m) => !sentPmJobs.has(`${userId}|${m.id}`)) : orgMatches;
+      if (!matches.length) continue;
       if (dry) {
         sent++;
         continue;
