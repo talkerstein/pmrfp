@@ -18,4 +18,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node scripts/check-db-grants.mjs
-      - run: npx vitest run test/db/api-grants.test.ts test/db/rls.test.ts test/db/correction-requests.test.ts
+      - run: npx vitest run test/db/api-grants.test.ts test/db/rls.test.ts test/db/correction-requests.test.ts test/db/migration-replay.test.ts test/unit/migration-history.test.ts
