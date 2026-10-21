@@ -1,0 +1,2892 @@
+[
+  {
+    "kind": "default",
+    "table": "audit_logs",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "award_history",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "award_history",
+    "name": "award_history_notice_url_check",
+    "definition": "CHECK (((notice_url IS NULL) OR (notice_url ~ '^https://'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "award_history",
+    "name": "award_history_source_check",
+    "definition": "CHECK ((source ~ '^[a-z0-9-]{2,40}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "bid_results",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "case_studies",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "case_study_share_links",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "case_study_share_links",
+    "name": "case_study_share_links_token_check",
+    "definition": "CHECK ((token ~ '^[A-Za-z0-9_-]{32}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "contact_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "correction_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "correction_requests",
+    "name": "correction_requests_contact_email_check",
+    "definition": "CHECK ((((length(contact_email) >= 3) AND (length(contact_email) <= 254)) AND (contact_email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "device_push_tokens",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "digest_subscribers",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "digest_subscribers",
+    "column": "send_bucket",
+    "definition": "(floor((random() * (4)::double precision)))::smallint"
+  },
+  {
+    "kind": "default",
+    "table": "duplicate_reviews",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "forum_categories",
+    "name": "forum_categories_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{2,60}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "forum_mod_log",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_poll_options",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_polls",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_posts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "forum_profiles",
+    "name": "forum_profiles_handle_check",
+    "definition": "CHECK ((handle ~ '^[a-z0-9_]{3,30}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "forum_reports",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_reputation_events",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_threads",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "forum_threads",
+    "name": "forum_threads_short_id_check",
+    "definition": "CHECK ((short_id ~ '^[a-z0-9]{6,12}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "forum_threads",
+    "name": "forum_threads_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{1,80}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "insight_brief_log",
+    "name": "insight_brief_log_week_check",
+    "definition": "CHECK ((week ~ '^\\d{4}-W\\d{2}$'::text))"
+  },
+  {
+    "kind": "identity",
+    "table": "insight_rejections",
+    "column": "id"
+  },
+  {
+    "kind": "default",
+    "table": "job_applications",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "job_posts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "job_posts",
+    "column": "expires_at",
+    "definition": "(CURRENT_DATE + 30)"
+  },
+  {
+    "kind": "check",
+    "table": "job_posts",
+    "name": "job_posts_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{3,90}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "karma_events",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "lifecycle_sends",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "major_projects",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "major_projects",
+    "name": "major_projects_bid_list_url_check",
+    "definition": "CHECK (((bid_list_url IS NULL) OR (bid_list_url ~ '^https?://'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "major_projects",
+    "name": "major_projects_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{3,120}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "major_projects",
+    "name": "major_projects_source_check",
+    "definition": "CHECK ((source ~ '^[a-z0-9-]{2,40}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "marketplace_listings",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "marketplace_listings",
+    "column": "expires_at",
+    "definition": "(now() + '60 days'::interval)"
+  },
+  {
+    "kind": "check",
+    "table": "marketplace_listings",
+    "name": "marketplace_listings_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9][a-z0-9-]{2,90}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "marketplace_messages",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "notifications",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_join_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_members",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_property_types",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_regions",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organizations",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "profile_views",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "property_types",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "region_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "regional_waitlist",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "regions",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "resources",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "review_invites",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_documents",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_interests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_posts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_posts",
+    "column": "keep_alive_token",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_views",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "saved_rfps",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "signup_attribution",
+    "name": "signup_attribution_country_check",
+    "definition": "CHECK (((country IS NULL) OR (country ~ '^[A-Z]{2}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "signup_attribution",
+    "name": "signup_attribution_landing_path_check",
+    "definition": "CHECK (((landing_path IS NULL) OR ((char_length(landing_path) <= 200) AND (landing_path ~ '^/'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "signup_attribution",
+    "name": "signup_attribution_referrer_host_check",
+    "definition": "CHECK (((referrer_host IS NULL) OR (referrer_host ~ '^[a-z0-9.-]{1,100}$'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "sponsor_clicks",
+    "column": "day",
+    "definition": "((now() AT TIME ZONE 'America/Toronto'::text))::date"
+  },
+  {
+    "kind": "default",
+    "table": "sponsors",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "sponsors",
+    "name": "sponsors_logo_url_check",
+    "definition": "CHECK (((logo_url IS NULL) OR ((char_length(logo_url) <= 500) AND ((logo_url ~ '^https://'::text) OR (logo_url ~ '^/'::text)))))"
+  },
+  {
+    "kind": "check",
+    "table": "sponsors",
+    "name": "sponsors_slug_check",
+    "definition": "CHECK (((slug ~ '^[a-z0-9][a-z0-9-]{1,39}$'::text) AND (slug <> ALL (ARRAY['maple'::text, 'cleverpays'::text, 'talkerstein'::text]))))"
+  },
+  {
+    "kind": "check",
+    "table": "sponsors",
+    "name": "sponsors_url_check",
+    "definition": "CHECK (((char_length(url) <= 500) AND (url ~ '^https://'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "subscriptions",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "talent_contacts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "talent_endorsements",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "talent_profiles",
+    "name": "talent_profiles_employment_types_check",
+    "definition": "CHECK ((employment_types <@ ARRAY['full_time'::text, 'part_time'::text, 'contract'::text, 'seasonal'::text, 'apprenticeship'::text, 'temporary'::text]))"
+  },
+  {
+    "kind": "check",
+    "table": "talent_profiles",
+    "name": "talent_profiles_handle_check",
+    "definition": "CHECK ((handle ~ '^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "trade_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "trade_trials",
+    "name": "trade_trials_source_check",
+    "definition": "CHECK ((source ~ '^[a-z0-9_-]{2,30}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "trade_trials",
+    "name": "trade_trials_window",
+    "definition": "CHECK (((ends_at > started_at) AND (ends_at <= (started_at + '31 days'::interval))))"
+  },
+  {
+    "kind": "check",
+    "table": "trusted_lists",
+    "name": "trusted_lists_handle_check",
+    "definition": "CHECK ((handle ~ '^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "vendor_reviews",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "winner_claims",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "index",
+    "table": "users_profile",
+    "name": "users_profile_email_norm_idx",
+    "definition": "CREATE INDEX users_profile_email_norm_idx ON public.users_profile USING btree (normalize_email(email))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "policyname": "audit insert admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "policyname": "audit read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "award_history",
+    "policyname": "award history intel read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT has_intel_access(auth.uid()) AS has_intel_access)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "badge_hits",
+    "policyname": "badge hits admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "bid_results",
+    "policyname": "bid results intel read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT has_intel_access(auth.uid()) AS has_intel_access)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies admin all",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies member insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_studies.organization_id) AND (om.user_id = auth.uid())))) AND (status = ANY (ARRAY['draft'::text, 'pending_review'::text])))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies member update own drafts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_studies.organization_id) AND (om.user_id = auth.uid())))) AND (status = ANY (ARRAY['draft'::text, 'pending_review'::text])))",
+    "with_check": "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies public read published",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'published'::text) AND (visibility = ANY (ARRAY['public'::text, 'unlisted'::text]))) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_studies.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_study_share_links",
+    "policyname": "share links member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_study_share_links.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "contact_requests",
+    "policyname": "contact insert public",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "contact_requests",
+    "policyname": "contact read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "contact_requests",
+    "policyname": "contact update admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "correction_requests",
+    "policyname": "corrections admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "correction_requests",
+    "policyname": "corrections admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "digest_subscribers",
+    "policyname": "digest subscribers admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "duplicate_reviews",
+    "policyname": "duplicate reviews admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "email_suppressions",
+    "policyname": "email suppressions admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_categories",
+    "policyname": "forum categories read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_public OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_category_mods",
+    "policyname": "forum mods read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_category_redirects",
+    "policyname": "forum category redirects read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_mod_log",
+    "policyname": "forum mod log admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_poll_options",
+    "policyname": "forum poll options read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM (forum_polls p\n     JOIN forum_threads t ON ((t.id = p.thread_id)))\n  WHERE ((p.id = forum_poll_options.poll_id) AND (t.status = 'approved'::text)))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_poll_votes",
+    "policyname": "forum poll votes own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_polls",
+    "policyname": "forum polls read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM forum_threads t\n  WHERE ((t.id = forum_polls.thread_id) AND (t.status = 'approved'::text)))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_post_votes",
+    "policyname": "forum votes own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_posts",
+    "policyname": "forum posts read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'approved'::text) AND (EXISTS ( SELECT 1\n   FROM forum_threads t\n  WHERE ((t.id = forum_posts.thread_id) AND (t.status = 'approved'::text))))) OR (author_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_profiles",
+    "policyname": "forum profiles read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((NOT banned) OR is_admin(auth.uid()) OR (user_id = auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_reports",
+    "policyname": "forum reports admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_reputation_events",
+    "policyname": "forum reputation own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_room_follows",
+    "policyname": "forum follows own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_thread_ratings",
+    "policyname": "forum ratings own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_threads",
+    "policyname": "forum threads read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((status = 'approved'::text) OR (author_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "intel_access",
+    "policyname": "intel access member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = intel_access.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "job_applications",
+    "policyname": "job applications employer read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM job_posts j\n  WHERE ((j.id = job_applications.job_id) AND (is_org_member(auth.uid(), j.organization_id) OR is_admin(auth.uid())))))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "job_posts",
+    "policyname": "job posts read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'open'::text) AND (expires_at >= CURRENT_DATE) AND (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = job_posts.organization_id) AND (o.profile_status = 'approved'::text) AND (o.status = 'active'::text))))) OR is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "karma_events",
+    "policyname": "karma events admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "landing_counts",
+    "policyname": "landing counts admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "lifecycle_sends",
+    "policyname": "lifecycle sends admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects pro read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(major_project_is_public(source, approved, review_status) AND has_active_trade_access(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings admin all",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings owner insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'active'::text) AND (expires_at > now())) OR (user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notification_preferences",
+    "policyname": "notif_prefs own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notification_preferences",
+    "policyname": "notif_prefs own update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notification_preferences",
+    "policyname": "notif_prefs own upsert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications own update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "onboarding_steps",
+    "policyname": "onboarding steps admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "org_karma",
+    "policyname": "org karma member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), org_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_categories",
+    "policyname": "org_categories member write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_categories",
+    "policyname": "org_categories public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_join_requests",
+    "policyname": "join requests read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()) OR (EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = organization_join_requests.organization_id) AND (m.user_id = auth.uid()) AND (m.role = ANY (ARRAY['owner'::text, 'admin'::text]))))))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members delete own or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members read own or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_property_types",
+    "policyname": "org_proptypes member write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_property_types",
+    "policyname": "org_proptypes public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_regions",
+    "policyname": "org_regions member write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_regions",
+    "policyname": "org_regions public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org delete by admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org insert by authenticated",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org public read approved",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((profile_status = 'approved'::text) AND (status <> 'suspended'::text)) OR is_org_member(auth.uid(), id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org update by member or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(is_org_member(auth.uid(), id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "platform_settings",
+    "policyname": "settings admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "platform_settings",
+    "policyname": "settings public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "profile_views",
+    "policyname": "profile_views insert any",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "profile_views",
+    "policyname": "profile_views read org/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "property_types",
+    "policyname": "property_types admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "property_types",
+    "policyname": "property_types public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(active OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "region_requests",
+    "policyname": "region_requests insert public",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "region_requests",
+    "policyname": "region_requests read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "region_requests",
+    "policyname": "region_requests update admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regional_waitlist",
+    "policyname": "regional_waitlist insert public",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regional_waitlist",
+    "policyname": "regional_waitlist read own/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regional_waitlist",
+    "policyname": "regional_waitlist update admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regions",
+    "policyname": "regions admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regions",
+    "policyname": "regions public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(active OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "resources",
+    "policyname": "resources admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "resources",
+    "policyname": "resources public read published",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((status = 'published'::text) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "review_invites",
+    "policyname": "review invites member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = review_invites.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_bid_checks",
+    "policyname": "bid checks: members and admins read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(has_active_trade_access(auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_categories",
+    "policyname": "rfp_categories public read published",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(rfp_is_published(rfp_id) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_categories.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_categories",
+    "policyname": "rfp_categories write owner/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_categories.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))",
+    "with_check": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_categories.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_documents",
+    "policyname": "rfp_documents read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((visibility = 'public'::text) AND (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND (r.status = 'published'::text))))) OR ((visibility = 'paid_users'::text) AND has_active_trade_access(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND (r.status = 'published'::text))))) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_documents",
+    "policyname": "rfp_documents write owner/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))",
+    "with_check": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_interests",
+    "policyname": "interest insert paid member",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((submitted_by_user_id = auth.uid()) AND has_active_trade_access(auth.uid()) AND is_org_member(auth.uid(), trade_organization_id))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_interests",
+    "policyname": "interest read involved",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), trade_organization_id) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_interests.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_interests",
+    "policyname": "interest update owner/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(is_admin(auth.uid()) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_interests.rfp_id) AND (r.posted_by_user_id = auth.uid())))))",
+    "with_check": "(is_admin(auth.uid()) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_interests.rfp_id) AND (r.posted_by_user_id = auth.uid())))))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp delete by admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp full read paid/owner/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'published'::text) AND has_active_trade_access(auth.uid())) OR (posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), posted_by_organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp insert by pm or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((posted_by_user_id = auth.uid()) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp update by owner or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), posted_by_organization_id) OR is_admin(auth.uid()))",
+    "with_check": "((posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), posted_by_organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_views",
+    "policyname": "rfp_views insert any",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_views",
+    "policyname": "rfp_views read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "saved_rfps",
+    "policyname": "saved delete own",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "saved_rfps",
+    "policyname": "saved insert own",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "saved_rfps",
+    "policyname": "saved read own/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "signup_attribution",
+    "policyname": "signup attribution admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsor_clicks",
+    "policyname": "sponsor clicks admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsor_impressions",
+    "policyname": "sponsor impressions admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "subscriptions",
+    "policyname": "subs admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "subscriptions",
+    "policyname": "subs admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "subscriptions",
+    "policyname": "subs read member/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_contacts",
+    "policyname": "talent contacts org read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_endorsements",
+    "policyname": "talent endorsements read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM talent_profiles t\n  WHERE ((t.user_id = talent_endorsements.talent_user_id) AND (t.published OR (t.user_id = auth.uid()))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_private",
+    "policyname": "talent private owner",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles owner insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(published OR (user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trade_categories",
+    "policyname": "categories admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trade_categories",
+    "policyname": "categories public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(active OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trade_trials",
+    "policyname": "trade trials member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = trade_trials.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trusted_list_items",
+    "policyname": "trusted list items read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM trusted_lists l\n  WHERE ((l.owner_id = trusted_list_items.owner_id) AND (l.published OR (l.owner_id = auth.uid()))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trusted_lists",
+    "policyname": "trusted lists read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(published OR (owner_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "users_profile",
+    "policyname": "profile self insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "users_profile",
+    "policyname": "profile self read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "users_profile",
+    "policyname": "profile self update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": "((id = auth.uid()) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "vendor_reviews",
+    "policyname": "vendor reviews admin all",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "winner_claims",
+    "policyname": "winner claims own or admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos auth insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(bucket_id = 'logos'::text)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((bucket_id = 'logos'::text) AND (owner = auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((bucket_id = 'logos'::text) AND (owner = auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(bucket_id = 'logos'::text)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text]))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text])) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private owner read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text])) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text])) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "project-photos public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(bucket_id = 'project-photos'::text)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "rfp-photos auth insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(bucket_id = 'rfp-photos'::text)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "rfp-photos owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((bucket_id = 'rfp-photos'::text) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "rfp-photos owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((bucket_id = 'rfp-photos'::text) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "rfp-photos public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(bucket_id = 'rfp-photos'::text)",
+    "with_check": null
+  },
+  {
+    "kind": "function",
+    "name": "auto_enable_rls",
+    "definition": "CREATE OR REPLACE FUNCTION public.auto_enable_rls()\n RETURNS event_trigger\n LANGUAGE plpgsql\nAS $function$\ndeclare\n  obj record;\nbegin\n  for obj in\n    select * from pg_event_trigger_ddl_commands()\n    where command_tag = 'CREATE TABLE'\n      and schema_name = 'public'\n  loop\n    execute format('alter table %s enable row level security;', obj.object_identity);\n  end loop;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "award_history_intel_slice",
+    "definition": "CREATE OR REPLACE FUNCTION public.award_history_intel_slice(p_country text, p_since date, p_limit integer DEFAULT 30000)\n RETURNS jsonb\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\n  select coalesce(jsonb_agg(to_jsonb(x) - 'running' order by x.award_date desc, x.id), '[]'::jsonb)\n  from (\n    select h.id, h.source, h.board_ref, h.title, h.buyer, h.winner_business_name, h.winner_is_individual,\n           h.value, h.currency, h.country, h.province, h.city, h.award_date, h.end_date, h.end_date_source,\n           h.potential_end_date, h.number_of_bids, h.trade_slugs, h.notice_url, h.attribution,\n           exists (select 1 from public.bid_results b where b.award_history_id = h.id) as has_bids,\n           coalesce(h.end_date >= current_date - 365, false) as running\n    from public.award_history h\n    where h.country = p_country\n      and (h.award_date >= p_since or h.end_date >= current_date - 365)\n    order by running desc, h.award_date desc, h.id\n    limit least(greatest(coalesce(p_limit, 30000), 1), 60000)\n  ) x;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_bump_view",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_bump_view(tid uuid)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  update public.forum_threads set view_count = view_count + 1 where id = tid and status = 'approved';\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_poll_results",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_poll_results(pid uuid)\n RETURNS TABLE(option_id uuid, votes integer)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select o.id, count(v.user_id)::integer\n  from public.forum_poll_options o\n  left join public.forum_poll_votes v on v.option_id = o.id\n  where o.poll_id = pid\n    and (\n      exists (select 1 from public.forum_poll_votes mine where mine.poll_id = pid and mine.user_id = auth.uid())\n      or public.is_admin(auth.uid())\n    )\n  group by o.id;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_posts_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_posts_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare r record; cid uuid;\nbegin\n  r := coalesce(new, old);\n  perform public.forum_refresh_thread(r.thread_id);\n  select category_id into cid from public.forum_threads where id = r.thread_id;\n  if cid is not null then perform public.forum_refresh_category(cid); end if;\n  perform public.forum_refresh_profile(r.author_id);\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_ratings_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_ratings_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare tid uuid;\nbegin\n  tid := coalesce(new.thread_id, old.thread_id);\n  update public.forum_threads t set\n    rating_sum = (select coalesce(sum(score), 0) from public.forum_thread_ratings where thread_id = tid),\n    rating_count = (select count(*) from public.forum_thread_ratings where thread_id = tid)\n  where t.id = tid;\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_refresh_category",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_refresh_category(cid uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  update public.forum_categories c set\n    thread_count = (select count(*) from public.forum_threads t where t.category_id = cid and t.status = 'approved'),\n    post_count = (select count(*) + coalesce(sum(t.reply_count), 0) from public.forum_threads t where t.category_id = cid and t.status = 'approved'),\n    last_post_at = (select max(t.last_post_at) from public.forum_threads t where t.category_id = cid and t.status = 'approved'),\n    last_thread_id = (select t.id from public.forum_threads t where t.category_id = cid and t.status = 'approved' order by t.last_post_at desc limit 1)\n  where c.id = cid;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_refresh_profile",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_refresh_profile(uid uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  update public.forum_profiles p set\n    post_count = (select count(*) from public.forum_threads where author_id = uid and status = 'approved')\n               + (select count(*) from public.forum_posts where author_id = uid and status = 'approved'),\n    reputation = case when p.is_system then 0\n                 else (select coalesce(sum(points), 0) from public.forum_reputation_events where user_id = uid) end\n  where p.user_id = uid;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_refresh_thread",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_refresh_thread(tid uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  n integer; w integer; last_at timestamptz; last_user uuid;\nbegin\n  select count(*), coalesce(sum(body_words), 0) into n, w\n    from public.forum_posts where thread_id = tid and status = 'approved';\n  select created_at, author_id into last_at, last_user\n    from public.forum_posts where thread_id = tid and status = 'approved'\n    order by created_at desc limit 1;\n  update public.forum_threads t set\n    reply_count = n,\n    words_total = t.body_words + w,\n    last_post_at = coalesce(last_at, t.created_at),\n    last_post_user_id = coalesce(last_user, t.author_id)\n  where t.id = tid;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_reputation_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_reputation_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  perform public.forum_refresh_profile(coalesce(new.user_id, old.user_id));\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_threads_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_threads_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  if tg_op <> 'DELETE' then\n    perform public.forum_refresh_thread(new.id);\n    perform public.forum_refresh_category(new.category_id);\n    perform public.forum_refresh_profile(new.author_id);\n  end if;\n  if tg_op <> 'INSERT' then\n    perform public.forum_refresh_category(old.category_id);\n  end if;\n  if tg_op = 'DELETE' then perform public.forum_refresh_profile(old.author_id); end if;\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_votes_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_votes_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare pid uuid;\nbegin\n  pid := coalesce(new.post_id, old.post_id);\n  update public.forum_posts set upvote_count = (select count(*) from public.forum_post_votes where post_id = pid) where id = pid;\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_organization_privileged",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_organization_privileged()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  if auth.uid() is null or public.is_admin(auth.uid()) then\n    return new;\n  end if;\n  if new.profile_status is distinct from old.profile_status\n     and new.profile_status not in ('draft', 'pending_review') then\n    raise exception 'Only an administrator can set profile_status to %', new.profile_status;\n  end if;\n  if new.status is distinct from old.status then\n    raise exception 'Only an administrator can change organization status';\n  end if;\n  if new.verified is distinct from old.verified then\n    raise exception 'Only an administrator can change verification';\n  end if;\n  if new.featured is distinct from old.featured then\n    raise exception 'Only an administrator can change featured status';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_users_profile_insert",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_users_profile_insert()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  -- Service role / trigger context (no auth.uid()) and admins may set any role.\n  if auth.uid() is null or public.is_admin(auth.uid()) then\n    return new;\n  end if;\n  if new.primary_role in ('admin', 'super_admin') then\n    raise exception 'Not authorized to set primary_role';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_users_profile_privileged",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_users_profile_privileged()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  if auth.uid() is null or public.is_admin(auth.uid()) then\n    return new;\n  end if;\n  if new.primary_role is distinct from old.primary_role then\n    raise exception 'Not authorized to change primary_role';\n  end if;\n  if new.status is distinct from old.status then\n    raise exception 'Not authorized to change account status';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "handle_new_user",
+    "definition": "CREATE OR REPLACE FUNCTION public.handle_new_user()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  requested text := nullif(new.raw_user_meta_data->>'primary_role', '');\nbegin\n  insert into public.users_profile (id, email, full_name, primary_role)\n  values (\n    new.id,\n    coalesce(new.email, ''),\n    coalesce(new.raw_user_meta_data->>'full_name', ''),\n    case\n      when requested in ('trade', 'property_manager', 'supplier', 'real_estate_agent', 'visitor', 'talent') then requested\n      else 'trade'\n    end\n  )\n  on conflict (id) do nothing;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "has_active_trade_access",
+    "definition": "CREATE OR REPLACE FUNCTION public.has_active_trade_access(uid uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (\n    select 1\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    join public.subscriptions s on s.organization_id = o.id\n    where om.user_id = uid\n      and o.organization_type in ('trade_company','supplier')\n      and o.status <> 'suspended'\n      and s.status in ('active','comped')\n      and s.tier in ('pro','featured')\n  )\n  or exists (\n    select 1\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    join public.trade_trials t on t.organization_id = o.id\n    where om.user_id = uid\n      and o.organization_type = 'trade_company'\n      and o.status <> 'suspended'\n      and t.ends_at > now()\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "has_intel_access",
+    "definition": "CREATE OR REPLACE FUNCTION public.has_intel_access(uid uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select public.is_admin(uid) or exists (\n    select 1\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    join public.intel_access i on i.organization_id = o.id\n    where om.user_id = uid\n      and o.status <> 'suspended'\n      and i.status in ('active','comped','trialing')\n      and (i.expires_at is null or i.expires_at > now())\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "is_admin",
+    "definition": "CREATE OR REPLACE FUNCTION public.is_admin(uid uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (\n    select 1 from public.users_profile p\n    where p.id = uid\n      and p.primary_role in ('admin','super_admin')\n      and p.status = 'active'\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "is_org_member",
+    "definition": "CREATE OR REPLACE FUNCTION public.is_org_member(uid uuid, org uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (\n    select 1 from public.organization_members om\n    where om.user_id = uid and om.organization_id = org\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "major_project_is_public",
+    "definition": "CREATE OR REPLACE FUNCTION public.major_project_is_public(p_source text, p_approved boolean, p_review_status text)\n RETURNS boolean\n LANGUAGE sql\n IMMUTABLE\nAS $function$\n  select coalesce(p_review_status, 'pending') <> 'rejected'\n     and (p_source <> 'manual' or coalesce(p_approved, false));\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "marketplace_increment_views",
+    "definition": "CREATE OR REPLACE FUNCTION public.marketplace_increment_views(p_slug text)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  update public.marketplace_listings set views = views + 1\n  where slug = p_slug and status = 'active' and expires_at > now();\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "marketplace_listings_guard",
+    "definition": "CREATE OR REPLACE FUNCTION public.marketplace_listings_guard()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  privileged boolean := coalesce(auth.role(), '') = 'service_role' or public.is_admin(auth.uid());\nbegin\n  if privileged then\n    return new;\n  end if;\n  if tg_op = 'INSERT' then\n    new.featured_until := null;\n    new.views := 0;\n    new.expires_at := now() + interval '60 days';\n    if new.status not in ('draft','active') then\n      new.status := 'active';\n    end if;\n    return new;\n  end if;\n  new.featured_until := old.featured_until;\n  new.views := old.views;\n  new.user_id := old.user_id;\n  if old.status = 'removed' then\n    raise exception 'This listing was removed by PMRFP.';\n  end if;\n  if new.status = 'removed' then\n    new.status := old.status;\n  end if;\n  if new.expires_at > now() + interval '60 days' then\n    new.expires_at := now() + interval '60 days';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "normalize_email",
+    "definition": "CREATE OR REPLACE FUNCTION public.normalize_email(e text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE\nAS $function$\n  select case\n    when split_part(lower(btrim(coalesce(e, ''))), '@', 2) in ('gmail.com', 'googlemail.com')\n      then replace(split_part(split_part(lower(btrim(e)), '@', 1), '+', 1), '.', '') || '@gmail.com'\n    else lower(btrim(coalesce(e, '')))\n  end\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "rate_limit_hit",
+    "definition": "CREATE OR REPLACE FUNCTION public.rate_limit_hit(p_key text, p_window_seconds integer, p_limit integer)\n RETURNS TABLE(allowed boolean, hits integer, reset_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  w timestamptz := to_timestamp(floor(extract(epoch from now()) / p_window_seconds) * p_window_seconds);\n  n integer;\nbegin\n  insert into public.rate_limit_hits as r (key, window_start, hits)\n  values (p_key, w, 1)\n  on conflict (key, window_start) do update set hits = r.hits + 1\n  returning r.hits into n;\n\n  -- Opportunistic cleanup (~1% of calls): drop windows older than a day.\n  if random() < 0.01 then\n    delete from public.rate_limit_hits where window_start < now() - interval '1 day';\n  end if;\n\n  return query select n <= p_limit, n, w + make_interval(secs => p_window_seconds);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_badge_hits",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_badge_hits(p_rows jsonb)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.badge_hits as b (day, kind, slug, referrer, hits)\n  select day, kind, slug, referrer, sum(n)::int\n  from (\n    select\n      coalesce((r->>'day')::date, (now() at time zone 'America/Toronto')::date) as day,\n      r->>'kind' as kind,\n      left(r->>'slug', 120) as slug,\n      left(lower(coalesce(r->>'referrer', '')), 120) as referrer,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(case when jsonb_typeof(p_rows) = 'array' then p_rows else '[]'::jsonb end) as r\n    where r->>'kind' in ('listed', 'winner', 'karma') and coalesce(r->>'slug', '') <> ''\n  ) x\n  group by day, kind, slug, referrer\n  on conflict (day, kind, slug, referrer)\n  do update set hits = b.hits + excluded.hits;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_landings",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_landings(p_rows jsonb)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.landing_counts as l (day, channel, landing_path, visits)\n  -- Same key twice in one batch is summed first (ON CONFLICT can't touch a row twice).\n  select day, channel, landing_path, sum(n)::int\n  from (\n    select\n      coalesce((r->>'day')::date, (now() at time zone 'America/Toronto')::date) as day,\n      left(r->>'channel', 40) as channel,\n      left(coalesce(r->>'path', ''), 120) as landing_path,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(case when jsonb_typeof(p_rows) = 'array' then p_rows else '[]'::jsonb end) as r\n    where coalesce(r->>'channel', '') <> ''\n  ) x\n  group by day, channel, landing_path\n  on conflict (day, channel, landing_path)\n  do update set visits = l.visits + excluded.visits;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_sponsor_click",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_sponsor_click(p_sponsor text, p_placement text, p_trade text DEFAULT ''::text, p_region text DEFAULT ''::text)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.sponsor_clicks (sponsor, placement, trade, region, clicks)\n  values (left(p_sponsor, 40), left(p_placement, 40), left(coalesce(p_trade, ''), 60), left(coalesce(p_region, ''), 60), 1)\n  on conflict (day, sponsor, placement, trade, region)\n  do update set clicks = public.sponsor_clicks.clicks + 1;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_sponsor_impressions",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_sponsor_impressions(p_rows jsonb)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.sponsor_impressions as si (day, sponsor, placement, trade, region, impressions)\n  -- Same key twice in one batch is summed first (ON CONFLICT can't touch a row twice).\n  select day, sponsor, placement, trade, region, sum(n)::int\n  from (\n    select\n      coalesce((r->>'day')::date, (now() at time zone 'America/Toronto')::date) as day,\n      left(r->>'sponsor', 40) as sponsor,\n      left(r->>'placement', 40) as placement,\n      left(coalesce(r->>'trade', ''), 60) as trade,\n      left(coalesce(r->>'region', ''), 60) as region,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(case when jsonb_typeof(p_rows) = 'array' then p_rows else '[]'::jsonb end) as r\n    where coalesce(r->>'sponsor', '') <> '' and coalesce(r->>'placement', '') <> ''\n  ) b\n  group by day, sponsor, placement, trade, region\n  on conflict (day, sponsor, placement, trade, region)\n  do update set impressions = si.impressions + excluded.impressions;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "rfp_is_published",
+    "definition": "CREATE OR REPLACE FUNCTION public.rfp_is_published(p_rfp_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (\n    select 1 from public.rfp_posts r\n    where r.id = p_rfp_id and r.status = 'published'\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "set_updated_at",
+    "definition": "CREATE OR REPLACE FUNCTION public.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nbegin\n  new.updated_at = now();\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "trigger",
+    "name": "on_auth_user_created",
+    "table_name": "users",
+    "schema": "auth",
+    "definition": "CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_votes_changed",
+    "table_name": "forum_post_votes",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_votes_changed AFTER INSERT OR DELETE ON public.forum_post_votes FOR EACH ROW EXECUTE FUNCTION forum_votes_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_posts_changed",
+    "table_name": "forum_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_posts_changed AFTER INSERT OR DELETE OR UPDATE OF status, body_words ON public.forum_posts FOR EACH ROW EXECUTE FUNCTION forum_posts_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_reputation_changed",
+    "table_name": "forum_reputation_events",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_reputation_changed AFTER INSERT OR DELETE ON public.forum_reputation_events FOR EACH ROW EXECUTE FUNCTION forum_reputation_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_ratings_changed",
+    "table_name": "forum_thread_ratings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_ratings_changed AFTER INSERT OR DELETE OR UPDATE ON public.forum_thread_ratings FOR EACH ROW EXECUTE FUNCTION forum_ratings_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_threads_changed",
+    "table_name": "forum_threads",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_threads_changed AFTER INSERT OR DELETE OR UPDATE OF status, category_id, body_words ON public.forum_threads FOR EACH ROW EXECUTE FUNCTION forum_threads_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "job_posts_set_updated",
+    "table_name": "job_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER job_posts_set_updated BEFORE UPDATE ON public.job_posts FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "major_projects_updated_at",
+    "table_name": "major_projects",
+    "schema": "public",
+    "definition": "CREATE TRIGGER major_projects_updated_at BEFORE UPDATE ON public.major_projects FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "marketplace_listings_guard",
+    "table_name": "marketplace_listings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER marketplace_listings_guard BEFORE INSERT OR UPDATE ON public.marketplace_listings FOR EACH ROW EXECUTE FUNCTION marketplace_listings_guard()"
+  },
+  {
+    "kind": "trigger",
+    "name": "marketplace_listings_set_updated",
+    "table_name": "marketplace_listings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER marketplace_listings_set_updated BEFORE UPDATE ON public.marketplace_listings FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "notification_preferences_set_updated",
+    "table_name": "notification_preferences",
+    "schema": "public",
+    "definition": "CREATE TRIGGER notification_preferences_set_updated BEFORE UPDATE ON public.notification_preferences FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "guard_organization_privileged",
+    "table_name": "organizations",
+    "schema": "public",
+    "definition": "CREATE TRIGGER guard_organization_privileged BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION guard_organization_privileged()"
+  },
+  {
+    "kind": "trigger",
+    "name": "organizations_set_updated",
+    "table_name": "organizations",
+    "schema": "public",
+    "definition": "CREATE TRIGGER organizations_set_updated BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "platform_settings_set_updated",
+    "table_name": "platform_settings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER platform_settings_set_updated BEFORE UPDATE ON public.platform_settings FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "resources_set_updated",
+    "table_name": "resources",
+    "schema": "public",
+    "definition": "CREATE TRIGGER resources_set_updated BEFORE UPDATE ON public.resources FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_interests_set_updated",
+    "table_name": "rfp_interests",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_interests_set_updated BEFORE UPDATE ON public.rfp_interests FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_posts_set_updated",
+    "table_name": "rfp_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_posts_set_updated BEFORE UPDATE ON public.rfp_posts FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "sponsors_set_updated",
+    "table_name": "sponsors",
+    "schema": "public",
+    "definition": "CREATE TRIGGER sponsors_set_updated BEFORE UPDATE ON public.sponsors FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "subscriptions_set_updated",
+    "table_name": "subscriptions",
+    "schema": "public",
+    "definition": "CREATE TRIGGER subscriptions_set_updated BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "talent_profiles_set_updated",
+    "table_name": "talent_profiles",
+    "schema": "public",
+    "definition": "CREATE TRIGGER talent_profiles_set_updated BEFORE UPDATE ON public.talent_profiles FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "trusted_lists_set_updated",
+    "table_name": "trusted_lists",
+    "schema": "public",
+    "definition": "CREATE TRIGGER trusted_lists_set_updated BEFORE UPDATE ON public.trusted_lists FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "guard_users_profile_insert",
+    "table_name": "users_profile",
+    "schema": "public",
+    "definition": "CREATE TRIGGER guard_users_profile_insert BEFORE INSERT ON public.users_profile FOR EACH ROW EXECUTE FUNCTION guard_users_profile_insert()"
+  },
+  {
+    "kind": "trigger",
+    "name": "guard_users_profile_privileged",
+    "table_name": "users_profile",
+    "schema": "public",
+    "definition": "CREATE TRIGGER guard_users_profile_privileged BEFORE UPDATE ON public.users_profile FOR EACH ROW EXECUTE FUNCTION guard_users_profile_privileged()"
+  },
+  {
+    "kind": "trigger",
+    "name": "users_profile_set_updated",
+    "table_name": "users_profile",
+    "schema": "public",
+    "definition": "CREATE TRIGGER users_profile_set_updated BEFORE UPDATE ON public.users_profile FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "view",
+    "viewname": "gc_package_levels",
+    "definition": " SELECT r.slug,\n    k.level\n   FROM (rfp_posts r\n     JOIN org_karma_public k ON ((k.org_id = r.posted_by_organization_id)))\n  WHERE ((r.status = 'published'::text) AND (r.source_type = 'gc_package'::text) AND (k.level >= 2));"
+  },
+  {
+    "kind": "view",
+    "viewname": "karma_ledger",
+    "definition": " SELECT id,\n    org_id,\n    kind,\n    points,\n    source_type,\n    source_id,\n    reason,\n    created_at,\n    reversed_at,\n    reversed_reason\n   FROM karma_events e\n  WHERE (is_org_member(auth.uid(), org_id) OR is_admin(auth.uid()));"
+  },
+  {
+    "kind": "view",
+    "viewname": "major_project_source_counts",
+    "definition": " SELECT source,\n    count(*) FILTER (WHERE ((NOT stale) AND major_project_is_public(source, approved, review_status))) AS live,\n    count(*) FILTER (WHERE stale) AS stale,\n    count(*) FILTER (WHERE (review_status = 'pending'::text)) AS pending,\n    count(*) FILTER (WHERE (review_status = 'rejected'::text)) AS hidden,\n    max(last_seen) AS last_seen\n   FROM major_projects\n  WHERE is_admin(auth.uid())\n  GROUP BY source;"
+  },
+  {
+    "kind": "view",
+    "viewname": "major_projects_public",
+    "definition": " SELECT id,\n    slug,\n    source,\n    country,\n    name,\n    description,\n    category,\n    owner,\n    city,\n    province,\n    region_id,\n    est_value_cad,\n    size,\n    status,\n    status_raw,\n    status_date,\n    timeline,\n    trades_needed,\n    sources,\n    license,\n    evidence,\n    caveats,\n    first_seen,\n    last_seen,\n    stale,\n    stale_since,\n    status_changed_at,\n    updated_at,\n    (general_contractor IS NOT NULL) AS has_gc,\n    ((bid_list_url IS NOT NULL) OR (bid_route IS NOT NULL)) AS has_bid_route,\n    source_updated,\n    link_group\n   FROM major_projects\n  WHERE major_project_is_public(source, approved, review_status);"
+  },
+  {
+    "kind": "view",
+    "viewname": "org_karma_public",
+    "definition": " SELECT k.org_id,\n    k.level\n   FROM (org_karma k\n     JOIN organizations o ON ((o.id = k.org_id)))\n  WHERE ((o.profile_status = 'approved'::text) AND (o.status = 'active'::text) AND (NOT o.is_demo));"
+  },
+  {
+    "kind": "view",
+    "viewname": "region_category_liquidity",
+    "definition": " SELECT oreg.region_id,\n    ocat.category_id,\n    count(DISTINCT o.id) AS paid_org_count\n   FROM ((organizations o\n     JOIN organization_regions oreg ON ((oreg.organization_id = o.id)))\n     JOIN organization_categories ocat ON ((ocat.organization_id = o.id)))\n  WHERE ((o.organization_type = ANY (ARRAY['trade_company'::text, 'supplier'::text])) AND (o.status = 'active'::text) AND (o.profile_status = 'approved'::text) AND (COALESCE(o.is_demo, false) = false))\n  GROUP BY oreg.region_id, ocat.category_id;"
+  },
+  {
+    "kind": "view",
+    "viewname": "region_liquidity",
+    "definition": " SELECT oreg.region_id,\n    count(DISTINCT o.id) AS paid_org_count\n   FROM (organizations o\n     JOIN organization_regions oreg ON ((oreg.organization_id = o.id)))\n  WHERE ((o.organization_type = ANY (ARRAY['trade_company'::text, 'supplier'::text])) AND (o.status = 'active'::text) AND (o.profile_status = 'approved'::text) AND (COALESCE(o.is_demo, false) = false))\n  GROUP BY oreg.region_id;"
+  },
+  {
+    "kind": "view",
+    "viewname": "rfp_award_links",
+    "definition": " SELECT slug,\n    source_url\n   FROM rfp_posts\n  WHERE ((status = 'published'::text) AND (source_type = 'public_source'::text) AND (source_url IS NOT NULL) AND (slug ~ '-(cba|qca|tora|nsa)-[a-z0-9-]+$'::text) AND (summary ~~ 'Awarded %'::text) AND (deadline <= CURRENT_DATE));"
+  },
+  {
+    "kind": "view",
+    "viewname": "rfp_public",
+    "definition": " SELECT id,\n    title,\n    slug,\n    summary,\n    property_type_id,\n    region_id,\n    city,\n    province,\n    deadline,\n    desired_start_date,\n    source_type,\n    is_demo,\n    published_at,\n    created_at,\n    gc_project_name,\n    awarded_rfp_id\n   FROM rfp_posts\n  WHERE (status = 'published'::text);"
+  },
+  {
+    "kind": "view",
+    "viewname": "sponsors_public",
+    "definition": " SELECT id,\n    slug,\n    tier,\n    country,\n    trades,\n    regions,\n    start_date,\n    end_date,\n    status,\n        CASE\n            WHEN (status = 'approved'::text) THEN name\n            ELSE NULL::text\n        END AS name,\n        CASE\n            WHEN (status = 'approved'::text) THEN logo_url\n            ELSE NULL::text\n        END AS logo_url,\n        CASE\n            WHEN (status = 'approved'::text) THEN url\n            ELSE NULL::text\n        END AS url,\n        CASE\n            WHEN (status = 'approved'::text) THEN headline\n            ELSE NULL::text\n        END AS headline,\n        CASE\n            WHEN (status = 'approved'::text) THEN message\n            ELSE NULL::text\n        END AS message,\n        CASE\n            WHEN (status = 'approved'::text) THEN cta\n            ELSE NULL::text\n        END AS cta,\n        CASE\n            WHEN (status = 'approved'::text) THEN headline_fr\n            ELSE NULL::text\n        END AS headline_fr,\n        CASE\n            WHEN (status = 'approved'::text) THEN message_fr\n            ELSE NULL::text\n        END AS message_fr,\n        CASE\n            WHEN (status = 'approved'::text) THEN cta_fr\n            ELSE NULL::text\n        END AS cta_fr\n   FROM sponsors\n  WHERE ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'paused'::text])) AND ((end_date IS NULL) OR (end_date >= (((now() AT TIME ZONE 'America/Toronto'::text))::date - 1))));"
+  },
+  {
+    "kind": "view",
+    "viewname": "vendor_reviews_public",
+    "definition": " SELECT r.id,\n    r.organization_id,\n    r.case_study_id,\n        CASE\n            WHEN r.show_building THEN btrim(r.reviewer_name)\n            ELSE regexp_replace(btrim(r.reviewer_name), '^(\\S+)\\s+(\\S).*$'::text, '\\1 \\2.'::text)\n        END AS reviewer_display_name,\n        CASE\n            WHEN r.show_building THEN r.reviewer_company\n            ELSE NULL::text\n        END AS reviewer_company,\n    r.rating,\n    r.body,\n    r.verified_via,\n    r.reply,\n    r.reply_at,\n    r.created_at\n   FROM (vendor_reviews r\n     LEFT JOIN case_studies cs ON ((cs.id = r.case_study_id)))\n  WHERE ((r.status = 'published'::text) AND ((r.case_study_id IS NULL) OR (cs.visibility IS DISTINCT FROM 'private'::text)));"
+  },
+  {
+    "kind": "view",
+    "viewname": "winner_claims_public",
+    "definition": " SELECT c.winner_slug,\n    o.name,\n    o.slug AS org_slug,\n    o.logo_url,\n    o.short_description,\n    o.website,\n        CASE\n            WHEN (o.public_contact_visibility = 'show_contact'::text) THEN o.phone\n            ELSE NULL::text\n        END AS phone,\n        CASE\n            WHEN (o.public_contact_visibility = 'show_contact'::text) THEN o.email\n            ELSE NULL::text\n        END AS email,\n    o.city,\n    o.province,\n    o.verified,\n    c.reviewed_at AS claimed_at\n   FROM (winner_claims c\n     JOIN organizations o ON ((o.id = c.organization_id)))\n  WHERE ((c.status = 'approved'::text) AND (o.profile_status = 'approved'::text) AND (o.status = 'active'::text) AND (NOT o.is_demo));"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "auto_enable_rls_trigger",
+    "event": "ddl_command_end",
+    "enabled": "O",
+    "function": "auto_enable_rls"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20260529000001_schema.sql",
+    "sql": "create extension if not exists pgcrypto;      -- gen_random_uuid()"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20260529000001_schema.sql",
+    "sql": "create extension if not exists pg_trgm;       -- trigram search"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20260529000001_schema.sql",
+    "sql": "create index organizations_name_trgm on public.organizations using gin (name gin_trgm_ops);"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20260529000001_schema.sql",
+    "sql": "create index organizations_desc_trgm on public.organizations using gin (short_description gin_trgm_ops);"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20260529000001_schema.sql",
+    "sql": "create index rfp_posts_title_trgm on public.rfp_posts using gin (title gin_trgm_ops);"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20260529000001_schema.sql",
+    "sql": "create index rfp_posts_summary_trgm on public.rfp_posts using gin (summary gin_trgm_ops);"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20260604000001_region_liquidity_waitlist_notifs.sql",
+    "sql": "create index if not exists region_requests_name_trgm\n  on public.region_requests using gin (raw_name gin_trgm_ops);"
+  },
+  {
+    "kind": "index-extension",
+    "file": "20261017000040_award_history.sql",
+    "sql": "create index if not exists award_history_trades_idx on public.award_history using gin (trade_slugs);"
+  }
+]

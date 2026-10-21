@@ -1,0 +1,27 @@
+name: D1 migration rehearsal tests
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/d1/**'
+      - 'test/d1/**'
+      - 'd1/**'
+      - '.github/workflows/d1-rehearsal.yml'
+  push:
+    branches: [codex/d1-staged-migration]
+    paths:
+      - 'scripts/d1/**'
+      - 'test/d1/**'
+      - 'd1/**'
+      - '.github/workflows/d1-rehearsal.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test copies, reconciliation, validation and restore without credentials
+        run: python3 -m unittest discover -s test/d1 -v
