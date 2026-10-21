@@ -42,7 +42,7 @@ const PAGES: RegExp[] = [
   /^\/forum(\/[a-z-]+)?$/,
   /^\/(founding-500|reputation|weekly-email|gc-packages\/new)$/,
   /^\/major-projects(\/[^/]+)?$/,
-  /^\/buyers(\/[a-z-]+\/[^/]+)?$/,
+  /^\/buyers(\/[a-z-]+(\/[^/]+)?)?$/,
   /^\/reports\/contract-winners(\/[^/]+)?$/,
   /^\/trusted\/[^/]+$/,
   // Sign-in/sign-up flows: translated, but noindex, so never in the sitemap.

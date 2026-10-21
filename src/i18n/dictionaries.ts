@@ -59,6 +59,7 @@ import dedupeClient from "./messages/dedupeClient";
 import pmJobs from "./messages/pmJobs";
 import pmJobsClient from "./messages/pmJobsClient";
 import towns from "./messages/towns";
+import follows from "./messages/follows";
 import townJobs from "./messages/townJobs";
 import townJobsClient from "./messages/townJobsClient";
 
@@ -115,6 +116,7 @@ const NAMESPACES = {
   pmJobs,
   pmJobsClient,
   towns,
+  follows,
   townJobs,
   townJobsClient,
 };

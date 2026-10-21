@@ -20,6 +20,9 @@ import { claimableFrom } from "@/lib/towns/claimable";
 import { decideClaim, isFreeMail } from "@/lib/towns/domains";
 import { findBuyerPage } from "@/lib/buyers/model";
 import { parseBuyerKey } from "@/lib/towns/managed";
+import { CLAIM_REASON_LABEL } from "@/lib/buyers/admin-notify";
+import { runBuyerFollowAlerts, type FollowAlertRun } from "@/lib/follows/alerts-server";
+import { FREE_FOLLOW_LIMIT, buyerFollowAlertsEnabled } from "@/lib/follows/rules";
 
 interface ClaimRow {
   id: string;
@@ -53,16 +56,7 @@ interface ManagedRow {
 const PAGES_MIGRATION = "supabase/migrations/20261021000040_public_buyer_towns.sql";
 
 /** Plain-English reason a claim waits for review (lib/towns/domains). */
-const REASON_LABEL: Record<string, string> = {
-  free_mail: "Personal mailbox (gmail, outlook, ISP…)",
-  email_unconfirmed: "Email not confirmed",
-  no_domain_on_file: "No domain on file for this buyer",
-  domain_mismatch: "Email domain isn't one we have for this buyer",
-  shared_domain: "Domain shared by several public bodies",
-  bad_email: "Unusual email address",
-  managed: "Page already managed: sent as a join request",
-  email_domain: "Verified by email domain",
-};
+const REASON_LABEL = CLAIM_REASON_LABEL;
 
 export const metadata: Metadata = { title: "Buyer sources · Admin · PMRFP" };
 
@@ -147,6 +141,9 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
   };
   const permissions = [...registry.values()].sort((a, b) => a.status.localeCompare(b.status) || a.buyerName.localeCompare(b.buyerName));
   const cities = CITY_SOURCES.map((c) => ({ c, gate: citySourceGate(c, registry) }));
+  // Follows (PMRFP for Towns, Part B1): counts, the most-followed pages, and
+  // what the same-day follow emails would send right now (a dry run: nothing is sent).
+  const follows = demo ? null : await followStats(createServiceClient());
 
   return (
     <>
@@ -279,6 +276,48 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
         })}
       </AdminTable>
 
+      <h2 className="mb-2 mt-8 text-lg font-semibold">Follows</h2>
+      <p className="mb-3 text-sm text-muted-foreground">
+        Contractors following buyer and town pages. Free accounts follow up to {FREE_FOLLOW_LIMIT} and get new listings in the Monday roundup; Trade Pro and
+        trial follow as many as they like and get a same-day email (cron/buyer-follow-alerts, hourly) once BUYER_FOLLOW_ALERTS_ENABLED is on. Pages only
+        ever show counts, never who follows.
+      </p>
+      {follows?.missing ? (
+        <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">The buyer_follows table is missing. Run supabase/migrations/20261021000110_buyer_follows.sql. Until then nobody can follow.</p>
+      ) : follows ? (
+        <>
+          <div className="mb-4 grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <StatCard label="Follows" value={follows.total} />
+            <StatCard label="Pages followed" value={follows.pages} />
+            <StatCard label="People following" value={follows.run?.followers ?? 0} />
+            <StatCard label="Listings in the last 36 h" value={follows.run?.listings ?? 0} />
+          </div>
+          <p className="mb-3 rounded-md border border-border bg-card px-3 py-2 text-sm" data-follow-alerts={buyerFollowAlertsEnabled() ? "on" : "off"}>
+            <b>Same-day follow emails: {buyerFollowAlertsEnabled() ? "ON" : "OFF (BUYER_FOLLOW_ALERTS_ENABLED)"}.</b>{" "}
+            {follows.run ? (
+              <>
+                Dry run now: <b data-dry-run={follows.run.wouldEmail}>{follows.run.wouldEmail}</b> Trade Pro / trial {follows.run.wouldEmail === 1 ? "member" : "members"} would get an email
+                about {follows.run.wouldList} {follows.run.wouldList === 1 ? "listing" : "listings"}. Not emailed: {follows.run.skipped.free} free (Monday roundup instead),{" "}
+                {follows.run.skipped.alreadySent} already sent by category alerts or earlier, {follows.run.skipped.optedOut} opted out, {follows.run.skipped.weekly} weekly,{" "}
+                {follows.run.skipped.noEmail} no email.
+              </>
+            ) : (
+              "Dry run unavailable."
+            )}
+          </p>
+          <AdminTable columns={["Page", "Followers"]}>
+            {follows.top.map((f) => (
+              <TableRow key={f.key}>
+                <TableCell className="text-xs">
+                  <a href={`/buyers/${f.key}`} className="underline" target="_blank" rel="noreferrer">{f.key}</a>
+                </TableCell>
+                <TableCell className="text-xs">{f.followers}</TableCell>
+              </TableRow>
+            ))}
+          </AdminTable>
+        </>
+      ) : null}
+
       <h2 className="mb-2 mt-8 text-lg font-semibold">City sources (daily municipal cron)</h2>
       <AdminTable columns={["Source", "Buyer", "How bids are listed", "Today"]}>
         {cities.map(({ c, gate }) => (
@@ -320,4 +359,16 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
       </AdminTable>
     </>
   );
+}
+
+/** Follow counts, the 20 most-followed pages and a dry run of the same-day follow emails. Never throws. */
+async function followStats(db: ReturnType<typeof createServiceClient>): Promise<{ missing: boolean; total: number; pages: number; top: { key: string; followers: number }[]; run: FollowAlertRun | null }> {
+  const [{ count, error }, top] = await Promise.all([
+    db.from("buyer_follows").select("user_id", { count: "exact", head: true }),
+    db.from("buyer_follow_counts").select("buyer_slug,followers").order("followers", { ascending: false }).limit(2000),
+  ]);
+  if (error) return { missing: isMissingTableError(error), total: 0, pages: 0, top: [], run: null };
+  const rows = ((top.data ?? []) as { buyer_slug: string; followers: number }[]).map((r) => ({ key: r.buyer_slug, followers: Number(r.followers) || 0 }));
+  const run = await runBuyerFollowAlerts(db, { dry: true }).catch(() => null);
+  return { missing: false, total: count ?? 0, pages: rows.length, top: rows.slice(0, 20), run };
 }

@@ -23,7 +23,11 @@ import { winnerKey, winnersFromRfps } from "@/lib/data/winners";
 import { getFullRfp, getPublicTenderNoticeUrl, getRfpTeaser } from "@/lib/data/rfps";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { loadBuyers } from "@/lib/buyers/load";
-import { buyerPageForRfp } from "@/lib/buyers/model";
+import { buyerPageForRfp, findBuyerPage } from "@/lib/buyers/model";
+import { parseBuyerKey } from "@/lib/towns/managed";
+import { FollowPill } from "@/components/follows/blocks";
+import { buyerDisplayName } from "@/lib/towns/claimable";
+import { inSentence } from "@/lib/towns/names";
 import { buyerFromSummary as awardBuyerFromSummary } from "@/lib/data/monthly-winners";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
@@ -278,8 +282,11 @@ export default async function RfpDetailPage({
     (teaser.regionName ? regionName(teaser.regionName, lang) : teaser.regionName);
   const buyer = town?.post.buyer_name ?? buyerFromSummary(teaser.summary) ?? (isGc ? t.facts.gc : isPublicTender ? null : t.facts.pm);
   // Canadian public listings link to their buyer's "where they post bids" page (same cached snapshots, no new query).
-  const buyerPage =
-    isPublicTender && rfpMarket(teaser) === "CA"
+  // A town's own post names its page (rfp_posts.buyer_key), so it gets the same link and Follow button.
+  const townKey = town?.post.buyer_key ? parseBuyerKey(town.post.buyer_key) : null;
+  const buyerPage = townKey
+    ? findBuyerPage((await loadBuyers()).pages, townKey.provinceSlug, townKey.slug)
+    : isPublicTender && rfpMarket(teaser) === "CA"
       ? buyerPageForRfp((await loadBuyers()).pages, teaser, buyerFromSummary(teaser.summary) ?? awardBuyerFromSummary(teaser.summary))
       : null;
   const sourceLabel = town ? townTag(town) : isPublicTender ? portalName : isGc ? t.facts.gc : t.facts.pm;
@@ -770,7 +777,9 @@ export default async function RfpDetailPage({
           )}
           {buyerPage && (
             <p className="small" data-link="buyer">
-              <a href={L(buyerPage.path)}>{fill(getT("buyers").page.rfpLink, { name: buyerPage.buyer.name })} →</a>
+              <a href={L(buyerPage.path)}>{fill(getT("buyers").page.rfpLink, { name: buyerPage.buyer.name })} →</a>{" "}
+              {/* Follow the buyer: its next bids by email (PMRFP for Towns, Part B1). */}
+              <FollowPill page={buyerPage} name={inSentence(buyerDisplayName(buyerPage, lang), lang)} />
             </p>
           )}
           {/* Credits are printed above; this adds the correction / removal link. */}

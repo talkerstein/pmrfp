@@ -13,7 +13,9 @@ import { getLang, getT } from "@/i18n/server";
 import { localizePath } from "@/i18n/config";
 import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { regionName } from "@/i18n/terms";
-import { AwardsAndProjects, ClaimCta, FollowCta, ManagedRows, NearbyBids, OpenBidList, TownWidgetCode, UpcomingPurchases, VerifiedBadge, awardsAndProjectsCount } from "./blocks";
+import { FollowBlock } from "@/components/follows/blocks";
+import { provincePath } from "@/lib/buyers/province";
+import { AwardsAndProjects, ClaimCta, ManagedRows, NearbyBids, OpenBidList, TownWidgetCode, UpcomingPurchases, VerifiedBadge, awardsAndProjectsCount } from "./blocks";
 
 /**
  * A municipality's page when only Statistics Canada knows it (no directory
@@ -78,6 +80,7 @@ export function TownPageView({
         data={breadcrumbSchema([
           { name: home, path: L("/") },
           { name: tb.page.crumb, path: L(BUYERS_PATH) },
+          { name: province, path: L(provincePath(p.provinceSlug)) },
           { name, path: L(p.path) },
         ])}
       />
@@ -85,7 +88,7 @@ export function TownPageView({
         lang={lang}
         current={null}
         group="company"
-        crumbs={[{ label: tb.page.crumb, href: BUYERS_PATH }]}
+        crumbs={[{ label: tb.page.crumb, href: BUYERS_PATH }, { label: province, href: provincePath(p.provinceSlug) }]}
         tabs={false}
         aside={false}
         title={name}
@@ -129,7 +132,7 @@ export function TownPageView({
         <AwardsAndProjects p={p} name={name} no={no.awards} />
 
         {!managed && !declined && <ClaimCta name={name} buyerKey={key} />}
-        <FollowCta name={inSentence(name, lang)} place={place} province={province} path={p.path} regionSlug={regionSlug} />
+        <FollowBlock page={p} name={inSentence(name, lang)} title={fmt(t.followTitle, { place })} regionSlug={regionSlug} kind="town" />
 
         <NearbyBids rows={nearby} place={place} province={province} provinceSlug={p.provinceSlug} no={no.nearby} />
 
@@ -146,7 +149,7 @@ export function TownPageView({
 
         <div className="s-links">
           <a href={L(BUYERS_PATH)}>{t.back} →</a>
-          <a href={L(`${BUYERS_PATH}#${p.provinceSlug}`)}>{province} →</a>
+          <a href={L(provincePath(p.provinceSlug))}>{province} →</a>
         </div>
       </SimplePage>
     </>

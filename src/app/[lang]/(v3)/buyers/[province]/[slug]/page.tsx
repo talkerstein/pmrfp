@@ -18,6 +18,9 @@ import { nearbyOpenBids, placeOf } from "@/lib/towns/nearby";
 import { buyerPageExtras, followRegionSlug } from "@/lib/towns/page-data";
 import { ClaimCta, ManagedRows, TownWidgetCode, UpcomingPurchases, VerifiedBadge } from "@/components/towns/blocks";
 import { TownPageView } from "@/components/towns/town-page";
+import { FollowBlock } from "@/components/follows/blocks";
+import { provincePath } from "@/lib/buyers/province";
+import { inSentence } from "@/lib/towns/names";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
@@ -90,6 +93,8 @@ export default async function BuyerPageView({ params }: { params: Params }) {
 
   const b = p.buyer;
   const name = b.name;
+  // "Follow": the region picked at sign-up when a signed-out visitor follows.
+  const regionSlug = await followRegionSlug(p);
   const province = regionName(p.province, lang);
   const and = AND[lang] ?? "and";
   const platform = platformList(b.platforms, t, and);
@@ -97,7 +102,6 @@ export default async function BuyerPageView({ params }: { params: Params }) {
   const faq = buyerFaq(p, t, lang);
   const tradeBySlug = new Map(categories.map((c) => [c.slug, c.name]));
   const trades = p.awards.tradeSlugs.map((s) => ({ slug: s, name: tradeBySlug.get(s) })).filter((x): x is { slug: string; name: string } => Boolean(x.name)).slice(0, 3);
-  const alertsHref = `${L("/sign-up")}?next=${encodeURIComponent(`${L("/rfps")}?q=${name}`)}`;
   const intelHref = L(p.intelSlug ? `/intel/buyers/${p.intelSlug}` : "/intel");
   // The city flow: a buyer that said yes gets the "Listed with permission"
   // card; one that said no gets nothing new (the plain links, as before);
@@ -120,6 +124,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         data={breadcrumbSchema([
           { name: home, path: L("/") },
           { name: t.page.crumb, path: L(BUYERS_PATH) },
+          { name: province, path: L(provincePath(p.provinceSlug)) },
           { name, path: L(p.path) },
         ])}
       />
@@ -128,7 +133,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         lang={lang}
         current={null}
         group="company"
-        crumbs={[{ label: t.page.crumb, href: BUYERS_PATH }]}
+        crumbs={[{ label: t.page.crumb, href: BUYERS_PATH }, { label: province, href: provincePath(p.provinceSlug) }]}
         tabs={false}
         aside={false}
         title={name}
@@ -313,13 +318,8 @@ export default async function BuyerPageView({ params }: { params: Params }) {
           </>
         )}
 
-        <div className="g-cta" data-cta="alerts">
-          <h3 className="hd">{fmt(t.page.alertsTitle, { name })}</h3>
-          <p>{fmt(t.page.alertsBody, { name, province })}</p>
-          <div className="acts">
-            <a href={alertsHref} className="btn mint lg">{t.page.alertsBtn}</a>
-          </div>
-        </div>
+        {/* Follow: new bids from this buyer by email (free: 3 buyers, weekly; Trade Pro: unlimited). */}
+        <FollowBlock page={p} name={inSentence(buyerDisplayName(p, lang), lang)} regionSlug={regionSlug} kind={b.group === "municipality" ? "town" : "buyer"} />
 
         {managed && (
           <>
@@ -344,7 +344,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
 
         <div className="s-links">
           <a href={L(BUYERS_PATH)}>{t.page.back} →</a>
-          <a href={L(`${BUYERS_PATH}#${p.provinceSlug}`)}>{province} →</a>
+          <a href={L(provincePath(p.provinceSlug))}>{province} →</a>
         </div>
       </SimplePage>
     </>

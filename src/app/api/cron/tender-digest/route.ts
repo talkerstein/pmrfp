@@ -13,6 +13,10 @@ import { freeDigestMatches, orgCountries, regionCountryMap } from "@/lib/alerts/
 import { activeTrialOrgIds } from "@/lib/entitlement/server";
 import { pmJobAlertKey } from "@/lib/pm-jobs/alerts";
 import { isPmJobSource } from "@/lib/pm-jobs/rules";
+import { weeklyFollowItems } from "@/lib/follows/alerts-server";
+import { weeklyFollowSection } from "@/lib/follows/alerts";
+import { weeklyFollowSectionHtml } from "@/lib/follows/email-copy";
+import { buyerFollowAlertsEnabled } from "@/lib/follows/rules";
 
 export const maxDuration = 60;
 
@@ -35,6 +39,10 @@ export const maxDuration = 60;
  *  - Caps recipients per run.
  *  - Country-first: a company only hears about tenders in the country it
  *    works in (lib/alerts/country), never the other side of the border.
+ *  - "From buyers you follow" (PMRFP for Towns, Part B1): what the buyers
+ *    and towns a free member follows listed this week (lib/follows). A
+ *    member whose trades had nothing new still gets the email when a
+ *    followed buyer did.
  * `?dry=1` reports who would get what without sending or writing.
  */
 const MAX_RECIPIENTS = 300;
@@ -143,35 +151,48 @@ export async function GET(request: Request) {
     for (const l of (logRows ?? []) as { user_id: string; lead_key: string }[]) sentPmJobs.add(`${l.user_id}|${l.lead_key.slice("pmjob:".length)}`);
   }
 
+  // Free members' followed buyers: their listings this week (nobody follows anything: nothing more is read).
+  const followed = await weeklyFollowItems(supabase, { userIds, since: weekAgo, today });
+  const sameDay = buyerFollowAlertsEnabled();
+  const slugById = new Map(openRfps.map((r) => [r.id, r.slug]));
+
   let sent = 0;
+  let withFollows = 0;
   const paidSponsors = await getSponsorSnapshot();
   const preview: { org: string; count: number; trade: string }[] = [];
   for (const org of freeOrgs) {
     const cats = catsByOrg.get(org.id);
-    if (!cats?.size) continue;
+    const orgUsers = usersByOrg.get(org.id) ?? new Set<string>();
+    const follows = [...orgUsers].some((u) => followed.byUser.has(u));
+    if (!cats?.size && !follows) continue;
     const regs = regsByOrg.get(org.id) ?? new Set<string>();
     const countries = orgCountries(org, ownRegsByOrg.get(org.id) ?? [], countryByRegion);
-    const orgMatches = freeDigestMatches(openRfps, { categories: cats, regions: regs, countries }, nationalIds, countryByRegion);
-    if (!orgMatches.length) continue;
+    const orgMatches = cats?.size ? freeDigestMatches(openRfps, { categories: cats, regions: regs, countries }, nationalIds, countryByRegion) : [];
+    if (!orgMatches.length && !follows) continue;
 
     // Label by the trade that matched most often ("snow removal tenders").
     const counts = new Map<string, number>();
     for (const r of orgMatches)
       for (const c of r.rfp_categories)
-        if (cats.has(c.category_id) && c.trade_categories?.name)
+        if (cats?.has(c.category_id) && c.trade_categories?.name)
           counts.set(c.trade_categories.name, (counts.get(c.trade_categories.name) ?? 0) + 1);
     const trade = ([...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "commercial").toLowerCase();
     preview.push({ org: org.name, count: orgMatches.length, trade });
     // Sponsor slot: this trade × the province most of these tenders are in.
     const place = dominantPlace(orgMatches.map((m) => ({ province: m.province })));
 
-    for (const userId of usersByOrg.get(org.id) ?? []) {
+    for (const userId of orgUsers) {
       const email = emailById.get(userId);
       if (!email || optedOut.has(userId) || alreadySent.has(userId) || sent >= MAX_RECIPIENTS) continue;
       const unsub = unsubscribeUrl(base, userId);
       if (!unsub) continue;
       const matches = sentPmJobs.size ? orgMatches.filter((m) => !sentPmJobs.has(`${userId}|${m.id}`)) : orgMatches;
-      if (!matches.length) continue;
+      const shown = matches.slice(0, 5);
+      // PM jobs this person already got by email don't come again in the follow section either.
+      const sentRfp = new Set([...sentPmJobs].filter((k) => k.startsWith(`${userId}|`)).map((k) => `${userId}|${slugById.get(k.slice(userId.length + 1)) ?? ""}`));
+      const fromFollows = weeklyFollowSection(followed.byUser.get(userId), { alreadyListed: new Set(shown.map((m) => m.id)), sentRfp, userId });
+      if (!matches.length && !fromFollows.length) continue;
+      if (fromFollows.length) withFollows++;
       if (dry) {
         sent++;
         continue;
@@ -180,16 +201,21 @@ export async function GET(request: Request) {
       const { error } = await supabase.from("notifications").insert({
         user_id: userId,
         type: "tender_digest",
-        title: `${matches.length} new ${trade} tender${matches.length === 1 ? "" : "s"} this week`,
-        message: matches.slice(0, 3).map((m) => m.title).join(" · "),
-        link_url: "/rfps",
+        title: matches.length ? `${matches.length} new ${trade} tender${matches.length === 1 ? "" : "s"} this week` : "New bids from buyers you follow",
+        message: [...shown.map((m) => m.title), ...fromFollows.map((f) => f.listing.title)].slice(0, 3).join(" · "),
+        link_url: matches.length ? "/rfps" : "/dashboard/following",
       });
       if (error) continue;
       alreadySent.add(userId);
       await sendTenderDigest(email, {
         count: matches.length,
         tradeLabel: trade,
-        items: matches.slice(0, 5).map((m) => ({ title: m.title, slug: m.slug, deadline: m.deadline })),
+        items: shown.map((m) => ({ title: m.title, slug: m.slug, deadline: m.deadline })),
+        followedHtml: weeklyFollowSectionHtml(
+          base,
+          fromFollows.map((f) => ({ title: f.listing.title, slug: f.listing.slug, deadline: f.listing.deadline, buyer: f.keys.map((k) => followed.names.get(k)).find(Boolean) ?? "" })),
+          { sameDay },
+        ),
         closingSoon: matches.filter((m) => m.deadline && m.deadline <= weekAhead).length,
         // Monthly first: the one trade that has paid chose monthly.
         upgradeUrl: `${base}/dashboard/billing?plan=pro&interval=monthly`,
@@ -208,7 +234,7 @@ export async function GET(request: Request) {
   }
 
   if (!dry) await flushImpressions(true);
-  return NextResponse.json(dry ? { dry: true, wouldSend: sent, orgs: preview } : { sent, orgs: preview.length });
+  return NextResponse.json(dry ? { dry: true, wouldSend: sent, withFollows, orgs: preview } : { sent, withFollows, orgs: preview.length });
 }
 
 type Pair = Record<string, string>;

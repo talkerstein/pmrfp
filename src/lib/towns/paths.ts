@@ -21,15 +21,3 @@ export function claimOnboardingHref(key: string | null, extra: Record<string, st
   const s = q.toString();
   return s ? `/onboarding?${s}` : "/onboarding";
 }
-
-/**
- * "Contractor near X? Follow this town": a free trade sign-up with the town's
- * region (or province) picked as a region preference when the taxonomy has
- * one, coming back to the town page. Following itself arrives in Part B.
- */
-export function followTownHref(townPath: string, regionSlug: string | null): string {
-  const q = new URLSearchParams({ role: "trade" });
-  if (regionSlug) q.set("region", regionSlug);
-  q.set("next", townPath);
-  return `/sign-up?${q.toString()}`;
-}
