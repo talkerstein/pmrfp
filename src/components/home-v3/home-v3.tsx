@@ -3,8 +3,9 @@
 import "./home-v3.css";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
+import { audienceFromCookie, rememberAudience } from "@/lib/audience/pm";
+import { PROMPT_COOKIE, QUIET_AFTER_INPUT_MS, TOAST_COOKIE, VIEWS_COOKIE, mayInterrupt, mayToast, quietEnough, readCookie } from "@/lib/growth/interruptions";
 import { V3Footer, V3Header, foundingLabel } from "./chrome";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
@@ -13,7 +14,7 @@ import { FOUNDING } from "@/lib/founding/config";
 import { sponsorPrice } from "@/lib/sponsors/pricing";
 import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
-import { fmt, formatNumber } from "@/i18n/format";
+import { fmt, formatNumber, plural } from "@/i18n/format";
 import type { Messages } from "@/i18n/dictionaries";
 
 /* ------------------------------------------------------------------ data */
@@ -28,7 +29,12 @@ export interface V3Trade { name: string; n: number | null; href: string }
  * block is hidden or reads "Live numbers loading". Never a design-time number.
  */
 export interface V3Data {
+  /** Open listings: public tenders + property-manager RFPs. */
   open: number | null;
+  /** The part of `open` posted by property managers (never demo listings). */
+  openPm: number | null;
+  /** The part of `open` that is imported public tenders. */
+  openPublic: number | null;
   closing7: number | null;
   trades: number | null;
   regions: number | null;
@@ -92,7 +98,8 @@ const H = {
   talentSignUp: "/sign-up?role=talent",
   signIn: "/sign-in",
   joinTrade: "/sign-up?role=trade",
-  postRfp: "/sign-up?role=property_manager",
+  // Property managers write the RFP first; sign-up comes only at "Post it free".
+  postRfp: "/rfp-writer",
   landlord: "/sign-up?role=landlord",
   realtor: "/sign-up?role=real_estate_agent",
   supplier: "/sign-up?role=supplier",
@@ -170,7 +177,6 @@ export function HomeV3({
   /** The free weekly email sign-up (server-rendered; null while sign-ups are off). */
   digest?: ReactNode;
 }) {
-  const router = useRouter();
   const market = useVisitorMarket();
   // Country-first: one country's numbers, lists and awards at a time.
   const data = market === "US" && dataUs ? dataUs : dataCa;
@@ -181,6 +187,14 @@ export function HomeV3({
   /** A "{n} …" line, or null (hidden) when the count is unknown. Lines without {n} pass through. */
   const factLine = (tpl: string, n: number | null): string | null =>
     !tpl.includes("{n}") ? tpl : n == null ? null : fmt(tpl, { n: num(n) });
+  /**
+   * Open PUBLIC tenders: the headline counters say "public tenders", and the
+   * property-manager RFPs are counted on their own (persona QA 2026-10-21:
+   * "261 contracts open" read as property-manager work; it was all tenders).
+   */
+  const pub = data.openPublic;
+  /** A click on a property-manager CTA: no trade popup or toast for this visitor from now on. */
+  const pickPm = () => rememberAudience("pm");
 
   /* One currency per visitor: CAD in Canada, USD in the U.S.; nothing until we know which. */
   const known = market != null;
@@ -213,7 +227,6 @@ export function HomeV3({
   const [pending, startTransition] = useTransition();
   const [toastOn, setToastOn] = useState(false);
   const [toastOff, setToastOff] = useState(false);
-  const [toastIdx, setToastIdx] = useState(0);
 
   const openModal = useCallback(() => {
     seen.current = true;
@@ -243,28 +256,76 @@ export function HomeV3({
       if (still) return;
       setDeck((d) => (d + 1) % 4);
     }, 2800);
-    const t3 = setTimeout(() => {
-      if (!seen.current) {
-        seen.current = true;
-        setModal(true);
+
+    // Trade popup and toast: only per lib/growth/interruptions (never for
+    // property managers, once per visitor, never before a first-time visitor
+    // interacts, never right under a click).
+    let interacted = false;
+    let lastInput: number | null = null;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const ctx = (cookie: string) => ({
+      path: "/",
+      audience: audienceFromCookie(document.cookie),
+      alreadyShown: readCookie(document.cookie, cookie) === "1",
+      pageViews: Number(readCookie(document.cookie, VIEWS_COOKIE)) || 1,
+      interacted,
+    });
+    const setOnce = (cookie: string) => {
+      try {
+        document.cookie = `${cookie}=1; Max-Age=${60 * 60 * 24 * 365}; Path=/; SameSite=Lax`;
+      } catch {
+        /* cookies blocked: it may show again next visit */
       }
-    }, 9000);
-    const t5 = setTimeout(() => setToastOn(true), 4000);
-    const t4 = setInterval(() => setToastIdx((x) => x + 1), 7000);
+    };
+    const openPrompt = () => {
+      if (seen.current || !mayInterrupt(ctx(PROMPT_COOKIE))) return;
+      if (!quietEnough(Date.now(), lastInput)) {
+        // Never open under a click: wait until the visitor pauses.
+        timers.push(setTimeout(openPrompt, QUIET_AFTER_INPUT_MS));
+        return;
+      }
+      seen.current = true;
+      setOnce(PROMPT_COOKIE);
+      lastFocus.current = document.activeElement as HTMLElement | null;
+      setModal(true);
+    };
+    const openToast = () => {
+      if (!mayToast(ctx(TOAST_COOKIE), window.innerWidth)) return;
+      setOnce(TOAST_COOKIE);
+      setToastOn(true);
+    };
+    let armed = false;
+    const arm = () => {
+      if (armed) return;
+      armed = true;
+      timers.push(setTimeout(openToast, 4000), setTimeout(openPrompt, 9000));
+    };
+    const onInput = () => {
+      lastInput = Date.now();
+      interacted = true;
+      arm();
+    };
+    const onScroll = () => {
+      interacted = true;
+      arm();
+    };
+    // A returning page view may start the clock; a first view waits for the visitor.
+    if (ctx(PROMPT_COOKIE).pageViews > 1) arm();
+    window.addEventListener("pointerdown", onInput, { passive: true });
+    window.addEventListener("keydown", onInput);
+    window.addEventListener("scroll", onScroll, { passive: true, once: true });
     // Exit intent: desktop only (cursor leaves through the top of the viewport).
     const onLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !seen.current && window.matchMedia("(min-width: 1024px)").matches) {
-        seen.current = true;
-        setModal(true);
-      }
+      if (e.clientY <= 0 && window.matchMedia("(min-width: 1024px)").matches) openPrompt();
     };
     document.addEventListener("mouseleave", onLeave);
     return () => {
       clearInterval(timer);
       clearInterval(timer2);
-      clearInterval(t4);
-      clearTimeout(t3);
-      clearTimeout(t5);
+      timers.forEach(clearTimeout);
+      window.removeEventListener("pointerdown", onInput);
+      window.removeEventListener("keydown", onInput);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("mouseleave", onLeave);
     };
   }, []);
@@ -304,27 +365,32 @@ export function HomeV3({
     ...a,
     img: AUD_IMG[i],
     href: AUD_HREF[i],
-    fact: factLine(a.fact, i === 0 ? data.open : data.regions),
+    fact: factLine(a.fact, i === 0 ? pub : data.regions),
+    // Property managers, landlords, condo boards, builders: the buyer side.
+    pm: i >= 1 && i <= 3,
   }));
   const word = aud[active].word;
   const swapClass = tick % 2 ? "swapb" : "swapa";
   const closing = market === "US" && data.closingUs.length ? data.closingUs : data.closingCa;
   const ticker = data.ticker.concat(data.ticker);
-  const toastItem = data.toast.length ? data.toast[toastIdx % data.toast.length] : null;
+  // One toast, not a rotation (lib/growth/interruptions).
+  const toastItem = data.toast[0] ?? null;
   const showToast = toastOn && !toastOff && !modal && toastItem != null;
   const spots = foundingLabel(t, data.foundingLeft);
   const showFounding = spots != null;
   const w = data.winners;
   const top = w.top;
   const bigwords = [
-    factLine(t.platform.bigwords.open, data.open),
+    factLine(t.platform.bigwords.open, pub),
     factLine(t.platform.bigwords.trades, data.trades),
     factLine(t.platform.bigwords.regions, data.regions),
     ...(top.length ? [fmt(t.platform.bigwords.awarded, { value: w.value })] : []),
   ].filter((x): x is string => x != null);
-  const stats = ([[data.open, t.stats.open], [data.closing7, t.stats.closing], [data.trades, t.stats.trades], [data.regions, t.stats.regions]] as const).filter(
+  const stats = ([[pub, t.stats.open], [data.openPm, t.stats.pm], [data.closing7, t.stats.closing], [data.trades, t.stats.trades]] as const).filter(
     (s): s is readonly [number, string] => s[0] != null,
   );
+  /** " · 0 property-manager RFPs" after the public-tender count; empty while unknown. */
+  const pmPart = data.openPm != null ? ` · ${plural(data.openPm, t.hero.pm, { n: num(data.openPm) })}` : "";
   const cards = DECK.map((img, i) => {
     const slot = (i - deck + 4) % 4;
     return { no: `0${i + 1}`, cap: t.platform.work.steps[i], img, slot, z: 4 - slot, pick: () => setDeck(i) };
@@ -345,7 +411,10 @@ export function HomeV3({
     if (area?.region) q.set("region", area.region);
     if (area?.country) q.set("country", area.country);
     const qs = q.toString();
-    router.push(L(qs ? `/rfps?${qs}` : "/rfps"));
+    // A full page load, like every other board filter: the results open at the
+    // top. A client transition kept the home page's scroll and left phones
+    // ~125px down the board, header hidden (persona QA 2026-10-21).
+    window.location.assign(L(qs ? `/rfps?${qs}` : "/rfps"));
   };
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -399,7 +468,7 @@ export function HomeV3({
         <button type="submit" disabled={pending} style={{ opacity: pending ? 0.7 : 1 }}>{pending ? t.popup.sending : t.popup.submit}</button>
         {formError && <div role="alert" className="err">{formError}</div>}
       </form>
-      <div className="fine">{t.popup.note} <a href={L(H.postRfp)}>{t.popup.post}</a></div>
+      <div className="fine">{t.popup.note} <a href={L(H.postRfp)} onClick={pickPm}>{t.popup.post}</a></div>
     </div>
   ) : (
     <div className="fadeup">
@@ -425,8 +494,8 @@ export function HomeV3({
               <div className="v3-hero-main">
                 <div className="v3-hero-eyebrow">
                   <span className="v3-dot" />
-                  <span className="d">{data.open != null ? fmt(t.hero.eyebrow, { n: num(data.open), where: here }) : t.stats.loading}</span>
-                  <span className="m">{data.open != null ? fmt(t.hero.eyebrowShort, { n: num(data.open), where: here }) : t.stats.loading}</span>
+                  <span className="d">{pub != null ? `${fmt(t.hero.eyebrow, { n: num(pub), where: here })}${pmPart}` : t.stats.loading}</span>
+                  <span className="m">{pub != null ? fmt(t.hero.eyebrowShort, { n: num(pub), where: here }) : t.stats.loading}</span>
                 </div>
                 <h1 className="v3-h1">
                   {t.hero.title} <span key={tick} className={`w ${swapClass}`} aria-live="off">{word}.</span>
@@ -436,7 +505,7 @@ export function HomeV3({
                 <p className="v3-hero-sub"><span className="d">{t.hero.sub}</span><span className="m">{t.hero.subShort}</span></p>
                 <div className="v3-hero-ctas">
                   <button type="button" onClick={openModal} className="v3-pill mint">{t.hero.join}</button>
-                  <a href={L(H.postRfp)} className="v3-pill ghost">{t.hero.post}</a>
+                  <a href={L(H.postRfp)} onClick={pickPm} className="v3-pill ghost">{t.hero.post}</a>
                 </div>
               </div>
             </div>
@@ -462,7 +531,7 @@ export function HomeV3({
                           <div className="h">{p.head}</div>
                           <div className="p"><span className="d">{p.desc}</span><span className="m">{p.descShort}</span></div>
                           <div className="row">
-                            <a href={L(p.href)} className="v3-pill mint"><span className="d">{p.cta}</span><span className="m">{p.ctaShort}</span> →</a>
+                            <a href={L(p.href)} onClick={p.pm ? pickPm : undefined} className="v3-pill mint"><span className="d">{p.cta}</span><span className="m">{p.ctaShort}</span> →</a>
                             {p.fact && <span className="fact">{p.fact}</span>}
                           </div>
                         </div>
@@ -559,6 +628,18 @@ export function HomeV3({
             })}
           </div>
           </>)}
+
+          {/* No property-manager RFPs open: say so and invite the first (never a made-up listing or testimonial). */}
+          {data.openPm === 0 && (
+            <div className="v3-pmcard">
+              <div>
+                <div className="v3-label">{t.pmEmpty.eyebrow}</div>
+                <h3 className="hd">{t.pmEmpty.title}</h3>
+                <p>{t.pmEmpty.body}</p>
+              </div>
+              <a href={L(H.postRfp)} onClick={pickPm} className="v3-pill navy">{t.pmEmpty.cta}</a>
+            </div>
+          )}
 
           <div className="v3-src">
             <h2 className="v3-h3">{t.sources.title}</h2>
@@ -865,17 +946,17 @@ export function HomeV3({
 
         <section className="v3-final">
           <div className="v3-wrap v3-final-in">
-            {data.open != null && <div className="big" aria-hidden>{num(data.open)}</div>}
+            {pub != null && <div className="big" aria-hidden>{num(pub)}</div>}
             <div>
               <h2>
-                {data.open != null ? <><span className="v3-sr">{num(data.open)} </span>{t.cta.line1}</> : t.cta.line1NoCount}
+                {pub != null ? <><span className="v3-sr">{num(pub)} </span>{t.cta.line1}</> : t.cta.line1NoCount}
                 {data.closing7 != null && <><br /> {fmt(t.cta.line2, { n: num(data.closing7) })}</>}
               </h2>
               <div className="note">{t.cta.note}</div>
             </div>
             <div className="btns">
               <button type="button" onClick={openModal} className="v3-pill ink">{t.cta.join}</button>
-              <a href={L(H.postRfp)} className="v3-pill out">{t.cta.post}</a>
+              <a href={L(H.postRfp)} onClick={pickPm} className="v3-pill out">{t.cta.post}</a>
             </div>
           </div>
         </section>
@@ -918,10 +999,10 @@ export function HomeV3({
         <div className="v3-sticky-in">
           <span className="v3-dot d" style={{ width: 10, height: 10 }} />
           <div className="txt">
-            <b>{data.open != null ? <><span className="d">{fmt(t.sticky.open, { n: num(data.open), where: here })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(data.open), where: here })}</span></> : t.stats.loading}</b>{" "}
+            <b>{pub != null ? <><span className="d">{fmt(t.sticky.open, { n: num(pub), where: here })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(pub), where: here })}</span></> : t.stats.loading}</b>{" "}
             {data.closing7 != null && <span className="c"><span className="d">{fmt(t.sticky.closing, { n: num(data.closing7) })}</span><span className="m">{fmt(t.sticky.closingShort, { n: num(data.closing7) })}</span></span>}
           </div>
-          <a href={L(H.postRfp)} className="v3-pill ghost">{t.sticky.post}</a>
+          <a href={L(H.postRfp)} onClick={pickPm} className="v3-pill ghost">{t.sticky.post}</a>
           <button type="button" onClick={openModal} className="v3-pill mint"><span className="d">{t.sticky.cta}</span><span className="m">{t.sticky.ctaShort}</span></button>
         </div>
       </div>
@@ -942,8 +1023,8 @@ export function HomeV3({
             <div className="v3-dlg-side">
               <Image src={IMG.roofing} alt="" fill sizes="400px" className="v3-img" />
               <span className="sh" />
-              {data.open != null && <span className="n">{num(data.open)}</span>}
-              <span className="l">{data.open != null ? t.popup.open : t.stats.loading}</span>
+              {pub != null && <span className="n">{num(pub)}</span>}
+              <span className="l">{pub != null ? t.popup.open : t.stats.loading}</span>
               <span className="ls">
                 {data.closing7 != null && <span>{fmt(t.popup.closing, { n: num(data.closing7) })}</span>}
                 {data.trades != null && data.regions != null && <span>{fmt(t.popup.tradesRegions, { trades: num(data.trades), regions: num(data.regions) })}</span>}

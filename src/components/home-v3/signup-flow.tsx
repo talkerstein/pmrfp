@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { audienceForRole, rememberAudience } from "@/lib/audience/pm";
 import { signUpAction, type ActionState } from "@/lib/auth/actions";
 import { onboardingPath, parseRoleChoice } from "@/lib/auth/oauth";
 import { billingPathForIntent, type PlanId, type PlanInterval } from "@/lib/billing/plan-intent";
@@ -47,6 +48,10 @@ export function SignUpFlow(p: SignupProps) {
   const locked = !!p.intent;
   const [step, setStep] = useState(locked ? 1 : 0);
   const [role, setRole] = useState<SignupRole | "">(locked ? (p.initialRole === "supplier" ? "supplier" : "trade") : p.initialRole ?? "");
+  // A property-manager-side pick: no trade popups or toasts for this visitor afterwards.
+  useEffect(() => {
+    if (audienceForRole(role) === "pm") rememberAudience("pm");
+  }, [role]);
   const [trades, setTrades] = useState<string[]>([]);
   const [regions, setRegions] = useState<string[]>([]);
   const [plan, setPlan] = useState<"free" | "pro">(p.intent ? "pro" : "free");
@@ -334,7 +339,7 @@ export function SignUpFlow(p: SignupProps) {
           a={fmt(t.stickyA, { n: num(p.stats.open) })}
           b={p.stats.closing7 != null ? fmt(t.stickyB, { n: num(p.stats.closing7) }) : ""}
           meta={stepText}
-          cta={{ href: L("/sign-up?role=property_manager"), label: t.postFree }}
+          cta={{ href: L("/rfp-writer"), label: t.postFree }}
         />
       )}
     </>

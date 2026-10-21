@@ -46,8 +46,9 @@ export default async function ForPropertyManagersPage({ params }: { params: Prom
             {p.lead.after}
           </>
         ),
-        cta: { label: p.postFree, href: "/sign-up?role=property_manager" },
-        cta2: { label: p.writeRfp, href: "/rfp-writer" },
+        // Write first; sign-up only at "Post it free" in the writer.
+        cta: { label: p.writeRfp, href: "/rfp-writer" },
+        cta2: { label: getT("seo").browseDirectory, href: "/directory" },
         // The landlord section: same tools, same price, its own sign-up.
         ctaNote: (
           <>

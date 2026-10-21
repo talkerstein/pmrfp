@@ -26,6 +26,8 @@ const en = {
     jobs: "Jobs",
     forum: "Forum",
     pricing: "Pricing",
+    /** Property-manager side: the free RFP writer (/rfp-writer). */
+    writer: "RFP writer",
     signIn: "Sign in",
     listBusiness: "List your business",
     join: "Join free",
@@ -35,9 +37,11 @@ const en = {
     closeMenu: "Close menu",
   },
   hero: {
-    /** {where}: common.market.where ("in Canada"); every count is one country. */
-    eyebrow: "{n} contracts open {where}",
-    eyebrowShort: "{n} contracts open {where}",
+    /** {where}: common.market.where ("in Canada"); every count is one country. {n}: open public tenders only. */
+    eyebrow: "{n} open public tenders {where}",
+    eyebrowShort: "{n} public tenders open {where}",
+    /** After the eyebrow: open RFPs posted by property managers, counted on their own. */
+    pm: { one: "{n} property-manager RFP", other: "{n} property-manager RFPs" },
     title: "One board for commercial property work. Built for",
     sub: "RFPs posted by property managers, public building tenders from government buyers, and a directory of the trades who do the work.",
     subShort: "RFPs from property managers, public building tenders, and a directory of the trades who do the work. Pick who you are.",
@@ -46,7 +50,7 @@ const en = {
     audience: "Who it's for",
   },
   audience: [
-    { label: "For tradesmen", word: "tradesmen", head: "Get discovered for commercial property work.", desc: "PMRFP is where property managers post RFPs. Get listed, watch your trade and region, and bid.", descShort: "Get listed, watch your trade and region, and bid.", cta: "Join as a trade company", ctaShort: "Join as a trade company", fact: "{n} open contracts today" },
+    { label: "For tradesmen", word: "tradesmen", head: "Get discovered for commercial property work.", desc: "PMRFP is where property managers post RFPs. Get listed, watch your trade and region, and bid.", descShort: "Get listed, watch your trade and region, and bid.", cta: "Join as a trade company", ctaShort: "Join as a trade company", fact: "{n} open public tenders today" },
     { label: "For property managers", word: "property managers", head: "Post a project. Find the right vendors. No pressure to hire.", desc: "Post your building project free. Trades that match your category and region see it and bid.", descShort: "Trades that match your category and region see it and bid.", cta: "Post an RFP free", ctaShort: "Post an RFP free", fact: "Free to post" },
     { label: "For landlords", word: "landlords", head: "Own your buildings? Post repair and maintenance jobs free.", desc: "Search a directory of commercial trade contractors by trade and region, with the credentials each company lists.", descShort: "Search a directory of commercial trades.", cta: "Sign up as a landlord", ctaShort: "Sign up as a landlord", fact: "{n} regions covered" },
     { label: "For condo boards", word: "condo boards", head: "Run open, documented RFPs.", desc: "Show owners competitive bids, side by side, with every trade’s credentials on record.", descShort: "Show owners competitive bids, side by side.", cta: "Start an RFP", ctaShort: "Start an RFP", fact: "Free to post" },
@@ -55,7 +59,8 @@ const en = {
     { label: "For builders", word: "builders", head: "Post trade packages free.", desc: "Builders and general contractors post packages by trade. Local trades quote and bid.", descShort: "Local trades quote and bid.", cta: "Post a package", ctaShort: "Post a package", fact: "Free to post" },
   ],
   stats: {
-    open: "contracts open right now",
+    open: "public tenders open right now",
+    pm: "property-manager RFPs open",
     closing: "close in the next 7 days",
     trades: "trades covered",
     regions: "regions in Canada and the U.S.",
@@ -236,8 +241,8 @@ const en = {
     foundingCta: "Become a Founding member →",
   },
   cta: {
-    line1: "contracts are open.",
-    line1NoCount: "Contracts are open on the board.",
+    line1: "public tenders are open.",
+    line1NoCount: "Public tenders are open on the board.",
     line2: "{n} close in the next 7 days.",
     note: "A directory listing is free. No card needed.",
     join: "Join free →",
@@ -265,6 +270,7 @@ const en = {
     forum: "Forum",
     trades: "Trade contractors",
     pms: "Property managers",
+    writer: "RFP writer (free)",
     landlords: "Landlords and owners",
     condos: "Condo boards",
     realEstate: "Real estate",
@@ -286,9 +292,9 @@ const en = {
     legal: "PMRFP is a platform for posting RFPs and finding trades. We do not guarantee project availability, bid success, contract awards or revenue. Public tender sources are not affiliated with PMRFP.",
   },
   sticky: {
-    open: "{n} contracts open {where}.",
+    open: "{n} open public tenders {where}.",
     closing: "{n} close in the next 7 days.",
-    openShort: "{n} open {where}",
+    openShort: "{n} tenders open {where}",
     closingShort: "{n} close in 7 days",
     post: "Post an RFP free",
     cta: "See what's open in my trade →",
@@ -314,10 +320,17 @@ const en = {
     pro: "Want every match by email the morning it posts? Trade Pro · {price}/month",
     keep: "Keep browsing",
     close: "Close",
-    open: "contracts open right now",
+    open: "public tenders open right now",
     closing: "{n} close in the next 7 days",
     tradesRegions: "{trades} trades · {regions} regions",
     sources: "Pulled every morning from public open-data sources",
+  },
+  /** Shown when no property-manager RFP is open: an invitation, never a made-up listing. */
+  pmEmpty: {
+    eyebrow: "Property managers and condo boards",
+    title: "No property-manager RFPs are open right now.",
+    body: "Be the first to post one, free. The RFP writer drafts it in about two minutes; you only create an account when you post it.",
+    cta: "Write an RFP free →",
   },
 };
 
@@ -341,6 +354,7 @@ const fr: typeof en = {
     jobs: "Emplois",
     forum: "Forum",
     pricing: "Tarifs",
+    writer: "Rédiger un AO",
     signIn: "Se connecter",
     listBusiness: "Inscrire votre entreprise",
     join: "S'inscrire gratuitement",
@@ -350,8 +364,9 @@ const fr: typeof en = {
     closeMenu: "Fermer le menu",
   },
   hero: {
-    eyebrow: "{n} contrats ouverts {where}",
-    eyebrowShort: "{n} contrats ouverts {where}",
+    eyebrow: "{n} appels d'offres publics ouverts {where}",
+    eyebrowShort: "{n} appels d'offres publics ouverts {where}",
+    pm: { one: "{n} appel d'offres de gestionnaire", other: "{n} appels d'offres de gestionnaires" },
     title: "Un seul tableau pour les travaux en immobilier commercial. Conçu pour les",
     sub: "Des appels d'offres publiés par des gestionnaires immobiliers, des appels d'offres publics de bâtiment d'acheteurs gouvernementaux, et un répertoire des gens de métier qui font le travail.",
     subShort: "Des appels d'offres de gestionnaires immobiliers, des appels d'offres publics et un répertoire des gens de métier. Choisissez votre profil.",
@@ -360,7 +375,7 @@ const fr: typeof en = {
     audience: "À qui ça s'adresse",
   },
   audience: [
-    { label: "Gens de métier", word: "gens de métier", head: "Faites-vous découvrir pour des travaux en immobilier commercial.", desc: "C'est sur PMRFP que les gestionnaires immobiliers publient leurs appels d'offres. Inscrivez-vous, suivez votre corps de métier et votre région, et soumissionnez.", descShort: "Inscrivez-vous, suivez votre corps de métier et votre région, et soumissionnez.", cta: "S'inscrire comme entrepreneur", ctaShort: "S'inscrire comme entrepreneur", fact: "{n} contrats ouverts aujourd'hui" },
+    { label: "Gens de métier", word: "gens de métier", head: "Faites-vous découvrir pour des travaux en immobilier commercial.", desc: "C'est sur PMRFP que les gestionnaires immobiliers publient leurs appels d'offres. Inscrivez-vous, suivez votre corps de métier et votre région, et soumissionnez.", descShort: "Inscrivez-vous, suivez votre corps de métier et votre région, et soumissionnez.", cta: "S'inscrire comme entrepreneur", ctaShort: "S'inscrire comme entrepreneur", fact: "{n} appels d'offres publics ouverts aujourd'hui" },
     { label: "Gestionnaires immobiliers", word: "gestionnaires immobiliers", head: "Publiez un projet. Trouvez les bons fournisseurs. Aucune obligation d'embaucher.", desc: "Publiez votre projet gratuitement. Les entrepreneurs de votre catégorie et de votre région le voient et soumissionnent.", descShort: "Les entrepreneurs de votre catégorie et de votre région le voient et soumissionnent.", cta: "Publier un appel d'offres gratuitement", ctaShort: "Publier gratuitement", fact: "Publication gratuite" },
     { label: "Propriétaires", word: "propriétaires", head: "Propriétaire d'immeubles? Publiez vos travaux de réparation et d'entretien gratuitement.", desc: "Cherchez dans un répertoire d'entrepreneurs commerciaux par corps de métier et par région, avec les qualifications que chaque entreprise indique.", descShort: "Cherchez dans un répertoire d'entrepreneurs commerciaux.", cta: "S'inscrire comme propriétaire", ctaShort: "S'inscrire comme propriétaire", fact: "{n} régions couvertes" },
     { label: "Syndicats de copropriété", word: "syndicats de copropriété", head: "Menez des appels d'offres ouverts et documentés.", desc: "Présentez aux copropriétaires des soumissions concurrentes, côte à côte, avec les qualifications de chaque entrepreneur au dossier.", descShort: "Présentez des soumissions concurrentes, côte à côte.", cta: "Lancer un appel d'offres", ctaShort: "Lancer un appel d'offres", fact: "Publication gratuite" },
@@ -369,7 +384,8 @@ const fr: typeof en = {
     { label: "Constructeurs", word: "constructeurs", head: "Publiez vos lots de travaux gratuitement.", desc: "Les constructeurs et entrepreneurs généraux publient leurs lots par corps de métier. Les entrepreneurs locaux soumissionnent.", descShort: "Les entrepreneurs locaux soumissionnent.", cta: "Publier un lot", ctaShort: "Publier un lot", fact: "Publication gratuite" },
   ],
   stats: {
-    open: "contrats ouverts en ce moment",
+    open: "appels d'offres publics ouverts en ce moment",
+    pm: "appels d'offres de gestionnaires ouverts",
     closing: "clôturent dans les 7 prochains jours",
     trades: "corps de métier couverts",
     regions: "régions au Canada et aux États-Unis",
@@ -548,8 +564,8 @@ const fr: typeof en = {
     foundingCta: "Devenir membre fondateur →",
   },
   cta: {
-    line1: "contrats sont ouverts.",
-    line1NoCount: "Des contrats sont ouverts sur le tableau.",
+    line1: "appels d'offres publics sont ouverts.",
+    line1NoCount: "Des appels d'offres publics sont ouverts sur le tableau.",
     line2: "{n} clôturent dans les 7 prochains jours.",
     note: "Fiche au répertoire gratuite. Aucune carte requise.",
     join: "S'inscrire gratuitement →",
@@ -577,6 +593,7 @@ const fr: typeof en = {
     forum: "Forum",
     trades: "Entrepreneurs",
     pms: "Gestionnaires immobiliers",
+    writer: "Rédacteur d'appels d'offres (gratuit)",
     landlords: "Propriétaires",
     condos: "Syndicats de copropriété",
     realEstate: "Immobilier",
@@ -598,9 +615,9 @@ const fr: typeof en = {
     legal: "PMRFP est une plateforme pour publier des appels d'offres et trouver des entrepreneurs. Nous ne garantissons ni la disponibilité des projets, ni le succès des soumissions, ni l'octroi de contrats, ni des revenus. Les sources publiques d'appels d'offres ne sont pas affiliées à PMRFP.",
   },
   sticky: {
-    open: "{n} contrats ouverts {where}.",
+    open: "{n} appels d'offres publics ouverts {where}.",
     closing: "{n} clôturent dans les 7 prochains jours.",
-    openShort: "{n} ouverts {where}",
+    openShort: "{n} appels d'offres ouverts {where}",
     closingShort: "{n} clôturent d'ici 7 jours",
     post: "Publier un appel d'offres gratuitement",
     cta: "Voir ce qui est ouvert dans mon métier →",
@@ -626,10 +643,16 @@ const fr: typeof en = {
     pro: "Vous voulez chaque correspondance par courriel le matin même? Trade Pro · {price}/mois",
     keep: "Continuer à explorer",
     close: "Fermer",
-    open: "contrats ouverts en ce moment",
+    open: "appels d'offres publics ouverts en ce moment",
     closing: "{n} clôturent dans les 7 prochains jours",
     tradesRegions: "{trades} métiers · {regions} régions",
     sources: "Récupérés chaque matin depuis des sources publiques de données ouvertes",
+  },
+  pmEmpty: {
+    eyebrow: "Gestionnaires immobiliers et syndicats de copropriété",
+    title: "Aucun appel d'offres de gestionnaire n'est ouvert en ce moment.",
+    body: "Soyez le premier à en publier un, gratuitement. Le rédacteur d'appels d'offres le prépare en deux minutes environ; vous créez un compte seulement au moment de le publier.",
+    cta: "Rédiger un appel d'offres gratuitement →",
   },
 };
 
@@ -653,6 +676,7 @@ const es: typeof en = {
     jobs: "Empleos",
     forum: "Foro",
     pricing: "Precios",
+    writer: "Redactar RFP",
     signIn: "Iniciar sesión",
     listBusiness: "Publique su negocio",
     join: "Registrarse gratis",
@@ -662,8 +686,9 @@ const es: typeof en = {
     closeMenu: "Cerrar menú",
   },
   hero: {
-    eyebrow: "{n} contratos abiertos {where}",
-    eyebrowShort: "{n} contratos abiertos {where}",
+    eyebrow: "{n} licitaciones públicas abiertas {where}",
+    eyebrowShort: "{n} licitaciones públicas abiertas {where}",
+    pm: { one: "{n} RFP de administrador", other: "{n} RFP de administradores" },
     title: "Un solo tablero para trabajos en propiedades comerciales. Hecho para",
     sub: "Solicitudes de propuestas (RFP) de administradores de propiedades, licitaciones públicas de edificios de compradores gubernamentales y un directorio de los oficios que hacen el trabajo.",
     subShort: "RFP de administradores de propiedades, licitaciones públicas y un directorio de oficios. Elija su perfil.",
@@ -672,7 +697,7 @@ const es: typeof en = {
     audience: "Para quién es",
   },
   audience: [
-    { label: "Para oficios", word: "contratistas", head: "Que lo encuentren para trabajos en propiedades comerciales.", desc: "En PMRFP los administradores de propiedades publican sus RFP. Regístrese, siga su oficio y su región, y presente ofertas.", descShort: "Regístrese, siga su oficio y su región, y presente ofertas.", cta: "Registrarse como contratista", ctaShort: "Registrarse como contratista", fact: "{n} contratos abiertos hoy" },
+    { label: "Para oficios", word: "contratistas", head: "Que lo encuentren para trabajos en propiedades comerciales.", desc: "En PMRFP los administradores de propiedades publican sus RFP. Regístrese, siga su oficio y su región, y presente ofertas.", descShort: "Regístrese, siga su oficio y su región, y presente ofertas.", cta: "Registrarse como contratista", ctaShort: "Registrarse como contratista", fact: "{n} licitaciones públicas abiertas hoy" },
     { label: "Para administradores", word: "administradores de propiedades", head: "Publique un proyecto. Encuentre a los proveedores adecuados. Sin obligación de contratar.", desc: "Publique su proyecto gratis. Los contratistas de su categoría y región lo ven y presentan ofertas.", descShort: "Los contratistas de su categoría y región lo ven y presentan ofertas.", cta: "Publicar una RFP gratis", ctaShort: "Publicar una RFP gratis", fact: "Publicar es gratis" },
     { label: "Para propietarios", word: "propietarios", head: "¿Tiene edificios? Publique trabajos de reparación y mantenimiento gratis.", desc: "Busque en un directorio de contratistas comerciales por oficio y región, con las credenciales que indica cada empresa.", descShort: "Busque en un directorio de contratistas comerciales.", cta: "Registrarse como propietario", ctaShort: "Registrarse como propietario", fact: "{n} regiones cubiertas" },
     { label: "Para juntas de condominio", word: "juntas de condominio", head: "Realice RFP abiertas y documentadas.", desc: "Muestre a los propietarios ofertas competitivas, lado a lado, con las credenciales de cada contratista en el expediente.", descShort: "Muestre ofertas competitivas, lado a lado.", cta: "Iniciar una RFP", ctaShort: "Iniciar una RFP", fact: "Publicar es gratis" },
@@ -681,7 +706,8 @@ const es: typeof en = {
     { label: "Para constructores", word: "constructores", head: "Publique paquetes de trabajo gratis.", desc: "Constructores y contratistas generales publican paquetes por oficio. Los contratistas locales cotizan y presentan ofertas.", descShort: "Los contratistas locales cotizan y presentan ofertas.", cta: "Publicar un paquete", ctaShort: "Publicar un paquete", fact: "Publicar es gratis" },
   ],
   stats: {
-    open: "contratos abiertos ahora",
+    open: "licitaciones públicas abiertas ahora",
+    pm: "RFP de administradores abiertas",
     closing: "cierran en los próximos 7 días",
     trades: "oficios cubiertos",
     regions: "regiones en Canadá y EE. UU.",
@@ -860,8 +886,8 @@ const es: typeof en = {
     foundingCta: "Hacerse miembro fundador →",
   },
   cta: {
-    line1: "contratos están abiertos.",
-    line1NoCount: "Hay contratos abiertos en el tablero.",
+    line1: "licitaciones públicas están abiertas.",
+    line1NoCount: "Hay licitaciones públicas abiertas en el tablero.",
     line2: "{n} cierran en los próximos 7 días.",
     note: "Ficha en el directorio gratis. Sin tarjeta.",
     join: "Registrarse gratis →",
@@ -889,6 +915,7 @@ const es: typeof en = {
     forum: "Foro",
     trades: "Contratistas",
     pms: "Administradores de propiedades",
+    writer: "Redactor de RFP (gratis)",
     landlords: "Propietarios",
     condos: "Juntas de condominio",
     realEstate: "Bienes raíces",
@@ -910,9 +937,9 @@ const es: typeof en = {
     legal: "PMRFP es una plataforma para publicar RFP y encontrar contratistas. No garantizamos la disponibilidad de proyectos, el éxito de las ofertas, la adjudicación de contratos ni ingresos. Las fuentes públicas de licitaciones no están afiliadas a PMRFP.",
   },
   sticky: {
-    open: "{n} contratos abiertos {where}.",
+    open: "{n} licitaciones públicas abiertas {where}.",
     closing: "{n} cierran en los próximos 7 días.",
-    openShort: "{n} abiertos {where}",
+    openShort: "{n} licitaciones abiertas {where}",
     closingShort: "{n} cierran en 7 días",
     post: "Publicar una RFP gratis",
     cta: "Ver lo abierto en mi oficio →",
@@ -938,10 +965,16 @@ const es: typeof en = {
     pro: "¿Quiere cada coincidencia por correo la misma mañana? Trade Pro · {price} al mes",
     keep: "Seguir explorando",
     close: "Cerrar",
-    open: "contratos abiertos ahora",
+    open: "licitaciones públicas abiertas ahora",
     closing: "{n} cierran en los próximos 7 días",
     tradesRegions: "{trades} oficios · {regions} regiones",
     sources: "Actualizado cada mañana desde fuentes públicas de datos abiertos",
+  },
+  pmEmpty: {
+    eyebrow: "Administradores de propiedades y juntas de condominio",
+    title: "No hay RFP de administradores abiertas en este momento.",
+    body: "Sea el primero en publicar una, gratis. El redactor de RFP la prepara en unos dos minutos; solo crea una cuenta cuando la publica.",
+    cta: "Redactar una RFP gratis →",
   },
 };
 

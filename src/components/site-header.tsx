@@ -19,6 +19,7 @@ const NAV_KEY = {
   "/forum": "forum",
   "/marketplace": "marketplace",
   "/for-property-managers": "forPms",
+  "/rfp-writer": "writer",
   "/pricing": "pricing",
 } as const;
 import { cn } from "@/lib/utils";
@@ -27,9 +28,10 @@ export function SiteHeader() {
   const t = useT("common").nav;
   // French and Spanish labels run longer: keep the burger menu up to 2xl so the desktop row never overflows.
   const en = useLang() === "en";
+  // English too since the free RFP writer joined the nav (persona QA 2026-10-21): at xl it overflowed.
   const bp = en
-    ? { show: "xl:flex", hide: "xl:hidden", pad: "2xl:px-3.5" }
-    : { show: "2xl:flex", hide: "2xl:hidden", pad: "" };
+    ? { show: "2xl:flex", hide: "2xl:hidden", pad: "" }
+    : { show: "min-[1700px]:flex", hide: "min-[1700px]:hidden", pad: "" };
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 

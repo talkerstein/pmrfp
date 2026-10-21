@@ -4,6 +4,7 @@ import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 import { pickTemplate } from "./compose";
 import { RFP_TEMPLATES_ES, type RfpTemplateEs } from "./templates-es";
 import { WEIGHTS, type RfpDraft, type WizardInput } from "./schema";
+import { confirmBlank, finalizeDraft, properCase, siteAccessBlock, tidyUserText } from "./postprocess";
 
 /**
  * Spanish (neutral Latin-American, "usted") version of compose.ts: same
@@ -63,7 +64,7 @@ function lowerFirst(s: string): string {
 const norm = (s: string | undefined) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
 
 function where(input: WizardInput): string {
-  return [input.city, input.province ? regionName(input.province, "es") : undefined].filter(Boolean).join(", ");
+  return [input.city ? properCase(input.city) : undefined, input.province ? regionName(input.province, "es") : undefined].filter(Boolean).join(", ");
 }
 
 function propertyTypeEs(input: WizardInput): string | undefined {
@@ -140,8 +141,8 @@ export function localizeEs(text: string, input: Pick<WizardInput, "province">): 
 /** Replace Spanish template placeholders with answers where we have them. */
 export function fillEs(text: string, input: WizardInput): string {
   return text
-    .replace(/\[(?:size|X)\]\s*pies²/gi, () => area(input.size) ?? "[superficie por confirmar] pies²")
-    .replace(/\[size\]/gi, () => input.size ?? "[tamaño por confirmar]")
+    .replace(/\[(?:size|X)\]\s*pies²/gi, () => area(input.size) ?? `${confirmBlank("es", "superficie")} pies²`)
+    .replace(/\[size\]/gi, () => input.size ?? confirmBlank("es", "tamaño"))
     .replace(/responsabilidad civil general de \$[25] millones/g, () => `responsabilidad civil general de ${input.insurance === "5m" ? "$5 millones" : "$2 millones"}`);
 }
 
@@ -154,7 +155,7 @@ export function propertyParagraphEs(input: WizardInput): string {
   const parts: string[] = [];
   const type = propertyTypeEs(input);
   const place = [type ? lowerFirst(type) : undefined, where(input)].filter(Boolean).join(" — ");
-  parts.push(`Propiedad: ${place || "[tipo de propiedad y ubicación por confirmar]"}${input.size ? ` (${input.size})` : ""}.`);
+  parts.push(`Propiedad: ${place || confirmBlank("es", "tipo de propiedad y ubicación")}${input.size ? ` (${input.size})` : ""}.`);
   if (input.occupied === true) parts.push("El edificio estará ocupado durante el trabajo, por lo que el ruido, el acceso y la seguridad deben planificarse en función de los residentes y los inquilinos.");
   if (input.occupied === false) parts.push("El edificio no estará ocupado durante el trabajo.");
   parts.push(`El trabajo debe realizarse ${TIMING_LABEL_ES[input.timing]}.`);
@@ -168,7 +169,7 @@ export function submissionInstructionsEs(input: WizardInput): string {
       ? "Presente el precio del contrato de servicio (precio anual, más las tarifas por visita o por evento, si corresponde), con cada alternativa adicional cotizada por separado."
       : "Presente un precio global (suma alzada) para el alcance base, con cada alternativa adicional cotizada por separado.",
   );
-  lines.push(`Incluya: certificado de seguro, ${wcb(input.province).short}, las licencias pertinentes, un cronograma propuesto y tres referencias de trabajos comparables.`);
+  lines.push(`Incluya: certificado de seguro, ${wcb(input.province).short}, las licencias pertinentes${norm(input.province) === "quebec" ? " (incluida la licencia RBQ)" : ""}, un cronograma propuesto y tres referencias de trabajos comparables.`);
   if (input.siteVisit) {
     lines.push(
       input.siteVisitDate
@@ -220,33 +221,38 @@ export function composeRfpEs(input: WizardInput): RfpDraft {
   const te = spanishTemplate(t);
   const trade = lowerFirst(tradeName(input.tradeName, "es"));
   const type = propertyTypeEs(input);
-  const city = input.city ?? (input.province ? regionName(input.province, "es") : undefined);
+  const city = input.city ? properCase(input.city) : input.province ? regionName(input.province, "es") : undefined;
   const place = [type, city].filter(Boolean).join(", ");
   const noun = te
     ? te.name
     : `${input.contractType === "service-contract" ? "Contrato de servicio" : "Proyecto"} de ${trade}`;
   const title = place ? `${noun} — ${place}` : noun;
 
-  const firstSentence = input.description.split(/(?<=[.!?])\s/)[0].slice(0, 220);
+  // From the structured answers only: the manager's own words appear once, under "Lo que necesitamos".
   const placeInSentence = [type ? lowerFirst(type) : undefined, city].filter(Boolean).join(", ");
-  const summary = `${firstSentence}${/[.!?]$/.test(firstSentence) ? "" : "."} El trabajo debe realizarse ${TIMING_LABEL_ES[input.timing]}${placeInSentence ? ` (${placeInSentence})` : ""}.`;
+  const summary = `${noun}${placeInSentence ? ` (${placeInSentence})` : ""}. El trabajo debe realizarse ${TIMING_LABEL_ES[input.timing]}.`;
 
   const scope = [
     `Acerca de la propiedad:\n${propertyParagraphEs(input)}`,
-    `Lo que necesitamos:\n${input.description}`,
+    `Lo que necesitamos:\n${tidyUserText(input.description, input, "es")}`,
     templateText(te ? te.scope : genericScopeEs(), input),
-    te?.siteAccess ? `Acceso al sitio (por confirmar para esta propiedad):\n${templateText(te.siteAccess, input)}` : null,
-  ].filter(Boolean).join("\n\n");
+    // Never the template's sample site facts: visible blanks to confirm.
+    siteAccessBlock("es", input, te?.siteAccess ?? t?.siteAccess),
+  ].join("\n\n");
 
   const requirements = templateText(te ? te.requirements : genericRequirementsEs(input, trade), input);
 
-  return {
-    title,
-    summary,
-    scope,
-    requirements,
-    submissionInstructions: submissionInstructionsEs(input),
-    evaluationCriteria: WEIGHTS[input.priority].map(([k, v]) => `${CRITERIA_ES[k] ?? k} (${v}%)`),
-    questionsForBidders: te?.questions.length ? te.questions.map((q) => localizeEs(q, input)) : GENERIC_QUESTIONS_ES,
-  };
+  return finalizeDraft(
+    {
+      title,
+      summary,
+      scope,
+      requirements,
+      submissionInstructions: submissionInstructionsEs(input),
+      evaluationCriteria: WEIGHTS[input.priority].map(([k, v]) => `${CRITERIA_ES[k] ?? k} (${v}%)`),
+      questionsForBidders: te?.questions.length ? te.questions.map((q) => localizeEs(q, input)) : GENERIC_QUESTIONS_ES,
+    },
+    input,
+    { lang: "es", structuredSummary: summary },
+  );
 }

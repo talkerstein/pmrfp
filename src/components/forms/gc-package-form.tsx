@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RfpPhotoUploader } from "@/components/forms/rfp-photo-uploader";
 import { useLang, useT } from "@/i18n/provider";
+import { defaultProvinceFor } from "@/lib/geo-defaults";
 import { regionName, tradeName } from "@/i18n/terms";
 import type { ClientMessages } from "@/i18n/dictionaries";
 
@@ -124,7 +125,7 @@ export function GcPackageForm({
             </select>
           </Field>
           <Field label={t.city}><Input name="city" defaultValue={defaults?.city ?? ""} /></Field>
-          <Field label={t.province}><Input name="province" defaultValue={defaults?.province ?? "Ontario"} /></Field>
+          <Field label={t.province}><Input name="province" defaultValue={defaults?.province ?? defaultProvinceFor(lang)} /></Field>
         </div>
       </Section>
 

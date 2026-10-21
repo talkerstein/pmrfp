@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useLang, useT } from "@/i18n/provider";
+import { defaultProvinceFor } from "@/lib/geo-defaults";
 import { regionName, tradeName } from "@/i18n/terms";
 import { localizePath } from "@/i18n/config";
 import { VISITOR_UPGRADE_PATH } from "@/lib/auth/visitor-upgrade";
@@ -125,7 +126,7 @@ export function OnboardingForm({
         <Field label={t.phone}><Input name="phone" defaultValue={echoed("phone")} /></Field>
         <Field label={t.email}><Input name="email" type="email" defaultValue={echoed("email")} /></Field>
         <Field label={t.city}><Input name="city" defaultValue={echoed("city")} /></Field>
-        <Field label={t.province}><Input name="province" defaultValue={echoed("province") ?? "Ontario"} /></Field>
+        <Field label={t.province}><Input name="province" defaultValue={echoed("province") ?? defaultProvinceFor(lang)} /></Field>
       </div>
 
       <Field label={t.shortDescription}>

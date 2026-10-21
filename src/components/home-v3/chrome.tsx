@@ -9,8 +9,10 @@
  */
 import "./home-v3.css";
 import Image from "next/image";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { isPmAudiencePath, rememberAudience } from "@/lib/audience/pm";
+import { VIEWS_COOKIE, readCookie } from "@/lib/growth/interruptions";
 import { setMarket, useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
 import { foundingScarcity } from "@/lib/founding/config";
 import { toUsd } from "@/lib/markets";
@@ -140,6 +142,10 @@ export function V3Header({
   const path = splitLocale(usePathname() ?? "/").path;
   const cur = (href: string) => (path === href || path.startsWith(`${href}/`) ? ("page" as const) : undefined);
   const spots = foundingLabel(t, foundingLeft);
+  // Property-manager / condo-board pages: "Join free" is the buyer sign-up, not the trade one.
+  const pmSide = isPmAudiencePath(path);
+  const join = pmSide && joinHref === V3H.joinTrade ? V3H.joinPm : joinHref;
+  usePageView(pmSide);
   const goMarket = (m: "CA" | "US") => {
     if (m === (market ?? "CA")) return;
     setMarket(m);
@@ -163,6 +169,8 @@ export function V3Header({
           <nav id="v3-nav" aria-label={t.nav.main} className={`v3-nav${menu ? " open" : ""}`}>
             <div className="v3-nav-links">
               <a href={L(V3H.rfps)} aria-current={cur(V3H.rfps)}>{t.nav.rfps}</a>
+              {/* Property-manager side: the free RFP writer, no sign-up until "Post it free". */}
+              <a href={L(V3H.writer)} aria-current={cur(V3H.writer)}>{t.nav.writer}</a>
               <a href={L(V3H.directory)} aria-current={cur(V3H.directory)}>{t.nav.directory}</a>
               <a href={L(V3H.winners)} aria-current={cur(V3H.winners)}>{t.nav.winners}</a>
               <a href={L(V3H.jobs)} aria-current={cur(V3H.jobs)}>{t.nav.jobs}</a>
@@ -177,7 +185,7 @@ export function V3Header({
             <V3LangSwitch />
             <V3AccountLink L={L} signIn={{ href: V3H.signIn, label: t.nav.signIn }} listBusiness={t.nav.listBusiness} />
           </nav>
-          <a href={L(joinHref)} onClick={onJoin} className="v3-join">
+          <a href={L(join)} onClick={pmSide ? undefined : onJoin} className="v3-join">
             <span className="d">{t.nav.join}</span><span className="m">{t.nav.joinShort}</span>
           </a>
           <button type="button" className="v3-burger" aria-label={menu ? t.nav.closeMenu : t.nav.openMenu} aria-expanded={menu} aria-controls="v3-nav" onClick={() => setMenu((m) => !m)}>
@@ -193,6 +201,31 @@ export function V3Header({
 /** Alias kept for pages written against the older name. */
 export const V3Top = V3Header;
 
+/**
+ * Counts page views this browser session (lib/growth/interruptions: nothing
+ * interrupts a first page view before the visitor interacts) and remembers a
+ * visitor who reached a property-manager page (no trade popups for them).
+ */
+let lastCountedView = "";
+function usePageView(pmSide: boolean) {
+  // Without the locale: a prerendered English page can report "/en" then "/".
+  const path = splitLocale(usePathname() ?? "/").path;
+  useEffect(() => {
+    // Once per page view, even when React runs the effect twice (Strict Mode).
+    const key = `${performance.timeOrigin}|${path}`;
+    if (key !== lastCountedView) {
+      lastCountedView = key;
+      try {
+        const n = (Number(readCookie(document.cookie, VIEWS_COOKIE)) || 0) + 1;
+        document.cookie = `${VIEWS_COOKIE}=${n}; Path=/; SameSite=Lax`;
+      } catch {
+        /* cookies blocked */
+      }
+    }
+    if (pmSide) rememberAudience("pm");
+  }, [pmSide, path]);
+}
+
 /* ------------------------------------------------------------------ footer */
 
 export function V3Footer({ t, lang }: { t: V3ChromeMessages; lang: Locale }) {
@@ -200,7 +233,7 @@ export function V3Footer({ t, lang }: { t: V3ChromeMessages; lang: Locale }) {
   const f = t.footer;
   const cols = [
     [f.find, [[f.rfps, V3H.rfps], [f.directory, V3H.directory], [f.winners, V3H.winners], [f.gcHub, "/gc-hub"], [f.jobs, V3H.jobs], [f.marketplace, V3H.marketplace], [f.forum, V3H.forum]]],
-    [f.who, [[f.trades, "/for-trades"], [f.pms, "/for-property-managers"], [f.landlords, V3H.landlord], [f.condos, "/for/condo-boards"], [f.realEstate, V3H.forRealEstate], [f.suppliers, "/for/suppliers"], [f.builders, "/for/builders"], [f.agencies, "/for-agencies"]]],
+    [f.who, [[f.trades, "/for-trades"], [f.pms, "/for-property-managers"], [f.writer, V3H.writer], [f.landlords, V3H.landlord], [f.condos, "/for/condo-boards"], [f.realEstate, V3H.forRealEstate], [f.suppliers, "/for/suppliers"], [f.builders, "/for/builders"], [f.agencies, "/for-agencies"]]],
     [f.resources, [[f.monthlyReports, "/reports/contract-winners"], [f.contractsReport, "/reports/public-building-contracts"], [f.directories, "/resources/contractor-directories"]]],
     [f.company, [[f.about2, "/about"], [f.advertise, V3H.advertise], [f.spotlight, "/spotlight"], [f.contact, "/contact"], [f.terms, "/terms"], [f.privacy, "/privacy"], [f.corrections, "/corrections"], [f.forumRules, "/forum/rules"]]],
   ] as const;
@@ -255,26 +288,31 @@ export function V3Sticky({
 }: {
   t: Pick<V3Messages, "sticky" | "nav">;
   lang: Locale;
-  counts: Record<"CA" | "US", { open: number; closing7: number }> | null;
+  counts: Record<"CA" | "US", { open: number; openPublic?: number; closing7: number }> | null;
   /** common.market.where: "in Canada" / "in the U.S.". */
   where: Record<"CA" | "US", string>;
 }) {
   const market = useVisitorMarket();
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
+  const pmSide = isPmAudiencePath(splitLocale(usePathname() ?? "/").path);
   if (!counts || market == null) return null;
-  const { open, closing7 } = counts[market];
-  if (open <= 0) return null;
+  const { open, openPublic, closing7 } = counts[market];
+  // The label says "open public tenders": property-manager RFPs aren't in this number.
+  const pub = openPublic ?? open;
+  if (pub <= 0) return null;
   return (
     <div className="v3-sticky">
       <div className="v3-sticky-in">
         <span className="v3-dot d" style={{ width: 10, height: 10 }} />
         <div className="txt">
-          <b><span className="d">{fmt(t.sticky.open, { n: num(open), where: where[market] })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(open), where: where[market] })}</span></b>{" "}
+          <b><span className="d">{fmt(t.sticky.open, { n: num(pub), where: where[market] })}</span><span className="m">{fmt(t.sticky.openShort, { n: num(pub), where: where[market] })}</span></b>{" "}
           <span className="c"><span className="d">{fmt(t.sticky.closing, { n: num(closing7) })}</span><span className="m">{fmt(t.sticky.closingShort, { n: num(closing7) })}</span></span>
         </div>
-        <a href={L("/sign-up?role=property_manager")} className="v3-pill ghost">{t.sticky.post}</a>
-        <a href={L(V3H.joinTrade)} className="v3-pill mint">{t.nav.join} →</a>
+        {/* Property managers write the RFP first; sign-up only at "Post it free". */}
+        <a href={L(V3H.writer)} onClick={() => rememberAudience("pm")} className="v3-pill ghost">{t.sticky.post}</a>
+        {/* On property-manager / condo-board pages, "Join free" is the buyer sign-up. */}
+        <a href={L(pmSide ? V3H.joinPm : V3H.joinTrade)} className="v3-pill mint">{t.nav.join} →</a>
       </div>
     </div>
   );

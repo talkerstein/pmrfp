@@ -84,6 +84,8 @@ export const MAIN_NAV = [
   { href: "/forum", label: "Forum" },
   { href: "/marketplace", label: "Marketplace" },
   { href: "/for-property-managers", label: "For Property Managers" },
+  // Property-manager side: the free writer, no sign-up until "Post it free".
+  { href: "/rfp-writer", label: "Free RFP writer" },
   { href: "/pricing", label: "Pricing" },
 ] as const;
 

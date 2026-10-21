@@ -176,7 +176,7 @@ export const VERTICALS: Vertical[] = [
       { q: "I only have a few properties.", a: "PMRFP is free on the demand side — zero cost to post an RFP or browse vendors." },
     ],
     cta: { label: "Browse the directory", href: "/directory" },
-    secondaryCta: { label: "Post an RFP", href: "/sign-up" },
+    secondaryCta: { label: "Post an RFP", href: "/rfp-writer" },
     metaTitle: "PMRFP for Property Investors — Find Commercial Vendors in Canada",
     metaDescription:
       "Real-estate investors and owners: browse a credentialed directory of commercial trade contractors and run competitive RFPs for your portfolio. Free to post and browse.",
@@ -242,7 +242,7 @@ export const VERTICALS: Vertical[] = [
       { q: "Is competitive bidding required by law?", a: "No. Running documented competitive bids is a governance best practice boards are increasingly expected to follow — not a legal requirement. PMRFP just makes it simple." },
       { q: "We're self-managed.", a: "PMRFP is built for that — a volunteer board can post a project, collect bids from listed trades, and keep the record, without hiring anyone." },
     ],
-    cta: { label: "Post a project — free", href: "/sign-up?role=property_manager" },
+    cta: { label: "Post a project — free", href: "/rfp-writer" },
     secondaryCta: { label: "Browse trades", href: "/directory" },
     metaTitle: "PMRFP for Condo Boards — Transparent Competitive Bids You Can Show Owners",
     metaDescription:

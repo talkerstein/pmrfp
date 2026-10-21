@@ -47,6 +47,9 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 /** SEAO (Quebec) notices are published in French. */
 const isFrench = (r: { slug: string }) => /-qca?-/.test(r.slug);
 
+/** Québec leads the area options (it's the preselected one). */
+const quebecFirst = <T extends { region?: string }>(opts: T[]): T[] => [...opts.filter((o) => o.region === "quebec"), ...opts.filter((o) => o.region !== "quebec")];
+
 /** Round-robin by key, keeping each group's order. */
 function spread<T>(items: T[], key: (t: T) => string): T[] {
   const groups = new Map<string, T[]>();
@@ -109,6 +112,8 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
   data.big.name = trade(data.big.name);
   data.tiles = data.tiles.map((x) => ({ ...x, name: trade(x.name) }));
   data.tradeOptions = data.tradeOptions.map((o) => ({ ...o, label: trade(o.label) }));
+  // French page: Québec is the preselected area (popup and trade search).
+  if (lang === "fr") data.areaOptions = quebecFirst(data.areaOptions);
 
   const [rfpsR, catsR, regionsR, soldR, combosR] = await Promise.allSettled([
     listAllRfpsCached(),
@@ -151,7 +156,7 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
   // design fallback: a block with no U.S. data is left empty (and hidden).
   const dataUs: V3Data = structuredClone(data);
   Object.assign(dataUs, {
-    open: 0, closing7: 0, closingCa: [], closingUs: [], ticker: [], toast: [], alerts: [], awards: [],
+    open: 0, openPm: 0, openPublic: 0, closing7: 0, closingCa: [], closingUs: [], ticker: [], toast: [], alerts: [], awards: [],
     winners: { ...dataUs.winners, repeat: 0, contracts: 0, value: "", top: [], most: { name: "", n: 0 }, report: undefined },
     browse: { combos: [], newest: [] },
   });
@@ -187,6 +192,8 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
 
     const stats = boardStats(rfps);
     data.open = stats.open;
+    data.openPm = stats.openPm;
+    data.openPublic = stats.openPublic;
     data.closing7 = stats.closingThisWeek;
     live.push("board");
 
@@ -294,17 +301,21 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
       live.push("awards");
     } else fallback.push("awards");
 
-    // Toast: next closer, another open tender, latest award.
+    // Toast: next closer, another open tender, latest award, in the page's
+    // language only (SEAO's French notices stay off the English and Spanish
+    // pages). The page shows at most one, once per visitor (lib/growth/interruptions).
     const toast: V3Data["toast"] = [];
-    const first = closingSoon[0];
+    const inPageLanguage = (r: { slug: string }) => lang === "fr" || !isFrench(r);
+    const first = closingSoon.find(inPageLanguage);
     if (first) {
       const d = daysUntil(first.deadline) ?? 0;
       toast.push({ tag: d <= 1 ? t.toastTags.closesTomorrow : fmt(t.toastTags.closesOn, { date: short(first.deadline) }), color: "#8A3F06", title: `${first.title} · ${place(first)}` });
     }
     const second = tickerPool.find((r) => r.slug !== first?.slug);
     if (second) toast.push({ tag: fmt(t.toastTags.openNow, { date: short(second.deadline) }), color: "#15803D", title: `${second.title} · ${place(second)}` });
-    if (data.awards[0] && awards.length) {
-      const w = data.awards[0];
+    const awardIdx = awards.findIndex(inPageLanguage);
+    if (awardIdx >= 0 && data.awards[awardIdx]) {
+      const w = data.awards[awardIdx];
       toast.push({ tag: fmt(t.toastTags.awarded, { date: w.date, value: w.value }), color: "#282B59", title: fmt(t.toastTags.wonBy, { title: w.title, winner: w.winner }) });
     }
     if (toast.length) data.toast = toast;

@@ -70,7 +70,12 @@ export default async function AboutPage({ params }: { params: Promise<object> })
           <div><div className="k">{v.about.founder}</div><div className="v">R. Talkar</div></div>
           <div><div className="k">{v.about.builtIn}</div><div className="v">{v.about.toronto}</div></div>
           <div><div className="k">{v.about.teamBehind}</div><div className="v">{SITE.sisterBrand.name}</div></div>
+          {/* Facts only (repo/briefs): no new people, phone or bios. */}
+          <div><div className="k">{v.about.launched}</div><div className="v">{v.about.launchedValue}</div></div>
+          <div><div className="k">{v.about.operator}</div><div className="v">{v.about.operatorValue}</div></div>
+          <div><div className="k">{v.about.contact}</div><div className="v"><a href={`mailto:${SITE.email}`}>{SITE.email}</a></div></div>
         </div>
+        <p>{v.about.money}</p>
         <p>
           {rich(t.contactBody, {
             email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>,

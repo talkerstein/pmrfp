@@ -16,6 +16,7 @@ import { displayTitle } from "@/lib/tenders/title";
 import { getTaxonomyRows } from "./taxonomy";
 import { countryOf } from "@/lib/visitor-geo";
 import { getBoardIndex, getBoardRows, type BoardRow } from "./board-snapshot";
+import { buildRegionIndex, matchesRegion, type RegionIndex } from "@/lib/regions/rollup";
 
 function demoToList(r: DemoRfp): RfpListItem {
   const today = new Date().toISOString().slice(0, 10);
@@ -73,6 +74,8 @@ const boardLookups = cache(async () => {
     regionBySlug: new Map(regions.map((r) => [r.slug, r.name])),
     propBySlug: new Map(props.map((r) => [r.slug, r.name])),
     tradeBySlug: new Map(trades.map((r) => [r.slug, r.name])),
+    // Region filter rolls cities up into GTA / province / country (lib/regions/rollup).
+    regionIndex: buildRegionIndex(regions),
   };
 });
 type Lookups = Awaited<ReturnType<typeof boardLookups>>;
@@ -137,17 +140,28 @@ export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]>
   return filterAndSort(all, filters, m);
 }
 
-/** Pure filter + sort over list items (exported for tests). */
+/**
+ * Pure filter + sort over list items (exported for tests). With a region
+ * index, a region filter includes everything inside the region: Ontario
+ * includes Toronto, the GTA includes Vaughan (lib/regions/rollup). Without
+ * one it falls back to the exact region name.
+ */
 export function filterAndSort(
   all: readonly RfpListItem[],
   filters: RfpFilters,
-  m: Pick<Lookups, "regionBySlug" | "propBySlug" | "tradeBySlug">,
+  m: Pick<Lookups, "regionBySlug" | "propBySlug" | "tradeBySlug"> & { regionIndex?: RegionIndex },
 ): RfpListItem[] {
   let mapped = [...all];
   if (filters.country) mapped = mapped.filter((r) => countryOf(r) === filters.country);
   if (filters.region) {
-    const name = m.regionBySlug.get(filters.region);
-    mapped = mapped.filter((r) => r.regionName === name);
+    const slug = filters.region;
+    if (m.regionIndex?.bySlug.has(slug)) {
+      const idx = m.regionIndex;
+      mapped = mapped.filter((r) => matchesRegion(r, slug, idx));
+    } else {
+      const name = m.regionBySlug.get(slug);
+      mapped = mapped.filter((r) => r.regionName === name);
+    }
   }
   if (filters.propertyType) {
     const name = m.propBySlug.get(filters.propertyType);

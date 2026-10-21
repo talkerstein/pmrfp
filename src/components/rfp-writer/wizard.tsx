@@ -13,6 +13,9 @@ import { useLang, useT } from "@/i18n/provider";
 import { localizePath } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
+import { orderTrades } from "@/lib/trades/order";
+import { rememberAudience } from "@/lib/audience/pm";
+import { countBlanks, defaultDeadlineDays } from "@/lib/rfp-writer/postprocess";
 
 type Option = { slug: string; name: string };
 type TemplateOption = { slug: string; name: string; tradeSlug: string };
@@ -115,7 +118,9 @@ export function RfpWizard({
   const [occupied, setOccupied] = useState<"yes" | "no" | "">("");
   const [contractType, setContractType] = useState<"project" | "service-contract">("project");
   const [timing, setTiming] = useState("1-3-months");
-  const [bidDeadline, setBidDeadline] = useState(plusDays(21));
+  const [bidDeadline, setBidDeadline] = useState(plusDays(defaultDeadlineDays("1-3-months")));
+  // Until the manager picks a date, the deadline follows the urgency.
+  const [deadlineTouched, setDeadlineTouched] = useState(false);
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [insurance, setInsurance] = useState<"2m" | "5m">("5m");
@@ -131,6 +136,9 @@ export function RfpWizard({
   const [emailing, setEmailing] = useState(false);
   const [emailed, setEmailed] = useState(false);
 
+  // Someone writing an RFP is on the property-manager side: no trade popups for them.
+  useEffect(() => rememberAudience("pm"), []);
+
   // Back from sign-up (?tailor=1): re-run the saved answers, now AI-tailored.
   useEffect(() => {
     if (!new URLSearchParams(window.location.search).has("tailor")) return;
@@ -145,6 +153,7 @@ export function RfpWizard({
       setCity(a.city);
       setProvince(a.province);
       setBidDeadline(a.bidDeadline);
+      setDeadlineTouched(true);
       setBudgetMin(a.budgetMin);
       setBudgetMax(a.budgetMax);
       void generate(a.payload);
@@ -174,16 +183,13 @@ export function RfpWizard({
   const trade = categories.find((c) => c.slug === tradeSlug);
   const tradeTemplates = templates.filter((t) => t.tradeSlug === tradeSlug);
   const filteredTrades = useMemo(() => {
-    if (lang === "en") {
-      const q = tradeQuery.trim().toLowerCase();
-      return q ? categories.filter((c) => c.name.toLowerCase().includes(q)) : categories;
-    }
-    // Other languages: search the translated and the English name, list in translated A-Z order.
+    // Search the page-language and the English name; list the trades property
+    // managers hire most first, then A–Z in the page language (lib/trades/order).
     const q = fold(tradeQuery.trim());
     const shown = q
       ? categories.filter((c) => fold(tradeName(c.name, lang)).includes(q) || fold(c.name).includes(q))
       : categories;
-    return [...shown].sort((a, b) => tradeName(a.name, lang).localeCompare(tradeName(b.name, lang), lang));
+    return orderTrades(shown, (c) => tradeName(c.name, lang), lang);
   }, [categories, tradeQuery, lang]);
 
   const canNext = [
@@ -303,26 +309,36 @@ export function RfpWizard({
   // ─────────────────────────── Result ───────────────────────────
   if (rfp) {
     const update = (patch: Partial<RfpDraft>) => setRfp({ ...rfp, ...patch });
+    const blanks = countBlanks(rfp);
+    // Phones: every action is a 44px tap target.
+    const tap = "h-11 sm:h-8";
     return (
       <div>
         <style>{`@media print { body * { visibility: hidden; } .rfp-print, .rfp-print * { visibility: visible; } .rfp-print { position: absolute; inset: 0 auto auto 0; width: 100%; } .rfp-noprint { display: none !important; } }`}</style>
 
         <div className="rfp-noprint flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-300 bg-teal-50/70 p-4">
-          <p className="flex items-center gap-2 text-sm font-medium text-teal-900">
-            <Check className="size-4" /> {r.ready}{" "}
-            <span className="font-normal text-teal-900/80">
-              {source === "ai" ? r.sourceAi : r.sourceTemplate} {r.editAnything}
-            </span>
-          </p>
+          <div className="min-w-0 flex-1 basis-64">
+            <p className="flex items-start gap-2 text-sm font-medium text-teal-900">
+              <Check className="mt-0.5 size-4 shrink-0" />
+              <span>
+                {r.ready}{" "}
+                <span className="font-normal text-teal-900/80">
+                  {source === "ai" ? r.sourceAi : r.sourceTemplate} {r.editAnything}
+                </span>
+              </span>
+            </p>
+            {blanks > 0 && <p className="mt-1.5 pl-6 text-xs text-teal-900/80">{fmt(r.blanks, { n: String(blanks) })}</p>}
+          </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => copy(fullText(rfp, t.plainText), t.toast.fullCopied)}>
+            <Button variant="outline" size="sm" className={tap} onClick={() => copy(fullText(rfp, t.plainText), t.toast.fullCopied)}>
               <Copy className="size-3.5" /> {r.copyAll}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Button variant="outline" size="sm" className={tap} onClick={() => window.print()}>
               <Printer className="size-3.5" /> {r.print}
             </Button>
             <Button
               size="sm"
+              className={tap}
               onClick={() => {
                 saveDraft(rfp);
                 window.location.href = postHref;
@@ -361,7 +377,8 @@ export function RfpWizard({
 
         <div className="rfp-print mt-6 space-y-6">
           <Field label={r.title}>
-            <Input value={rfp.title} onChange={(e) => update({ title: e.target.value })} className="text-base font-semibold" />
+            {/* Wraps instead of cutting a long title off on a phone. */}
+            <Textarea rows={1} value={rfp.title} onChange={(e) => update({ title: e.target.value.replace(/\n/g, " ") })} className="min-h-0 resize-none text-base font-semibold md:text-base" />
           </Field>
           <Field label={r.summary}>
             <Textarea value={rfp.summary} onChange={(e) => update({ summary: e.target.value })} rows={3} />
@@ -559,10 +576,26 @@ export function RfpWizard({
               <Toggle options={[["project", w.project], ["service-contract", w.serviceContract]]} value={contractType} onChange={(v) => setContractType(v as "project" | "service-contract")} />
             </Field>
             <Field label={w.when} className="sm:col-span-2">
-              <Toggle options={TIMING.map((v) => [v, w.timing[v]])} value={timing} onChange={setTiming} />
+              <Toggle
+                options={TIMING.map((v) => [v, w.timing[v]])}
+                value={timing}
+                onChange={(v) => {
+                  setTiming(v);
+                  // Urgent work gets a short bid window unless a date was already picked.
+                  if (!deadlineTouched) setBidDeadline(plusDays(defaultDeadlineDays(v)));
+                }}
+              />
             </Field>
-            <Field label={w.deadline} hint={w.deadlineHint}>
-              <Input type="date" value={bidDeadline} min={plusDays(3)} onChange={(e) => setBidDeadline(e.target.value)} />
+            <Field label={w.deadline} hint={timing === "asap" ? w.deadlineHintUrgent : w.deadlineHint}>
+              <Input
+                type="date"
+                value={bidDeadline}
+                min={plusDays(3)}
+                onChange={(e) => {
+                  setDeadlineTouched(true);
+                  setBidDeadline(e.target.value);
+                }}
+              />
             </Field>
             <Field label={fmt(w.budget, { currency: isUsState(province) ? "USD" : "CAD" })} hint={w.budgetHint}>
               <div className="flex items-center gap-2">
@@ -635,7 +668,8 @@ function Section({ title, copyLabel, onCopy, children }: { title: string; copyLa
       <div className="mb-1.5 flex items-center justify-between">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
         {onCopy && (
-          <button type="button" onClick={onCopy} className="rfp-noprint inline-flex items-center gap-1 text-xs text-teal-700 hover:underline">
+          // 44px tap target on phones (the label stays small).
+          <button type="button" onClick={onCopy} className="rfp-noprint -my-2 -mr-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-2 text-xs text-teal-700 hover:underline sm:min-h-8 sm:min-w-0">
             <Copy className="size-3" /> {copyLabel}
           </button>
         )}

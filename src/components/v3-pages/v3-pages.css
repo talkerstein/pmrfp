@@ -184,6 +184,17 @@
 .vp-empty .b { margin-top: 10px; color: var(--sub); font-size: 17px; max-width: 520px; }
 .vp-empty .ctas { margin-top: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
+/* Under the open count: public tenders vs property-manager RFPs (honest split). */
+.vp-hero-stats .split { margin-top: 4px; font-size: 14px; color: #C9CCE6; }
+/* No property-manager RFP open: invite the first one (links to the free writer). */
+.vp-pmcard { margin-bottom: 16px; border: 2px solid var(--mint); border-radius: 24px; padding: 22px 26px; background: #F5FDF9; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.vp-pmcard .h { font-family: var(--fp); font-weight: 700; font-size: 22px; line-height: 1.2; letter-spacing: -.02em; color: var(--navy); margin: 6px 0 0 !important; }
+.vp-pmcard .b { margin-top: 6px; color: var(--sub); font-size: 15px; max-width: 560px; }
+.pmrfp-v3 .vp-pmcard .v3-pill { flex-shrink: 0; min-height: 44px; }
+@media (max-width: 1023px) {
+  .vp-pmcard { flex-direction: column; align-items: flex-start; padding: 18px; gap: 14px; }
+}
+
 .vp-awards { background: var(--ink); color: #FFFFFF; }
 .vp-awards-in { padding-top: 80px; padding-bottom: 80px; }
 .vp-awards-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; }

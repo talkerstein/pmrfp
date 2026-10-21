@@ -96,29 +96,32 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 @keyframes v3-langbar-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .v3-join { text-decoration: none; color: var(--ink) !important; background: var(--mint); font-weight: 700; border-radius: 999px; padding: 11px 22px; }
 .v3-burger { display: none; width: 44px; height: 44px; border: 0; background: transparent; padding: 0; align-items: center; justify-content: center; margin-right: -8px; cursor: pointer; }
-/* Narrow desktops (and French/Spanish, whose labels run longer, at every
-   desktop width): a tighter header so the row never overflows. */
-@media (min-width: 1024px) and (max-width: 1279px) {
+/* Desktop: a tight header so the row never overflows. It was French and
+   Spanish only (longer labels); with the RFP writer in the nav (persona QA
+   2026-10-21) English needs it too. */
+@media (min-width: 1024px) {
   .pmrfp-v3 .v3-hdr { padding: 0 24px; gap: 16px; }
   .pmrfp-v3 .v3-logo span { font-size: 20px; }
   .pmrfp-v3 .v3-nav { gap: 12px; font-size: 15px; }
   .pmrfp-v3 .v3-nav-links { gap: 16px; }
   .pmrfp-v3 .v3-lang { margin-left: -4px; }
   .pmrfp-v3 .v3-nav .v3-lang a, .pmrfp-v3 .v3-market button { padding-left: 8px; padding-right: 8px; }
-  .pmrfp-v3 .v3-join { padding: 11px 16px; }
+  .pmrfp-v3 .v3-join { padding: 11px 16px; white-space: nowrap; }
   .pmrfp-v3 .v3-join .d { display: none; }
   .pmrfp-v3 .v3-join .m { display: inline; }
 }
+/* Narrow desktops: a notch smaller; long labels may wrap to two lines, never overflow. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .pmrfp-v3 .v3-hdr { gap: 12px; }
+  .pmrfp-v3 .v3-nav { gap: 10px; font-size: 14px; }
+  .pmrfp-v3 .v3-nav-links { gap: 12px; }
+}
+/* From 1280px every language fits on one line (the header stops growing at 1248px). */
 @media (min-width: 1280px) {
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-hdr { padding: 0 24px; gap: 16px; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-logo span { font-size: 20px; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav { gap: 12px; font-size: 15px; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav-links { gap: 16px; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-lang { margin-left: -4px; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav .v3-lang a, .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-market button { padding-left: 8px; padding-right: 8px; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-join { padding: 11px 16px; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-join .d { display: none; }
-  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-join .m { display: inline; }
+  .pmrfp-v3 .v3-nav-links a, .pmrfp-v3 .v3-nav > a { white-space: nowrap; }
+  /* French and Spanish run longer: a notch smaller. */
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav { font-size: 14px; }
+  .pmrfp-v3:is(:lang(fr), :lang(es)) .v3-nav-links { gap: 12px; }
 }
 
 /* ------------------------------------------------------------ hero */
@@ -212,6 +215,14 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-close .left { font-size: 14px; font-weight: 700; }
 .v3-close .tag { font-family: var(--fm); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); margin-top: 18px; }
 .v3-close .ti { font-weight: 700; font-size: 17px; line-height: 1.35; margin-top: 4px; }
+/* No property-manager RFP open: invite the first one (links to the free writer). */
+.v3-pmcard { margin-top: 40px; border: 2px solid var(--mint); border-radius: 24px; padding: 24px 28px; background: #F5FDF9; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.v3-pmcard .hd { margin: 6px 0 0; font-family: var(--fp); font-weight: 700; font-size: 24px; line-height: 1.2; letter-spacing: -.02em; color: var(--navy); }
+.v3-pmcard p { margin: 6px 0 0; color: var(--sub); max-width: 600px; }
+.v3-pmcard .v3-pill { flex-shrink: 0; min-height: 44px; }
+@media (max-width: 1023px) {
+  .v3-pmcard { flex-direction: column; align-items: flex-start; padding: 18px; gap: 14px; }
+}
 .v3-src { margin-top: 56px; display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 24px; }
 .v3-src .note { color: var(--sub); font-size: 14px; }
 .v3-src-grid { grid-column: 1 / -1; margin-top: 20px; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border: 2px solid var(--navy); border-radius: 20px; overflow: hidden; }

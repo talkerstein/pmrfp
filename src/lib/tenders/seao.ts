@@ -67,9 +67,10 @@ export const RULES_FR: [slug: string, pattern: RegExp][] = [
   ["snow-removal", /deneigement|enlevement de la neige|deglacage/],
   ["cleaning-janitorial", /entretien menager|conciergerie|nettoyage|menage des|lavage de vitres/],
   ["landscaping", /amenagement paysager|paysag|tonte|gazon|horticult|elagage|abattage d.arbres|entretien des terrains/],
-  ["hvac", /\bcvac\b|chauffage|ventilation|climatisation|refrigeration|chaudiere(?!-appalaches)|thermopompe|chauffe-eau|systeme mecanique/],
+  ["hvac", /\bcvac\b|chauffage|ventilation|climatisation|refrigeration|chaudiere(?!-appalaches)|thermopompe|chauffe-eau|systeme mecanique|unites? (?:de|sur (?:le|les)) toits?/],
   ["locksmith", /serrurerie|serrurier/],
-  ["roofing", /toiture|\btoit\b|couverture/],
+  // "Unités de toit" (rooftop units) is HVAC equipment, not roofing work.
+  ["roofing", /toiture|(?<!unites? (?:de|sur (?:le|les)) )\btoits?\b|couverture/],
   ["electrical", /electri|generatrice|panneau de distribution/],
   ["lighting", /eclairage|luminaire/],
   ["plumbing", /plomberie|sanitaire|drain/],
