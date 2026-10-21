@@ -17,8 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return { title: t.title, description: t.description, alternates: alternatesFor(l, "/privacy") };
 }
 
-const LAST_UPDATED = "October 16, 2026";
-const LAST_UPDATED_ISO = "2026-10-16";
+const LAST_UPDATED = "October 21, 2026";
+const LAST_UPDATED_ISO = "2026-10-21";
 /** The Privacy Officer's mailbox (privacy requests, corrections, removals). */
 const PRIVACY_EMAIL = "privacy@pmrfp.com";
 

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { countBlanks } from "@/lib/rfp-writer/postprocess";
+import { track } from "@/lib/tracking/client";
 import { MUNI_PROVINCES, PROVINCE_NAME, THRESHOLDS, NWPTA, localPreferenceAllowed, money, type MuniProvince } from "@/lib/rfp-writer/municipal/clauses";
 import { FACILITY_SERVICES, MUNI_TEMPLATES, type FacilityService, type MuniTemplate } from "@/lib/rfp-writer/municipal/schema";
 import type { MunicipalDraft } from "@/lib/rfp-writer/municipal/compose";
@@ -400,7 +401,14 @@ export function MunicipalWizard({ buyerName: initialBuyer, province: initialProv
             <ArrowLeft className="size-4" /> {t.back}
           </Button>
           {step < t.steps.length - 1 ? (
-            <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>
+            <Button
+              onClick={() => {
+                // First-party funnel: past the first question = started writing.
+                if (step === 0) track("writer_started", { kind: "municipal" });
+                setStep((s) => s + 1);
+              }}
+              disabled={!canNext}
+            >
               {t.next} <ArrowRight className="size-4" />
             </Button>
           ) : (

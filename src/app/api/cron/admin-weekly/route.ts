@@ -5,6 +5,8 @@ import { buildWeeklyReport } from "@/lib/admin/weekly-report";
 import { sendAdminWeeklyReport } from "@/lib/email/send";
 import { fetchStripeRevenue } from "@/lib/admin/stripe-revenue";
 import { getStripe } from "@/lib/stripe/server";
+import { fetchSiteReport, rangeEnding } from "@/lib/tracking/report-server";
+import { torontoDay } from "@/lib/attribution/cookie";
 
 export const maxDuration = 60;
 
@@ -29,7 +31,10 @@ export async function GET(request: Request) {
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
   const twoWeeksAgo = new Date(now.getTime() - 14 * 86_400_000).toISOString();
 
-  const [stripe, users, subs, pmRfps, tenders, usTenders, interests, interestsPrev, contacts] = await Promise.all([
+  const week = rangeEnding(torontoDay(now), 7);
+  const [traffic, stripe, users, subs, pmRfps, tenders, usTenders, interests, interestsPrev, contacts] = await Promise.all([
+    // First-party visitors, sign-ups by source and funnel (one aggregated RPC).
+    fetchSiteReport(week.from, week.to),
     process.env.STRIPE_SECRET_KEY ? fetchStripeRevenue(getStripe()) : Promise.resolve(null),
     supabase.from("users_profile").select("email,primary_role,created_at").gte("created_at", twoWeeksAgo).limit(5000),
     supabase
@@ -75,6 +80,7 @@ export async function GET(request: Request) {
     interestsPrev: interestsPrev.count ?? 0,
     contactRequests: contacts.count ?? 0,
     stripe,
+    traffic,
   });
 
   if (new URL(request.url).searchParams.get("dry") === "1") {

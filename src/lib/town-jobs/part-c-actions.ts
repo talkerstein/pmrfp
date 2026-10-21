@@ -11,6 +11,7 @@ import { canManageTownJob, isAdminActor } from "./rules";
 import { loadTownJob, type TownJob } from "./server";
 import { breakGlass, cancelOpening, confirmOpening, requestOpening, resendWitnessLink, witnessConfirm, type BreakGlassQuote } from "./sealed-server";
 import { publishAward, saveRecommendation } from "./results-server";
+import { EVENT, trackEvent } from "@/lib/analytics";
 
 /**
  * Part C's buttons: the sealed box's opening (ask, confirm, cancel, resend
@@ -72,6 +73,8 @@ export async function confirmOpeningAction(_prev: PartCState, fd: FormData): Pro
   const res = await confirmOpening(createServiceClient(), { job: ctx.job, actorId: ctx.userId });
   if (!res.ok) return { error: res.error };
   refresh(ctx.job, true);
+  // First-party funnel (lib/analytics → site_events): counts only, never prices.
+  await trackEvent(EVENT.SEALED_OPENED, { via: "colleague", quotes: res.opened }, { userId: ctx.userId, role: ctx.role });
   return { done: "opened", n: res.opened };
 }
 
@@ -104,6 +107,8 @@ export async function witnessConfirmAction(_prev: PartCState, fd: FormData): Pro
   if (!res.ok) return { error: res.error };
   const job = await loadTownJob(db, rfpId);
   if (job) refresh(job, true);
+  // The witness has no account: the event carries no user.
+  await trackEvent(EVENT.SEALED_OPENED, { via: "witness", quotes: res.opened }, { role: "public_buyer" });
   return { done: "opened", n: res.opened };
 }
 
@@ -129,6 +134,9 @@ export async function publishAwardAction(_prev: PartCState, fd: FormData): Promi
   if (!res.ok) return { error: res.error };
   refresh(ctx.job, true);
   revalidatePath("/rfps");
+  // Whether an amount was made public, never the amount itself.
+  const amountPublic = ["on", "true"].includes(String(fd.get("amountPublic") ?? ""));
+  await trackEvent(EVENT.AWARD_PUBLISHED, { amount_public: amountPublic, history: !!res.history }, { userId: ctx.userId, role: ctx.role });
   return { done: "published", history: res.history };
 }
 

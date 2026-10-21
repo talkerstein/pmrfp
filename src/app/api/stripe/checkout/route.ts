@@ -69,6 +69,6 @@ export async function POST(request: Request) {
     subscription_data: { metadata },
   });
 
-  await trackEvent(EVENT.CHECKOUT_STARTED, { plan, interval });
+  await trackEvent(EVENT.CHECKOUT_STARTED, { plan, interval }, { userId: session.userId, role: session.profile.primary_role });
   return NextResponse.json({ url: checkout.url });
 }

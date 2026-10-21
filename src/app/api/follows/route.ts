@@ -7,6 +7,7 @@ import { loadBuyers } from "@/lib/buyers/load";
 import { findBuyerPage } from "@/lib/buyers/model";
 import { canFollowBuyers, followUsage, parseFollowKey } from "@/lib/follows/rules";
 import { followBuyer, myFollows, unfollowBuyer } from "@/lib/follows/server";
+import { EVENT, trackEvent } from "@/lib/analytics";
 
 /**
  * Follow / unfollow a buyer or town (PMRFP for Towns, Part B1).
@@ -85,5 +86,6 @@ export async function POST(request: Request) {
   const r = await followBuyer(db, { userId: session.userId, orgId: session.organization?.id ?? null, key, pro });
   if (r.status === "unavailable" || r.status === "error") return json({ error: "Could not follow" }, r.status === "unavailable" ? 503 : 500);
   if (r.status === "limit") return json({ ok: false, reason: "limit", following: false, usage: r.usage }, 409);
+  await trackEvent(EVENT.FOLLOW_BUYER, { buyer: key, pro }, { userId: session.userId, role: session.profile.primary_role });
   return json({ ok: true, following: true, usage: r.usage });
 }

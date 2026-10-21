@@ -6,6 +6,7 @@ import { composeRfp, pickTemplate } from "@/lib/rfp-writer/compose";
 import { composeRfpFr } from "@/lib/rfp-writer/compose-fr";
 import { composeRfpEs } from "@/lib/rfp-writer/compose-es";
 import { aiAvailable, tailorRfp } from "@/lib/rfp-writer/ai";
+import { EVENT, trackEvent } from "@/lib/analytics";
 
 // AI tailoring can take up to a minute; the template path is instant.
 export const maxDuration = 90;
@@ -39,6 +40,11 @@ export async function POST(request: Request) {
   const session = await getSession();
   const canUseAi = Boolean(session && AI_ROLES.has(session.profile.primary_role));
   const tailored = canUseAi ? await tailorRfp(input, base, pickTemplate(input)) : null;
+  await trackEvent(
+    EVENT.WRITER_DRAFT_GENERATED,
+    { kind: "pm", source: tailored ? "ai" : "template" },
+    { userId: session?.userId ?? null, role: session?.profile.primary_role ?? null, lang: input.lang ?? null },
+  );
 
   return NextResponse.json({
     rfp: tailored ?? base,

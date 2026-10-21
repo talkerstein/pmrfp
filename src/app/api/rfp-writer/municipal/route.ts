@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { municipalInputSchema } from "@/lib/rfp-writer/municipal/schema";
 import { composeMunicipal } from "@/lib/rfp-writer/municipal/compose";
+import { EVENT, trackEvent } from "@/lib/analytics";
 
 /**
  * POST /api/rfp-writer/municipal: the municipal writer's answers → a town's
@@ -23,5 +24,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Please check your answers", issues: parsed.error.flatten() }, { status: 422 });
   }
-  return NextResponse.json({ rfp: composeMunicipal(parsed.data), source: "template" });
+  const rfp = composeMunicipal(parsed.data);
+  await trackEvent(EVENT.WRITER_DRAFT_GENERATED, { kind: "municipal", source: "template" });
+  return NextResponse.json({ rfp, source: "template" });
 }

@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/audit";
+import { EVENT, trackEvent } from "@/lib/analytics";
 import { winnerFacts } from "@/lib/badge/winner-facts";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
 import { canClaim, claimMethod, hostOf } from "./domain";
@@ -110,6 +111,9 @@ export async function submitWinnerClaimAction(formData: FormData): Promise<void>
     entityId: org!.id,
     metadata: { claimId: saved!.id, winnerSlug: slug, method, website: host },
   });
+  const who = { userId: session.userId, role: session.profile.primary_role };
+  await trackEvent(EVENT.CLAIM_STARTED, { kind: "winner", method }, who);
+  if (approved) await trackEvent(EVENT.CLAIM_VERIFIED, { kind: "winner", method }, who);
   if (approved) revalidateWinner(slug);
   redirect(claimPath(slug, lang, { status: approved ? "approved" : "pending" }));
 }

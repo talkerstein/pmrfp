@@ -4,6 +4,7 @@ import { GEO_COOKIE, encodeGeo } from "@/lib/visitor-geo";
 import { checkPublicReadLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { isPublicPageRead } from "@/lib/public-read-policy";
 import { withAttribution } from "@/lib/attribution/proxy";
+import { BOT_UA, optedOut } from "@/lib/tracking/privacy";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, hasLocale, isEnabledLocale, splitLocale, type Locale } from "@/i18n/config";
 
 // Next.js 16 "proxy" convention (formerly middleware). Refreshes the Supabase
@@ -24,7 +25,7 @@ const PUBLIC_FILE = /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|gif|
 // File-based metadata routes (/en/opengraph-image...) are requested by their internal URL.
 const METADATA_ROUTE = /\/(opengraph-image|twitter-image|icon|apple-icon)(?:[-/]|$)/;
 const MONTHLY_REPORT_CSV = /^(?:\/(?:en|fr|es))?\/reports\/contract-winners\/(\d{4}-(?:0[1-9]|1[0-2]))\.csv$/;
-const BOT = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|embedly|preview|lighthouse|headless/i;
+const BOT = BOT_UA;
 const COOKIE_OPTS = { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" as const };
 
 function withGeo(request: NextRequest, response: NextResponse) {
@@ -46,10 +47,14 @@ function isHumanPageView(request: NextRequest) {
   return (request.method === "GET" || request.method === "HEAD") && isPageNavigation(request) && !BOT.test(request.headers.get("user-agent") ?? "");
 }
 
-/** Geo cookie on every response; the first-touch cookie on human page views (lib/attribution). */
+/**
+ * Geo cookie on every response; the first-touch cookie on human page views
+ * (lib/attribution), except for browsers that send Do-Not-Track or Global
+ * Privacy Control (lib/tracking/privacy): no attribution cookie, no landing count.
+ */
 function finish(request: NextRequest, response: NextResponse, lang: string) {
   withGeo(request, response);
-  return isHumanPageView(request) ? withAttribution(request, response, lang) : response;
+  return isHumanPageView(request) && !optedOut(request.headers) ? withAttribution(request, response, lang) : response;
 }
 
 function redirectTo(request: NextRequest, pathname: string, status: 307 | 308 = 307) {
@@ -109,6 +114,7 @@ export const config = {
   matcher: [
     // Website widgets (/embed/*, /embed.js) and the service worker skip the
     // session refresh: they're public, framed by other sites, and must stay cacheable.
-    "/((?!_next/static|_next/image|embed/|embed\.js|sw\.js|manifest\.webmanifest|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // So does the analytics beacon (/api/t): no Auth call per page view.
+    "/((?!_next/static|_next/image|embed/|embed\.js|sw\.js|manifest\.webmanifest|favicon.ico|api/t$|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

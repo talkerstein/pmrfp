@@ -28,6 +28,7 @@ import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { startTrialAction } from "@/lib/entitlement/actions";
 import { trialsOpen } from "@/lib/entitlement/server";
 import { ServerMarketProvider } from "@/components/geo/server-market";
+import { TrackOnMount } from "@/components/track";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { getUsdPerCad } from "@/lib/fx";
 import { MATRIX_GROUPS, PLAN_MATRIX, SOLD_TIERS, countCell } from "@/lib/pricing/plan-matrix";
@@ -180,6 +181,7 @@ export default async function PricingPage({ params }: { params: Promise<object> 
 
   return (
     <ServerMarketProvider value={serverMarket}>
+      <TrackOnMount event="pricing_viewed" />
       <div className="v3-top">
         <section className="v3-wrap vp-phero">
           <div className="vp-phero-main">

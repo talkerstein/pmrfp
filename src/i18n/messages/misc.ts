@@ -315,7 +315,8 @@ const en = {
           "Technical and log data our hosting provider records when pages are served, such as IP address, browser and device type, pages requested and time.",
           "The country and province or state our host estimates from your IP address, used to show the right market (Canada or the U.S.) and prefill your region. Never for access or billing.",
           "A one-way hash of your IP address, used for rate limiting and spam protection, and to count profile views.",
-          "Usage events, such as completing sign-up or starting a checkout, counted through Vercel Web Analytics.",
+          "Our own visit statistics, kept in our database without cookies or third parties: the pages you view, the listings you open, the referring website's domain (never the full address) and steps such as opening the sign-up page, signing up, finishing onboarding, starting or completing a checkout, or posting an RFP. You are counted as a one-way code that changes every day, made from your account if you're signed in, or else from your browser's details and first-visit cookie. Never your IP address, and nothing that links one day to the next.",
+          "If your browser sends Do-Not-Track or Global Privacy Control, we record none of these statistics and set no first-visit cookie.",
         ],
       },
       {
@@ -338,14 +339,14 @@ const en = {
         title: "How People Find PMRFP",
         body: [
           "To understand how people find PMRFP, we record the page you first landed on and the referring site or campaign. One first-party cookie (pmrfp_ft, kept for 90 days from your first visit) holds the first page's address without its query string, the referring website's domain only (never the full address), any campaign tags in the link (utm_source, utm_medium, utm_campaign, utm_content), the campaign tags of a later tagged visit if they differ, the date, the page language and your country as estimated by our host. It never holds your IP address, and anything that looks like an email address is dropped.",
-          "If you create an account, we save these values with it, along with the channel we classify them into (for example search, email or social) and how you signed up (email or Google), so we can see which channels bring members. This record is visible only to PMRFP administrators and is deleted with your account. We also count first visits per page and channel as daily totals that identify no one. Blocking or clearing the cookie doesn't affect the Service.",
+          "If you create an account, we save these values with it, along with the channel we classify them into (for example search, email or social), how you signed up (password, emailed link or Google) and your account type, so we can see which channels bring members. If your browser sends Do-Not-Track or Global Privacy Control, the record keeps only how you signed up and your account type. This record is visible only to PMRFP administrators and is deleted with your account. We also count first visits per page and channel as daily totals that identify no one. Blocking or clearing the cookie doesn't affect the Service.",
         ],
       },
       {
         title: "Analytics",
         body: [
-          "We use Vercel Web Analytics and Speed Insights to count page views and measure site performance. On the live site we also use Google Analytics 4, which sets Google Analytics cookies and sends usage data (such as pages viewed, device type and approximate location) to Google. You can block it with your browser settings or Google's opt-out browser add-on.",
-          "If Microsoft Clarity is turned on, we ask first: it loads only if you click “Accept analytics” in the banner, and never if you decline. Clarity records how visitors use pages (heatmaps and session recordings). We don't use advertising or retargeting pixels.",
+          "We count visits and sign-ups ourselves, without cookies or third parties (see “Information Collected Automatically”). We also use Vercel Web Analytics and Speed Insights, which don't use cookies, to count page views and measure site performance.",
+          "Google Analytics 4 and Microsoft Clarity use cookies, so we ask first: they load only if you click “Accept analytics” in the banner, and never if you decline. Google Analytics sends usage data (such as pages viewed, device type and approximate location) to Google, with Google signals and ad personalization turned off. Clarity, when it's turned on, records how visitors use pages (heatmaps and session recordings). If your browser sends Do-Not-Track or Global Privacy Control, we treat it as declining: no banner, and neither one loads. We don't use advertising or retargeting pixels.",
         ],
       },
       {
@@ -391,7 +392,7 @@ const en = {
           "Stripe: payments and billing.",
           "Resend: sending email.",
           "HighLevel: our customer-relationship (CRM) system, for member and enquiry contact details.",
-          "Google: Google Analytics, Google sign-in if you use it, and the Gemini AI service for AI-assisted features.",
+          "Google: Google Analytics (only if you accept it in the banner), Google sign-in if you use it, and the Gemini AI service for AI-assisted features.",
           "Upstash: rate limiting (hashed IP addresses only).",
           "Cloudflare Turnstile: spam checks on forum posts, when turned on.",
           "Microsoft Clarity: only if you accept it in the banner.",
@@ -405,6 +406,7 @@ const en = {
         list: [
           "Account and profile information: while your account is open. When you ask us to close your account, we delete or anonymize it, except what we must keep by law (for example billing and tax records).",
           "Sign-up attribution: the pmrfp_ft cookie lasts up to 90 days; the copy saved with an account is deleted with that account.",
+          "Visit statistics (daily visitor codes, page and listing views, referring sites, sign-up and checkout steps): deleted after 13 months.",
           "Rate-limiting data: hashed IP addresses, kept for a short time (usually less than a day).",
           "Trial records: kept while the organization exists, as the record that it used its one trial.",
           "Unsubscribe records: kept so we keep honouring your choice.",
@@ -1194,7 +1196,8 @@ const fr: typeof en = {
           "Les données techniques et de journalisation que notre hébergeur enregistre lorsque des pages sont servies, comme l'adresse IP, le type de navigateur et d'appareil, les pages demandées et l'heure.",
           "Le pays et la province ou l'État que notre hébergeur estime à partir de votre adresse IP, utilisés pour afficher le bon marché (Canada ou États-Unis) et préremplir votre région. Jamais pour l'accès ni pour la facturation.",
           "Un hachage à sens unique de votre adresse IP, utilisé pour limiter le débit des requêtes, protéger contre le pollupostage et compter les consultations de profils.",
-          "Des événements d'utilisation, comme la fin d'une inscription ou le début d'un paiement, comptés au moyen de Vercel Web Analytics.",
+          "Nos propres statistiques de visites, conservées dans notre base de données sans témoins ni tiers : les pages que vous consultez, les annonces que vous ouvrez, le domaine du site de provenance (jamais l'adresse complète) et des étapes comme l'ouverture de la page d'inscription, l'inscription, la fin de l'accueil, le début ou la fin d'un paiement, ou la publication d'un appel d'offres. Vous êtes compté au moyen d'un code à sens unique qui change chaque jour, établi à partir de votre compte si vous êtes connecté, sinon à partir des caractéristiques de votre navigateur et du témoin de première visite. Jamais votre adresse IP, et rien qui relie un jour au suivant.",
+          "Si votre navigateur envoie le signal Do-Not-Track ou Global Privacy Control, nous n'enregistrons aucune de ces statistiques et ne déposons aucun témoin de première visite.",
         ],
       },
       {
@@ -1217,14 +1220,14 @@ const fr: typeof en = {
         title: "Comment les gens trouvent PMRFP",
         body: [
           "Pour comprendre comment les gens trouvent PMRFP, nous enregistrons la première page que vous avez visitée et le site ou la campagne qui vous y a dirigé. Un seul témoin interne (pmrfp_ft, conservé 90 jours à compter de votre première visite) contient l'adresse de cette première page sans ses paramètres, le domaine du site référent seulement (jamais l'adresse complète), les balises de campagne du lien, le cas échéant (utm_source, utm_medium, utm_campaign, utm_content), les balises de campagne d'une visite ultérieure si elles diffèrent, la date, la langue de la page et votre pays tel qu'estimé par notre hébergeur. Il ne contient jamais votre adresse IP, et tout ce qui ressemble à une adresse courriel est supprimé.",
-          "Si vous créez un compte, nous conservons ces valeurs avec celui-ci, ainsi que le canal dans lequel nous les classons (par exemple recherche, courriel ou réseaux sociaux) et votre mode d'inscription (courriel ou Google), pour savoir quels canaux nous amènent des membres. Ce dossier n'est visible que par les administrateurs de PMRFP et est supprimé avec votre compte. Nous comptons aussi les premières visites par page et par canal sous forme de totaux quotidiens qui n'identifient personne. Bloquer ou effacer ce témoin n'a aucun effet sur le Service.",
+          "Si vous créez un compte, nous conservons ces valeurs avec celui-ci, ainsi que le canal dans lequel nous les classons (par exemple recherche, courriel ou réseaux sociaux), votre mode d'inscription (mot de passe, lien par courriel ou Google) et votre type de compte, pour savoir quels canaux nous amènent des membres. Si votre navigateur envoie le signal Do-Not-Track ou Global Privacy Control, le dossier ne conserve que votre mode d'inscription et votre type de compte. Ce dossier n'est visible que par les administrateurs de PMRFP et est supprimé avec votre compte. Nous comptons aussi les premières visites par page et par canal sous forme de totaux quotidiens qui n'identifient personne. Bloquer ou effacer ce témoin n'a aucun effet sur le Service.",
         ],
       },
       {
         title: "Analytique",
         body: [
-          "Nous utilisons Vercel Web Analytics et Speed Insights pour compter les pages vues et mesurer la performance du site. Sur le site en production, nous utilisons aussi Google Analytics 4, qui dépose des témoins Google Analytics et transmet à Google des données d'utilisation (comme les pages consultées, le type d'appareil et l'emplacement approximatif). Vous pouvez le bloquer au moyen des paramètres de votre navigateur ou du module complémentaire de désactivation de Google.",
-          "Si Microsoft Clarity est activé, nous vous le demandons d'abord : il ne se charge que si vous cliquez sur « Accepter l'analyse » dans le bandeau, et jamais si vous refusez. Clarity enregistre la façon dont les visiteurs utilisent les pages (cartes de chaleur et enregistrements de sessions). Nous n'utilisons aucun pixel publicitaire ni de reciblage.",
+          "Nous comptons nous-mêmes les visites et les inscriptions, sans témoins ni tiers (voir « Renseignements recueillis automatiquement »). Nous utilisons aussi Vercel Web Analytics et Speed Insights, qui n'utilisent pas de témoins, pour compter les pages vues et mesurer la performance du site.",
+          "Google Analytics 4 et Microsoft Clarity utilisent des témoins, alors nous vous le demandons d'abord : ils ne se chargent que si vous cliquez sur « Accepter l'analyse » dans le bandeau, et jamais si vous refusez. Google Analytics transmet à Google des données d'utilisation (comme les pages consultées, le type d'appareil et l'emplacement approximatif), avec les signaux Google et la personnalisation des annonces désactivés. Clarity, lorsqu'il est activé, enregistre la façon dont les visiteurs utilisent les pages (cartes de chaleur et enregistrements de sessions). Si votre navigateur envoie le signal Do-Not-Track ou Global Privacy Control, nous le traitons comme un refus : aucun bandeau, et aucun des deux ne se charge. Nous n'utilisons aucun pixel publicitaire ni de reciblage.",
         ],
       },
       {
@@ -1270,7 +1273,7 @@ const fr: typeof en = {
           "Stripe : paiements et facturation.",
           "Resend : envoi de courriels.",
           "HighLevel : notre système de gestion de la relation client (CRM), pour les coordonnées des membres et des demandes.",
-          "Google : Google Analytics, la connexion Google si vous l'utilisez, et le service d'IA Gemini pour les fonctionnalités assistées par l'IA.",
+          "Google : Google Analytics (seulement si vous l'acceptez dans le bandeau), la connexion Google si vous l'utilisez, et le service d'IA Gemini pour les fonctionnalités assistées par l'IA.",
           "Upstash : limitation du débit des requêtes (adresses IP hachées seulement).",
           "Cloudflare Turnstile : vérification antipourriel des messages du forum, lorsqu'elle est activée.",
           "Microsoft Clarity : seulement si vous l'acceptez dans le bandeau.",
@@ -1284,6 +1287,7 @@ const fr: typeof en = {
         list: [
           "Renseignements de compte et de profil : tant que votre compte est ouvert. Lorsque vous nous demandez de fermer votre compte, nous les supprimons ou les anonymisons, sauf ce que la loi nous oblige à conserver (par exemple les dossiers de facturation et fiscaux).",
           "Provenance des inscriptions : le témoin pmrfp_ft dure au plus 90 jours; la copie conservée avec un compte est supprimée avec ce compte.",
+          "Statistiques de visites (codes de visiteur quotidiens, pages et annonces consultées, sites de provenance, étapes d'inscription et de paiement) : supprimées après 13 mois.",
           "Données de limitation du débit : adresses IP hachées, conservées peu de temps (généralement moins d'un jour).",
           "Dossiers d'essai : conservés tant que l'organisation existe, comme preuve qu'elle a utilisé son unique essai.",
           "Dossiers de désabonnement : conservés pour que nous continuions à respecter votre choix.",
@@ -2090,7 +2094,8 @@ const es: typeof en = {
           "Datos técnicos y de registro que nuestro proveedor de alojamiento guarda al servir las páginas, como la dirección IP, el tipo de navegador y de dispositivo, las páginas solicitadas y la hora.",
           "El país y la provincia o el estado que nuestro proveedor de alojamiento estima a partir de su dirección IP, que usamos para mostrar el mercado correcto (Canadá o EE. UU.) y prellenar su región. Nunca para el acceso ni la facturación.",
           "Un hash unidireccional de su dirección IP, que usamos para limitar la frecuencia de solicitudes, proteger contra el spam y contar las visitas a los perfiles.",
-          "Eventos de uso, como completar el registro o iniciar un pago, contados mediante Vercel Web Analytics.",
+          "Nuestras propias estadísticas de visitas, guardadas en nuestra base de datos sin cookies ni terceros: las páginas que ve, los anuncios que abre, el dominio del sitio de referencia (nunca la dirección completa) y pasos como abrir la página de registro, registrarse, terminar la configuración inicial, iniciar o completar un pago, o publicar una solicitud de propuestas. Se le cuenta mediante un código de un solo sentido que cambia cada día, creado a partir de su cuenta si ha iniciado sesión o, si no, de los datos de su navegador y de la cookie de primera visita. Nunca su dirección IP, y nada que relacione un día con el siguiente.",
+          "Si su navegador envía la señal Do-Not-Track o Global Privacy Control, no registramos ninguna de estas estadísticas ni instalamos la cookie de primera visita.",
         ],
       },
       {
@@ -2113,14 +2118,14 @@ const es: typeof en = {
         title: "Cómo nos encuentra la gente",
         body: [
           "Para entender cómo la gente encuentra PMRFP, registramos la primera página que visitó y el sitio o la campaña que lo trajo. Una sola cookie propia (pmrfp_ft, guardada 90 días desde su primera visita) contiene la dirección de esa primera página sin sus parámetros, solo el dominio del sitio de referencia (nunca la dirección completa), las etiquetas de campaña del enlace, si las hay (utm_source, utm_medium, utm_campaign, utm_content), las etiquetas de campaña de una visita posterior si son diferentes, la fecha, el idioma de la página y su país según lo estima nuestro proveedor de alojamiento. Nunca contiene su dirección IP, y se descarta cualquier cosa que parezca una dirección de correo electrónico.",
-          "Si crea una cuenta, guardamos estos valores con ella, junto con el canal en el que los clasificamos (por ejemplo búsqueda, correo o redes sociales) y la forma en que se registró (correo o Google), para saber qué canales nos traen miembros. Este registro solo lo ven los administradores de PMRFP y se elimina junto con su cuenta. También contamos las primeras visitas por página y canal como totales diarios que no identifican a nadie. Bloquear o borrar la cookie no afecta al Servicio.",
+          "Si crea una cuenta, guardamos estos valores con ella, junto con el canal en el que los clasificamos (por ejemplo búsqueda, correo o redes sociales), la forma en que se registró (contraseña, enlace por correo o Google) y su tipo de cuenta, para saber qué canales nos traen miembros. Si su navegador envía la señal Do-Not-Track o Global Privacy Control, el registro solo conserva la forma en que se registró y su tipo de cuenta. Este registro solo lo ven los administradores de PMRFP y se elimina junto con su cuenta. También contamos las primeras visitas por página y canal como totales diarios que no identifican a nadie. Bloquear o borrar la cookie no afecta al Servicio.",
         ],
       },
       {
         title: "Analítica",
         body: [
-          "Usamos Vercel Web Analytics y Speed Insights para contar las páginas vistas y medir el rendimiento del sitio. En el sitio en producción también usamos Google Analytics 4, que establece cookies de Google Analytics y envía a Google datos de uso (como las páginas vistas, el tipo de dispositivo y la ubicación aproximada). Puede bloquearlo desde la configuración de su navegador o con el complemento de inhabilitación de Google.",
-          "Si Microsoft Clarity está activado, se lo preguntamos primero: solo se carga si hace clic en “Aceptar analítica” en el aviso, y nunca si lo rechaza. Clarity registra cómo los visitantes usan las páginas (mapas de calor y grabaciones de sesiones). No usamos píxeles de publicidad ni de remarketing.",
+          "Contamos nosotros mismos las visitas y los registros, sin cookies ni terceros (vea “Información que se recopila automáticamente”). También usamos Vercel Web Analytics y Speed Insights, que no usan cookies, para contar las páginas vistas y medir el rendimiento del sitio.",
+          "Google Analytics 4 y Microsoft Clarity usan cookies, así que se lo preguntamos primero: solo se cargan si hace clic en “Aceptar analítica” en el aviso, y nunca si lo rechaza. Google Analytics envía a Google datos de uso (como las páginas vistas, el tipo de dispositivo y la ubicación aproximada), con las señales de Google y la personalización de anuncios desactivadas. Clarity, cuando está activado, registra cómo los visitantes usan las páginas (mapas de calor y grabaciones de sesiones). Si su navegador envía la señal Do-Not-Track o Global Privacy Control, lo tratamos como un rechazo: no hay aviso y no se carga ninguno de los dos. No usamos píxeles de publicidad ni de remarketing.",
         ],
       },
       {
@@ -2166,7 +2171,7 @@ const es: typeof en = {
           "Stripe: pagos y facturación.",
           "Resend: envío de correos electrónicos.",
           "HighLevel: nuestro sistema de gestión de relaciones con clientes (CRM), para los datos de contacto de miembros y consultas.",
-          "Google: Google Analytics, el inicio de sesión con Google si lo usa, y el servicio de IA Gemini para las funciones asistidas por IA.",
+          "Google: Google Analytics (solo si lo acepta en el aviso), el inicio de sesión con Google si lo usa, y el servicio de IA Gemini para las funciones asistidas por IA.",
           "Upstash: limitación de la frecuencia de solicitudes (solo direcciones IP con hash).",
           "Cloudflare Turnstile: verificación antispam de los mensajes del foro, cuando está activada.",
           "Microsoft Clarity: solo si lo acepta en el aviso.",
@@ -2180,6 +2185,7 @@ const es: typeof en = {
         list: [
           "Información de la cuenta y del perfil: mientras su cuenta esté abierta. Cuando nos pide cerrar su cuenta, la eliminamos o anonimizamos, salvo lo que la ley nos obliga a conservar (por ejemplo, registros de facturación e impuestos).",
           "Origen del registro: la cookie pmrfp_ft dura como máximo 90 días; la copia guardada con una cuenta se elimina junto con esa cuenta.",
+          "Estadísticas de visitas (códigos diarios de visitante, páginas y anuncios vistos, sitios de referencia, pasos de registro y de pago): se eliminan después de 13 meses.",
           "Datos de limitación de frecuencia: direcciones IP con hash, conservadas por poco tiempo (normalmente menos de un día).",
           "Registros de pruebas: se conservan mientras exista la organización, como constancia de que usó su única prueba.",
           "Registros de bajas: se conservan para seguir respetando su decisión.",

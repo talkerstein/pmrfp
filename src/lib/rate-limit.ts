@@ -28,7 +28,7 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 type BucketName =
   | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
   | "photo-upload" | "project-draft" | "project-publish" | "review" | "public-read"
-  | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source";
+  | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source" | "beacon";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
@@ -56,6 +56,8 @@ const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${n
   correction: { tokens: 5, window: "10 m" },
   // "List your tenders free" (/for-public-buyers): one organization files once, maybe a retry.
   "buyer-source": { tokens: 5, window: "10 m" },
+  // First-party analytics beacon (/api/t): about one call per page a person opens.
+  beacon: { tokens: 60, window: "60 s" },
 };
 
 let _redis: Redis | null = null;
@@ -176,6 +178,50 @@ async function checkWithPostgres(ip: string, bucket: BucketName): Promise<RateLi
   } catch {
     return null;
   }
+}
+
+/** In-memory fallback for the beacon: per instance, fixed window, bounded. */
+const beaconWindows = new Map<string, { start: number; hits: number }>();
+const BEACON_KEYS_MAX = 10_000;
+
+/**
+ * The /api/t beacon's limit (60 a minute per IP). Upstash when configured;
+ * otherwise a per-instance counter in memory. Never the Supabase fallback:
+ * analytics must not add a database call to every page view. The key is a
+ * hash of the IP; nothing is stored. Fails open.
+ */
+export async function checkBeaconLimit(ip: string, now = Date.now()): Promise<RateLimitInfo | null> {
+  if (!ip || ip === "unknown") return null;
+  const key = createHash("sha256").update(`beacon:${ip}`).digest("hex");
+  const limiter = getLimiter("beacon");
+  if (limiter) {
+    try {
+      const result = await limiter.limit(key);
+      return result.success ? null : { limit: result.limit, remaining: result.remaining, reset: result.reset };
+    } catch {
+      // Redis unavailable: fall through to the in-memory counter.
+    }
+  }
+  const { tokens, window } = BUCKETS.beacon;
+  const span = windowSeconds(window) * 1000;
+  let w = beaconWindows.get(key);
+  if (!w || now - w.start >= span) {
+    if (!w && beaconWindows.size >= BEACON_KEYS_MAX) beaconWindows.clear();
+    w = { start: now, hits: 0 };
+    beaconWindows.set(key, w);
+  }
+  w.hits += 1;
+  return w.hits > tokens ? { limit: tokens, remaining: 0, reset: w.start + span } : null;
+}
+
+/** Tests only. */
+export function resetBeaconLimit(): void {
+  beaconWindows.clear();
+}
+
+/** Best-effort client IP for a request (the beacon's rate-limit key). */
+export function requestIp(request: Request): string {
+  return clientIp(request);
 }
 
 export function rateLimitResponse(info: RateLimitInfo): NextResponse {

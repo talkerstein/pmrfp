@@ -41,6 +41,7 @@ import { TownAsideCtas, TownHeroCtas, TownListingBody, townTag } from "@/compone
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { localizeCredit } from "@/lib/data-credits";
 import { RecordFooter } from "@/components/public/record-footer";
+import { TrackListingView } from "@/components/track";
 import { awardNoticeUrl } from "@/lib/tenders/awards";
 import { closedArchiveAward, closedArchiveNoticeUrl } from "@/lib/tenders/closed-archive";
 import { daysUntil, parseAward } from "@/lib/data/fomo";
@@ -373,6 +374,8 @@ export default async function RfpDetailPage({
 
   return (
     <>
+      {/* One view per visitor per listing per day (rfp_views), sent from the browser: no extra work on this render. */}
+      <TrackListingView slug={teaser.slug} />
       <JsonLd
         data={breadcrumbSchema([
           { name: tb.hero.eyebrow, path: L("/rfps") },

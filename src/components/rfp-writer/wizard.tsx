@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { RfpDraft } from "@/lib/rfp-writer/schema";
 import { useLang, useT } from "@/i18n/provider";
+import { track } from "@/lib/tracking/client";
 import { localizePath } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
@@ -629,7 +630,14 @@ export function RfpWizard({
             <ArrowLeft className="size-4" /> {w.back}
           </Button>
           {step < w.steps.length - 1 ? (
-            <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>
+            <Button
+              onClick={() => {
+                // First-party funnel: past the first question = started writing.
+                if (step === 0) track("writer_started", { kind: "pm" });
+                setStep((s) => s + 1);
+              }}
+              disabled={!canNext}
+            >
               {w.next} <ArrowRight className="size-4" />
             </Button>
           ) : (

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -129,8 +130,10 @@ export default async function SignupsPage({ params }: { params: Promise<object> 
         </p>
       )}
       <p className="mb-6 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-        <strong className="text-foreground">Backfill note:</strong> attribution started on {ATTRIBUTION_START}. Accounts created before then have no
-        source and show as <strong>Unknown</strong>, as do sign-ups from browsers that blocked or cleared the cookie. Nothing is guessed after the fact.
+        <strong className="text-foreground">Backfill note:</strong> attribution started on {ATTRIBUTION_START}, but until October 21, 2026 only password
+        sign-ups were saved at sign-up (email-link and Google sign-ups waited for onboarding, town sign-ups were never saved). Accounts without a row
+        show as <strong>Unknown</strong>, as do sign-ups from browsers that blocked or cleared the cookie or asked not to be tracked. Nothing is guessed
+        after the fact. Traffic and the funnel: <Link href="/admin/analytics" className="underline">Site Analytics</Link>.
       </p>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-4">
@@ -191,7 +194,7 @@ export default async function SignupsPage({ params }: { params: Promise<object> 
           {recent.map((l) => (
             <TableRow key={l.userId}>
               <TableCell className="whitespace-nowrap">{l.at.slice(0, 10)}</TableCell>
-              <TableCell>{ROLE[l.role ?? ""] ?? l.role ?? "–"}{l.a?.method === "google" ? " · Google" : ""}</TableCell>
+              <TableCell>{ROLE[l.role ?? ""] ?? l.role ?? "–"}{l.a?.method === "google" ? " · Google" : l.a?.method === "magic_link" ? " · email link" : ""}</TableCell>
               <TableCell className="max-w-[180px] truncate">{(l.a?.org_id && orgNames.get(l.a.org_id)) || "–"}</TableCell>
               <TableCell className={l.channel === "unknown" ? "text-muted-foreground" : "font-medium"}>{CHANNEL_LABEL[l.channel]}</TableCell>
               <TableCell className="max-w-[220px] truncate font-mono text-xs">{l.a?.landing_path ?? "–"}</TableCell>

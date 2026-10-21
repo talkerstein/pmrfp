@@ -25,7 +25,7 @@ import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { gcFormPath, parseAwardRef } from "@/lib/gc/packages";
 import { parsePrefSlugs } from "@/lib/auth/signup-prefs";
-import { recordSignupAttribution } from "@/lib/attribution/record";
+import { recordSignupAttribution, recordSignupAttributionForEmail } from "@/lib/attribution/record";
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
 import { errorDetail } from "@/lib/onboarding/steps";
 import { linkDigestSubscriber } from "@/lib/digest/link";
@@ -209,6 +209,10 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
       console.error("[signUp:link]", error.message);
       return { error: m.signUpFailed };
     }
+    // Where they came from, recorded now (this browser has the first-touch
+    // cookie; the emailed link may be opened on another device). Supabase
+    // returns no user id for OTP, so the fresh account is found by email.
+    await recordSignupAttributionForEmail({ email: parsed.data.email, method: "magic_link", role: parsed.data.role, lang });
     await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord, method: "link" });
     await sendAdminNewSignup({ email: parsed.data.email, name: parsed.data.fullName ?? "", role: parsed.data.role, method: "email", gc: isGc, landlord: isLandlord });
     await syncPmrfpUserToGhl({
@@ -217,7 +221,6 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
       role: parsed.data.role,
       subscriptionStatus: "none",
     }, { extraTags: buyerTags("pmrfp-signup", buyerKind) });
-    // The user id isn't returned for OTP; attribution is recorded at onboarding (recordSignupAttribution there).
     const done = new URLSearchParams({ email: parsed.data.email, role: isGc ? "general_contractor" : isLandlord ? "landlord" : parsed.data.role, method: "link" });
     if (wantsPro) done.set("plan", "pro");
     redirect(localizePath(`/check-email?${done.toString()}`, lang));
@@ -238,11 +241,12 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   }
   // Where they came from (first-touch cookie). Skipped when Supabase hides an
   // existing account behind a placeholder user (no identities).
-  if (data.user?.id && (data.user.identities?.length ?? 1) > 0) {
-    await recordSignupAttribution({ userId: data.user.id, method: "email" });
+  const newUserId = data.user?.id && (data.user.identities?.length ?? 1) > 0 ? data.user.id : null;
+  if (newUserId) {
+    await recordSignupAttribution({ userId: newUserId, method: "password", role: parsed.data.role, lang });
   }
   // No welcome email here: it goes out once onboarding completes.
-  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord });
+  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord, method: "password" }, { userId: newUserId });
   await sendAdminNewSignup({ email: parsed.data.email, name: parsed.data.fullName, role: parsed.data.role, method: "email", gc: isGc, landlord: isLandlord });
   // Fire-and-forget GHL sync; no-ops if GHL_API_KEY unset.
   await syncPmrfpUserToGhl({
@@ -421,8 +425,9 @@ export async function chooseRoleAction(_prev: ActionState, formData: FormData): 
 
   // What signUpAction does for an email sign-up (the welcome email goes out
   // when onboarding completes).
-  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: pick.role, hasNext: !!next, gc: pick.builder, landlord: pick.orgKind === "landlord", method: "google" });
-  await recordSignupAttribution({ userId: user.id, method: "google" });
+  await trackEvent(EVENT.SIGNUP_COMPLETED, { role: pick.role, hasNext: !!next, gc: pick.builder, landlord: pick.orgKind === "landlord", method: "google" }, { userId: user.id });
+  // The callback already wrote the row (lib/attribution/record); this adds the role.
+  await recordSignupAttribution({ userId: user.id, method: "google", role: pick.role, lang, signedUpAt: user.created_at });
   await sendAdminNewSignup({ email: session.profile.email, name: session.profile.full_name, role: pick.role, method: "google", gc: pick.builder, landlord: pick.orgKind === "landlord" });
   await syncPmrfpUserToGhl({
     email: session.profile.email,
@@ -461,8 +466,9 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   if (intent === "browsing" || role === "visitor" || role === "talent") {
     const supabase = await createClient();
     await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
-    await recordSignupAttribution({ userId: session.userId });
+    await recordSignupAttribution({ userId: session.userId, role, lang });
     await linkDigestSubscriber(session.userId, session.profile.email);
+    await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, browsing: true }, { userId: session.userId });
     redirect(localizePath(next ?? "/directory", lang));
   }
 
@@ -606,9 +612,9 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   }
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
-  await recordSignupAttribution({ userId: session.userId, orgId: org.id });
+  await recordSignupAttribution({ userId: session.userId, orgId: org.id, role, lang });
   await linkDigestSubscriber(session.userId, session.profile.email);
-  await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord });
+  await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord }, { userId: session.userId });
 
   // One welcome email per member, with the next step for their kind of account.
   // Trade companies get the lifecycle sequence's Day 0 welcome instead when

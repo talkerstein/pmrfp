@@ -27,6 +27,7 @@ import { getLinkableAward } from "@/lib/gc/data";
 import type { ActionState } from "@/lib/auth/actions";
 import { getDictionary } from "@/i18n/dictionaries";
 import { logAudit } from "@/lib/audit";
+import { EVENT, trackEvent } from "@/lib/analytics";
 import { profileStatusPatch, reviewChanges } from "@/lib/organizations/profile-review";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, splitLocale, type Locale } from "@/i18n/config";
 
@@ -403,6 +404,11 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
     const unavailable = lang === DEFAULT_LOCALE ? GC_UNAVAILABLE_MESSAGE : t.gcUnavailable;
     return { error: gc && isGcSchemaMissingError(error) ? unavailable : t.createFailed };
   }
+
+  // First-party funnel (site_events): a PM, GC or town posted a job.
+  const poster = { userId: session.userId, role: session.profile.primary_role };
+  await trackEvent(EVENT.RFP_POSTED, { kind: town ? "town" : gc ? "gc_package" : "pm", post_kind: town?.fields.postKind ?? null }, poster);
+  if (town?.fields.postKind === "quote_request") await trackEvent(EVENT.QUOTE_REQUEST_POSTED, { kind: "town", sealed: town.fields.sealed }, poster);
 
   const { data: catRows } = await supabase.from("trade_categories").select("id,slug").in("slug", categories);
   if (catRows?.length)
