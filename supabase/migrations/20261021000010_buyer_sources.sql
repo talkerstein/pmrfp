@@ -139,3 +139,8 @@ insert into public.buyer_permissions (buyer_slug, buyer_name, province_code, sco
   ('edmonton-public-schools', 'Edmonton Public Schools', 'AB', 'buyer', '{}', 'no', null, '2026-10-16', 'pcs.general.information@epsb.ca', null,
    'Declined: no vendor solicitation by email or phone (postal only). Do not email again.')
 on conflict (buyer_slug) do nothing;
+
+-- Explicit backend privileges; new tables no longer inherit these after Oct 30.
+grant select, insert, update, delete on public.buyer_source_requests to service_role;
+grant select, insert, update, delete on public.buyer_permissions to service_role;
+grant select on public.buyer_permissions_public to service_role;
