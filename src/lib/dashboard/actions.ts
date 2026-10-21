@@ -463,6 +463,7 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
       title: d.title,
       slug,
       postKind: town.fields.postKind,
+      sealed: town.fields.sealed,
       postedBy: session.organization?.name ?? null,
       region: d.regionSlug,
       categories: categories.join(", "),

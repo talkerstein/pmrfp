@@ -43,6 +43,10 @@ export interface TownListing {
   qa: PublicQa[];
   addenda: AddendumRow[];
   history: DeadlineChange[];
+  /** Part C: "Sealed until closing" (the closing instant, the town's zone, when it was opened). Never a count. */
+  sealed: { closesAt: string | null; timeZone: string; openedAt: string | null } | null;
+  /** Part C: the published award ("Awarded to X"; the amount only when the town published it). */
+  award: { winner: string; amount: number | null; date: string | null; publishedAt: string } | null;
 }
 
 export async function getTownListing(slug: string): Promise<TownListing | null> {
@@ -52,10 +56,15 @@ export async function getTownListing(slug: string): Promise<TownListing | null> 
     const { data, error } = await db.from("town_posts_public").select("*").eq("slug", slug).maybeSingle();
     if (error || !data) return null;
     const post = data as TownPostPublic;
-    const [{ data: qa }, { data: addenda }] = await Promise.all([
+    const [{ data: qa }, { data: addenda }, sealedRes, awardRes] = await Promise.all([
       db.from("town_job_qa_public").select("id,question,answer,answered_at").eq("rfp_id", post.id).order("answered_at", { ascending: true }),
       db.from("town_job_addenda_public").select("number,body,official_url,old_deadline,new_deadline,created_at").eq("rfp_id", post.id).order("number", { ascending: true }),
+      // Part C (migration 20261021000120): absent before it runs, so errors read as "not sealed, no award".
+      db.from("town_sealed_public").select("closes_at,time_zone,opened_at").eq("rfp_id", post.id).maybeSingle(),
+      db.from("town_awards_public").select("winner_name,amount,award_date,award_published_at").eq("rfp_id", post.id).maybeSingle(),
     ]);
+    const sealedRow = sealedRes.error ? null : (sealedRes.data as { closes_at: string | null; time_zone: string; opened_at: string | null } | null);
+    const awardRow = awardRes.error ? null : (awardRes.data as { winner_name: string; amount: number | string | null; award_date: string | null; award_published_at: string } | null);
     const rows = ((addenda ?? []) as AddendumRow[]).sort((a, b) => a.number - b.number);
     return {
       post,
@@ -63,6 +72,8 @@ export async function getTownListing(slug: string): Promise<TownListing | null> 
       qa: publicQa(((qa ?? []) as { id: string; question: string; answer: string; answered_at: string }[]).map((r) => ({ ...r, status: "answered" }))),
       addenda: rows,
       history: deadlineHistory(rows),
+      sealed: sealedRow ? { closesAt: sealedRow.closes_at, timeZone: sealedRow.time_zone, openedAt: sealedRow.opened_at } : null,
+      award: awardRow?.winner_name ? { winner: awardRow.winner_name, amount: awardRow.amount == null ? null : Number(awardRow.amount), date: awardRow.award_date, publishedAt: awardRow.award_published_at } : null,
     };
   } catch (e) {
     console.warn("[town-jobs] listing read failed", e instanceof Error ? e.message : e);

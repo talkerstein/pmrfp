@@ -581,7 +581,7 @@ export default async function RfpDetailPage({
           )}
 
           {town ? (
-            <TownListingBody listing={town} viewer={townViewer} slug={teaser.slug} manageHref={townManageHref} />
+            <TownListingBody listing={town} viewer={townViewer} slug={teaser.slug} manageHref={townManageHref} respond={respond} />
           ) : isAward ? (
             <div className="vp-awardbox">
               {award?.winner && (

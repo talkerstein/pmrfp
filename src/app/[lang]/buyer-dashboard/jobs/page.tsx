@@ -68,7 +68,10 @@ export default async function TownJobsPage({ params }: { params: Promise<object>
                 <tr key={j.id} className="border-b border-border last:border-0" data-kind={j.post_kind ?? ""}>
                   <td className="px-4 py-3">
                     <Link href={`/buyer-dashboard/jobs/${j.id}`} className="font-medium hover:text-teal-700">{j.title}</Link>
-                    <div className="text-xs text-muted-foreground">{j.post_kind === "tender_mirror" ? t.kind.tender_mirror : t.kind.quote_request}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {j.post_kind === "tender_mirror" ? t.kind.tender_mirror : t.kind.quote_request}
+                      {j.sealedBox && !j.sealedBox.opened ? <span className="ml-1.5 rounded bg-secondary px-1.5 py-0.5 font-medium text-foreground" data-sealed="yes">{getT("townResults").list.sealed}</span> : null}
+                    </div>
                   </td>
                   <td className="px-3 py-3"><StatusBadge status={j.status} /></td>
                   <td className="px-3 py-3 text-muted-foreground">{day(j.deadline)}</td>
