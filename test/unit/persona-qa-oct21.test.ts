@@ -68,7 +68,7 @@ describe("#6 honest counters", () => {
     ]);
     expect(s.open).toBe(4);
     expect(s.openPm).toBe(1);
-    expect(s.open - s.openPm).toBe(3);
+    expect(s.openPublic).toBe(2);
   });
 });
 

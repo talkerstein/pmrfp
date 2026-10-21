@@ -156,7 +156,7 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
   // design fallback: a block with no U.S. data is left empty (and hidden).
   const dataUs: V3Data = structuredClone(data);
   Object.assign(dataUs, {
-    open: 0, openPm: 0, closing7: 0, closingCa: [], closingUs: [], ticker: [], toast: [], alerts: [], awards: [],
+    open: 0, openPm: 0, openPublic: 0, closing7: 0, closingCa: [], closingUs: [], ticker: [], toast: [], alerts: [], awards: [],
     winners: { ...dataUs.winners, repeat: 0, contracts: 0, value: "", top: [], most: { name: "", n: 0 }, report: undefined },
     browse: { combos: [], newest: [] },
   });
@@ -193,6 +193,7 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
     const stats = boardStats(rfps);
     data.open = stats.open;
     data.openPm = stats.openPm;
+    data.openPublic = stats.openPublic;
     data.closing7 = stats.closingThisWeek;
     live.push("board");
 

@@ -31,8 +31,10 @@ export interface V3Trade { name: string; n: number | null; href: string }
 export interface V3Data {
   /** Open listings: public tenders + property-manager RFPs. */
   open: number | null;
-  /** The part of `open` posted by property managers; open - openPm = open public tenders. */
+  /** The part of `open` posted by property managers (never demo listings). */
   openPm: number | null;
+  /** The part of `open` that is imported public tenders. */
+  openPublic: number | null;
   closing7: number | null;
   trades: number | null;
   regions: number | null;
@@ -190,7 +192,7 @@ export function HomeV3({
    * property-manager RFPs are counted on their own (persona QA 2026-10-21:
    * "261 contracts open" read as property-manager work; it was all tenders).
    */
-  const pub = data.open != null ? data.open - (data.openPm ?? 0) : null;
+  const pub = data.openPublic;
   /** A click on a property-manager CTA: no trade popup or toast for this visitor from now on. */
   const pickPm = () => rememberAudience("pm");
 

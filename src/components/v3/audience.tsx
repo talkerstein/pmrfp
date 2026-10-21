@@ -99,9 +99,9 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
   // Country-first: every board number is the visitor's country's (both ship; ByMarket picks).
   const bc = board.byCountry;
   const open = bc && bc.CA.open + bc.US.open > 0 ? bc : null;
-  const perCountry = (f: (c: { open: number; openPm: number; closing7: number }) => number) =>
+  const perCountry = (f: (c: { open: number; openPm: number; openPublic: number; closing7: number }) => number) =>
     bc ? <ByMarket ca={num(f(bc.CA))} us={num(f(bc.US))} /> : null;
-  const bigNum: ReactNode = c.side === "seller" ? (bc ? perCountry((x) => x.open - x.openPm) : null) : board.trades != null ? num(board.trades) : null;
+  const bigNum: ReactNode = c.side === "seller" ? (bc ? perCountry((x) => x.openPublic) : null) : board.trades != null ? num(board.trades) : null;
   const nums: [ReactNode, string][] = ([
     [bc ? perCountry((c) => c.closing7) : null, t.liveClosing],
     [board.trades, t.liveTrades],
@@ -136,7 +136,7 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
               </span>
               {open && (
                 <div className="stat">
-                  <div className="big">{perCountry((c) => c.open - c.openPm)}</div>
+                  <div className="big">{perCountry((c) => c.openPublic)}</div>
                   <div className="cap">
                     <span>{t.heroStat}</span>
                     <span className="pingw" aria-hidden><span className="ping" /><span /></span>
@@ -266,7 +266,7 @@ export async function AudienceLanding({ c, lang }: { c: AudienceContent; lang: L
           <div className="wrap a-live">
             <div className="a-live-k"><span className="pingw" aria-hidden><span className="ping" /><span /></span>{t.live}</div>
             <div className="a-nums">
-              <div><div className="n1">{perCountry((c) => c.open - c.openPm)}</div><div className="l1">{t.liveOpen}</div></div>
+              <div><div className="n1">{perCountry((c) => c.openPublic)}</div><div className="l1">{t.liveOpen}</div></div>
               {nums.map(([n, l]) => <div key={l}><div className="n">{typeof n === "number" ? num(n) : n}</div><div className="l">{l}</div></div>)}
             </div>
             {c.side === "seller" && <AudienceOpen cards={cards} t={t} total={{ CA: num(open.CA.open), US: num(open.US.open) }} lang={lang} />}

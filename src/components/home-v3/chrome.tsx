@@ -206,16 +206,24 @@ export const V3Top = V3Header;
  * interrupts a first page view before the visitor interacts) and remembers a
  * visitor who reached a property-manager page (no trade popups for them).
  */
+let lastCountedView = "";
 function usePageView(pmSide: boolean) {
+  // Without the locale: a prerendered English page can report "/en" then "/".
+  const path = splitLocale(usePathname() ?? "/").path;
   useEffect(() => {
-    try {
-      const n = (Number(readCookie(document.cookie, VIEWS_COOKIE)) || 0) + 1;
-      document.cookie = `${VIEWS_COOKIE}=${n}; Path=/; SameSite=Lax`;
-    } catch {
-      /* cookies blocked */
+    // Once per page view, even when React runs the effect twice (Strict Mode).
+    const key = `${performance.timeOrigin}|${path}`;
+    if (key !== lastCountedView) {
+      lastCountedView = key;
+      try {
+        const n = (Number(readCookie(document.cookie, VIEWS_COOKIE)) || 0) + 1;
+        document.cookie = `${VIEWS_COOKIE}=${n}; Path=/; SameSite=Lax`;
+      } catch {
+        /* cookies blocked */
+      }
     }
     if (pmSide) rememberAudience("pm");
-  }, [pmSide]);
+  }, [pmSide, path]);
 }
 
 /* ------------------------------------------------------------------ footer */
@@ -280,7 +288,7 @@ export function V3Sticky({
 }: {
   t: Pick<V3Messages, "sticky" | "nav">;
   lang: Locale;
-  counts: Record<"CA" | "US", { open: number; openPm?: number; closing7: number }> | null;
+  counts: Record<"CA" | "US", { open: number; openPublic?: number; closing7: number }> | null;
   /** common.market.where: "in Canada" / "in the U.S.". */
   where: Record<"CA" | "US", string>;
 }) {
@@ -289,9 +297,9 @@ export function V3Sticky({
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
   const pmSide = isPmAudiencePath(splitLocale(usePathname() ?? "/").path);
   if (!counts || market == null) return null;
-  const { open, openPm = 0, closing7 } = counts[market];
+  const { open, openPublic, closing7 } = counts[market];
   // The label says "open public tenders": property-manager RFPs aren't in this number.
-  const pub = open - openPm;
+  const pub = openPublic ?? open;
   if (pub <= 0) return null;
   return (
     <div className="v3-sticky">

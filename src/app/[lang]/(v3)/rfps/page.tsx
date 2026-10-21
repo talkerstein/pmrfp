@@ -116,6 +116,7 @@ export default async function RfpsPage({
   const openIn = (c: Country) => allRfps.filter((r) => isOpenListing(r) && inCountry(c)(r)).length;
   // Honest split of the headline: public tenders vs RFPs posted by property managers.
   const openPmIn = (c: Country) => allRfps.filter((r) => isOpenListing(r) && isPmListing(r) && inCountry(c)(r)).length;
+  const openPublicIn = (c: Country) => allRfps.filter((r) => isOpenListing(r) && r.sourceType === "public_source" && inCountry(c)(r)).length;
   // Property-manager RFPs open anywhere in this country (whatever the trade/area filter).
   const pmOpenCountry = board.filter((r) => isOpenListing(r) && isPmListing(r) && inCountry(country)(r)).length;
 
@@ -307,7 +308,7 @@ export default async function RfpsPage({
               <div className="big">{num(openIn(country))}</div>
               <div className="sub">{v.openIn[country]}</div>
               <div className="split">
-                {plural(openIn(country) - openPmIn(country), v.openSplit.public, { n: num(openIn(country) - openPmIn(country)) })}
+                {plural(openPublicIn(country), v.openSplit.public, { n: num(openPublicIn(country)) })}
                 {" · "}
                 {plural(openPmIn(country), v.openSplit.pm, { n: num(openPmIn(country)) })}
               </div>
