@@ -116,3 +116,9 @@ alter table public.rfp_interests
 -- select count(*) from public.case_study_share_links;
 -- select column_name from information_schema.columns
 --   where table_name = 'rfp_interests' and column_name = 'case_study_ids';
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.case_study_share_links to service_role;
+grant select on public.case_studies to anon, authenticated;
+grant select on public.case_study_share_links to authenticated;
+grant select on public.vendor_reviews_public to service_role;

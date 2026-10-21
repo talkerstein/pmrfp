@@ -301,3 +301,16 @@ notify pgrst, 'reload schema';
 -- select slug, sort from public.forum_categories order by sort;              -- 31 rooms
 -- select * from public.forum_category_redirects;                             -- 6 rows
 -- select count(*) from public.forum_threads where auto_source_key like 'guide:%';
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.forum_category_redirects to service_role;
+grant select, insert, update, delete on public.forum_poll_options to service_role;
+grant select, insert, update, delete on public.forum_poll_votes to service_role;
+grant select, insert, update, delete on public.forum_polls to service_role;
+grant select, insert, update, delete on public.forum_reply_notifications to service_role;
+grant select, insert, update, delete on public.forum_room_follows to service_role;
+grant select on public.forum_category_redirects to anon, authenticated;
+grant select on public.forum_polls to anon, authenticated;
+grant select on public.forum_poll_options to anon, authenticated;
+grant select on public.forum_poll_votes to anon, authenticated;
+grant select on public.forum_room_follows to anon, authenticated;

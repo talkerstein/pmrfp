@@ -52,3 +52,7 @@ revoke all on public.correction_requests from anon;
 revoke all on public.correction_requests from authenticated;
 grant select on public.correction_requests to authenticated;
 grant update (status, resolution, resolved_at, resolved_by, updated_at) on public.correction_requests to authenticated;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.correction_requests to service_role;
+grant select on public.correction_requests to authenticated;

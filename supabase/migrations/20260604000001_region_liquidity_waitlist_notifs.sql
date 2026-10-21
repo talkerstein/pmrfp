@@ -159,3 +159,19 @@ create policy "notif_prefs own upsert" on public.notification_preferences
 create policy "notif_prefs own update" on public.notification_preferences
   for update to authenticated using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.notification_preferences to service_role;
+grant select, insert, update, delete on public.region_requests to service_role;
+grant select, insert, update, delete on public.regional_waitlist to service_role;
+grant insert on public.region_requests to anon, authenticated;
+grant select on public.region_requests to authenticated;
+grant update on public.region_requests to authenticated;
+grant insert on public.regional_waitlist to anon, authenticated;
+grant select on public.regional_waitlist to authenticated;
+grant update on public.regional_waitlist to authenticated;
+grant select on public.notification_preferences to authenticated;
+grant insert on public.notification_preferences to authenticated;
+grant update on public.notification_preferences to authenticated;
+grant select on public.region_category_liquidity to service_role;
+grant select on public.region_liquidity to service_role;

@@ -56,3 +56,8 @@ revoke all on public.insight_rejections from anon, authenticated;
 -- Verify: expect two zero counts before the first send.
 select (select count(*) from public.insight_brief_log) as briefs_logged,
        (select count(*) from public.insight_rejections) as rejections_logged;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.insight_brief_log to service_role;
+grant select, insert, update, delete on public.insight_rejections to service_role;
+grant usage, select on sequence public.insight_rejections_id_seq to service_role;

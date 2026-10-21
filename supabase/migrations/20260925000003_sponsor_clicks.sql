@@ -36,3 +36,7 @@ $$;
 revoke all on function public.record_sponsor_click(text, text, text) from public;
 revoke all on function public.record_sponsor_click(text, text, text) from anon, authenticated;
 grant execute on function public.record_sponsor_click(text, text, text) to service_role;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.sponsor_clicks to service_role;
+grant select on public.sponsor_clicks to authenticated;

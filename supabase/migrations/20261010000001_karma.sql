@@ -108,3 +108,12 @@ grant select on public.gc_package_levels to anon, authenticated;
 -- ── Verify ────────────────────────────────────────────────────────────
 -- select count(*) from public.karma_events;          -- 0 until the backfill runs
 -- select level, count(*) from public.org_karma group by 1 order by 1;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.karma_events to service_role;
+grant select, insert, update, delete on public.org_karma to service_role;
+grant select on public.karma_events to anon, authenticated;
+grant select on public.org_karma to anon, authenticated;
+grant select on public.gc_package_levels to service_role;
+grant select on public.karma_ledger to service_role;
+grant select on public.org_karma_public to service_role;

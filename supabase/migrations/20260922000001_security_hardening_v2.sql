@@ -65,3 +65,7 @@ union all
 select policyname, cmd from pg_policies
  where tablename = 'objects' and schemaname = 'storage'
    and (policyname like 'logos%' or policyname like 'rfp-photos%');
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.stripe_webhook_events to service_role;
+grant insert on public.organization_members to authenticated;

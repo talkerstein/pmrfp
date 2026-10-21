@@ -31,3 +31,6 @@ create policy "rfp_categories public read published" on public.rfp_categories
                     or public.is_org_member(auth.uid(), r.posted_by_organization_id)))
     or public.is_admin(auth.uid())
   );
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select on public.rfp_categories to anon, authenticated;

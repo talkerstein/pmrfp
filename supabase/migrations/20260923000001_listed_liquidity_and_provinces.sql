@@ -78,3 +78,7 @@ update public.regions c
 select slug, name from public.regions
  where slug in ('british-columbia','alberta','manitoba','nova-scotia','yukon')
  order by slug;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select on public.region_category_liquidity to service_role;
+grant select on public.region_liquidity to service_role;

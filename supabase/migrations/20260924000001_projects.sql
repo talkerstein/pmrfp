@@ -127,3 +127,8 @@ end $$;
 --   where table_name = 'case_studies' and column_name in ('photos','hero_url','summary','source','client_approved');
 -- select id, public from storage.buckets where id = 'project-photos';
 -- select * from public.vendor_reviews_public limit 1;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.review_invites to service_role;
+grant select on public.review_invites to authenticated;
+grant select on public.vendor_reviews_public to service_role;

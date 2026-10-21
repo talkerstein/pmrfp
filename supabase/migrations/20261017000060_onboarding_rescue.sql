@@ -55,3 +55,7 @@ revoke insert, update, delete on public.onboarding_steps from authenticated;
 -- ) x group by step order by 2 desc;
 -- select step, status, count(*) from public.lifecycle_sends where step like 'rescue%' or step = 'review_pending' group by 1, 2;
 select count(*) as onboarding_steps from public.onboarding_steps;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.onboarding_steps to service_role;
+grant select on public.onboarding_steps to authenticated;

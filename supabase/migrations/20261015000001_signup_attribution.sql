@@ -96,3 +96,9 @@ $$;
 revoke all on function public.record_landings(jsonb) from public;
 revoke all on function public.record_landings(jsonb) from anon, authenticated;
 grant execute on function public.record_landings(jsonb) to service_role;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.landing_counts to service_role;
+grant select, insert, update, delete on public.signup_attribution to service_role;
+grant select on public.signup_attribution to authenticated;
+grant select on public.landing_counts to authenticated;

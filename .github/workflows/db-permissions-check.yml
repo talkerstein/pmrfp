@@ -1,0 +1,21 @@
+name: Database permission checks
+on:
+  pull_request:
+    paths: ['supabase/migrations/**', 'test/db/**', 'scripts/check-db-grants.mjs', '.github/workflows/db-permissions-check.yml']
+  push:
+    branches: [master]
+    paths: ['supabase/migrations/**', 'test/db/**', 'scripts/check-db-grants.mjs', '.github/workflows/db-permissions-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/check-db-grants.mjs
+      - run: npx vitest run test/db/api-grants.test.ts test/db/rls.test.ts test/db/correction-requests.test.ts

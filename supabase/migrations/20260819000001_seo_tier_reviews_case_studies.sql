@@ -147,3 +147,14 @@ drop policy if exists "vendor reviews admin all" on public.vendor_reviews;
 create policy "vendor reviews admin all" on public.vendor_reviews
   for all to authenticated using (public.is_admin(auth.uid()))
   with check (public.is_admin(auth.uid()));
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.case_studies to service_role;
+grant select, insert, update, delete on public.vendor_reviews to service_role;
+grant select on public.case_studies to anon, authenticated;
+grant insert on public.case_studies to authenticated;
+grant update on public.case_studies to authenticated;
+grant select, insert, update, delete on public.case_studies to authenticated;
+grant select on public.vendor_reviews to anon, authenticated;
+grant insert on public.vendor_reviews to authenticated;
+grant select, insert, update, delete on public.vendor_reviews to authenticated;

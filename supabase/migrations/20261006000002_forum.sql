@@ -373,3 +373,25 @@ create policy "forum reports admin read" on public.forum_reports for select usin
 
 drop policy if exists "forum mod log admin read" on public.forum_mod_log;
 create policy "forum mod log admin read" on public.forum_mod_log for select using (public.is_admin(auth.uid()));
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.forum_categories to service_role;
+grant select, insert, update, delete on public.forum_category_mods to service_role;
+grant select, insert, update, delete on public.forum_mod_log to service_role;
+grant select, insert, update, delete on public.forum_post_votes to service_role;
+grant select, insert, update, delete on public.forum_posts to service_role;
+grant select, insert, update, delete on public.forum_profiles to service_role;
+grant select, insert, update, delete on public.forum_reports to service_role;
+grant select, insert, update, delete on public.forum_reputation_events to service_role;
+grant select, insert, update, delete on public.forum_thread_ratings to service_role;
+grant select, insert, update, delete on public.forum_threads to service_role;
+grant select on public.forum_categories to anon, authenticated;
+grant select on public.forum_profiles to anon, authenticated;
+grant select on public.forum_category_mods to anon, authenticated;
+grant select on public.forum_threads to anon, authenticated;
+grant select on public.forum_posts to anon, authenticated;
+grant select on public.forum_thread_ratings to anon, authenticated;
+grant select on public.forum_post_votes to anon, authenticated;
+grant select on public.forum_reputation_events to anon, authenticated;
+grant select on public.forum_reports to anon, authenticated;
+grant select on public.forum_mod_log to anon, authenticated;

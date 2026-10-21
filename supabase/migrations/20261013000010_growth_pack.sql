@@ -170,3 +170,14 @@ revoke all on public.email_suppressions from anon;
 -- select kind, referrer, sum(hits) from public.badge_hits group by 1, 2 order by 3 desc;
 -- select status, count(*) from public.winner_claims group by 1;
 -- select status, country, count(*) from public.digest_subscribers group by 1, 2;
+
+-- Explicit Data API access: grants and RLS are separate requirements.
+grant select, insert, update, delete on public.badge_hits to service_role;
+grant select, insert, update, delete on public.digest_subscribers to service_role;
+grant select, insert, update, delete on public.email_suppressions to service_role;
+grant select, insert, update, delete on public.winner_claims to service_role;
+grant select on public.badge_hits to authenticated;
+grant select on public.winner_claims to authenticated;
+grant select on public.digest_subscribers to authenticated;
+grant select on public.email_suppressions to authenticated;
+grant select on public.winner_claims_public to service_role;
