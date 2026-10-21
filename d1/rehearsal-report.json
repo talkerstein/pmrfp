@@ -1,0 +1,35 @@
+{
+  "database": "pmrfp-migration-staging-v2-20261021",
+  "source_sha256": "24b84fdb030077e05480dee39e48fde5e413dd6fa57b6d87f671b1029189dcdb",
+  "tables": 60,
+  "records": 9961,
+  "schema_sha256": "f1ddb3957f70736a25f0125a86740717d3119fc6b8b3c1364ef8200941b89b03",
+  "schema_comparison": "identical",
+  "record_comparison": "all fields identical",
+  "foreign_keys": "valid",
+  "cutover_ready": false,
+  "baseline_master": "f8bca9fb92fda4ceda8b781b904e38191aa72b32",
+  "audit_date": "2026-10-21",
+  "snapshot_is_current_production": false,
+  "offline_tests": 18,
+  "local_incremental_insert_update_delete": "passed with synthetic records",
+  "second_live_export": "identical, no-op reconciliation passed",
+  "source_backup_restore": "all 9961 records matched",
+  "remote_readback_backup_restore": "all 9961 records matched",
+  "supabase_production_modified_by_this_branch": false,
+  "application_traffic_on_d1": false,
+  "continuous_cdc_implemented": false,
+  "reverse_replay_implemented": false,
+  "retained_staging_databases": [
+    {
+      "name": "pmrfp-migration-staging-20261021",
+      "id": "3a841ab5-6a0a-4d60-a895-2ba0f50796c4",
+      "purpose": "first verified data copy, retained after nullable-JSON fix"
+    },
+    {
+      "name": "pmrfp-migration-staging-v2-20261021",
+      "id": "80b90607-2f8d-4f9b-a646-658f2ebad0bc",
+      "purpose": "corrected candidate schema, fully verified copy"
+    }
+  ]
+}

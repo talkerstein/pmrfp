@@ -56,7 +56,9 @@
     "20261017000050_correction_requests.sql",
     "20261017000060_onboarding_rescue.sql",
     "20261018000010_free_saved_rfps.sql",
-    "20261019000001_dedupe_signups.sql"
+    "20261019000001_dedupe_signups.sql",
+    "20261021000001_explicit_api_grants.sql",
+    "20261021000010_buyer_sources.sql"
   ],
   "adaptations": [
     {
@@ -733,6 +735,426 @@
       "table_name": "bid_results",
       "column_name": "updated_at",
       "ordinal_position": 12,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "buyer_slug",
+      "ordinal_position": 1,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "buyer_name",
+      "ordinal_position": 2,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "province_code",
+      "ordinal_position": 3,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "country",
+      "ordinal_position": 4,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'CA'::text",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "scope",
+      "ordinal_position": 5,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'buyer'::text",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "hosts",
+      "ordinal_position": 6,
+      "data_type": "ARRAY",
+      "udt_name": "_text",
+      "is_nullable": "NO",
+      "column_default": "'{}'::text[]",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "status",
+      "ordinal_position": 7,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "method",
+      "ordinal_position": 8,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "feed_url",
+      "ordinal_position": 9,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "granted_on",
+      "ordinal_position": 10,
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "contact",
+      "ordinal_position": 11,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "reply_quote",
+      "ordinal_position": 12,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "notes",
+      "ordinal_position": 13,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "source_request_id",
+      "ordinal_position": 14,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "updated_by",
+      "ordinal_position": 15,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "created_at",
+      "ordinal_position": 16,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_permissions",
+      "column_name": "updated_at",
+      "ordinal_position": 17,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "id",
+      "ordinal_position": 1,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "organization",
+      "ordinal_position": 2,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "contact_name",
+      "ordinal_position": 3,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "work_email",
+      "ordinal_position": 4,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "tenders_url",
+      "ordinal_position": 5,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "method",
+      "ordinal_position": 6,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "feed_url",
+      "ordinal_position": 7,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "province_code",
+      "ordinal_position": 8,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "country",
+      "ordinal_position": 9,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'CA'::text",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "buyer_slug",
+      "ordinal_position": 10,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "authorized",
+      "ordinal_position": 11,
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "lang",
+      "ordinal_position": 12,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'en'::text",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "status",
+      "ordinal_position": 13,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'new'::text",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "admin_notes",
+      "ordinal_position": 14,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "decided_by",
+      "ordinal_position": 15,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "decided_at",
+      "ordinal_position": 16,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "created_at",
+      "ordinal_position": 17,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "buyer_source_requests",
+      "column_name": "updated_at",
+      "ordinal_position": 18,
       "data_type": "timestamp with time zone",
       "udt_name": "timestamptz",
       "is_nullable": "NO",
@@ -10998,6 +11420,192 @@
       "definition": "CHECK ((status_label = ANY (ARRAY['awarded'::text, 'apparent_low'::text, 'not_awarded'::text, 'submitted'::text])))"
     },
     {
+      "name": "buyer_permissions_buyer_name_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK (((char_length(buyer_name) >= 1) AND (char_length(buyer_name) <= 200)))"
+    },
+    {
+      "name": "buyer_permissions_buyer_slug_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK ((buyer_slug ~ '^[a-z0-9][a-z0-9-]{1,119}$'::text))"
+    },
+    {
+      "name": "buyer_permissions_contact_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK (((contact IS NULL) OR (char_length(contact) <= 300)))"
+    },
+    {
+      "name": "buyer_permissions_country_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK ((country = 'CA'::text))"
+    },
+    {
+      "name": "buyer_permissions_feed_url_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK (((feed_url IS NULL) OR ((char_length(feed_url) <= 500) AND (feed_url ~* '^https?://'::text))))"
+    },
+    {
+      "name": "buyer_permissions_method_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK (((method IS NULL) OR (method = ANY (ARRAY['read_public_page'::text, 'email_notices'::text, 'feed'::text]))))"
+    },
+    {
+      "name": "buyer_permissions_notes_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK (((notes IS NULL) OR (char_length(notes) <= 4000)))"
+    },
+    {
+      "name": "buyer_permissions_pkey",
+      "table_name": "buyer_permissions",
+      "type": "p",
+      "definition": "PRIMARY KEY (buyer_slug)"
+    },
+    {
+      "name": "buyer_permissions_province_code_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK (((province_code IS NULL) OR (province_code = ANY (ARRAY['ON'::text, 'BC'::text, 'AB'::text, 'NS'::text, 'MB'::text, 'SK'::text, 'QC'::text, 'NB'::text, 'PE'::text, 'NL'::text, 'YT'::text, 'NT'::text, 'NU'::text]))))"
+    },
+    {
+      "name": "buyer_permissions_reply_quote_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK (((reply_quote IS NULL) OR (char_length(reply_quote) <= 2000)))"
+    },
+    {
+      "name": "buyer_permissions_scope_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK ((scope = ANY (ARRAY['buyer'::text, 'platform'::text])))"
+    },
+    {
+      "name": "buyer_permissions_source_request_id_fkey",
+      "table_name": "buyer_permissions",
+      "type": "f",
+      "definition": "FOREIGN KEY (source_request_id) REFERENCES buyer_source_requests(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "buyer_permissions_status_check",
+      "table_name": "buyer_permissions",
+      "type": "c",
+      "definition": "CHECK ((status = ANY (ARRAY['yes'::text, 'link_only'::text, 'no'::text, 'pending'::text])))"
+    },
+    {
+      "name": "buyer_permissions_updated_by_fkey",
+      "table_name": "buyer_permissions",
+      "type": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "buyer_source_requests_admin_notes_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((admin_notes IS NULL) OR (char_length(admin_notes) <= 4000)))"
+    },
+    {
+      "name": "buyer_source_requests_authorized_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (authorized)"
+    },
+    {
+      "name": "buyer_source_requests_buyer_slug_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((buyer_slug IS NULL) OR (buyer_slug ~ '^[a-z0-9][a-z0-9-]{1,119}$'::text)))"
+    },
+    {
+      "name": "buyer_source_requests_contact_name_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((char_length(contact_name) >= 2) AND (char_length(contact_name) <= 200)))"
+    },
+    {
+      "name": "buyer_source_requests_country_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK ((country = 'CA'::text))"
+    },
+    {
+      "name": "buyer_source_requests_decided",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((status = 'new'::text) OR (decided_at IS NOT NULL)))"
+    },
+    {
+      "name": "buyer_source_requests_decided_by_fkey",
+      "table_name": "buyer_source_requests",
+      "type": "f",
+      "definition": "FOREIGN KEY (decided_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "buyer_source_requests_feed",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((method <> 'feed'::text) OR (feed_url IS NOT NULL)))"
+    },
+    {
+      "name": "buyer_source_requests_feed_url_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((feed_url IS NULL) OR ((char_length(feed_url) <= 500) AND (feed_url ~* '^https?://'::text))))"
+    },
+    {
+      "name": "buyer_source_requests_lang_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK ((lang = ANY (ARRAY['en'::text, 'fr'::text, 'es'::text])))"
+    },
+    {
+      "name": "buyer_source_requests_method_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK ((method = ANY (ARRAY['read_public_page'::text, 'email_notices'::text, 'feed'::text])))"
+    },
+    {
+      "name": "buyer_source_requests_organization_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((char_length(organization) >= 2) AND (char_length(organization) <= 200)))"
+    },
+    {
+      "name": "buyer_source_requests_pkey",
+      "table_name": "buyer_source_requests",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "buyer_source_requests_province_code_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK ((province_code = ANY (ARRAY['ON'::text, 'BC'::text, 'AB'::text, 'NS'::text, 'MB'::text, 'SK'::text, 'QC'::text, 'NB'::text, 'PE'::text, 'NL'::text, 'YT'::text, 'NT'::text, 'NU'::text])))"
+    },
+    {
+      "name": "buyer_source_requests_status_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK ((status = ANY (ARRAY['new'::text, 'approved'::text, 'rejected'::text])))"
+    },
+    {
+      "name": "buyer_source_requests_tenders_url_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK (((char_length(tenders_url) <= 500) AND (tenders_url ~* '^https?://'::text)))"
+    },
+    {
+      "name": "buyer_source_requests_work_email_check",
+      "table_name": "buyer_source_requests",
+      "type": "c",
+      "definition": "CHECK ((((char_length(work_email) >= 3) AND (char_length(work_email) <= 254)) AND (work_email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'::text)))"
+    },
+    {
       "name": "case_studies_category_id_fkey",
       "table_name": "case_studies",
       "type": "f",
@@ -14092,6 +14700,26 @@
       "indexdef": "CREATE UNIQUE INDEX bid_results_pkey ON public.bid_results USING btree (id)"
     },
     {
+      "tablename": "buyer_permissions",
+      "indexname": "buyer_permissions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX buyer_permissions_pkey ON public.buyer_permissions USING btree (buyer_slug)"
+    },
+    {
+      "tablename": "buyer_permissions",
+      "indexname": "buyer_permissions_status_idx",
+      "indexdef": "CREATE INDEX buyer_permissions_status_idx ON public.buyer_permissions USING btree (status)"
+    },
+    {
+      "tablename": "buyer_source_requests",
+      "indexname": "buyer_source_requests_pkey",
+      "indexdef": "CREATE UNIQUE INDEX buyer_source_requests_pkey ON public.buyer_source_requests USING btree (id)"
+    },
+    {
+      "tablename": "buyer_source_requests",
+      "indexname": "buyer_source_requests_status_idx",
+      "indexdef": "CREATE INDEX buyer_source_requests_status_idx ON public.buyer_source_requests USING btree (status, created_at DESC)"
+    },
+    {
       "tablename": "case_studies",
       "indexname": "case_studies_cat_region_idx",
       "indexdef": "CREATE INDEX case_studies_cat_region_idx ON public.case_studies USING btree (category_id, region_id)"
@@ -15322,6 +15950,66 @@
       "cmd": "SELECT",
       "qual": "( SELECT has_intel_access(auth.uid()) AS has_intel_access)",
       "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "buyer_permissions",
+      "policyname": "buyer permissions admin insert",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "buyer_permissions",
+      "policyname": "buyer permissions admin read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "buyer_permissions",
+      "policyname": "buyer permissions admin update",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "UPDATE",
+      "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+      "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "buyer_source_requests",
+      "policyname": "buyer source requests admin read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "buyer_source_requests",
+      "policyname": "buyer source requests admin update",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "UPDATE",
+      "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+      "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
     },
     {
       "schemaname": "public",
@@ -17353,6 +18041,10 @@
     }
   ],
   "views": [
+    {
+      "viewname": "buyer_permissions_public",
+      "definition": " SELECT buyer_slug,\n    scope,\n    status,\n    method,\n    granted_on\n   FROM buyer_permissions;"
+    },
     {
       "viewname": "gc_package_levels",
       "definition": " SELECT r.slug,\n    k.level\n   FROM (rfp_posts r\n     JOIN org_karma_public k ON ((k.org_id = r.posted_by_organization_id)))\n  WHERE ((r.status = 'published'::text) AND (r.source_type = 'gc_package'::text) AND (k.level >= 2));"
