@@ -190,6 +190,8 @@ export function marketView(raw: RawReport, market: Market): MarketView {
       "claim_verified",
       "respond_to_job",
       "quote_request_posted",
+      "sealed_opened",
+      "award_published",
     ].map((event) => ({ event, n: actors(raw, market, event) })),
   };
 }

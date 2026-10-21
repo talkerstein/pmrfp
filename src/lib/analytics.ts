@@ -30,6 +30,8 @@ export const EVENT = {
   CLAIM_STARTED: "claim_started",
   CLAIM_VERIFIED: "claim_verified",
   QUOTE_REQUEST_POSTED: "quote_request_posted",
+  SEALED_OPENED: "sealed_opened",
+  AWARD_PUBLISHED: "award_published",
 } as const;
 
 export type EventName = (typeof EVENT)[keyof typeof EVENT];
@@ -51,6 +53,8 @@ const SITE_EVENT_FOR: Partial<Record<EventName, SiteEvent>> = {
   claim_started: "claim_started",
   claim_verified: "claim_verified",
   quote_request_posted: "quote_request_posted",
+  sealed_opened: "sealed_opened",
+  award_published: "award_published",
 };
 
 /**

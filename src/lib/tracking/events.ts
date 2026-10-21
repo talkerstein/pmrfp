@@ -25,6 +25,9 @@ export const SITE_EVENTS = [
   "claim_verified",
   "respond_to_job",
   "quote_request_posted",
+  // PMRFP for Towns, Part C.
+  "sealed_opened",
+  "award_published",
 ] as const;
 export type SiteEvent = (typeof SITE_EVENTS)[number];
 

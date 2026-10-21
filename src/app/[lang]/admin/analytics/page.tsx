@@ -27,6 +27,8 @@ const ACTIVITY_LABEL: Record<string, string> = {
   claim_verified: "Claim verified",
   respond_to_job: "Responded to a job",
   quote_request_posted: "Quote request posted",
+  sealed_opened: "Sealed quote box opened (towns)",
+  award_published: "Award published (towns)",
 };
 
 /**

@@ -84,6 +84,7 @@ export function TownJobForm({
 }) {
   const t = useT("townJobsClient").form;
   const pm = useT("pmClient").form;
+  const tc = useT("townResultsClient").form;
   const lang = useLang();
   const [state, action, pending] = useActionState(createRfpAction, {} as ActionState);
   const [draft, setDraft] = useState<Defaults | undefined>(undefined);
@@ -183,6 +184,14 @@ export function TownJobForm({
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="budgetPublic" className="size-4" /> {t.budgetPublic}
+            </label>
+            {/* Part C: the sealed quote box (opt-in per post). */}
+            <label className="flex items-start gap-2 rounded-md border border-border bg-secondary/30 p-3 text-sm" data-option="sealed">
+              <input type="checkbox" name="sealed" className="mt-0.5 size-4" />
+              <span>
+                <span className="font-medium">{tc.sealed}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{tc.sealedHint}</span>
+              </span>
             </label>
           </>
         )}

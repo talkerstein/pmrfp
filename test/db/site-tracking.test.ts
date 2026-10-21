@@ -101,6 +101,12 @@ describe("record_site_beacon: traffic and events", () => {
       { event: "upgrade_clicked", role: "trade", country: "US", path: "/pricing", anon_hash: H1, props: { plan: "pro" } },
     ]);
   });
+
+  it("accepts Part C's town events (sealed box opened, award published)", async () => {
+    await beacon({ events: [{ event: "sealed_opened", role: "public_buyer", props: { via: "witness", quotes: 3 } }, { event: "award_published", role: "public_buyer" }] });
+    expect(await rows(`select event from site_events where event in ('sealed_opened', 'award_published') order by event`)).toEqual([{ event: "award_published" }, { event: "sealed_opened" }]);
+    await db.exec(`delete from site_events where event in ('sealed_opened', 'award_published')`);
+  });
 });
 
 describe("site_analytics_report", () => {

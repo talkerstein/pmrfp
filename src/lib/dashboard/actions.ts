@@ -408,7 +408,7 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   // First-party funnel (site_events): a PM, GC or town posted a job.
   const poster = { userId: session.userId, role: session.profile.primary_role };
   await trackEvent(EVENT.RFP_POSTED, { kind: town ? "town" : gc ? "gc_package" : "pm", post_kind: town?.fields.postKind ?? null }, poster);
-  if (town?.fields.postKind === "quote_request") await trackEvent(EVENT.QUOTE_REQUEST_POSTED, { kind: "town" }, poster);
+  if (town?.fields.postKind === "quote_request") await trackEvent(EVENT.QUOTE_REQUEST_POSTED, { kind: "town", sealed: town.fields.sealed }, poster);
 
   const { data: catRows } = await supabase.from("trade_categories").select("id,slug").in("slug", categories);
   if (catRows?.length)
@@ -469,6 +469,7 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
       title: d.title,
       slug,
       postKind: town.fields.postKind,
+      sealed: town.fields.sealed,
       postedBy: session.organization?.name ?? null,
       region: d.regionSlug,
       categories: categories.join(", "),

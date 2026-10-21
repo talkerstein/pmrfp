@@ -144,14 +144,6 @@ const en = {
     waiting: "{n} questions waiting",
     responses: "{n} responses",
   },
-  partC: {
-    title: "Coming next",
-    items: [
-      { title: "Sealed quote box", body: "Quotes stay locked until closing, then two named staff open them together, with a log." },
-      { title: "Council summary", body: "One click: bids received, lowest price and a recommendation, as a PDF or spreadsheet for your report." },
-      { title: "Award publishing", body: "Publish who won and for how much, so your award history builds itself." },
-    ],
-  },
   listing: {
     posted: "Posted by {buyer} (verified)",
     postedUnverified: "Posted by {buyer}",
@@ -338,14 +330,6 @@ const fr: Messages = {
     waiting: "{n} questions en attente",
     responses: "{n} réponses",
   },
-  partC: {
-    title: "Bientôt",
-    items: [
-      { title: "Boîte de prix scellée", body: "Les prix restent verrouillés jusqu'à la clôture, puis deux employés nommés les ouvrent ensemble, avec un registre." },
-      { title: "Sommaire pour le conseil", body: "En un clic : soumissions reçues, plus bas prix et recommandation, en PDF ou en chiffrier pour votre rapport." },
-      { title: "Publication de l'adjudication", body: "Publiez le gagnant et le montant : votre historique d'adjudications se construit tout seul." },
-    ],
-  },
   listing: {
     posted: "Publié par {buyer} (vérifiée)",
     postedUnverified: "Publié par {buyer}",
@@ -529,14 +513,6 @@ const es: Messages = {
     empty: "Aún no ha publicado nada.",
     waiting: "{n} preguntas pendientes",
     responses: "{n} respuestas",
-  },
-  partC: {
-    title: "Próximamente",
-    items: [
-      { title: "Buzón sellado de cotizaciones", body: "Las cotizaciones quedan cerradas hasta el cierre y luego dos empleados designados las abren juntos, con un registro." },
-      { title: "Resumen para el concejo", body: "Con un clic: ofertas recibidas, precio más bajo y recomendación, en PDF u hoja de cálculo para su informe." },
-      { title: "Publicación de la adjudicación", body: "Publique quién ganó y por cuánto, y su historial de adjudicaciones se arma solo." },
-    ],
   },
   listing: {
     posted: "Publicado por {buyer} (verificado)",

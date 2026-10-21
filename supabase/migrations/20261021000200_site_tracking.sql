@@ -16,7 +16,8 @@
 --                        The old "anyone may insert" policy is dropped: no
 --                        browser writes here directly any more.
 --   site_events          funnel events (sign-up, onboarding, writer, posts,
---                        pricing, checkout, trials, follows, claims, jobs).
+--                        pricing, checkout, trials, follows, claims, jobs,
+--                        and Part C's sealed openings and published awards).
 --   site_visitors        one row per visitor-hash per day.
 --   site_page_views      daily page views per path and country.
 --   site_referrers       daily arrivals per referring domain and country.
@@ -68,7 +69,7 @@ create table if not exists public.site_events (
     'writer_started', 'writer_draft_generated', 'rfp_posted',
     'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_completed',
     'trial_started', 'follow_buyer', 'claim_started', 'claim_verified',
-    'respond_to_job', 'quote_request_posted'
+    'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'
   )),
   path text check (path is null or (char_length(path) <= 200 and path ~ '^/')),
   lang text check (lang is null or lang in ('en', 'fr', 'es')),
@@ -272,7 +273,7 @@ begin
       'writer_started', 'writer_draft_generated', 'rfp_posted',
       'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_completed',
       'trial_started', 'follow_buyer', 'claim_started', 'claim_verified',
-      'respond_to_job', 'quote_request_posted'
+      'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'
     )
   ) x
   left join public.users_profile u on u.id = x.uid

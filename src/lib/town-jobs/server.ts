@@ -8,6 +8,8 @@ import { emailLang, type EmailLang } from "@/lib/pm-jobs/email-copy";
 import { langOf, loadAlertAudience, loadJob, pendingReviewCount, recipientLangs, runPmJobAlerts } from "@/lib/pm-jobs/server";
 import { answerEmail, addendumEmail, emailInviteEmail, questionWaitingEmail, tradeInviteEmail } from "./email-copy";
 import { getBuyerFollowerIds } from "./followers";
+import { isClosed, townClosesAt } from "./sealed";
+import { sealedCounts, sealedResponderIds } from "./sealed-server";
 import {
   askDecision,
   broadcastAudience,
@@ -71,14 +73,19 @@ export interface TownJob {
   poster_lang?: string | null;
   created_at?: string;
   published_at?: string | null;
+  /** "Sealed until closing" (Part C, migration 20261021000120). */
+  sealed?: boolean | null;
 }
 
-export const TOWN_JOB_COLS =
+const TOWN_JOB_BASE_COLS =
   "id,title,slug,summary,status,source_type,post_kind,buyer_key,buyer_name,official_url,official_portal,deadline,question_deadline,posted_by_user_id,posted_by_organization_id,poster_lang,created_at,published_at";
+export const TOWN_JOB_COLS = `${TOWN_JOB_BASE_COLS},sealed`;
 
 /** A public buyer's job by id, or null (not found, not a town's job, or before migration 20261021000060). */
 export async function loadTownJob(db: Db, rfpId: string): Promise<TownJob | null> {
-  const { data, error } = await db.from("rfp_posts").select(TOWN_JOB_COLS).eq("id", rfpId).maybeSingle();
+  let { data, error } = await db.from("rfp_posts").select(TOWN_JOB_COLS).eq("id", rfpId).maybeSingle();
+  // Before Part C's migration there's no sealed column: nothing is sealed.
+  if (error) ({ data, error } = await db.from("rfp_posts").select(TOWN_JOB_BASE_COLS).eq("id", rfpId).maybeSingle());
   if (error || !data) return null;
   const job = data as unknown as TownJob;
   return job.source_type === TOWN_SOURCE ? job : null;
@@ -158,10 +165,10 @@ export interface FinishResult {
  */
 export async function finishTownPost(
   db: Db,
-  p: { rfpId: string; page: TownPage; organizationId: string; actorUserId: string; title: string; slug: string; postKind: string; postedBy: string | null; region: string | null; categories: string; schedule: (task: () => Promise<void>) => void },
+  p: { rfpId: string; page: TownPage; organizationId: string; actorUserId: string; title: string; slug: string; postKind: string; postedBy: string | null; region: string | null; categories: string; schedule: (task: () => Promise<void>) => void; sealed?: boolean },
 ): Promise<FinishResult> {
   const base = { rfpId: p.rfpId, organizationId: p.organizationId, buyerKey: p.page.buyerKey, actorUserId: p.actorUserId };
-  await logTownEvent(db, { ...base, event: "posted", detail: { kind: p.postKind, verified: p.page.verified } });
+  await logTownEvent(db, { ...base, event: "posted", detail: { kind: p.postKind, verified: p.page.verified, ...(p.sealed ? { sealed: true } : {}) } });
   const target = townPostStatus({ verified: p.page.verified });
   if (target === "published") {
     const { data, error } = await db
@@ -172,7 +179,9 @@ export async function finishTownPost(
       .select("id")
       .maybeSingle();
     if (!error && data) {
-      await logTownEvent(db, { ...base, event: "published", detail: { auto: true } });
+      // Followers at posting time, for the reach report (counts only).
+      const followers = await getBuyerFollowerIds(p.page.buyerKey).catch(() => [] as string[]);
+      await logTownEvent(db, { ...base, event: "published", detail: { auto: true, followers: followers.length } });
       const preview = await runPmJobAlerts(db, p.rfpId, { dry: true }).catch(() => null);
       const n = preview?.wouldEmail ?? 0;
       let alerts: FinishResult["alerts"] = "none";
@@ -315,6 +324,8 @@ export async function issueAddendum(
   const planned = planAddendum({ body: p.body, officialUrl: p.officialUrl, newDeadline: p.newDeadline }, p.job);
   if (!planned.ok) return { ok: false, error: planned.error };
   const plan = planned.plan;
+  // A sealed box that has closed keeps its closing date (the database refuses it too): notices only.
+  if (plan.newDeadline && p.job.sealed && isClosed(townClosesAt(p.job.deadline, p.job.buyer_key))) return { ok: false, error: "closed" };
   const { data: existing } = await db.from("town_job_addenda").select("number").eq("rfp_id", p.job.id);
   let number = nextAddendumNumber((existing ?? []) as { number: number }[]);
   let inserted = false;
@@ -396,7 +407,9 @@ export async function broadcastToEngaged(db: Db, job: TownJob, payload: Broadcas
     job.buyer_key ? getBuyerFollowerIds(job.buyer_key).catch(() => []) : Promise.resolve([] as string[]),
     townUserIds(db, job),
   ]);
-  const responders = ((interests ?? []) as { submitted_by_user_id: string | null }[]).map((r) => r.submitted_by_user_id);
+  const responders: (string | null)[] = ((interests ?? []) as { submitted_by_user_id: string | null }[]).map((r) => r.submitted_by_user_id);
+  // A sealed box: everyone with a quote in it hears too (ids only; who they are never reaches the town).
+  if (job.sealed) responders.push(...(await sealedResponderIds(db, job.id)));
   const asked = ((askers ?? []) as { asker_user_id: string | null }[]).map((r) => r.asker_user_id);
   const ids = [...new Set([...responders, ...asked, ...followers].filter((x): x is string => Boolean(x)))];
   const [profiles, prefs] = await Promise.all([
@@ -695,6 +708,8 @@ export async function unpublishTownJob(db: Db, rfpId: string, actorUserId: strin
 
 export interface TownJobSummary extends TownJob {
   responses: number;
+  /** A sealed post's box: quotes in it (a count) and whether it's open. */
+  sealedBox?: { received: number; opened: boolean } | null;
   questionsWaiting: number;
   questions: number;
   addenda: number;
@@ -703,29 +718,29 @@ export interface TownJobSummary extends TownJob {
 
 /** A town's jobs, newest first, with what's waiting on each. */
 export async function townJobsFor(db: Db, organizationId: string): Promise<TownJobSummary[]> {
-  const { data, error } = await db
-    .from("rfp_posts")
-    .select(TOWN_JOB_COLS)
-    .eq("posted_by_organization_id", organizationId)
-    .eq("source_type", TOWN_SOURCE)
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const read = (cols: string) =>
+    db.from("rfp_posts").select(cols).eq("posted_by_organization_id", organizationId).eq("source_type", TOWN_SOURCE).order("created_at", { ascending: false }).limit(200);
+  let { data, error } = await read(TOWN_JOB_COLS);
+  if (error) ({ data, error } = await read(TOWN_JOB_BASE_COLS));
   if (error || !data) return [];
   const jobs = data as unknown as TownJob[];
   const ids = jobs.map((j) => j.id);
   if (!ids.length) return [];
-  const [interests, questions, addenda, invites] = await Promise.all([
+  const sealedIds = jobs.filter((j) => j.sealed).map((j) => j.id);
+  const [interests, questions, addenda, invites, boxes] = await Promise.all([
     inList<{ rfp_id: string }>(ids, (c) => db.from("rfp_interests").select("rfp_id").in("rfp_id", c)),
     inList<{ rfp_id: string; status: string }>(ids, (c) => db.from("town_job_questions").select("rfp_id,status").in("rfp_id", c)),
     inList<{ rfp_id: string }>(ids, (c) => db.from("town_job_addenda").select("rfp_id").in("rfp_id", c)),
     inList<{ rfp_id: string }>(ids, (c) => db.from("town_invites").select("rfp_id").in("rfp_id", c)),
+    sealedIds.length ? sealedCounts(db, sealedIds) : Promise.resolve(new Map<string, { received: number; opened: boolean }>()),
   ]);
   const count = <T extends { rfp_id: string }>(rows: T[], id: string, test: (r: T) => boolean = () => true) => rows.filter((r) => r.rfp_id === id && test(r)).length;
   return jobs
     .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
     .map((j) => ({
       ...j,
-      responses: count(interests, j.id),
+      responses: j.sealed && !boxes.get(j.id)?.opened ? (boxes.get(j.id)?.received ?? 0) : count(interests, j.id),
+      sealedBox: j.sealed ? (boxes.get(j.id) ?? { received: 0, opened: false }) : null,
       questions: count(questions, j.id),
       questionsWaiting: count(questions, j.id, (r) => r.status === "open"),
       addenda: count(addenda, j.id),
@@ -744,6 +759,7 @@ export interface TownJobDetail {
   addenda: AddendumRow[];
   invites: { id: string; kind: string; email_key: string; company: string | null; created_at: string; status: string }[];
   log: { id: number; event: string; detail: Record<string, unknown>; created_at: string }[];
+  /** Responses (rfp_interests). A sealed box's quotes are counted in its own state (sealed_box_state) until it opens. */
   responses: number;
 }
 

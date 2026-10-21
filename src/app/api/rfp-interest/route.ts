@@ -12,6 +12,8 @@ import { isEnabledLocale } from "@/i18n/config";
 import { REFUSAL_STATUS, isFreeLimitError, parseQuoteAmount, parseQuoteKind, respondDecision, responseAllowance } from "@/lib/pm-jobs/rules";
 import { freeResponsesUsed } from "@/lib/pm-jobs/server";
 import { loadJobForDecision, notifyNewInterest } from "@/lib/pm-jobs/decisions";
+import { loadTownJob } from "@/lib/town-jobs/server";
+import { respondSealed } from "@/lib/town-jobs/sealed-respond";
 
 /**
  * A trade responds to a listing ("Express interest" / "Respond").
@@ -62,6 +64,16 @@ export async function POST(request: Request) {
   const pro = session.hasTradeAccess;
   // A town's job (lib/town-jobs): always free, never counted, so no allowance to read or show.
   const townJob = rfp.source_type === "public_buyer_direct";
+  // "Sealed until closing" (Part C): the quote goes into the sealed box, never into a response the town can read.
+  if (townJob) {
+    const town = await loadTownJob(db, rfp.id);
+    if (town?.sealed) {
+      const reply = await respondSealed(db, session, town, data);
+      // First-party: respond_to_job (a sealed quote; never its price).
+      if (reply.body.ok) await trackEvent(EVENT.RFP_INTEREST_SUBMITTED, { rfpId: rfp.id, kind: "town_sealed" }, { userId: session.userId, role: session.profile.primary_role });
+      return NextResponse.json(reply.body.ok ? { ...reply.body, allowance: { unlimited: true } } : reply.body, { status: reply.status });
+    }
+  }
   const used = pro || townJob ? 0 : await freeResponsesUsed(db, org.id);
   const decision = respondDecision({
     signedIn: true,
@@ -129,6 +141,10 @@ export async function POST(request: Request) {
     }
     if (isFreeLimitError(error)) {
       return NextResponse.json({ error: refusalMessage("limit"), reason: "limit" }, { status: REFUSAL_STATUS.limit });
+    }
+    // A sealed box (the database keeps responses out of it until it's opened).
+    if (error?.hint === "pmrfp_sealed") {
+      return NextResponse.json({ error: "Quotes on this job are sealed until closing.", reason: "not_open" }, { status: 409 });
     }
     // A town's formal tender (the database refuses responses on a mirror too).
     if (error?.hint === "pmrfp_official_portal") {
