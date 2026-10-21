@@ -452,7 +452,7 @@ async function sendBuilt(to: string, e: BuiltEmail, lang: EmailLang, utm: string
 export async function sendInterestConfirmation(
   to: string,
   rfpTitle: string,
-  opts: { lang?: EmailLang; posterKind?: "pm" | "gc"; allowance?: { unlimited: boolean; left: number; limit: number } } = {},
+  opts: { lang?: EmailLang; posterKind?: PosterKind; allowance?: { unlimited: boolean; left: number; limit: number } } = {},
 ): Promise<void> {
   const lang = opts.lang ?? "en";
   await sendBuilt(to, confirmationEmail(lang, { base: BASE, rfpTitle, posterKind: opts.posterKind ?? "pm", allowance: opts.allowance }), lang, "response-sent");
@@ -466,13 +466,16 @@ export async function sendAdminNewRfp(rfp: {
   category?: string | null;
   kind?: string | null;
   pending?: number | null;
+  /** A verified town's job went live without review (lib/town-jobs): an FYI, with the unpublish link. */
+  autoPublished?: boolean;
 }): Promise<void> {
   const waiting = rfp.pending && rfp.pending > 1 ? ` (${rfp.pending} waiting)` : "";
+  const what = rfp.kind === "gc_package" ? "GC package" : rfp.kind === "public_buyer_direct" ? "town job" : "RFP";
   await send(
     adminInbox(),
-    `New ${rfp.kind === "gc_package" ? "GC package" : "RFP"} to review${waiting}: ${rfp.title.slice(0, 90)}`,
+    rfp.autoPublished ? `New ${what} published (verified buyer): ${rfp.title.slice(0, 90)}` : `New ${what} to review${waiting}: ${rfp.title.slice(0, 90)}`,
     layout(
-      "New post waiting for review",
+      rfp.autoPublished ? "A verified town published a job" : "New post waiting for review",
       `<ul>
         <li><strong>Title:</strong> ${esc(rfp.title)}</li>
         ${rfp.postedBy ? `<li><strong>Posted by:</strong> ${esc(rfp.postedBy)}</li>` : ""}
@@ -480,8 +483,8 @@ export async function sendAdminNewRfp(rfp: {
         ${rfp.region ? `<li><strong>Region:</strong> ${esc(rfp.region)}</li>` : ""}
         ${rfp.pending ? `<li><strong>Waiting for review:</strong> ${rfp.pending}</li>` : ""}
        </ul>
-       <p>It stays hidden, and no trade hears about it, until you publish it.</p>
-       <p>${btn(`${BASE}/admin/rfps`, "Review in admin")}</p>`,
+       <p>${rfp.autoPublished ? "It's live now: the buyer manages its verified town page, so it skipped review. Unpublish it from admin if something's wrong." : "It stays hidden, and no trade hears about it, until you publish it."}</p>
+       <p>${btn(`${BASE}/admin/rfps`, rfp.autoPublished ? "Open admin" : "Review in admin")}</p>`,
     ),
   );
 }
@@ -499,10 +502,17 @@ export async function sendPmNewInterest(
     rfpId: string;
     lang?: EmailLang;
     quote?: { amount?: number | null; kind?: "estimate" | "firm" | null; notes?: string | null; startDate?: string | null; availability?: string | null; currency?: "CAD" | "USD" };
+    /** A town's job: the "Review responses" button opens the town's dashboard. */
+    posterKind?: PosterKind;
   },
 ): Promise<void> {
   const lang = params.lang ?? "en";
-  await sendBuilt(to, newInterestEmail(lang, { base: BASE, vendorName: params.vendorName, rfpTitle: params.rfpTitle, rfpId: params.rfpId, quote: params.quote }), lang, "new-response");
+  await sendBuilt(
+    to,
+    newInterestEmail(lang, { base: BASE, vendorName: params.vendorName, rfpTitle: params.rfpTitle, rfpId: params.rfpId, quote: params.quote, posterKind: params.posterKind }),
+    lang,
+    "new-response",
+  );
 }
 
 /**
@@ -525,6 +535,8 @@ export async function sendPmJobAlert(
     freeLimit: number;
     unsubscribeUrl: string;
     mailingAddress: string;
+    /** A public buyer's job: who posted it, and whether bids go to an official portal. */
+    town?: { buyer: string | null; mirror: boolean; portal: string | null };
   },
 ): Promise<void> {
   const { lang, ...rest } = params;
@@ -534,7 +546,20 @@ export async function sendPmJobAlert(
   });
 }
 
-type PosterKind = "pm" | "gc";
+type PosterKind = "pm" | "gc" | "town";
+
+/**
+ * A town's job email (lib/town-jobs/email-copy: invites, answers, addenda,
+ * a question waiting) in the shared shell. With an unsubscribe link it also
+ * carries the one-click List-Unsubscribe headers (RFC 8058). The callers
+ * gate sending (TOWN_INVITES_ENABLED, TOWN_QA_EMAILS_ENABLED).
+ */
+export async function sendTownJobEmail(to: string, e: BuiltEmail, lang: EmailLang, utm: string, unsubscribeUrl?: string | null): Promise<void> {
+  const headers = unsubscribeUrl
+    ? { "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+    : undefined;
+  await send(to, e.subject, layout(e.title, e.bodyHtml, e.footnote || undefined, { lang, referralPs: false }), headers, { utm });
+}
 type Contact = { name: string | null; company: string | null; email: string | null; phone: string | null };
 
 /** To a trade whose response the poster declined (with their optional note). */
@@ -558,7 +583,7 @@ export async function sendTradeContactShared(to: string, p: { lang: EmailLang; r
 }
 
 /** To the poster: the admin rejected the listing, with a short reason. */
-export async function sendPmRfpRejected(to: string, p: { lang: EmailLang; title: string; reason: string | null }): Promise<void> {
+export async function sendPmRfpRejected(to: string, p: { lang: EmailLang; title: string; reason: string | null; posterKind?: PosterKind }): Promise<void> {
   await sendBuilt(to, rejectedEmail(p.lang, { base: BASE, ...p }), p.lang, "rfp-rejected");
 }
 
@@ -581,12 +606,12 @@ export async function sendAdminNewInterest(params: { vendor: string; rfpTitle: s
 /** To the poster: their listing is live. Says whether matching trades are being emailed today (PM_JOB_ALERTS_ENABLED). */
 export async function sendPmRfpPublished(
   to: string,
-  rfp: { title: string; slug: string; id?: string; lang?: EmailLang; alertsOn?: boolean },
+  rfp: { title: string; slug: string; id?: string; lang?: EmailLang; alertsOn?: boolean; posterKind?: PosterKind },
 ): Promise<void> {
   const lang = rfp.lang ?? "en";
   await sendBuilt(
     to,
-    publishedEmail(lang, { base: BASE, title: rfp.title, slug: rfp.slug, rfpId: rfp.id ?? "", alertsOn: Boolean(rfp.alertsOn) }),
+    publishedEmail(lang, { base: BASE, title: rfp.title, slug: rfp.slug, rfpId: rfp.id ?? "", alertsOn: Boolean(rfp.alertsOn), posterKind: rfp.posterKind }),
     lang,
     "rfp-published",
   );

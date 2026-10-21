@@ -27,6 +27,8 @@ export function isGcPackage(r: { sourceType: string | null }): boolean {
 export function sourceTypeLabel(sourceType: string | null, slug: string, lang: Locale = "en"): string | null {
   if (sourceType === GC_PACKAGE) return lang === "en" ? GC_BADGE : sourceLabels(lang).gcPackage;
   if (sourceType === "public_source") return translateBadge(publicTenderSource(slug).badge, lang);
+  // PMRFP for Towns: a job a town (or other public buyer) posted itself.
+  if (sourceType === "public_buyer_direct") return sourceLabels(lang).townJob;
   return null;
 }
 

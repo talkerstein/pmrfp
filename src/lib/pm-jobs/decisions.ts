@@ -11,7 +11,7 @@ import {
 } from "@/lib/email/send";
 import { isUsState } from "@/lib/geo";
 import { escHtml } from "@/lib/email/parts";
-import type { EmailLang, PosterKind, QuoteInfo } from "./email-copy";
+import { responsesPath, type EmailLang, type PosterKind, type QuoteInfo } from "./email-copy";
 import { langOf } from "./server";
 import { canPickOn, isOpenResponse, pickPlan, pmContactCard, type Allowance, type ContactCard } from "./rules";
 
@@ -38,21 +38,24 @@ export interface JobForDecision {
   contact_email?: string | null;
   contact_phone?: string | null;
   poster_lang?: string | null;
+  /** Public buyers' jobs (migration 20261021000060): 'quote_request' or 'tender_mirror'. */
+  post_kind?: string | null;
 }
 
 export const JOB_DECISION_COLS =
   "id,title,slug,status,source_type,province,posted_by_user_id,posted_by_organization_id,contact_name,contact_email,contact_phone";
 
 export function posterKindOf(sourceType: string | null | undefined): PosterKind {
-  return sourceType === "gc_package" ? "gc" : "pm";
+  return sourceType === "gc_package" ? "gc" : sourceType === "public_buyer_direct" ? "town" : "pm";
 }
 
-/** The job, with poster_lang when that column exists (migration 20261021000020). */
+/** The job, with poster_lang (migration 20261021000020) and post_kind (20261021000060) when those columns exist. */
 export async function loadJobForDecision(db: Db, rfpId: string): Promise<JobForDecision | null> {
-  const first = await db.from("rfp_posts").select(`${JOB_DECISION_COLS},poster_lang`).eq("id", rfpId).maybeSingle();
-  if (!first.error) return (first.data as JobForDecision | null) ?? null;
-  const legacy = await db.from("rfp_posts").select(JOB_DECISION_COLS).eq("id", rfpId).maybeSingle();
-  return (legacy.data as JobForDecision | null) ?? null;
+  for (const extra of [",poster_lang,post_kind", ",poster_lang", ""]) {
+    const res = await db.from("rfp_posts").select(`${JOB_DECISION_COLS}${extra}`).eq("id", rfpId).maybeSingle();
+    if (!res.error || !extra) return (res.data as JobForDecision | null) ?? null;
+  }
+  return null;
 }
 
 export interface Actor {
@@ -121,7 +124,9 @@ export async function notifyNewInterest(db: Db, n: NewInterestNotice): Promise<{
   const tasks: Promise<unknown>[] = [];
   if (pmEmail) {
     const lang = await langOf(db, n.job.posted_by_user_id, n.job.poster_lang);
-    tasks.push(sendPmNewInterest(pmEmail, { vendorName: n.vendorName, rfpTitle: n.job.title, rfpId: n.job.id, lang, quote: n.quote ? { ...n.quote, currency } : undefined }));
+    tasks.push(
+      sendPmNewInterest(pmEmail, { vendorName: n.vendorName, rfpTitle: n.job.title, rfpId: n.job.id, lang, quote: n.quote ? { ...n.quote, currency } : undefined, posterKind }),
+    );
   }
   if (n.job.posted_by_user_id) {
     tasks.push(
@@ -131,7 +136,7 @@ export async function notifyNewInterest(db: Db, n: NewInterestNotice): Promise<{
           type: "pm_new_response",
           title: `New response from ${n.vendorName}`.slice(0, 200),
           message: n.job.title,
-          link_url: `/pm-dashboard/rfps/${n.job.id}/interests`,
+          link_url: responsesPath(n.job.id, posterKind),
         }),
       ),
     );

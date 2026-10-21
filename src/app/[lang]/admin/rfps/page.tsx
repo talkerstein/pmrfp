@@ -11,6 +11,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { fmtDate, dash } from "@/lib/admin/queries";
 import type { RfpPost } from "@/types/db";
 import { reviewRfpAction } from "@/lib/admin/rfp-actions";
+import { unpublishTownJobAction } from "@/lib/town-jobs/actions";
 import { setLangFrom } from "@/i18n/server";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -29,11 +30,13 @@ const DEMO_RFPS: RfpRow[] = [
   { id: "4", title: "Retail Property Parking Lot Asphalt Repair", status: "draft", deadline: "2026-07-31", source_type: "admin_seeded", created_at: "2026-05-24" },
 ];
 
-type Search = { published?: string; alerts?: string; n?: string; rejected?: string; preview?: string };
+type Search = { published?: string; alerts?: string; n?: string; rejected?: string; preview?: string; unpublished?: string; unpublish?: string };
 
 /** What the admin sees after a publish or reject (lib/admin/rfp-actions puts it in the URL). */
 function reviewBanner(sp: Search): { tone: "ok" | "warn"; text: string } | null {
   if (sp.rejected) return { tone: "ok", text: "Rejected. The poster was emailed your reason." };
+  if (sp.unpublished) return { tone: "ok", text: "Unpublished. The town's job is off the board and back in the review queue; the town was told in-app." };
+  if (sp.unpublish === "failed") return { tone: "warn", text: "Couldn't unpublish that job (it may already be off the board)." };
   if (!sp.published) return null;
   const n = Number(sp.n) || 0;
   const trades = `${n} matching ${n === 1 ? "person" : "people"}`;
@@ -59,8 +62,19 @@ export default async function AdminRfpsPage({ params, searchParams }: { params: 
 
   let rows = DEMO_RFPS;
   let waiting: RfpRow[] = DEMO_RFPS.filter((r) => r.status === "pending_review");
+  let townLive: RfpRow[] = [];
   if (!isDemoMode()) {
     const supabase = await createClient();
+    // Towns' live jobs (verified towns publish without review): an admin can take one off the board.
+    const towns = await supabase
+      .from("rfp_posts")
+      .select("id, title, status, deadline, source_type, created_at")
+      .eq("source_type", "public_buyer_direct")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(100)
+      .returns<RfpRow[]>();
+    townLive = towns.data ?? [];
     const [{ data }, { data: queue }] = await Promise.all([
       supabase
         .from("rfp_posts")
@@ -201,6 +215,35 @@ export default async function AdminRfpsPage({ params, searchParams }: { params: 
                       </form>
                     </div>
                   )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </AdminTable>
+        </section>
+      )}
+
+      {townLive.length > 0 && (
+        <section className="mb-8" data-section="town-live">
+          <h2 className="mb-1 text-lg font-semibold">Towns&apos; live jobs ({townLive.length})</h2>
+          <p className="mb-3 text-sm text-muted-foreground">Verified towns publish without review. Unpublish one to take it off the board and back to the queue above (the town is told in-app, with your reason).</p>
+          <AdminTable columns={["Title", "Deadline", "Created", ""]}>
+            {townLive.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="max-w-xs truncate font-medium">{dash(r.title)}</TableCell>
+                <TableCell className="text-muted-foreground">{fmtDate(r.deadline)}</TableCell>
+                <TableCell className="text-muted-foreground">{fmtDate(r.created_at)}</TableCell>
+                <TableCell>
+                  <form action={unpublishTownJobAction} className="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="id" value={r.id} />
+                    <input
+                      name="reason"
+                      maxLength={500}
+                      placeholder="Short reason for the town"
+                      aria-label="Reason sent to the town"
+                      className="h-7 w-48 rounded-md border border-input bg-transparent px-2 text-xs"
+                    />
+                    <button className="rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary">Unpublish</button>
+                  </form>
                 </TableCell>
               </TableRow>
             ))}

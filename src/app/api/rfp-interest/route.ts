@@ -60,7 +60,9 @@ export async function POST(request: Request) {
 
   const org = session.organization;
   const pro = session.hasTradeAccess;
-  const used = pro ? 0 : await freeResponsesUsed(db, org.id);
+  // A town's job (lib/town-jobs): always free, never counted, so no allowance to read or show.
+  const townJob = rfp.source_type === "public_buyer_direct";
+  const used = pro || townJob ? 0 : await freeResponsesUsed(db, org.id);
   const decision = respondDecision({
     signedIn: true,
     org: { id: org.id, organization_type: org.organization_type, status: org.status, profile_status: org.profile_status },
@@ -128,6 +130,10 @@ export async function POST(request: Request) {
     if (isFreeLimitError(error)) {
       return NextResponse.json({ error: refusalMessage("limit"), reason: "limit" }, { status: REFUSAL_STATUS.limit });
     }
+    // A town's formal tender (the database refuses responses on a mirror too).
+    if (error?.hint === "pmrfp_official_portal") {
+      return NextResponse.json({ error: refusalMessage("official_portal"), reason: "official_portal" }, { status: REFUSAL_STATUS.official_portal });
+    }
     return NextResponse.json({ error: "Could not submit interest" }, { status: 500 });
   }
   const interestId = (inserted as { id: string }).id;
@@ -136,7 +142,7 @@ export async function POST(request: Request) {
   // reputation; re-sync that company after the response.
   await karmaSyncAfter({ userIds: [rfp.posted_by_user_id] });
 
-  const allowance = responseAllowance({ pro, usedThisMonth: (used ?? 0) + (decision.free ? 1 : 0) });
+  const allowance = responseAllowance({ pro: pro || townJob, usedThisMonth: (used ?? 0) + (decision.free ? 1 : 0) });
   await notifyNewInterest(db, {
     interestId,
     job: rfp,
@@ -163,6 +169,8 @@ function refusalMessage(reason: string): string {
       return "This account is suspended.";
     case "public_tender":
       return "Public tenders are answered on the buyer's own portal.";
+    case "official_portal":
+      return "Bids on this tender go to the town's official portal, not through PMRFP.";
     case "not_open":
       return "This job isn't open for responses.";
     case "own_job":

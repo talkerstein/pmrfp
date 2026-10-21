@@ -11,6 +11,8 @@ import { isSchemaMissing } from "@/lib/projects/compat";
 import { pmJobAlertsEnabled } from "@/lib/pm-jobs/alerts";
 import { isPmJob } from "@/lib/pm-jobs/rules";
 import { langOf, runPmJobAlerts } from "@/lib/pm-jobs/server";
+import { posterKindOf } from "@/lib/pm-jobs/decisions";
+import { loadTownJob, logTownEvent } from "@/lib/town-jobs/server";
 
 /**
  * Admin: publish or reject an RFP or GC package waiting for review. Property
@@ -25,7 +27,7 @@ import { langOf, runPmJobAlerts } from "@/lib/pm-jobs/server";
  * Reject: the poster gets the short reason the admin typed.
  */
 export async function reviewRfpAction(formData: FormData): Promise<void> {
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
   const id = String(formData.get("id") ?? "");
   const decision = String(formData.get("decision") ?? "");
   if (!id || !["published", "rejected"].includes(decision)) redirect("/admin/rfps");
@@ -49,6 +51,13 @@ export async function reviewRfpAction(formData: FormData): Promise<void> {
   if (rfp) {
     const to = await posterEmail(svc, rfp);
     const lang = await posterLang(svc, rfp.id, rfp.posted_by_user_id);
+    // A town's job (lib/town-jobs): its own dashboard links, and the town's record.
+    const posterKind = posterKindOf(rfp.source_type);
+    const town = posterKind === "town";
+    if (town) {
+      const job = await loadTownJob(svc, rfp.id);
+      if (job) await logTownEvent(svc, { rfpId: job.id, organizationId: job.posted_by_organization_id, buyerKey: job.buyer_key, actorUserId: admin.userId, event: decision === "published" ? "published" : "rejected", detail: decision === "published" ? { auto: false } : { reason } });
+    }
     if (decision === "published") {
       let alerts = "none";
       let n = 0;
@@ -70,12 +79,12 @@ export async function reviewRfpAction(formData: FormData): Promise<void> {
           });
         }
       }
-      if (to) await sendPmRfpPublished(to, { title: rfp.title, slug: rfp.slug, id: rfp.id, lang, alertsOn: alerts === "on" && n > 0 });
-      await notifyPoster(svc, rfp.posted_by_user_id, "rfp_published", "Your job is live", rfp.title, `/pm-dashboard/rfps/${rfp.id}/interests`);
+      if (to) await sendPmRfpPublished(to, { title: rfp.title, slug: rfp.slug, id: rfp.id, lang, alertsOn: alerts === "on" && n > 0, posterKind });
+      await notifyPoster(svc, rfp.posted_by_user_id, "rfp_published", "Your job is live", rfp.title, town ? `/buyer-dashboard/jobs/${rfp.id}` : `/pm-dashboard/rfps/${rfp.id}/interests`);
       query = `?published=${encodeURIComponent(rfp.id)}&alerts=${alerts}&n=${n}`;
     } else {
-      if (to) await sendPmRfpRejected(to, { lang, title: rfp.title, reason });
-      await notifyPoster(svc, rfp.posted_by_user_id, "rfp_rejected", "Your listing wasn't published", rfp.title, "/pm-dashboard/rfps");
+      if (to) await sendPmRfpRejected(to, { lang, title: rfp.title, reason, posterKind });
+      await notifyPoster(svc, rfp.posted_by_user_id, "rfp_rejected", "Your listing wasn't published", rfp.title, town ? `/buyer-dashboard/jobs/${rfp.id}` : "/pm-dashboard/rfps");
       query = `?rejected=${encodeURIComponent(rfp.id)}`;
     }
     // A package posted from a public award earns its poster reputation once published.
