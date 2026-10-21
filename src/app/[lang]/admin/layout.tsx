@@ -6,6 +6,7 @@ import { getSession, isAdminRole } from "@/lib/access/access";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { pendingReviewCount } from "@/lib/pm-jobs/server";
+import { organizationReviewCounts } from "@/lib/organizations/review-server";
 
 // Utility pages: keep them out of the index (links still followed).
 export const metadata: Metadata = { robots: { index: false, follow: true } };
@@ -16,9 +17,23 @@ export default async function AdminLayout({
 } & { params: Promise<object> }) {
   await setLangFrom(params);
   // Posts waiting at /admin/rfps: a count badge on "RFPs" so nothing sits unseen.
+  // Same on "Organizations": new companies waiting for approval plus approved
+  // companies whose profile edits are waiting for a look.
   const session = isServiceConfigured() ? await getSession().catch(() => null) : null;
-  const pending = session && isAdminRole(session.profile.primary_role) ? await pendingReviewCount(createServiceClient()).catch(() => 0) : 0;
-  const nav = ADMIN_NAV.map((item) => (item.href === "/admin/rfps" && pending > 0 ? { ...item, badge: pending } : item));
+  const isAdmin = Boolean(session && isAdminRole(session.profile.primary_role));
+  const db = isAdmin ? createServiceClient() : null;
+  const [pending, orgs] = db
+    ? await Promise.all([
+        pendingReviewCount(db).catch(() => 0),
+        organizationReviewCounts(db).catch(() => ({ waiting: 0, edited: 0 })),
+      ])
+    : [0, { waiting: 0, edited: 0 }];
+  const orgBadge = orgs.waiting + orgs.edited;
+  const nav = ADMIN_NAV.map((item) => {
+    if (item.href === "/admin/rfps" && pending > 0) return { ...item, badge: pending };
+    if (item.href === "/admin/organizations" && orgBadge > 0) return { ...item, badge: orgBadge };
+    return item;
+  });
   return (
     <DashboardShell nav={nav} area="Admin">
       {children}
