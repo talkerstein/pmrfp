@@ -1104,6 +1104,13 @@ export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
     <h2 style="font-size:16px;margin:16px 0 4px">Signups by type</h2>
     ${list(r.signups.byRole.map(([label, n]) => `<li>${esc(label)}: <strong>${n}</strong></li>`))}
 
+    <h2 style="font-size:16px;margin:16px 0 4px">Visitors, sign-ups by source and funnel (first-party)</h2>
+    ${
+      r.traffic
+        ? `<p style="margin:6px 0 2px;font-weight:600">Canada</p>${list(r.traffic.canada.map((l) => `<li>${esc(l)}</li>`))}<p style="margin:6px 0 2px;font-weight:600">United States</p>${list(r.traffic.us.map((l) => `<li>${esc(l)}</li>`))}<p style="margin:0 0 16px">${btn(`${BASE}/admin/analytics?days=7`, "Open site analytics")}</p>`
+        : `<p style="margin:6px 0 16px;color:#64748b">Not available yet (site tracking tables not set up).</p>`
+    }
+
     <h2 style="font-size:16px;margin:16px 0 4px">Payments received this week (Stripe)</h2>
     ${s ? list(s.payments7d.map((p) => `<li>${esc(p.who)} — $${p.amount.toLocaleString("en-CA")} ${p.currency} · ${p.date}</li>`)) : "<p>Stripe unavailable.</p>"}
 

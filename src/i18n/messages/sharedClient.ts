@@ -80,6 +80,8 @@ const en = {
   consent: {
     label: "Cookie choice",
     body: "We'd like to use Microsoft Clarity to see how visitors use the site (anonymous heatmaps and session recordings) so we can improve it.",
+    bodyGa: "We'd like to use Google Analytics, which sets cookies, to see how visitors use the site so we can improve it. Our own cookie-free visit counts run either way.",
+    bodyBoth: "We'd like to use Google Analytics and Microsoft Clarity (anonymous heatmaps and session recordings), which set cookies, to see how visitors use the site so we can improve it. Our own cookie-free visit counts run either way.",
     accept: "Accept analytics",
     decline: "Decline",
     privacy: "Privacy",
@@ -172,6 +174,8 @@ const fr: typeof en = {
   consent: {
     label: "Choix des témoins",
     body: "Nous aimerions utiliser Microsoft Clarity pour comprendre comment les visiteurs utilisent le site (cartes de chaleur et enregistrements anonymes de sessions) afin de l'améliorer.",
+    bodyGa: "Nous aimerions utiliser Google Analytics, qui dépose des témoins, pour comprendre comment les visiteurs utilisent le site afin de l'améliorer. Nos propres statistiques de visites, sans témoins, fonctionnent dans tous les cas.",
+    bodyBoth: "Nous aimerions utiliser Google Analytics et Microsoft Clarity (cartes de chaleur et enregistrements anonymes de sessions), qui déposent des témoins, pour comprendre comment les visiteurs utilisent le site afin de l'améliorer. Nos propres statistiques de visites, sans témoins, fonctionnent dans tous les cas.",
     accept: "Accepter l'analyse",
     decline: "Refuser",
     privacy: "Confidentialité",
@@ -264,6 +268,8 @@ const es: typeof en = {
   consent: {
     label: "Preferencia de cookies",
     body: "Nos gustaría usar Microsoft Clarity para ver cómo los visitantes usan el sitio (mapas de calor y grabaciones de sesiones anónimas) y así mejorarlo.",
+    bodyGa: "Nos gustaría usar Google Analytics, que instala cookies, para ver cómo los visitantes usan el sitio y así mejorarlo. Nuestro propio conteo de visitas, sin cookies, funciona en cualquier caso.",
+    bodyBoth: "Nos gustaría usar Google Analytics y Microsoft Clarity (mapas de calor y grabaciones de sesiones anónimas), que instalan cookies, para ver cómo los visitantes usan el sitio y así mejorarlo. Nuestro propio conteo de visitas, sin cookies, funciona en cualquier caso.",
     accept: "Aceptar analítica",
     decline: "Rechazar",
     privacy: "Privacidad",

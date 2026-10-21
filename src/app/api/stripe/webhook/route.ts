@@ -15,6 +15,7 @@ import { SPONSOR_PRODUCT } from "@/lib/sponsors/pricing";
 import { handleSponsorCheckout, syncSponsorSubscription } from "@/lib/sponsors/stripe";
 import { INTEL_PRODUCT } from "@/lib/intel/pricing";
 import { handleIntelCheckout, syncIntelSubscription } from "@/lib/intel/stripe";
+import { EVENT, trackEvent } from "@/lib/analytics";
 
 /**
  * Founding 500 purchase. Never refuses: the cap was checked at checkout, and
@@ -124,6 +125,19 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const cs = event.data.object as Stripe.Checkout.Session;
+        // First-party funnel (site_events). Not from the request: this is
+        // Stripe calling, so only the buyer's id from the session metadata
+        // (the database fills in their role and company country).
+        await trackEvent(
+          EVENT.CHECKOUT_COMPLETED,
+          {
+            product: cs.metadata?.product ?? (cs.mode === "subscription" ? "subscription" : cs.mode ?? null),
+            plan: cs.metadata?.plan ?? null,
+            interval: cs.metadata?.interval ?? null,
+            paid: cs.payment_status === "paid",
+          },
+          { userId: cs.metadata?.user_id ?? null, fromRequest: false },
+        );
         // Monthly sponsorship (/advertise): its own subscription, never an org plan.
         if (cs.metadata?.product === SPONSOR_PRODUCT) {
           await handleSponsorCheckout(cs);

@@ -54,6 +54,9 @@ export function ActivateButton({
       variant={variant}
       disabled={busy}
       className={className}
+      data-track="upgrade_clicked"
+      data-plan={plan}
+      data-where="billing"
       onClick={() => go("/api/stripe/checkout", setBusy, t, { plan, interval })}
     >
       {busy ? t.redirecting : (label ?? t.activate)}

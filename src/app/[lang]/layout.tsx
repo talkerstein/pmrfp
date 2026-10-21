@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { AnalyticsConsent } from "@/components/analytics-consent";
+import { CONSENT_ATTR, clarityId, gaMeasurementId } from "@/lib/tracking/ga";
 import { JsonLd, organizationSchema, websiteSchema } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/site";
 import { LOCALES, LOCALE_TAG, OG_LOCALE, hasLocale } from "@/i18n/config";
@@ -67,27 +68,27 @@ export default async function RootLayout({
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   setLang(lang);
-  // Google Analytics 4. The measurement ID is public (rendered in page HTML),
-  // so it's baked in as the production default; an env override still wins.
-  // Only fires in production so preview/dev traffic never pollutes GA data.
-  // Runs alongside Vercel Analytics (kept for server-side custom events).
-  const gaId =
-    process.env.NEXT_PUBLIC_GA_ID ??
-    (process.env.VERCEL_ENV === "production" ? "G-FEC0QRSEFE" : undefined);
+  // Google Analytics 4 (lib/tracking/ga): NEXT_PUBLIC_GA_ID, else the
+  // production default, none on previews. Like Microsoft Clarity
+  // (NEXT_PUBLIC_CLARITY_ID), it loads only after the consent banner's
+  // "Accept", never for Do-Not-Track / Global Privacy Control.
+  const gaId = gaMeasurementId();
+  const consentGated = Boolean(gaId || clarityId());
   return (
     <html lang={LOCALE_TAG[lang]} className={`${fontVariables} h-full antialiased`}>
-      <body className="min-h-full">
+      <body className="min-h-full" {...(consentGated ? { [CONSENT_ATTR]: "" } : {})}>
         <JsonLd data={organizationSchema()} />
         <JsonLd data={websiteSchema()} />
         <I18nProvider lang={lang} messages={clientMessages(lang)}>
           {children}
           {/* Clear of the dashboards' bottom tab bar on phones. */}
           <Toaster mobileOffset={{ bottom: 88 }} />
-          {/* Microsoft Clarity, only with NEXT_PUBLIC_CLARITY_ID and the visitor's consent. */}
-          <AnalyticsConsent />
+          {/* GA4 and Microsoft Clarity, only with the visitor's consent. */}
+          <AnalyticsConsent gaId={gaId} />
         </I18nProvider>
         <RegisterServiceWorker />
-        <SiteAnalytics gaId={gaId} />
+        {/* Cookieless: first-party page views (/api/t), Vercel Analytics, Speed Insights. */}
+        <SiteAnalytics />
       </body>
     </html>
   );

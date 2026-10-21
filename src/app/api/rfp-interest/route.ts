@@ -152,7 +152,12 @@ export async function POST(request: Request) {
     trade: { userId: session.userId, email: session.profile.email || null, lang },
     allowance,
   }).catch((e) => console.error("[rfp-interest] notify failed", e instanceof Error ? e.message : e));
-  await trackEvent(EVENT.RFP_INTEREST_SUBMITTED, { rfpId: rfp.id });
+  // First-party: respond_to_job (lib/analytics).
+  await trackEvent(
+    EVENT.RFP_INTEREST_SUBMITTED,
+    { rfpId: rfp.id, kind: townJob ? "town" : String(rfp.source_type ?? "pm") },
+    { userId: session.userId, role: session.profile.primary_role },
+  );
 
   return NextResponse.json({
     ok: true,

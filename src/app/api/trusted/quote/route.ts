@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { sendTrustedQuoteRequest } from "@/lib/email/send";
+import { EVENT, trackEvent } from "@/lib/analytics";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/$/, "");
 
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
     message: d.message,
     cc,
   });
+  await trackEvent(EVENT.QUOTE_REQUEST_POSTED, { kind: "trusted_page" });
 
   return NextResponse.json({ ok: true });
 }

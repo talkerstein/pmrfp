@@ -7,6 +7,10 @@ import { callbackFailurePath } from "@/lib/auth/magic-link";
 import { safeNextPath } from "@/lib/auth/next";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { FRESH_OAUTH_MS, blockDuplicateOAuthUser, existingAccountPath } from "@/lib/dedupe/signup";
+import { recordSignupAttribution } from "@/lib/attribution/record";
+
+/** An account this new (and not yet onboarded) gets its sign-up source recorded at the callback. */
+const ATTRIBUTION_WINDOW_MS = 7 * 86_400_000;
 
 /**
  * Google sends people back here with a one-time `code` (PKCE). Swap it for a
@@ -39,6 +43,18 @@ export async function GET(request: NextRequest) {
   }
 
   const session = await getSession();
+  // A brand-new account (Google, or an emailed sign-up link): save where it
+  // came from now, while this browser's first-touch cookie is here. The
+  // first write wins, so a link sign-up already recorded at the form keeps
+  // its row; Google's role is added when they pick it.
+  if (fresh.user && session && !session.profile.onboarding_completed && Date.now() - Date.parse(fresh.user.created_at) < ATTRIBUTION_WINDOW_MS) {
+    await recordSignupAttribution({
+      userId: fresh.user.id,
+      method: method === "link" ? "magic_link" : "google",
+      role: method === "link" ? session.profile.primary_role : null,
+      signedUpAt: fresh.user.created_at,
+    });
+  }
   await trackEvent(EVENT.SIGNIN_COMPLETED, { method: method === "link" ? "link" : "google", hasNext: !!safeNextPath(next) });
   const to = postOAuthRedirect(
     next,

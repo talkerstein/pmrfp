@@ -8,6 +8,7 @@
  * dollar figures are never presented as revenue.
  */
 import type { StripeRevenue } from "./stripe-revenue";
+import { marketView, weeklyLines, type RawReport } from "@/lib/tracking/report";
 
 export interface ReportInput {
   now: Date;
@@ -30,6 +31,8 @@ export interface ReportInput {
   contactRequests: number;
   /** Null when Stripe isn't configured or the API call failed. */
   stripe: StripeRevenue | null;
+  /** First-party traffic + funnel for the week (lib/tracking/report); null/absent before the tracking migration. */
+  traffic?: RawReport | null;
 }
 
 const DAY = 86_400_000;
@@ -65,8 +68,17 @@ export function buildWeeklyReport(input: ReportInput) {
 
   const pmRfps = input.pmRfps.filter((r) => inWeek(r.created_at));
 
+  // Canada and the U.S. separately, never mixed.
+  const traffic = input.traffic
+    ? {
+        canada: weeklyLines(marketView(input.traffic, "CA")),
+        us: weeklyLines(marketView(input.traffic, "US")),
+      }
+    : null;
+
   return {
     stripe: input.stripe,
+    traffic,
     period: { from: new Date(weekAgo).toISOString().slice(0, 10), to: input.now.toISOString().slice(0, 10) },
     signups: {
       count: signups.length,

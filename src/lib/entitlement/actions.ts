@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { getSession } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { EVENT, trackEvent } from "@/lib/analytics";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, splitLocale, type Locale } from "@/i18n/config";
 import { startOrgTrial } from "./server";
 import { parseTrialSource } from "./trial";
@@ -37,6 +38,7 @@ export async function startTrialAction(formData: FormData): Promise<void> {
   const session = await getSession();
   if (!session) redirect(localizePath(`/sign-up?role=trade&next=${encodeURIComponent("/dashboard/trial")}`, lang));
   const result = await startOrgTrial(session, source);
+  if (result.ok) await trackEvent(EVENT.TRIAL_STARTED, { source }, { userId: session.userId, role: session.profile.primary_role });
   revalidatePath("/[lang]/dashboard", "layout");
   redirect(localizePath(`/dashboard?trial=${result.ok ? "started" : result.reason}`, lang));
 }

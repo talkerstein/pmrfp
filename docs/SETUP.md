@@ -77,7 +77,9 @@ Without a key, emails are logged, not sent — nothing breaks.
 | `RESEND_FROM_EMAIL` | for email | From address |
 | `NEXT_PUBLIC_SITE_URL` | recommended | Absolute URLs, OG, emails |
 | `CRON_SECRET` | optional | Protect the alerts cron |
-| `NEXT_PUBLIC_GA_ID` | optional | Google Analytics |
+| `NEXT_PUBLIC_GA_ID` | optional | Google Analytics 4 measurement ID (`G-…`), or `off`. Unset: production uses the built-in property. Loads only after cookie consent; never with DNT/GPC. Aliases: `NEXT_PUBLIC_GA4_ID`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` |
+| `NEXT_PUBLIC_CLARITY_ID` | optional | Microsoft Clarity project ID. Loads only after cookie consent; never with DNT/GPC |
+| `TRACKING_SALT_SECRET` | optional | Secret for the daily visitor-hash salt of first-party tracking (`/admin/analytics`). Defaults to an existing server secret |
 
 ## Pre-launch checklist (spec §32)
 

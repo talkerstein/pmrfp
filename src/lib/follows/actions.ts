@@ -9,6 +9,7 @@ import { findBuyerPage } from "@/lib/buyers/model";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { FOLLOWING_PATH, canFollowBuyers, followIntentPath, parseFollowKey } from "./rules";
 import { followBuyer, unfollowBuyer } from "./server";
+import { EVENT, trackEvent } from "@/lib/analytics";
 
 /**
  * Form actions for following (server actions carry Next's own origin check):
@@ -37,6 +38,7 @@ export async function confirmFollowAction(formData: FormData): Promise<void> {
   const r = await followBuyer(createServiceClient(), { userId: session.userId, orgId: session.organization?.id ?? null, key: key!, pro: session.hasTradeAccess });
   if (r.status === "limit") back("limit");
   if (r.status === "unavailable" || r.status === "error") back("unavailable");
+  await trackEvent(EVENT.FOLLOW_BUYER, { buyer: key!, pro: session.hasTradeAccess }, { userId: session.userId, role: session.profile.primary_role });
   redirect(localizePath(`${page!.path}?follow=done#follow`, lang));
 }
 

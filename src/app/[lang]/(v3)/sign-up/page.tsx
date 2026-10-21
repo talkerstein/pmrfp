@@ -22,6 +22,7 @@ import { getSession, roleHome } from "@/lib/access/access";
 import { loadBuyers } from "@/lib/buyers/load";
 import { findBuyerPage } from "@/lib/buyers/model";
 import { PublicBuyerSignUp } from "@/components/towns/public-buyer-signup";
+import { TrackOnMount } from "@/components/track";
 import { buyerDisplayName } from "@/lib/towns/claimable";
 import { parseBuyerKey } from "@/lib/towns/managed";
 import { PUBLIC_BUYER_ROLE, claimOnboardingHref } from "@/lib/towns/paths";
@@ -80,7 +81,12 @@ export default async function SignUpPage({
     if (session) redirect(localizePath(session.profile.primary_role === PUBLIC_BUYER_ROLE ? claimOnboardingHref(claim) : roleHome(session.profile.primary_role), lang));
     const page = key ? findBuyerPage((await loadBuyers()).pages, key.provinceSlug, key.slug) : null;
     const claimName = page ? `${buyerDisplayName(page, lang)}, ${regionName(page.province, lang)}` : null;
-    return <PublicBuyerSignUp lang={lang} claim={page ? claim : null} claimName={claimName} sent={sent === "1"} error={error ?? null} />;
+    return (
+      <>
+        {sent !== "1" && <TrackOnMount event="signup_started" props={{ role: PUBLIC_BUYER_ROLE }} />}
+        <PublicBuyerSignUp lang={lang} claim={page ? claim : null} claimName={claimName} sent={sent === "1"} error={error ?? null} />
+      </>
+    );
   }
   // A GC arriving from a public award they won: their first package is prefilled.
   const award = parseAwardRef(rawAward);
@@ -117,20 +123,24 @@ export default async function SignUpPage({
   const initialRegions = rawRegion && regionChips.some((r) => r.slug === rawRegion) ? [rawRegion] : [];
 
   return (
-    <SignUpFlow
-      initialRegions={initialRegions}
-      lang={lang}
-      t={{ ...t, linkNote: getT("agencies").signupLinkNote }}
-      initialRole={initialRole as SignupRole | undefined}
-      intent={intent ? { plan: intent.plan, interval: intent.interval, name: ta.plans[intent.plan] } : null}
-      next={next}
-      award={award}
-      google={google}
-      signInHref={signInHref}
-      stats={{ open: counts.open, closing7: counts.closing7, trades: categories.length, regions: regions.length }}
-      trades={trades}
-      regions={regionChips}
-    />
+    <>
+      {/* First-party funnel: the sign-up page opened (lib/tracking). */}
+      <TrackOnMount event="signup_started" props={{ role: initialRole ?? null, plan: intent?.plan ?? null }} />
+      <SignUpFlow
+        initialRegions={initialRegions}
+        lang={lang}
+        t={{ ...t, linkNote: getT("agencies").signupLinkNote }}
+        initialRole={initialRole as SignupRole | undefined}
+        intent={intent ? { plan: intent.plan, interval: intent.interval, name: ta.plans[intent.plan] } : null}
+        next={next}
+        award={award}
+        google={google}
+        signInHref={signInHref}
+        stats={{ open: counts.open, closing7: counts.closing7, trades: categories.length, regions: regions.length }}
+        trades={trades}
+        regions={regionChips}
+      />
+    </>
   );
 }
 

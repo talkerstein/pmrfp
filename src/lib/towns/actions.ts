@@ -13,6 +13,7 @@ import { EVENT, trackEvent } from "@/lib/analytics";
 import { cleanEmail } from "@/lib/dedupe/email";
 import { existingAccountFor, existingAccountPath } from "@/lib/dedupe/signup";
 import { magicLinkRedirect } from "@/lib/auth/magic-link";
+import { recordSignupAttribution, recordSignupAttributionForEmail } from "@/lib/attribution/record";
 import { findBuyerPage } from "@/lib/buyers/model";
 import { DEFAULT_LOCALE, LOCALES, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { claimContext } from "./claim-context";
@@ -81,6 +82,8 @@ export async function publicBuyerSignUpAction(formData: FormData): Promise<void>
     console.error("[public-buyer:signup]", error.message);
     back({ error: "failed" });
   }
+  // Where the town came from, recorded in this browser (lib/attribution/record).
+  await recordSignupAttributionForEmail({ email, method: "magic_link", role: PUBLIC_BUYER_ROLE, lang });
   await trackEvent(EVENT.SIGNUP_COMPLETED, { role: PUBLIC_BUYER_ROLE, hasNext: !!claim, method: "link" });
   back({ sent: "1" });
 }
@@ -139,9 +142,14 @@ export async function claimBuyerPageAction(formData: FormData): Promise<void> {
     entityId: "claimId" in result ? result.claimId : null,
     metadata: { buyerKey: buyer.key, ...(result.status === "pending" ? { reason: result.reason } : {}) },
   });
+  const who = { userId: session.userId, role: PUBLIC_BUYER_ROLE };
+  await trackEvent(EVENT.CLAIM_STARTED, { kind: "buyer_page", outcome: result.status }, who);
+  // A town that never reached the sign-up form's write (lib/attribution/record) still gets its row.
+  await recordSignupAttribution({ userId: session.userId, role: PUBLIC_BUYER_ROLE, lang });
   if (result.status === "verified") {
     revalidateBuyerPage(buyer.path);
-    await trackEvent(EVENT.ONBOARDING_COMPLETED, { role: PUBLIC_BUYER_ROLE, verified: true });
+    await trackEvent(EVENT.CLAIM_VERIFIED, { kind: "buyer_page" }, who);
+    await trackEvent(EVENT.ONBOARDING_COMPLETED, { role: PUBLIC_BUYER_ROLE, verified: true }, who);
   }
   if (result.status === "join_requested") redirect(localizePath("/onboarding", lang));
   redirect(localizePath(`${BUYER_DASHBOARD_PATH}?claim=${result.status}`, lang));

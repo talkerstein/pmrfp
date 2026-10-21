@@ -155,6 +155,7 @@ export const ADMIN_NAV = [
   { href: "/admin/sponsors", label: "Sponsors" },
   { href: "/admin/winner-claims", label: "Winner Claims" },
   { href: "/admin/badge-installs", label: "Badge Installs" },
+  { href: "/admin/analytics", label: "Site Analytics" },
   { href: "/admin/signups", label: "Sign-up Sources" },
   { href: "/admin/duplicates", label: "Duplicates" },
   { href: "/admin/weekly-email", label: "Weekly Email" },

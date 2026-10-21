@@ -120,6 +120,10 @@
     {
       "path": "/api/cron/buyer-follow-alerts",
       "schedule": "17 * * * *"
+    },
+    {
+      "path": "/api/cron/site-tracking-purge",
+      "schedule": "40 8 * * 0"
     }
   ]
 }

@@ -240,6 +240,8 @@ describe("signup_attribution row", () => {
       lang: "en",
       country: "CA",
       method: "email",
+      role: null,
+      opted_out: false,
     });
     const same = signupAttributionRow({ userId: "u1", ft: { ...ft, utm: { source: "x" }, last: { source: "x", at: "2026-10-02" } }, now: NOW });
     expect(same.last_utm_source).toBeNull();
