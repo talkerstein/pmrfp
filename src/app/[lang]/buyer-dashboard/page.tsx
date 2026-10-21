@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "@/i18n/link";
-import { BadgeCheck, Clock, Code2, FileText, Globe, Landmark } from "lucide-react";
+import { BadgeCheck, Clock, Code2, Globe, Landmark } from "lucide-react";
+import { TownPostsCard } from "@/components/towns/jobs/home-card";
+import { PartCComingSoon } from "@/components/towns/jobs/part-c";
+import { isServiceConfigured } from "@/lib/supabase/config";
+import { createServiceClient } from "@/lib/supabase/service";
+import { townJobsFor } from "@/lib/town-jobs/server";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
@@ -38,7 +43,8 @@ function Card({ icon, title, children }: { icon: React.ReactNode; title: string;
  * The public buyer's home: its page status (verified, under review, not
  * verified), whether the page shows in Google, the website widget's code,
  * whether PMRFP lists its tenders (the permission registry), requests from
- * colleagues to join, and what posting tenders will look like (Part B).
+ * colleagues to join, its quote requests and tenders (Part B2) and what
+ * Part C adds next.
  */
 export default async function BuyerDashboardHome({ params, searchParams }: { params: Promise<object>; searchParams?: Promise<{ join?: string }> }) {
   await setLangFrom(params);
@@ -52,6 +58,7 @@ export default async function BuyerDashboardHome({ params, searchParams }: { par
   const status: "verified" | "pending" | "rejected" | "none" = own ? "verified" : claim?.status === "pending" ? "pending" : claim?.status === "rejected" ? "rejected" : "none";
   const permission = extras?.permission ?? null;
   const day = (d: string) => formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang);
+  const jobs = !demo && session.organization && isServiceConfigured() ? await townJobsFor(createServiceClient(), session.organization.id).catch(() => []) : [];
 
   return (
     <div>
@@ -104,9 +111,11 @@ export default async function BuyerDashboardHome({ params, searchParams }: { par
           )}
         </Card>
 
-        <Card icon={<FileText className="size-4" />} title={t.postTitle}>
-          <p className="text-muted-foreground">{t.postBody}</p>
-        </Card>
+        {/* PMRFP for Towns, Part B2: posts, then what Part C adds. */}
+        <TownPostsCard jobs={jobs} />
+        <div className="lg:col-span-2">
+          <PartCComingSoon />
+        </div>
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ export type RfpStatus =
 export type RfpContactVisibility =
   | "public_contact" | "pmrfp_mediated" | "anonymous_until_interest_approved";
 export type RfpSourceType =
-  | "property_manager_direct" | "admin_seeded" | "public_source" | "partner_referral" | "gc_package";
+  | "property_manager_direct" | "admin_seeded" | "public_source" | "partner_referral" | "gc_package" | "public_buyer_direct";
 export type DocVisibility = "public" | "paid_users" | "admin_only";
 export type InterestStatus =
   | "submitted" | "viewed" | "contact_revealed" | "shortlisted" | "declined" | "closed" | "picked" | "not_selected";

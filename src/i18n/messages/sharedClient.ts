@@ -11,6 +11,7 @@ const en = {
     closesTomorrow: "Closes tomorrow",
     closesInDays: "Closes in {n} days",
     gcPackage: "GC sub-trade package",
+    townJob: "Posted by a town",
     sourceKind: {
       publicTender: "Public tender",
       pastContract: "Past public contract",
@@ -103,6 +104,7 @@ const fr: typeof en = {
     closesTomorrow: "Clôture demain",
     closesInDays: "Clôture dans {n} jours",
     gcPackage: "Lot de sous-traitance",
+    townJob: "Publié par une municipalité",
     sourceKind: {
       publicTender: "Appel d'offres public",
       pastContract: "Contrat public octroyé",
@@ -194,6 +196,7 @@ const es: typeof en = {
     closesTomorrow: "Cierra mañana",
     closesInDays: "Cierra en {n} días",
     gcPackage: "Paquete de subcontratación",
+    townJob: "Publicado por un municipio",
     sourceKind: {
       publicTender: "Licitación pública",
       pastContract: "Contrato público anterior",

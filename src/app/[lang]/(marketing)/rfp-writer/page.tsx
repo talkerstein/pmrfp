@@ -14,9 +14,54 @@ import { RFP_TEMPLATES_ES } from "@/lib/rfp-writer/templates-es";
 import { SITE } from "@/lib/site";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
-import { LOCALE_TAG, hasLocale, localizePath } from "@/i18n/config";
+import { LOCALE_TAG, hasLocale, localizePath, type Locale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt } from "@/i18n/format";
+import { MunicipalWizard } from "@/components/rfp-writer/municipal-wizard";
+import { provinceCodeOf } from "@/lib/rfp-writer/municipal/clauses";
+import { loadBuyerDashboard } from "@/lib/towns/dashboard-data";
+import { buyerDisplayName } from "@/lib/towns/claimable";
+import type { SessionContext } from "@/lib/access/access";
+
+/**
+ * The municipal writer's page (PMRFP for Towns, Part B2): a public buyer's
+ * own name and province filled in when it has a page; "Post it on PMRFP"
+ * goes to its post form, or to the public-buyer sign-up for a visitor.
+ */
+async function MunicipalWriter({ lang, session, visitorProvince }: { lang: Locale; session: SessionContext | null; visitorProvince: string | undefined }) {
+  const w = getT("townJobsClient").writer;
+  const buyer = session?.profile.primary_role === "public_buyer" && session.organization ? await loadBuyerDashboard(session).catch(() => null) : null;
+  const buyerName = buyer?.own?.buyer_name ?? (buyer?.page ? buyerDisplayName(buyer.page, lang) : (buyer?.claim?.buyer_name ?? ""));
+  const province = provinceCodeOf(buyer?.page?.buyer.provinceCode ?? null) ?? provinceCodeOf(visitorProvince) ?? (lang === "fr" ? "QC" : "ON");
+  const postPath = "/buyer-dashboard/jobs/new?kind=quote_request&draft=1";
+  const postHref = localizePath(
+    session?.profile.primary_role === "public_buyer" ? postPath : `/sign-up?role=public_buyer&next=${encodeURIComponent(localizePath(postPath, lang))}`,
+    lang,
+  );
+  return (
+    <>
+      <section className="border-b border-border bg-secondary/30">
+        <Container className="py-12">
+          <Eyebrow>{w.eyebrow}</Eyebrow>
+          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">{w.h1}</h1>
+          <p className="mt-3 max-w-2xl text-lg text-muted-foreground">{w.intro}</p>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-indigo px-3 py-1 text-sm text-white">
+            <span className="size-1.5 rounded-full bg-teal-300" />
+            {w.badge}
+          </p>
+        </Container>
+      </section>
+      <Container className="py-10">
+        <MunicipalWizard buyerName={buyerName} province={province} postHref={postHref} />
+        {session?.profile.primary_role !== "public_buyer" && (
+          <p className="mt-6 text-sm text-muted-foreground">
+            <Link href="/rfp-writer" className="font-medium text-teal-700 hover:underline">{w.pmLink}</Link>
+          </p>
+        )}
+      </Container>
+    </>
+  );
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -29,7 +74,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   };
 }
 
-export default async function RfpWriterPage({ params }: { params: Promise<object> }) {
+export default async function RfpWriterPage({ params, searchParams }: { params: Promise<object>; searchParams?: Promise<{ for?: string }> }) {
   const lang = await setLangFrom(params);
   const t = getT("writer");
   const [categories, propertyTypes, session, geo] = await Promise.all([
@@ -38,6 +83,11 @@ export default async function RfpWriterPage({ params }: { params: Promise<object
     getSession(),
     getVisitorGeo(),
   ]);
+  // PMRFP for Towns: the municipal writer for public buyers (their account, or ?for=town).
+  const sp = (await searchParams) ?? {};
+  if (sp.for === "town" || session?.profile.primary_role === "public_buyer") {
+    return <MunicipalWriter lang={lang} session={session} visitorProvince={defaultProvinceFor(lang, geo.province)} />;
+  }
   const postPath = "/pm-dashboard/rfps/new?draft=1";
   const isPm = session?.profile.primary_role === "property_manager" || session?.profile.primary_role === "real_estate_agent";
   const postHref = localizePath(

@@ -87,8 +87,10 @@ export default async function RfpInterestsPage({
   const r = getT("pmJobs").responses;
   const tp = getT("portfolio").interests;
   const lang = getLang();
-  await requireRole(["property_manager", "real_estate_agent"]);
+  // A town (public buyer) handles its own quote requests here too, from /buyer-dashboard/jobs/[id]/responses.
+  const session = await requireRole(["property_manager", "real_estate_agent", "public_buyer"]);
   const { id } = await params;
+  const back = session.profile.primary_role === "public_buyer" ? `/buyer-dashboard/jobs/${id}` : "/pm-dashboard/rfps";
 
   let interests: InterestRow[] = [];
   let job: JobInfo | null = null;
@@ -141,7 +143,7 @@ export default async function RfpInterestsPage({
 
   return (
     <div>
-      <Link href="/pm-dashboard/rfps" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={back} className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> {r.back}
       </Link>
       <PageHeader
