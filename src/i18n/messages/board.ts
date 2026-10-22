@@ -273,7 +273,7 @@ const fr: typeof en = {
     lead: { one: "{n} appel d'offres ouvert", other: "{n} appels d'offres ouverts" },
     leadNone: "Appels d'offres ouverts",
     description:
-      "{lead} en immobilier commercial, privés et publics, au Canada et aux États-Unis : déneigement, CVC, toiture, entretien ménager, électricité et plus. Mis à jour chaque jour, avec dates de clôture et contrats octroyés.",
+      "{lead} en immobilier commercial, privés et publics, au Canada et aux États-Unis : déneigement, CVC, toiture, entretien ménager, électricité et plus. Mis à jour chaque jour : chaque appel d'offre avec sa date de clôture, et les contrats octroyés.",
   },
   hero: {
     eyebrow: "Tableau des appels d'offres",

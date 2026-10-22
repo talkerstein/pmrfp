@@ -145,27 +145,53 @@ export const COMPETITORS_ES: Record<string, CompetitorCopy> = {
   },
   constructconnect: {
     nameOf: "de ConstructConnect",
-    tagline: "La plataforma dominante de información de preconstrucción en Canadá.",
+    tagline: "Datos de proyectos de construcción y la lista de licitaciones del Daily Commercial News.",
     whatItIs:
-      "ConstructConnect (con Link2Build y el Daily Commercial News) sigue proyectos en preconstrucción, planos y permisos para contratistas generales, subcontratistas y proveedores.",
-    whoFor: "Contratistas y proveedores que buscan oportunidades en proyectos de obra nueva.",
-    pricing: "Cotización a medida: según se informa, ≈$1,500–$3,000+ al año (no se publica)",
-    strengths: ["Datos detallados de proyectos en preconstrucción", "Credibilidad editorial (DCN)", "Amplia base de clientes en Canadá"],
+      "ConstructConnect es dueño del Daily Commercial News (DCN). En octubre de 2026, su lista canadiense de licitaciones mostraba 1,924 licitaciones con ocho filtros, incluidos tipo de trabajo (nuevo, alteración, servicio/mantenimiento/suministro) y tipo de edificio. También tiene una lista de proyectos planificados, un Construction Directory y un Top 10 diario gratuito. Las licitaciones del sector público se pueden ver gratis; indica que las del sector privado son solo para suscriptores de pago, y los documentos, oferentes y tenedores de planos están tras un formulario de ventas.",
+    whoFor: "Contratistas, oficios y proveedores que siguen proyectos de construcción desde la planificación hasta la licitación, en obra nueva, alteraciones y servicios.",
+    pricing:
+      "Canadá: sin precio público (formulario de ventas). Los planes de EE. UU. sí son públicos: Starter US$129 al mes por mercado, Professional desde US$199 al mes por mercado por usuario, Premium desde US$10,000 al año",
+    priceTable: [
+      { plan: "Starter (EE. UU.)", covers: "Un mercado", price: "US$129 al mes", perYear: "US$1,548 (12 meses)" },
+      { plan: "Professional (EE. UU.)", covers: "Un mercado, por usuario", price: "desde US$199 al mes", perYear: "desde US$2,388 (12 meses)" },
+      { plan: "Premium (EE. UU.)", covers: "Equipos grandes", price: "desde US$10,000 al año", perYear: "desde US$10,000" },
+    ],
+    priceSource: {
+      checked: "22 de octubre de 2026",
+      note: "Estos son los planes de ConstructConnect en EE. UU. Su servicio canadiense de licitaciones (Daily Commercial News) no muestra precio público, solo un formulario de ventas. Páginas revisadas el mismo día: canada.constructconnect.com/dcn (lista de licitaciones, proyectos planificados, Top 10, directorio) y pricingsaas.com/companies/constructconnect.",
+    },
+    strengths: [
+      "Una gran lista canadiense de licitaciones (1,924 en octubre de 2026) con ocho filtros, incluidos tipo de trabajo y tipo de edificio",
+      "Dirección, teléfono y sitio web del dueño en las páginas de licitación",
+      "Una lista de proyectos planificados con etapa, mes de inicio y valor",
+      "Un Top 10 diario gratuito, un Construction Directory y la cobertura del Daily Commercial News",
+    ],
     weaknesses: [
-      "Caro: fuera del alcance de muchos contratistas pequeños",
-      "Orientado a oportunidades de obra nueva, no a RFP de mantenimiento o renovación de propiedades",
-      "Sin directorio de proveedores ni perfil de marketing",
+      "Sin precio público para el servicio canadiense de licitaciones: documentos, oferentes y tenedores de planos están tras un formulario de ventas",
+      "Indica que las licitaciones del sector privado son solo para suscriptores de pago",
+      "Sus páginas públicas no muestran historial de adjudicaciones ni referencias de precios por oficio",
+      "Sin página por comprador público (una licitación muestra una línea del dueño); PMRFP tiene 597 páginas de compradores públicos de Ontario en octubre de 2026",
+      "Interfaz en inglés en cada página revisada en octubre de 2026; PMRFP funciona en inglés, francés y español",
     ],
     angle:
-      "ConstructConnect sirve para perseguir obra nueva. PMRFP sirve para ganar el trabajo recurrente de mantenimiento, renovación y adecuación de interiores de quienes operan propiedades comerciales existentes: un mercado más estable y mucho más asequible para la mayoría de los contratistas.",
+      "ConstructConnect es un servicio amplio de información de construcción: una gran lista de licitaciones, un pipeline de proyectos en planificación y un directorio. PMRFP es más acotado: licitaciones de edificios y propiedades de compradores públicos, solicitudes de propuestas de administradores de propiedades, historial de adjudicaciones y rangos de precios para su oficio, con precios públicos. Ambos cubren obra nueva, alteraciones y mantenimiento. A octubre de 2026.",
     rows: [
-      { feature: "Precio anual", pmrfp: PRICE, them: "Cotización a medida (según se informa, ≈$1,500–$3,000+ al año)" },
-      { feature: "Tipo de oportunidad", pmrfp: "RFP de propiedades existentes", them: "Preconstrucción de obra nueva" },
-      { feature: "Directorio de proveedores", pmrfp: "Sí", them: "No" },
-      { feature: "Costo de entrada", pmrfp: "Bajo, fijo", them: "Alto" },
+      { feature: "Precio", pmrfp: "Trade Pro $29 CAD al mes o $249 CAD al año; licitaciones públicas gratis", them: "Canadá: sin precio público (formulario de ventas). EE. UU.: desde US$129 al mes por mercado" },
+      { feature: "Licitaciones del sector público", pmrfp: "Gratis para ver", them: "Gratis para ver" },
+      { feature: "Trabajo del sector privado", pmrfp: "Las solicitudes de propuestas de administradores se ven y se publican gratis. Ninguna está abierta ahora (oct. 2026)", them: "Solo suscriptores de pago (según sus palabras)" },
+      { feature: "Filtros de la lista", pmrfp: "Oficio, lugar, tipo de comprador, plazo de cierre; valor cuando se indica", them: "Ocho, incluidos tipo de trabajo, tipo de edificio y rango de valor" },
+      { feature: "Contacto del dueño en una licitación", pmrfp: "Sitio web, página de licitaciones, correo de compras y teléfono del comprador cuando los tenemos (gratis); la persona nombrada en el aviso está en Trade Pro", them: "Dirección, teléfono y sitio web del dueño en la página" },
+      { feature: "Documentos, tenedores de planos, oferentes", pmrfp: "No se alojan: enlazamos a la página oficial del comprador", them: "De pago, solo lectura" },
+      { feature: "Historial de adjudicaciones y rangos de precios", pmrfp: "Avisos de adjudicación con ganador y monto cuando se publican; rangos por oficio y provincia", them: "No aparecen en sus páginas públicas" },
+      { feature: "Directorio de empresas", pmrfp: "Sí", them: "Sí (Construction Directory)" },
+      { feature: "Lista de proyectos planificados", pmrfp: "Todavía no", them: "Sí" },
+      { feature: "Idiomas", pmrfp: "Inglés, francés, español", them: "Inglés (cada página revisada)" },
     ],
     faqs: [
-      { q: "¿Cuál debería elegir un contratista pequeño?", a: "Si quiere acceso asequible a trabajo recurrente en propiedades comerciales, PMRFP. Si tiene presupuesto para perseguir grandes proyectos de obra nueva, ConstructConnect. Responden a necesidades distintas." },
+      { q: "¿ConstructConnect es solo para obra nueva?", a: "No. A octubre de 2026, su lista canadiense de licitaciones tiene un filtro \"Service, Maintenance & Supply\" y muchos avisos llevan la marca \"SMS:\". Cubre obra nueva, alteraciones y servicios." },
+      { q: "¿ConstructConnect tiene un directorio de empresas?", a: "Sí. El sitio del Daily Commercial News tiene un Construction Directory (revisado en octubre de 2026)." },
+      { q: "¿PMRFP ofrece trabajo del sector privado gratis?", a: "Las solicitudes de propuestas de administradores de propiedades se ven gratis y ellos las publican gratis. Ninguna está abierta ahora (octubre de 2026), así que lo disponible hoy son las licitaciones públicas. Es una diferencia de precio, no una afirmación sobre volumen." },
+      { q: "¿Cuál debería elegir un contratista pequeño?", a: "Revise las listas gratuitas de ambos y vea cuál muestra el trabajo en el que usted ofrece. El precio canadiense de ConstructConnect se obtiene por formulario de ventas; el de PMRFP es público." },
     ],
   },
   dodge: {
@@ -174,17 +200,17 @@ export const COMPETITORS_ES: Record<string, CompetitorCopy> = {
     whatItIs:
       "Dodge sigue más de 750,000 proyectos al año en Norteamérica para grandes contratistas generales, proveedores y subcontratistas que buscan oportunidades de preconstrucción.",
     whoFor: "Grandes empresas con presupuestos corporativos que buscan oportunidades de obra nueva.",
-    pricing: "≈US$6,000–$12,000+ al año por usuario",
+    pricing: "Solo por cotización; sin precio público (revisado en octubre de 2026)",
     strengths: ["Enorme base de datos de proyectos", "Información detallada", "Sólida cobertura en EE. UU."],
     weaknesses: [
-      "Muy caro: cuesta más al año de lo que muchos contratistas ganan en un solo trabajo",
+      "Se vende solo por cotización; sin precio público, así que no se puede comparar antes de una llamada de ventas",
       "Centrado en EE. UU.; la cobertura de Canadá es secundaria",
       "Excesivo para contratistas pequeños y medianos; sin directorio de proveedores",
     ],
     angle:
-      "Dodge cuesta más al año de lo que muchos contratistas pequeños ganan en un solo contrato. PMRFP está hecho específicamente para el mercado canadiense de propiedades comerciales, por una mínima fracción del precio.",
+      "Dodge vende solo por cotización. PMRFP está hecho para el mercado canadiense de propiedades comerciales y publica su precio: $249 CAD al año.",
     rows: [
-      { feature: "Precio anual", pmrfp: PRICE, them: "≈US$6,000–$12,000+ al año" },
+      { feature: "Precio anual", pmrfp: PRICE, them: "Solo por cotización" },
       { feature: "Nativo de Canadá", pmrfp: "Sí", them: "Principalmente EE. UU." },
       { feature: "Accesible para contratistas pequeños", pmrfp: "Sí", them: "No" },
       { feature: "Directorio de proveedores", pmrfp: "Sí", them: "No" },
@@ -295,17 +321,17 @@ export const COMPETITORS_ES: Record<string, CompetitorCopy> = {
     whatItIs:
       "BuildingConnected (propiedad de Autodesk) es una red de preconstrucción donde los contratistas generales gestionan invitaciones a ofertar y los subcontratistas reciben invitaciones.",
     whoFor: "Contratistas generales medianos y grandes y los subcontratistas que invitan, sobre todo en la construcción comercial de EE. UU.",
-    pricing: "Subcontratistas: gratis (reactivo) o ≈US$149 al mes; contratistas generales: ≈US$3,600–$5,000+ al año",
+    pricing: "Solo por cotización; sin precio público (revisado en octubre de 2026)",
     strengths: ["Más de 1 millón de profesionales", "Integración con Autodesk", "Estándar de la industria en la construcción comercial de EE. UU."],
     weaknesses: [
       "Reactivo para los subcontratistas: usted espera a que lo inviten",
       "Centrado en EE. UU.; Canadá es secundario",
-      "Complejo y costoso para empresas pequeñas",
+      "Se vende solo por cotización; sin precio público",
     ],
     angle:
       "Con BuildingConnected, alguien tiene que invitarlo. PMRFP le permite registrar su empresa de forma proactiva y responder a RFP abiertas de administradores de propiedades, sin esperar una invitación.",
     rows: [
-      { feature: "Precio anual", pmrfp: PRICE, them: "Gratis a ≈US$149 al mes (subcontratistas)" },
+      { feature: "Precio anual", pmrfp: PRICE, them: "Solo por cotización" },
       { feature: "Modelo de oportunidades", pmrfp: "Proactivo: RFP abiertas", them: "Solo por invitación" },
       { feature: "Cobertura en Canadá", pmrfp: "Canadá primero", them: "Principalmente EE. UU." },
       { feature: "Directorio de proveedores", pmrfp: "Sí", them: "No" },

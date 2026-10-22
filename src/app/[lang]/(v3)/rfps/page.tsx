@@ -14,7 +14,23 @@ import { hasActiveTradeAccess } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { awardsOnRecord, boardStats, isOpenListing, isPmListing } from "@/lib/data/site-counters";
-import { matchesSource, parseBoardSource, sourceLinkTarget, type BoardSource } from "@/lib/data/board-source";
+import { matchesSource, sourceLinkTarget, type BoardSource } from "@/lib/data/board-source";
+import {
+  BUYER_TYPES,
+  VALUE_BANDS,
+  boardQuery,
+  boardRobots,
+  buyerTypeOf,
+  inClosingWindow,
+  parseBoardParams,
+  postedDate,
+  valueBandOf,
+  withBoardPatch,
+  type BoardParams,
+  type BuyerType,
+  type ClosingWindow,
+  type ValueBandKey,
+} from "@/lib/data/board-filters";
 import { isGcPackage } from "@/lib/gc/packages";
 import { provinceFirst, regionCountry, rfpMarket } from "@/lib/visitor-geo";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
@@ -39,7 +55,8 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   const { lang: raw } = await params;
   const lang: Locale = hasLocale(raw) ? raw : "en";
   const t = getDictionary(lang).board.meta;
-  const [visitor, filters] = await Promise.all([getVisitorCountry(), searchParams]);
+  const [visitor, rawFilters] = await Promise.all([getVisitorCountry(), searchParams]);
+  const filters = parseBoardParams(rawFilters);
   const country = resolveBoardCountry(filters, visitor.country);
   const countCountry = country === "all" ? null : country === "us" ? "US" : "CA";
   const open = (await getOpenRfpCounts(null, undefined, countCountry).catch(() => ({ totalOpen: 0 }))).totalOpen;
@@ -47,12 +64,15 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
     // Live count + "free" in the title: searchers compare boards on volume and price.
     title: open > 0 ? plural(open, t.titleCount, { n: lang === "en" ? String(open) : formatNumber(open, lang) }) : t.title,
     description: fmt(t.description, { lead: open > 0 ? plural(open, t.lead) : t.leadNone }),
+    // Filtered views (trade, place, buyer type, value, closing window, tabs, page 2+) are the same
+    // listings re-cut: out of the index, links still followed, canonical to the board itself.
     alternates: alternatesFor(lang, "/rfps"),
+    robots: boardRobots(filters),
   };
 }
 
 type Country = BoardCountry;
-type Closing = "all" | "today" | "tomorrow" | "week" | "later";
+type Closing = "all" | ClosingWindow;
 
 /** "$498,992" / "498 992 $". */
 function dollars(n: number, lang: Locale): string {
@@ -77,14 +97,15 @@ export default async function RfpsPage({
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
   const trade = (name: string) => tradeName(name, lang);
-  const sp = await searchParams;
+  // Known parameters with valid values only (lib/data/board-filters); the rest of the query string is ignored.
+  const sp: BoardParams = parseBoardParams(await searchParams);
   const [allRfps, board, categories, allRegions, propertyTypes, access, visitor] = await Promise.all([
     listRfps({
       category: sp.category,
       region: sp.region,
       propertyType: sp.propertyType,
       q: sp.q,
-      sort: (sp.sort as "closing" | "newest") ?? "closing",
+      sort: sp.sort ?? "closing",
     }),
     listAllRfpsCached().catch(() => [] as RfpListItem[]),
     getCategories(),
@@ -99,19 +120,12 @@ export default async function RfpsPage({
   // first, Canadians Canadian), switchable with the tabs. A region filter
   // already picks a place, so it shows every country.
   const country = resolveBoardCountry(sp, market);
-  const closing: Closing = (["today", "tomorrow", "week", "later"] as const).find((c) => c === sp.closing) ?? "all";
-  const source: BoardSource = parseBoardSource(sp.source);
+  const closing: Closing = sp.closing ?? "all";
+  const source: BoardSource = sp.source ?? "all";
+  const fb = getT("listDepth");
   const inCountry = (c: Country) => (r: RfpListItem) => c === "all" || (rfpMarket(r) === "US") === (c === "us");
   const inSource = (r: RfpListItem) => matchesSource(r, source);
-  const inClosing = (r: RfpListItem) => {
-    if (closing === "all") return true;
-    const d = daysUntil(r.deadline);
-    if (d === null) return closing === "later";
-    if (closing === "today") return d <= 0;
-    if (closing === "tomorrow") return d === 1;
-    if (closing === "week") return d <= 7;
-    return d > 7;
-  };
+  const inClosing = (r: RfpListItem) => inClosingWindow(r.deadline, closing);
   const rfps = allRfps.filter(inCountry(country)).filter(inSource);
   const openIn = (c: Country) => allRfps.filter((r) => isOpenListing(r) && inCountry(c)(r)).length;
   // Honest split of the headline: public tenders vs RFPs posted by property managers.
@@ -144,7 +158,23 @@ export default async function RfpsPage({
   const gcOpen = open.filter(isGcPackage);
   const showGc = sp.view === "gc";
   const pageNum = Math.max(1, Number(sp.page) || 1);
-  const listing = (showAwarded ? [...past, ...otherClosed] : showGc ? gcOpen : open).filter(showAwarded ? () => true : inClosing);
+  // The tab's listings after the closing window; buyer type and value narrow it further, and each
+  // facet's counts come from the list narrowed by every OTHER filter.
+  const scoped = (showAwarded ? [...past, ...otherClosed] : showGc ? gcOpen : open).filter(showAwarded ? () => true : inClosing);
+  const buyerOk = (r: RfpListItem) => !sp.buyer || buyerTypeOf(r) === sp.buyer;
+  const valueOk = (r: RfpListItem) => !sp.value || valueBandOf(r) === sp.value;
+  const listing = scoped.filter(buyerOk).filter(valueOk);
+  const buyerCounts = new Map<BuyerType, number>();
+  for (const r of scoped.filter(valueOk)) {
+    const b = buyerTypeOf(r);
+    if (b) buyerCounts.set(b, (buyerCounts.get(b) ?? 0) + 1);
+  }
+  const valueCounts = new Map<ValueBandKey, number>();
+  for (const r of scoped.filter(buyerOk)) valueCounts.set(valueBandOf(r), (valueCounts.get(valueBandOf(r)) ?? 0) + 1);
+  // A filter only shows when it can tell listings apart: value needs at least one stated value
+  // (open public tenders state none), buyer type needs two kinds of buyer.
+  const showValue = Boolean(sp.value) || [...valueCounts.keys()].some((k) => k !== "not-stated");
+  const showBuyer = Boolean(sp.buyer) || buyerCounts.size > 1;
   const pages = Math.max(1, Math.ceil(listing.length / PAGE_SIZE));
   const visible = listing.slice((pageNum - 1) * PAGE_SIZE, pageNum * PAGE_SIZE);
   const recent = !showAwarded && !showGc ? past.slice(0, AWARDED_PREVIEW) : [];
@@ -153,21 +183,12 @@ export default async function RfpsPage({
   const recentItems = hydrated.slice(visible.length);
 
   // URL helpers: every filter is a link or a GET form, so the board works without JS and stays crawlable.
-  const href = (patch: Record<string, string | null>) => {
-    const q = new URLSearchParams(Object.entries(sp).filter(([k, val]) => val && k !== "page") as [string, string][]);
-    for (const [k, val] of Object.entries(patch)) {
-      if (val == null) q.delete(k);
-      else q.set(k, val);
-    }
-    const qs = q.toString();
+  const href = (patch: { [K in keyof BoardParams]?: BoardParams[K] | null }) => {
+    const qs = boardQuery(withBoardPatch(sp, patch));
     return L(qs ? `/rfps?${qs}` : "/rfps");
   };
-  const pageHref = (n: number) => {
-    const q = new URLSearchParams(Object.entries(sp).filter(([, val]) => val) as [string, string][]);
-    q.set("page", String(n));
-    return L(`/rfps?${q.toString()}`);
-  };
-  const clearAll = href({ category: null, region: null, propertyType: null, q: null, closing: null, source: null });
+  const pageHref = (n: number) => href({ page: n > 1 ? n : null });
+  const clearAll = href({ category: null, region: null, propertyType: null, q: null, closing: null, source: null, value: null, buyer: null });
 
   // Sidebar: open listings per trade in this country (not narrowed by the trade filter, so you can switch).
   const tradeCounts = new Map<string, number>();
@@ -190,7 +211,9 @@ export default async function RfpsPage({
   if (region) chips.push({ kind: v.chips.region, label: regionName(region.name, lang), href: href({ region: null }) });
   if (propertyType) chips.push({ kind: v.chips.propertyType, label: propertyTypeName(propertyType.name, lang), href: href({ propertyType: null }) });
   if (sp.q) chips.push({ kind: v.chips.q, label: sp.q, href: href({ q: null }) });
-  if (closing !== "all") chips.push({ kind: v.chips.closing, label: v.windows[closing], href: href({ closing: null }) });
+  if (closing !== "all") chips.push({ kind: v.chips.closing, label: fb.windows[closing], href: href({ closing: null }) });
+  if (sp.buyer) chips.push({ kind: fb.chips.buyer, label: fb.buyer.types[sp.buyer], href: href({ buyer: null }) });
+  if (sp.value) chips.push({ kind: fb.chips.value, label: fb.value.bands[sp.value], href: href({ value: null }) });
   if (source !== "all") chips.push({ kind: v.chips.source, label: source === "public" ? v.filters.sourcePublic : v.filters.sourcePm, href: href({ source: null }) });
   const hasFilters = chips.length > 0;
 
@@ -202,8 +225,8 @@ export default async function RfpsPage({
 
   const countryWord = t.country[country];
   const proHref = L(signUpHrefForPlan("pro", "monthly"));
-  const keep = (names: string[]) =>
-    names.filter((k) => sp[k]).map((k) => <input key={k} type="hidden" name={k} value={sp[k]} />);
+  const keep = (names: (keyof BoardParams)[]) =>
+    names.filter((k) => sp[k] !== undefined).map((k) => <input key={k} type="hidden" name={k} value={String(sp[k])} />);
 
   // Digest band: the visitor's filter, preselected.
   const digestTrades = [{ value: "", label: v.search.allTrades }, ...categories.map((c) => ({ value: c.slug, label: trade(c.name) }))];
@@ -230,6 +253,8 @@ export default async function RfpsPage({
     const mon = r.deadline ? formatDate(r.deadline, lang, { month: "short" }) : "";
     const day = r.deadline ? String(Number(r.deadline.slice(8, 10))) : "—";
     const link = L(`/rfps/${r.slug}`);
+    // When the buyer posted it (or, failing that, when we first stored it). No "updated" date: we don't keep a trustworthy one.
+    const posted = postedDate(r);
     return (
       <article key={r.slug} className="vp-row">
         <div className={`vp-date ${tone}`}>
@@ -249,6 +274,9 @@ export default async function RfpsPage({
             )}
             {where && (
               <span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#4B4F6B" strokeWidth="1.8" aria-hidden><path d="M8 14.5s4.5-4.2 4.5-7.8a4.5 4.5 0 00-9 0c0 3.6 4.5 7.8 4.5 7.8z" /><circle cx="8" cy="6.5" r="1.6" /></svg>{where}</span>
+            )}
+            {posted && (
+              <span className="vp-posted"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#4B4F6B" strokeWidth="1.8" aria-hidden><rect x="2" y="3" width="12" height="11" rx="2" /><path d="M2 7h12M5.5 1.5v3M10.5 1.5v3" /></svg>{fmt(fb.posted, { date: formatDate(`${posted}T12:00:00Z`, lang, { month: "short", day: "numeric" }) })}</span>
             )}
           </div>
         </div>
@@ -324,7 +352,7 @@ export default async function RfpsPage({
         </section>
         <div className="v3-wrap vp-searchwrap">
           <form action={L("/rfps")} method="get" className="vp-pillform">
-            {keep(["country", "view", "sort", "propertyType", "closing", "source"])}
+            {keep(["country", "view", "sort", "propertyType", "closing", "source", "value", "buyer"])}
             <label className="vp-pf first">
               <span>{v.search.trade}</span>
               <select name="category" defaultValue={sp.category ?? ""}>
@@ -368,10 +396,10 @@ export default async function RfpsPage({
               <span className="vp-lockline"><LockIcon />{t.locked.previews} <a href={L("/pricing")}>{t.locked.unlock}</a></span>
             )}
             <form action={L("/rfps")} method="get" className="vp-sort">
-              {keep(["country", "view", "category", "region", "propertyType", "q", "closing", "source"])}
+              {keep(["country", "view", "category", "region", "propertyType", "q", "closing", "source", "value", "buyer"])}
               <label>
                 <span>{v.sort}</span>
-                <SubmitSelect name="sort" defaultValue={sp.sort === "newest" ? "newest" : "closing"}>
+                <SubmitSelect name="sort" defaultValue={sp.sort ?? "closing"}>
                   <option value="closing">{t.sort.closing}</option>
                   <option value="newest">{t.sort.newest}</option>
                 </SubmitSelect>
@@ -391,17 +419,6 @@ export default async function RfpsPage({
                 <a href={clearAll}>{v.filters.clear}</a>
               </div>
 
-              {!showAwarded && (
-                <div>
-                  <div className="v3-label">{v.filters.closing}</div>
-                  <div className="vp-wins">
-                    {(["all", "today", "tomorrow", "week", "later"] as const).map((w) => (
-                      <a key={w} href={href({ closing: w === "all" ? null : w })} aria-current={closing === w ? "true" : undefined}>{v.windows[w]}</a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div>
                 <div className="v3-label">{v.filters.category}</div>
                 <div className="vp-trades">
@@ -417,6 +434,46 @@ export default async function RfpsPage({
                 </div>
                 <a href={L("/trades")} className="vp-more">{fmt(v.filters.seeAllTrades, { n: num(categories.length) })}</a>
               </div>
+
+              {!showAwarded && (
+                <div>
+                  <div className="v3-label">{v.filters.closing}</div>
+                  <div className="vp-wins">
+                    {(["all", "today", "tomorrow", "week", "two-weeks", "month", "later"] as const).map((w) => (
+                      <a key={w} href={href({ closing: w === "all" ? null : w })} aria-current={closing === w ? "true" : undefined}>{fb.windows[w]}</a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {showBuyer && (
+                <div>
+                  <div className="v3-label">{fb.buyer.title}</div>
+                  <div className="vp-wins">
+                    <a href={href({ buyer: null })} aria-current={sp.buyer ? undefined : "true"}>{fb.buyer.any}</a>
+                    {BUYER_TYPES.filter((b) => buyerCounts.has(b) || b === sp.buyer).map((b) => (
+                      <a key={b} href={href({ buyer: sp.buyer === b ? null : b })} aria-current={sp.buyer === b ? "true" : undefined}>
+                        {fb.buyer.types[b]} <span className="c">{num(buyerCounts.get(b) ?? 0)}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {showValue && (
+                <div>
+                  <div className="v3-label">{fb.value.title}</div>
+                  <div className="vp-wins">
+                    <a href={href({ value: null })} aria-current={sp.value ? undefined : "true"}>{fb.value.any}</a>
+                    {[...VALUE_BANDS.map((b) => b.key), "not-stated" as const].filter((k) => valueCounts.has(k) || k === sp.value).map((k) => (
+                      <a key={k} href={href({ value: sp.value === k ? null : k })} aria-current={sp.value === k ? "true" : undefined}>
+                        {fb.value.bands[k]} <span className="c">{num(valueCounts.get(k) ?? 0)}</span>
+                      </a>
+                    ))}
+                  </div>
+                  <p className="small muted" style={{ marginTop: 8 }}>{fb.value.note}</p>
+                </div>
+              )}
 
               <div>
                 <div className="v3-label">{v.filters.source}</div>
@@ -435,7 +492,7 @@ export default async function RfpsPage({
               </div>
 
               <form action={L("/rfps")} method="get" className="vp-aside-form">
-                {keep(["country", "view", "category", "q", "sort", "closing", "source"])}
+                {keep(["country", "view", "category", "q", "sort", "closing", "source", "value", "buyer"])}
                 <label>
                   <span className="v3-label">{v.filters.region}</span>
                   <SubmitSelect name="region" defaultValue={sp.region ?? ""}>
@@ -573,6 +630,16 @@ export default async function RfpsPage({
           </div>
         </section>
       )}
+
+      {/* Plain crawlable links to the other list pages. */}
+      <nav className="v3-wrap" aria-label={fb.browse.title} style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", padding: "24px 0" }}>
+        <b>{fb.browse.title}:</b>
+        <a href={L("/trades")}>{fb.browse.trades}</a>
+        <a href={L("/regions")}>{fb.browse.regions}</a>
+        <a href={L("/buyers")}>{fb.browse.buyers}</a>
+        <a href={L("/directory")}>{fb.browse.directory}</a>
+        <a href={L("/contract-winners")}>{fb.browse.awards}</a>
+      </nav>
 
       <div className="v3-wrap vp-refer v3-tw">
         <ReferBanner variant="subtle" />

@@ -6,7 +6,11 @@ type T = Messages["buyers"];
 
 /** "bids&tenders and its own website" (en) / "bids&tenders, Bonfire et son propre site Web". */
 export function platformList(keys: readonly PlatformKey[], t: T, and: string): string {
-  const names = keys.map((k) => t.platforms[k]);
+  return joinList(keys.map((k) => t.platforms[k]), and);
+}
+
+/** "A, B and C". */
+export function joinList(names: readonly string[], and: string): string {
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} ${and} ${names[names.length - 1]}`;
 }

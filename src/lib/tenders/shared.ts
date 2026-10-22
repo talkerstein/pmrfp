@@ -94,6 +94,23 @@ export function cap(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s;
 }
 
+/** Words a title cannot end on ("…Office Building at…"). */
+const DANGLING = /\s+(?:and|or|at|of|for|the|to|in|on|with|various|a|an|by|from|into|as|including|&)$/i;
+
+/**
+ * A title capped at `max` characters for a card, cut on a word boundary and
+ * never left hanging on a connector: "Multiple State of Good Repair projects at
+ * various…" loses its last words, not its meaning. Shorter titles are untouched.
+ */
+export function cutTitle(title: string, max: number): string {
+  if (title.length <= max) return title;
+  const head = title.slice(0, max - 1);
+  const space = head.lastIndexOf(" ");
+  let out = head.slice(0, Math.max(space, Math.floor(max * 0.66))).replace(/[\s,;:(–-]+$/, "");
+  while (DANGLING.test(out)) out = out.replace(DANGLING, "").replace(/[\s,;:(–-]+$/, "");
+  return `${out}…`;
+}
+
 /** Public-works infrastructure — not work a building trade bids on. */
 export const CIVIL =
   /culvert|bridge|watermain|sewer|road (re)?construction|resurfacing|transit|pedestrian bridge|creek|trenchless|pipe lining|red light camera|highway|ditching|dredg|runway|student transportation|transportation of students|school bus|roadway|overpass|shoulder gravel|paving of roads|repairs to roads|\broute \d+|\btrunk \d+|\bbr\d{3,}/i;

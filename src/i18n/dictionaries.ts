@@ -15,6 +15,7 @@ import agencies from "./messages/agencies";
 import shared from "./messages/shared";
 import sharedClient from "./messages/sharedClient";
 import board from "./messages/board";
+import listDepth from "./messages/listDepth";
 import boardClient from "./messages/boardClient";
 import directory from "./messages/directory";
 import directoryClient from "./messages/directoryClient";
@@ -74,6 +75,7 @@ const NAMESPACES = {
   shared,
   sharedClient,
   board,
+  listDepth,
   boardClient,
   directory,
   directoryClient,

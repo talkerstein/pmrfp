@@ -106,7 +106,7 @@ const en = {
       title: "{trade} RFPs & Tenders in {place}{open}",
       openSuffix: { one: " ({n} Open)", other: " ({n} Open)" },
       partOpen: {
-        one: "{n} open {lower} RFPs and tenders in {place}",
+        one: "{n} open {lower} RFP or tender in {place}",
         other: "{n} open {lower} RFPs and tenders in {place}",
       },
       partNoOpen: "{lower} RFPs and tenders in {place}",
@@ -415,7 +415,7 @@ const fr: typeof en = {
     meta: {
       title: "Entrepreneurs {of} pour immeubles commerciaux au Canada | Répertoire et appels d'offres",
       description:
-        "Trouvez des entrepreneurs {of} pour immeubles commerciaux partout au Canada et suivez les appels d'offres {of}. Inscrivez votre entreprise {of} sur {site}.",
+        "Trouvez des entrepreneurs {of} pour immeubles commerciaux partout au Canada et suivez chaque appel d'offre {of} ouvert. Inscrivez votre entreprise {of} sur {site}.",
     },
     faqs: [
       {
@@ -482,7 +482,7 @@ const fr: typeof en = {
       },
       median: " (médiane : {money})",
       join: ", plus ",
-      description: "{parts}. Mis à jour chaque matin sur {site}.",
+      description: "{parts}. Chaque appel d'offre se consulte gratuitement. Mis à jour chaque matin sur {site}.",
     },
     eyebrow: "{trade} · {place}",
     title: "Appels d'offres et contrats {of} {in}",

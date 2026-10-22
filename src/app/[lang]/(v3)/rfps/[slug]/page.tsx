@@ -26,6 +26,7 @@ import { loadBuyers } from "@/lib/buyers/load";
 import { buyerPageForRfp, findBuyerPage } from "@/lib/buyers/model";
 import { parseBuyerKey } from "@/lib/towns/managed";
 import { FollowPill } from "@/components/follows/blocks";
+import { BuyerOfficeBlock } from "@/components/buyers/buyer-office";
 import { buyerDisplayName } from "@/lib/towns/claimable";
 import { inSentence } from "@/lib/towns/names";
 import { buyerFromSummary as awardBuyerFromSummary } from "@/lib/data/monthly-winners";
@@ -785,6 +786,9 @@ export default async function RfpDetailPage({
               <FollowPill page={buyerPage} name={inSentence(buyerDisplayName(buyerPage, lang), lang)} />
             </p>
           )}
+          {/* The buyer's general office details (website, bids page, procurement inbox, phone) are public, so free.
+              The contact named on the notice and the bid checklist stay in Trade Pro (lib/buyers/office). */}
+          {buyerPage && isPublicTender && <BuyerOfficeBlock page={buyerPage} pro={showFull} />}
           {/* Credits are printed above; this adds the correction / removal link. */}
           <RecordFooter credits={[]} lang={lang} kind="rfp" path={`/rfps/${teaser.slug}`} refId={teaser.slug} />
         </div>
