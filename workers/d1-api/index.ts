@@ -12,7 +12,7 @@ const json = (value: unknown, status = 200) => Response.json(value, {
   status, headers: { "cache-control": "no-store, private", "x-content-type-options": "nosniff" },
 });
 /** No arbitrary SQL, caller-selected user, admin impersonation, CORS or public data endpoint. */
-export async function handleRequest(request: Request, env: Env, fetcher: typeof fetch = fetch): Promise<Response> {
+export async function handleRequest(request: Request, env: Env, fetcher: typeof fetch = globalThis.fetch.bind(globalThis)): Promise<Response> {
   try {
     await verifyGateway(request.headers.get("x-pmrfp-gateway-key"), env.GATEWAY_SECRET);
     const url = new URL(request.url);
