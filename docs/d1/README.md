@@ -4,8 +4,7 @@
 This branch implements the audit, candidate D1 copy schemas, consistent exports,
 local incremental reconciliation, private staging import, validation, and local
 backup/restore rehearsal. It now includes an opt-in synthetic saved-RFP preview; see [PREVIEW.md](PREVIEW.md). Production traffic remains on Supabase. Supabase
-remains authoritative. No production rows, policies, grants, jobs, auth settings,
-storage objects, or Vercel configuration were changed.
+remains authoritative. Existing production business rows, row policies, jobs, storage objects and Vercel configuration are unchanged. The user approved a temporary migration reader and narrower PUBLIC execution grants on 19 definer functions; see [READER-ACCESS.md](READER-ACCESS.md). At the user's request, one isolated Auth test account and its ordinary profile were created for preview verification; source bookmarks and public business listings were not created.
 
 Repository baseline refreshed to `origin/master` at
 `da918b5`,
@@ -15,6 +14,12 @@ The other chat's checkout was not modified. The grants fix (#164), city-source w
 this branch was rebased onto them without modifying those patches. The live
 copy below is the earlier point-in-time snapshot, not a fresh post-reconciliation
 export. Repeat the live audit before a later data synchronization or cutover.
+
+## October 22 update
+
+A fresh live catalog now reports 98 public tables, 163 public/storage policies, 63 functions, 37 row triggers and 20 views. Shared columns match the repository replay. The remaining metadata differences are a Supabase RLS helper and one storage read policy; this branch did not change them. See the dated Oct 22 catalog/schema files, `PREVIEW.md` and `VALIDATION.md`. The older table below remains the Oct 21 comparison for historical reproducibility.
+
+The Oct 22 full copy (10,842 records) and rebuilt candidate (10,726 records) are now separately verified on D1, including actual readback backup/restore. The synthetic saved-RFP flow is deployed and verified with a real test session. Full application parity and production cutover remain incomplete. The approved source reader is active and its live permission checks passed. A direct consistent export now contains 10,893 records. Local reconciliation and backup/restore passed; a fresh rebuilt candidate contains 10,776 records. Uploading that latest candidate is blocked by Cloudflare’s exhausted daily free D1 row-write allowance (error 7500), resetting October 23 at 00:00 UTC. Existing verified remote copies are retained.
 
 ## Findings that change the migration
 
@@ -113,8 +118,8 @@ indexes and unsupported constraints remain listed in the gaps file. A candidate
 schema is deliberately not described as an application-ready migration.
 
 D1 has no Supabase PostgREST endpoint or Postgres role/RLS execution. Existing
-Supabase clients cannot be pointed at it. There are 53 auth call sites, 21
-storage call sites, 10 literal RPC names and 28 configured Vercel cron jobs.
+Supabase clients cannot be pointed at it. The current audit records 56 auth call sites, 21
+storage call sites, 18 literal RPC names and 31 configured Vercel cron jobs.
 `src/lib/supabase/{server,browser,read,service}.ts`, the bearer-session client,
 mobile's Supabase client and direct scripts must be converted intentionally.
 A generic client-supplied SQL gateway would bypass the current authorization and
@@ -126,8 +131,7 @@ Vercel passes the actual user bearer token, which the Worker verifies against
 Supabase issuer/audience/signature before evaluating authorization. Anonymous,
 user, organization-member, admin, and trusted-job operations must be distinct.
 Never accept a caller's role/user ID as authorization and never expose a D1 API
-token or service-role secret to browser/mobile code. This serving layer has not
-yet been implemented or deployed.
+token or service-role secret to browser/mobile code. The saved-RFP operation subset is now implemented, deployed and verified with a real test session. Other operations and identities remain to be ported.
 
 ## Security and behavior still to port
 

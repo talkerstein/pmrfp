@@ -1,0 +1,22 @@
+{
+  "tls_mode": "verify-full",
+  "checks": {
+    "read_tables": true,
+    "read_auth_ids": true,
+    "deny_auth_password": true,
+    "deny_insert": true,
+    "deny_counter": true,
+    "deny_role_change": true,
+    "no_public_writes": true,
+    "readonly_default": true
+  },
+  "restricted_definer_functions_denied": 19,
+  "date": "2026-10-22",
+  "reader_role": "d1_migration_reader_20261022",
+  "expires_utc": "2026-10-29T10:00:00Z",
+  "auth_id_source": "public.d1_migration_auth_ids_20261022",
+  "public_table_count": 98,
+  "auth_password_access": false,
+  "public_definer_execute_grants_narrowed": 19,
+  "credential_in_repository": false
+}

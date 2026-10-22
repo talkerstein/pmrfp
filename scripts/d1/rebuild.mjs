@@ -2,6 +2,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { copyFileSync, readFileSync, writeFileSync, existsSync, chmodSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { scoreLedger, isKarmaKind } from '../../src/lib/karma/rules.ts';
 
@@ -68,7 +69,7 @@ export function authoritativeHash(db,tables) {
   }
   return hash.digest('hex');
 }
-if(process.argv[1]&&resolve(process.argv[1])===resolve(new URL(import.meta.url).pathname)) {
+if(process.argv[1]&&resolve(process.argv[1])===resolve(fileURLToPath(import.meta.url))) {
   const [source,target,now]=process.argv.slice(2);
   if(!source||!target||!now||existsSync(target)||resolve(source)===resolve(target)) throw new Error('Usage: node scripts/d1/rebuild.mjs SOURCE.sqlite NEW_TARGET.sqlite SCORING_ISO_TIMESTAMP (target must not exist)');
   // Source must be a closed, validated migration file, not a live WAL database.
