@@ -2,6 +2,8 @@
 
 *2026-10-16 · from "R. Talkar · PMRFP" <info@pmrfp.com> · code: src/lib/lifecycle/ · preview live: /admin/lifecycle*
 
+> **Update 2026-10-22:** the badge now has its own email right after approval (plus a reminder, a thanks and a one-time go-live catch-up), and "Day 3 · Get found" below is now about adding a project only. See `2026-10-22-badge-lifecycle.md`. The Day 3 copy in this file is the old version.
+
 ## In plain English
 
 New free trade companies get a short, helpful email every few days for about two weeks: welcome, what's in their market, how to get found, the free 14-day Trade Pro trial, what similar jobs sold for, the forum, and finally the Founding 500 offer. If they start a trial, that track replaces the rest: how to use it, a halfway check-in with their real numbers, 2 days left, trial ended, and one win-back a week later. Then nothing more.
@@ -20,7 +22,7 @@ Every email is plain text first, under 150 words, in the member's language (en /
 |---|---|
 | Day 0 · Welcome + finish profile | Day 0 (within 3 days of joining). Always sent: it is the entry to the sequence. One action: finish trades + areas (if missing), else see your leads. |
 | Day 1 · Your market | Day 1. Real counts from the lead matcher for their trades + area, plus 3 real lead titles. Under 3 leads and no price bands: says so and suggests more areas/trades. Fewer than 3 open bids: awards, price bands, GC packages and projects lead. |
-| Day 3 · Get found (project + badge) | Day 3. Skipped if the company already has a project AND the badge loading on a website; otherwise only the missing one(s). |
+| Day 3 · Get found (add a project) | Day 3. Skipped if the company already has a project. (Was "project + badge"; the badge has its own email since 2026-10-22.) |
 | Day 5 · Start the free trial | Day 5. Skipped if the matcher finds nothing at all and no price bands (no trial into an empty market). Counts are theirs: leads beyond the free 3, awards with a named winner, trades with a price range. |
 | Day 8 · What similar jobs sold for | Day 8. Only when one of their trades has at least 5 priced public awards in their province/state (24 months). Else skipped. |
 | Day 12 · Forum + reputation | Day 12. Only for approved company profiles (who can post) that haven't posted yet. |

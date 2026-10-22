@@ -77,12 +77,6 @@ const en = {
     projectBody:
       "Snap before and after photos on your phone, say what you did in a line, and we'll write it up. It goes on your profile for property managers to see.",
     addProject: "Add a project",
-    badgeAlt: "Your PMRFP badge",
-    badgeTitle: "Your profile is live — add your badge",
-    badgeBody:
-      "Paste it into your website footer and email signature. Property managers who click it see your profile, and your profile links back to your site. Two minutes, free.",
-    getBadge: "Get the badge",
-    companyWidget: "Company card widget",
     gcTitle: "Contractors who just won public work in {trade}",
     gcTitleAny: "Contractors who just won public work",
     gcBody: "{n} public contracts in this trade were awarded in the last {days} days. The winners may need subcontractors: see who won, what, and for how much.",
@@ -91,6 +85,24 @@ const en = {
     upsellTitle: "Unlock full RFP access with Trade Pro",
     upsellBody:
       "See the full scope, documents and buyer contact on every RFP, what similar contracts sold for, and get an email the morning each match posts. $29/month or $249 CAD/year.",
+  },
+  /** The "Add your badge" card on the dashboard home: install status (lib/badge/install) and the copy-paste code. */
+  badgeCard: {
+    title: "Add your badge",
+    alt: "Your PMRFP badge",
+    statusDetected: "Detected on {domain}",
+    statusNone: "Not detected yet",
+    statusNoSite: "No website on your profile",
+    body: "Put this small badge in your website footer or contact page. Visitors can check that you're listed and click through to your profile, projects and reviews. It also links your site to your PMRFP profile, which can help search engines understand your business (no ranking promises).",
+    detectedBody: "We can see it on your site. Thank you. Visitors can now check you're listed and click through to your profile.",
+    noSiteBody: "Add your website to your profile and we'll tell you when we see the badge on it.",
+    addWebsite: "Add your website",
+    rewardOffer: "Put it on your own website and we'll add {days} days of Trade Pro, free (once).",
+    rewardGranted: "Thank you: Trade Pro is on through {date}.",
+    codeLabel: "HTML for your website",
+    send: "Send this to whoever manages your website",
+    more: "Dark version, text link and more",
+    companyWidget: "Company card widget",
   },
   profile: {
     eyebrow: "Profile completion",
@@ -401,12 +413,6 @@ const fr: typeof en = {
     projectBody:
       "Prenez des photos avant et après avec votre téléphone, décrivez en une ligne ce que vous avez fait, et nous rédigeons le reste. Le projet s'affiche sur votre profil, à la vue des gestionnaires immobiliers.",
     addProject: "Ajouter un projet",
-    badgeAlt: "Votre badge PMRFP",
-    badgeTitle: "Votre profil est en ligne — ajoutez votre badge",
-    badgeBody:
-      "Collez-le dans le pied de page de votre site Web et dans votre signature de courriel. Les gestionnaires immobiliers qui cliquent dessus voient votre profil, et votre profil renvoie à votre site. Deux minutes, gratuit.",
-    getBadge: "Obtenir le badge",
-    companyWidget: "Widget de fiche d'entreprise",
     gcTitle: "Entrepreneurs qui viennent de remporter des contrats publics en {trade}",
     gcTitleAny: "Entrepreneurs qui viennent de remporter des contrats publics",
     gcBody: "{n} contrats publics dans ce métier ont été adjugés ces {days} derniers jours. Les adjudicataires auront peut-être besoin de sous-traitants : voyez qui a gagné, quoi et pour combien.",
@@ -415,6 +421,23 @@ const fr: typeof en = {
     upsellTitle: "Débloquez l'accès complet aux appels d'offres avec Trade Pro",
     upsellBody:
       "Consultez la portée complète, les documents et les coordonnées de l'acheteur de chaque appel d'offres, le prix obtenu pour des contrats semblables, et recevez un courriel le matin même où chaque appel d'offres correspondant est publié. 29 $/mois ou 249 $ CAD/an.",
+  },
+  badgeCard: {
+    title: "Ajoutez votre badge",
+    alt: "Votre badge PMRFP",
+    statusDetected: "Détecté sur {domain}",
+    statusNone: "Pas encore détecté",
+    statusNoSite: "Aucun site Web sur votre profil",
+    body: "Placez ce petit badge dans le pied de page ou la page de contact de votre site Web. Les visiteurs peuvent vérifier que vous êtes inscrit et accéder à votre profil, vos projets et vos avis. Il relie aussi votre site à votre profil PMRFP, ce qui peut aider les moteurs de recherche à comprendre votre entreprise (sans promesse de classement).",
+    detectedBody: "Nous le voyons sur votre site. Merci. Les visiteurs peuvent maintenant vérifier que vous êtes inscrit et accéder à votre profil.",
+    noSiteBody: "Ajoutez votre site Web à votre profil et nous vous dirons quand le badge y apparaît.",
+    addWebsite: "Ajouter votre site Web",
+    rewardOffer: "Placez-le sur votre propre site Web et nous ajoutons {days} jours de Trade Pro, gratuitement (une seule fois).",
+    rewardGranted: "Merci : Trade Pro est activé jusqu'au {date}.",
+    codeLabel: "HTML pour votre site Web",
+    send: "Envoyer ceci à la personne qui gère votre site",
+    more: "Version sombre, lien texte et plus",
+    companyWidget: "Widget de fiche d'entreprise",
   },
   profile: {
     eyebrow: "Progression du profil",
@@ -733,12 +756,6 @@ const es: typeof en = {
     projectBody:
       "Tome fotos del antes y el después con su teléfono, diga en una línea lo que hizo y nosotros lo redactamos. Aparece en su perfil para que lo vean los administradores de propiedades.",
     addProject: "Agregar un proyecto",
-    badgeAlt: "Su insignia de PMRFP",
-    badgeTitle: "Su perfil está publicado: agregue su insignia",
-    badgeBody:
-      "Péguela en el pie de página de su sitio web y en su firma de correo electrónico. Los administradores de propiedades que hagan clic en ella verán su perfil, y su perfil enlaza de vuelta a su sitio. Dos minutos, gratis.",
-    getBadge: "Obtener la insignia",
-    companyWidget: "Widget de tarjeta de empresa",
     gcTitle: "Contratistas que acaban de ganar obra pública en {trade}",
     gcTitleAny: "Contratistas que acaban de ganar obra pública",
     gcBody: "En los últimos {days} días se adjudicaron {n} contratos públicos de este oficio. Los adjudicatarios pueden necesitar subcontratistas: vea quién ganó, qué y por cuánto.",
@@ -747,6 +764,23 @@ const es: typeof en = {
     upsellTitle: "Desbloquee el acceso completo a las RFP con Trade Pro",
     upsellBody:
       "Vea el alcance completo, los documentos y el contacto del comprador de cada RFP, cuánto se pagó por contratos similares, y reciba un correo electrónico la misma mañana en que se publica cada oportunidad que coincide con su perfil. $29 al mes o $249 CAD al año.",
+  },
+  badgeCard: {
+    title: "Agregue su insignia",
+    alt: "Su insignia de PMRFP",
+    statusDetected: "Detectada en {domain}",
+    statusNone: "Todavía no se detecta",
+    statusNoSite: "Su perfil no tiene sitio web",
+    body: "Ponga esta pequeña insignia en el pie de página o la página de contacto de su sitio web. Los visitantes pueden comprobar que usted está registrado y entrar a su perfil, sus proyectos y sus reseñas. También enlaza su sitio a su perfil de PMRFP, lo que puede ayudar a los buscadores a entender su negocio (sin promesas de posicionamiento).",
+    detectedBody: "La vemos en su sitio. Gracias. Los visitantes ya pueden comprobar que usted está registrado y entrar a su perfil.",
+    noSiteBody: "Agregue su sitio web al perfil y le avisaremos cuando veamos la insignia en él.",
+    addWebsite: "Agregar su sitio web",
+    rewardOffer: "Póngala en su propio sitio web y le agregamos {days} días de Trade Pro, gratis (una sola vez).",
+    rewardGranted: "Gracias: Trade Pro quedó activo hasta el {date}.",
+    codeLabel: "HTML para su sitio web",
+    send: "Enviar esto a quien administra su sitio",
+    more: "Versión oscura, enlace de texto y más",
+    companyWidget: "Widget de tarjeta de empresa",
   },
   profile: {
     eyebrow: "Perfil completado",

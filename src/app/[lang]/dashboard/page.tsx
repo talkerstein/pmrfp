@@ -30,6 +30,7 @@ import { TrialFlash, TrialStartForm, TrialStatus, canStartTrial } from "@/compon
 import { InsightsCard } from "@/components/insights/insights-card";
 import { dashboardInsights } from "@/lib/insights/dashboard";
 import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
+import { BadgeInstallCard } from "@/components/dashboard/badge-install-card";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -208,24 +209,7 @@ export default async function TradeDashboardHome({
       )}
 
       {org?.profile_status === "approved" && org.slug && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-6">
-          <div className="flex items-start gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/api/badge/${org.slug}`} alt={t.badgeAlt} width={160} height={40} className="mt-1 hidden sm:block" />
-            <div>
-              <h2 className="text-base font-semibold">{t.badgeTitle}</h2>
-              <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t.badgeBody}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/badge" className={buttonVariants({ variant: "outline" })}>
-              {t.getBadge}
-            </Link>
-            <Link href="/widgets?w=company" className={buttonVariants({ variant: "outline" })}>
-              {t.companyWidget}
-            </Link>
-          </div>
-        </div>
+        <BadgeInstallCard org={{ id: org.id, slug: org.slug, name: org.name, website: org.website }} lang={lang} paid={Boolean(session.paid)} />
       )}
 
       {!session.hasTradeAccess && (

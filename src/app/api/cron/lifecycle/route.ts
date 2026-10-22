@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runLifecycle } from "@/lib/lifecycle/server";
+import { runBadgeRewards } from "@/lib/badge/server";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -22,6 +23,15 @@ export const dynamic = "force-dynamic";
  *  - Onboarding rescue first (lib/lifecycle/rescue): trade accounts with no
  *    company yet get +2h / +1 day / +3 days nudges, then nothing; it stops
  *    the moment onboarding completes and the normal welcome takes over.
+ *  - LIFECYCLE_START_AT (go-live cutoff, unset = off): companies older than it
+ *    get one welcome-back email and nothing else of the old steps.
+ *    LIFECYCLE_MAX_PER_DAY (unset = no ceiling): at most this many lifecycle
+ *    emails in any rolling 24 hours.
+ *
+ * Before the emails, the badge reward pass (lib/badge/server): a company
+ * whose badge is detected on its own website gets a one-time +14 days of
+ * Trade Pro, ONLY while BADGE_REWARD_ENABLED is on (independent of the
+ * lifecycle flag). Run first, so the thank-you email can say so.
  * Protect with CRON_SECRET if set.
  */
 export async function GET(request: Request) {
@@ -30,8 +40,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const dry = new URL(request.url).searchParams.get("dry") === "1";
+  const rewards = await runBadgeRewards({ dry });
+  const badgeRewards = {
+    enabled: rewards.enabled,
+    skipped: rewards.skipped,
+    considered: rewards.considered,
+    refused: rewards.refused,
+    // Company names only, never addresses (the cron report is not admin-only).
+    granted: rewards.granted.map((g) => ({ org: g.org, domain: g.domain, kind: g.kind, endsAt: g.endsAt })),
+  };
   const r = await runLifecycle({ dry });
-  if (r.skipped) return NextResponse.json({ skipped: r.skipped, dry, enabled: r.enabled });
+  if (r.skipped) return NextResponse.json({ skipped: r.skipped, dry, enabled: r.enabled, badgeRewards });
   const summary = {
     enabled: r.enabled,
     dry,
@@ -40,6 +59,9 @@ export async function GET(request: Request) {
     stops: r.stops,
     skips: r.skips.length,
     rescue: r.rescue,
+    startAt: r.startAt,
+    cap: r.cap,
+    badgeRewards,
   };
   if (dry) {
     return NextResponse.json({

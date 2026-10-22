@@ -1,7 +1,10 @@
 import "server-only";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { chunk, selectIn, type Db } from "@/lib/supabase/select-in";
+import { detectBadgeInstall, groupBySlug, websiteDomain } from "@/lib/badge/install";
+import { badgeRewardEnabled, isPayingSubscription, REWARD_DAYS } from "@/lib/badge/reward";
+import { loadHitRows, loadRewards } from "@/lib/badge/server";
 import { listRfps } from "@/lib/data/rfps";
 import { getTaxonomyRows } from "@/lib/data/taxonomy";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
@@ -14,7 +17,7 @@ import { accountGeo, type CountryCode } from "@/lib/visitor-geo";
 import { benchmarkPath, loadBenchmarkData } from "@/lib/data/price-benchmarks-load";
 import { canonicalProvince, computeBenchmark, teaserOf, type BenchmarkAward } from "@/lib/data/price-benchmarks";
 import { cachedLifetimeCount } from "@/lib/founding/server";
-import { foundingScarcity, isLifetimeSubscriptionId, spotsLeft, type FoundingScarcity } from "@/lib/founding/config";
+import { foundingScarcity, spotsLeft, type FoundingScarcity } from "@/lib/founding/config";
 import { isMissingTableError, trialState } from "@/lib/entitlement/trial";
 import { emailConfigured, sendLifecycleEmail } from "@/lib/email/send";
 import { lifecycleUnsubscribeUrl } from "@/lib/email/unsubscribe";
@@ -29,13 +32,30 @@ import {
   STALLED_LIST_DAYS,
   MAX_MEMBERS_PER_RUN,
   MAX_SENDS_PER_RUN,
+  RUN_TIME_BUDGET_MS,
+  SEND_GAP_MS,
   isStepId,
   lifecycleEnabled,
   lifecycleFrom,
+  lifecycleMaxPerDay,
+  lifecycleStartAt,
   type StepId,
 } from "./config";
-import { openSteps, plan, type MemberFacts, type MemberState, type SkipReason, type StopReason, type WaitReason } from "./schedule";
+import {
+  cohortOf,
+  describeDecision,
+  openSteps,
+  plan,
+  type DecideOptions,
+  type Decision,
+  type MemberFacts,
+  type MemberState,
+  type SkipReason,
+  type StopReason,
+  type WaitReason,
+} from "./schedule";
 import { countryArea, renderStep, sampleCopyData, type CopyData, type RenderedEmail, type RescueCopy } from "./copy";
+import type { BadgeCopy } from "./badge-copy";
 import { personaOf, type Persona } from "./persona";
 import { decideRescue, isInternalEmail, manualOutreach, missingParts, openBidsIn, resumePath, type RescueStopReason, type StalledState } from "./rescue";
 import { isPastContract } from "@/lib/data/fomo";
@@ -53,7 +73,6 @@ import { STAGE_LABEL, stageOf, type Stage } from "@/lib/onboarding/steps";
  * some member is actually at a step that needs them.
  */
 
-type Db = SupabaseClient;
 const DAY = 86_400_000;
 
 export interface PlannedSend {
@@ -80,6 +99,30 @@ export interface RunReport {
   failed: number;
   /** The onboarding rescue track (accounts with no company yet). */
   rescue: { considered: number; waits: Partial<Record<WaitReason, number>>; stops: Partial<Record<RescueStopReason, number>> };
+  /** LIFECYCLE_START_AT as the run saw it. */
+  startAt: { kind: "off" } | { kind: "on"; at: string };
+  /** LIFECYCLE_MAX_PER_DAY, and how many lifecycle emails went out in the last 24 hours (null = no ceiling). */
+  cap: { max: number; sentLast24h: number } | null;
+  /** Every company considered and what the planner would do with it right now. Dry runs only. */
+  members?: MemberPlan[];
+}
+
+/** One company's line in the dry run's "who gets what". */
+export interface MemberPlan {
+  userId: string;
+  email: string;
+  org: string;
+  country: CountryCode;
+  lang: Locale;
+  /** normal = the regular sequence; catch_up = joined before LIFECYCLE_START_AT. */
+  cohort: "normal" | "catch_up";
+  action: Decision["action"];
+  /** The email it would send now (action "send"), else null. */
+  step: StepId | null;
+  /** Plain words: "send welcome", "wait (quiet_hours)", "nothing (finished)". */
+  summary: string;
+  /** Steps that would be recorded as skipped first. */
+  skipped: StepId[];
 }
 
 interface OrgRow {
@@ -93,6 +136,8 @@ interface OrgRow {
   status: string;
   is_demo: boolean;
   profile_status: string;
+  website: string | null;
+  approved_at: string | null;
   created_at: string;
 }
 
@@ -105,27 +150,9 @@ interface Member {
   org: OrgRow;
   tradeSlugs: string[];
   regionIds: string[];
-}
-
-const chunk = <T,>(xs: T[], n = 200): T[][] => {
-  const out: T[][] = [];
-  for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n));
-  return out;
-};
-
-/** `select … in (ids)` over chunks; rows from every chunk. Errors → null (caller decides). */
-async function selectIn<T>(
-  ids: string[],
-  q: (chunkIds: string[]) => PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>,
-): Promise<{ rows: T[]; error: { message: string; code?: string } | null }> {
-  const rows: T[] = [];
-  for (const c of chunk([...new Set(ids)])) {
-    if (!c.length) continue;
-    const { data, error } = await q(c);
-    if (error) return { rows, error };
-    rows.push(...((data ?? []) as T[]));
-  }
-  return { rows, error: null };
+  /** Badge install detection (lib/badge/install) and the reward granted, for the badge emails. */
+  install: ReturnType<typeof detectBadgeInstall>;
+  reward: { kind: string; endsAt: string } | null;
 }
 
 const NO_FACTS: MemberFacts = {
@@ -133,6 +160,8 @@ const NO_FACTS: MemberFacts = {
   hasAreas: false,
   projects: 0,
   badgeInstalled: false,
+  hasWebsite: false,
+  badgeDetectedOn: null,
   leadTotal: null,
   benchmarkReady: null,
   canPost: false,
@@ -246,11 +275,17 @@ function primaryCountry(org: OrgRow, regionIds: string[], byRegion: ReadonlyMap<
   return orgCountries(org, regionIds, byRegion).has("CA") ? "CA" : "US";
 }
 
-async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<string, CountryCode>): Promise<{ members: Member[]; error: string | null }> {
+async function loadMembers(
+  db: Db,
+  now: Date,
+  countryByRegion: ReadonlyMap<string, CountryCode>,
+  opts: { startAt: Date | null },
+): Promise<{ members: Member[]; error: string | null }> {
   const since = new Date(now.getTime() - FREE_HORIZON_MS).toISOString();
   const trialEndSince = new Date(now.getTime() - 12 * DAY).toISOString();
+  type Membership = { organization_id: string; user_id: string; created_at: string };
 
-  const [recent, trials] = await Promise.all([
+  const [recent, trials, approvedRecent, older] = await Promise.all([
     db
       .from("organization_members")
       .select("organization_id,user_id,created_at")
@@ -258,18 +293,29 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
       .order("created_at", { ascending: true })
       .limit(MAX_MEMBERS_PER_RUN),
     db.from("trade_trials").select("organization_id").gte("ends_at", trialEndSince).limit(MAX_MEMBERS_PER_RUN),
+    // Companies approved lately, however long ago they joined: the badge email follows the approval.
+    db.from("organizations").select("id").gte("approved_at", since).limit(MAX_MEMBERS_PER_RUN),
+    // Go-live catch-up only: everyone who joined before the sequence window (one welcome-back each, once approved).
+    opts.startAt
+      ? db.from("organization_members").select("organization_id,user_id,created_at").lt("created_at", since).order("created_at", { ascending: false }).limit(MAX_MEMBERS_PER_RUN)
+      : Promise.resolve({ data: [] as Membership[], error: null }),
   ]);
   if (recent.error) return { members: [], error: recent.error.message };
+  if (older.error) return { members: [], error: older.error.message };
   const trialOrgIds = ((trials.data ?? []) as { organization_id: string }[]).map((t) => t.organization_id);
-  const trialMembers = await selectIn<{ organization_id: string; user_id: string; created_at: string }>(trialOrgIds, (c) =>
+  const approvedOrgIds = approvedRecent.error ? [] : ((approvedRecent.data ?? []) as { id: string }[]).map((o) => o.id);
+  const trialMembers = await selectIn<Membership>([...new Set([...trialOrgIds, ...approvedOrgIds])], (c) =>
     db.from("organization_members").select("organization_id,user_id,created_at").in("organization_id", c),
   );
-  const memberships = [...((recent.data ?? []) as { organization_id: string; user_id: string; created_at: string }[]), ...trialMembers.rows];
+  const memberships = [...((recent.data ?? []) as Membership[]), ...trialMembers.rows, ...((older.data ?? []) as Membership[])];
   if (!memberships.length) return { members: [], error: null };
 
   const orgIds = [...new Set(memberships.map((m) => m.organization_id))];
   const orgRes = await selectIn<OrgRow>(orgIds, (c) =>
-    db.from("organizations").select("id,name,slug,city,province,country,organization_type,status,is_demo,profile_status,created_at").in("id", c),
+    db
+      .from("organizations")
+      .select("id,name,slug,city,province,country,organization_type,status,is_demo,profile_status,website,approved_at,created_at")
+      .in("id", c),
   );
   if (orgRes.error) return { members: [], error: orgRes.error.message };
   const orgs = new Map(orgRes.rows.filter((o) => o.organization_type === "trade_company").map((o) => [o.id, o]));
@@ -286,7 +332,7 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
   const tradeOrgIds = [...new Set([...byUser.values()].map((m) => m.organization_id))];
   const slugs = tradeOrgIds.map((id) => orgs.get(id)!.slug);
 
-  const [profiles, prefs, sends, attrib, posts, subs, trialRows, cats, regs, studies, badges] = await Promise.all([
+  const [profiles, prefs, sends, attrib, posts, subs, trialRows, cats, regs, studies, badges, rewards] = await Promise.all([
     selectIn<{ id: string; email: string; full_name: string | null; status: string; primary_role: string }>(userIds, (c) =>
       db.from("users_profile").select("id,email,full_name,status,primary_role").in("id", c),
     ),
@@ -309,7 +355,9 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
     ),
     selectIn<{ organization_id: string; region_id: string }>(tradeOrgIds, (c) => db.from("organization_regions").select("organization_id,region_id").in("organization_id", c)),
     selectIn<{ organization_id: string }>(tradeOrgIds, (c) => db.from("case_studies").select("organization_id").in("organization_id", c).limit(5000)),
-    selectIn<{ slug: string; referrer: string }>(slugs, (c) => db.from("badge_hits").select("slug,referrer").eq("kind", "listed").neq("referrer", "").in("slug", c).limit(5000)),
+    // The badge loading from the company's OWN website on 2+ different days (lib/badge/install).
+    loadHitRows(db, slugs),
+    loadRewards(db, tradeOrgIds),
   ]);
   if (sends.error) return { members: [], error: isMissingTableError(sends.error) ? "lifecycle_sends table missing (run migration 20261016000020)" : sends.error.message };
   if (prefs.error) return { members: [], error: `notification_preferences: ${prefs.error.message} (run migration 20261016000020)` };
@@ -329,11 +377,7 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
   const langById = new Map(attrib.rows.map((a) => [a.user_id, a.lang]));
   const postsBy = new Map<string, number>();
   for (const p of posts.rows) postsBy.set(p.author_id, (postsBy.get(p.author_id) ?? 0) + 1);
-  const paidOrgs = new Set(
-    subs.rows
-      .filter((s) => (s.status === "active" || s.status === "comped") && (s.tier === "pro" || s.tier === "featured" || isLifetimeSubscriptionId(s.stripe_subscription_id)))
-      .map((s) => s.organization_id),
-  );
+  const paidOrgs = new Set(subs.rows.filter(isPayingSubscription).map((s) => s.organization_id));
   const trialByOrg = new Map(trialRows.rows.map((t) => [t.organization_id, { startedAt: t.started_at, endsAt: t.ends_at }]));
   const tradesByOrg = new Map<string, string[]>();
   for (const r of cats.rows) if (r.trade_categories?.slug) tradesByOrg.set(r.organization_id, [...(tradesByOrg.get(r.organization_id) ?? []), r.trade_categories.slug]);
@@ -341,16 +385,19 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
   for (const r of regs.rows) regionsByOrg.set(r.organization_id, [...(regionsByOrg.get(r.organization_id) ?? []), r.region_id]);
   const projectsByOrg = new Map<string, number>();
   for (const s of studies.rows) projectsByOrg.set(s.organization_id, (projectsByOrg.get(s.organization_id) ?? 0) + 1);
-  const badgeSlugs = new Set(badges.rows.filter((b) => b.referrer).map((b) => b.slug));
+  // A failed badge_hits read just means "no install seen": the badge emails go out as if nothing is installed.
+  const hitsBySlug = groupBySlug(badges.error ? [] : badges.rows);
   const suppressedSet = new Set(suppressed.rows.map((s) => s.email_key));
   const digestByEmail = new Map(digest.rows.map((d) => [d.email_key, d]));
   const recordedBy = new Map<string, Set<StepId>>();
   const lastSentBy = new Map<string, string>();
+  const sentAtBy = new Map<string, Partial<Record<StepId, string>>>();
   for (const s of sends.rows) {
     if (!isStepId(s.step)) continue;
     if (!recordedBy.has(s.user_id)) recordedBy.set(s.user_id, new Set());
     recordedBy.get(s.user_id)!.add(s.step);
     if ((s.status === "sent" || s.status === "sending") && (!lastSentBy.has(s.user_id) || lastSentBy.get(s.user_id)! < s.sent_at)) lastSentBy.set(s.user_id, s.sent_at);
+    if (s.status === "sent") sentAtBy.set(s.user_id, { ...(sentAtBy.get(s.user_id) ?? {}), [s.step]: s.sent_at });
   }
 
   const members: Member[] = [];
@@ -364,6 +411,7 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
     const tradeSlugs = tradesByOrg.get(org.id) ?? [];
     const regionIds = regionsByOrg.get(org.id) ?? [];
     const rawLang = langById.get(userId);
+    const install = detectBadgeInstall(org.website, hitsBySlug.get(org.slug) ?? [], org.slug);
     const state: MemberState = {
       userId,
       joinedAt: mem.created_at,
@@ -381,12 +429,18 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
       lastSentAt: lastSentBy.get(userId) ?? null,
       digestSentAt: dig?.last_sent_at ?? null,
       pendingReview: org.profile_status === "pending_review",
+      profileApproved: org.profile_status === "approved",
+      approvedAt: org.approved_at,
+      sentAt: sentAtBy.get(userId) ?? {},
+      internal: isInternalEmail(profile.email),
       facts: {
         ...NO_FACTS,
         hasTrades: tradeSlugs.length > 0,
         hasAreas: regionIds.length > 0,
         projects: projectsByOrg.get(org.id) ?? 0,
-        badgeInstalled: badgeSlugs.has(org.slug),
+        hasWebsite: websiteDomain(org.website) !== null,
+        badgeInstalled: install.detected,
+        badgeDetectedOn: install.detectedOn,
         canPost: org.profile_status === "approved",
         forumPosts: postsBy.get(userId) ?? 0,
       },
@@ -400,6 +454,8 @@ async function loadMembers(db: Db, now: Date, countryByRegion: ReadonlyMap<strin
       org,
       tradeSlugs,
       regionIds,
+      install,
+      reward: rewards.get(org.id) ?? null,
     });
   }
   return { members, error: null };
@@ -635,7 +691,7 @@ function rescueCopyData(s: StalledSignup, step: StepId, md: MarketData | null, t
     market: { openBids: 0, projects: 0, winners: 0, packages: 0, total: 0 },
     leadTitles: [],
     hasProject: false,
-    hasBadge: false,
+    badge: null,
     proBenchmarks: 0,
     benchmark: null,
     foundingScarcity: "quiet",
@@ -718,7 +774,9 @@ async function trialActivity(db: Db, m: Member): Promise<{ alertsSent: number; s
 const MARKET_STEPS: ReadonlySet<StepId> = new Set(["market", "trial_offer", "trial_day1", "trial_day7", "trial_winback"]);
 const BENCH_STEPS: ReadonlySet<StepId> = new Set(["market", "benchmark", "trial_offer"]);
 
-export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: number } = { dry: true }): Promise<RunReport> {
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: number; sendGapMs?: number } = { dry: true }): Promise<RunReport> {
   const now = opts.now ?? new Date();
   const enabled = lifecycleEnabled();
   const report: RunReport = {
@@ -732,19 +790,44 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     sent: 0,
     failed: 0,
     rescue: { considered: 0, waits: {}, stops: {} },
+    startAt: { kind: "off" },
+    cap: null,
   };
   if (!isServiceConfigured()) return { ...report, skipped: "no service client" };
   if (!opts.dry && !enabled) return { ...report, skipped: "LIFECYCLE_EMAILS_ENABLED is off" };
   if (!opts.dry && !emailConfigured()) return { ...report, skipped: "RESEND_API_KEY not set" };
+
+  // The go-live cutoff. A value that isn't a date stops the run: guessing "off" would let old accounts catch up in a burst.
+  const startSetting = lifecycleStartAt();
+  if (startSetting.kind === "invalid") return { ...report, skipped: `LIFECYCLE_START_AT is not a date ("${startSetting.raw.slice(0, 40)}"): use e.g. 2026-10-23 or 2026-10-23T09:00:00-04:00` };
+  const startAt = startSetting.kind === "on" ? startSetting.at : null;
+  report.startAt = startAt ? { kind: "on", at: startAt.toISOString() } : { kind: "off" };
+  const decideOpts: DecideOptions = { startAt };
+
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
+  // Every send carries a signed one-click unsubscribe link and the List-Unsubscribe headers (lib/email/send). Never send without one.
+  if (!opts.dry && !lifecycleUnsubscribeUrl(base, "probe")) return { ...report, skipped: "no unsubscribe signing secret (UNSUBSCRIBE_SECRET): emails would go out without a one-click unsubscribe" };
 
   const db = createServiceClient();
   const probe = await db.from("lifecycle_sends").select("id").limit(1);
   if (probe.error) return { ...report, skipped: isMissingTableError(probe.error) ? "lifecycle_sends table missing (run migration 20261016000020)" : probe.error.message };
 
   const tax = await loadTaxonomy();
-  const { members, error } = await loadMembers(db, now, tax.countryByRegion);
+  const { members, error } = await loadMembers(db, now, tax.countryByRegion, { startAt });
   if (error) return { ...report, skipped: error };
   report.considered = members.length;
+  if (opts.dry) report.members = [];
+
+  // Optional ceiling on lifecycle emails in any rolling 24 hours (LIFECYCLE_MAX_PER_DAY), so a go-live wave can't outrun the Resend plan.
+  const maxPerDay = lifecycleMaxPerDay();
+  let dayBudget = Number.POSITIVE_INFINITY;
+  if (maxPerDay) {
+    const last24 = new Date(now.getTime() - DAY).toISOString();
+    const { count, error: capErr } = await db.from("lifecycle_sends").select("id", { count: "exact", head: true }).in("status", ["sent", "sending"]).gte("sent_at", last24);
+    if (capErr) return { ...report, skipped: `could not count the last 24 hours of sends: ${capErr.message}` };
+    report.cap = { max: maxPerDay, sentLast24h: count ?? 0 };
+    dayBudget = Math.max(0, maxPerDay - (count ?? 0));
+  }
 
   const market = lazy(() => loadMarket(tax));
   const bench = lazy(async () => {
@@ -756,10 +839,20 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     return foundingScarcity(sold == null ? null : spotsLeft(sold));
   });
 
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
   const from = lifecycleFrom();
   const maxSends = opts.maxSends ?? MAX_SENDS_PER_RUN;
-  let budget = maxSends;
+  // The per-run ceiling and the rolling 24-hour ceiling, whichever is lower.
+  let budget = Math.min(maxSends, dayBudget);
+  // Real sends are spaced (Resend's per-second limit) and stop before the function's time limit; the rest go out next hour.
+  const gapMs = opts.sendGapMs ?? SEND_GAP_MS;
+  const runStart = Date.now();
+  let lastSendAt = 0;
+  const outOfTime = () => !opts.dry && Date.now() - runStart > RUN_TIME_BUDGET_MS;
+  const pace = async () => {
+    const wait = lastSendAt + gapMs - Date.now();
+    if (lastSendAt && wait > 0) await sleep(wait);
+    lastSendAt = Date.now();
+  };
 
   // 1. Onboarding rescue: trade accounts with no company yet. Time-sensitive, so first.
   const stalledRes = await loadStalled(db, now, tax, { horizonMs: RESCUE_HORIZON_MS, roles: ["trade"] });
@@ -784,6 +877,8 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     report.sends.push({ userId: s.state.userId, email: s.email, org: label, step, lang: s.lang, country: s.country, subject: email.subject, words: email.words });
     budget--;
     if (opts.dry) continue;
+    if (outOfTime()) break;
+    await pace();
     const res = await claimAndSend(db, { userId: s.state.userId, orgId: null, step, lang: s.lang, to: s.email, from, email, unsub });
     if (res === "sent") report.sent++;
     else if (res === "failed") report.failed++;
@@ -791,8 +886,10 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
 
   // 2. Companies: review_pending, the free track, the trial track.
   for (const m of members) {
-    if (budget <= 0) break;
-    const open = new Set(openSteps(m.state, now));
+    // A dry run keeps going past the ceiling so the preview lists everyone; a real run stops.
+    const exhausted = budget <= 0;
+    if (exhausted && !opts.dry) break;
+    const open = new Set(openSteps(m.state, now, decideOpts));
     let mk: ReturnType<typeof marketFor> | null = null;
     let bf: BenchFact | null = null;
     if (!m.state.facts.hasTrades) {
@@ -809,7 +906,19 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     }
     if (open.has("founding")) m.state.facts.foundingSoldOut = (await scarcity()) === "soldout";
 
-    const { skips, decision } = plan(m.state, now);
+    const { skips, decision } = plan(m.state, now, decideOpts);
+    report.members?.push({
+      userId: m.state.userId,
+      email: m.email,
+      org: m.org.name,
+      country: m.country,
+      lang: m.lang,
+      cohort: cohortOf(m.state, startAt).mode,
+      action: exhausted && decision.action === "send" ? "wait" : decision.action,
+      step: decision.action === "send" && !exhausted ? decision.step : null,
+      summary: exhausted && decision.action === "send" ? `send ${decision.step} (held back: daily limit reached)` : describeDecision(decision),
+      skipped: skips.map((s) => s.step),
+    });
     for (const s of skips) report.skips.push({ userId: m.state.userId, org: m.org.name, step: s.step, reason: s.reason });
     if (!opts.dry && skips.length) {
       const { error: skipErr } = await db.from("lifecycle_sends").upsert(
@@ -826,7 +935,7 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
       report.stops[decision.reason] = (report.stops[decision.reason] ?? 0) + 1;
       continue;
     }
-    if (decision.action !== "send") continue;
+    if (decision.action !== "send" || exhausted) continue;
     const step = decision.step;
 
     if (!mk && MARKET_STEPS.has(step) && m.state.facts.hasTrades) mk = marketFor(m, await market());
@@ -837,6 +946,8 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     budget--;
     if (opts.dry) continue;
 
+    if (outOfTime()) break;
+    await pace();
     const res = await claimAndSend(db, { userId: m.state.userId, orgId: m.org.id, step, lang: m.lang, to: m.email, from, email, unsub });
     if (res === "sent") report.sent++;
     else if (res === "failed") report.failed++;
@@ -877,6 +988,20 @@ async function claimAndSend(
   return res.ok ? "sent" : "failed";
 }
 
+/**
+ * What the badge emails say about this company. The reward line is only ever
+ * true: an offer only while BADGE_REWARD_ENABLED is on and this company could
+ * still earn it (free, no reward yet, a real website that isn't ours); "granted"
+ * only when its badge_rewards row exists.
+ */
+function badgeCopyFor(m: Member): BadgeCopy {
+  const { install } = m;
+  let reward: BadgeCopy["reward"] = null;
+  if (m.reward) reward = { state: "granted", days: REWARD_DAYS, endsAt: m.reward.endsAt };
+  else if (badgeRewardEnabled() && !m.state.paid && install.domain && !install.ownDomain) reward = { state: "offer", days: REWARD_DAYS, endsAt: null };
+  return { slug: m.org.slug, website: install.domain, detectedDomain: install.detected ? install.domain : null, reward };
+}
+
 async function copyDataFor(
   db: Db,
   m: Member,
@@ -908,7 +1033,7 @@ async function copyDataFor(
     market: counts,
     leadTitles: ctx.mk?.titles.slice(0, 3) ?? [],
     hasProject: m.state.facts.projects > 0,
-    hasBadge: m.state.facts.badgeInstalled,
+    badge: badgeCopyFor(m),
     proBenchmarks: ctx.bf?.ready ?? 0,
     benchmark: ctx.bf
       ? {
@@ -926,14 +1051,32 @@ async function copyDataFor(
 
 /* ------------------------------------------------------------------ admin preview + test send */
 
-export function previewEmail(step: StepId, lang: Locale, country: CountryCode, unsubscribeUserId = "preview-user", persona: Persona = "specialty"): RenderedEmail {
+export function previewEmail(
+  step: StepId,
+  lang: Locale,
+  country: CountryCode,
+  unsubscribeUserId = "preview-user",
+  persona: Persona = "specialty",
+  /** The badge emails: show the reward line (the live BADGE_REWARD_ENABLED flag by default, or the admin's toggle) and/or a company with no website. */
+  opts: { reward?: boolean; website?: boolean } = {},
+): RenderedEmail {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
-  return renderStep(step, sampleCopyData(step, lang, country, persona), { base, unsubscribeUrl: lifecycleUnsubscribeUrl(base, unsubscribeUserId) });
+  const data = sampleCopyData(step, lang, country, persona, { reward: opts.reward ?? badgeRewardEnabled(), website: opts.website });
+  return renderStep(step, data, { base, unsubscribeUrl: lifecycleUnsubscribeUrl(base, unsubscribeUserId) });
 }
 
 /** The sample email to ONE admin address, subject marked [Test]. Not recorded in lifecycle_sends. */
-export async function sendTestToAdmin(p: { to: string; userId: string; step: StepId; lang: Locale; country: CountryCode; persona?: Persona }): Promise<{ ok: boolean; error?: string }> {
-  const email = previewEmail(p.step, p.lang, p.country, p.userId, p.persona);
+export async function sendTestToAdmin(p: {
+  to: string;
+  userId: string;
+  step: StepId;
+  lang: Locale;
+  country: CountryCode;
+  persona?: Persona;
+  reward?: boolean;
+  website?: boolean;
+}): Promise<{ ok: boolean; error?: string }> {
+  const email = previewEmail(p.step, p.lang, p.country, p.userId, p.persona, { reward: p.reward, website: p.website });
   const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
   const res = await sendLifecycleEmail({
     to: p.to,
