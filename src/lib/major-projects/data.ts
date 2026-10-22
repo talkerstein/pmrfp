@@ -24,7 +24,7 @@ import type { MajorProjectCategory, MajorProjectStatus, ProjectSourceLink } from
  */
 
 export const MP_SHARDS = 16;
-export const MP_REVALIDATE = 3600;
+export const MP_REVALIDATE = 21600;
 const PAGE = 1000;
 const READ_TIMEOUT_MS = 10_000;
 

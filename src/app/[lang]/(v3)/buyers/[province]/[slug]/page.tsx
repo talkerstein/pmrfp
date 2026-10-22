@@ -29,7 +29,7 @@ import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   // Rendered on first visit, then cached (ISR): no build-time prebuild of the

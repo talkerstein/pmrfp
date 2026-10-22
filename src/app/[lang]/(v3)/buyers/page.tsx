@@ -13,7 +13,7 @@ import { SH2, SimplePage } from "@/components/v3/simple";
 import { FOR_PUBLIC_BUYERS_PATH } from "@/lib/buyers/source-links";
 import { inProvince, provinceList, provincePath } from "@/lib/buyers/province";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;

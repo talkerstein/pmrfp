@@ -21,7 +21,7 @@ describe("transient public table read recovery", () => {
     expect(transport).toHaveBeenCalledTimes(2);
     const [first, second] = transport.mock.calls;
     expect(second[0]).toBe(first[0]);
-    expect(second[1]).toMatchObject({ cache: "force-cache", next: { revalidate: 3600, tags: ["supabase-public-taxonomy"] } });
+    expect(second[1]).toMatchObject({ cache: "force-cache", next: { revalidate: 21600, tags: ["supabase-public-taxonomy"] } });
     expect(first[1]?.signal).toBeUndefined();
     expect(second[1]?.signal).toBeInstanceOf(AbortSignal);
     expect(console.info).toHaveBeenCalledWith("supabase_read_retry", { path: "/rest/v1/regions", outcome: "recovered", status: 200 });

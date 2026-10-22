@@ -15,7 +15,7 @@ import { isSponsorTier } from "./pricing";
  * The list is tiny (one row per sold slot), so one read fills it.
  */
 
-export const SPONSORS_REVALIDATE = 300;
+export const SPONSORS_REVALIDATE = 21600;
 const READ_TIMEOUT_MS = 8_000;
 
 export interface SponsorViewRow {

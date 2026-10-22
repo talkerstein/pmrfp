@@ -13,7 +13,7 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt } from "@/i18n/format";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   return VERTICALS.map((v) => ({ vertical: v.slug }));

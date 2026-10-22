@@ -23,7 +23,7 @@ import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { FreeGate } from "@/components/growth/free-gate";
 import { majorProjectView } from "@/lib/growth/gate";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   return []; // rendered on first visit, then cached — no build-time prebuild (DB-load incident 2026-10-09)

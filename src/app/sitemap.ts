@@ -42,7 +42,7 @@ import { translationsOf } from "@/i18n/translated";
 // The RFP board now refreshes daily from the public-tender feed; without
 // this the page was frozen at build time and showed stale open counts
 // (and the sitemap missed every new tender) until the next deploy.
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");

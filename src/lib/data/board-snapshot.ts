@@ -32,7 +32,8 @@ import { createLimiter, createSingleFlight } from "@/lib/concurrency";
  */
 
 export const SNAPSHOT_SHARDS = 16;
-export const SNAPSHOT_REVALIDATE = 600;
+/** Safety net only: every write through write-fetch marks the rfps tag stale. 6 h (was 10 min) because the lowest TTL on a page becomes its ISR TTL. */
+export const SNAPSHOT_REVALIDATE = 21600;
 /** PostgREST's default max rows per response. */
 const PAGE = 1000;
 const READ_TIMEOUT_MS = 10_000;

@@ -25,7 +25,7 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateStaticParams({ params }: { params: { lang: string } }) {
   // A few pages are prebuilt (lib/build/prebuild); the rest render

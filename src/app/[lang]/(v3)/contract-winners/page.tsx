@@ -18,7 +18,7 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { tradeName } from "@/i18n/terms";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
