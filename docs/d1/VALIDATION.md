@@ -69,3 +69,48 @@ tracking tests or the other checkout's dependencies.
 This adds opt-in application code to the branch, not a production configuration
 change. See `PREVIEW.md` for the remaining source-backed consumers and explicit
 cutover guards.
+
+## October 22 completed live preview and new datasets
+
+Worker permissions were explicitly authorized. The synthetic and copied-read
+Workers are deployed. The new source catalog has 98 public tables, 163
+public/storage policies, 63 functions, 37 triggers and 20 views; shared columns
+match the repository baseline. The old Oct 21 files remain unchanged.
+
+The new consistent read-only source export contains 10,791 public rows plus 51
+Auth ID references: 10,842 records. V3 staging matched every field and table/index
+definition, passed foreign keys/quick_check, and its actual D1 readback backup was
+restored and revalidated. The separately checksummed rebuilt dataset contains
+10,726 records after resetting 129 transient rate-limit hits and regenerating
+karma caches (13 additional zero-score cache rows). All authoritative fields
+were identical. Its remote D1 copy, actual readback backup and restored local
+copy also passed complete validation. Neither data copy accepts preview writes.
+
+At the user's request, one isolated, non-deliverable test account was added to
+Supabase Auth and paired with synthetic sandbox fixtures. Its profile was set up
+without publishing a business listing or creating source RFPs. The source
+snapshot predates this account. Actual signed requests through the Next API
+saved/listed/removed a synthetic RFP in Cloudflare; both actions returned 200.
+The signed-in browser displayed the saved item, then the empty state. Source
+saved-RFP rows remained zero. Passwords, tokens, screenshots and row exports are
+private/ignored. Production Vercel traffic/configuration is unchanged.
+
+Cloudflare's native runtime rejected redirect:error; manual redirects now fail
+closed without forwarding Auth tokens. Live missing-gateway, missing-user and
+invalid-token checks return 401/private/no-store. The preview/privilege/karma
+suite now has 48 passing tests, and offline migration/rebuild tests have 21.
+The user approved and we applied the expiring reader and 19 narrowed definer
+grants; an ID-only, reader-only view handles the managed Auth schema. Live TLS
+verification succeeded with the Supabase CA. Reads passed; inserts (even in an
+explicit read-write transaction), role switching, Auth password reads and all
+19 restricted definer calls were denied. See `reader-verification-2026-10-22.json`
+and `READER-ACCESS.md`.
+
+The first automated repeatable-read export contains 10,893 records across 99
+copied tables. Local reconciliation accepted the source changes, compared all
+fields and relationships, and validated a restore of its previous-checkpoint
+backup. The approved rebuild produced 10,776 records with authoritative fields
+identical. The latest remote upload is **not complete**: Cloudflare returned
+error 7500 (daily free row-write allowance exhausted) before accepting the
+manifest CREATE. The new empty target is not serving traffic. Existing verified
+full/rebuilt remote copies are unchanged. Continuous CDC remains unimplemented.

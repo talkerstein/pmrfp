@@ -1,6 +1,6 @@
 """Private D1 staging rehearsal through the official query API.
 
-Pinned to this rehearsal database; cannot target production. No serving API is
+Pinned to an explicit rehearsal database registry; cannot target production. No serving API is
 created. A partial load stays marked 'loading' until every record and FK passes.
 Use CLOUDFLARE_API_TOKEN, or explicitly opt into the local Wrangler OAuth file.
 """
@@ -10,9 +10,12 @@ import migrate as m
 ACCOUNT='f4e9b098134981b108024243b2a72ed4'
 DATABASE='80b90607-2f8d-4f9b-a646-658f2ebad0bc'
 NAME='pmrfp-migration-staging-v2-20261021'
+TARGETS={'v2':(DATABASE,NAME),'v3':('ea67a920-f736-4eea-a66d-a1a64d45e2b0','pmrfp-migration-staging-v3-20261022'),'rebuilt-v1':('a6d834f8-b00e-410f-91e1-b695209212e1','pmrfp-rebuilt-staging-20261022'),'rebuilt-reader-v1':('08ef9af3-a400-4a73-92d3-702b6ff39662','pmrfp-rebuilt-reader-staging-20261022')}
 
 class Remote:
-    def __init__(self,wrangler_auth=False):
+    def __init__(self,wrangler_auth=False,generation='v2'):
+        if generation not in TARGETS:raise ValueError('Unknown rehearsal generation')
+        database,self.name=TARGETS[generation]
         self.wrangler_auth=wrangler_auth and not os.environ.get('CLOUDFLARE_API_TOKEN')
         self.token=os.environ.get('CLOUDFLARE_API_TOKEN')
         if not self.token and wrangler_auth:
@@ -20,9 +23,9 @@ class Remote:
             match=re.search(r'^oauth_token\s*=\s*"([^"]+)"',auth.read_text(),re.M)
             self.token=match[1] if match else None
         if not self.token:raise ValueError('Cloudflare authentication required')
-        self.url=f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/d1/database/{DATABASE}'
+        self.url=f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/d1/database/{database}'
         info=self.request('GET','')
-        if info['result']['name']!=NAME:raise ValueError('Staging target mismatch')
+        if info['result']['name']!=self.name:raise ValueError('Staging target mismatch')
     def request(self,method,path,body=None):
         data=None if body is None else json.dumps(body).encode()
         for attempt in range(3):
@@ -136,7 +139,7 @@ def verify(remote,snapshot,require_validated=True,backup_path=None):
                 sql='INSERT INTO '+m.ident(table)+' ('+','.join(map(m.ident,cols))+') VALUES ('+','.join('?' for _ in cols)+')'
                 for row in actual[table].values():db.execute(sql,[row[c] for c in cols])
             m.check(db,expected,specs);db.commit();m.backup(db,backup_path)
-    return {'database':NAME,'source_sha256':sha,'tables':len(specs),'records':sum(len(v) for v in expected.values()),'schema_sha256':m.digest(m.SCHEMA.read_bytes()),'schema_comparison':'identical','record_comparison':'all fields identical','foreign_keys':'valid','cutover_ready':False}
+    return {'database':getattr(remote,'name',NAME),'source_sha256':sha,'tables':len(specs),'records':sum(len(v) for v in expected.values()),'schema_sha256':m.digest(m.SCHEMA.read_bytes()),'schema_comparison':'identical','record_comparison':'all fields identical','foreign_keys':'valid','cutover_ready':False}
 
 def finalize(remote,snapshot,backup_path=None):
     result=verify(remote,snapshot,require_validated=False,backup_path=backup_path)
@@ -144,8 +147,8 @@ def finalize(remote,snapshot,backup_path=None):
     return result
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('command',choices=['load','verify','finalize']);p.add_argument('--snapshot',required=True);p.add_argument('--wrangler-auth',action='store_true');p.add_argument('--report',required=True);p.add_argument('--backup');a=p.parse_args()
-    remote=Remote(a.wrangler_auth);result=load(remote,a.snapshot) if a.command=='load' else (finalize(remote,a.snapshot,backup_path=a.backup) if a.command=='finalize' else verify(remote,a.snapshot,backup_path=a.backup))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('command',choices=['load','verify','finalize']);p.add_argument('--snapshot',required=True);p.add_argument('--generation',choices=sorted(TARGETS),default='v2');p.add_argument('--wrangler-auth',action='store_true');p.add_argument('--report',required=True);p.add_argument('--backup');a=p.parse_args()
+    remote=Remote(a.wrangler_auth,a.generation);result=load(remote,a.snapshot) if a.command=='load' else (finalize(remote,a.snapshot,backup_path=a.backup) if a.command=='finalize' else verify(remote,a.snapshot,backup_path=a.backup))
     fd=os.open(a.report,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
     with os.fdopen(fd,'w') as f:json.dump(result,f,indent=2)
     print(json.dumps(result))

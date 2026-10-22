@@ -19,6 +19,7 @@ function statement(sql: string, values: (string|number|null)[]=[]): D1Statement 
 }
 const auth: typeof fetch=async (url,init)=>{
   expect(String(url)).toBe('https://synthetic.supabase.co/auth/v1/user');
+  expect(init?.redirect).toBe('manual');
   expect(new Headers(init?.headers).get('apikey')).toBe('synthetic-anon');
   const token=new Headers(init?.headers).get('authorization');
   if(token==='Bearer revoked.jwt.token') return Response.json({}, {status:401});
@@ -111,6 +112,15 @@ describe('Next transport → Worker → Auth verification → real SQLite',()=>{
     expect(res.status).toBe(503); expect(await res.text()).not.toContain('secret');
     env.DB={prepare:()=>{throw new Error('private SQL');}} as unknown as D1Binding;
     await expect(client().list('valid.jwt.token')).rejects.toMatchObject({status:503});
+  });
+  it('refuses Auth redirects without forwarding the bearer token to another origin',async()=>{
+    let calls=0;
+    const res=await handleRequest(new Request('https://synthetic.worker.test/v1/saved-rfps',{headers:{authorization:'Bearer valid.jwt.token','x-pmrfp-gateway-key':secret}}),env,async(_url,init)=>{
+      calls++; expect(init?.redirect).toBe('manual');
+      return Response.redirect('https://untrusted.example.invalid',302);
+    });
+    expect(res.status).toBe(503);expect(calls).toBe(1);
+    expect(await res.text()).not.toContain('untrusted');
   });
   it('blocks writes to imported production datasets and read-only mode',async()=>{
     env.SAVED_RFPS_MODE='read-only'; expect((await request({rfpId:rid})).status).toBe(503);

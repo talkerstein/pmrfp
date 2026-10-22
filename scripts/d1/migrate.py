@@ -173,7 +173,9 @@ def export_snapshot(output):
     # Abort on column/type/generated-column drift before exporting any rows.
     for table,spec in specs.items():
         if table=='_auth_users':
-            relation='auth.users';projection='id';sourcecols=['id']
+            relation=os.environ.get('D1_MIGRATION_AUTH_IDS_VIEW','auth.users')
+            if relation not in ('auth.users','public.d1_migration_auth_ids_20261022'):raise ValueError('Unreviewed auth ID relation')
+            projection='id';sourcecols=['id']
         else:
             relation='public.'+ident(table);sourcecols=[c['column_name'] for c in spec['columns']]
             projection=','.join(ident(c['column_name'])+('::text AS '+ident(c['column_name']) if c['udt_name']=='numeric' else '') for c in spec['columns'])

@@ -5,7 +5,7 @@
   "account_id": "f4e9b098134981b108024243b2a72ed4",
   "workers_dev": true,
   "vars": {
-    "SAVED_RFPS_MODE": "read-only"
+    "SAVED_RFPS_MODE": "sandbox-write"
   },
   "d1_databases": [{
     "binding": "DB",
