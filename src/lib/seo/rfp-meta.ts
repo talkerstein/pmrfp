@@ -20,12 +20,33 @@ export function cleanTenderTitle(title: string): string {
   return title.replace(/^NAICS\s+\d+\s+(?:PSC\s+[^:]{1,40}:\s*)?/i, "").replace(/\s+/g, " ").trim() || title;
 }
 
-/** Cut at a word boundary so Google doesn't do it mid-word. */
+/** Words and marks that look wrong as the last thing in a cut title ("… for the", "… and"). */
+const DANGLING = /(?:[\s,;:–—\-/&(]+|\s+(?:of|the|and|for|to|at|in|on|or|a|an|with|de|du|des|la|le|les|et|pour|au|aux|d|l|y|del|para|en))$/i;
+
+/**
+ * At most `max` characters, always ending on a whole word (never "Roofin…"),
+ * with no dangling "of" / "and" / "for". A single token longer than `max`
+ * is the only thing that is cut hard. No ellipsis: use for <title> text.
+ */
+export function cutAtWord(s: string, max: number): string {
+  if (s.length <= max) return s;
+  let out = s.slice(0, max);
+  // The cut fell inside a word unless the next character is a space.
+  if (s[max] !== " ") {
+    const sp = out.lastIndexOf(" ");
+    if (sp > 0) out = out.slice(0, sp);
+  }
+  for (let prev = ""; prev !== out; ) {
+    prev = out;
+    out = out.replace(DANGLING, "");
+  }
+  return out || s.slice(0, max);
+}
+
+/** Like cutAtWord, with an ellipsis when something was cut. The result is at most `max` characters. */
 export function clip(s: string, max: number): string {
   if (s.length <= max) return s;
-  const cut = s.slice(0, max - 1);
-  const sp = cut.lastIndexOf(" ");
-  return `${(sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,;:–—-]+$/, "")}…`;
+  return `${cutAtWord(s, max - 1)}…`;
 }
 
 /** "City, ST" — whichever parts exist, without repeating the city as province. */

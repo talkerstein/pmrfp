@@ -12,7 +12,7 @@
 export const TRIAL_DAYS = 14;
 const DAY_MS = 86_400_000;
 
-export const TRIAL_SOURCES = ["dashboard", "pricing", "leads", "billing"] as const;
+export const TRIAL_SOURCES = ["dashboard", "pricing", "leads", "billing", "listing"] as const;
 export type TrialSource = (typeof TRIAL_SOURCES)[number];
 
 export function parseTrialSource(v: unknown): TrialSource {
