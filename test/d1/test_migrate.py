@@ -33,10 +33,10 @@ class FixtureMixin:
 class MigrationTests(FixtureMixin, unittest.TestCase):
     def test_deterministic_schema_and_all_tables(self):
         sql,gaps=generate(self.cat);self.assertEqual(sql,m.SCHEMA.read_text());self.assertTrue(gaps)
-        self.assertEqual(len(self.specs),86)
+        self.assertEqual(set(self.specs), {c['table_name'] for c in self.cat['columns']} | {'_auth_users'})
     def test_initial_copy_and_all_record_hashes(self):
         s=self.snapshot(self.seed());result=m.sync(s,self.target)
-        self.assertEqual(len(result['validated']),86);self.assertFalse(result['cutover_ready']);m.validate(s,self.target)
+        self.assertEqual(set(result['validated']),set(self.specs));self.assertFalse(result['cutover_ready']);m.validate(s,self.target)
     def test_incremental_insert_update_delete_and_noop(self):
         s1=self.snapshot(self.seed());m.sync(s1,self.target)
         s2=self.snapshot(self.seed(2),'next.jsonl');b=self.root/'backup.sqlite';r=m.sync(s2,self.target,b)

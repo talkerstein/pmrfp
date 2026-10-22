@@ -92,3 +92,8 @@ mobile/ios/
 /d1/.wrangler/
 /.d1-private/
 **/__pycache__/
+
+# Worker local runtime state and secrets
+/workers/**/.wrangler/
+/workers/**/.d1-private/
+/workers/**/.dev.vars*

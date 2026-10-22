@@ -5,7 +5,7 @@ from schema import ROOT
 
 def compare(repo,live,commit):
     a={(x['table_name'],x['column_name']):x for x in repo['columns']};b={(x['table_name'],x['column_name']):x for x in live['columns']}
-    out={'master':commit,'audit_date':'2026-10-21','repo_tables':len({x[0] for x in a}),'production_tables':len({x[0] for x in b}),'repo_only_tables':sorted({x[0] for x in a}-{x[0] for x in b}),'production_only_tables':sorted({x[0] for x in b}-{x[0] for x in a}),'repo_only_columns':[list(k) for k in sorted(a.keys()-b.keys()) if k[0] in {x[0] for x in b}],'production_only_columns':[list(k) for k in sorted(b.keys()-a.keys())],'changed_columns':[]}
+    out={'master':commit,'production_snapshot_date':'2026-10-21','repo_tables':len({x[0] for x in a}),'production_tables':len({x[0] for x in b}),'repo_only_tables':sorted({x[0] for x in a}-{x[0] for x in b}),'production_only_tables':sorted({x[0] for x in b}-{x[0] for x in a}),'repo_only_columns':[list(k) for k in sorted(a.keys()-b.keys()) if k[0] in {x[0] for x in b}],'production_only_columns':[list(k) for k in sorted(b.keys()-a.keys())],'changed_columns':[]}
     for k in sorted(a.keys()&b.keys()):
         changes={f:{'repo':a[k][f],'production':b[k][f]} for f in ['udt_name','is_nullable','column_default','is_identity','is_generated','generation_expression'] if a[k][f]!=b[k][f]}
         if changes:out['changed_columns'].append({'table':k[0],'column':k[1],'changes':changes})

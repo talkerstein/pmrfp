@@ -103,6 +103,110 @@ CREATE TABLE "bid_results" (
   CONSTRAINT "bid_results_status_label_check" CHECK ((status_label IN ('awarded', 'apparent_low', 'not_awarded', 'submitted')))
 );
 
+CREATE TABLE "buyer_claims" (
+  "id" TEXT NOT NULL,
+  "buyer_key" TEXT NOT NULL,
+  "buyer_name" TEXT NOT NULL,
+  "province_code" TEXT NOT NULL,
+  "country" TEXT NOT NULL DEFAULT 'CA',
+  "user_id" TEXT NOT NULL,
+  "organization_id" TEXT,
+  "email" TEXT NOT NULL,
+  "email_domain" TEXT,
+  "full_name" TEXT,
+  "job_title" TEXT,
+  "phone" TEXT,
+  "note" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'pending',
+  "reason" TEXT,
+  "method" TEXT,
+  "join_request_id" TEXT,
+  "admin_notes" TEXT,
+  "decided_by" TEXT,
+  "decided_at" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "buyer_claims_admin_notes_check" CHECK (((admin_notes IS NULL) OR (length(admin_notes) <= 2000))),
+  CONSTRAINT "buyer_claims_buyer_name_check" CHECK (((length(buyer_name) >= 1) AND (length(buyer_name) <= 200))),
+  CONSTRAINT "buyer_claims_country_check" CHECK ((country = 'CA')),
+  CONSTRAINT "buyer_claims_decided" CHECK (((status = 'pending') OR (decided_at IS NOT NULL))),
+  CONSTRAINT "buyer_claims_decided_by_fkey" FOREIGN KEY (decided_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_claims_email_check" CHECK (((length(email) >= 3) AND (length(email) <= 254))),
+  CONSTRAINT "buyer_claims_email_domain_check" CHECK (((email_domain IS NULL) OR (length(email_domain) <= 253))),
+  CONSTRAINT "buyer_claims_full_name_check" CHECK (((full_name IS NULL) OR (length(full_name) <= 120))),
+  CONSTRAINT "buyer_claims_job_title_check" CHECK (((job_title IS NULL) OR (length(job_title) <= 120))),
+  CONSTRAINT "buyer_claims_join_request_id_fkey" FOREIGN KEY (join_request_id) REFERENCES organization_join_requests(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_claims_method_check" CHECK (((method IS NULL) OR (method IN ('email_domain', 'admin')))),
+  CONSTRAINT "buyer_claims_note_check" CHECK (((note IS NULL) OR (length(note) <= 1000))),
+  CONSTRAINT "buyer_claims_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_claims_phone_check" CHECK (((phone IS NULL) OR (length(phone) <= 40))),
+  CONSTRAINT "buyer_claims_pkey" PRIMARY KEY (id),
+  CONSTRAINT "buyer_claims_province_code_check" CHECK ((province_code IN ('ON', 'BC', 'AB', 'NS', 'MB', 'SK', 'QC', 'NB', 'PE', 'NL', 'YT', 'NT', 'NU'))),
+  CONSTRAINT "buyer_claims_reason_check" CHECK (((reason IS NULL) OR (length(reason) <= 60))),
+  CONSTRAINT "buyer_claims_status_check" CHECK ((status IN ('pending', 'verified', 'rejected', 'join_requested', 'cancelled'))),
+  CONSTRAINT "buyer_claims_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE CASCADE
+);
+
+CREATE TABLE "buyer_domains" (
+  "id" TEXT NOT NULL,
+  "buyer_key" TEXT NOT NULL,
+  "domain" TEXT NOT NULL,
+  "added_by" TEXT,
+  "note" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "buyer_domains_added_by_fkey" FOREIGN KEY (added_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_domains_buyer_key_domain_key" UNIQUE (buyer_key, domain),
+  CONSTRAINT "buyer_domains_note_check" CHECK (((note IS NULL) OR (length(note) <= 500))),
+  CONSTRAINT "buyer_domains_pkey" PRIMARY KEY (id)
+);
+
+CREATE TABLE "buyer_follows" (
+  "user_id" TEXT NOT NULL,
+  "org_id" TEXT,
+  "buyer_slug" TEXT NOT NULL,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "buyer_follows_org_id_fkey" FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_follows_pkey" PRIMARY KEY (user_id, buyer_slug),
+  CONSTRAINT "buyer_follows_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE CASCADE
+);
+
+CREATE TABLE "buyer_pages" (
+  "buyer_key" TEXT NOT NULL,
+  "province_code" TEXT NOT NULL,
+  "country" TEXT NOT NULL DEFAULT 'CA',
+  "buyer_name" TEXT NOT NULL,
+  "organization_id" TEXT NOT NULL,
+  "verified_method" TEXT NOT NULL,
+  "verified_domain" TEXT,
+  "verified_by" TEXT,
+  "verified_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "logo_url" TEXT,
+  "contact_email" TEXT,
+  "contact_phone" TEXT,
+  "show_contact" INTEGER NOT NULL DEFAULT 0 CHECK ("show_contact" IN (0,1)),
+  "bids_url" TEXT,
+  "platform_url" TEXT,
+  "vendor_registration_url" TEXT,
+  "intro" TEXT,
+  "upcoming" TEXT NOT NULL DEFAULT '[]' CHECK ("upcoming" IS NULL OR json_valid("upcoming")),
+  "updated_by" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "buyer_pages_buyer_name_check" CHECK (((length(buyer_name) >= 1) AND (length(buyer_name) <= 200))),
+  CONSTRAINT "buyer_pages_contact_phone_check" CHECK (((contact_phone IS NULL) OR (length(contact_phone) <= 40))),
+  CONSTRAINT "buyer_pages_country_check" CHECK ((country = 'CA')),
+  CONSTRAINT "buyer_pages_intro_check" CHECK (((intro IS NULL) OR (length(intro) <= 600))),
+  CONSTRAINT "buyer_pages_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+  CONSTRAINT "buyer_pages_organization_id_key" UNIQUE (organization_id),
+  CONSTRAINT "buyer_pages_pkey" PRIMARY KEY (buyer_key),
+  CONSTRAINT "buyer_pages_province_code_check" CHECK ((province_code IN ('ON', 'BC', 'AB', 'NS', 'MB', 'SK', 'QC', 'NB', 'PE', 'NL', 'YT', 'NT', 'NU'))),
+  CONSTRAINT "buyer_pages_upcoming_check" CHECK (((json_type(upcoming) = 'array') AND (json_array_length(upcoming) <= 12))),
+  CONSTRAINT "buyer_pages_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_pages_verified_by_fkey" FOREIGN KEY (verified_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "buyer_pages_verified_domain_check" CHECK (((verified_domain IS NULL) OR (length(verified_domain) <= 253))),
+  CONSTRAINT "buyer_pages_verified_method_check" CHECK ((verified_method IN ('email_domain', 'admin')))
+);
+
 CREATE TABLE "buyer_permissions" (
   "buyer_slug" TEXT NOT NULL,
   "buyer_name" TEXT NOT NULL,
@@ -1083,8 +1187,11 @@ CREATE TABLE "organizations" (
   "google_ratings_synced_at" TEXT,
   "platinum" INTEGER NOT NULL DEFAULT 0 CHECK ("platinum" IN (0,1)),
   "merged_into" TEXT,
+  "approved_at" TEXT,
+  "review_flagged_at" TEXT,
+  "review_changes" TEXT CHECK ("review_changes" IS NULL OR json_valid("review_changes")),
   CONSTRAINT "organizations_merged_into_fkey" FOREIGN KEY (merged_into) REFERENCES organizations(id) ON DELETE SET NULL,
-  CONSTRAINT "organizations_organization_type_check" CHECK ((organization_type IN ('trade_company', 'property_manager', 'builder', 'owner', 'admin', 'supplier', 'landlord'))),
+  CONSTRAINT "organizations_organization_type_check" CHECK ((organization_type IN ('trade_company', 'property_manager', 'builder', 'owner', 'admin', 'supplier', 'landlord', 'public_buyer'))),
   CONSTRAINT "organizations_pkey" PRIMARY KEY (id),
   CONSTRAINT "organizations_profile_status_check" CHECK ((profile_status IN ('draft', 'pending_review', 'approved', 'rejected', 'suspended'))),
   CONSTRAINT "organizations_public_contact_visibility_check" CHECK ((public_contact_visibility IN ('show_contact', 'request_intro', 'hide_contact'))),
@@ -1278,11 +1385,26 @@ CREATE TABLE "rfp_interests" (
   "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   "updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   "case_study_ids" TEXT NOT NULL DEFAULT '[]' CHECK ("case_study_ids" IS NULL OR json_valid("case_study_ids")) CHECK (json_type("case_study_ids")='array'),
+  "quote_amount" TEXT,
+  "quote_kind" TEXT,
+  "quote_notes" TEXT,
+  "start_date" TEXT,
+  "used_free_allowance" INTEGER NOT NULL DEFAULT 0 CHECK ("used_free_allowance" IN (0,1)),
+  "lang" TEXT,
+  "pm_contact_shared" INTEGER NOT NULL DEFAULT 0 CHECK ("pm_contact_shared" IN (0,1)),
+  "decision_note" TEXT,
+  "decided_at" TEXT,
+  "outcome_notified_at" TEXT,
   CONSTRAINT "rfp_interests_case_study_ids_check" CHECK ((json_array_length(case_study_ids) <= 3)),
+  CONSTRAINT "rfp_interests_decision_note_check" CHECK (((decision_note IS NULL) OR (length(decision_note) <= 1000))),
+  CONSTRAINT "rfp_interests_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
   CONSTRAINT "rfp_interests_pkey" PRIMARY KEY (id),
+  CONSTRAINT "rfp_interests_quote_amount_check" CHECK (((quote_amount IS NULL) OR ((quote_amount >= (0)) AND (quote_amount <= (1000000000))))),
+  CONSTRAINT "rfp_interests_quote_kind_check" CHECK (((quote_kind IS NULL) OR (quote_kind IN ('estimate', 'firm')))),
+  CONSTRAINT "rfp_interests_quote_notes_check" CHECK (((quote_notes IS NULL) OR (length(quote_notes) <= 2000))),
   CONSTRAINT "rfp_interests_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE,
   CONSTRAINT "rfp_interests_rfp_id_trade_organization_id_key" UNIQUE (rfp_id, trade_organization_id),
-  CONSTRAINT "rfp_interests_status_check" CHECK ((status IN ('submitted', 'viewed', 'contact_revealed', 'shortlisted', 'declined', 'closed'))),
+  CONSTRAINT "rfp_interests_status_check" CHECK ((status IN ('submitted', 'viewed', 'contact_revealed', 'shortlisted', 'declined', 'closed', 'picked', 'not_selected'))),
   CONSTRAINT "rfp_interests_submitted_by_user_id_fkey" FOREIGN KEY (submitted_by_user_id) REFERENCES users_profile(id) ON DELETE SET NULL,
   CONSTRAINT "rfp_interests_trade_organization_id_fkey" FOREIGN KEY (trade_organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 );
@@ -1327,16 +1449,32 @@ CREATE TABLE "rfp_posts" (
   "keep_alive_token" TEXT NOT NULL,
   "awarded_rfp_id" TEXT,
   "gc_project_name" TEXT,
+  "poster_lang" TEXT,
+  "review_note" TEXT,
+  "buyer_key" TEXT,
+  "buyer_name" TEXT,
+  "post_kind" TEXT,
+  "official_url" TEXT,
+  "official_portal" TEXT,
+  "question_deadline" TEXT,
+  "sealed" INTEGER NOT NULL DEFAULT 0 CHECK ("sealed" IN (0,1)),
   CONSTRAINT "rfp_posts_awarded_rfp_id_fkey" FOREIGN KEY (awarded_rfp_id) REFERENCES rfp_posts(id) ON DELETE SET NULL,
+  CONSTRAINT "rfp_posts_buyer_name_check" CHECK (((buyer_name IS NULL) OR ((length(buyer_name) >= 1) AND (length(buyer_name) <= 200)))),
   CONSTRAINT "rfp_posts_contact_visibility_check" CHECK ((contact_visibility IN ('public_contact', 'pmrfp_mediated', 'anonymous_until_interest_approved'))),
+  CONSTRAINT "rfp_posts_official_portal_check" CHECK (((official_portal IS NULL) OR (length(official_portal) <= 120))),
   CONSTRAINT "rfp_posts_pkey" PRIMARY KEY (id),
+  CONSTRAINT "rfp_posts_post_kind_check" CHECK (((post_kind IS NULL) OR (post_kind IN ('quote_request', 'tender_mirror')))),
   CONSTRAINT "rfp_posts_posted_by_organization_id_fkey" FOREIGN KEY (posted_by_organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
   CONSTRAINT "rfp_posts_posted_by_user_id_fkey" FOREIGN KEY (posted_by_user_id) REFERENCES users_profile(id) ON DELETE SET NULL,
+  CONSTRAINT "rfp_posts_poster_lang_check" CHECK (((poster_lang IS NULL) OR (poster_lang IN ('en', 'fr', 'es')))),
   CONSTRAINT "rfp_posts_property_type_id_fkey" FOREIGN KEY (property_type_id) REFERENCES property_types(id) ON DELETE SET NULL,
   CONSTRAINT "rfp_posts_region_id_fkey" FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL,
+  CONSTRAINT "rfp_posts_review_note_check" CHECK (((review_note IS NULL) OR (length(review_note) <= 1000))),
+  CONSTRAINT "rfp_posts_sealed_check" CHECK (((NOT sealed) OR ((source_type = 'public_buyer_direct') AND (post_kind = 'quote_request') AND (buyer_key IS NOT NULL)))),
   CONSTRAINT "rfp_posts_slug_key" UNIQUE (slug),
-  CONSTRAINT "rfp_posts_source_type_check" CHECK ((source_type IN ('property_manager_direct', 'admin_seeded', 'public_source', 'partner_referral', 'gc_package'))),
-  CONSTRAINT "rfp_posts_status_check" CHECK ((status IN ('draft', 'pending_review', 'published', 'closed', 'awarded', 'expired', 'archived', 'rejected')))
+  CONSTRAINT "rfp_posts_source_type_check" CHECK ((source_type IN ('property_manager_direct', 'admin_seeded', 'public_source', 'partner_referral', 'gc_package', 'public_buyer_direct'))),
+  CONSTRAINT "rfp_posts_status_check" CHECK ((status IN ('draft', 'pending_review', 'published', 'closed', 'awarded', 'expired', 'archived', 'rejected'))),
+  CONSTRAINT "rfp_posts_town_post_check" CHECK (((source_type <> 'public_buyer_direct') OR ((buyer_key IS NOT NULL) AND (post_kind IS NOT NULL) AND ((post_kind <> 'tender_mirror') OR (official_url IS NOT NULL)))))
 );
 
 CREATE TABLE "rfp_views" (
@@ -1346,6 +1484,11 @@ CREATE TABLE "rfp_views" (
   "organization_id" TEXT,
   "viewer_ip_hash" TEXT,
   "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "view_day" TEXT,
+  "visitor_hash" TEXT,
+  "country" TEXT,
+  "lang" TEXT,
+  CONSTRAINT "rfp_views_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
   CONSTRAINT "rfp_views_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
   CONSTRAINT "rfp_views_pkey" PRIMARY KEY (id),
   CONSTRAINT "rfp_views_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE,
@@ -1386,13 +1529,15 @@ CREATE TABLE "signup_attribution" (
   "country" TEXT,
   "method" TEXT,
   "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "role" TEXT,
+  "opted_out" INTEGER NOT NULL DEFAULT 0 CHECK ("opted_out" IN (0,1)),
   CONSTRAINT "signup_attribution_channel_check" CHECK ((channel IN ('google_organic', 'bing_organic', 'other_search', 'ai_assistant', 'email', 'social', 'paid', 'referral', 'internal', 'direct', 'other', 'unknown'))),
   CONSTRAINT "signup_attribution_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
   CONSTRAINT "signup_attribution_last_utm_campaign_check" CHECK (((last_utm_campaign IS NULL) OR (length(last_utm_campaign) <= 80))),
   CONSTRAINT "signup_attribution_last_utm_content_check" CHECK (((last_utm_content IS NULL) OR (length(last_utm_content) <= 80))),
   CONSTRAINT "signup_attribution_last_utm_medium_check" CHECK (((last_utm_medium IS NULL) OR (length(last_utm_medium) <= 80))),
   CONSTRAINT "signup_attribution_last_utm_source_check" CHECK (((last_utm_source IS NULL) OR (length(last_utm_source) <= 80))),
-  CONSTRAINT "signup_attribution_method_check" CHECK (((method IS NULL) OR (method IN ('email', 'google')))),
+  CONSTRAINT "signup_attribution_method_check" CHECK (((method IS NULL) OR (method IN ('email', 'password', 'magic_link', 'google')))),
   CONSTRAINT "signup_attribution_org_id_fkey" FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE SET NULL,
   CONSTRAINT "signup_attribution_pkey" PRIMARY KEY (user_id),
   CONSTRAINT "signup_attribution_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE CASCADE,
@@ -1400,6 +1545,58 @@ CREATE TABLE "signup_attribution" (
   CONSTRAINT "signup_attribution_utm_content_check" CHECK (((utm_content IS NULL) OR (length(utm_content) <= 80))),
   CONSTRAINT "signup_attribution_utm_medium_check" CHECK (((utm_medium IS NULL) OR (length(utm_medium) <= 80))),
   CONSTRAINT "signup_attribution_utm_source_check" CHECK (((utm_source IS NULL) OR (length(utm_source) <= 80)))
+);
+
+CREATE TABLE "site_events" (
+  "id" INTEGER NOT NULL,
+  "event" TEXT NOT NULL,
+  "path" TEXT,
+  "lang" TEXT,
+  "country" TEXT,
+  "role" TEXT,
+  "user_id" TEXT,
+  "anon_hash" TEXT,
+  "utm_source" TEXT,
+  "utm_medium" TEXT,
+  "utm_campaign" TEXT,
+  "props" TEXT NOT NULL DEFAULT '{}' CHECK ("props" IS NULL OR json_valid("props")),
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "site_events_event_check" CHECK ((event IN ('signup_started', 'signup_completed', 'onboarding_completed', 'writer_started', 'writer_draft_generated', 'rfp_posted', 'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_completed', 'trial_started', 'follow_buyer', 'claim_started', 'claim_verified', 'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'))),
+  CONSTRAINT "site_events_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
+  CONSTRAINT "site_events_pkey" PRIMARY KEY (id),
+  CONSTRAINT "site_events_props_check" CHECK (((json_type(props) = 'object') AND (octet_length((props)) <= 1000))),
+  CONSTRAINT "site_events_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE SET NULL,
+  CONSTRAINT "site_events_utm_campaign_check" CHECK (((utm_campaign IS NULL) OR (length(utm_campaign) <= 80))),
+  CONSTRAINT "site_events_utm_medium_check" CHECK (((utm_medium IS NULL) OR (length(utm_medium) <= 80))),
+  CONSTRAINT "site_events_utm_source_check" CHECK (((utm_source IS NULL) OR (length(utm_source) <= 80)))
+);
+
+CREATE TABLE "site_page_views" (
+  "day" TEXT NOT NULL,
+  "path" TEXT NOT NULL,
+  "country" TEXT NOT NULL DEFAULT '',
+  "views" INTEGER NOT NULL DEFAULT 0,
+  CONSTRAINT "site_page_views_pkey" PRIMARY KEY (day, path, country),
+  CONSTRAINT "site_page_views_views_check" CHECK ((views >= 0))
+);
+
+CREATE TABLE "site_referrers" (
+  "day" TEXT NOT NULL,
+  "referrer_host" TEXT NOT NULL,
+  "country" TEXT NOT NULL DEFAULT '',
+  "visits" INTEGER NOT NULL DEFAULT 0,
+  CONSTRAINT "site_referrers_pkey" PRIMARY KEY (day, referrer_host, country),
+  CONSTRAINT "site_referrers_visits_check" CHECK ((visits >= 0))
+);
+
+CREATE TABLE "site_visitors" (
+  "day" TEXT NOT NULL,
+  "visitor_hash" TEXT NOT NULL,
+  "country" TEXT NOT NULL DEFAULT '',
+  "lang" TEXT NOT NULL DEFAULT '',
+  "signed_in" INTEGER NOT NULL DEFAULT 0 CHECK ("signed_in" IN (0,1)),
+  CONSTRAINT "site_visitors_lang_check" CHECK ((lang IN ('', 'en', 'fr', 'es'))),
+  CONSTRAINT "site_visitors_pkey" PRIMARY KEY (day, visitor_hash)
 );
 
 CREATE TABLE "sponsor_clicks" (
@@ -1587,6 +1784,117 @@ CREATE TABLE "talent_profiles" (
   CONSTRAINT "talent_profiles_years_experience_check" CHECK (((years_experience >= 0) AND (years_experience <= 60)))
 );
 
+CREATE TABLE "town_invites" (
+  "id" TEXT NOT NULL,
+  "rfp_id" TEXT NOT NULL,
+  "organization_id" TEXT NOT NULL,
+  "buyer_key" TEXT,
+  "kind" TEXT NOT NULL,
+  "trade_organization_id" TEXT,
+  "user_id" TEXT,
+  "email_key" TEXT NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'sent',
+  "lang" TEXT,
+  "sent_by" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "town_invites_email_key_check" CHECK ((((length(email_key) >= 3) AND (length(email_key) <= 254)) AND (email_key = lower(email_key)))),
+  CONSTRAINT "town_invites_kind_check" CHECK ((kind IN ('trade', 'email'))),
+  CONSTRAINT "town_invites_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
+  CONSTRAINT "town_invites_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+  CONSTRAINT "town_invites_pkey" PRIMARY KEY (id),
+  CONSTRAINT "town_invites_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE,
+  CONSTRAINT "town_invites_sent_by_fkey" FOREIGN KEY (sent_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "town_invites_status_check" CHECK ((status IN ('sent', 'failed'))),
+  CONSTRAINT "town_invites_trade_organization_id_fkey" FOREIGN KEY (trade_organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
+  CONSTRAINT "town_invites_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE SET NULL
+);
+
+CREATE TABLE "town_job_addenda" (
+  "id" TEXT NOT NULL,
+  "rfp_id" TEXT NOT NULL,
+  "number" INTEGER NOT NULL,
+  "body" TEXT NOT NULL,
+  "official_url" TEXT,
+  "old_deadline" TEXT,
+  "new_deadline" TEXT,
+  "posted_by" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "town_job_addenda_body_check" CHECK (((length(body) >= 5) AND (length(body) <= 4000))),
+  CONSTRAINT "town_job_addenda_deadline" CHECK (((old_deadline IS NULL) = (new_deadline IS NULL))),
+  CONSTRAINT "town_job_addenda_number_check" CHECK (((number >= 1) AND (number <= 999))),
+  CONSTRAINT "town_job_addenda_pkey" PRIMARY KEY (id),
+  CONSTRAINT "town_job_addenda_posted_by_fkey" FOREIGN KEY (posted_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_addenda_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE,
+  CONSTRAINT "town_job_addenda_rfp_id_number_key" UNIQUE (rfp_id, number)
+);
+
+CREATE TABLE "town_job_log" (
+  "id" INTEGER NOT NULL,
+  "rfp_id" TEXT,
+  "organization_id" TEXT,
+  "buyer_key" TEXT,
+  "actor_user_id" TEXT,
+  "event" TEXT NOT NULL,
+  "detail" TEXT NOT NULL DEFAULT '{}' CHECK ("detail" IS NULL OR json_valid("detail")),
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "town_job_log_detail_check" CHECK ((json_type(detail) = 'object')),
+  CONSTRAINT "town_job_log_pkey" PRIMARY KEY (id)
+);
+
+CREATE TABLE "town_job_questions" (
+  "id" TEXT NOT NULL,
+  "rfp_id" TEXT NOT NULL,
+  "asker_user_id" TEXT,
+  "asker_organization_id" TEXT,
+  "question" TEXT NOT NULL,
+  "public_question" TEXT,
+  "answer" TEXT,
+  "answered_by" TEXT,
+  "answered_at" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'open',
+  "lang" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "town_job_questions_answer_check" CHECK (((answer IS NULL) OR ((length(answer) >= 2) AND (length(answer) <= 4000)))),
+  CONSTRAINT "town_job_questions_answered" CHECK (((status = 'answered') = ((answer IS NOT NULL) AND (answered_at IS NOT NULL)))),
+  CONSTRAINT "town_job_questions_answered_by_fkey" FOREIGN KEY (answered_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_questions_asker_organization_id_fkey" FOREIGN KEY (asker_organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_questions_asker_user_id_fkey" FOREIGN KEY (asker_user_id) REFERENCES users_profile(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_questions_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
+  CONSTRAINT "town_job_questions_pkey" PRIMARY KEY (id),
+  CONSTRAINT "town_job_questions_public_question_check" CHECK (((public_question IS NULL) OR ((length(public_question) >= 5) AND (length(public_question) <= 2000)))),
+  CONSTRAINT "town_job_questions_question_check" CHECK (((length(question) >= 5) AND (length(question) <= 2000))),
+  CONSTRAINT "town_job_questions_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE,
+  CONSTRAINT "town_job_questions_status_check" CHECK ((status IN ('open', 'answered')))
+);
+
+CREATE TABLE "town_job_results" (
+  "rfp_id" TEXT NOT NULL,
+  "organization_id" TEXT,
+  "recommended_interest_id" TEXT,
+  "rationale" TEXT,
+  "recommended_by" TEXT,
+  "recommended_at" TEXT,
+  "award_interest_id" TEXT,
+  "award_winner_name" TEXT,
+  "award_amount" TEXT,
+  "award_amount_public" INTEGER NOT NULL DEFAULT 0 CHECK ("award_amount_public" IN (0,1)),
+  "award_date" TEXT,
+  "award_published_at" TEXT,
+  "award_published_by" TEXT,
+  "updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "town_job_results_award" CHECK (((award_published_at IS NULL) OR ((award_winner_name IS NOT NULL) AND (award_date IS NOT NULL)))),
+  CONSTRAINT "town_job_results_award_amount_check" CHECK (((award_amount IS NULL) OR ((award_amount >= (0)) AND (award_amount <= (1000000000))))),
+  CONSTRAINT "town_job_results_award_interest_id_fkey" FOREIGN KEY (award_interest_id) REFERENCES rfp_interests(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_results_award_published_by_fkey" FOREIGN KEY (award_published_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_results_award_winner_name_check" CHECK (((award_winner_name IS NULL) OR ((length(award_winner_name) >= 1) AND (length(award_winner_name) <= 300)))),
+  CONSTRAINT "town_job_results_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_results_pkey" PRIMARY KEY (rfp_id),
+  CONSTRAINT "town_job_results_rationale_check" CHECK (((rationale IS NULL) OR ((length(rationale) >= 1) AND (length(rationale) <= 2000)))),
+  CONSTRAINT "town_job_results_recommended_by_fkey" FOREIGN KEY (recommended_by) REFERENCES "_auth_users"(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_results_recommended_interest_id_fkey" FOREIGN KEY (recommended_interest_id) REFERENCES rfp_interests(id) ON DELETE SET NULL,
+  CONSTRAINT "town_job_results_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE
+);
+
 CREATE TABLE "trade_categories" (
   "id" TEXT NOT NULL,
   "name" TEXT NOT NULL,
@@ -1662,7 +1970,7 @@ CREATE TABLE "users_profile" (
   "updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   CONSTRAINT "users_profile_id_fkey" FOREIGN KEY (id) REFERENCES "_auth_users"(id) ON DELETE CASCADE,
   CONSTRAINT "users_profile_pkey" PRIMARY KEY (id),
-  CONSTRAINT "users_profile_primary_role_check" CHECK ((primary_role IN ('trade', 'property_manager', 'admin', 'super_admin', 'visitor', 'supplier', 'real_estate_agent', 'talent'))),
+  CONSTRAINT "users_profile_primary_role_check" CHECK ((primary_role IN ('trade', 'property_manager', 'admin', 'super_admin', 'visitor', 'supplier', 'real_estate_agent', 'talent', 'public_buyer'))),
   CONSTRAINT "users_profile_status_check" CHECK ((status IN ('active', 'suspended', 'deleted')))
 );
 
@@ -1741,6 +2049,16 @@ CREATE INDEX badge_hits_referrer_idx ON badge_hits (referrer, day DESC);
 CREATE INDEX bid_results_award_idx ON bid_results (award_history_id);
 
 CREATE INDEX bid_results_bidder_idx ON bid_results (bidder_key);
+
+CREATE UNIQUE INDEX buyer_claims_one_pending ON buyer_claims (buyer_key, user_id) WHERE (status = 'pending');
+
+CREATE INDEX buyer_claims_status_idx ON buyer_claims (status, created_at DESC);
+
+CREATE INDEX buyer_claims_user_idx ON buyer_claims (user_id, created_at DESC);
+
+CREATE INDEX buyer_follows_buyer_idx ON buyer_follows (buyer_slug);
+
+CREATE INDEX buyer_pages_province_idx ON buyer_pages (province_code);
 
 CREATE INDEX buyer_permissions_status_idx ON buyer_permissions (status);
 
@@ -1872,6 +2190,8 @@ CREATE INDEX organizations_platinum_idx ON organizations (platinum) WHERE platin
 
 CREATE INDEX organizations_profile_status_idx ON organizations (profile_status);
 
+CREATE INDEX organizations_review_flagged_idx ON organizations (review_flagged_at) WHERE (review_flagged_at IS NOT NULL);
+
 CREATE INDEX organizations_status_idx ON organizations (status);
 
 CREATE INDEX organizations_type_idx ON organizations (organization_type);
@@ -1902,11 +2222,17 @@ CREATE INDEX rfp_categories_rfp_idx ON rfp_categories (rfp_id);
 
 CREATE INDEX rfp_documents_rfp_idx ON rfp_documents (rfp_id);
 
+CREATE INDEX rfp_interests_free_month_idx ON rfp_interests (trade_organization_id, created_at) WHERE used_free_allowance;
+
+CREATE UNIQUE INDEX rfp_interests_one_pick ON rfp_interests (rfp_id) WHERE (status = 'picked');
+
 CREATE INDEX rfp_interests_org_idx ON rfp_interests (trade_organization_id);
 
 CREATE INDEX rfp_interests_rfp_idx ON rfp_interests (rfp_id);
 
 CREATE INDEX rfp_posts_awarded_rfp_idx ON rfp_posts (awarded_rfp_id) WHERE (awarded_rfp_id IS NOT NULL);
+
+CREATE INDEX rfp_posts_buyer_key_idx ON rfp_posts (buyer_key) WHERE (buyer_key IS NOT NULL);
 
 CREATE INDEX rfp_posts_deadline_idx ON rfp_posts (deadline);
 
@@ -1924,6 +2250,12 @@ CREATE INDEX rfp_posts_region_idx ON rfp_posts (region_id);
 
 CREATE INDEX rfp_posts_status_idx ON rfp_posts (status);
 
+CREATE INDEX rfp_views_created_idx ON rfp_views (created_at DESC);
+
+CREATE UNIQUE INDEX rfp_views_daily_visitor_uniq ON rfp_views (rfp_id, view_day, visitor_hash) WHERE ((visitor_hash IS NOT NULL) AND (view_day IS NOT NULL));
+
+CREATE INDEX rfp_views_rfp_day_idx ON rfp_views (rfp_id, view_day);
+
 CREATE INDEX rfp_views_rfp_idx ON rfp_views (rfp_id);
 
 CREATE INDEX saved_rfps_rfp_idx ON saved_rfps (rfp_id);
@@ -1933,6 +2265,16 @@ CREATE INDEX saved_rfps_user_idx ON saved_rfps (user_id);
 CREATE INDEX signup_attribution_org_idx ON signup_attribution (org_id);
 
 CREATE INDEX signup_attribution_signed_up_idx ON signup_attribution (signed_up_at DESC);
+
+CREATE INDEX site_events_created_idx ON site_events (created_at DESC);
+
+CREATE INDEX site_events_event_created_idx ON site_events (event, created_at DESC);
+
+CREATE INDEX site_events_user_idx ON site_events (user_id) WHERE (user_id IS NOT NULL);
+
+CREATE INDEX site_page_views_day_idx ON site_page_views (day DESC);
+
+CREATE INDEX site_referrers_day_idx ON site_referrers (day DESC);
 
 CREATE INDEX sponsors_country_idx ON sponsors (country);
 
@@ -1951,6 +2293,22 @@ CREATE INDEX talent_endorsements_talent_idx ON talent_endorsements (talent_user_
 CREATE INDEX talent_profiles_browse_idx ON talent_profiles (published, availability);
 
 CREATE INDEX talent_profiles_trade_idx ON talent_profiles (primary_trade_id);
+
+CREATE UNIQUE INDEX town_invites_one_company ON town_invites (rfp_id, trade_organization_id) WHERE (trade_organization_id IS NOT NULL);
+
+CREATE UNIQUE INDEX town_invites_one_email ON town_invites (rfp_id, email_key);
+
+CREATE INDEX town_invites_org_day_idx ON town_invites (organization_id, created_at) WHERE (status = 'sent');
+
+CREATE INDEX town_job_addenda_rfp_idx ON town_job_addenda (rfp_id, number);
+
+CREATE INDEX town_job_log_org_idx ON town_job_log (organization_id, created_at);
+
+CREATE INDEX town_job_log_rfp_idx ON town_job_log (rfp_id, created_at);
+
+CREATE INDEX town_job_questions_open_idx ON town_job_questions (rfp_id) WHERE (status = 'open');
+
+CREATE INDEX town_job_questions_rfp_idx ON town_job_questions (rfp_id, created_at);
 
 CREATE INDEX trade_categories_active_idx ON trade_categories (active);
 

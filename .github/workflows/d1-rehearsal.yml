@@ -5,6 +5,12 @@ on:
     paths:
       - 'scripts/d1/**'
       - 'test/d1/**'
+      - 'test/d1-api/**'
+      - 'src/lib/d1/**'
+      - 'src/app/api/save-rfp/route.ts'
+      - 'src/app/**/dashboard/saved-rfps/page.tsx'
+      - 'src/lib/karma/rules.ts'
+      - 'workers/d1-api/**'
       - 'd1/**'
       - '.github/workflows/d1-rehearsal.yml'
   push:
@@ -12,6 +18,12 @@ on:
     paths:
       - 'scripts/d1/**'
       - 'test/d1/**'
+      - 'test/d1-api/**'
+      - 'src/lib/d1/**'
+      - 'src/app/api/save-rfp/route.ts'
+      - 'src/app/**/dashboard/saved-rfps/page.tsx'
+      - 'src/lib/karma/rules.ts'
+      - 'workers/d1-api/**'
       - 'd1/**'
       - '.github/workflows/d1-rehearsal.yml'
 
@@ -25,3 +37,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test copies, reconciliation, validation and restore without credentials
         run: python3 -m unittest discover -s test/d1 -v
+
+  worker-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Test API authorization, synthetic writes, public projections and rebuild preservation
+        run: npx vitest run test/d1-api test/unit/karma-rules.test.ts
+      - run: npm run typecheck

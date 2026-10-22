@@ -3,13 +3,13 @@
 **Status: application conversion is incomplete; production cutover is blocked.**
 This branch implements the audit, candidate D1 copy schemas, consistent exports,
 local incremental reconciliation, private staging import, validation, and local
-backup/restore rehearsal. It does not route application traffic to D1. Supabase
+backup/restore rehearsal. It now includes an opt-in synthetic saved-RFP preview; see [PREVIEW.md](PREVIEW.md). Production traffic remains on Supabase. Supabase
 remains authoritative. No production rows, policies, grants, jobs, auth settings,
 storage objects, or Vercel configuration were changed.
 
 Repository baseline refreshed to `origin/master` at
-`f8bca9fb92fda4ceda8b781b904e38191aa72b32`,
-2026-10-21. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
+`da918b5`,
+2026-10-22. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
 The other chat's checkout was not modified. The grants fix (#164), city-source work
 (#163), and migration-reconciliation fixes (#165/#166) landed during this work;
 this branch was rebased onto them without modifying those patches. The live
@@ -20,15 +20,13 @@ export. Repeat the live audit before a later data synchronization or cutover.
 
 | Inventory | Current repository replay | Production snapshot at export |
 |---|---:|---:|
-| Public tables | 85 | 59 |
-| Public + storage RLS policies | 154 | 127 |
-| Application functions | 31 | 26 |
-| Application/auth row triggers | 24 | 24 |
-| Public views | 13 | 11 |
+| Public tables | 98 | 59 |
+| Public + storage RLS policies | 164 | 127 |
+| Application functions | 62 | 26 |
+| Application/auth row triggers | 37 | 24 |
+| Public views | 20 | 11 |
 
-The initial production snapshot has **26 fewer tables** and six fewer columns
-than current master on otherwise shared tables. Shared column types, nullability, defaults and generation definitions
-match. All missing relations/columns are listed in `d1/schema-drift.json`.
+The initial production snapshot has **39 fewer tables** than the current repository replay. Shared column differences are catalogued separately; this is a comparison against the old snapshot. All missing relations/columns are listed in `d1/schema-drift.json`.
 A later read-only follow-up, after the other chat reconciled migrations, now
 reports **85 public tables, 141 public policies and 13 views** in production.
 The full catalog and data in this rehearsal intentionally remain the earlier
@@ -71,7 +69,7 @@ D1-write plus refresh/background access.
 - `d1/0001-staging-copy.sql`: repository-schema candidate; **copy only**.
 - `d1/production-staging-copy.sql`: live-schema candidate; **copy only**.
 - `d1/*porting-gaps.json`: every omitted default, check/index, policy, function,
-  trigger and view. There are 322 repository and 255 production gap entries.
+  trigger and view. There are 418 repository and 255 production gap entries.
   These are behavior entries, not estimates of engineering effort.
 - `d1/production-snapshot.sql`: reproducible read-only dashboard export query.
 - `scripts/d1/migrate.py`: local export, reconcile, validate and restore CLI.

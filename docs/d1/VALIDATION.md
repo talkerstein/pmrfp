@@ -39,3 +39,33 @@ copy/validation pipeline, not evidence that ongoing synchronization is running.
 Application-serving parity, continuous CDC, in-place remote delta replay,
 reverse-write replay, full Auth/Storage restore and production cutover have not
 been implemented or demonstrated. They remain explicit gates in the README.
+
+## October 22 rebuild and preview verification
+
+The repository replay now covers 98 public tables (master `da918b5`), 164
+public/storage policies, 62 functions, 37 row triggers and 20 views. The original
+production snapshot and its checksums are unchanged.
+
+- Remote synthetic sandbox `pmrfp-api-sandbox-20261022`: all 98 public tables
+  accepted by Cloudflare D1; synthetic seed loaded; foreign_key_check empty;
+  quick_check `ok`. It has no production records.
+- Private rebuilt candidate from the Oct 21 remote readback: karma/forum
+  aggregates rebuilt and transient rate-limit hits reset. The hash of all other
+  rows/columns remained identical; local foreign keys and quick_check passed.
+- 24 preview/Next route/rebuild integration tests pass, plus 22 existing karma
+  scoring tests; 18 offline migration tests pass.
+- Full application suite under Node 24.22.1: 2,064 passed, two skipped (before
+  adding the four Next route tests, which pass separately).
+- Next 16 production build and typecheck pass under Node 24. The build retains
+  an existing dynamic filesystem trace warning in contract-history sources.
+- Worker bundle dry run passes. Deployed HTTP/Auth/session verification is
+  pending Cloudflare Worker permission consent and public Supabase Auth setup.
+
+The machine's Node 26 produced five unrelated site-tracking localStorage test
+failures; all five passed under Node 24. An isolated dependency install fixed the
+worktree's original Turbopack symlink failure. No changes were made to those
+tracking tests or the other checkout's dependencies.
+
+This adds opt-in application code to the branch, not a production configuration
+change. See `PREVIEW.md` for the remaining source-backed consumers and explicit
+cutover guards.
