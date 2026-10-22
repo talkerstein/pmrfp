@@ -185,27 +185,55 @@ export const COMPETITORS: Competitor[] = [
   {
     slug: "constructconnect",
     name: "ConstructConnect",
-    tagline: "Canada's dominant preconstruction intelligence platform.",
+    // Rewritten 2026-10-22 from the depth study: only what was read on ConstructConnect / DCN pages that day.
+    tagline: "Construction project data and the Daily Commercial News tender list.",
     whatItIs:
-      "ConstructConnect (with Link2Build and the Daily Commercial News) tracks preconstruction projects, plans, and permits for GCs, sub-trades, and suppliers.",
-    whoFor: "Trades and suppliers chasing new-construction project leads.",
-    pricing: "Custom quote — reportedly ≈$1,500–$3,000+/yr (not publicly listed)",
-    strengths: ["Deep preconstruction project data", "Editorial credibility (DCN)", "Large Canadian base"],
+      "ConstructConnect owns the Daily Commercial News (DCN). As of October 2026 its Canadian tender list showed 1,924 tenders with eight filters, including work type (new, alteration, service/maintenance/supply) and building type. It also has a list of planned projects, a Construction Directory and a free daily Top 10. Public-sector tenders are free to browse; it says private-sector tenders are only for paid subscribers, and documents, bidders and plan holders sit behind a sales form.",
+    whoFor: "Contractors, trades and suppliers who follow construction projects from planning through bidding, across new builds, alterations and service work.",
+    pricing:
+      "Canada: no public price (sales form). U.S. plans are public: Starter US$129/month per market, Professional from US$199/month per market per seat, Premium from US$10,000/year",
+    priceTable: [
+      { plan: "Starter (U.S.)", covers: "One market", price: "US$129/month", perYear: "US$1,548 (12 months)" },
+      { plan: "Professional (U.S.)", covers: "One market, per seat", price: "from US$199/month", perYear: "from US$2,388 (12 months)" },
+      { plan: "Premium (U.S.)", covers: "Larger teams", price: "from US$10,000/year", perYear: "from US$10,000" },
+    ],
+    priceSource: {
+      url: "https://constructconnect.com/pricing",
+      checked: "October 22, 2026",
+      note: "These are ConstructConnect's U.S. plans. Its Canadian tender service (Daily Commercial News) shows no public price, only a sales form. Also read the same day: canada.constructconnect.com/dcn (tender list, planned projects, Top 10, directory) and pricingsaas.com/companies/constructconnect.",
+    },
+    strengths: [
+      "A large Canadian tender list (1,924 tenders as of October 2026) with eight filters, including work type and building type",
+      "Owner address, phone and website shown on tender pages",
+      "A planned-project list with stage, start month and value",
+      "A free daily Top 10, a Construction Directory and Daily Commercial News coverage",
+    ],
     weaknesses: [
-      "Expensive — out of reach for many small trades",
-      "Oriented to new-build leads, not property maintenance/renovation RFPs",
-      "No vendor directory or marketing profile",
+      "No public price for the Canadian tender service: documents, bidders and plan holders are behind a sales form",
+      "Says private-sector tenders are only available to paid subscribers",
+      "Its public pages show neither award history nor price benchmarks by trade",
+      "No page per public buyer (a tender shows an owner line); PMRFP has 597 Ontario public buyer pages as of October 2026",
+      "Interface in English on every page checked in October 2026; PMRFP runs in English, French and Spanish",
     ],
     angle:
-      "ConstructConnect is for chasing new construction. PMRFP is for winning the recurring maintenance, renovation, and fit-out work from existing commercial property operators — a steadier, far more affordable market for most trades.",
+      "ConstructConnect is a broad construction information service: a big tender list, a planning-stage pipeline and a directory. PMRFP is narrower: building and property tenders from public buyers, property-manager RFPs, award history and price bands for your trade, with public prices. Both cover new work, alterations and maintenance. As of October 2026.",
     rows: [
-      { feature: "Annual price", pmrfp: PRICE, them: "Custom quote (reportedly ≈$1,500–$3,000+/yr)" },
-      { feature: "Opportunity type", pmrfp: "Existing-property RFPs", them: "New-build preconstruction" },
-      { feature: "Vendor directory", pmrfp: "Yes", them: "No" },
-      { feature: "Entry-level cost", pmrfp: "Low, flat", them: "High" },
+      { feature: "Price", pmrfp: "Trade Pro $29 CAD/month or $249 CAD/yr; public tenders free to browse", them: "Canada: no public price (sales form). U.S.: from US$129/month per market" },
+      { feature: "Public-sector tenders", pmrfp: "Free to browse", them: "Free to browse" },
+      { feature: "Private-sector work", pmrfp: "Property-manager RFPs are free to browse and to post. None is open right now (Oct 2026)", them: "Paid subscribers only (its wording)" },
+      { feature: "Tender list filters", pmrfp: "Trade, place, buyer type, closing window; value where stated", them: "Eight, including work type, building type and value range" },
+      { feature: "Owner contact on a tender", pmrfp: "Buyer website, bids page, procurement inbox and phone when we hold them (free); the person named on the notice is Trade Pro", them: "Owner address, phone and website on the tender page" },
+      { feature: "Documents, plan holders, bidders", pmrfp: "Not hosted: we link to the buyer's official page", them: "Paid, view-only" },
+      { feature: "Award history and price bands", pmrfp: "Award notices with winners and amounts where published; price bands by trade and province", them: "Not on its public pages" },
+      { feature: "Company directory", pmrfp: "Yes", them: "Yes (Construction Directory)" },
+      { feature: "Planned-project list", pmrfp: "Not yet", them: "Yes" },
+      { feature: "Languages", pmrfp: "English, French, Spanish", them: "English (every page checked)" },
     ],
     faqs: [
-      { q: "Which should a small trade choose?", a: "If you want affordable access to recurring commercial property work, PMRFP. If you have the budget to chase large new-build projects, ConstructConnect. They serve different needs." },
+      { q: "Is ConstructConnect only for new construction?", a: "No. As of October 2026 its Canadian tender list has a \"Service, Maintenance & Supply\" filter and many listings are marked \"SMS:\". It covers new construction, alterations and service work." },
+      { q: "Does ConstructConnect have a company directory?", a: "Yes. The Daily Commercial News site has a Construction Directory (checked October 2026)." },
+      { q: "Does PMRFP have private-sector work for free?", a: "Property-manager RFPs are free to browse and property managers post them free. None is open right now (October 2026), so what is available today is the public tenders. That is a difference in price, not a claim about volume." },
+      { q: "Which should a small trade choose?", a: "Browse the free tender lists on both and see which shows the work you bid on. ConstructConnect's Canadian price comes by sales form; PMRFP's is public." },
     ],
   },
   {
@@ -215,17 +243,17 @@ export const COMPETITORS: Competitor[] = [
     whatItIs:
       "Dodge tracks 750,000+ projects a year across North America for large GCs, suppliers, and subs pursuing preconstruction leads.",
     whoFor: "Large firms with enterprise budgets pursuing new-build leads.",
-    pricing: "≈US$6,000–$12,000+/yr per user",
+    pricing: "Quote only; no public price (checked Oct 2026)",
     strengths: ["Massive project database", "Deep intelligence", "Strong US coverage"],
     weaknesses: [
-      "Very expensive — more per year than many trades profit on a single job",
+      "Priced by quote only; no public price, so you cannot compare before a sales call",
       "US-centric; Canada coverage is secondary",
       "Overkill for small/mid trades; no vendor directory",
     ],
     angle:
-      "Dodge costs more per year than many small trades make on a single contract. PMRFP is purpose-built for the Canadian commercial property market at a tiny fraction of the price.",
+      "Dodge sells by quote only. PMRFP is built for the Canadian commercial property market and publishes its price: $249 CAD a year.",
     rows: [
-      { feature: "Annual price", pmrfp: PRICE, them: "≈US$6,000–$12,000+/yr" },
+      { feature: "Annual price", pmrfp: PRICE, them: "Quote only" },
       { feature: "Canada-native", pmrfp: "Yes", them: "US-primary" },
       { feature: "Small-trade accessible", pmrfp: "Yes", them: "No" },
       { feature: "Vendor directory", pmrfp: "Yes", them: "No" },
@@ -341,17 +369,17 @@ export const COMPETITORS: Competitor[] = [
     whatItIs:
       "BuildingConnected (owned by Autodesk) is a preconstruction network where GCs manage bid invites and subs receive invitations.",
     whoFor: "Mid-to-large GCs and the subs they invite, mostly in US commercial construction.",
-    pricing: "Subs free (reactive) or ≈US$149/mo; GCs ≈US$3,600–$5,000+/yr",
+    pricing: "Quote only; no public price (checked Oct 2026)",
     strengths: ["1M+ professionals", "Autodesk integration", "Industry standard in US commercial construction"],
     weaknesses: [
       "Reactive for subs — you wait to be invited",
       "US-centric; Canada secondary",
-      "Complex and costly for small shops",
+      "Priced by quote only; no public price",
     ],
     angle:
       "BuildingConnected requires someone to invite you. PMRFP lets you proactively list your company and respond to open RFPs from property managers — no waiting for an invitation.",
     rows: [
-      { feature: "Annual price", pmrfp: PRICE, them: "Free–≈US$149/mo (subs)" },
+      { feature: "Annual price", pmrfp: PRICE, them: "Quote only" },
       { feature: "Lead model", pmrfp: "Proactive — open RFPs", them: "Invitation-only" },
       { feature: "Canada coverage", pmrfp: "Canada-first", them: "US-primary" },
       { feature: "Vendor directory", pmrfp: "Yes", them: "No" },

@@ -2,6 +2,9 @@ import { RecordFooter } from "@/components/public/record-footer";
 import { SH2, SimplePage } from "@/components/v3/simple";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { BUYERS_PATH, type BuyerPage } from "@/lib/buyers/model";
+import { AND, joinList } from "@/lib/buyers/faq";
+import { postedOn } from "@/lib/buyers/posting";
+import { portalName } from "@/lib/gc/packages";
 import type { BuyerPermission } from "@/lib/buyers/permissions";
 import type { RfpListItem } from "@/lib/data/types";
 import { publicTenderSource } from "@/lib/tenders/sources";
@@ -46,6 +49,8 @@ export function TownPageView({
   const lang = getLang();
   const t = getT("towns").page;
   const tb = getT("buyers");
+  const ld = getT("listDepth");
+  const posted = postedOn(p).map((portal) => portalName(portal, lang));
   const home = getT("v3Pages").simple.home;
   const L = (path: string) => localizePath(path, lang);
   const town = p.town!;
@@ -111,6 +116,28 @@ export function TownPageView({
               </table>
             </div>
             <p className="small muted">{t.officialNote}</p>
+          </>
+        ) : p.buyer.tendersUrl ? (
+          // A bids page PMRFP already reads for this place (lib/buyers/posting): not "not known yet".
+          <>
+            <p data-where="official">{fmt(ld.where.official, { name: inSentence(name, lang) })}</p>
+            <div className="s-dtw">
+              <table className="s-dt" data-list="where">
+                <tbody>
+                  <tr>
+                    <th scope="row">{tb.page.official}</th>
+                    <td><a className="ext" href={p.buyer.tendersUrl} target="_blank" rel="noopener noreferrer nofollow" data-link="official">{p.buyer.tendersUrl.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="small muted">{t.officialNote}</p>
+          </>
+        ) : posted.length ? (
+          <>
+            <p data-where="posted-on">{fmt(ld.where.postedOn, { name: inSentence(name, lang), portal: joinList(posted, AND[lang] ?? "and") })}</p>
+            <p className="small muted">{t.officialNote}</p>
+            {!managed && !declined && <p className="small muted">{t.whereUnknownHint}</p>}
           </>
         ) : (
           <>

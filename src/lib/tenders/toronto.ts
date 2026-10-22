@@ -15,7 +15,7 @@
  * parts) are dropped: not work a building trade bids on.
  */
 import { parseCsv } from "./csv";
-import { CIVIL, EXCLUDE, RULES, clean, slugify } from "./shared";
+import { CIVIL, EXCLUDE, RULES, clean, cutTitle, slugify } from "./shared";
 import type { TenderInsert } from "./canadabuys";
 
 export const TORONTO_OPEN_URL =
@@ -144,7 +144,10 @@ function placeName(description: string): string | null {
   return m ? m[1] : null;
 }
 
-/** A board-ready title (max ~90 chars) for an open Toronto solicitation, or null. */
+/** Longest board title kept whole; longer ones are cut on a word boundary. */
+const TITLE_MAX = 120;
+
+/** A board-ready title (max ~120 chars) for an open Toronto solicitation, or null. */
 export function torontoTitle(description: string): string | null {
   let t = torontoLead(description);
   if (t.length < 12) return null;
@@ -156,9 +159,9 @@ export function torontoTitle(description: string): string | null {
   // "SITE WORK: concrete paving…": a shouted lead phrase, sentence-cased.
   t = t.replace(/^[A-Z][A-Z &/-]{3,}(?=[:\s])/, (m) => m.charAt(0) + m.slice(1).toLowerCase());
   t = t.charAt(0).toUpperCase() + t.slice(1);
-  if (t.length <= 90) return t;
-  const cut = t.slice(0, 89);
-  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 60)).replace(/[\s,;:(–-]+$/, "")}…`;
+  // 120 characters wrap to two lines on a card; the old 90 cut "…at various City of
+  // Toronto facilities" down to "…at various City…".
+  return cutTitle(t, TITLE_MAX);
 }
 
 // Hard civil: a building trade doesn't bid these, even in Construction Services.

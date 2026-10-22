@@ -4,7 +4,10 @@ import { RecordFooter } from "@/components/public/record-footer";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
 import { loadBuyers } from "@/lib/buyers/load";
 import { BUYERS_PATH, findBuyerPage, pageKind } from "@/lib/buyers/model";
-import { AND, buyerFaq, commercialOf, platformList } from "@/lib/buyers/faq";
+import { AND, buyerFaq, commercialOf, joinList, platformList } from "@/lib/buyers/faq";
+import { buyerOffice } from "@/lib/buyers/office";
+import { postedOn } from "@/lib/buyers/posting";
+import { portalName } from "@/lib/gc/packages";
 import { compactDollars } from "@/lib/data/fomo";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { benchmarkPath, insightsMarketPath } from "@/lib/insights/paths";
@@ -98,6 +101,19 @@ export default async function BuyerPageView({ params }: { params: Params }) {
   const province = regionName(p.province, lang);
   const and = AND[lang] ?? "and";
   const platform = platformList(b.platforms, t, and);
+  // "Where it posts" without a platform on file: its official bids page, else where its notices on PMRFP were posted.
+  const ld = getT("listDepth");
+  const posted = postedOn(p).map((portal) => portalName(portal, lang));
+  const whereText = platform
+    ? fmt(t.page.whereBody, { name, platform })
+    : b.tendersUrl
+      ? fmt(ld.where.official, { name })
+      : posted.length
+        ? fmt(ld.where.postedOn, { name, portal: joinList(posted, and) })
+        : fmt(t.page.whereUnknown, { name });
+  const platformFact = platform || (b.tendersUrl ? t.page.official : posted.length ? joinList(posted, and) : t.index.unknown);
+  // Free office details we hold (website, procurement inbox, phone); a verified buyer's own rows come from ManagedRows.
+  const office = buyerOffice(b, null);
   const commercial = commercialOf(p);
   const faq = buyerFaq(p, t, lang);
   const tradeBySlug = new Map(categories.map((c) => [c.slug, c.name]));
@@ -144,7 +160,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         }
       >
         <div className="s-facts">
-          <div><div className="k">{t.page.facts.platform}</div><div className="v" data-stat="platform">{platform || t.index.unknown}</div></div>
+          <div><div className="k">{t.page.facts.platform}</div><div className="v" data-stat="platform">{platformFact}</div></div>
           <div><div className="k">{t.page.facts.awards}</div><div className="v" data-stat="awards">{formatNumber(p.awards.count, lang)}</div></div>
           <div><div className="k">{t.page.facts.open}</div><div className="v" data-stat="open">{formatNumber(p.openBids.length, lang)}</div></div>
         </div>
@@ -153,7 +169,7 @@ export default async function BuyerPageView({ params }: { params: Params }) {
         {p.fromBoard && <p className="small muted" style={{ marginTop: 18 }}>{t.page.fromBoard}</p>}
 
         <SH2 no={++no} id="where">{fmt(t.page.whereTitle, { name })}</SH2>
-        <p>{platform ? fmt(t.page.whereBody, { name, platform }) : fmt(t.page.whereUnknown, { name })}</p>
+        <p data-where={platform ? "platform" : b.tendersUrl ? "official" : posted.length ? "posted-on" : "unknown"}>{whereText}</p>
         <div className="s-dtw">
           <table className="s-dt" data-list="where">
             <tbody>
@@ -170,10 +186,22 @@ export default async function BuyerPageView({ params }: { params: Params }) {
                   <td><a className="ext" href={b.portalUrl} target="_blank" rel="noopener noreferrer nofollow" data-link="portal">{b.portalUrl.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a></td>
                 </tr>
               )}
-              {b.email && (
+              {office?.website && (
+                <tr>
+                  <th scope="row">{ld.office.website}</th>
+                  <td><a className="ext" href={office.website} target="_blank" rel="noopener noreferrer nofollow" data-link="website">{office.website.replace(/^https?:\/\/(www\.)?/, "")}</a></td>
+                </tr>
+              )}
+              {(b.email ?? office?.procurementEmail) && (
                 <tr>
                   <th scope="row">{t.page.email}</th>
-                  <td><a href={`mailto:${b.email}`}>{b.email}</a></td>
+                  <td><a href={`mailto:${b.email ?? office?.procurementEmail}`}>{b.email ?? office?.procurementEmail}</a></td>
+                </tr>
+              )}
+              {office?.phone && (
+                <tr>
+                  <th scope="row">{ld.office.phone}</th>
+                  <td><a href={`tel:${office.phone.replace(/[^0-9+]/g, "")}`} data-office="phone">{office.phone}</a></td>
                 </tr>
               )}
             </tbody>

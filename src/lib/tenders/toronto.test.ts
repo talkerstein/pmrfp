@@ -29,7 +29,7 @@ describe("Toronto open bids: construction services", () => {
       "This Request for Tender (RFT) includes multiple State of Good Repair (SOGR) and capital construction projects at various City of Toronto facilities. The Work generally includes general construction, selective demolition, architectural renovations, structural and concrete rehabilitation, asphalt paving, mechanical and HVAC system upgrades, building automation system (BAS) upgrades, electrical modifications, accessibility improvements, site works, testing, commissioning, and all associated work.",
     );
     expect(torontoTitle(r["Solicitation Document Description"])).toBe(
-      "Multiple State of Good Repair (SOGR) and capital construction projects at various City…",
+      "Multiple State of Good Repair (SOGR) and capital construction projects at various City of Toronto facilities",
     );
     const trades = classifyToronto(r, TODAY);
     expect(trades[0]).toBe("general-contracting");
@@ -53,7 +53,7 @@ describe("Toronto open bids: construction services", () => {
       "This nRFP is an invitation by the City of Toronto (the �City�) to prospective Suppliers (the �Supplier�) to submit Bids for Construction Services for Dufferin Waste Management Facility Office Building at Dufferin Yard, as further described in Part 3 (the \"Deliverables\")",
     );
     expect(torontoTitle(r["Solicitation Document Description"])).toBe(
-      "Construction Services for Dufferin Waste Management Facility Office Building at Dufferin…",
+      "Construction Services for Dufferin Waste Management Facility Office Building at Dufferin Yard",
     );
     expect(classifyToronto(r, TODAY)).toEqual(["general-contracting"]);
 
@@ -174,12 +174,13 @@ describe("torontoToRfpInsert", () => {
     expect(ins.contact_email).toBeNull();
   });
 
-  it("caps titles near 90 characters on a word boundary", () => {
+  it("caps titles near 120 characters on a word boundary, never ending on a connector", () => {
     const t = torontoTitle(
-      "This RFQ is an invitation by the City of Toronto to prospective Suppliers to submit Bids for the replacement of the exterior envelope and windows at the North York Central Library and adjoining civic buildings.",
+      "This RFQ is an invitation by the City of Toronto to prospective Suppliers to submit Bids for the replacement of the exterior envelope and windows at the North York Central Library and adjoining civic buildings, including the parking structure and related site works.",
     )!;
-    expect(t.length).toBeLessThanOrEqual(90);
+    expect(t.length).toBeLessThanOrEqual(120);
     expect(t.endsWith("…")).toBe(true);
+    expect(t).not.toMatch(/(?:and|at|of|for|the|to|in|on|with|various)…$/i);
     expect(torontoLead("Request for Tenders (RFT) for Roof Replacement at Station 12. Please review all documentation")).toBe("Roof Replacement at Station 12");
   });
 });

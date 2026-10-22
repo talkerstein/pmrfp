@@ -19,15 +19,18 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatNumber } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 
-export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | undefined>> }): Promise<Metadata> {
   const { lang } = await params;
+  const sp = await searchParams;
   const l = hasLocale(lang) ? lang : "en";
   const t = getDictionary(l).directory.meta;
+  const filtered = Boolean(sp.category || sp.region || sp.propertyType || sp.verified || sp.q || sp.sort || (Number(sp.page) || 1) > 1);
   return {
     title: t.title,
     description: t.description,
-    // Filtered views (?category=, ?region=, ?q=, ?page=) are the same page to Google.
+    // Filtered views (?category=, ?region=, ?q=, ?page=) are the same listings re-cut: canonical to the directory, kept out of the index.
     alternates: alternatesFor(l, "/directory"),
+    ...(filtered ? { robots: { index: false, follow: true } } : {}),
   };
 }
 

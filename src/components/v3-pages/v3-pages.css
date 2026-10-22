@@ -101,6 +101,7 @@
 .vp-wins { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
 .pmrfp-v3 .vp-wins a { font-size: 14px; font-weight: 700; border: 1.5px solid #D5D7E6; background: #FFFFFF; color: var(--ink); border-radius: 999px; padding: 6px 13px; text-decoration: none; }
 .pmrfp-v3 .vp-wins a[aria-current] { background: var(--navy); border-color: var(--navy); color: #FFFFFF; }
+.pmrfp-v3 .vp-wins a .c { margin-left: 4px; font-weight: 600; opacity: .7; }
 .vp-trades { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
 .pmrfp-v3 .vp-trades a { text-decoration: none; color: var(--ink); border-radius: 10px; padding: 7px 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; row-gap: 5px; align-items: baseline; transition: background .2s ease; }
 .pmrfp-v3 .vp-trades a:hover { background: #F5F5FA; }

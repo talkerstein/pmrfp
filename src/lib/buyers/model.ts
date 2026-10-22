@@ -26,6 +26,7 @@ import { publicTenderSource } from "@/lib/tenders/sources";
 import type { RfpListItem } from "@/lib/data/types";
 import type { TownFacts } from "@/lib/towns/data";
 import { formalNameEn, formalNameFr, nameIn } from "@/lib/towns/names";
+import { knownBidsPage } from "./posting";
 import DIRECTORY_JSON from "./directory.json";
 
 export const BUYERS_PATH = "/buyers";
@@ -439,13 +440,15 @@ export function townOpenBids(needles: readonly TownNeedle[], open: readonly Open
 
 /** The directory-shaped buyer a town page renders (no research yet: no bids page, platforms or inbox). */
 export function townBuyer(t: TownFacts): DirectoryBuyer {
+  // A bids page PMRFP already reads for this place (the City of Toronto's portal) is not "not known yet".
+  const known = knownBidsPage(t.provinceCode, t.slug);
   return {
     name: formalNameEn(t),
     provinceCode: t.provinceCode,
     type: "municipality",
     group: "municipality",
-    tendersUrl: null,
-    platforms: [],
+    tendersUrl: known?.url ?? null,
+    platforms: known?.platforms ?? [],
     portalUrl: null,
     ownSiteList: false,
     email: null,
