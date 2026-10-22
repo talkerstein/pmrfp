@@ -66,6 +66,26 @@ export interface LocalClock {
 
 const WEEKDAY: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
+/**
+ * The next moment (at or after `from`) that is 13:00 Eastern on a weekday: a
+ * time when every North American zone is inside its 9:00–17:00 sending hours
+ * (10:00 Pacific, 14:00 Atlantic). For "what would the first run send?" in a
+ * dry run, which would otherwise be hidden behind quiet hours.
+ */
+export function nextSendWindow(from: Date): Date {
+  for (let d = 0; d < 9; d++) {
+    const day = new Date(from.getTime() + d * 86_400_000);
+    const c = localClock(day, DEFAULT_TIME_ZONE);
+    if (c.weekday === 0 || c.weekday === 6) continue;
+    // 13:00 local on that date: try the two offsets Eastern can have (EDT -4, EST -5).
+    for (const offset of [4, 5]) {
+      const at = new Date(`${c.date}T${String(13 + offset).padStart(2, "0")}:00:00Z`);
+      if (localClock(at, DEFAULT_TIME_ZONE).hour === 13 && at.getTime() >= from.getTime()) return at;
+    }
+  }
+  return from;
+}
+
 export function localClock(at: Date, timeZone: string = DEFAULT_TIME_ZONE): LocalClock {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,

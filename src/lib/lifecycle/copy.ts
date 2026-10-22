@@ -21,6 +21,8 @@ import { THIN_MARKET } from "@/lib/leads/match";
 import type { CountryCode } from "@/lib/visitor-geo";
 import type { Persona } from "./persona";
 import type { Missing } from "./rescue";
+import type { Block } from "./blocks";
+import { badgeBody, type BadgeBodyStep, type BadgeCopy } from "./badge-copy";
 import { LIFECYCLE_ADDRESS, LIFECYCLE_SENDER, LIFECYCLE_UTM_SOURCE, isRescueStep, isTrialStep, type StepId } from "./config";
 
 /** Regular Trade Pro, CAD a year (lib/site PRICING.proAnnual; billed in CAD only). */
@@ -43,7 +45,8 @@ export interface CopyData {
   /** Up to 3 real lead titles (free view). */
   leadTitles: string[];
   hasProject: boolean;
-  hasBadge: boolean;
+  /** The badge lane's facts (lib/lifecycle/badge-copy). Unset for steps that don't use it. */
+  badge?: BadgeCopy | null;
   /** Their trades with a priced range in their province (what Pro unlocks). */
   proBenchmarks: number;
   benchmark: {
@@ -83,8 +86,6 @@ export interface RenderedEmail {
   /** Words before the footer (the < 150 rule). */
   words: number;
 }
-
-type Block = { p: string } | { list: string[] } | { link: { label: string; url: string } };
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -129,6 +130,14 @@ export const PATHS = {
   settings: "/dashboard/settings",
 } as const;
 
+/**
+ * The static picture of the badge in the badge emails: renderListedBadge()'s
+ * light "Listed on pmrfp.com" seal, rasterized once (sharp, 3x, shown at
+ * 214x54). A PNG because Gmail and Outlook don't draw SVG, and a static file
+ * so an email open never counts as a badge load (lib/badge/respond).
+ */
+export const BADGE_PREVIEW_PATH = "/images/badge-listed-preview.png";
+
 /** Our link: localized and tagged utm_source=lifecycle&utm_medium=email&utm_campaign=<step>. */
 export function lifecycleUrl(base: string, path: string, lang: Locale, step: StepId): string {
   return emailUtmUrl(`${base.replace(/\/+$/, "")}${localizePath(path, lang)}`, step, false, LIFECYCLE_UTM_SOURCE);
@@ -171,12 +180,9 @@ interface Strings {
   };
   getFound: {
     subject: string;
-    introTwo: string;
-    introOne: string;
+    intro: string;
     project: string;
     projectCta: string;
-    badge: string;
-    badgeCta: string;
   };
   trialOffer: {
     subject: string;
@@ -279,13 +285,10 @@ const EN: Strings = {
     noTrades: "You haven't picked your trades yet, so there's nothing to match. It takes two minutes.",
   },
   getFound: {
-    subject: "Free ways to get found by property managers",
-    introTwo: "Property managers hire trades they can check. Two free things help most:",
-    introOne: "Property managers hire trades they can check. One free thing helps a lot:",
+    subject: "A free way to get found by property managers",
+    intro: "Property managers hire trades they can check. One free thing helps a lot:",
     project: "Add a project: before-and-after photos and one sentence. PMRFP writes it up for your profile.",
     projectCta: "Add a project",
-    badge: "Put the PMRFP badge on your website. It shows visitors you're listed and links to your profile, projects and reviews.",
-    badgeCta: "Get your badge",
   },
   trialOffer: {
     subject: "Try Trade Pro free for 14 days",
@@ -416,13 +419,10 @@ const FR: Strings = {
     noTrades: "Vous n'avez pas encore choisi vos corps de métier, donc il n'y a rien à jumeler. Ça prend deux minutes.",
   },
   getFound: {
-    subject: "Des façons gratuites de vous faire trouver",
-    introTwo: "Les gestionnaires immobiliers embauchent des entrepreneurs qu'ils peuvent vérifier. Deux choses gratuites aident le plus :",
-    introOne: "Les gestionnaires immobiliers embauchent des entrepreneurs qu'ils peuvent vérifier. Une chose gratuite aide beaucoup :",
+    subject: "Une façon gratuite de vous faire trouver",
+    intro: "Les gestionnaires immobiliers embauchent des entrepreneurs qu'ils peuvent vérifier. Une chose gratuite aide beaucoup :",
     project: "Ajoutez un projet : des photos avant-après et une phrase. PMRFP rédige le reste pour votre profil.",
     projectCta: "Ajouter un projet",
-    badge: "Mettez le badge PMRFP sur votre site Web. Il montre aux visiteurs que vous êtes inscrit et mène à votre profil, vos projets et vos avis.",
-    badgeCta: "Obtenir votre badge",
   },
   trialOffer: {
     subject: "Essayez Trade Pro gratuitement pendant 14 jours",
@@ -554,13 +554,10 @@ const ES: Strings = {
     noTrades: "Todavía no eligió sus oficios, así que no hay nada que buscar. Toma dos minutos.",
   },
   getFound: {
-    subject: "Formas gratuitas de que lo encuentren",
-    introTwo: "Los administradores de propiedades contratan a quienes pueden verificar. Dos cosas gratuitas ayudan más:",
-    introOne: "Los administradores de propiedades contratan a quienes pueden verificar. Una cosa gratuita ayuda mucho:",
+    subject: "Una forma gratuita de que lo encuentren",
+    intro: "Los administradores de propiedades contratan a quienes pueden verificar. Una cosa gratuita ayuda mucho:",
     project: "Agregue un proyecto: fotos de antes y después y una frase. PMRFP redacta el resto para su perfil.",
     projectCta: "Agregar un proyecto",
-    badge: "Ponga la insignia de PMRFP en su sitio web. Muestra a los visitantes que está registrado y lleva a su perfil, sus proyectos y sus reseñas.",
-    badgeCta: "Obtener su insignia",
   },
   trialOffer: {
     subject: "Pruebe Trade Pro gratis durante 14 días",
@@ -816,7 +813,7 @@ export function countryArea(country: CountryCode, lang: Locale): string {
 
 /* ------------------------------------------------------------------ steps */
 
-function body(step: StepId, d: CopyData, url: (path: string) => string): { subject: string; blocks: Block[] } {
+function body(step: StepId, d: CopyData, url: (path: string) => string, base: string): { subject: string; blocks: Block[] } {
   const s = STRINGS[d.lang];
   const trades = d.trades.length ? joinList(d.trades.slice(0, 3), d.lang) : "";
   const firstTrade = d.trades[0] ?? "";
@@ -899,12 +896,20 @@ function body(step: StepId, d: CopyData, url: (path: string) => string): { subje
       return { subject: m.subject(firstTrade, d.area), blocks };
     }
     case "get_found": {
+      // The badge has its own email (badge-copy); this one is about adding a project.
       const g = s.getFound;
-      const todo: Block[] = [];
-      if (!d.hasProject) todo.push({ p: g.project }, link(g.projectCta, PATHS.projectNew));
-      if (!d.hasBadge) todo.push({ p: g.badge }, link(g.badgeCta, PATHS.badge));
-      return { subject: g.subject, blocks: [{ p: todo.length > 2 ? g.introTwo : g.introOne }, ...todo] };
+      return { subject: g.subject, blocks: [{ p: g.intro }, { p: g.project }, link(g.projectCta, PATHS.projectNew)] };
     }
+    case "badge":
+    case "badge_reminder":
+    case "badge_thanks":
+    case "welcome_back":
+      return badgeBody(step as BadgeBodyStep, d, {
+        base,
+        url,
+        previewUrl: `${base}${BADGE_PREVIEW_PATH}`,
+        paths: { badge: PATHS.badge, company: PATHS.company },
+      });
     case "trial_offer": {
       const t = s.trialOffer;
       const total = d.market.total;
@@ -1025,7 +1030,7 @@ const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial
 export function renderStep(step: StepId, d: CopyData, ctx: RenderContext): RenderedEmail {
   const s = STRINGS[d.lang];
   const url = (path: string) => lifecycleUrl(ctx.base, path, d.lang, step);
-  const { subject, blocks } = body(step, d, url);
+  const { subject, blocks } = body(step, d, url, ctx.base.replace(/\/+$/, ""));
   const all: Block[] = [{ p: s.hi(d.firstName) }, ...blocks];
 
   // Text first. French puts a space before the colon.
@@ -1042,6 +1047,12 @@ export function renderStep(step: StepId, d: CopyData, ctx: RenderContext): Rende
         wordLines.push(li);
       }
       textLines.push("");
+    } else if ("code" in b) {
+      // Copy-paste code: indented, and not part of the word count.
+      for (const line of b.code.split("\n")) textLines.push(`  ${line}`);
+      textLines.push("");
+    } else if ("img" in b) {
+      // Pictures are for the HTML version only.
     } else {
       textLines.push(`${b.link.label}${colon} ${b.link.url}`, "");
       wordLines.push(b.link.label);
@@ -1059,6 +1070,12 @@ export function renderStep(step: StepId, d: CopyData, ctx: RenderContext): Rende
     .map((b) => {
       if ("p" in b) return p(esc(b.p));
       if ("list" in b) return `<ul style="margin:0 0 16px;padding-left:20px">${b.list.map((li) => `<li style="margin:0 0 6px">${esc(li)}</li>`).join("")}</ul>`;
+      if ("code" in b) {
+        return `<pre style="margin:0 0 16px;padding:12px;background:#F4F5FA;border:1px solid #E6E8F0;border-radius:6px;font-family:Consolas,Menlo,monospace;font-size:12px;line-height:18px;color:#1B1E45;white-space:pre-wrap;word-break:break-all">${esc(b.code)}</pre>`;
+      }
+      if ("img" in b) {
+        return p(`<img src="${esc(b.img.src)}" alt="${esc(b.img.alt)}" width="${b.img.width}" height="${b.img.height}" style="display:block;border:0;width:${b.img.width}px;max-width:100%;height:auto">`);
+      }
       return p(`<a href="${esc(b.link.url)}" style="color:#282B59;font-weight:600">${esc(b.link.label)}</a>`);
     })
     .join("\n");
@@ -1088,12 +1105,30 @@ const SAMPLE_TITLES: Record<CountryCode, string[]> = {
   US: ["Roof replacement, county courthouse annex (Travis County)", "New 240-unit multifamily project, Austin: permit issued", "HVAC retrofit, city library branches (awarded)"],
 };
 
+/** The badge lane's sample: a real-looking slug and site; the reward line only when asked for (the live flag, or the admin preview toggle). */
+function sampleBadgeCopy(step: StepId, ca: boolean, opts: { reward?: boolean; website?: boolean }): BadgeCopy {
+  const site = ca ? "northlineroofing.ca" : "lonestarroofing.com";
+  const endsAt = new Date(Date.now() + 14 * 86_400_000).toISOString();
+  return {
+    slug: ca ? "northline-roofing" : "lone-star-roofing",
+    website: opts.website === false ? null : site,
+    detectedDomain: site,
+    reward: opts.reward ? { state: step === "badge_thanks" ? "granted" : "offer", days: 14, endsAt } : null,
+  };
+}
+
 /**
  * Sample data for the admin preview and the brief: plausible, clearly a
  * preview (the cron never uses it). Country-consistent: a Canadian sample is
  * Ontario + CAD, a U.S. sample Texas + USD.
  */
-export function sampleCopyData(step: StepId, lang: Locale, country: CountryCode = "CA", persona: Persona = "specialty"): CopyData {
+export function sampleCopyData(
+  step: StepId,
+  lang: Locale,
+  country: CountryCode = "CA",
+  persona: Persona = "specialty",
+  opts: { reward?: boolean; website?: boolean } = {},
+): CopyData {
   const ca = country === "CA";
   const trades = lang === "fr" ? ["Toiture", "CVC"] : lang === "es" ? ["Techos", "HVAC"] : ["Roofing", "HVAC"];
   const province = ca ? "Ontario" : "Texas";
@@ -1112,7 +1147,7 @@ export function sampleCopyData(step: StepId, lang: Locale, country: CountryCode 
     market: { openBids: 6, projects: 9, winners: 4, packages: 2, total: 21 },
     leadTitles: SAMPLE_TITLES[country],
     hasProject: false,
-    hasBadge: false,
+    badge: sampleBadgeCopy(step, ca, opts),
     proBenchmarks: 2,
     benchmark: {
       trade: trades[0],

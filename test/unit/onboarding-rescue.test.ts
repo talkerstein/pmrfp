@@ -393,9 +393,12 @@ describe("onboarding rescue engine", () => {
     for (const k of Object.keys(authUsers)) delete authUsers[k];
     Object.assign(tables, { lifecycle_sends: [], organization_members: [], trade_trials: [], organizations: [], users_profile: [profile()] });
     authUsers.u9 = { email_confirmed_at: signedUp, app_metadata: { provider: "email" }, user_metadata: { pref_categories: ["roofing"], pref_company: "Northline Roofing" } };
+    // Real sends need the unsubscribe signing secret (the run refuses to send without one).
+    process.env.UNSUBSCRIBE_SECRET = "test-secret";
   });
   afterEach(() => {
     delete process.env.LIFECYCLE_EMAILS_ENABLED;
+    delete process.env.UNSUBSCRIBE_SECRET;
   });
 
   it("flag off: nothing sends, nothing is written", async () => {

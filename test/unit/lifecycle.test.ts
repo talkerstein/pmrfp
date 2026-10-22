@@ -90,10 +90,11 @@ describe("lifecycle scheduling", () => {
 });
 
 describe("lifecycle skip rules (behaviour-based)", () => {
-  it("skips get-found when the company has a project AND the badge", () => {
+  it("skips get-found when the company already has a project (the badge has its own email now)", () => {
     const at = (f: Partial<MemberFacts>) => decide(member({ joinedDaysAgo: 3, recorded: allBefore("get_found"), facts: facts(f) }), TUE_2PM_ET);
     expect(at({ projects: 1, badgeInstalled: true })).toEqual({ action: "skip", step: "get_found", reason: "profile_done" });
-    expect(at({ projects: 1, badgeInstalled: false }).action).toBe("send");
+    expect(at({ projects: 1, badgeInstalled: false })).toEqual({ action: "skip", step: "get_found", reason: "profile_done" });
+    expect(at({ projects: 0, badgeInstalled: true }).action).toBe("send");
   });
 
   it("skips the benchmark teaser without n ≥ 5 priced awards", () => {

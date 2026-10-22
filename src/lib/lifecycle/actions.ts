@@ -19,9 +19,14 @@ export async function sendLifecycleTestAction(formData: FormData): Promise<void>
   const lang = formData.get("lang");
   const country = formData.get("country") === "US" ? "US" : "CA";
   const persona = PERSONAS.find((p) => p === formData.get("persona")) ?? "specialty";
+  // The badge emails' preview switches: the reward line, and a company with no website.
+  const reward = formData.get("reward") === "1" ? true : formData.get("reward") === "0" ? false : undefined;
+  const website = formData.get("website") === "0" ? false : undefined;
   if (!isStepId(step) || !isEnabledLocale(lang)) redirect("/admin/lifecycle?test=bad");
-  const back = `/admin/lifecycle?step=${step}&lang=${lang}&country=${country}&persona=${persona}`;
+  const back =
+    `/admin/lifecycle?step=${step}&lang=${lang}&country=${country}&persona=${persona}` +
+    `${reward === undefined ? "" : `&reward=${reward ? 1 : 0}`}${website === false ? "&website=0" : ""}`;
   if (isDemoMode() || !session.profile.email) redirect(`${back}&test=demo`);
-  const res = await sendTestToAdmin({ to: session.profile.email, userId: session.userId, step, lang, country, persona });
+  const res = await sendTestToAdmin({ to: session.profile.email, userId: session.userId, step, lang, country, persona, reward, website });
   redirect(`${back}&test=${res.ok ? "sent" : "failed"}`);
 }

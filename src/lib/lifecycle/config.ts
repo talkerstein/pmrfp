@@ -15,6 +15,23 @@
  * Everything stops on upgrade (paid Pro / Featured / lifetime),
  * unsubscribe, bounce or complaint.
  *
+ * The BADGE lane runs beside either track (lib/lifecycle/schedule):
+ *   badge          right after the profile is approved (after the welcome,
+ *                  before "market"): a "Listed on PMRFP" badge for the
+ *                  company's website, honest about why it helps
+ *   badge_reminder 7 days after the badge email, ONLY if no install was
+ *                  detected (the badge loading from the company's own
+ *                  website on 2 different days); then nothing more
+ *   badge_thanks   once, when that install is first detected
+ *   welcome_back   the ONE catch-up email for accounts that existed before
+ *                  LIFECYCLE_START_AT (below): a short welcome-back + badge
+ *
+ * LIFECYCLE_START_AT (an ISO date, unset = off) is the go-live cutoff. Unset,
+ * everything works as before. Set, a company that joined before it gets no
+ * welcome / market / get_found / … catch-up and no pending-review note, only
+ * welcome_back (once, when approved) and badge_thanks; the normal sequence is
+ * for companies that joined, or were approved, at or after the cutoff.
+ *
  * Before any of that, the ONBOARDING RESCUE track (lib/lifecycle/rescue) is
  * for trade accounts that never finished onboarding (no company yet), so
  * never reach the welcome:
@@ -46,11 +63,30 @@ export const TRIAL_STEPS = ["trial_day1", "trial_day7", "trial_day12", "trial_ex
 export const RESCUE_STEPS = ["rescue_2h", "rescue_1d", "rescue_3d"] as const;
 /** One-off: a new company whose profile waits in pending_review. */
 export const REVIEW_STEP = "review_pending" as const;
-export const STEPS = [...RESCUE_STEPS, REVIEW_STEP, ...FREE_STEPS, ...TRIAL_STEPS] as const;
+/** The badge lane (runs beside the free and trial tracks; see the header). */
+export const BADGE_STEPS = ["badge", "badge_reminder", "badge_thanks", "welcome_back"] as const;
+/** Every step, in the order the admin funnel shows them (the badge email sits after the welcome). */
+export const STEPS = [
+  ...RESCUE_STEPS,
+  REVIEW_STEP,
+  "welcome",
+  "badge",
+  "market",
+  "get_found",
+  "trial_offer",
+  "benchmark",
+  "community",
+  "founding",
+  "badge_reminder",
+  "badge_thanks",
+  "welcome_back",
+  ...TRIAL_STEPS,
+] as const;
 
 export type FreeStep = (typeof FREE_STEPS)[number];
 export type TrialStep = (typeof TRIAL_STEPS)[number];
 export type RescueStep = (typeof RESCUE_STEPS)[number];
+export type BadgeStep = (typeof BADGE_STEPS)[number];
 export type StepId = (typeof STEPS)[number];
 
 export function isStepId(v: unknown): v is StepId {
@@ -59,6 +95,7 @@ export function isStepId(v: unknown): v is StepId {
 
 export const isTrialStep = (s: StepId): s is TrialStep => (TRIAL_STEPS as readonly string[]).includes(s);
 export const isRescueStep = (s: StepId): s is RescueStep => (RESCUE_STEPS as readonly string[]).includes(s);
+export const isBadgeStep = (s: StepId): s is BadgeStep => (BADGE_STEPS as readonly string[]).includes(s);
 
 /** Admin labels. */
 export const STEP_LABEL: Record<StepId, string> = {
@@ -67,12 +104,16 @@ export const STEP_LABEL: Record<StepId, string> = {
   rescue_3d: "Rescue +3 days · Want us to set it up? (last)",
   review_pending: "Pending review · We're reviewing your profile",
   welcome: "Day 0 · Welcome + finish profile",
+  badge: "On approval · Put the badge on your website",
   market: "Day 1 · Your market",
-  get_found: "Day 3 · Get found (project + badge)",
+  get_found: "Day 3 · Get found (add a project)",
   trial_offer: "Day 5 · Start the free trial",
   benchmark: "Day 8 · What similar jobs sold for",
   community: "Day 12 · Forum + reputation",
   founding: "Day 16 · Founding 500 offer",
+  badge_reminder: "Badge +7 days · Reminder (only if not installed)",
+  badge_thanks: "Badge detected · Thanks, we see it on your site",
+  welcome_back: "Go-live catch-up · Welcome back + badge (one only)",
   trial_day1: "Trial day 1 · How to use leads + alerts",
   trial_day7: "Trial day 7 · What you've seen so far",
   trial_day12: "Trial day 12 · 2 days left + offer",
@@ -126,6 +167,52 @@ export const RESCUE_HORIZON_MS = 8 * D;
 export const REVIEW_WINDOW_MS = 3 * D;
 
 /**
+ * The badge lane, same never-late rule as the tracks above.
+ *   badge          from the profile's approval (its approved_at, else when the
+ *                  member joined): due half an hour later so the badge page
+ *                  resolves the new listing, open for 5 days (like the free
+ *                  steps: a company approved a week ago is not "right
+ *                  after approval", and turning the flag on can't blast it). For the
+ *                  welcome_back catch-up the clock starts at go-live instead.
+ *   badge_reminder from the day the badge email went out: due 7 days later,
+ *                  open for 7 more (a one-a-day clash can push it a few days)
+ *   badge_thanks   from the day the install was first detected, open 14 days
+ *   welcome_back   from go-live (or the approval, if later), open 21 days:
+ *                  the sending gates and LIFECYCLE_MAX_PER_DAY spread it out
+ */
+export const BADGE_WINDOWS = {
+  badge: { dueMs: H / 2, graceMs: 5 * D },
+  badge_reminder: { dueMs: 7 * D, graceMs: 7 * D },
+  badge_thanks: { graceMs: 14 * D },
+  welcome_back: { dueMs: 0, graceMs: 21 * D },
+} as const;
+
+export type StartAtSetting = { kind: "off" } | { kind: "on"; at: Date } | { kind: "invalid"; raw: string };
+
+/**
+ * LIFECYCLE_START_AT: the go-live cutoff, an ISO date ("2026-10-23" or
+ * "2026-10-23T09:00:00-04:00"). Unset or empty = off (today's behaviour). A
+ * value that isn't a date is "invalid", and the run refuses to go rather than
+ * guess (guessing "off" would let the old accounts catch up in a burst).
+ */
+export function lifecycleStartAt(env: string | undefined = process.env.LIFECYCLE_START_AT): StartAtSetting {
+  const raw = (env ?? "").trim();
+  if (!raw) return { kind: "off" };
+  const t = /^\d{4}-\d{2}-\d{2}/.test(raw) ? Date.parse(raw) : NaN;
+  return Number.isFinite(t) ? { kind: "on", at: new Date(t) } : { kind: "invalid", raw };
+}
+
+/**
+ * LIFECYCLE_MAX_PER_DAY: a ceiling on lifecycle emails sent in any rolling 24
+ * hours (counted from lifecycle_sends), so a go-live wave can't outrun the
+ * Resend plan. Unset, empty or not a positive whole number = no ceiling.
+ */
+export function lifecycleMaxPerDay(env: string | undefined = process.env.LIFECYCLE_MAX_PER_DAY): number | null {
+  const n = Number((env ?? "").trim());
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/**
  * Relaxed hours for the two "you just did something" emails (rescue_2h and
  * review_pending): 8:00 to 20:00 local Monday to Thursday, so someone who
  * signs up at 4pm hears back the same evening. Friday keeps the normal
@@ -148,6 +235,16 @@ export const SEND_WEEKDAYS: ReadonlySet<number> = new Set([1, 2, 3, 4, 5]);
 /** Per cron run. The cron runs hourly, so a day can send far more. */
 export const MAX_SENDS_PER_RUN = 150;
 export const MAX_MEMBERS_PER_RUN = 3000;
+
+/**
+ * Resend's API answers 429 above its per-second limit (2 requests a second by
+ * default), and a 429 would be recorded as a failed step that never retries.
+ * So real sends in one run are spaced this far apart (about 1.7 a second), and
+ * a run stops starting new sends after RUN_TIME_BUDGET_MS (the route's
+ * maxDuration is 60 s): whoever is left goes out on the next hourly run.
+ */
+export const SEND_GAP_MS = 600;
+export const RUN_TIME_BUDGET_MS = 50_000;
 
 /** Benchmark teaser only with at least this many priced awards (lib/data/price-benchmarks MIN_RANGE_AWARDS). */
 export const BENCHMARK_MIN_AWARDS = 5;

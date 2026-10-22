@@ -7,6 +7,9 @@ import { EmptyState } from "@/components/public/empty-state";
 import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { setLangFrom } from "@/i18n/server";
+import { INSTALL_MIN_DAYS } from "@/lib/badge/install";
+import { listCompanyBadgeStatus, type CompanyBadgeRow, type CompanyBadgeState } from "@/lib/badge/server";
+import { badgeRewardEnabled } from "@/lib/badge/reward";
 
 export const metadata: Metadata = { title: "Badge installs · Admin · PMRFP" };
 
@@ -28,6 +31,16 @@ interface Install {
   first: string;
   last: string;
 }
+
+const STATE_LABEL: Record<CompanyBadgeState, string> = {
+  installed: "Detected on its own site",
+  other_sites: "Seen, but not on its own site",
+  not_detected: "Not detected",
+  no_website: "No website on its profile",
+  pending: "Profile not approved yet",
+};
+
+const sendText = (s: CompanyBadgeRow["sends"][keyof CompanyBadgeRow["sends"]]) => (s ? `${s.status} ${s.sentAt.slice(0, 10)}` : "—");
 
 const KIND: Record<HitRow["kind"], string> = { listed: "Directory", winner: "Contract winner", karma: "Reputation" };
 /** YYYY-MM-DD, `days` ago. */
@@ -52,6 +65,9 @@ export default async function BadgeInstallsPage({ params, searchParams }: { para
 
   let rows: HitRow[] = [];
   let missing = false;
+  let companies: CompanyBadgeRow[] = [];
+  let companiesError: string | null = null;
+  if (!demo) ({ rows: companies, error: companiesError } = await listCompanyBadgeStatus());
   if (!demo) {
     const { data, error } = await createServiceClient()
       .from("badge_hits")
@@ -77,6 +93,10 @@ export default async function BadgeInstallsPage({ params, searchParams }: { para
   const sites = new Set(installs.filter((i) => i.referrer).map((i) => i.referrer)).size;
   const total = installs.reduce((s, i) => s + i.hits, 0);
 
+  const installed = companies.filter((c) => c.state === "installed").length;
+  const approved = companies.filter((c) => c.state !== "pending").length;
+  const rewardOn = badgeRewardEnabled();
+
   return (
     <>
       <PageHeader
@@ -96,6 +116,39 @@ export default async function BadgeInstallsPage({ params, searchParams }: { para
           </a>
         ))}
       </p>
+      <h2 className="mb-2 mt-6 text-base font-semibold">Companies</h2>
+      <p className="mb-2 text-xs text-muted-foreground">
+        A company counts as installed when its badge loads from a page on its own website (the domain on its profile) on at least {INSTALL_MIN_DAYS} different days.
+        Loads with no referrer, or from other sites, are never counted. {installed} of {approved} approved companies are detected.
+        Reward (BADGE_REWARD_ENABLED): {rewardOn ? "on" : "off"}.
+      </p>
+      {companiesError ? (
+        <p className="mb-2 text-sm text-amber-900">Couldn&apos;t load companies: {companiesError}</p>
+      ) : companies.length === 0 ? (
+        <p className="mb-2 text-sm text-muted-foreground">{demo ? "Demo mode: no data." : "No trade companies yet."}</p>
+      ) : (
+        <AdminTable columns={["Company", "Website", "Status", "Days on own site", "Last seen", "Badge email", "Reminder", "Thanks", "Reward"]}>
+          {companies.map((c) => (
+            <TableRow key={c.orgId}>
+              <TableCell className="text-xs font-medium"><a href={`/directory/${c.slug}`} className="hover:underline">{c.name}</a></TableCell>
+              <TableCell className="text-xs">{c.install.domain ?? <span className="text-muted-foreground">none</span>}</TableCell>
+              <TableCell className={`text-xs ${c.state === "installed" ? "font-semibold text-teal-700" : ""}`}>
+                {STATE_LABEL[c.state]}
+                {c.state === "other_sites" && c.install.otherSites.length > 0 ? ` (${c.install.otherSites.slice(0, 2).join(", ")})` : ""}
+                {c.state === "other_sites" && c.install.days === 1 ? " · 1 day on its own site so far" : ""}
+              </TableCell>
+              <TableCell className="text-xs">{c.install.days}</TableCell>
+              <TableCell className="text-xs">{c.install.lastDay ?? "—"}</TableCell>
+              <TableCell className="text-xs">{sendText(c.sends.badge ?? c.sends.welcome_back)}</TableCell>
+              <TableCell className="text-xs">{sendText(c.sends.badge_reminder)}</TableCell>
+              <TableCell className="text-xs">{sendText(c.sends.badge_thanks)}</TableCell>
+              <TableCell className="text-xs">{c.reward ? `${c.reward.kind}, Pro to ${c.reward.endsAt.slice(0, 10)}` : c.paid ? "paying" : "—"}</TableCell>
+            </TableRow>
+          ))}
+        </AdminTable>
+      )}
+
+      <h2 className="mb-2 mt-8 text-base font-semibold">Every website loading a badge</h2>
       {installs.length === 0 ? (
         <EmptyState title="No badge loads yet" description="Once a company pastes a badge on its site, the site shows up here within a few minutes of its first visitor." />
       ) : (
