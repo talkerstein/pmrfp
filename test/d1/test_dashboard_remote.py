@@ -56,7 +56,7 @@ class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
     def test_generated_dashboard_query_is_read_only_and_complete(self):
         query=d.sql(self.cat)
         self.assertIn('REPEATABLE READ READ ONLY',query);self.assertIn('md5(rows)',query)
-        self.assertEqual(query.count(' AS table_name,'),86)
+        self.assertEqual(query.count(' AS table_name,'),len(self.specs))
         self.assertNotIn('raw_user_meta_data',query);self.assertNotIn('encrypted_password',query)
 
 if __name__=='__main__':unittest.main()

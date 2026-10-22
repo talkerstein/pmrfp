@@ -1,12 +1,26 @@
 {
   "tables": {
+    "buyer_pages": [
+      "src/app/[lang]/(marketing)/widgets/page.tsx:55",
+      "src/app/[lang]/admin/buyer-sources/page.tsx:122",
+      "src/lib/follows/alerts-server.ts:131",
+      "src/lib/town-jobs/results-server.ts:229",
+      "src/lib/town-jobs/server.ts:110",
+      "src/lib/towns/actions.ts:171",
+      "src/lib/towns/actions.ts:178",
+      "src/lib/towns/claims.ts:60",
+      "src/lib/towns/claims.ts:75",
+      "src/lib/towns/claims.ts:160",
+      "src/lib/towns/claims.ts:293",
+      "src/lib/towns/dashboard-data.ts:49"
+    ],
     "contact_requests": [
       "src/app/[lang]/(v3)/advertise/actions.ts:121",
       "src/app/[lang]/admin/contact-requests/page.tsx:35",
       "src/app/api/bid-help/route.ts:62",
       "src/app/api/contact/route.ts:41",
-      "src/app/api/cron/admin-weekly/route.ts:50",
-      "src/app/api/trusted/quote/route.ts:68"
+      "src/app/api/cron/admin-weekly/route.ts:55",
+      "src/app/api/trusted/quote/route.ts:69"
     ],
     "sponsors": [
       "src/app/[lang]/(v3)/advertise/actions.ts:200",
@@ -44,6 +58,71 @@
       "src/lib/karma/sync.ts:80",
       "src/lib/karma/sync.ts:273"
     ],
+    "rfp_posts": [
+      "src/app/[lang]/(v3)/rfps/[slug]/page.tsx:162",
+      "src/app/[lang]/admin/page.tsx:69",
+      "src/app/[lang]/admin/page.tsx:73",
+      "src/app/[lang]/admin/rfps/page.tsx:70",
+      "src/app/[lang]/admin/rfps/page.tsx:80",
+      "src/app/[lang]/admin/rfps/page.tsx:87",
+      "src/app/[lang]/admin/sealed/page.tsx:38",
+      "src/app/[lang]/dashboard/interests/page.tsx:70",
+      "src/app/[lang]/pm-dashboard/page.tsx:46",
+      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:107",
+      "src/app/[lang]/pm-dashboard/rfps/page.tsx:54",
+      "src/app/api/cron/admin-weekly/route.ts:45",
+      "src/app/api/cron/admin-weekly/route.ts:50",
+      "src/app/api/cron/admin-weekly/route.ts:52",
+      "src/app/api/cron/bid-checks/route.ts:52",
+      "src/app/api/cron/bid-checks/route.ts:79",
+      "src/app/api/cron/pm-job-alerts/route.ts:37",
+      "src/app/api/cron/rfp-alerts/route.ts:76",
+      "src/app/api/cron/rfp-alerts/route.ts:281",
+      "src/app/api/cron/rfp-expiry/route.ts:37",
+      "src/app/api/cron/rfp-expiry/route.ts:47",
+      "src/app/api/cron/rfp-expiry/route.ts:56",
+      "src/app/api/cron/rfp-expiry/route.ts:78",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:44",
+      "src/app/api/cron/saved-rfp-alerts/route.ts:51",
+      "src/app/api/cron/tender-digest/route.ts:72",
+      "src/app/api/rfp/keep-alive/route.ts:25",
+      "src/app/api/rfp/keep-alive/route.ts:32",
+      "src/app/api/rfp/keep-alive/route.ts:43",
+      "src/lib/admin/rfp-actions.ts:40",
+      "src/lib/admin/rfp-actions.ts:110",
+      "src/lib/dashboard/actions.ts:239",
+      "src/lib/dashboard/actions.ts:257",
+      "src/lib/dashboard/actions.ts:396",
+      "src/lib/data/rfps.ts:261",
+      "src/lib/data/rfps.ts:284",
+      "src/lib/embed/data.ts:61",
+      "src/lib/follows/alerts-server.ts:100",
+      "src/lib/forum/auto-threads-server.ts:101",
+      "src/lib/karma/sync.ts:94",
+      "src/lib/pm-jobs/decisions.ts:55",
+      "src/lib/pm-jobs/decisions.ts:257",
+      "src/lib/pm-jobs/server.ts:132",
+      "src/lib/pm-jobs/server.ts:135",
+      "src/lib/pm-jobs/server.ts:383",
+      "src/lib/pm-jobs/server.ts:412",
+      "src/lib/tenders/sync.ts:197",
+      "src/lib/tenders/sync.ts:207",
+      "src/lib/tenders/sync.ts:227",
+      "src/lib/tenders/sync.ts:279",
+      "src/lib/town-jobs/records-server.ts:27",
+      "src/lib/town-jobs/results-server.ts:184",
+      "src/lib/town-jobs/results-server.ts:214",
+      "src/lib/town-jobs/server.ts:86",
+      "src/lib/town-jobs/server.ts:88",
+      "src/lib/town-jobs/server.ts:175",
+      "src/lib/town-jobs/server.ts:307",
+      "src/lib/town-jobs/server.ts:348",
+      "src/lib/town-jobs/server.ts:687",
+      "src/lib/town-jobs/server.ts:722",
+      "mobile/src/lib/rfps.ts:57",
+      "scripts/import-public-tenders.mjs:215",
+      "scripts/import-public-tenders.mjs:219"
+    ],
     "audit_logs": [
       "src/app/[lang]/admin/audit-logs/page.tsx:24",
       "src/lib/audit.ts:18"
@@ -53,7 +132,8 @@
       "src/app/[lang]/admin/award-history/page.tsx:40",
       "src/lib/contract-history/load.ts:73",
       "src/lib/contract-history/load.ts:98",
-      "src/lib/contract-history/sync.ts:46"
+      "src/lib/contract-history/sync.ts:46",
+      "src/lib/town-jobs/results-server.ts:210"
     ],
     "bid_results": [
       "src/app/[lang]/admin/award-history/page.tsx:46",
@@ -65,11 +145,41 @@
       "src/lib/lifecycle/server.ts:312"
     ],
     "buyer_source_requests": [
-      "src/app/[lang]/admin/buyer-sources/page.tsx:61",
+      "src/app/[lang]/admin/buyer-sources/page.tsx:107",
       "src/app/api/admin/buyer-sources/route.ts:45",
       "src/app/api/admin/buyer-sources/route.ts:57",
       "src/app/api/admin/buyer-sources/route.ts:76",
-      "src/app/api/buyer-sources/route.ts:38"
+      "src/app/api/buyer-sources/route.ts:41"
+    ],
+    "buyer_claims": [
+      "src/app/[lang]/admin/buyer-sources/page.tsx:113",
+      "src/app/api/admin/buyer-claims/route.ts:50",
+      "src/lib/town-jobs/server.ts:114",
+      "src/lib/towns/claims.ts:104",
+      "src/lib/towns/claims.ts:106",
+      "src/lib/towns/claims.ts:189",
+      "src/lib/towns/claims.ts:191",
+      "src/lib/towns/claims.ts:193",
+      "src/lib/towns/claims.ts:237",
+      "src/lib/towns/claims.ts:246",
+      "src/lib/towns/claims.ts:276",
+      "src/lib/towns/claims.ts:306",
+      "src/lib/towns/dashboard-data.ts:52"
+    ],
+    "buyer_follows": [
+      "src/app/[lang]/admin/buyer-sources/page.tsx:367",
+      "src/lib/follows/alerts-server.ts:149",
+      "src/lib/follows/alerts-server.ts:150",
+      "src/lib/follows/server.ts:28",
+      "src/lib/follows/server.ts:35",
+      "src/lib/follows/server.ts:54",
+      "src/lib/follows/server.ts:60",
+      "src/lib/town-jobs/followers.ts:25",
+      "src/lib/town-jobs/reach.ts:142"
+    ],
+    "buyer_follow_counts": [
+      "src/app/[lang]/admin/buyer-sources/page.tsx:368",
+      "src/lib/follows/counts.ts:31"
     ],
     "case_studies": [
       "src/app/[lang]/admin/case-studies/page.tsx:38",
@@ -108,11 +218,11 @@
     "trade_categories": [
       "src/app/[lang]/admin/categories/page.tsx:31",
       "src/app/api/cron/rfp-alerts/route.ts:334",
-      "src/lib/auth/actions.ts:592",
+      "src/lib/auth/actions.ts:600",
       "src/lib/case-studies/actions.ts:68",
-      "src/lib/dashboard/actions.ts:164",
-      "src/lib/dashboard/actions.ts:265",
-      "src/lib/dashboard/actions.ts:357",
+      "src/lib/dashboard/actions.ts:194",
+      "src/lib/dashboard/actions.ts:295",
+      "src/lib/dashboard/actions.ts:413",
       "src/lib/forum/auto-threads-server.ts:118",
       "src/lib/jobs/actions.ts:84",
       "src/lib/projects/manage.ts:245",
@@ -208,25 +318,31 @@
     ],
     "organizations": [
       "src/app/[lang]/admin/intel/page.tsx:54",
-      "src/app/[lang]/admin/organizations/page.tsx:36",
+      "src/app/[lang]/admin/organizations/page.tsx:63",
       "src/app/[lang]/admin/page.tsx:65",
-      "src/app/[lang]/admin/signups/page.tsx:94",
+      "src/app/[lang]/admin/signups/page.tsx:95",
       "src/app/[lang]/admin/trials/page.tsx:48",
+      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:124",
       "src/app/api/contact/route.ts:35",
       "src/app/api/cron/lead-alerts/route.ts:78",
-      "src/app/api/cron/tender-digest/route.ts:70",
-      "src/app/api/stripe/webhook/route.ts:206",
-      "src/app/api/stripe/webhook/route.ts:306",
-      "src/app/api/stripe/webhook/route.ts:317",
-      "src/app/api/trusted/quote/route.ts:55",
+      "src/app/api/cron/tender-digest/route.ts:80",
+      "src/app/api/stripe/webhook/route.ts:220",
+      "src/app/api/stripe/webhook/route.ts:320",
+      "src/app/api/stripe/webhook/route.ts:331",
+      "src/app/api/trusted/quote/route.ts:56",
       "src/lib/access/access.ts:73",
       "src/lib/admin/intel-actions.ts:31",
-      "src/lib/admin/org-actions.ts:22",
-      "src/lib/auth/actions.ts:559",
-      "src/lib/auth/actions.ts:569",
+      "src/lib/admin/org-actions.ts:27",
+      "src/lib/admin/org-actions.ts:57",
+      "src/lib/admin/org-actions.ts:67",
+      "src/lib/admin/org-actions.ts:97",
+      "src/lib/admin/org-actions.ts:105",
+      "src/lib/admin/org-actions.ts:134",
+      "src/lib/auth/actions.ts:567",
+      "src/lib/auth/actions.ts:577",
       "src/lib/badge/data.ts:53",
-      "src/lib/claims/actions.ts:104",
-      "src/lib/dashboard/actions.ts:135",
+      "src/lib/claims/actions.ts:105",
+      "src/lib/dashboard/actions.ts:174",
       "src/lib/data/directory.ts:132",
       "src/lib/data/directory.ts:150",
       "src/lib/data/directory.ts:205",
@@ -248,8 +364,24 @@
       "src/lib/karma/data.ts:59",
       "src/lib/karma/sync.ts:78",
       "src/lib/lifecycle/server.ts:272",
+      "src/lib/organizations/review-server.ts:16",
+      "src/lib/organizations/review-server.ts:18",
+      "src/lib/pm-jobs/decisions.ts:81",
+      "src/lib/pm-jobs/decisions.ts:186",
+      "src/lib/pm-jobs/server.ts:177",
       "src/lib/reviews/actions.ts:78",
       "src/lib/stripe/server.ts:83",
+      "src/lib/town-jobs/records-server.ts:66",
+      "src/lib/town-jobs/results-server.ts:77",
+      "src/lib/town-jobs/results-server.ts:232",
+      "src/lib/town-jobs/server.ts:778",
+      "src/lib/towns/claims.ts:59",
+      "src/lib/towns/claims.ts:71",
+      "src/lib/towns/claims.ts:137",
+      "src/lib/towns/claims.ts:140",
+      "src/lib/towns/claims.ts:176",
+      "src/lib/towns/claims.ts:283",
+      "src/lib/towns/claims.ts:305",
       "src/lib/trusted/actions.ts:87",
       "scripts/seed-founding-orgs.mjs:163",
       "scripts/seed-regions-and-tag-orgs.mjs:98",
@@ -260,16 +392,32 @@
     "rfp_interests": [
       "src/app/[lang]/admin/interests/page.tsx:38",
       "src/app/[lang]/admin/page.tsx:76",
-      "src/app/[lang]/dashboard/interests/page.tsx:45",
-      "src/app/[lang]/pm-dashboard/page.tsx:53",
-      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:63",
-      "src/app/api/cron/admin-weekly/route.ts:48",
-      "src/app/api/cron/admin-weekly/route.ts:49",
-      "src/app/api/rfp-interest/route.ts:71",
-      "src/app/api/rfp-interest/route.ts:74",
+      "src/app/[lang]/dashboard/interests/page.tsx:62",
+      "src/app/[lang]/pm-dashboard/page.tsx:54",
+      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:104",
+      "src/app/api/cron/admin-weekly/route.ts:53",
+      "src/app/api/cron/admin-weekly/route.ts:54",
+      "src/app/api/rfp-interest/route.ts:128",
+      "src/app/api/rfp-interest/route.ts:132",
+      "src/app/api/rfp-interest/route.ts:134",
       "src/lib/karma/sync.ts:96",
       "src/lib/lifecycle/server.ts:711",
-      "mobile/src/lib/rfps.ts:98"
+      "src/lib/pm-jobs/decisions.ts:110",
+      "src/lib/pm-jobs/decisions.ts:174",
+      "src/lib/pm-jobs/decisions.ts:179",
+      "src/lib/pm-jobs/decisions.ts:209",
+      "src/lib/pm-jobs/decisions.ts:221",
+      "src/lib/pm-jobs/decisions.ts:249",
+      "src/lib/pm-jobs/decisions.ts:255",
+      "src/lib/pm-jobs/decisions.ts:273",
+      "src/lib/pm-jobs/decisions.ts:287",
+      "src/lib/pm-jobs/server.ts:82",
+      "src/lib/pm-jobs/server.ts:392",
+      "src/lib/town-jobs/results-server.ts:71",
+      "src/lib/town-jobs/sealed-server.ts:289",
+      "src/lib/town-jobs/server.ts:405",
+      "src/lib/town-jobs/server.ts:731",
+      "src/lib/town-jobs/server.ts:773"
     ],
     "org_karma": [
       "src/app/[lang]/admin/karma/page.tsx:51",
@@ -312,26 +460,27 @@
     "users_profile": [
       "src/app/[lang]/admin/page.tsx:58",
       "src/app/[lang]/admin/page.tsx:78",
-      "src/app/[lang]/admin/signups/page.tsx:64",
+      "src/app/[lang]/admin/signups/page.tsx:65",
       "src/app/[lang]/admin/users/page.tsx:35",
-      "src/app/api/buyer-sources/route.ts:59",
-      "src/app/api/cron/admin-weekly/route.ts:34",
+      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:127",
+      "src/app/api/buyer-sources/route.ts:65",
+      "src/app/api/cron/admin-weekly/route.ts:39",
       "src/app/api/cron/lead-alerts/route.ts:110",
       "src/app/api/cron/rfp-alerts/route.ts:128",
       "src/app/api/cron/rfp-expiry/route.ts:67",
       "src/app/api/cron/saved-rfp-alerts/route.ts:85",
-      "src/app/api/cron/tender-digest/route.ts:116",
+      "src/app/api/cron/tender-digest/route.ts:126",
       "src/app/api/cron/weekly-digest/route.ts:85",
       "src/app/api/jobs/apply/route.ts:64",
-      "src/app/api/rfp-interest/route.ts:93",
       "src/app/api/talent/contact/route.ts:53",
-      "src/app/api/trusted/quote/route.ts:59",
+      "src/app/api/trusted/quote/route.ts:60",
       "src/components/home-v3/account-link.tsx:25",
       "src/lib/access/access.ts:56",
-      "src/lib/admin/rfp-actions.ts:35",
-      "src/lib/auth/actions.ts:401",
-      "src/lib/auth/actions.ts:461",
-      "src/lib/auth/actions.ts:606",
+      "src/lib/admin/rfp-actions.ts:104",
+      "src/lib/attribution/record.ts:102",
+      "src/lib/auth/actions.ts:405",
+      "src/lib/auth/actions.ts:468",
+      "src/lib/auth/actions.ts:614",
       "src/lib/auth/visitor-upgrade-actions.ts:36",
       "src/lib/auth/visitor-upgrade-actions.ts:95",
       "src/lib/dedupe/admin-actions.ts:91",
@@ -341,28 +490,43 @@
       "src/lib/dedupe/join.ts:116",
       "src/lib/dedupe/lookup.ts:31",
       "src/lib/dedupe/signup.ts:85",
+      "src/lib/follows/alerts-server.ts:224",
       "src/lib/forum/notify.ts:41",
       "src/lib/insights/server.ts:214",
       "src/lib/lifecycle/server.ts:291",
       "src/lib/lifecycle/server.ts:477",
       "src/lib/marketplace/data.ts:204",
+      "src/lib/pm-jobs/decisions.ts:78",
+      "src/lib/pm-jobs/decisions.ts:116",
+      "src/lib/pm-jobs/decisions.ts:187",
+      "src/lib/pm-jobs/server.ts:196",
       "src/lib/talent/actions.ts:104",
       "src/lib/talent/actions.ts:150",
       "src/lib/talent/data.ts:195",
-      "src/lib/talent/data.ts:206"
+      "src/lib/talent/data.ts:206",
+      "src/lib/town-jobs/records-server.ts:41",
+      "src/lib/town-jobs/records-server.ts:73",
+      "src/lib/town-jobs/results-server.ts:124",
+      "src/lib/town-jobs/sealed-server.ts:172",
+      "src/lib/town-jobs/server.ts:259",
+      "src/lib/town-jobs/server.ts:416",
+      "src/lib/town-jobs/server.ts:623",
+      "src/lib/towns/claims.ts:110",
+      "src/lib/towns/claims.ts:197",
+      "src/lib/towns/claims.ts:307"
     ],
     "subscriptions": [
       "src/app/[lang]/admin/page.tsx:61",
       "src/app/[lang]/admin/subscriptions/page.tsx:35",
       "src/app/[lang]/admin/trials/page.tsx:49",
       "src/app/[lang]/dashboard/billing/page.tsx:55",
-      "src/app/api/cron/admin-weekly/route.ts:36",
+      "src/app/api/cron/admin-weekly/route.ts:41",
       "src/app/api/cron/lead-alerts/route.ts:203",
       "src/app/api/cron/lead-alerts/route.ts:205",
       "src/app/api/cron/rfp-alerts/route.ts:87",
-      "src/app/api/cron/tender-digest/route.ts:75",
+      "src/app/api/cron/tender-digest/route.ts:85",
       "src/app/api/stripe/portal/route.ts:18",
-      "src/app/api/stripe/webhook/route.ts:367",
+      "src/app/api/stripe/webhook/route.ts:381",
       "src/lib/access/access.ts:150",
       "src/lib/access/access.ts:163",
       "src/lib/access/access.ts:196",
@@ -374,66 +538,27 @@
       "src/lib/insights/server.ts:405",
       "src/lib/jobs/data.ts:104",
       "src/lib/lifecycle/server.ts:302",
+      "src/lib/pm-jobs/server.ts:94",
+      "src/lib/pm-jobs/server.ts:96",
       "src/lib/stripe/server.ts:37",
       "src/lib/stripe/server.ts:65",
       "src/lib/stripe/server.ts:73",
       "src/lib/trusted/data.ts:79"
     ],
-    "rfp_posts": [
-      "src/app/[lang]/admin/page.tsx:69",
-      "src/app/[lang]/admin/page.tsx:73",
-      "src/app/[lang]/admin/rfps/page.tsx:37",
-      "src/app/[lang]/admin/rfps/page.tsx:44",
-      "src/app/[lang]/pm-dashboard/page.tsx:45",
-      "src/app/[lang]/pm-dashboard/rfps/[id]/interests/page.tsx:70",
-      "src/app/[lang]/pm-dashboard/rfps/page.tsx:51",
-      "src/app/api/cron/admin-weekly/route.ts:40",
-      "src/app/api/cron/admin-weekly/route.ts:45",
-      "src/app/api/cron/admin-weekly/route.ts:47",
-      "src/app/api/cron/bid-checks/route.ts:52",
-      "src/app/api/cron/bid-checks/route.ts:79",
-      "src/app/api/cron/rfp-alerts/route.ts:76",
-      "src/app/api/cron/rfp-alerts/route.ts:281",
-      "src/app/api/cron/rfp-expiry/route.ts:37",
-      "src/app/api/cron/rfp-expiry/route.ts:47",
-      "src/app/api/cron/rfp-expiry/route.ts:56",
-      "src/app/api/cron/rfp-expiry/route.ts:78",
-      "src/app/api/cron/saved-rfp-alerts/route.ts:44",
-      "src/app/api/cron/saved-rfp-alerts/route.ts:51",
-      "src/app/api/cron/tender-digest/route.ts:62",
-      "src/app/api/rfp/keep-alive/route.ts:25",
-      "src/app/api/rfp/keep-alive/route.ts:39",
-      "src/app/api/rfp-interest/route.ts:45",
-      "src/lib/admin/rfp-actions.ts:24",
-      "src/lib/dashboard/actions.ts:209",
-      "src/lib/dashboard/actions.ts:227",
-      "src/lib/dashboard/actions.ts:319",
-      "src/lib/data/rfps.ts:247",
-      "src/lib/data/rfps.ts:270",
-      "src/lib/embed/data.ts:61",
-      "src/lib/forum/auto-threads-server.ts:101",
-      "src/lib/karma/sync.ts:94",
-      "src/lib/tenders/sync.ts:197",
-      "src/lib/tenders/sync.ts:207",
-      "src/lib/tenders/sync.ts:227",
-      "src/lib/tenders/sync.ts:279",
-      "mobile/src/lib/rfps.ts:56",
-      "scripts/import-public-tenders.mjs:215",
-      "scripts/import-public-tenders.mjs:219"
-    ],
     "regions": [
       "src/app/[lang]/admin/regions/page.tsx:32",
       "src/app/api/cron/rfp-alerts/route.ts:97",
-      "src/app/api/cron/tender-digest/route.ts:76",
-      "src/lib/auth/actions.ts:593",
+      "src/app/api/cron/tender-digest/route.ts:86",
+      "src/lib/auth/actions.ts:601",
       "src/lib/case-studies/actions.ts:71",
-      "src/lib/dashboard/actions.ts:165",
-      "src/lib/dashboard/actions.ts:311",
+      "src/lib/dashboard/actions.ts:195",
+      "src/lib/dashboard/actions.ts:357",
       "src/lib/data/liquidity.ts:63",
       "src/lib/gc/data.ts:51",
       "src/lib/jobs/actions.ts:85",
       "src/lib/major-projects/sync.ts:212",
       "src/lib/match/data.ts:24",
+      "src/lib/pm-jobs/server.ts:162",
       "src/lib/projects/manage.ts:248",
       "src/lib/projects/publish.ts:95",
       "src/lib/talent/actions.ts:67",
@@ -464,15 +589,18 @@
       "src/lib/data/liquidity.ts:47"
     ],
     "signup_attribution": [
-      "src/app/[lang]/admin/signups/page.tsx:71",
-      "src/lib/attribution/record.ts:30",
-      "src/lib/attribution/record.ts:36",
+      "src/app/[lang]/admin/signups/page.tsx:72",
+      "src/lib/attribution/record.ts:67",
+      "src/lib/attribution/record.ts:70",
+      "src/lib/attribution/record.ts:78",
+      "src/lib/attribution/record.ts:82",
       "src/lib/insights/server.ts:216",
       "src/lib/lifecycle/server.ts:299",
-      "src/lib/lifecycle/server.ts:502"
+      "src/lib/lifecycle/server.ts:502",
+      "src/lib/pm-jobs/server.ts:64"
     ],
     "landing_counts": [
-      "src/app/[lang]/admin/signups/page.tsx:77"
+      "src/app/[lang]/admin/signups/page.tsx:78"
     ],
     "trade_trials": [
       "src/app/[lang]/admin/trials/page.tsx:38",
@@ -482,7 +610,8 @@
       "src/lib/entitlement/server.ts:102",
       "src/lib/entitlement/server.ts:112",
       "src/lib/lifecycle/server.ts:260",
-      "src/lib/lifecycle/server.ts:305"
+      "src/lib/lifecycle/server.ts:305",
+      "src/lib/pm-jobs/server.ts:101"
     ],
     "digest_subscribers": [
       "src/app/[lang]/admin/weekly-email/page.tsx:44",
@@ -501,83 +630,61 @@
     ],
     "winner_claims": [
       "src/app/[lang]/admin/winner-claims/page.tsx:55",
-      "src/lib/claims/actions.ts:64",
-      "src/lib/claims/actions.ts:89",
-      "src/lib/claims/actions.ts:96",
+      "src/lib/claims/actions.ts:65",
+      "src/lib/claims/actions.ts:90",
       "src/lib/claims/actions.ts:97",
-      "src/lib/claims/actions.ts:131",
-      "src/lib/claims/actions.ts:137",
+      "src/lib/claims/actions.ts:98",
+      "src/lib/claims/actions.ts:135",
+      "src/lib/claims/actions.ts:141",
       "src/lib/claims/data.ts:77"
     ],
     "organization_categories": [
       "src/app/[lang]/dashboard/company/page.tsx:57",
-      "src/app/[lang]/dashboard/page.tsx:281",
+      "src/app/[lang]/dashboard/page.tsx:284",
       "src/app/[lang]/dashboard/projects/capability-sheet/page.tsx:29",
       "src/app/api/cron/lead-alerts/route.ts:79",
       "src/app/api/cron/rfp-alerts/route.ts:94",
-      "src/app/api/cron/tender-digest/route.ts:101",
+      "src/app/api/cron/tender-digest/route.ts:111",
       "src/components/forum/this-week.tsx:26",
-      "src/lib/auth/actions.ts:595",
-      "src/lib/dashboard/actions.ts:169",
-      "src/lib/dashboard/actions.ts:174",
+      "src/lib/auth/actions.ts:603",
+      "src/lib/dashboard/actions.ts:199",
+      "src/lib/dashboard/actions.ts:204",
       "src/lib/insights/server.ts:198",
       "src/lib/insights/server.ts:364",
       "src/lib/leads/load.ts:76",
-      "src/lib/lifecycle/server.ts:308"
+      "src/lib/lifecycle/server.ts:308",
+      "src/lib/pm-jobs/server.ts:172",
+      "src/lib/pm-jobs/server.ts:186"
     ],
     "organization_regions": [
       "src/app/[lang]/dashboard/company/page.tsx:58",
       "src/app/[lang]/dashboard/projects/capability-sheet/page.tsx:30",
       "src/app/api/cron/lead-alerts/route.ts:80",
       "src/app/api/cron/rfp-alerts/route.ts:95",
-      "src/app/api/cron/tender-digest/route.ts:102",
-      "src/lib/auth/actions.ts:600",
-      "src/lib/dashboard/actions.ts:170",
-      "src/lib/dashboard/actions.ts:176",
+      "src/app/api/cron/tender-digest/route.ts:112",
+      "src/lib/auth/actions.ts:608",
+      "src/lib/dashboard/actions.ts:200",
+      "src/lib/dashboard/actions.ts:206",
       "src/lib/insights/server.ts:199",
       "src/lib/insights/server.ts:365",
       "src/lib/leads/load.ts:77",
       "src/lib/lifecycle/server.ts:310",
+      "src/lib/pm-jobs/server.ts:187",
       "src/lib/visitor-geo.server.ts:61",
       "scripts/seed-regions-and-tag-orgs.mjs:114",
       "scripts/seed-regions-and-tag-orgs.mjs:115"
     ],
     "organization_property_types": [
       "src/app/[lang]/dashboard/company/page.tsx:59",
-      "src/lib/dashboard/actions.ts:171",
-      "src/lib/dashboard/actions.ts:178"
-    ],
-    "saved_rfps": [
-      "src/app/[lang]/dashboard/saved-rfps/page.tsx:26",
-      "src/app/api/cron/saved-rfp-alerts/route.ts:72",
-      "src/app/api/save-rfp/route.ts:49",
-      "src/app/api/save-rfp/route.ts:53",
-      "src/app/api/save-rfp/route.ts:57",
-      "src/lib/lifecycle/server.ts:710"
-    ],
-    "rfp_public": [
-      "src/app/[lang]/dashboard/saved-rfps/page.tsx:30",
-      "src/app/api/cron/indexnow/route.ts:28",
-      "src/app/api/save-rfp/route.ts:43",
-      "src/lib/data/rfps.ts:206",
-      "src/lib/data/rfps.ts:376",
-      "src/lib/forum/data.ts:711",
-      "src/lib/forum/data.ts:733",
-      "src/lib/gc/data.ts:44",
-      "src/lib/gc/data.ts:58",
-      "src/lib/gc/data.ts:72",
-      "src/lib/gc/data.ts:76",
-      "src/lib/gc/data.ts:97",
-      "src/lib/gc/data.ts:101",
-      "mobile/src/lib/rfps.ts:35",
-      "mobile/src/lib/rfps.ts:66"
+      "src/lib/dashboard/actions.ts:201",
+      "src/lib/dashboard/actions.ts:208"
     ],
     "buyer_permissions": [
       "src/app/api/admin/buyer-sources/route.ts:70",
       "src/lib/buyers/permissions-data.ts:76"
     ],
     "notifications": [
-      "src/app/api/buyer-sources/route.ts:65",
+      "src/app/api/buyer-sources/route.ts:71",
       "src/app/api/cron/lead-alerts/route.ts:113",
       "src/app/api/cron/lead-alerts/route.ts:184",
       "src/app/api/cron/rfp-alerts/route.ts:131",
@@ -586,11 +693,27 @@
       "src/app/api/cron/rfp-alerts/route.ts:336",
       "src/app/api/cron/saved-rfp-alerts/route.ts:88",
       "src/app/api/cron/saved-rfp-alerts/route.ts:128",
-      "src/app/api/cron/tender-digest/route.ts:119",
-      "src/app/api/cron/tender-digest/route.ts:169",
+      "src/app/api/cron/tender-digest/route.ts:129",
+      "src/app/api/cron/tender-digest/route.ts:201",
+      "src/components/pm-jobs/recent-updates.tsx:27",
+      "src/lib/admin/rfp-actions.ts:116",
       "src/lib/dedupe/join.ts:69",
       "src/lib/dedupe/join.ts:127",
-      "src/lib/insights/server.ts:320"
+      "src/lib/follows/alerts-server.ts:228",
+      "src/lib/follows/alerts-server.ts:281",
+      "src/lib/insights/server.ts:320",
+      "src/lib/pm-jobs/decisions.ts:134",
+      "src/lib/pm-jobs/decisions.ts:197",
+      "src/lib/pm-jobs/server.ts:342",
+      "src/lib/town-jobs/sealed-server.ts:121",
+      "src/lib/town-jobs/sealed-server.ts:132",
+      "src/lib/town-jobs/sealed-server.ts:205",
+      "src/lib/town-jobs/sealed-server.ts:295",
+      "src/lib/town-jobs/server.ts:218",
+      "src/lib/town-jobs/server.ts:251",
+      "src/lib/town-jobs/server.ts:432",
+      "src/lib/town-jobs/server.ts:594",
+      "src/lib/town-jobs/server.ts:696"
     ],
     "rfp_bid_checks": [
       "src/app/api/cron/bid-checks/route.ts:68",
@@ -598,13 +721,30 @@
       "src/app/api/cron/rfp-alerts/route.ts:100",
       "src/lib/bid-check/data.ts:13"
     ],
+    "rfp_public": [
+      "src/app/api/cron/indexnow/route.ts:28",
+      "src/app/api/save-rfp/route.ts:57",
+      "src/lib/d1/saved-page.ts:12",
+      "src/lib/data/rfps.ts:220",
+      "src/lib/data/rfps.ts:390",
+      "src/lib/forum/data.ts:711",
+      "src/lib/forum/data.ts:733",
+      "src/lib/gc/data.ts:44",
+      "src/lib/gc/data.ts:58",
+      "src/lib/gc/data.ts:72",
+      "src/lib/gc/data.ts:76",
+      "src/lib/gc/data.ts:97",
+      "src/lib/gc/data.ts:101",
+      "mobile/src/lib/rfps.ts:36",
+      "mobile/src/lib/rfps.ts:67"
+    ],
     "organization_members": [
       "src/app/api/cron/lead-alerts/route.ts:81",
       "src/app/api/cron/rfp-alerts/route.ts:96",
-      "src/app/api/cron/tender-digest/route.ts:103",
+      "src/app/api/cron/tender-digest/route.ts:113",
       "src/components/dashboard/join-requests-card.tsx:26",
       "src/lib/access/access.ts:65",
-      "src/lib/auth/actions.ts:584",
+      "src/lib/auth/actions.ts:592",
       "src/lib/dedupe/admin-data.ts:52",
       "src/lib/dedupe/join.ts:33",
       "src/lib/dedupe/join.ts:48",
@@ -613,42 +753,82 @@
       "src/lib/dedupe/merge.ts:152",
       "src/lib/dedupe/merge.ts:168",
       "src/lib/dedupe/signup.ts:84",
+      "src/lib/follows/alerts-server.ts:186",
       "src/lib/insights/server.ts:200",
       "src/lib/karma/sync.ts:79",
       "src/lib/lifecycle/server.ts:255",
       "src/lib/lifecycle/server.ts:265",
       "src/lib/lifecycle/server.ts:488",
-      "mobile/src/lib/rfps.ts:88"
+      "src/lib/pm-jobs/server.ts:188",
+      "src/lib/town-jobs/records-server.ts:58",
+      "src/lib/town-jobs/sealed-server.ts:169",
+      "src/lib/town-jobs/server.ts:392",
+      "src/lib/towns/claims.ts:56",
+      "src/lib/towns/claims.ts:61",
+      "src/lib/towns/claims.ts:70",
+      "src/lib/towns/claims.ts:155",
+      "src/lib/towns/claims.ts:289"
     ],
     "notification_preferences": [
       "src/app/api/cron/lead-alerts/route.ts:111",
       "src/app/api/cron/rfp-alerts/route.ts:129",
       "src/app/api/cron/saved-rfp-alerts/route.ts:86",
-      "src/app/api/cron/tender-digest/route.ts:117",
+      "src/app/api/cron/tender-digest/route.ts:127",
       "src/app/api/cron/weekly-digest/route.ts:92",
       "src/app/api/email/lifecycle-unsubscribe/route.ts:20",
       "src/app/api/email/unsubscribe/route.ts:17",
       "src/app/api/forum/unsubscribe/route.ts:15",
       "src/components/forum/thread-view.tsx:189",
+      "src/lib/follows/alerts-server.ts:225",
       "src/lib/forum/actions.ts:528",
       "src/lib/forum/notify.ts:38",
       "src/lib/insights/server.ts:215",
       "src/lib/lifecycle/server.ts:294",
-      "src/lib/lifecycle/server.ts:499"
+      "src/lib/lifecycle/server.ts:499",
+      "src/lib/pm-jobs/server.ts:198",
+      "src/lib/town-jobs/server.ts:417",
+      "src/lib/town-jobs/server.ts:629"
     ],
     "lead_alert_log": [
       "src/app/api/cron/lead-alerts/route.ts:170",
       "src/app/api/cron/lead-alerts/route.ts:227",
+      "src/app/api/cron/tender-digest/route.ts:150",
+      "src/lib/follows/alerts-server.ts:230",
+      "src/lib/follows/alerts-server.ts:263",
       "src/lib/insights/server.ts:316",
       "src/lib/insights/server.ts:425",
-      "src/lib/lifecycle/server.ts:709"
+      "src/lib/lifecycle/server.ts:709",
+      "src/lib/pm-jobs/server.ts:202",
+      "src/lib/pm-jobs/server.ts:313",
+      "src/lib/town-jobs/reach.ts:127"
+    ],
+    "saved_rfps": [
+      "src/app/api/cron/saved-rfp-alerts/route.ts:72",
+      "src/app/api/save-rfp/route.ts:63",
+      "src/app/api/save-rfp/route.ts:67",
+      "src/app/api/save-rfp/route.ts:71",
+      "src/lib/d1/saved-page.ts:9",
+      "src/lib/lifecycle/server.ts:710"
     ],
     "email_suppressions": [
       "src/app/api/cron/weekly-digest/route.ts:84",
+      "src/app/api/email/invite-unsubscribe/route.ts:21",
       "src/app/api/email/resend-webhook/route.ts:54",
       "src/lib/digest/actions.ts:57",
       "src/lib/lifecycle/server.ts:320",
-      "src/lib/lifecycle/server.ts:504"
+      "src/lib/lifecycle/server.ts:504",
+      "src/lib/town-jobs/server.ts:384"
+    ],
+    "town_invites": [
+      "src/app/api/email/invite-unsubscribe/route.ts:18",
+      "src/lib/town-jobs/records-server.ts:56",
+      "src/lib/town-jobs/results-server.ts:101",
+      "src/lib/town-jobs/server.ts:470",
+      "src/lib/town-jobs/server.ts:479",
+      "src/lib/town-jobs/server.ts:556",
+      "src/lib/town-jobs/server.ts:643",
+      "src/lib/town-jobs/server.ts:734",
+      "src/lib/town-jobs/server.ts:771"
     ],
     "job_posts": [
       "src/app/api/jobs/apply/route.ts:33",
@@ -669,8 +849,8 @@
     ],
     "marketplace_listings": [
       "src/app/api/marketplace/featured/route.ts:27",
-      "src/app/api/stripe/webhook/route.ts:164",
-      "src/app/api/stripe/webhook/route.ts:171",
+      "src/app/api/stripe/webhook/route.ts:178",
+      "src/app/api/stripe/webhook/route.ts:185",
       "src/lib/marketplace/actions.ts:82",
       "src/lib/marketplace/actions.ts:117",
       "src/lib/marketplace/actions.ts:124",
@@ -687,8 +867,8 @@
       "src/lib/marketplace/data.ts:191"
     ],
     "stripe_webhook_events": [
-      "src/app/api/stripe/webhook/route.ts:109",
-      "src/app/api/stripe/webhook/route.ts:382"
+      "src/app/api/stripe/webhook/route.ts:110",
+      "src/app/api/stripe/webhook/route.ts:396"
     ],
     "talent_profiles": [
       "src/app/api/talent/contact/route.ts:35",
@@ -706,7 +886,7 @@
       "src/lib/talent/data.ts:182"
     ],
     "trusted_lists": [
-      "src/app/api/trusted/quote/route.ts:40",
+      "src/app/api/trusted/quote/route.ts:41",
       "src/lib/trusted/actions.ts:46",
       "src/lib/trusted/actions.ts:57",
       "src/lib/trusted/actions.ts:129",
@@ -715,7 +895,7 @@
       "src/lib/trusted/data.ts:115"
     ],
     "trusted_list_items": [
-      "src/app/api/trusted/quote/route.ts:49",
+      "src/app/api/trusted/quote/route.ts:50",
       "src/lib/trusted/actions.ts:81",
       "src/lib/trusted/actions.ts:95",
       "src/lib/trusted/actions.ts:104",
@@ -766,22 +946,23 @@
       "src/lib/claims/data.ts:37"
     ],
     "property_types": [
-      "src/lib/dashboard/actions.ts:166",
-      "src/lib/dashboard/actions.ts:313",
+      "src/lib/dashboard/actions.ts:196",
+      "src/lib/dashboard/actions.ts:359",
       "src/lib/projects/manage.ts:251",
       "src/lib/projects/publish.ts:98",
       "mobile/src/lib/projects.ts:139"
     ],
     "rfp_categories": [
-      "src/lib/dashboard/actions.ts:359",
-      "src/lib/data/rfps.ts:403",
+      "src/lib/dashboard/actions.ts:415",
+      "src/lib/data/rfps.ts:417",
       "src/lib/forum/auto-threads-server.ts:123",
       "src/lib/tenders/sync.ts:218",
+      "src/lib/town-jobs/results-server.ts:185",
       "scripts/import-public-tenders.mjs:223"
     ],
     "rfp_documents": [
-      "src/lib/dashboard/actions.ts:402",
-      "src/lib/data/rfps.ts:422"
+      "src/lib/dashboard/actions.ts:458",
+      "src/lib/data/rfps.ts:436"
     ],
     "region_liquidity": [
       "src/lib/data/liquidity.ts:71"
@@ -935,6 +1116,59 @@
       "src/lib/talent/actions.ts:169",
       "src/lib/talent/data.ts:152"
     ],
+    "town_posts_public": [
+      "src/lib/town-jobs/posts-data.ts:23",
+      "src/lib/town-jobs/public-data.ts:56"
+    ],
+    "town_job_qa_public": [
+      "src/lib/town-jobs/public-data.ts:60"
+    ],
+    "town_job_addenda_public": [
+      "src/lib/town-jobs/public-data.ts:61"
+    ],
+    "town_sealed_public": [
+      "src/lib/town-jobs/public-data.ts:63"
+    ],
+    "town_awards_public": [
+      "src/lib/town-jobs/public-data.ts:64"
+    ],
+    "rfp_views": [
+      "src/lib/town-jobs/reach.ts:27"
+    ],
+    "town_job_log": [
+      "src/lib/town-jobs/reach.ts:138",
+      "src/lib/town-jobs/records-server.ts:57",
+      "src/lib/town-jobs/server.ts:133",
+      "src/lib/town-jobs/server.ts:772"
+    ],
+    "town_job_addenda": [
+      "src/lib/town-jobs/records-server.ts:54",
+      "src/lib/town-jobs/server.ts:329",
+      "src/lib/town-jobs/server.ts:333",
+      "src/lib/town-jobs/server.ts:733",
+      "src/lib/town-jobs/server.ts:770"
+    ],
+    "town_job_questions": [
+      "src/lib/town-jobs/records-server.ts:55",
+      "src/lib/town-jobs/server.ts:243",
+      "src/lib/town-jobs/server.ts:279",
+      "src/lib/town-jobs/server.ts:289",
+      "src/lib/town-jobs/server.ts:406",
+      "src/lib/town-jobs/server.ts:732",
+      "src/lib/town-jobs/server.ts:769"
+    ],
+    "town_job_results": [
+      "src/lib/town-jobs/results-server.ts:107",
+      "src/lib/town-jobs/results-server.ts:142",
+      "src/lib/town-jobs/results-server.ts:166"
+    ],
+    "buyer_domains": [
+      "src/lib/towns/claim-context.ts:26",
+      "src/lib/towns/claims.ts:309"
+    ],
+    "buyer_pages_public": [
+      "src/lib/towns/managed-data.ts:27"
+    ],
     "regional_waitlist": [
       "src/lib/waitlist/actions.ts:96"
     ],
@@ -943,6 +1177,9 @@
     ]
   },
   "rpcs": {
+    "purge_site_tracking": [
+      "src/app/api/cron/site-tracking-purge/route.ts:18"
+    ],
     "record_sponsor_click": [
       "src/app/go/[sponsor]/route.ts:29"
     ],
@@ -958,6 +1195,9 @@
     "award_history_intel_slice": [
       "src/lib/contract-history/load.ts:32"
     ],
+    "follow_buyer": [
+      "src/lib/follows/server.ts:41"
+    ],
     "forum_poll_results": [
       "src/lib/forum/data.ts:913"
     ],
@@ -965,10 +1205,28 @@
       "src/lib/marketplace/data.ts:212"
     ],
     "rate_limit_hit": [
-      "src/lib/rate-limit.ts:168"
+      "src/lib/rate-limit.ts:170"
     ],
     "record_sponsor_impressions": [
       "src/lib/sponsors/impressions.ts:61"
+    ],
+    "sealed_box_state": [
+      "src/lib/town-jobs/sealed-server.ts:43"
+    ],
+    "sealed_counts": [
+      "src/lib/town-jobs/sealed-server.ts:52"
+    ],
+    "sealed_quote_own": [
+      "src/lib/town-jobs/sealed-server.ts:60"
+    ],
+    "sealed_responder_ids": [
+      "src/lib/town-jobs/sealed-server.ts:67"
+    ],
+    "record_site_beacon": [
+      "src/lib/tracking/buffer.ts:153"
+    ],
+    "site_analytics_report": [
+      "src/lib/tracking/report-server.ts:18"
     ],
     "has_active_trade_access": [
       "mobile/src/lib/auth.tsx:27"
@@ -1004,35 +1262,37 @@
     "src/app/[lang]/(v3)/check-email/page.tsx:15",
     "src/app/[lang]/(v3)/forum/[category]/new/page.tsx:52",
     "src/app/[lang]/(v3)/sign-up/opengraph-image.tsx:18",
-    "src/app/[lang]/(v3)/sign-up/page.tsx:34",
+    "src/app/[lang]/(v3)/sign-up/page.tsx:43",
     "src/app/[lang]/account/list-business/page.tsx:14",
-    "src/app/[lang]/onboarding/page.tsx:34",
+    "src/app/[lang]/onboarding/page.tsx:37",
+    "src/app/[lang]/onboarding/page.tsx:89",
     "src/app/api/forum/photos/route.ts:45",
-    "src/app/auth/callback/route.ts:26",
-    "src/app/auth/callback/route.ts:35",
-    "src/app/auth/callback/route.ts:37",
+    "src/app/auth/callback/route.ts:30",
+    "src/app/auth/callback/route.ts:39",
+    "src/app/auth/callback/route.ts:41",
     "src/components/forms/google-button.tsx:22",
     "src/components/forum/thread-view.tsx:141",
     "src/components/home-v3/account-link.tsx:22",
-    "src/components/public/email-capture.tsx:38",
+    "src/components/public/email-capture.tsx:41",
     "src/lib/access/access.ts:30",
     "src/lib/access/access.ts:51",
     "src/lib/auth/actions.ts:114",
     "src/lib/auth/actions.ts:204",
-    "src/lib/auth/actions.ts:226",
-    "src/lib/auth/actions.ts:280",
-    "src/lib/auth/actions.ts:308",
-    "src/lib/auth/actions.ts:320",
-    "src/lib/auth/actions.ts:337",
-    "src/lib/auth/actions.ts:353",
-    "src/lib/auth/actions.ts:373",
-    "src/lib/auth/actions.ts:412",
-    "src/lib/auth/actions.ts:574",
+    "src/lib/auth/actions.ts:229",
+    "src/lib/auth/actions.ts:284",
+    "src/lib/auth/actions.ts:312",
+    "src/lib/auth/actions.ts:324",
+    "src/lib/auth/actions.ts:341",
+    "src/lib/auth/actions.ts:357",
+    "src/lib/auth/actions.ts:377",
+    "src/lib/auth/actions.ts:416",
+    "src/lib/auth/actions.ts:582",
     "src/lib/auth/google.ts:32",
     "src/lib/auth/signup-prefs.ts:31",
     "src/lib/auth/visitor-upgrade-actions.ts:48",
     "src/lib/auth/visitor-upgrade-actions.ts:66",
     "src/lib/auth/visitor-upgrade-actions.ts:67",
+    "src/lib/d1/server.ts:25",
     "src/lib/dedupe/admin-actions.ts:97",
     "src/lib/dedupe/admin-actions.ts:119",
     "src/lib/dedupe/signup.ts:77",
@@ -1044,13 +1304,14 @@
     "src/lib/forum/staff-guides-server.ts:46",
     "src/lib/gc/intent.ts:13",
     "src/lib/supabase/middleware.ts:58",
+    "src/lib/towns/actions.ts:73",
+    "src/lib/towns/actions.ts:113",
     "mobile/src/lib/api.ts:29",
     "mobile/src/lib/auth.tsx:40",
     "mobile/src/lib/auth.tsx:47",
     "mobile/src/lib/auth.tsx:64",
     "mobile/src/lib/auth.tsx:68",
-    "mobile/src/lib/push.ts:86",
-    "mobile/src/lib/rfps.ts:80"
+    "mobile/src/lib/push.ts:86"
   ],
   "realtime": [],
   "dynamicTables": [
@@ -1068,8 +1329,9 @@
     "src/components/marketplace/marketplace-forms.tsx:86",
     "src/components/projects/case-study-builder.tsx:203",
     "src/components/projects/project-capture.tsx:216",
+    "src/lib/buyers/admin-notify.ts:38",
     "src/lib/data/board-snapshot.ts:104",
-    "src/lib/data/rfps.ts:344",
+    "src/lib/data/rfps.ts:358",
     "src/lib/data/taxonomy.ts:32",
     "src/lib/dedupe/merge.ts:92",
     "src/lib/dedupe/merge.ts:106",
@@ -1087,6 +1349,8 @@
     "src/lib/email/unsubscribe.ts:45",
     "src/lib/email/unsubscribe.ts:67",
     "src/lib/email/unsubscribe.ts:68",
+    "src/lib/email/unsubscribe.ts:90",
+    "src/lib/email/unsubscribe.ts:91",
     "src/lib/embed/keys.ts:26",
     "src/lib/forum/actions.ts:416",
     "src/lib/forum/actions.ts:438",
@@ -1106,6 +1370,9 @@
     "src/lib/projects/slug.ts:25",
     "src/lib/tenders/granular-feeds.test.ts:76",
     "src/lib/tenders/nc-evp.ts:148",
+    "src/lib/tracking/session-cookie.ts:20",
+    "src/lib/zip/write.ts:65",
+    "src/lib/zip/write.ts:67",
     "scripts/attach-rfp-photos.mjs:98"
   ],
   "crons": [
@@ -1220,6 +1487,18 @@
     {
       "path": "/api/cron/insights-brief",
       "schedule": "40 13 * * 1"
+    },
+    {
+      "path": "/api/cron/pm-job-alerts",
+      "schedule": "27 * * * *"
+    },
+    {
+      "path": "/api/cron/buyer-follow-alerts",
+      "schedule": "17 * * * *"
+    },
+    {
+      "path": "/api/cron/site-tracking-purge",
+      "schedule": "40 8 * * 0"
     }
   ]
 }

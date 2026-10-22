@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-22",
+  "repository_master": "da918b5e13897401cc36d8b52f1fa89b23a8b1d4",
+  "catalog_sha256": "3620dfb93ece2e4bd662f748714cd7239b14b7476f6e8f637a5a22a0d8ed667f",
+  "schema_sha256": "5ba1e06bd350b1f96be42bce313b2d0e2cfa255d08d3abadd134725985f7d795",
+  "public_tables": 98,
+  "sandbox_database": "pmrfp-api-sandbox-20261022",
+  "sandbox_database_id": "89721b4c-4fd7-46a2-809e-6a2299d915a3",
+  "remote_schema_applied": true,
+  "synthetic_seed_applied": true,
+  "remote_foreign_key_violations": 0,
+  "remote_quick_check": "ok",
+  "production_cutover": false,
+  "production_snapshot_refreshed": false,
+  "worker_deployed": false,
+  "worker_deployment_blocker": "new Worker OAuth permission consent pending",
+  "preview_tests_passed": 24,
+  "existing_karma_tests_passed": 22,
+  "offline_migration_tests_passed": 18,
+  "full_suite_node24": {
+    "passed": 2064,
+    "skipped": 2,
+    "note": "Four additional Next route tests verified separately after full suite"
+  },
+  "production_build_node24": "passed"
+}
