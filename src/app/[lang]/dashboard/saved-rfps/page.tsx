@@ -1,6 +1,6 @@
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
+import { loadSavedRfpTitles } from "@/lib/d1/saved-page";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { buttonVariants } from "@/components/ui/button";
@@ -20,21 +20,7 @@ export default async function SavedRfpsPage({ params }: { params: Promise<object
   // Saving is free (lib/access/free-actions): trade and supplier accounts.
   const session = await requireRole(["trade", "supplier"]);
 
-  const saved: { title: string; slug: string }[] = [];
-  if (!isDemoMode()) {
-    const supabase = await createClient();
-    const { data } = await supabase.from("saved_rfps").select("rfp_id,created_at").eq("user_id", session.userId).order("created_at", { ascending: false }).limit(500);
-    const ids = ((data as { rfp_id: string }[] | null) ?? []).map((r) => r.rfp_id);
-    if (ids.length) {
-      // Titles from the public teaser view: free members can't read full rows.
-      const { data: rows } = await supabase.from("rfp_public").select("id,title,slug").in("id", ids);
-      const byId = new Map(((rows as { id: string; title: string; slug: string }[] | null) ?? []).map((r) => [r.id, r]));
-      for (const id of ids) {
-        const r = byId.get(id);
-        if (r) saved.push({ title: r.title, slug: r.slug });
-      }
-    }
-  }
+  const saved = isDemoMode() ? [] : await loadSavedRfpTitles(session.userId);
 
   return (
     <div>
