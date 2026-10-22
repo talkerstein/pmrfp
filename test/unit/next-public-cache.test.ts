@@ -74,7 +74,7 @@ describe("Next framework cache regressions", () => {
     expect(upstream).toHaveBeenCalledTimes(2);
     for (const context of [first, second]) {
       expect(context.renderUnit.tags).toContain(TAXONOMY_DATA_TAG);
-      expect(context.renderUnit.revalidate).toBe(3600);
+      expect(context.renderUnit.revalidate).toBe(21600);
     }
     vi.restoreAllMocks();
   });
@@ -103,12 +103,12 @@ describe("Next framework cache regressions", () => {
     expect(boardReads()).toBe(cold);
     for (const context of [first, second]) {
       expect(context.renderUnit.tags).toContain(RFPS_TAG);
-      expect(context.renderUnit.revalidate).toBe(600);
+      expect(context.renderUnit.revalidate).toBe(21600);
     }
     backing.expireTag(RFPS_TAG);
     await render("/rfps", page);
     expect(db.count("rfp_public")).toBe(32);
-    backing.now += 601000;
+    backing.now += 21601000;
     await render("/rfps", page);
     expect(db.count("rfp_public")).toBe(48);
   });
@@ -127,7 +127,7 @@ describe("Next framework cache regressions", () => {
     for (const context of contexts) {
       expect(context.result).toEqual([{ name: "Toronto" }]);
       expect(context.renderUnit.tags).toContain(TAXONOMY_DATA_TAG);
-      expect(context.renderUnit.revalidate).toBe(3600);
+      expect(context.renderUnit.revalidate).toBe(21600);
     }
     const before = transport.mock.calls.length;
     const cached = await render("/regions", query);

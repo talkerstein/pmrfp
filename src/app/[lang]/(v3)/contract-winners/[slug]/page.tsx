@@ -33,7 +33,7 @@ import { getRegions } from "@/lib/data/taxonomy";
 import { mostCommonArea } from "@/lib/data/related-listings";
 import { bidAlertPlace } from "@/lib/digest/config";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   return []; // rendered on first visit, then cached (ISR)

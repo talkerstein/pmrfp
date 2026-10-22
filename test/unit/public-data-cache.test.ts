@@ -22,7 +22,7 @@ describe("public Supabase read caching", () => {
   it("keeps taxonomy on its own hour-long tag", async () => {
     const transport = vi.fn(async () => new Response("[]"));
     await createPublicReadFetch(base, key, transport)(`${base}/rest/v1/regions`, { headers });
-    expect(transport).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ next: { revalidate: 3600, tags: [TAXONOMY_DATA_TAG] } }));
+    expect(transport).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ next: { revalidate: 21600, tags: [TAXONOMY_DATA_TAG] } }));
   });
   it("caches real SDK reads with distinct filters and page offsets", async () => {
     const transport = vi.fn(async () => new Response("[]", { status: 200 }));
@@ -36,7 +36,7 @@ describe("public Supabase read caching", () => {
     expect(calls).toHaveLength(2);
     expect(calls[0][0]).not.toBe(calls[1][0]);
     expect(new URL(calls[1][0]).searchParams.get("offset")).toBe("250");
-    expect(calls[0][1]).toMatchObject({ cache: "force-cache", next: { revalidate: 300, tags: [PUBLIC_DATA_TAG] } });
+    expect(calls[0][1]).toMatchObject({ cache: "force-cache", next: { revalidate: 3600, tags: [PUBLIC_DATA_TAG] } });
   });
 
   it.each([

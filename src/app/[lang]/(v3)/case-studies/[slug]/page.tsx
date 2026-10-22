@@ -18,7 +18,7 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
 

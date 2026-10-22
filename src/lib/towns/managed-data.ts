@@ -15,7 +15,7 @@ import { fromPublicRow, type ManagedPage, type PublicPageRow } from "./managed";
  * migration 20261021000040 runs.
  */
 
-export const BUYER_PAGES_REVALIDATE = 600;
+export const BUYER_PAGES_REVALIDATE = 21600;
 const READ_TIMEOUT_MS = 8_000;
 const singleFlight = createSingleFlight();
 

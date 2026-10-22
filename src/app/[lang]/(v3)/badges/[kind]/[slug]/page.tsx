@@ -18,7 +18,7 @@ import { fmt } from "@/i18n/format";
  * /badges/winner/<contract-winner slug> (public contract winner badge).
  * Utility page: not indexed. Rendered on first visit, then cached.
  */
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   return [];

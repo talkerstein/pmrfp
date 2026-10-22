@@ -14,7 +14,7 @@ import type { TownPostLite } from "./merge";
  * 10 minutes. Empty without Supabase or before migration 20261021000060.
  */
 
-const REVALIDATE = 600;
+const REVALIDATE = 21600;
 const READ_TIMEOUT_MS = 8_000;
 const singleFlight = createSingleFlight();
 

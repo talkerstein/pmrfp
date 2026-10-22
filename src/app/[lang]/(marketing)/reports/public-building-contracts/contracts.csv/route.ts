@@ -2,7 +2,7 @@ import { listRfps } from "@/lib/data/rfps";
 import { reportContracts } from "@/lib/data/contracts-report";
 import { SITE } from "@/lib/site";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 const cell = (v: string | number | null) => {
   const s = v == null ? "" : String(v);

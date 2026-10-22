@@ -1,6 +1,6 @@
 import "server-only";
 import { createSingleFlight } from "@/lib/concurrency";
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { FOUNDING, LIFETIME_SUB_PREFIX, isLifetimeSubscriptionId, lifetimeRow } from "./config";
@@ -29,7 +29,11 @@ let failedAt = 0;
  */
 const oneCount = createSingleFlight();
 const sharedLifetimeCount = unstable_cache(async (_projectUrl: string) => oneCount(`founding:${_projectUrl}`, countLifetimeOrgs), ["founding-lifetime-count-v1"], {
-  revalidate: 60,
+  // 2026-10 cost fix: this counter is in the site-wide banner/shell, and an
+  // unstable_cache TTL becomes the page's own ISR TTL (the lowest one wins).
+  // At 60 s every ISR page re-rendered, and re-wrote its cache entry, each
+  // minute. A purchase purges it at once (grantLifetime), so 1 h is only a net.
+  revalidate: 3600,
   tags: ["founding"],
 });
 
@@ -118,6 +122,13 @@ export async function grantLifetime(p: {
     .update({ profile_status: "approved" })
     .eq("id", p.organizationId)
     .in("profile_status", ["pending_review", "draft"]);
+
+  // Show the new count straight away instead of waiting out the 1 h cache.
+  try {
+    revalidateTag("founding", { expire: 0 });
+  } catch {
+    // Outside a Next request (tests, scripts): nothing to purge.
+  }
 
   let sold: number | null = null;
   try {

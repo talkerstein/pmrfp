@@ -3,6 +3,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { GEO_COOKIE, encodeGeo } from "@/lib/visitor-geo";
 import { checkPublicReadLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { isPublicPageRead } from "@/lib/public-read-policy";
+import { earlyAnswer } from "@/lib/bot-guard";
 import { withAttribution } from "@/lib/attribution/proxy";
 import { BOT_UA, optedOut } from "@/lib/tracking/privacy";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, hasLocale, isEnabledLocale, splitLocale, type Locale } from "@/i18n/config";
@@ -66,6 +67,16 @@ function redirectTo(request: NextRequest, pathname: string, status: 307 | 308 = 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isGet = request.method === "GET" || request.method === "HEAD";
+
+  // Scanners, SEO-tool crawlers and made-up provinces get an instant bare
+  // answer: no rate-limit call, no session refresh, no page render.
+  const early = earlyAnswer(request.method, pathname, request.headers.get("user-agent"));
+  if (early) {
+    return new NextResponse(early.status === 403 ? "Forbidden" : "Not found", {
+      status: early.status,
+      headers: { "Cache-Control": "public, max-age=3600", "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 
   if (isPublicPageRead(request.method, pathname)) {
     const blocked = await checkPublicReadLimit(request);

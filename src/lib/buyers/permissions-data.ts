@@ -86,7 +86,7 @@ export async function loadPermissionRegistry(db: Pick<SupabaseClient, "from">): 
   }
 }
 
-export const BUYER_PERMISSIONS_REVALIDATE = 600;
+export const BUYER_PERMISSIONS_REVALIDATE = 21600;
 const READ_TIMEOUT_MS = 8_000;
 const singleFlight = createSingleFlight();
 

@@ -1,10 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SiteTracker } from "@/components/site-tracker";
-import { trackingAllowed } from "@/lib/tracking/client";
 
 /**
  * Cookieless measurement, everywhere except the website widgets (/embed/*),
@@ -13,8 +10,9 @@ import { trackingAllowed } from "@/lib/tracking/client";
  * remain traceable):
  *  - first-party page views, listing views and upgrade clicks
  *    (SiteTracker → /api/t, our own database);
- *  - Vercel Web Analytics + Speed Insights (they only collect once Web
- *    Analytics / Speed Insights are switched on for the Vercel project).
+ * Vercel Web Analytics and Speed Insights were removed (2026-10): the
+ * first-party beacon covers page views and funnels, and Speed Insights was a
+ * paid per-event add-on. Do not re-add them without checking the Vercel bill.
  * Nothing is sent when the browser asks not to be tracked (Do-Not-Track or
  * Global Privacy Control). Google Analytics 4 and Microsoft Clarity set
  * cookies, so they load only after consent (components/analytics-consent).
@@ -25,8 +23,6 @@ export function SiteAnalytics() {
   return (
     <>
       <SiteTracker />
-      <Analytics beforeSend={(event) => (trackingAllowed() ? event : null)} />
-      <SpeedInsights beforeSend={(event) => (trackingAllowed() ? event : null)} />
     </>
   );
 }

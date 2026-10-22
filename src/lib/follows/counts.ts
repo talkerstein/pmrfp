@@ -17,7 +17,7 @@ import { createSingleFlight } from "@/lib/concurrency";
  */
 
 export const BUYER_FOLLOWS_TAG = "buyer-follows";
-export const FOLLOW_COUNTS_REVALIDATE = 600;
+export const FOLLOW_COUNTS_REVALIDATE = 3600;
 const READ_TIMEOUT_MS = 8_000;
 const singleFlight = createSingleFlight();
 
