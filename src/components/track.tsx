@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { track, trackListingView, type BeaconProps } from "@/lib/tracking/client";
 import type { ClientEvent } from "@/lib/tracking/events";
 
-/** Sends one browser-side funnel event when the page opens (e.g. pricing_viewed, signup_started). */
+/** Sends one browser-side funnel event when the page opens (e.g. pricing_viewed, signup_viewed). */
 export function TrackOnMount({ event, props }: { event: ClientEvent; props?: BeaconProps }) {
   const key = JSON.stringify(props ?? {});
   useEffect(() => {

@@ -30,6 +30,10 @@ import { recordOnboardingStep } from "@/lib/onboarding/progress";
 import { errorDetail } from "@/lib/onboarding/steps";
 import { linkDigestSubscriber } from "@/lib/digest/link";
 import { magicLinkRedirect, parseSignupMethod } from "@/lib/auth/magic-link";
+import { SIGNUP_INTENT_COOKIE } from "@/lib/auth/signup-intent";
+import { marketingTicked } from "@/lib/consent/email";
+import { normalizeWebsite } from "@/lib/auth/website";
+import { recordEmailConsent, recordEmailConsentForEmail } from "@/lib/consent/record";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { cleanEmail } from "@/lib/dedupe/email";
 import { existingAccountFor, existingAccountPath } from "@/lib/dedupe/signup";
@@ -129,6 +133,12 @@ function translated(group: "validation" | "upstream", message: string | undefine
   return key ? local[key] : fallback;
 }
 
+/** What the onboarding form says about email: the notice (service) always, the optional box (marketing) only if ticked. */
+async function recordOnboardingConsent(userId: string, formData: FormData, lang: Locale): Promise<void> {
+  await recordEmailConsent(userId, "service", "onboarding", lang);
+  if (marketingTicked(formData.get("marketing"))) await recordEmailConsent(userId, "marketing", "onboarding", lang);
+}
+
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "company";
 }
@@ -155,6 +165,8 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     return { error: translated("validation", "Password must be at least 8 characters", lang, m.checkDetails) };
   }
   if (parsed.data.company_website) return { success: m.thanks }; // honeypot
+  // The form was submitted and passed validation (signup_viewed is the page opening; lib/tracking/events).
+  await trackEvent(EVENT.SIGNUP_STARTED, { role: parsed.data.role, method, plan: formData.get("plan") === "pro" ? "pro" : null, hasNext: !!safeNextPath(formData.get("next")?.toString()) });
   if (!isSupabaseConfigured()) return { error: m.demo };
 
   // One account per mailbox (lib/dedupe): an address that already has an
@@ -213,6 +225,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     // cookie; the emailed link may be opened on another device). Supabase
     // returns no user id for OTP, so the fresh account is found by email.
     await recordSignupAttributionForEmail({ email: parsed.data.email, method: "magic_link", role: parsed.data.role, lang });
+    await recordEmailConsentForEmail(parsed.data.email, "service", "signup_form", lang);
     await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord, method: "link" });
     await sendAdminNewSignup({ email: parsed.data.email, name: parsed.data.fullName ?? "", role: parsed.data.role, method: "email", gc: isGc, landlord: isLandlord });
     await syncPmrfpUserToGhl({
@@ -223,15 +236,22 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     }, { extraTags: buyerTags("pmrfp-signup", buyerKind) });
     const done = new URLSearchParams({ email: parsed.data.email, role: isGc ? "general_contractor" : isLandlord ? "landlord" : parsed.data.role, method: "link" });
     if (wantsPro) done.set("plan", "pro");
+    if (next) done.set("next", next);
+    (await cookies()).delete(SIGNUP_INTENT_COOKIE);
     redirect(localizePath(`/check-email?${done.toString()}`, lang));
   }
 
+  // The confirmation link comes back through /auth/callback, like the emailed
+  // sign-in link, carrying `next` (a plan chosen on the way in, a town to
+  // follow). It used to land on /onboarding with nothing but the code, so
+  // the checkout someone had asked for was forgotten.
+  const confirmNext = isTalent ? "/talent/edit" : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password!,
     options: {
       data: metadata,
-      emailRedirectTo: `${siteUrl}${isTalent ? "/talent/edit" : "/onboarding"}`,
+      emailRedirectTo: magicLinkRedirect(siteUrl, confirmNext),
     },
   });
   if (error) {
@@ -244,6 +264,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   const newUserId = data.user?.id && (data.user.identities?.length ?? 1) > 0 ? data.user.id : null;
   if (newUserId) {
     await recordSignupAttribution({ userId: newUserId, method: "password", role: parsed.data.role, lang });
+    await recordEmailConsent(newUserId, "service", "signup_form", lang);
   }
   // No welcome email here: it goes out once onboarding completes.
   await trackEvent(EVENT.SIGNUP_COMPLETED, { role: parsed.data.role, hasNext: !!next, gc: isGc, landlord: isLandlord, method: "password" }, { userId: newUserId });
@@ -258,9 +279,11 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   // Email confirmation required → no session yet. Land on an explanation page
   // instead of silently bouncing /onboarding → /sign-in (a dead end for
   // invited trades). The confirmation link itself carries them to /onboarding.
+  (await cookies()).delete(SIGNUP_INTENT_COOKIE);
   if (!data.session) {
-    const done = new URLSearchParams({ email: parsed.data.email, role: isGc ? "general_contractor" : isLandlord ? "landlord" : parsed.data.role });
+    const done = new URLSearchParams({ email: parsed.data.email, role: isGc ? "general_contractor" : isLandlord ? "landlord" : parsed.data.role, method: "password" });
     if (wantsPro) done.set("plan", "pro");
+    if (next) done.set("next", next);
     redirect(localizePath(`/check-email?${done.toString()}`, lang));
   }
   if (isTalent) redirect(localizePath("/talent/edit", lang));
@@ -315,6 +338,34 @@ export async function signInLinkAction(_prev: ActionState, formData: FormData): 
   });
   // "No such user" is expected for unknown addresses: same answer either way.
   if (error) console.info("[signInLink]", error.message);
+  return { success: m.linkSent };
+}
+
+/**
+ * "Send the link again" on the check-your-email screen. The same answer
+ * whether or not the address has an account, so it can't be used to find
+ * out who is a member. The new link goes through the same callback and
+ * carries the same `next`, so a plan or a town picked at sign-up survives.
+ * The screen enforces the cooldown (lib/auth/resend); Supabase enforces its own.
+ */
+export async function resendSignupLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const lang = formLang(formData);
+  const m = messages(lang);
+  if (await checkRateLimitByIp(await authIp(), "auth")) {
+    return { error: m.rateLimit };
+  }
+  const parsed = forgotPasswordSchema.safeParse({ email: cleanEmail(String(formData.get("email") ?? "")) });
+  if (!parsed.success) return { error: m.enterValidEmail };
+  if (!isSupabaseConfigured()) return { error: m.demo };
+  const next = safeNextPath(formData.get("next")?.toString());
+  const linkNext = formData.get("role") === "talent" ? "/talent/edit" : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
+  const supabase = await createClient();
+  // signInWithOtp, not auth.resend(): only it carries the PKCE challenge the callback needs.
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
+    options: { shouldCreateUser: false, emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", linkNext) },
+  });
+  if (error) console.info("[resendSignupLink]", error.message);
   return { success: m.linkSent };
 }
 
@@ -467,6 +518,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     const supabase = await createClient();
     await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
     await recordSignupAttribution({ userId: session.userId, role, lang });
+    await recordOnboardingConsent(session.userId, formData, lang);
     await linkDigestSubscriber(session.userId, session.profile.email);
     await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, browsing: true }, { userId: session.userId });
     redirect(localizePath(next ?? "/directory", lang));
@@ -487,9 +539,10 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   const parsed = companyProfileSchema.safeParse({
     name: isLandlord && !rawName ? session.profile.full_name?.trim() || "Individual owner" : formData.get("name"),
-    website: formData.get("website") ?? "",
+    website: normalizeWebsite(formData.get("website")),
     phone: formData.get("phone") ?? "",
-    email: formData.get("email") ?? session.profile.email,
+    // Left blank (the box looks optional): the account's own address, not "Enter a valid email".
+    email: String(formData.get("email") ?? "").trim() || session.profile.email,
     city: formData.get("city") ?? "",
     province: formData.get("province") ?? "",
     shortDescription: formData.get("shortDescription") ?? "",
@@ -499,6 +552,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   });
   if (!parsed.success) {
     await recordOnboardingStep(session.userId, "form_error", errorDetail(parsed.error.issues[0]?.path));
+    await trackEvent(EVENT.ONBOARDING_STEP, { step: "form_error", field: errorDetail(parsed.error.issues[0]?.path) }, { userId: session.userId, role });
     return { error: translated("validation", parsed.error.issues[0]?.message, lang, m.completeRequired) };
   }
   const data = parsed.data;
@@ -586,6 +640,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   }
   if (orgErr || !org) {
     await recordOnboardingStep(session.userId, "org_failed", orgErr?.code ?? null);
+    await trackEvent(EVENT.ONBOARDING_STEP, { step: "org_failed" }, { userId: session.userId, role });
     return { error: m.orgFailed };
   }
 
@@ -613,6 +668,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   await admin.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
   await recordSignupAttribution({ userId: session.userId, orgId: org.id, role, lang });
+  await recordOnboardingConsent(session.userId, formData, lang);
   await linkDigestSubscriber(session.userId, session.profile.email);
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord }, { userId: session.userId });
 

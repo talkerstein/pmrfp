@@ -15,10 +15,16 @@ import type { SiteEvent } from "@/lib/tracking/events";
 import { recordSiteEvent, type TrackContext } from "@/lib/tracking/server";
 
 export const EVENT = {
+  /** The sign-up form was submitted (the page opening is signup_viewed, reported by the browser). */
+  SIGNUP_STARTED: "signup_started",
   SIGNUP_COMPLETED: "signup_completed",
+  /** The emailed link was opened and the address is confirmed. */
+  EMAIL_CONFIRMED: "email_confirmed",
+  ONBOARDING_STEP: "onboarding_step",
   SIGNIN_COMPLETED: "signin_completed",
   ONBOARDING_COMPLETED: "onboarding_completed",
   CHECKOUT_STARTED: "checkout_started",
+  CHECKOUT_FAILED: "checkout_failed",
   CHECKOUT_COMPLETED: "checkout_completed",
   SUBSCRIPTION_ACTIVE: "subscription_active",
   TEMPLATE_USED: "template_used",
@@ -40,7 +46,11 @@ type AllowedValue = string | number | boolean | null;
 
 /** The first-party event each name is recorded as (names not listed go to Vercel only). */
 const SITE_EVENT_FOR: Partial<Record<EventName, SiteEvent>> = {
+  signup_started: "signup_started",
   signup_completed: "signup_completed",
+  email_confirmed: "email_confirmed",
+  onboarding_step: "onboarding_step",
+  checkout_failed: "checkout_failed",
   onboarding_completed: "onboarding_completed",
   checkout_started: "checkout_started",
   checkout_completed: "checkout_completed",

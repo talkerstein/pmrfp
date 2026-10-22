@@ -43,6 +43,7 @@ export function OnboardingForm({
 }) {
   const t = useT("auth").onboarding;
   const tu = useT("auth").visitorUpgrade;
+  const ce = useT("auth").emailConsent;
   const lang = useLang();
   const [state, action, pending] = useActionState(completeOnboardingAction, {} as ActionState);
   const isListing = role === "trade" || role === "supplier";
@@ -72,6 +73,7 @@ export function OnboardingForm({
         <p className="text-sm text-muted-foreground">
           {t.browseReady}
         </p>
+        <EmailConsent ce={ce} lang={lang} />
         <Button type="submit" disabled={pending}>{t.startBrowsing}</Button>
       </form>
     );
@@ -116,22 +118,15 @@ export function OnboardingForm({
         </fieldset>
       )}
 
+      {/* Only what the listing needs: the name, where, and (below) what you do. Everything else is optional and folds away. */}
       <div className="grid gap-4 sm:grid-cols-2">
         {landlord ? (
           <Field label={t.landlordName}><Input name="name" placeholder={t.landlordNamePlaceholder} defaultValue={echoed("name") ?? defaultName ?? undefined} /></Field>
         ) : (
           <Field label={t.companyName} required><Input name="name" required defaultValue={echoed("name") ?? defaultName ?? undefined} /></Field>
         )}
-        <Field label={t.website}><Input name="website" placeholder="https://" defaultValue={echoed("website")} /></Field>
-        <Field label={t.phone}><Input name="phone" defaultValue={echoed("phone")} /></Field>
-        <Field label={t.email}><Input name="email" type="email" defaultValue={echoed("email")} /></Field>
-        <Field label={t.city}><Input name="city" defaultValue={echoed("city")} /></Field>
         <Field label={t.province}><Input name="province" defaultValue={echoed("province") ?? defaultProvinceFor(lang)} /></Field>
       </div>
-
-      <Field label={t.shortDescription}>
-        <Textarea name="shortDescription" rows={2} maxLength={300} defaultValue={echoed("shortDescription")} placeholder={landlord ? t.landlordDescriptionPlaceholder : t.shortDescriptionPlaceholder} />
-      </Field>
 
       {isListing && (
         <>
@@ -149,24 +144,66 @@ export function OnboardingForm({
             required
             preselected={echo.length ? echoedAll("regions") : preselectedRegions}
           />
-          <Field label={t.contact}>
-            <select
-              name="publicContactVisibility"
-              defaultValue={echoed("publicContactVisibility") ?? "request_intro"}
-              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-            >
-              <option value="show_contact">{t.contactShow}</option>
-              <option value="request_intro">{t.contactIntro}</option>
-              <option value="hide_contact">{t.contactHide}</option>
-            </select>
-          </Field>
         </>
       )}
+
+      <details
+        className="rounded-lg border border-border p-4"
+        open={["website", "phone", "email", "city", "shortDescription"].some((k) => !!echoed(k))}
+      >
+        <summary className="cursor-pointer text-sm font-medium">{t.moreDetails}</summary>
+        <p className="mt-1 text-xs text-muted-foreground">{t.moreDetailsHint}</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label={t.website}><Input name="website" placeholder="example.com" defaultValue={echoed("website")} /></Field>
+          <Field label={t.phone}><Input name="phone" defaultValue={echoed("phone")} /></Field>
+          <Field label={t.email}><Input name="email" type="email" defaultValue={echoed("email")} /></Field>
+          <Field label={t.city}><Input name="city" defaultValue={echoed("city")} /></Field>
+        </div>
+        <div className="mt-4">
+          <Field label={t.shortDescription}>
+            <Textarea name="shortDescription" rows={2} maxLength={300} defaultValue={echoed("shortDescription")} placeholder={landlord ? t.landlordDescriptionPlaceholder : t.shortDescriptionPlaceholder} />
+          </Field>
+        </div>
+        {isListing && (
+          <div className="mt-4">
+            <Field label={t.contact}>
+              <select
+                name="publicContactVisibility"
+                defaultValue={echoed("publicContactVisibility") ?? "request_intro"}
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              >
+                <option value="show_contact">{t.contactShow}</option>
+                <option value="request_intro">{t.contactIntro}</option>
+                <option value="hide_contact">{t.contactHide}</option>
+              </select>
+            </Field>
+          </div>
+        )}
+      </details>
+
+      <EmailConsent ce={ce} lang={lang} />
 
       <Button type="submit" size="lg" disabled={pending}>
         {pending ? t.saving : isListing ? t.finish : t.createOrg}
       </Button>
     </form>
+  );
+}
+
+/** The plain email notice and the optional, unticked marketing box (lib/consent/email). */
+function EmailConsent({ ce, lang }: { ce: { notice: string; terms: string; privacy: string; marketingLabel: string }; lang: Parameters<typeof localizePath>[1] }) {
+  return (
+    <div className="space-y-3">
+      <label className="flex cursor-pointer items-start gap-2 text-sm">
+        {/* Never pre-ticked: a ticked box is not consent (CASL). Only an explicit tick is recorded. */}
+        <input type="checkbox" name="marketing" value="on" className="mt-0.5 size-4 rounded border-input" />
+        <span>{ce.marketingLabel}</span>
+      </label>
+      <p className="text-sm text-foreground/80" data-testid="email-notice">
+        {ce.notice}{" "}
+        <a className="underline" href={localizePath("/terms", lang)}>{ce.terms}</a> · <a className="underline" href={localizePath("/privacy", lang)}>{ce.privacy}</a>
+      </p>
+    </div>
   );
 }
 

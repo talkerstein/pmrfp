@@ -22,6 +22,8 @@ export interface RawReport {
   signups: { market: Market; channel: string; method: string; role: string; n: number }[];
   accounts: { total: number; without_row: number } | null;
   events: { market: Market; event: string; role_group: RoleGroup; actors: number; n: number }[];
+  /** signup_step / onboarding_step by step (and the field a refused form named). Missing before migration 20261022000100. */
+  steps: { market: Market; event: string; step: string; field: string; actors: number; n: number }[];
 }
 
 export const EMPTY_REPORT: RawReport = {
@@ -33,6 +35,7 @@ export const EMPTY_REPORT: RawReport = {
   signups: [],
   accounts: null,
   events: [],
+  steps: [],
 };
 
 /** Accepts whatever the RPC returned; anything malformed becomes empty. */
@@ -49,6 +52,7 @@ export function normalizeReport(raw: unknown): RawReport {
     signups: arr(r.signups),
     accounts: r.accounts && typeof r.accounts === "object" ? r.accounts : null,
     events: arr(r.events),
+    steps: arr(r.steps),
   };
 }
 
@@ -95,8 +99,10 @@ function actors(raw: RawReport, market: Market, event: string, groups?: readonly
 
 export const STEP_LABEL: Record<string, string> = {
   visit: "Visits",
-  signup_started: "Opened sign-up",
-  signup_completed: "Signed up",
+  signup_viewed: "Opened the sign-up page",
+  signup_started: "Submitted the sign-up form",
+  signup_completed: "Account created",
+  email_confirmed: "Confirmed their email",
   onboarding_completed: "Finished onboarding",
   upgrade_clicked: "Clicked upgrade",
   checkout_started: "Started checkout",
@@ -118,6 +124,17 @@ export interface MarketView {
   funnel: { shared: FunnelStep[]; trade: FunnelStep[]; pm: FunnelStep[] };
   /** Other activity, distinct people. */
   activity: { event: string; n: number }[];
+  /** The sign-up wizard and the onboarding form, step by step: where unfinished sign-ups stopped. */
+  stalls: StallView;
+  /** The single biggest drop in the sign-up funnel (null when there is too little to say). */
+  leak: Leak | null;
+}
+
+export interface StallView {
+  wizard: { step: number; actors: number }[];
+  onboarding: { step: string; label: string; actors: number }[];
+  /** Fields the company form refused, with how many people it stopped. */
+  refusedFields: { field: string; actors: number }[];
 }
 
 /**
@@ -162,8 +179,10 @@ export function marketView(raw: RawReport, market: Market): MarketView {
     funnel: {
       shared: funnel([
         step("visit", visitors),
+        step("signup_viewed", actors(raw, market, "signup_viewed")),
         step("signup_started", actors(raw, market, "signup_started")),
         step("signup_completed", actors(raw, market, "signup_completed")),
+        step("email_confirmed", actors(raw, market, "email_confirmed")),
         step("onboarding_completed", actors(raw, market, "onboarding_completed")),
       ]),
       trade: funnel([
@@ -178,9 +197,18 @@ export function marketView(raw: RawReport, market: Market): MarketView {
         step("rfp_posted", actors(raw, market, "rfp_posted", PM_SIDE)),
       ]),
     },
+    stalls: stallView(raw, market),
+    leak: biggestLeak(funnel([
+      step("signup_viewed", actors(raw, market, "signup_viewed")),
+      step("signup_started", actors(raw, market, "signup_started")),
+      step("signup_completed", actors(raw, market, "signup_completed")),
+      step("email_confirmed", actors(raw, market, "email_confirmed")),
+      step("onboarding_completed", actors(raw, market, "onboarding_completed")),
+    ])),
     activity: [
       "pricing_viewed",
       "upgrade_clicked",
+      "checkout_failed",
       "writer_started",
       "writer_draft_generated",
       "trial_started",
@@ -199,11 +227,69 @@ export function marketView(raw: RawReport, market: Market): MarketView {
 /** Lines for the Monday admin email (one market). */
 export function weeklyLines(v: MarketView): string[] {
   const s = v.funnel.shared;
+  const at = (key: string) => s.find((x) => x.key === key);
   const conv = (a: FunnelStep | undefined, b: FunnelStep | undefined) => (a && b && a.n > 0 ? pct(b.n / a.n) : "–");
   const sources = v.signupsByChannel.slice(0, 4).map((c) => `${c.label} ${c.n}`).join(", ") || "none";
   return [
     `Visitors ${v.visitors} · page views ${v.pageViews}`,
     `Sign-ups ${v.signups} by source: ${sources}`,
-    `Visit → sign-up ${conv(s[0], s[2])} · sign-up → onboarded ${conv(s[2], s[3])} · trade upgrade → paid ${conv(v.funnel.trade[1], v.funnel.trade[3])} · PM writer → posted ${conv(v.funnel.pm[1], v.funnel.pm[2])}`,
+    `Visit → sign-up ${conv(at("visit"), at("signup_completed"))} · sign-up page → submitted ${conv(at("signup_viewed"), at("signup_started"))} · account → onboarded ${conv(at("signup_completed"), at("onboarding_completed"))} · trade upgrade → paid ${conv(v.funnel.trade[1], v.funnel.trade[3])} · PM writer → posted ${conv(v.funnel.pm[1], v.funnel.pm[2])}`,
   ];
+}
+
+export interface Leak {
+  from: string;
+  to: string;
+  fromN: number;
+  toN: number;
+  /** Share of the step before that reached this one (0 to 1). */
+  kept: number;
+}
+
+/**
+ * The biggest drop between two neighbouring steps. Steps with nobody in
+ * them, and any "drop" that isn't one (a later step with MORE people: the
+ * steps count browsers before sign-in and accounts after it, so they can
+ * disagree by a few), are skipped. Needs at least 5 people on the first
+ * step of the pair, so three visitors don't make a verdict.
+ */
+export function biggestLeak(steps: readonly FunnelStep[], minimum = 5): Leak | null {
+  let worst: Leak | null = null;
+  for (let i = 1; i < steps.length; i++) {
+    const a = steps[i - 1];
+    const b = steps[i];
+    if (a.n < minimum || b.fromPrev == null || b.n > a.n) continue;
+    if (!worst || b.fromPrev < worst.kept) worst = { from: a.label, to: b.label, fromN: a.n, toN: b.n, kept: b.fromPrev };
+  }
+  return worst;
+}
+
+export const ONBOARDING_STEP_LABEL: Record<string, string> = {
+  role_pick_viewed: "Saw \"what describes you\" (Google)",
+  role_picked: "Picked a role",
+  form_viewed: "Opened the company form",
+  form_error: "Company form refused something",
+  org_failed: "Saving the company failed (our side)",
+};
+
+function stallView(raw: RawReport, market: Market): StallView {
+  const rows = raw.steps.filter((r) => r.market === market);
+  const sum = (event: string, key: (r: RawReport["steps"][number]) => string) => {
+    const m = new Map<string, number>();
+    for (const r of rows.filter((x) => x.event === event)) m.set(key(r), (m.get(key(r)) ?? 0) + (Number(r.actors) || 0));
+    return m;
+  };
+  const wizard = [...sum("signup_step", (r) => r.step)]
+    .map(([step, actors]) => ({ step: Number(step), actors }))
+    .filter((x) => Number.isInteger(x.step) && x.step >= 1 && x.step <= 9)
+    .sort((a, b) => a.step - b.step);
+  const onboarding = [...sum("onboarding_step", (r) => r.step)]
+    .map(([step, actors]) => ({ step, label: ONBOARDING_STEP_LABEL[step] ?? step, actors }))
+    .filter((x) => x.step !== "")
+    .sort((a, b) => Object.keys(ONBOARDING_STEP_LABEL).indexOf(a.step) - Object.keys(ONBOARDING_STEP_LABEL).indexOf(b.step));
+  const refused = [...sum("onboarding_step", (r) => (r.step === "form_error" ? r.field : ""))]
+    .filter(([field]) => field !== "")
+    .map(([field, actors]) => ({ field, actors }))
+    .sort((a, b) => b.actors - a.actors);
+  return { wizard, onboarding, refusedFields: refused };
 }

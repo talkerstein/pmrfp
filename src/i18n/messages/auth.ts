@@ -183,6 +183,15 @@ const en = {
     saving: "Saving…",
     finish: "Finish & go to dashboard",
     createOrg: "Create organization",
+    moreDetails: "Add more details (optional)",
+    moreDetailsHint: "Website, phone, email, city, a short description and how buyers contact you. You can add all of this later.",
+  },
+  /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
+  emailConsent: {
+    notice: "We'll email you about your account, the bids and buyers you follow, and tips for getting set up on PMRFP. You can unsubscribe from any email.",
+    terms: "Terms",
+    privacy: "Privacy",
+    marketingLabel: "Also send me occasional offers and news from PMRFP. Optional; you can change your mind at any time.",
   },
   /** The sign-up page's "why join" panel. */
   /** "Just looking" accounts that run a business: switch to a free listing (lib/auth/visitor-upgrade). */
@@ -448,6 +457,15 @@ const fr: typeof en = {
     saving: "Enregistrement…",
     finish: "Terminer et aller au tableau de bord",
     createOrg: "Créer l'organisation",
+    moreDetails: "Ajouter plus de détails (facultatif)",
+    moreDetailsHint: "Site web, téléphone, courriel, ville, courte description et façon dont les acheteurs vous joignent. Vous pourrez tout ajouter plus tard.",
+  },
+  /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
+  emailConsent: {
+    notice: "Nous vous écrirons au sujet de votre compte, des appels d'offres et des acheteurs que vous suivez, et pour vous aider à bien démarrer sur PMRFP. Vous pouvez vous désabonner de n'importe quel courriel.",
+    terms: "Conditions",
+    privacy: "Confidentialité",
+    marketingLabel: "Je veux aussi recevoir à l'occasion des offres et des nouvelles de PMRFP. Facultatif; vous pouvez changer d'avis en tout temps.",
   },
   visitorUpgrade: {
     meta: "Inscrivez votre entreprise gratuitement",
@@ -711,6 +729,15 @@ const es: typeof en = {
     saving: "Guardando…",
     finish: "Terminar e ir al panel",
     createOrg: "Crear la organización",
+    moreDetails: "Agregar más detalles (opcional)",
+    moreDetailsHint: "Sitio web, teléfono, correo, ciudad, una breve descripción y cómo pueden contactarle los compradores. Puede agregarlo todo después.",
+  },
+  /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
+  emailConsent: {
+    notice: "Le enviaremos correos sobre su cuenta, las licitaciones y los compradores que sigue, y para ayudarle a empezar bien en PMRFP. Puede darse de baja desde cualquier correo.",
+    terms: "Términos",
+    privacy: "Privacidad",
+    marketingLabel: "También quiero recibir de vez en cuando ofertas y novedades de PMRFP. Opcional; puede cambiar de opinión en cualquier momento.",
   },
   visitorUpgrade: {
     meta: "Publique su negocio gratis",

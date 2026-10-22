@@ -47,6 +47,7 @@ import { closedArchiveAward, closedArchiveNoticeUrl } from "@/lib/tenders/closed
 import { daysUntil, parseAward } from "@/lib/data/fomo";
 import { tradePhotoForName } from "@/lib/photos";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
+import { upgradeInterval } from "@/lib/billing/checkout-flow";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { buyerFromSummary, cleanTenderTitle, clip, placeLabel } from "@/lib/seo/rfp-meta";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
@@ -211,7 +212,9 @@ export default async function RfpDetailPage({
   const closedAward = closedArchive ? closedArchiveAward(teaser.summary) : null;
   const locked = !town && !isAward && !isClosed && !(showFull && full);
   const bidCheck = !isAward && !isClosed ? await getBidCheckBySlug(teaser.slug) : null;
-  const upgradeHref = session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly");
+  // Ask for monthly only when a monthly price exists (a "monthly" link with no monthly price ended in "That plan isn't available yet").
+  const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
+  const upgradeHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
   const annualHref = session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro", "annual");
   const bidChecklist = bidCheck ? (
     <BidChecklist check={bidCheck} locked={!showFull} proHref={upgradeHref} translated={isPublicTender && tenderSource.key === "seao"} />

@@ -5,12 +5,13 @@
  * with its data-plan. So does any link into a purchase path, wherever it
  * sits, so CTAs added later are counted without remembering to tag them:
  *   /sign-up?plan=pro|featured (the pricing cards), /dashboard/billing,
- *   /dashboard/trial, /founding-500, /intel/upgrade.
+ *   /checkout, /dashboard/trial, /founding-500, /intel/upgrade.
  */
 
 const PURCHASE_PATHS: [RegExp, string][] = [
   [/^\/dashboard\/billing(?:\/|$)/, "billing"],
   [/^\/dashboard\/trial(?:\/|$)/, "trial"],
+  [/^\/checkout(?:\/|$)/, "checkout"],
   [/^\/founding-500(?:\/|$)/, "founding"],
   [/^\/intel\/upgrade(?:\/|$)/, "intel"],
 ];

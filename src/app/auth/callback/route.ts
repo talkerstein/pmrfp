@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession, roleHome } from "@/lib/access/access";
 import { postOAuthRedirect } from "@/lib/auth/oauth";
 import { callbackFailurePath } from "@/lib/auth/magic-link";
+import { callbackCredential, isFreshConfirmation } from "@/lib/auth/callback";
 import { safeNextPath } from "@/lib/auth/next";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { FRESH_OAUTH_MS, blockDuplicateOAuthUser, existingAccountPath } from "@/lib/dedupe/signup";
@@ -19,15 +20,20 @@ const ATTRIBUTION_WINDOW_MS = 7 * 86_400_000;
  * /sign-in with a friendly message.
  */
 export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get("code");
+  const credential = callbackCredential(request.nextUrl.searchParams);
   const next = request.nextUrl.searchParams.get("next");
   // Google and emailed sign-in links (m=link, lib/auth/magic-link) both land here.
   const method = request.nextUrl.searchParams.get("m");
   const failed = NextResponse.redirect(new URL(callbackFailurePath(method), request.url));
-  if (!code || !isSupabaseConfigured()) return failed;
+  if (!credential || !isSupabaseConfigured()) return failed;
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  // `code` (PKCE) only works in the browser that asked for the link;
+  // `token_hash` works anywhere (lib/auth/callback explains the template change).
+  const { error } =
+    credential.kind === "code"
+      ? await supabase.auth.exchangeCodeForSession(credential.code)
+      : await supabase.auth.verifyOtp({ type: credential.type, token_hash: credential.tokenHash });
   if (error) {
     console.error("[auth/callback]", error.message);
     return failed;
@@ -54,6 +60,10 @@ export async function GET(request: NextRequest) {
       role: method === "link" ? session.profile.primary_role : null,
       signedUpAt: fresh.user.created_at,
     });
+  }
+  // The emailed link was opened and the address is confirmed (the funnel's step after "account created").
+  if (fresh.user && method === "link" && isFreshConfirmation(fresh.user.email_confirmed_at)) {
+    await trackEvent(EVENT.EMAIL_CONFIRMED, { method: "link", via: credential.kind, hasNext: !!safeNextPath(next) }, { userId: fresh.user.id, role: session?.profile.primary_role ?? null });
   }
   await trackEvent(EVENT.SIGNIN_COMPLETED, { method: method === "link" ? "link" : "google", hasNext: !!safeNextPath(next) });
   const to = postOAuthRedirect(

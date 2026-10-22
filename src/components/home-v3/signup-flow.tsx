@@ -4,7 +4,10 @@ import { useActionState, useEffect, useRef, useState, type ReactNode } from "rea
 import { audienceForRole, rememberAudience } from "@/lib/audience/pm";
 import { signUpAction, type ActionState } from "@/lib/auth/actions";
 import { onboardingPath, parseRoleChoice } from "@/lib/auth/oauth";
-import { billingPathForIntent, type PlanId, type PlanInterval } from "@/lib/billing/plan-intent";
+import { type PlanId, type PlanInterval } from "@/lib/billing/plan-intent";
+import { checkoutPath } from "@/lib/billing/checkout-flow";
+import { SIGNUP_INTENT_COOKIE, intentCookieAttributes, intentFromParams, serializeIntent } from "@/lib/auth/signup-intent";
+import { track } from "@/lib/tracking/client";
 import { PRICING } from "@/lib/site";
 import { ContinueWithGoogle } from "@/components/forms/google-button";
 import { localizePath, type Locale } from "@/i18n/config";
@@ -28,6 +31,10 @@ export interface SignupProps {
   lang: Locale;
   t: SignupCopy;
   initialRole?: SignupRole;
+  /** The link itself named the role (?role=…): the "who are you?" step is skipped. */
+  roleFromLink?: boolean;
+  /** The plain email notice under the button (auth.emailConsent). */
+  consent: { notice: string; terms: string; privacy: string };
   /** Arrived from a paid-plan button: the role (trade/supplier) and plan are decided. */
   intent: { plan: PlanId; interval: PlanInterval; name: string } | null;
   next: string | null;
@@ -48,7 +55,9 @@ export function SignUpFlow(p: SignupProps) {
   const m = useV3Money(lang);
   const [state, action, pending] = useActionState(signUpAction, {} as ActionState);
   const locked = !!p.intent;
-  const [step, setStep] = useState(locked ? 1 : 0);
+  // A plan or a role named by the link is already decided: start on the details.
+  const skipWho = locked || (!!p.roleFromLink && !!p.initialRole);
+  const [step, setStep] = useState(skipWho ? 1 : 0);
   const [role, setRole] = useState<SignupRole | "">(locked ? (p.initialRole === "supplier" ? "supplier" : "trade") : p.initialRole ?? "");
   // A property-manager-side pick: no trade popups or toasts for this visitor afterwards.
   useEffect(() => {
@@ -85,7 +94,31 @@ export function SignUpFlow(p: SignupProps) {
   const isLandlord = role === "landlord";
   const formRole = isGc || isLandlord ? "property_manager" : role || "trade";
   // Picked Trade Pro here (no plan in the URL): checkout comes after the account.
-  const nextPath = p.next ?? (pro && !p.intent ? billingPathForIntent({ plan: "pro", interval: "annual", name: "Trade Pro", priceLabel: "" }) : null);
+  const nextPath = p.next ?? (pro && !p.intent ? checkoutPath("pro", "annual") : null);
+
+  // Which step of the wizard people reach (once each per visit): where the sign-up leaks is measured, not guessed.
+  const seenSteps = useRef(new Set<number>());
+  useEffect(() => {
+    if (seenSteps.current.has(step)) return;
+    seenSteps.current.add(step);
+    track("signup_step", { step: step + 1, role: role || null });
+  }, [step, role]);
+  // Keep what the link asked for (plan, return path, town, role) for two hours, in case this page is opened again without it.
+  useEffect(() => {
+    const i = intentFromParams({
+      role: p.roleFromLink ? p.initialRole : undefined,
+      plan: p.intent?.plan,
+      interval: p.intent?.interval,
+      next: p.next ?? undefined,
+      region: p.initialRegions?.[0],
+    });
+    if (!i) return;
+    try {
+      document.cookie = `${SIGNUP_INTENT_COOKIE}=${serializeIntent(i)}; ${intentCookieAttributes(window.location.protocol === "https:")}`;
+    } catch {
+      /* cookies off: the URL still works */
+    }
+  }, [p.roleFromLink, p.initialRole, p.intent, p.next, p.initialRegions]);
 
   const stepText = step === 3 ? t.done : fmt(t.stepOf, { n: step + 1 });
   const gets = isSeller ? (pro ? t.getsPro : t.getsSeller) : t.getsPoster;
@@ -214,7 +247,24 @@ export function SignUpFlow(p: SignupProps) {
                 <ContinueWithGoogle next={onboardingPath({ role: parseRoleChoice(role || "trade"), award: p.award, next: nextPath })} />
               </div>
             )}
-            {/* Email + trade + region only: name and company are asked at onboarding. */}
+            {/* The email is the one thing the account needs: it comes first, so on a phone it isn't five screens below the trade and region pickers. */}
+            <div className="v3-su-block">
+              <input type="hidden" name="method" value={method} />
+              <div className="v3-su-two" style={{ marginTop: 0 }}>
+                <label className="v3-su-fld"><span>{t.workEmail}</span><input ref={emailRef} name="email" type="email" required autoComplete="email" placeholder="you@example.com" onBlur={(e) => { const email = e.currentTarget.value; setTyped((x) => ({ ...x, email })); }} /></label>
+                {method === "password" && (
+                  <label className="v3-su-fld"><span>{t.password}</span><input ref={passRef} name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+                )}
+              </div>
+              <div role="group" aria-label={t.methodLabel} className="v3-su-chips" style={{ marginTop: 10 }}>
+                <button type="button" className="v3-su-chip" aria-pressed={method === "link"} onClick={() => setMethod("link")}>{t.methodLink}</button>
+                <button type="button" className="v3-su-chip" aria-pressed={method === "password"} onClick={() => setMethod("password")}>{t.methodPassword}</button>
+              </div>
+              <div className="v3-su-note">{t.emailNote} {method === "link" ? t.methodLinkNote : t.passwordHint}</div>
+              {detailsError && <div className="v3-su-note" role="alert" style={{ color: "#9B1C1C", fontWeight: 700 }}>{t.fillIn}</div>}
+            </div>
+
+            {/* Trade + region picks are optional; name and company are asked at onboarding. */}
             {pickTrades && p.trades.length > 0 && (
               <div className="v3-su-block">
                 <div className="hd"><b>{t.yourTrades}</b><span>{trades.length ? fmt(t.tradesCount, { n: num(trades.length), open: num(openInPicked) }) : t.pickSome}</span></div>
@@ -244,21 +294,6 @@ export function SignUpFlow(p: SignupProps) {
               </div>
             )}
 
-            <div className="v3-su-block">
-              <input type="hidden" name="method" value={method} />
-              <div className="v3-su-two" style={{ marginTop: 0 }}>
-                <label className="v3-su-fld"><span>{t.workEmail}</span><input ref={emailRef} name="email" type="email" required autoComplete="email" placeholder="you@example.com" onBlur={(e) => { const email = e.currentTarget.value; setTyped((x) => ({ ...x, email })); }} /></label>
-                {method === "password" && (
-                  <label className="v3-su-fld"><span>{t.password}</span><input ref={passRef} name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
-                )}
-              </div>
-              <div role="group" aria-label={t.methodLabel} className="v3-su-chips" style={{ marginTop: 10 }}>
-                <button type="button" className="v3-su-chip" aria-pressed={method === "link"} onClick={() => setMethod("link")}>{t.methodLink}</button>
-                <button type="button" className="v3-su-chip" aria-pressed={method === "password"} onClick={() => setMethod("password")}>{t.methodPassword}</button>
-              </div>
-              <div className="v3-su-note">{t.emailNote} {method === "link" ? t.methodLinkNote : t.passwordHint}</div>
-              {detailsError && <div className="v3-su-note" role="alert" style={{ color: "#9B1C1C", fontWeight: 700 }}>{t.fillIn}</div>}
-            </div>
           </div>
 
           {/* 03 · Pick a plan */}
@@ -332,6 +367,11 @@ export function SignUpFlow(p: SignupProps) {
                 )}
               </div>
             </div>
+            {/* The plain email notice, right under the button on every step (CASL; lib/consent/email). */}
+            <p className="v3-su-notice" data-testid="email-notice">
+              {p.consent.notice}{" "}
+              <a href={L("/terms")}>{p.consent.terms}</a> · <a href={L("/privacy")}>{p.consent.privacy}</a>
+            </p>
             <div className="v3-su-legal">{t.disclaimer}</div>
           </div>
         </form>

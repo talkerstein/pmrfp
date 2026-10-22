@@ -10,6 +10,7 @@ import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { getCategories } from "@/lib/data/taxonomy";
 import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
+import { upgradeInterval } from "@/lib/billing/checkout-flow";
 import { rfpMarket } from "@/lib/visitor-geo";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -72,7 +73,8 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
   ]);
   // Trade Pro fields come through the visitor's own session: RLS decides.
   const pro = access ? await getProjectProFields(p.id) : null;
-  const proHref = session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly");
+  const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
+  const proHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
 
   // Related work from the shared board snapshot — Canada only (a project's province is always Canadian).
   const slugByName = new Map(categories.map((c) => [c.name, c.slug]));

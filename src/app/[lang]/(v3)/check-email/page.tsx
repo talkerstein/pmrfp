@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { BigTick, ROLE_PHOTO, SignupAside, SignupFrame, SignupSticky, SignupTop, Stepper } from "@/components/home-v3/signup-ui";
 import { getVisitorListCounts } from "@/lib/data/list-counts";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
-import { billingPathForIntent } from "@/lib/billing/plan-intent";
+import { checkoutPath } from "@/lib/billing/checkout-flow";
+import { CheckEmailActions } from "@/components/auth/check-email-actions";
+import { mailProviderFor } from "@/lib/auth/mail-provider";
+import { safeNextPath } from "@/lib/auth/next";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
@@ -27,19 +30,23 @@ export default async function CheckEmailPage({
   searchParams,
   params,
 }: {
-  searchParams: Promise<{ email?: string; role?: string; plan?: string }>;
+  searchParams: Promise<{ email?: string; role?: string; plan?: string; next?: string }>;
   params: Promise<object>;
 }) {
   const lang = await setLangFrom(params);
   const t = getT("v3Pages").signup;
-  const { email, role: rawRole, plan } = await searchParams;
+  const { email, role: rawRole, plan, next: rawNext } = await searchParams;
+  const next = safeNextPath(rawNext);
   const role: Role | null = rawRole && (ROLES as readonly string[]).includes(rawRole) ? (rawRole as Role) : null;
   const seller = role === "trade" || role === "supplier" || role === "talent" || role === null;
   const pro = (role === "trade" || role === "supplier") && plan === "pro";
   const [counts, categories, regions] = await Promise.all([getVisitorListCounts(), getCategories(), getRegions()]);
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => formatNumber(n, lang);
-  const checkout = `/sign-in?next=${encodeURIComponent(billingPathForIntent({ plan: "pro", interval: "annual", name: "Trade Pro", priceLabel: "" }))}`;
+  const checkout = `/sign-in?next=${encodeURIComponent(next ?? checkoutPath("pro", "annual"))}`;
+  // Wrong address? Back to the form with the same role and plan.
+  const startOver = `/sign-up${role || next ? "?" : ""}${new URLSearchParams({ ...(role ? { role: role === "general_contractor" ? "property_manager" : role } : {}), ...(role === "general_contractor" ? { kind: "gc" } : {}), ...(next ? { next } : {}) }).toString()}`;
+  const provider = mailProviderFor(email);
 
   const steps = seller && role !== "talent" ? t.nextSeller : t.nextPoster;
   const bigs = seller && role !== "talent"
@@ -88,6 +95,17 @@ export default async function CheckEmailPage({
           </div>
           <p className="v3-su-sub" style={{ marginTop: 16 }}>{email ? fmt(t.doneSubSent, { email }) : t.doneSub}</p>
           <p className="v3-su-fine">{t.spam}</p>
+          {email && (
+            <CheckEmailActions
+              email={email}
+              role={role}
+              next={next}
+              lang={lang}
+              provider={provider ? { name: provider.name, href: provider.href } : null}
+              startOverHref={L(startOver)}
+              t={{ openMail: t.openMail, resend: t.resend, resendIn: t.resendIn, resending: t.resending, resent: t.resent, resendLimit: t.resendLimit, wrongEmail: t.wrongEmail, startOver: t.startOver, sameBrowser: t.sameBrowser }}
+            />
+          )}
 
           {pro && (
             <div className="v3-su-checkout">
