@@ -13,6 +13,7 @@ import { BENCHMARKS_PATH, benchmarkPath, loadBenchmark, loadBenchmarkData, loadC
 import { getSession } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
+import { upgradeInterval } from "@/lib/billing/checkout-flow";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary, type Messages } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
@@ -81,7 +82,8 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
   // Free-account gate: signed out (crawlers too) = summary only; the gated lists are not in the data.
   const signedIn = configured ? Boolean(session) : sp.view !== "signed-out";
   const view = gateBenchmarkView(benchmarkView(b, pro), signedIn);
-  const upgradeHref = session ? "/dashboard/billing?plan=pro&interval=monthly" : signUpHrefForPlan("pro", "monthly");
+  const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
+  const upgradeHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
 
   const path = L(benchmarkPath(r.category.slug, r.province));
   const base = SITE.url.replace(/\/$/, "");

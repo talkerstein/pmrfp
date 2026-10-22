@@ -22,6 +22,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
+import { EVENT, trackEvent } from "@/lib/analytics";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { pendingJoinRequestFor } from "@/lib/dedupe/join";
@@ -55,7 +56,10 @@ export default async function OnboardingPage({
   // Signed up with Google, so no role yet: ask that one question first.
   if (needsRolePick(await rolePickStateFor(session))) {
     // Where sign-ups stall (lib/onboarding/steps): after the response, never blocking it.
-    if (!session.profile.onboarding_completed) after(() => recordOnboardingStep(session.userId, "role_pick_viewed"));
+    if (!session.profile.onboarding_completed) {
+      after(() => recordOnboardingStep(session.userId, "role_pick_viewed"));
+      await trackEvent(EVENT.ONBOARDING_STEP, { step: "role_pick_viewed" }, { userId: session.userId, role });
+    }
     return (
       <Shell lang={lang} heading={t.rolePickHeading} intro={t.rolePickIntro}>
         <RolePickerForm initial={choice} next={next} award={parseAwardRef(awardParam)} />
@@ -102,7 +106,10 @@ export default async function OnboardingPage({
     );
   }
 
-  if (!session.profile.onboarding_completed) after(() => recordOnboardingStep(session.userId, "form_viewed"));
+  if (!session.profile.onboarding_completed) {
+    after(() => recordOnboardingStep(session.userId, "form_viewed"));
+    await trackEvent(EVENT.ONBOARDING_STEP, { step: "form_viewed" }, { userId: session.userId, role });
+  }
   const [categories, allRegions, geo, prefs] = await Promise.all([getCategories(), getRegions(), getVisitorGeo(), getSignupPrefs()]);
   // Visitors in the U.S. see the U.S. regions first (the list is long and
   // scrolls); everyone gets their own province/state ticked to start.

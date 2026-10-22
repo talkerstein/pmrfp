@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { funnel, marketView, normalizeReport, pct, weeklyLines, type RawReport } from "@/lib/tracking/report";
+import { biggestLeak, funnel, marketView, normalizeReport, pct, weeklyLines, type RawReport } from "@/lib/tracking/report";
 import { rangeEnding } from "@/lib/tracking/report-server";
 import { buildWeeklyReport } from "@/lib/admin/weekly-report";
 
@@ -37,7 +37,9 @@ const RAW: RawReport = {
   ],
   accounts: { total: 7, without_row: 0 },
   events: [
-    { market: "CA", event: "signup_started", role_group: "other", actors: 20, n: 25 },
+    { market: "CA", event: "signup_viewed", role_group: "other", actors: 20, n: 25 },
+    { market: "CA", event: "signup_started", role_group: "other", actors: 6, n: 6 },
+    { market: "CA", event: "email_confirmed", role_group: "trade", actors: 4, n: 4 },
     { market: "CA", event: "signup_completed", role_group: "trade", actors: 4, n: 4 },
     { market: "CA", event: "signup_completed", role_group: "pm", actors: 1, n: 1 },
     { market: "CA", event: "onboarding_completed", role_group: "trade", actors: 2, n: 2 },
@@ -47,7 +49,15 @@ const RAW: RawReport = {
     { market: "CA", event: "checkout_completed", role_group: "trade", actors: 1, n: 1 },
     { market: "CA", event: "writer_started", role_group: "pm", actors: 2, n: 2 },
     { market: "CA", event: "rfp_posted", role_group: "pm", actors: 1, n: 1 },
-    { market: "US", event: "signup_started", role_group: "other", actors: 5, n: 5 },
+    { market: "US", event: "signup_viewed", role_group: "other", actors: 5, n: 5 },
+  ],
+  steps: [
+    { market: "CA", event: "signup_step", step: "1", field: "", actors: 20, n: 22 },
+    { market: "CA", event: "signup_step", step: "2", field: "", actors: 9, n: 9 },
+    { market: "CA", event: "signup_step", step: "3", field: "", actors: 6, n: 6 },
+    { market: "CA", event: "onboarding_step", step: "form_viewed", field: "", actors: 4, n: 5 },
+    { market: "CA", event: "onboarding_step", step: "form_error", field: "website", actors: 2, n: 2 },
+    { market: "CA", event: "onboarding_step", step: "form_error", field: "email", actors: 1, n: 1 },
   ],
 };
 
@@ -55,7 +65,7 @@ describe("funnel math", () => {
   it("converts from the previous step and from the top", () => {
     const f = funnel([
       { key: "visit", label: "Visits", n: 200 },
-      { key: "signup_started", label: "Opened sign-up", n: 20 },
+      { key: "signup_viewed", label: "Opened the sign-up page", n: 20 },
       { key: "signup_completed", label: "Signed up", n: 5 },
     ]);
     expect(f.map((s) => [s.n, s.fromPrev, s.fromTop])).toEqual([
@@ -78,8 +88,10 @@ describe("funnel math", () => {
   it("builds Canada and the U.S. separately, with trade and PM branches", () => {
     const ca = marketView(RAW, "CA");
     expect([ca.visitors, ca.pageViews, ca.signups]).toEqual([100, 300, 5]);
-    expect(ca.funnel.shared.map((s) => s.n)).toEqual([100, 20, 5, 3]);
-    expect(ca.funnel.shared[2].fromPrev).toBe(0.25);
+    // visit, opened the page, submitted, account created, confirmed the email, finished onboarding
+    expect(ca.funnel.shared.map((s) => s.key)).toEqual(["visit", "signup_viewed", "signup_started", "signup_completed", "email_confirmed", "onboarding_completed"]);
+    expect(ca.funnel.shared.map((s) => s.n)).toEqual([100, 20, 6, 5, 4, 3]);
+    expect(ca.funnel.shared[2].fromPrev).toBe(0.3);
     // Branches: signed-in members of that side only; anonymous clicks show under "Other activity".
     expect(ca.funnel.trade.map((s) => s.n)).toEqual([2, 1, 0, 1]);
     expect(ca.activity.find((a) => a.event === "upgrade_clicked")?.n).toBe(4);
@@ -89,7 +101,7 @@ describe("funnel math", () => {
 
     const us = marketView(RAW, "US");
     expect([us.visitors, us.signups]).toEqual([10, 2]);
-    expect(us.funnel.shared.map((s) => s.n)).toEqual([10, 5, 0, 0]);
+    expect(us.funnel.shared.map((s) => s.n)).toEqual([10, 5, 0, 0, 0, 0]);
     expect(us.topPages).toEqual([{ path: "/pricing", views: 9 }]);
   });
 
@@ -104,10 +116,38 @@ describe("funnel math", () => {
     expect(lines[0]).toBe("Visitors 100 · page views 300");
     expect(lines[1]).toBe("Sign-ups 5 by source: Google (organic) 4, Email 1");
     expect(lines[2]).toContain("Visit → sign-up 5%");
+    expect(lines[2]).toContain("sign-up page → submitted 30%");
+    expect(lines[2]).toContain("account → onboarded 60%");
     const report = buildWeeklyReport({ now: new Date("2026-10-21T12:00:00Z"), users: [], subscriptions: [], pmRfps: [], tenders: { total: 0, us: 0 }, interests: 0, interestsPrev: 0, contactRequests: 0, stripe: null, traffic: RAW });
     expect(report.traffic?.canada[0]).toBe("Visitors 100 · page views 300");
     expect(report.traffic?.us[0]).toBe("Visitors 10 · page views 15");
     expect(buildWeeklyReport({ now: new Date(), users: [], subscriptions: [], pmRfps: [], tenders: { total: 0, us: 0 }, interests: 0, interestsPrev: 0, contactRequests: 0, stripe: null }).traffic).toBeNull();
+  });
+
+  it("names the biggest leak, and ignores steps that grow or are too small to judge", () => {
+    const ca = marketView(RAW, "CA");
+    // 20 opened the page, 6 submitted: that is the worst neighbouring drop.
+    expect(ca.leak).toMatchObject({ from: "Opened the sign-up page", to: "Submitted the sign-up form", fromN: 20, toN: 6 });
+    expect(ca.leak?.kept).toBeCloseTo(0.3);
+    expect(marketView(RAW, "US").leak).toMatchObject({ fromN: 5, toN: 0, kept: 0 }); // 5 opened it, none submitted: a leak
+    const grows = funnel([
+      { key: "a", label: "A", n: 10 },
+      { key: "b", label: "B", n: 12 },
+      { key: "c", label: "C", n: 9 },
+    ]);
+    // 10 -> 12 is not a drop (browsers become accounts); 12 -> 9 is.
+    expect(biggestLeak(grows)).toMatchObject({ from: "B", to: "C", kept: 0.75 });
+    expect(biggestLeak([])).toBeNull();
+    expect(biggestLeak(funnel([{ key: "a", label: "A", n: 4 }, { key: "b", label: "B", n: 0 }]))).toBeNull();
+  });
+
+  it("shows where unfinished sign-ups stopped, and which field the company form refused", () => {
+    const { wizard, onboarding, refusedFields } = marketView(RAW, "CA").stalls;
+    expect(wizard).toEqual([{ step: 1, actors: 20 }, { step: 2, actors: 9 }, { step: 3, actors: 6 }]);
+    expect(onboarding.map((o) => [o.step, o.actors])).toEqual([["form_viewed", 4], ["form_error", 3]]);
+    expect(refusedFields).toEqual([{ field: "website", actors: 2 }, { field: "email", actors: 1 }]);
+    // A database that predates the migration has no `steps`: the page still renders.
+    expect(marketView(normalizeReport({ events: RAW.events }), "CA").stalls).toEqual({ wizard: [], onboarding: [], refusedFields: [] });
   });
 
   it("date ranges are inclusive", () => {

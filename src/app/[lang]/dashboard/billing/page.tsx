@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { ActivateButton, ManageBillingButton } from "@/components/dashboard/billing-actions";
+import { TrialStartForm, canStartTrial } from "@/components/leads/trial";
 import { PRICING } from "@/lib/site";
 import { parsePlanIntent, type PlanIntent } from "@/lib/billing/plan-intent";
 import type { Metadata } from "next";
@@ -39,7 +40,7 @@ function intentPrice(intent: PlanIntent, perMonth: string, perYear: string): str
 
 export default async function BillingPage({
   searchParams, params }: {
-  searchParams: Promise<{ plan?: string; interval?: string }>;
+  searchParams: Promise<{ plan?: string; interval?: string; checkout?: string }>;
 } & { params: Promise<object> }) {
   await setLangFrom(params);
   const lang = getLang();
@@ -89,6 +90,21 @@ export default async function BillingPage({
   return (
     <div>
       <PageHeader title={t.title} description={t.description} />
+
+      {(sp.checkout === "failed" || sp.checkout === "unavailable") && !isActive && (
+        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          {sp.checkout === "failed" ? t.checkoutFailed : t.checkoutUnavailable}
+        </div>
+      )}
+
+      {/* No card, one click: the way in for a company that isn't ready to pay (14 days, once per company). */}
+      {!isActive && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type }) && (
+        <div className="mb-4 rounded-lg border border-border bg-card p-5">
+          <p className="font-semibold text-foreground">{t.trialHead}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t.trialBody}</p>
+          <div className="mt-4"><TrialStartForm source="billing" label={getT("leads").trial.start} lang={lang} variant="outline" /></div>
+        </div>
+      )}
 
       {intent && !isActive && (
         <div className="mb-4 rounded-lg border border-teal-300 bg-teal-50/60 p-5">

@@ -3,6 +3,8 @@ import { getSession } from "@/lib/access/access";
 import { getStripe, isStripeConfigured, realtorPriceId, SITE_URL } from "@/lib/stripe/server";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { createTradeCheckout } from "@/lib/billing/checkout";
+import { checkoutFailureMessage } from "@/lib/billing/checkout-flow";
 
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "checkout");
@@ -32,20 +34,21 @@ export async function POST(request: Request) {
   const interval: "monthly" | "annual" =
     plan !== "featured" && plan !== "realtor" && body?.interval === "monthly" ? "monthly" : "annual";
 
-  let price: string | undefined;
-  if (plan === "realtor") {
-    // Only for buyers (realtors, property managers): it's their trusted-trades page.
-    if (session.organization.organization_type === "trade_company" || session.organization.organization_type === "supplier") {
-      return NextResponse.json({ error: "Realtor Pro is for realtors and property managers." }, { status: 400 });
+  if (plan !== "realtor") {
+    // Trade Pro and Featured: shared with the /checkout page (lib/billing/checkout).
+    const made = await createTradeCheckout(session, { plan, interval }, "api");
+    if (!made.ok) {
+      const { status, error } = checkoutFailureMessage(made.reason);
+      return NextResponse.json({ error }, { status });
     }
-    price = (await realtorPriceId()) ?? undefined;
-  } else if (plan === "featured") {
-    price = process.env.STRIPE_PRICE_FEATURED_ANNUAL;
-  } else if (interval === "monthly") {
-    price = process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY;
-  } else {
-    price = process.env.STRIPE_PRICE_TRADE_PRO_ANNUAL;
+    return NextResponse.json({ url: made.url });
   }
+
+  // Realtor Pro: only for buyers (realtors, property managers): it's their trusted-trades page.
+  if (session.organization.organization_type === "trade_company" || session.organization.organization_type === "supplier") {
+    return NextResponse.json({ error: "Realtor Pro is for realtors and property managers." }, { status: 400 });
+  }
+  const price = (await realtorPriceId()) ?? undefined;
   if (!price) {
     return NextResponse.json({ error: "That plan isn't available yet." }, { status: 400 });
   }
@@ -62,8 +65,8 @@ export async function POST(request: Request) {
     mode: "subscription",
     line_items: [{ price, quantity: 1 }],
     customer_email: session.profile.email,
-    success_url: plan === "realtor" ? `${SITE_URL}/pm-dashboard/saved-vendors?upgraded=1` : `${SITE_URL}/dashboard?welcome=1`,
-    cancel_url: plan === "realtor" ? `${SITE_URL}/pm-dashboard/saved-vendors` : `${SITE_URL}/pricing`,
+    success_url: `${SITE_URL}/pm-dashboard/saved-vendors?upgraded=1`,
+    cancel_url: `${SITE_URL}/pm-dashboard/saved-vendors`,
     allow_promotion_codes: true,
     metadata,
     subscription_data: { metadata },

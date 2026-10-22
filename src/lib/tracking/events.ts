@@ -9,8 +9,18 @@
  */
 
 export const SITE_EVENTS = [
+  // Sign-up funnel, in order. signup_viewed is the page opening (the browser
+  // reports it); signup_started is the form being SUBMITTED; signup_completed
+  // is the account existing; email_confirmed is the emailed link opened;
+  // onboarding_step records how far the company form got. Before 2026-10-22
+  // "signup_started" meant "the page opened" (migration 20261022000100
+  // relabels those rows signup_viewed).
+  "signup_viewed",
+  "signup_step",
   "signup_started",
   "signup_completed",
+  "email_confirmed",
+  "onboarding_step",
   "onboarding_completed",
   "writer_started",
   "writer_draft_generated",
@@ -18,6 +28,7 @@ export const SITE_EVENTS = [
   "pricing_viewed",
   "upgrade_clicked",
   "checkout_started",
+  "checkout_failed",
   "checkout_completed",
   "trial_started",
   "follow_buyer",
@@ -32,7 +43,7 @@ export const SITE_EVENTS = [
 export type SiteEvent = (typeof SITE_EVENTS)[number];
 
 /** What the browser beacon may report. Everything else comes from the server. */
-export const CLIENT_EVENTS = ["signup_started", "pricing_viewed", "upgrade_clicked", "writer_started"] as const;
+export const CLIENT_EVENTS = ["signup_viewed", "signup_step", "pricing_viewed", "upgrade_clicked", "writer_started"] as const;
 export type ClientEvent = (typeof CLIENT_EVENTS)[number];
 
 export function isSiteEvent(v: unknown): v is SiteEvent {

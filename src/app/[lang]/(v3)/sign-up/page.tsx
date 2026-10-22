@@ -4,7 +4,9 @@ import { SignUpFlow, type SignupRole } from "@/components/home-v3/signup-flow";
 import { safeNextPath } from "@/lib/auth/next";
 import { signupRoleFromLink, type SignupLinkRole } from "@/lib/auth/signup-link";
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
-import { billingPathForIntent, parsePlanIntent } from "@/lib/billing/plan-intent";
+import { parsePlanIntent } from "@/lib/billing/plan-intent";
+import { checkoutPath } from "@/lib/billing/checkout-flow";
+import { SIGNUP_INTENT_COOKIE, parseIntent, withRememberedIntent } from "@/lib/auth/signup-intent";
 import { parseAwardRef } from "@/lib/gc/packages";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { getVisitorListCounts, getOpenCountsByName } from "@/lib/data/list-counts";
@@ -72,7 +74,13 @@ export default async function SignUpPage({
   const lang = await setLangFrom(params);
   const t = getT("v3Pages").signup;
   const ta = getT("auth").signUp;
-  const { role: rawRole, kind, next: rawNext, template, plan, interval, award: rawAward, region: rawRegion, claim: rawClaim, sent, error } = await searchParams;
+  const query = await searchParams;
+  const { claim: rawClaim, sent, error } = query;
+  // The URL wins; a page opened with no plan or return path takes the intent
+  // remembered from the last visit (lib/auth/signup-intent), so going back,
+  // switching language or clicking "Sign up" in the header never loses it.
+  const remembered = query.role === PUBLIC_BUYER_ROLE ? null : parseIntent((await cookies()).get(SIGNUP_INTENT_COOKIE)?.value);
+  const { role: rawRole, kind, next: rawNext, template, plan, interval, award: rawAward, region: rawRegion } = withRememberedIntent(query, remembered);
   // Towns, cities, school boards, housing providers: their own one-field sign-up (PMRFP for Towns).
   if (rawRole === PUBLIC_BUYER_ROLE) {
     const key = parseBuyerKey(rawClaim);
@@ -83,7 +91,7 @@ export default async function SignUpPage({
     const claimName = page ? `${buyerDisplayName(page, lang)}, ${regionName(page.province, lang)}` : null;
     return (
       <>
-        {sent !== "1" && <TrackOnMount event="signup_started" props={{ role: PUBLIC_BUYER_ROLE }} />}
+        {sent !== "1" && <TrackOnMount event="signup_viewed" props={{ role: PUBLIC_BUYER_ROLE }} />}
         <PublicBuyerSignUp lang={lang} claim={page ? claim : null} claimName={claimName} sent={sent === "1"} error={error ?? null} />
       </>
     );
@@ -96,8 +104,10 @@ export default async function SignUpPage({
   const linkedRole: ValidRole | undefined = signupRoleFromLink(rawRole, kind);
   // No role in the link: start on "I do the work" when they came from a trade page or trade outreach.
   const initialRole: ValidRole | undefined = linkedRole ?? (!intent && (await cameFromTradeSide()) ? "trade" : undefined);
+  // The link itself said who they are (outreach, a town page): skip the "who are you?" step.
+  const roleFromLink = Boolean(linkedRole);
   // Back-compat: older links pass ?template=X; promote it to a `next` path.
-  const next = safeNextPath(rawNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? billingPathForIntent(intent) : null));
+  const next = safeNextPath(rawNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? checkoutPath(intent.plan, intent.interval) : null));
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
 
   const { country, province } = await getVisitorCountry();
@@ -125,12 +135,14 @@ export default async function SignUpPage({
   return (
     <>
       {/* First-party funnel: the sign-up page opened (lib/tracking). */}
-      <TrackOnMount event="signup_started" props={{ role: initialRole ?? null, plan: intent?.plan ?? null }} />
+      <TrackOnMount event="signup_viewed" props={{ role: initialRole ?? null, plan: intent?.plan ?? null }} />
       <SignUpFlow
         initialRegions={initialRegions}
         lang={lang}
         t={{ ...t, linkNote: getT("agencies").signupLinkNote }}
         initialRole={initialRole as SignupRole | undefined}
+        roleFromLink={roleFromLink}
+        consent={getT("auth").emailConsent}
         intent={intent ? { plan: intent.plan, interval: intent.interval, name: ta.plans[intent.plan] } : null}
         next={next}
         award={award}

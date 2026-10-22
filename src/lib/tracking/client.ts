@@ -108,7 +108,7 @@ export function trackListingView(slug: string): void {
   enqueue({ t: "lv", s: slug.slice(0, 200), p: window.location.pathname.slice(0, 200) });
 }
 
-/** A browser-side funnel event (pricing_viewed, upgrade_clicked, signup_started, writer_started). */
+/** A browser-side funnel event (signup_viewed, signup_step, pricing_viewed, upgrade_clicked, writer_started). */
 export function track(event: ClientEvent, props?: BeaconProps): void {
   enqueue({ t: "ev", e: event, p: typeof window === "undefined" ? "/" : window.location.pathname.slice(0, 200), ...(props ? { x: props } : {}) });
 }

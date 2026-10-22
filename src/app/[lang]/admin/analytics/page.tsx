@@ -18,6 +18,7 @@ const METHOD_LABEL: Record<string, string> = { password: "Password", email: "Pas
 const ACTIVITY_LABEL: Record<string, string> = {
   pricing_viewed: "Viewed pricing",
   upgrade_clicked: "Clicked an upgrade link (anyone)",
+  checkout_failed: "Checkout could not be created (Stripe)",
   writer_started: "Started the RFP Writer (anyone)",
   writer_draft_generated: "Generated an RFP draft",
   trial_started: "Started a Trade Pro trial",
@@ -126,6 +127,47 @@ export default async function AnalyticsPage({ params, searchParams }: { params: 
   );
 }
 
+/** Where unfinished sign-ups stopped: the sign-up wizard's steps, then the company form's. */
+function Stalls({ stalls }: { stalls: MarketView["stalls"] }) {
+  if (!stalls.wizard.length && !stalls.onboarding.length) return null;
+  return (
+    <div className="mt-4 grid gap-4 md:grid-cols-2">
+      {stalls.wizard.length > 0 && (
+        <div>
+          <h4 className="mb-1 text-sm font-semibold">Sign-up form: how far people got</h4>
+          <AdminTable columns={["Step", "People"]}>
+            {stalls.wizard.map((w) => (
+              <TableRow key={w.step}>
+                <TableCell>Reached step {w.step}</TableCell>
+                <TableCell>{w.actors}</TableCell>
+              </TableRow>
+            ))}
+          </AdminTable>
+        </div>
+      )}
+      {stalls.onboarding.length > 0 && (
+        <div>
+          <h4 className="mb-1 text-sm font-semibold">Company form: where it stopped them</h4>
+          <AdminTable columns={["Step", "People"]}>
+            {stalls.onboarding.map((o) => (
+              <TableRow key={o.step}>
+                <TableCell>{o.label}</TableCell>
+                <TableCell>{o.actors}</TableCell>
+              </TableRow>
+            ))}
+            {stalls.refusedFields.map((f) => (
+              <TableRow key={f.field}>
+                <TableCell className="text-muted-foreground">Refused field: {f.field}</TableCell>
+                <TableCell>{f.actors}</TableCell>
+              </TableRow>
+            ))}
+          </AdminTable>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MarketColumn({ v }: { v: MarketView }) {
   const maxDay = Math.max(1, ...v.daily.map((d) => d.visitors));
   return (
@@ -139,6 +181,12 @@ function MarketColumn({ v }: { v: MarketView }) {
 
       <h3 className="mb-2 font-semibold">Funnel</h3>
       <FunnelTable steps={v.funnel.shared} />
+      {v.leak && (
+        <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="leak">
+          Biggest drop: <strong>{v.leak.from}</strong> to <strong>{v.leak.to}</strong>. {v.leak.toN} of {v.leak.fromN} went on ({pct(v.leak.kept)}).
+        </p>
+      )}
+      <Stalls stalls={v.stalls} />
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div>
           <h4 className="mb-1 text-sm font-semibold">Trades</h4>
