@@ -6,6 +6,9 @@ import { renderOgImage, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og/template";
 import { getRfpTeaser } from "@/lib/data/rfps";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, type Locale } from "@/i18n/config";
+import { metaBuyer, metaKindOf } from "@/lib/rfp-detail/meta";
+import { cleanTenderTitle } from "@/lib/seo/rfp-meta";
+import { publicTenderSource } from "@/lib/tenders/sources";
 import { fmt, formatDate } from "@/i18n/format";
 import { propertyTypeName, regionName } from "@/i18n/terms";
 
@@ -42,16 +45,22 @@ export default async function OG({ params }: { params: Promise<{ lang: string; s
 
   const region =
     rfp.regionName != null ? regionName(rfp.regionName, lang) : rfp.province != null ? regionName(rfp.province, lang) : t.regionFallback;
-  const eyebrow = fmt(t.eyebrowRegion, { region });
+  // "Public tender · Ontario", "Award notice · Ontario": not "RFP" on a tender or an award.
+  const dict = getDictionary(lang);
+  const kind = metaKindOf(rfp);
+  const eyebrow = `${dict.rfpDepth.og.kinds[kind]} · ${region}`;
+  const src = rfp.sourceType === "public_source" ? publicTenderSource(rfp.slug) : null;
+  const sourceCopy = src ? (dict.board.detail.sources as Record<string, { issuer?: string } | undefined>)[src.key] : undefined;
+  const buyer = metaBuyer(rfp, sourceCopy?.issuer ?? src?.issuer, src?.key);
   const closes = fmtDate(rfp.deadline, lang);
   const subline = closes ? fmt(t.closes, { date: closes }) : undefined;
-  const caption = rfp.propertyTypeName
-    ? `${propertyTypeName(rfp.propertyTypeName, lang)}${rfp.city ? ` · ${rfp.city}` : ""}`
-    : rfp.city ?? undefined;
+  const caption =
+    buyer ??
+    (rfp.propertyTypeName ? `${propertyTypeName(rfp.propertyTypeName, lang)}${rfp.city ? ` · ${rfp.city}` : ""}` : rfp.city ?? undefined);
 
   return renderOgImage({
     eyebrow,
-    title: rfp.title,
+    title: cleanTenderTitle(rfp.title),
     subline,
     caption,
   });

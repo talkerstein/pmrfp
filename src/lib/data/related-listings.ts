@@ -37,7 +37,7 @@ export interface RelatedPick<T extends RelatedRow> {
 }
 
 /** "Québec", "Quebec", "QC" → "quebec"; "TX", "Texas" → "texas". */
-function fold(s: string): string {
+export function fold(s: string): string {
   const t = s.trim();
   const named = CA_PROVINCE_CODES[t.toUpperCase()] ?? (t.length === 2 ? US_STATES[t.toUpperCase()] : undefined) ?? t;
   return named.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();

@@ -17,12 +17,15 @@ export function BidChecklist({
   locked,
   proHref,
   translated = false,
+  showSummary = true,
 }: {
   check: BidCheck;
   locked: boolean;
   proHref: string;
   /** The source notice is in French (SEAO): say the summary is a translation. */
   translated?: boolean;
+  /** False when the page already shows the plain-language summary in its own block. */
+  showSummary?: boolean;
 }) {
   const t = getT("shared").checklist;
   const lang = getLang();
@@ -45,8 +48,12 @@ export function BidChecklist({
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <ClipboardCheck className="size-5 text-teal-700" /> {t.title}
       </h2>
-      <p className="mt-3 leading-relaxed text-foreground">{check.plainSummary}</p>
-      {translated && <p className="mt-1 text-xs text-muted-foreground">{t.translated}</p>}
+      {showSummary && (
+        <>
+          <p className="mt-3 leading-relaxed text-foreground">{check.plainSummary}</p>
+          {translated && <p className="mt-1 text-xs text-muted-foreground">{t.translated}</p>}
+        </>
+      )}
 
       {locked ? (
         <div className="mt-5 rounded-xl border border-border bg-card p-4">

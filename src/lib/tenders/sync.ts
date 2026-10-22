@@ -6,7 +6,8 @@
  * only ever archives rows of the sources it ran.
  *
  *   new tender            → insert + categories
- *   still open, amended   → refresh title/summary/scope/deadline
+ *   still open, amended   → refresh title/summary/scope/deadline, and log a moved
+ *                           closing date or a changed title (public.rfp_changes)
  *   gone from the feed    → archive (closed/cancelled/awarded; drops off the board)
  *
  * Never touches PM-posted RFPs — every query is scoped to public_source.
@@ -14,6 +15,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { publicTenderSource } from "./sources";
 import type { TenderInsert } from "./canadabuys";
+import { diffListing, recordRfpChanges, withoutTitleFlood, type PendingChange } from "@/lib/rfp-detail/changes";
 
 export interface Candidate {
   insert: TenderInsert;
@@ -87,7 +89,7 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
   const openSources = new Set<string>();
   // Per history source: the URLs it still lists (its own archive scope).
   const historySeen = new Map<string, Set<string>>();
-  const updates: { id: string; patch: Record<string, unknown> }[] = [];
+  const updates: { id: string; patch: Record<string, unknown>; changes: PendingChange[] }[] = [];
   const matchedBySource = new Map<string, number>();
 
   for (const { src, candidates, ok } of results) {
@@ -118,8 +120,15 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
             (src.history && prior.summary !== ins.summary) ||
             (!!region && prior.region_id !== region);
           if (changed) {
+            // The change log (rfp_changes): closing date and title only, and only for rows this run updates.
+            const sourceKey = publicTenderSource(prior.slug).key;
+            const changes = diffListing(
+              { title: prior.title, deadline: prior.deadline },
+              { title: ins.title, deadline: ins.deadline ?? null },
+            ).map((d) => ({ ...d, rfpId: prior.id, slug: prior.slug, sourceKey }));
             updates.push({
               id: prior.id,
+              changes,
               patch: {
                 title: ins.title,
                 // An enriched source's insert text came from its detail page;
@@ -183,6 +192,7 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
         failed,
         wouldInsert: toInsert.length,
         wouldRefresh: updates.length,
+        wouldLogChanges: withoutTitleFlood(updates.flatMap((u) => u.changes)).length,
         wouldArchive: toArchive.length,
         sample: toInsert.slice(0, 8).map((t) => ({ title: t.title, deadline: t.deadline, slug: t.slug })),
         archiveSample: archiveRows.slice(0, 8).map((e) => ({ title: e.title, deadline: e.deadline, slug: e.slug })),
@@ -191,14 +201,23 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
   }
 
   let refreshed = 0;
+  // Changes of rows whose update went through (a failed update changed nothing, so nothing to log).
+  const updated: PendingChange[] = [];
   for (let i = 0; i < updates.length; i += 25) {
+    const batch = updates.slice(i, i + 25);
     const res = await Promise.all(
-      updates.slice(i, i + 25).map(({ id, patch }) =>
+      batch.map(({ id, patch }) =>
         supabase.from("rfp_posts").update(patch).eq("id", id).eq("source_type", "public_source"),
       ),
     );
-    refreshed += res.filter((r) => !r.error).length;
+    res.forEach((r, k) => {
+      if (!r.error) {
+        refreshed++;
+        updated.push(...batch[k].changes);
+      }
+    });
   }
+  const logged = await recordRfpChanges(supabase, withoutTitleFlood(updated));
 
   // Chunked: a first import can be hundreds of rows with 8 KB scopes each.
   let inserted = 0;
@@ -230,8 +249,15 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
       .eq("source_type", "public_source");
     if (!error) archived = toArchive.length;
   }
+  if (archived) {
+    // "No longer in the buyer's feed": a status change, logged for the listing's page should it come back.
+    await recordRfpChanges(
+      supabase,
+      archiveRows.map((e) => ({ rfpId: e.id, slug: e.slug, sourceKey: publicTenderSource(e.slug).key, field: "status" as const, oldValue: "published", newValue: "archived" })),
+    );
+  }
 
-  return { status: 200, body: { matched, failed, inserted, refreshed, archived } };
+  return { status: 200, body: { matched, failed, inserted, refreshed, archived, logged } };
 }
 
 /**

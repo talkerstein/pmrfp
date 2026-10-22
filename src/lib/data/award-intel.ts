@@ -20,6 +20,8 @@ export interface AwardRow {
   winner: string | null;
   /** /contract-winners/<slug> when the winner has 2+ awards on record. */
   winnerSlug: string | null;
+  /** Award date, YYYY-MM-DD, when the notice has one (lib/rfp-detail/similar-work windows on it). */
+  date?: string | null;
 }
 
 export interface AwardIntel {
@@ -54,6 +56,7 @@ export function buildAwardIndex(rfps: RfpListItem[]): AwardRow[] {
       amount: amount && amount >= 1000 ? amount : null,
       winner: publishable,
       winnerSlug: publishable ? pages.get(winnerKey(publishable)) ?? null : null,
+      date: /^\d{4}-\d{2}-\d{2}/.test(r.deadline ?? "") ? r.deadline!.slice(0, 10) : null,
     };
   });
 }

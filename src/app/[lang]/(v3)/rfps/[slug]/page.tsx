@@ -8,7 +8,34 @@ import { SaveButton } from "@/components/dashboard/save-button";
 import { ExpressInterestDialog } from "@/components/forms/express-interest-dialog";
 import { BidChecklist } from "@/components/public/bid-checklist";
 import { GcPackageCta } from "@/components/public/gc-package-cta";
-import { AwardIntelCard } from "@/components/public/award-intel-card";
+import { KeyFacts, type Fact } from "@/components/rfp-detail/key-facts";
+import { ProCta } from "@/components/rfp-detail/blocks";
+import { PlainSummary } from "@/components/rfp-detail/plain-summary";
+import { ChangeLog } from "@/components/rfp-detail/change-log";
+import { BuyerProfile } from "@/components/rfp-detail/buyer-profile";
+import { SimilarWorkCard } from "@/components/rfp-detail/similar-work";
+import { RetenderCard } from "@/components/rfp-detail/retender";
+import { PrepareChecklist } from "@/components/rfp-detail/prepare-checklist";
+import { PurchasingRules } from "@/components/rfp-detail/purchasing-rules";
+import { PlatformGuide } from "@/components/rfp-detail/platform-guide";
+import { RelatedBlock } from "@/components/rfp-detail/related-block";
+import { canStartTrial } from "@/components/leads/trial";
+import { buildRfpMeta, metaBuyer, metaKindOf, specificIssuer } from "@/lib/rfp-detail/meta";
+import { buyerKindOf, countdownOf, statedValue, workTypeOf } from "@/lib/rfp-detail/facts";
+import { similarWorkFor, similarWorkView } from "@/lib/rfp-detail/similar-work";
+import { findRetender, retenderView } from "@/lib/rfp-detail/retender";
+import { loadRfpChanges } from "@/lib/rfp-detail/changes";
+import { prepareFor } from "@/lib/rfp-detail/prepare";
+import { hasRules, purchasingRulesFor } from "@/lib/rfp-detail/purchasing";
+import { platformForListing } from "@/lib/rfp-detail/platforms";
+import { moreFromBuyer, sameTradeNearby } from "@/lib/rfp-detail/related";
+import { buyerOffice, buyerProfileData } from "@/lib/rfp-detail/buyer-profile";
+import { valueLabel } from "@/lib/rfp-detail/format";
+import { getManagedPagesSnapshot } from "@/lib/towns/managed-data";
+import { trialsOpen } from "@/lib/entitlement/server";
+import { loadBenchmarkData } from "@/lib/data/price-benchmarks-load";
+import { torontoToday } from "@/lib/data/monthly-winners-load";
+import { canonicalProvince } from "@/lib/data/price-benchmarks";
 import { WhoElseBidPanel } from "@/components/intel/who-else-bid";
 import { whoElseBidForBoardSlug } from "@/lib/bid-results/load";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
@@ -24,7 +51,7 @@ import { getFullRfp, getPublicTenderNoticeUrl, getRfpTeaser } from "@/lib/data/r
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { loadBuyers } from "@/lib/buyers/load";
 import { buyerPageForRfp, findBuyerPage } from "@/lib/buyers/model";
-import { parseBuyerKey } from "@/lib/towns/managed";
+import { buyerKey, parseBuyerKey } from "@/lib/towns/managed";
 import { FollowPill } from "@/components/follows/blocks";
 import { buyerDisplayName } from "@/lib/towns/claimable";
 import { inSentence } from "@/lib/towns/names";
@@ -49,13 +76,13 @@ import { tradePhotoForName } from "@/lib/photos";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { upgradeInterval } from "@/lib/billing/checkout-flow";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
-import { buyerFromSummary, cleanTenderTitle, clip, placeLabel } from "@/lib/seo/rfp-meta";
+import { buyerFromSummary, cleanTenderTitle, clip } from "@/lib/seo/rfp-meta";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
 import { getBidCheckBySlug } from "@/lib/bid-check/data";
 import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
 import { isGcPackage, sourceTypeLabel, tradeWords } from "@/lib/gc/packages";
 import { getAwardById, listPackagesForAward } from "@/lib/gc/data";
-import { getAwardIndex, intelFor } from "@/lib/data/award-intel";
+import { getAwardIndex } from "@/lib/data/award-intel";
 import { benchmarkView } from "@/lib/data/price-benchmarks";
 import { benchmarkForListing, benchmarkPath } from "@/lib/data/price-benchmarks-load";
 import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
@@ -81,22 +108,25 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang: raw, slug } = await params;
   const lang: Locale = hasLocale(raw) ? raw : "en";
-  const t = getDictionary(lang).board.detail.meta;
+  const dict = getDictionary(lang);
+  const m = dict.rfpDepth.meta;
   const rfp = await getRfpTeaser(slug);
-  if (!rfp) return { title: t.notFound };
-  // Full tender name + city in the title (what searchers type), buyer and
-  // closing date up front in the description (what bidders check first).
-  const name = cleanTenderTitle(rfp.title);
-  const place = placeLabel(rfp.city, rfp.province ? regionName(rfp.province, lang) : null);
-  // Not clipped short on purpose: tender-name queries match words late in the title.
-  const title = place ? fill(t.titlePlace, { title: clip(name, 110), place }) : clip(name, 110);
-  const buyer = buyerFromSummary(rfp.summary);
-  const who = buyer ? fill(t.descBuyer, { buyer }) : t.descPm;
-  const closes = rfp.deadline
-    ? fill(rfp.status === "open" ? t.descCloses : t.descClosed, { date: fmt(rfp.deadline, lang) })
-    : "";
-  const lead = fill(t.descTender, { who, where: place ? fill(t.descWhere, { place }) : "" });
-  const description = clip(`${lead}${closes} ${clip(name, 90).replace(/[.…]$/, "")}.${t.descTail}`, 300);
+  if (!rfp) return { title: m.notFound };
+  // Full tender name + city in the title (what searchers type, cut at a whole
+  // word), buyer and closing date up front in the description (what bidders
+  // check first). The wording follows the kind of listing: a public tender is
+  // never described as a property manager's (lib/rfp-detail/meta).
+  const src = rfp.sourceType === "public_source" ? publicTenderSource(rfp.slug) : null;
+  const issuer = src ? (dict.board.detail.sources as Record<string, { issuer?: string } | undefined>)[src.key]?.issuer ?? src.issuer : null;
+  const { title, description } = buildRfpMeta({
+    t: m,
+    kind: metaKindOf(rfp),
+    title: rfp.title,
+    buyer: metaBuyer(rfp, issuer, src?.key),
+    city: rfp.city,
+    province: rfp.province ? regionName(rfp.province, lang) : null,
+    date: rfp.deadline ? fmt(rfp.deadline, lang) : null,
+  });
   return {
     title,
     description,
@@ -189,6 +219,12 @@ export default async function RfpDetailPage({
   const sourceCopy = t.sources[tenderSource.key] as (typeof t.sources)[string] | undefined;
   const source = { ...tenderSource, ...sourceCopy, attribution: sourceCopy?.attribution ?? localizeCredit(tenderSource.attribution, lang) };
   const portalName = source.portal.replace(/^(the|le|la|les|el|los|las) /i, "");
+  // The one body a feed's notices come from ("the City of Toronto"), for feeds that have a single issuer.
+  // CanadaBuys is only the portal: it carries other governments' notices too, so it names no buyer.
+  const singleIssuer = isPublicTender && !tenderSource.key.startsWith("canadabuys");
+  const issuerBuyer = singleIssuer ? specificIssuer(source.issuer) : null;
+  // The English name matches the buyer directory whatever the page's language.
+  const issuerBuyerEn = singleIssuer ? specificIssuer(tenderSource.issuer) : null;
   // Listed with the buyer's own permission (lib/tenders/city-sources): the
   // official posting and the procurement contact are open to every visitor,
   // signed in or not, free or paid.
@@ -216,8 +252,11 @@ export default async function RfpDetailPage({
   const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
   const upgradeHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
   const annualHref = session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro", "annual");
+  // An open listing that isn't a town's own post gets the depth blocks (summary, buyer, similar work …).
+  const openListing = !town && !isAward && !isClosed;
   const bidChecklist = bidCheck ? (
-    <BidChecklist check={bidCheck} locked={!showFull} proHref={upgradeHref} translated={isPublicTender && tenderSource.key === "seao"} />
+    // The plain-language summary has its own block on open listings, so the checklist doesn't repeat it.
+    <BidChecklist check={bidCheck} locked={!showFull} proHref={upgradeHref} translated={isPublicTender && tenderSource.key === "seao"} showSummary={!openListing} />
   ) : null;
   // The board (cached): "the next one" on award pages, similar open RFPs everywhere.
   const [wholeBoard, categories, regions] = await Promise.all([
@@ -255,13 +294,8 @@ export default async function RfpDetailPage({
       upgradeHref={upgradeHref}
     />
   ) : null;
-  // "What this job is worth": open tenders only; the numbers render for members only.
-  // When the province benchmark has a real range it takes this slot (same
-  // question, stricter rules, links to the full benchmark).
-  const intel = !isAward && !isClosed && !bench?.benchmark.enough ? intelFor(teaser, await getAwardIndex()) : null;
-  const intelCard = !isAward && !isClosed && bench?.benchmark.enough ? benchCard : intel ? (
-    <AwardIntelCard intel={showFull ? intel : { scope: intel.scope, trade: intel.trade, count: intel.count }} locked={!showFull} upgradeHref={upgradeHref} />
-  ) : null;
+  // "What similar work sold for" on open listings is its own block (SimilarWorkCard, below):
+  // the median is free, the band and the winners are Trade Pro, and it links to the full benchmark.
   // Award and closed pages: the benchmark sits in the side column.
   const asideBenchCard = (isAward || isClosed) && bench ? benchCard : null;
   // "Bid positioning" (open listings): price band (Trade Pro), the buyer's usual winners (Award Intelligence), counts for everyone.
@@ -284,19 +318,18 @@ export default async function RfpDetailPage({
   const place =
     [teaser.city, teaser.province && regionName(teaser.province, lang)].filter(Boolean).join(", ") ||
     (teaser.regionName ? regionName(teaser.regionName, lang) : teaser.regionName);
-  const buyer = town?.post.buyer_name ?? buyerFromSummary(teaser.summary) ?? (isGc ? t.facts.gc : isPublicTender ? null : t.facts.pm);
+  const buyer = town?.post.buyer_name ?? buyerFromSummary(teaser.summary) ?? (isGc ? t.facts.gc : isPublicTender ? issuerBuyer : t.facts.pm);
   // Canadian public listings link to their buyer's "where they post bids" page (same cached snapshots, no new query).
   // A town's own post names its page (rfp_posts.buyer_key), so it gets the same link and Follow button.
   const townKey = town?.post.buyer_key ? parseBuyerKey(town.post.buyer_key) : null;
   const buyerPage = townKey
     ? findBuyerPage((await loadBuyers()).pages, townKey.provinceSlug, townKey.slug)
     : isPublicTender && rfpMarket(teaser) === "CA"
-      ? buyerPageForRfp((await loadBuyers()).pages, teaser, buyerFromSummary(teaser.summary) ?? awardBuyerFromSummary(teaser.summary))
+      ? buyerPageForRfp((await loadBuyers()).pages, teaser, buyerFromSummary(teaser.summary) ?? awardBuyerFromSummary(teaser.summary) ?? issuerBuyerEn)
       : null;
   const sourceLabel = town ? townTag(town) : isPublicTender ? portalName : isGc ? t.facts.gc : t.facts.pm;
   const days = !isAward && !isClosed ? daysUntil(teaser.deadline) : null;
   const soon = days === null || days < 0 || days > 7 ? null : days;
-  const daysLeft = soon === null ? null : soon === 0 ? t.daysLeft.today : soon === 1 ? t.daysLeft.tomorrow : fill(t.daysLeft.n, { n: soon });
   const closesIn = soon === null ? null : soon === 0 ? t.closesIn.today : soon === 1 ? t.closesIn.tomorrow : fill(t.closesIn.n, { n: soon });
   const status = isAward ? t.facts.awarded : isClosed ? t.facts.closed : closesIn ?? (teaser.deadline ? fill(v.closesOn, { date: formatDate(teaser.deadline, lang, { month: "short", day: "numeric" }) }) : t.facts.ongoing);
   const shortTitle = clip(cleanTenderTitle(teaser.title), 60);
@@ -315,21 +348,171 @@ export default async function RfpDetailPage({
   const sponsorName = pickSponsor(sponsorCtx)?.sponsor.name;
   const monthlyEnabled = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);
 
-  const facts = [
-    { k: dateLabel, v: teaser.deadline ? fmt(teaser.deadline, lang) : t.facts.ongoing, hi: true },
-    { k: t.side.trade, v: teaser.categories.length ? teaser.categories.map(trade).join(", ") : t.facts.notSpecified },
-    { k: t.side.region, v: teaser.regionName ? regionName(teaser.regionName, lang) : t.facts.notSpecified },
-    { k: t.facts.location, v: place || t.facts.notSpecified },
-    { k: t.side.propertyType, v: teaser.propertyTypeName ? propertyTypeName(teaser.propertyTypeName, lang) : t.facts.notSpecified },
-    { k: t.facts.source, v: sourceLabel },
-  ];
-
   // Primary action, by state.
   // Free with an account (lib/access/free-actions): save, and a public tender's official notice.
   const viewer = viewerOf(session);
   const canSave = configured && canSaveRfps(viewer);
   const freeNoticeHref = locked && configured && canOpenOfficialLink(viewer, teaser.sourceType, Boolean(permission)) ? await getPublicTenderNoticeUrl(teaser.slug) : null;
   const bidHref = showFull && full && isPublicTender ? full.sourceUrl : freeNoticeHref;
+
+  /* ── The deeper tender page (depth plan, Step 2) ────────────────────────
+     Every block below is fed only by data we hold or compute from the cached
+     snapshots (no per-request full loads). Free vs Trade Pro is decided here,
+     in the data each block receives, never by hiding it with CSS. */
+  const d = getT("rfpDepth");
+  const pro = showFull;
+  // The buyer's name: in English to match against the directory and the award notices, and as shown.
+  const buyerKeyName = buyerPage?.buyer.name ?? town?.post.buyer_name ?? buyerFromSummary(teaser.summary) ?? issuerBuyerEn ?? null;
+  const buyerNamed = buyerPage ? buyerDisplayName(buyerPage, lang) : (town?.post.buyer_name ?? (isPublicTender ? buyerFromSummary(teaser.summary) ?? issuerBuyer : null) ?? null);
+  const workType = workTypeOf(cleanTenderTitle(teaser.title));
+  const buyerKind = buyerKindOf({ isPublicTender, isGc, isTown: Boolean(town), group: buyerPage?.buyer.group ?? null, buyerName: buyerKeyName, sourceKey: isPublicTender ? tenderSource.key : null });
+  const currency = rfpMarket(teaser) === "US" ? "USD" : "CAD";
+  const provinceName = canonicalProvince(teaser.province) ?? canonicalProvince(teaser.regionName) ?? buyerPage?.province ?? null;
+
+  // 1. Key facts: only what the listing holds. The closing date counts down; a value shows only if someone stated it.
+  const countdown = countdownOf(openListing ? days : null);
+  const countdownText =
+    countdown.kind === "today" ? d.facts.today : countdown.kind === "tomorrow" ? d.facts.tomorrow : countdown.kind === "days" ? fill(d.facts.inDays, { n: num(countdown.days ?? 0) }) : null;
+  const stated = statedValue(full ? { min: full.budgetMin, max: full.budgetMax, isPublic: full.budgetPublic } : null);
+  const facts = ([
+    { k: dateLabel, v: teaser.deadline ? fmt(teaser.deadline, lang) : t.facts.ongoing, hi: true, sub: countdownText },
+    stated ? { k: d.facts.value, v: valueLabel(stated, currency, lang, d.facts) } : null,
+    teaser.categories.length ? { k: t.side.trade, v: teaser.categories.map(trade).join(", ") } : null,
+    workType ? { k: d.facts.workType, v: d.facts.workTypes[workType] } : null,
+    buyerKind ? { k: d.facts.funding, v: d.facts.buyerKinds[buyerKind] } : null,
+    place ? { k: t.facts.location, v: place } : null,
+    teaser.propertyTypeName ? { k: t.side.propertyType, v: propertyTypeName(teaser.propertyTypeName, lang) } : null,
+    { k: t.facts.source, v: sourceLabel },
+  ] as (Fact | null)[]).filter((f): f is Fact => f !== null);
+
+  // 1b. Plain-language summary: the bid check's (free for everyone), else one built from the title, buyer and dates.
+  const tradeText = firstTrade ? (lang === "es" ? tradeWords(trade(firstTrade)) : trade(firstTrade).toLowerCase()) : null;
+  const whereText = place ? fill(d.summary.where, { place }) : "";
+  const closesText = teaser.deadline
+    ? fill(countdownText ? d.summary.closes : d.summary.closesNoCountdown, { date: fmt(teaser.deadline, lang), countdown: countdownText ?? "" })
+    : "";
+  const summaryFallback = !openListing || isGc
+    ? null
+    : isPublicTender
+      ? buyerNamed
+        ? tradeText
+          ? fill(d.summary.withBuyer, { buyer: buyerNamed, trade: tradeText, where: whereText })
+          : fill(d.summary.withBuyerNoTrade, { buyer: buyerNamed, where: whereText })
+        : tradeText
+          ? fill(d.summary.noBuyer, { trade: tradeText, where: whereText })
+          : null
+      : tradeText
+        ? fill(d.summary.pm, { trade: tradeText, where: whereText })
+        : null;
+  const summaryText = openListing ? bidCheck?.plainSummary ?? (summaryFallback ? `${summaryFallback}${closesText}` : null) : null;
+
+  // 3. What similar work sold for: the median is free, the band and the winners are Trade Pro.
+  const similarWork = openListing ? similarWorkFor(teaser, await getAwardIndex().catch(() => []), torontoToday()) : null;
+
+  // 4. Looks like a re-tender: same buyer, same trade and place, same words in the title. Winner and amount are Trade Pro.
+  const benchData = openListing && isPublicTender && buyerKeyName ? await loadBenchmarkData().catch(() => null) : null;
+  const retenderRaw =
+    benchData && buyerKeyName
+      ? findRetender(
+          {
+            slug: teaser.slug,
+            title: cleanTenderTitle(teaser.title),
+            categories: teaser.categories,
+            province: provinceName,
+            deadline: teaser.deadline,
+            buyer: buyerKeyName,
+            country: rfpMarket(teaser),
+          },
+          benchData.awards,
+          benchData.today,
+        )
+      : null;
+
+  // The 14-day trial control, only when a block below actually has something locked.
+  const hasLockedBlock = !pro && Boolean(retenderRaw || similarWork?.median != null);
+  const trialOffer =
+    hasLockedBlock && configured
+      ? (await trialsOpen().catch(() => false)) &&
+        (!session || canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type ?? null }))
+      : false;
+  const proCta = <ProCta trial={trialOffer} plansHref={upgradeHref} />;
+
+  // 5. Change log: what the importer saw change on notices we read.
+  const changes = openListing && isPublicTender ? await loadRfpChanges(teaser.slug) : [];
+
+  // 2. Buyer profile, with the office details the buyer made public (free for everyone).
+  const managed = openListing && buyerPage ? (await getManagedPagesSnapshot()).get(buyerKey(buyerPage.provinceSlug, buyerPage.buyer.slug)) ?? null : null;
+  const office = openListing && buyerPage ? buyerOffice(buyerPage, managed, permission) : null;
+  const profile = openListing && buyerPage ? buyerProfileData(buyerPage) : null;
+  const tradeBySlug = new Map(categories.map((c) => [c.slug, c.name]));
+  const typicalTrades = profile ? profile.tradeSlugs.map((s) => tradeBySlug.get(s)).filter((n): n is string => Boolean(n)).map(trade) : [];
+
+  // 6-8. What to prepare (a general guide by province/state), how the buyer buys (researched buyers only), the platform's guide.
+  const prepare = openListing ? prepareFor({ province: provinceName ?? teaser.province, federal: isPublicTender && tenderSource.key === "sam", workType, publicBuyer: isPublicTender }) : null;
+  const rules =
+    openListing && isPublicTender && rfpMarket(teaser) === "CA"
+      ? purchasingRulesFor({ buyerName: buyerKeyName, province: provinceName, kind: buyerKind, construction: workType === "construction", population: buyerPage?.town?.population ?? null })
+      : null;
+  const platform = openListing && isPublicTender ? platformForListing({ officialUrl: bidHref ?? permission?.officialUrl, sourceKey: tenderSource.key, buyerPlatforms: buyerPage?.buyer.platforms }) : null;
+
+  // 9. Related: the buyer's other open bids, the same trade nearby.
+  const provinceOfRegion = new Map(regions.map((r) => [r.name, r.province ?? null]));
+  const nearby = openListing ? sameTradeNearby(boardRfps, teaser, provinceOfRegion) : [];
+  const moreFromThis = openListing && buyerPage ? moreFromBuyer(buyerPage.openBids, teaser.slug) : [];
+
+  const summaryBlock = summaryText ? (
+    <div className="v3-tw mb-6">
+      <PlainSummary
+        text={summaryText}
+        fromNotice={Boolean(bidCheck)}
+        translated={Boolean(bidCheck) && isPublicTender && tenderSource.key === "seao"}
+        translatedNote={getT("shared").checklist.translated}
+      />
+    </div>
+  ) : null;
+  const depthTop = openListing
+    ? [
+        changes.length ? <ChangeLog key="changes" changes={changes} /> : null,
+        buyerPage && profile ? (
+          <BuyerProfile
+            key="buyer"
+            name={buyerNamed ?? buyerPage.buyer.name}
+            path={buyerPage.path}
+            kindLabel={buyerKind ? d.facts.buyerKinds[buyerKind] : null}
+            openCount={profile.openCount}
+            awardCount={profile.awardCount}
+            trades={typicalTrades}
+            office={office}
+          />
+        ) : null,
+        similarWork ? (
+          <SimilarWorkCard
+            key="similar"
+            view={similarWorkView(similarWork, pro)}
+            benchmark={bench && bench.benchmark.total > 0 ? { href: benchmarkPath(bench.tradeSlug, bench.benchmark.province), province: bench.benchmark.province } : null}
+            cta={proCta}
+          />
+        ) : null,
+        retenderRaw ? <RetenderCard key="retender" view={retenderView(retenderRaw, pro)} cta={proCta} /> : null,
+      ].filter(Boolean)
+    : [];
+  const depthBottom = openListing
+    ? [
+        prepare && prepare.items.length ? <PrepareChecklist key="prepare" items={prepare.items} place={provinceName ? regionName(provinceName, lang) : ""} workType={workType} publicBuyer={isPublicTender} /> : null,
+        rules && hasRules(rules) ? <PurchasingRules key="rules" rules={rules} buyerName={buyerNamed ?? ""} province={provinceName} /> : null,
+        platform ? <PlatformGuide key="platform" platform={platform} /> : null,
+        buyerPage || nearby.length ? (
+          <RelatedBlock
+            key="related"
+            buyerName={buyerNamed}
+            moreFromBuyer={moreFromThis}
+            nearby={nearby.map((r) => ({ slug: r.slug, title: r.title, deadline: r.deadline, trade: r.categories[0] ?? null, place: r.city ?? r.regionName }))}
+            follow={buyerPage ? <FollowPill page={buyerPage} name={inSentence(buyerDisplayName(buyerPage, lang), lang)} /> : null}
+          />
+        ) : null,
+      ].filter(Boolean)
+    : [];
+
   // Signed out: the free account is the first step ("save this bid and get alerts"), back to this page after.
   const freeSignupHref = `/sign-up?role=trade&next=${encodeURIComponent(`/rfps/${teaser.slug}`)}`;
   // PM jobs (lib/pm-jobs): any approved company responds, free accounts 3 a month. Public tenders never.
@@ -511,14 +694,7 @@ export default async function RfpDetailPage({
       </div>
 
       <section className="v3-wrap">
-        <dl className="vp-strip">
-          {facts.map((f) => (
-            <div key={f.k} className={f.hi ? "hi" : undefined}>
-              <dt>{f.k}</dt>
-              <dd>{f.v}{f.hi && daysLeft ? <span className="dl"> · {daysLeft}</span> : null}</dd>
-            </div>
-          ))}
-        </dl>
+        <KeyFacts facts={facts} note={openListing && (workType || (buyerKind && buyerKind !== "private" && buyerKind !== "gc")) ? d.facts.note : null} />
       </section>
 
       <section className="v3-wrap vp-dgrid">
@@ -563,6 +739,8 @@ export default async function RfpDetailPage({
           {full?.status === "awarded" && <p className="vp-note ok"><b>{t.status.awardedTitle}</b> {t.status.awardedBody}</p>}
           {full?.status === "closed" && <p className="vp-note"><b>{t.status.closedTitle}</b> {t.status.closedBody}</p>}
 
+          {summaryBlock}
+
           {teaser.summary && (
             <>
               <div className="vp-dsec-head">
@@ -585,6 +763,8 @@ export default async function RfpDetailPage({
               {teaser.photoUrls.length > 6 && <p className="more">{plural(teaser.photoUrls.length - 6, t.photos.more)}</p>}
             </div>
           )}
+
+          {depthTop.length > 0 && <div className="v3-tw mt-8 flex flex-col gap-4" data-depth="top">{depthTop}</div>}
 
           {town ? (
             <TownListingBody listing={town} viewer={townViewer} slug={teaser.slug} manageHref={townManageHref} respond={respond} />
@@ -664,12 +844,7 @@ export default async function RfpDetailPage({
             </div>
           ) : showFull && full ? (
             <div className="vp-full">
-              {(bidChecklist || intelCard) && (
-                <div className="v3-tw vp-tw-stack">
-                  {bidChecklist}
-                  {intelCard}
-                </div>
-              )}
+              {bidChecklist && <div className="v3-tw vp-tw-stack">{bidChecklist}</div>}
               <Block title={t.full.scope} body={full.scope} />
               <Block title={t.full.requirements} body={full.requirements} />
               {full.budgetPublic && (full.budgetMin || full.budgetMax) ? (
@@ -743,14 +918,11 @@ export default async function RfpDetailPage({
                 </PaywallPlans>
               </div>
 
-              {(bidChecklist || intelCard) && (
-                <div className="vp-two v3-tw">
-                  {bidChecklist && <div className="vp-tw-card">{bidChecklist}</div>}
-                  {intelCard && <div className="vp-tw-card">{intelCard}</div>}
-                </div>
-              )}
+              {bidChecklist && <div className="v3-tw vp-tw-stack mt-5">{bidChecklist}</div>}
             </>
           )}
+
+          {depthBottom.length > 0 && <div className="v3-tw mt-8 flex flex-col gap-4" data-depth="bottom">{depthBottom}</div>}
 
           {/* "Email me bids like this": this listing's trade and province/state, one field. */}
           <BidAlertBox
@@ -781,7 +953,8 @@ export default async function RfpDetailPage({
               </div>
             </div>
           )}
-          {buyerPage && (
+          {/* Open listings link their buyer (and its Follow button) from the profile and related blocks above. */}
+          {buyerPage && !openListing && (
             <p className="small" data-link="buyer">
               <a href={L(buyerPage.path)}>{fill(getT("buyers").page.rfpLink, { name: buyerPage.buyer.name })} →</a>{" "}
               {/* Follow the buyer: its next bids by email (PMRFP for Towns, Part B1). */}

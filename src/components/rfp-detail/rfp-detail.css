@@ -1,0 +1,18 @@
+/* Key-facts row on a tender page (depth plan, Step 2). Same look as the old six-column strip,
+   but it fits however many facts the listing has: no empty columns, no "Not specified". */
+.pmrfp-v3 .rd-facts { margin: -28px 0 0; position: relative; display: grid; grid-template-columns: repeat(var(--rd-cols, 6), minmax(0, 1fr)); background: #FFFFFF; border: 2px solid var(--navy); border-radius: 20px; overflow: hidden; }
+/* A hairline on the right and bottom of every cell: stays tidy when the last row is short. */
+.pmrfp-v3 .rd-facts > div { padding: 16px 18px 14px; min-width: 0; background: #FFFFFF; box-shadow: inset -1px -1px 0 #D5D7E6; }
+.pmrfp-v3 .rd-facts > div.hi { background: #DDFBF0; }
+.pmrfp-v3 .rd-facts dt { font-family: var(--fm); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--sub); }
+.pmrfp-v3 .rd-facts dd { margin: 6px 0 0; font-family: var(--fp); font-weight: 600; font-size: 18px; line-height: 1.25; color: var(--navy); overflow-wrap: anywhere; }
+.pmrfp-v3 .rd-facts .dl { display: block; margin-top: 2px; font-size: 14px; font-weight: 500; color: #1F7A5C; }
+.pmrfp-v3 .rd-facts-note { margin: 10px 4px 0; font-size: 12px; color: var(--sub); }
+@media (max-width: 900px) {
+  .pmrfp-v3 .rd-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .pmrfp-v3 .rd-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -20px; border-radius: 16px; }
+  .pmrfp-v3 .rd-facts > div { padding: 12px 14px; }
+  .pmrfp-v3 .rd-facts dd { font-size: 16px; }
+}
