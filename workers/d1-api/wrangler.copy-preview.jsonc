@@ -7,8 +7,8 @@
   "vars": { "SAVED_RFPS_MODE": "read-only" },
   "d1_databases": [{
     "binding": "DB",
-    "database_name": "pmrfp-migration-staging-v3-20261022",
-    "database_id": "ea67a920-f736-4eea-a66d-a1a64d45e2b0"
+    "database_name": "pmrfp-rebuilt-staging-20261023",
+    "database_id": "9c41192c-bd59-471e-8baa-a5675d7f2c47"
   }],
   "observability": { "enabled": false }
 }

@@ -1,15 +1,12 @@
 import { D1ApiError, type SaveRfpInput, type SavedRfpItem, UUID } from "./contracts";
 
-export interface D1ClientConfig { url: string; secret: string; allowLocal?: boolean }
+import { gatewayEndpoint, type D1ClientConfig } from "./transport";
+export type { D1ClientConfig } from "./transport";
 /** Server-side transport. Callers supply only a verified-through-Auth user token, never a user id or SQL. */
 export class D1SavedRfpsClient {
   private readonly endpoint: URL;
   constructor(private readonly config: D1ClientConfig, private readonly fetcher: typeof fetch = fetch) {
-    let url: URL;
-    try { url = new URL(config.url); } catch { throw new D1ApiError(503, "gateway_unavailable"); }
-    const local = config.allowLocal && url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-    if ((!local && url.protocol !== "https:") || url.username || url.password || url.pathname !== "/" || url.search || url.hash || config.secret.length < 32) throw new D1ApiError(503, "gateway_unavailable");
-    this.endpoint = new URL("/v1/saved-rfps", url);
+    this.endpoint = gatewayEndpoint(config, "/v1/saved-rfps");
   }
   private async request(token: string, body?: SaveRfpInput): Promise<unknown> {
     if (!token || token.length > 4096) throw new D1ApiError(401, "sign_in_required");

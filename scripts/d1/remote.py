@@ -10,7 +10,7 @@ import migrate as m
 ACCOUNT='f4e9b098134981b108024243b2a72ed4'
 DATABASE='80b90607-2f8d-4f9b-a646-658f2ebad0bc'
 NAME='pmrfp-migration-staging-v2-20261021'
-TARGETS={'v2':(DATABASE,NAME),'v3':('ea67a920-f736-4eea-a66d-a1a64d45e2b0','pmrfp-migration-staging-v3-20261022'),'rebuilt-v1':('a6d834f8-b00e-410f-91e1-b695209212e1','pmrfp-rebuilt-staging-20261022'),'rebuilt-reader-v1':('08ef9af3-a400-4a73-92d3-702b6ff39662','pmrfp-rebuilt-reader-staging-20261022')}
+TARGETS={'v2':(DATABASE,NAME),'v3':('ea67a920-f736-4eea-a66d-a1a64d45e2b0','pmrfp-migration-staging-v3-20261022'),'rebuilt-v1':('a6d834f8-b00e-410f-91e1-b695209212e1','pmrfp-rebuilt-staging-20261022'),'rebuilt-reader-v1':('08ef9af3-a400-4a73-92d3-702b6ff39662','pmrfp-rebuilt-reader-staging-20261022'),'rebuilt-20261023':('9c41192c-bd59-471e-8baa-a5675d7f2c47','pmrfp-rebuilt-staging-20261023')}
 
 class Remote:
     def __init__(self,wrangler_auth=False,generation='v2'):

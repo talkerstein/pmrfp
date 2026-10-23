@@ -65,7 +65,10 @@
     "20261021000060_towns_part_b2.sql",
     "20261021000110_buyer_follows.sql",
     "20261021000120_towns_part_c.sql",
-    "20261021000200_site_tracking.sql"
+    "20261021000200_site_tracking.sql",
+    "20261022000100_signup_funnel_and_consent.sql",
+    "20261022000200_badge_lifecycle.sql",
+    "20261022000300_rfp_changes.sql"
   ],
   "adaptations": [
     {
@@ -602,6 +605,138 @@
       "udt_name": "int4",
       "is_nullable": "NO",
       "column_default": "0",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "organization_id",
+      "ordinal_position": 1,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "granted_at",
+      "ordinal_position": 2,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "kind",
+      "ordinal_position": 3,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "days",
+      "ordinal_position": 4,
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "domain",
+      "ordinal_position": 5,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "distinct_days",
+      "ordinal_position": 6,
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "detected_on",
+      "ordinal_position": 7,
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "trial_started_before",
+      "ordinal_position": 8,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "trial_ends_before",
+      "ordinal_position": 9,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "trial_started_after",
+      "ordinal_position": 10,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "badge_rewards",
+      "column_name": "trial_ends_after",
+      "ordinal_position": 11,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": null,
       "is_identity": "NO",
       "is_generated": "NEVER",
       "generation_expression": null
@@ -3070,6 +3205,90 @@
       "table_name": "duplicate_reviews",
       "column_name": "created_at",
       "ordinal_position": 11,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "email_consents",
+      "column_name": "id",
+      "ordinal_position": 1,
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "YES",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "email_consents",
+      "column_name": "user_id",
+      "ordinal_position": 2,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "email_consents",
+      "column_name": "scope",
+      "ordinal_position": 3,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "email_consents",
+      "column_name": "source",
+      "ordinal_position": 4,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "email_consents",
+      "column_name": "wording_version",
+      "ordinal_position": 5,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "email_consents",
+      "column_name": "lang",
+      "ordinal_position": 6,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "email_consents",
+      "column_name": "created_at",
+      "ordinal_position": 7,
       "data_type": "timestamp with time zone",
       "udt_name": "timestamptz",
       "is_nullable": "NO",
@@ -8815,6 +9034,114 @@
       "generation_expression": null
     },
     {
+      "table_name": "rfp_changes",
+      "column_name": "id",
+      "ordinal_position": 1,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "rfp_id",
+      "ordinal_position": 2,
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "slug",
+      "ordinal_position": 3,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "field",
+      "ordinal_position": 4,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "old_value",
+      "ordinal_position": 5,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "''::text",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "new_value",
+      "ordinal_position": 6,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "''::text",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "source_key",
+      "ordinal_position": 7,
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "change_day",
+      "ordinal_position": 8,
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "NO",
+      "column_default": "((now() AT TIME ZONE 'America/Toronto'::text))::date",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
+      "table_name": "rfp_changes",
+      "column_name": "changed_at",
+      "ordinal_position": 9,
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "is_identity": "NO",
+      "is_generated": "NEVER",
+      "generation_expression": null
+    },
+    {
       "table_name": "rfp_documents",
       "column_name": "id",
       "ordinal_position": 1,
@@ -13311,6 +13638,42 @@
       "definition": "CHECK (((char_length(slug) >= 1) AND (char_length(slug) <= 120)))"
     },
     {
+      "name": "badge_rewards_days_check",
+      "table_name": "badge_rewards",
+      "type": "c",
+      "definition": "CHECK (((days >= 1) AND (days <= 31)))"
+    },
+    {
+      "name": "badge_rewards_distinct_days_check",
+      "table_name": "badge_rewards",
+      "type": "c",
+      "definition": "CHECK ((distinct_days >= 2))"
+    },
+    {
+      "name": "badge_rewards_domain_check",
+      "table_name": "badge_rewards",
+      "type": "c",
+      "definition": "CHECK (((char_length(domain) >= 3) AND (char_length(domain) <= 253)))"
+    },
+    {
+      "name": "badge_rewards_kind_check",
+      "table_name": "badge_rewards",
+      "type": "c",
+      "definition": "CHECK ((kind = ANY (ARRAY['start'::text, 'extend'::text, 'reopen'::text])))"
+    },
+    {
+      "name": "badge_rewards_organization_id_fkey",
+      "table_name": "badge_rewards",
+      "type": "f",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "badge_rewards_pkey",
+      "table_name": "badge_rewards",
+      "type": "p",
+      "definition": "PRIMARY KEY (organization_id)"
+    },
+    {
       "name": "bid_results_award_history_id_bidder_key_key",
       "table_name": "bid_results",
       "type": "u",
@@ -14205,6 +14568,48 @@
       "definition": "CHECK ((status = ANY (ARRAY['open'::text, 'dismissed'::text, 'merged'::text, 'disabled'::text])))"
     },
     {
+      "name": "email_consents_lang_check",
+      "table_name": "email_consents",
+      "type": "c",
+      "definition": "CHECK (((lang IS NULL) OR (lang = ANY (ARRAY['en'::text, 'fr'::text, 'es'::text]))))"
+    },
+    {
+      "name": "email_consents_pkey",
+      "table_name": "email_consents",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "email_consents_scope_check",
+      "table_name": "email_consents",
+      "type": "c",
+      "definition": "CHECK ((scope = ANY (ARRAY['service'::text, 'marketing'::text])))"
+    },
+    {
+      "name": "email_consents_source_check",
+      "table_name": "email_consents",
+      "type": "c",
+      "definition": "CHECK ((source = ANY (ARRAY['signup_form'::text, 'onboarding'::text, 'google_signup'::text, 'settings'::text, 'other'::text])))"
+    },
+    {
+      "name": "email_consents_user_id_fkey",
+      "table_name": "email_consents",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "email_consents_user_id_scope_source_key",
+      "table_name": "email_consents",
+      "type": "u",
+      "definition": "UNIQUE (user_id, scope, source)"
+    },
+    {
+      "name": "email_consents_wording_version_check",
+      "table_name": "email_consents",
+      "type": "c",
+      "definition": "CHECK (((char_length(wording_version) >= 1) AND (char_length(wording_version) <= 40)))"
+    },
+    {
       "name": "email_suppressions_detail_check",
       "table_name": "email_suppressions",
       "type": "c",
@@ -15078,7 +15483,7 @@
       "name": "lifecycle_sends_step_check",
       "table_name": "lifecycle_sends",
       "type": "c",
-      "definition": "CHECK ((step = ANY (ARRAY['rescue_2h'::text, 'rescue_1d'::text, 'rescue_3d'::text, 'review_pending'::text, 'welcome'::text, 'market'::text, 'get_found'::text, 'trial_offer'::text, 'benchmark'::text, 'community'::text, 'founding'::text, 'trial_day1'::text, 'trial_day7'::text, 'trial_day12'::text, 'trial_expired'::text, 'trial_winback'::text])))"
+      "definition": "CHECK ((step = ANY (ARRAY['rescue_2h'::text, 'rescue_1d'::text, 'rescue_3d'::text, 'review_pending'::text, 'welcome'::text, 'market'::text, 'get_found'::text, 'trial_offer'::text, 'benchmark'::text, 'community'::text, 'founding'::text, 'trial_day1'::text, 'trial_day7'::text, 'trial_day12'::text, 'trial_expired'::text, 'trial_winback'::text, 'badge'::text, 'badge_reminder'::text, 'badge_thanks'::text, 'welcome_back'::text])))"
     },
     {
       "name": "lifecycle_sends_user_id_fkey",
@@ -15885,6 +16290,54 @@
       "definition": "FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE"
     },
     {
+      "name": "rfp_changes_field_check",
+      "table_name": "rfp_changes",
+      "type": "c",
+      "definition": "CHECK ((field = ANY (ARRAY['closing_date'::text, 'title'::text, 'status'::text])))"
+    },
+    {
+      "name": "rfp_changes_new_value_check",
+      "table_name": "rfp_changes",
+      "type": "c",
+      "definition": "CHECK ((char_length(new_value) <= 500))"
+    },
+    {
+      "name": "rfp_changes_old_value_check",
+      "table_name": "rfp_changes",
+      "type": "c",
+      "definition": "CHECK ((char_length(old_value) <= 500))"
+    },
+    {
+      "name": "rfp_changes_once_a_day",
+      "table_name": "rfp_changes",
+      "type": "u",
+      "definition": "UNIQUE (rfp_id, field, old_value, new_value, change_day)"
+    },
+    {
+      "name": "rfp_changes_pkey",
+      "table_name": "rfp_changes",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "rfp_changes_rfp_id_fkey",
+      "table_name": "rfp_changes",
+      "type": "f",
+      "definition": "FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "rfp_changes_slug_check",
+      "table_name": "rfp_changes",
+      "type": "c",
+      "definition": "CHECK (((char_length(slug) >= 1) AND (char_length(slug) <= 300)))"
+    },
+    {
+      "name": "rfp_changes_source_key_check",
+      "table_name": "rfp_changes",
+      "type": "c",
+      "definition": "CHECK (((source_key IS NULL) OR (char_length(source_key) <= 60)))"
+    },
+    {
       "name": "rfp_documents_pkey",
       "table_name": "rfp_documents",
       "type": "p",
@@ -16284,7 +16737,7 @@
       "name": "site_events_event_check",
       "table_name": "site_events",
       "type": "c",
-      "definition": "CHECK ((event = ANY (ARRAY['signup_started'::text, 'signup_completed'::text, 'onboarding_completed'::text, 'writer_started'::text, 'writer_draft_generated'::text, 'rfp_posted'::text, 'pricing_viewed'::text, 'upgrade_clicked'::text, 'checkout_started'::text, 'checkout_completed'::text, 'trial_started'::text, 'follow_buyer'::text, 'claim_started'::text, 'claim_verified'::text, 'respond_to_job'::text, 'quote_request_posted'::text, 'sealed_opened'::text, 'award_published'::text])))"
+      "definition": "CHECK ((event = ANY (ARRAY['signup_viewed'::text, 'signup_step'::text, 'signup_started'::text, 'signup_completed'::text, 'email_confirmed'::text, 'onboarding_step'::text, 'onboarding_completed'::text, 'writer_started'::text, 'writer_draft_generated'::text, 'rfp_posted'::text, 'pricing_viewed'::text, 'upgrade_clicked'::text, 'checkout_started'::text, 'checkout_failed'::text, 'checkout_completed'::text, 'trial_started'::text, 'follow_buyer'::text, 'claim_started'::text, 'claim_verified'::text, 'respond_to_job'::text, 'quote_request_posted'::text, 'sealed_opened'::text, 'award_published'::text])))"
     },
     {
       "name": "site_events_lang_check",
@@ -17441,6 +17894,11 @@
       "indexdef": "CREATE INDEX badge_hits_referrer_idx ON public.badge_hits USING btree (referrer, day DESC)"
     },
     {
+      "tablename": "badge_rewards",
+      "indexname": "badge_rewards_pkey",
+      "indexdef": "CREATE UNIQUE INDEX badge_rewards_pkey ON public.badge_rewards USING btree (organization_id)"
+    },
+    {
       "tablename": "bid_results",
       "indexname": "bid_results_award_history_id_bidder_key_key",
       "indexdef": "CREATE UNIQUE INDEX bid_results_award_history_id_bidder_key_key ON public.bid_results USING btree (award_history_id, bidder_key)"
@@ -17654,6 +18112,21 @@
       "tablename": "duplicate_reviews",
       "indexname": "duplicate_reviews_status_idx",
       "indexdef": "CREATE INDEX duplicate_reviews_status_idx ON public.duplicate_reviews USING btree (status, created_at DESC)"
+    },
+    {
+      "tablename": "email_consents",
+      "indexname": "email_consents_pkey",
+      "indexdef": "CREATE UNIQUE INDEX email_consents_pkey ON public.email_consents USING btree (id)"
+    },
+    {
+      "tablename": "email_consents",
+      "indexname": "email_consents_user_id_scope_source_key",
+      "indexdef": "CREATE UNIQUE INDEX email_consents_user_id_scope_source_key ON public.email_consents USING btree (user_id, scope, source)"
+    },
+    {
+      "tablename": "email_consents",
+      "indexname": "email_consents_user_idx",
+      "indexdef": "CREATE INDEX email_consents_user_idx ON public.email_consents USING btree (user_id)"
     },
     {
       "tablename": "email_suppressions",
@@ -18356,6 +18829,26 @@
       "indexdef": "CREATE INDEX rfp_categories_rfp_idx ON public.rfp_categories USING btree (rfp_id)"
     },
     {
+      "tablename": "rfp_changes",
+      "indexname": "rfp_changes_once_a_day",
+      "indexdef": "CREATE UNIQUE INDEX rfp_changes_once_a_day ON public.rfp_changes USING btree (rfp_id, field, old_value, new_value, change_day)"
+    },
+    {
+      "tablename": "rfp_changes",
+      "indexname": "rfp_changes_pkey",
+      "indexdef": "CREATE UNIQUE INDEX rfp_changes_pkey ON public.rfp_changes USING btree (id)"
+    },
+    {
+      "tablename": "rfp_changes",
+      "indexname": "rfp_changes_rfp_idx",
+      "indexdef": "CREATE INDEX rfp_changes_rfp_idx ON public.rfp_changes USING btree (rfp_id)"
+    },
+    {
+      "tablename": "rfp_changes",
+      "indexname": "rfp_changes_slug_idx",
+      "indexdef": "CREATE INDEX rfp_changes_slug_idx ON public.rfp_changes USING btree (slug, changed_at DESC)"
+    },
+    {
       "tablename": "rfp_documents",
       "indexname": "rfp_documents_pkey",
       "indexdef": "CREATE UNIQUE INDEX rfp_documents_pkey ON public.rfp_documents USING btree (id)"
@@ -18907,6 +19400,18 @@
     },
     {
       "schemaname": "public",
+      "tablename": "badge_rewards",
+      "policyname": "badge rewards admin read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin(auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
       "tablename": "bid_results",
       "policyname": "bid results intel read",
       "permissive": "PERMISSIVE",
@@ -19217,6 +19722,18 @@
       ],
       "cmd": "SELECT",
       "qual": "is_admin(auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_consents",
+      "policyname": "email consents own read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
       "with_check": null
     },
     {
@@ -21000,7 +21517,7 @@
     },
     {
       "name": "record_site_beacon",
-      "definition": "CREATE OR REPLACE FUNCTION public.record_site_beacon(p jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  day_re constant text := '^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$';\n  uuid_re constant text := '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';\n  hash_re constant text := '^[0-9a-f]{32}$';\n  arr jsonb;\nbegin\n  if p is null or jsonb_typeof(p) <> 'object' then\n    return;\n  end if;\n\n  arr := case when jsonb_typeof(p->'visitors') = 'array' then p->'visitors' else '[]'::jsonb end;\n  insert into public.site_visitors as v (day, visitor_hash, country, lang, signed_in)\n  select distinct on (d, h) d, h, c, l, s\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'h' as h,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      case when r->>'lang' in ('en', 'fr', 'es') then r->>'lang' else '' end as l,\n      coalesce(r->>'signed_in', 'false') = 'true' as s\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'h', '') ~ hash_re\n  ) x\n  order by d, h, s desc\n  on conflict (day, visitor_hash) do update set signed_in = v.signed_in or excluded.signed_in;\n\n  arr := case when jsonb_typeof(p->'pages') = 'array' then p->'pages' else '[]'::jsonb end;\n  insert into public.site_page_views as pv (day, path, country, views)\n  select d, path, c, sum(n)::int\n  from (\n    select\n      (r->>'day')::date as d,\n      left(r->>'path', 200) as path,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'path', '') ~ '^/' and coalesce(r->>'n', '') ~ '^\\d{1,6}$'\n  ) x\n  group by d, path, c\n  on conflict (day, path, country) do update set views = pv.views + excluded.views;\n\n  arr := case when jsonb_typeof(p->'referrers') = 'array' then p->'referrers' else '[]'::jsonb end;\n  insert into public.site_referrers as sr (day, referrer_host, country, visits)\n  select d, host, c, sum(n)::int\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'host' as host,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'host', '') ~ '^[a-z0-9.-]{1,100}$' and coalesce(r->>'n', '') ~ '^\\d{1,6}$'\n  ) x\n  group by d, host, c\n  on conflict (day, referrer_host, country) do update set visits = sr.visits + excluded.visits;\n\n  -- Listing views. The poster's own views and admins' don't count as reach.\n  arr := case when jsonb_typeof(p->'views') = 'array' then p->'views' else '[]'::jsonb end;\n  insert into public.rfp_views (rfp_id, viewed_by_user_id, organization_id, view_day, visitor_hash, country, lang)\n  select distinct on (rp.id, x.d, x.h)\n    rp.id, u.id, m.organization_id, x.d, x.h, x.c, x.l\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'slug' as slug,\n      r->>'h' as h,\n      case when coalesce(r->>'user_id', '') ~ uuid_re then (r->>'user_id')::uuid end as uid,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' end as c,\n      case when r->>'lang' in ('en', 'fr', 'es') then r->>'lang' end as l\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'h', '') ~ hash_re and coalesce(r->>'slug', '') ~ '^[A-Za-z0-9-]{1,200}$'\n  ) x\n  join public.rfp_posts rp on rp.slug = x.slug\n  left join public.users_profile u on u.id = x.uid\n  left join lateral (\n    select om.organization_id from public.organization_members om where om.user_id = u.id limit 1\n  ) m on true\n  where (u.id is null or (rp.posted_by_user_id is distinct from u.id and u.primary_role not in ('admin', 'super_admin')))\n  on conflict (rfp_id, view_day, visitor_hash) where visitor_hash is not null and view_day is not null do nothing;\n\n  arr := case when jsonb_typeof(p->'events') = 'array' then p->'events' else '[]'::jsonb end;\n  insert into public.site_events (event, path, lang, country, role, user_id, anon_hash, utm_source, utm_medium, utm_campaign, props, created_at)\n  select\n    x.event,\n    x.path,\n    x.lang,\n    -- No request country (the Stripe webhook): the member's company country.\n    coalesce(x.country, oc.cc),\n    coalesce(x.role, case when u.primary_role ~ '^[a-z_]{1,40}$' then u.primary_role end),\n    u.id,\n    x.anon_hash,\n    x.utm_source,\n    x.utm_medium,\n    x.utm_campaign,\n    x.props,\n    x.at\n  from (\n    select\n      e->>'event' as event,\n      case when coalesce(e->>'path', '') ~ '^/' then left(e->>'path', 200) end as path,\n      case when e->>'lang' in ('en', 'fr', 'es') then e->>'lang' end as lang,\n      case when coalesce(e->>'country', '') ~ '^[A-Z]{2}$' then e->>'country' end as country,\n      case when coalesce(e->>'role', '') ~ '^[a-z_]{1,40}$' then e->>'role' end as role,\n      case when coalesce(e->>'user_id', '') ~ uuid_re then (e->>'user_id')::uuid end as uid,\n      case when coalesce(e->>'anon_hash', '') ~ hash_re then e->>'anon_hash' end as anon_hash,\n      nullif(left(e->>'utm_source', 80), '') as utm_source,\n      nullif(left(e->>'utm_medium', 80), '') as utm_medium,\n      nullif(left(e->>'utm_campaign', 80), '') as utm_campaign,\n      case when jsonb_typeof(e->'props') = 'object' and octet_length((e->'props')::text) <= 1000 then e->'props' else '{}'::jsonb end as props,\n      case\n        when coalesce(e->>'at', '') ~ '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$'\n          then least(now(), greatest(now() - interval '1 day', (e->>'at')::timestamptz))\n        else now()\n      end as at\n    from jsonb_array_elements(arr) as e\n    where e->>'event' in (\n      'signup_started', 'signup_completed', 'onboarding_completed',\n      'writer_started', 'writer_draft_generated', 'rfp_posted',\n      'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_completed',\n      'trial_started', 'follow_buyer', 'claim_started', 'claim_verified',\n      'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'\n    )\n  ) x\n  left join public.users_profile u on u.id = x.uid\n  left join lateral (\n    select case o.country when 'Canada' then 'CA' when 'United States' then 'US' end as cc\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    where om.user_id = u.id\n    limit 1\n  ) oc on x.country is null;\nend;\n$function$\n"
+      "definition": "CREATE OR REPLACE FUNCTION public.record_site_beacon(p jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  day_re constant text := '^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$';\n  uuid_re constant text := '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';\n  hash_re constant text := '^[0-9a-f]{32}$';\n  arr jsonb;\nbegin\n  if p is null or jsonb_typeof(p) <> 'object' then\n    return;\n  end if;\n\n  arr := case when jsonb_typeof(p->'visitors') = 'array' then p->'visitors' else '[]'::jsonb end;\n  insert into public.site_visitors as v (day, visitor_hash, country, lang, signed_in)\n  select distinct on (d, h) d, h, c, l, s\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'h' as h,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      case when r->>'lang' in ('en', 'fr', 'es') then r->>'lang' else '' end as l,\n      coalesce(r->>'signed_in', 'false') = 'true' as s\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'h', '') ~ hash_re\n  ) x\n  order by d, h, s desc\n  on conflict (day, visitor_hash) do update set signed_in = v.signed_in or excluded.signed_in;\n\n  arr := case when jsonb_typeof(p->'pages') = 'array' then p->'pages' else '[]'::jsonb end;\n  insert into public.site_page_views as pv (day, path, country, views)\n  select d, path, c, sum(n)::int\n  from (\n    select\n      (r->>'day')::date as d,\n      left(r->>'path', 200) as path,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'path', '') ~ '^/' and coalesce(r->>'n', '') ~ '^\\d{1,6}$'\n  ) x\n  group by d, path, c\n  on conflict (day, path, country) do update set views = pv.views + excluded.views;\n\n  arr := case when jsonb_typeof(p->'referrers') = 'array' then p->'referrers' else '[]'::jsonb end;\n  insert into public.site_referrers as sr (day, referrer_host, country, visits)\n  select d, host, c, sum(n)::int\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'host' as host,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'host', '') ~ '^[a-z0-9.-]{1,100}$' and coalesce(r->>'n', '') ~ '^\\d{1,6}$'\n  ) x\n  group by d, host, c\n  on conflict (day, referrer_host, country) do update set visits = sr.visits + excluded.visits;\n\n  -- Listing views. The poster's own views and admins' don't count as reach.\n  arr := case when jsonb_typeof(p->'views') = 'array' then p->'views' else '[]'::jsonb end;\n  insert into public.rfp_views (rfp_id, viewed_by_user_id, organization_id, view_day, visitor_hash, country, lang)\n  select distinct on (rp.id, x.d, x.h)\n    rp.id, u.id, m.organization_id, x.d, x.h, x.c, x.l\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'slug' as slug,\n      r->>'h' as h,\n      case when coalesce(r->>'user_id', '') ~ uuid_re then (r->>'user_id')::uuid end as uid,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' end as c,\n      case when r->>'lang' in ('en', 'fr', 'es') then r->>'lang' end as l\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'h', '') ~ hash_re and coalesce(r->>'slug', '') ~ '^[A-Za-z0-9-]{1,200}$'\n  ) x\n  join public.rfp_posts rp on rp.slug = x.slug\n  left join public.users_profile u on u.id = x.uid\n  left join lateral (\n    select om.organization_id from public.organization_members om where om.user_id = u.id limit 1\n  ) m on true\n  where (u.id is null or (rp.posted_by_user_id is distinct from u.id and u.primary_role not in ('admin', 'super_admin')))\n  on conflict (rfp_id, view_day, visitor_hash) where visitor_hash is not null and view_day is not null do nothing;\n\n  arr := case when jsonb_typeof(p->'events') = 'array' then p->'events' else '[]'::jsonb end;\n  insert into public.site_events (event, path, lang, country, role, user_id, anon_hash, utm_source, utm_medium, utm_campaign, props, created_at)\n  select\n    x.event,\n    x.path,\n    x.lang,\n    -- No request country (the Stripe webhook): the member's company country.\n    coalesce(x.country, oc.cc),\n    coalesce(x.role, case when u.primary_role ~ '^[a-z_]{1,40}$' then u.primary_role end),\n    u.id,\n    x.anon_hash,\n    x.utm_source,\n    x.utm_medium,\n    x.utm_campaign,\n    x.props,\n    x.at\n  from (\n    select\n      e->>'event' as event,\n      case when coalesce(e->>'path', '') ~ '^/' then left(e->>'path', 200) end as path,\n      case when e->>'lang' in ('en', 'fr', 'es') then e->>'lang' end as lang,\n      case when coalesce(e->>'country', '') ~ '^[A-Z]{2}$' then e->>'country' end as country,\n      case when coalesce(e->>'role', '') ~ '^[a-z_]{1,40}$' then e->>'role' end as role,\n      case when coalesce(e->>'user_id', '') ~ uuid_re then (e->>'user_id')::uuid end as uid,\n      case when coalesce(e->>'anon_hash', '') ~ hash_re then e->>'anon_hash' end as anon_hash,\n      nullif(left(e->>'utm_source', 80), '') as utm_source,\n      nullif(left(e->>'utm_medium', 80), '') as utm_medium,\n      nullif(left(e->>'utm_campaign', 80), '') as utm_campaign,\n      case when jsonb_typeof(e->'props') = 'object' and octet_length((e->'props')::text) <= 1000 then e->'props' else '{}'::jsonb end as props,\n      case\n        when coalesce(e->>'at', '') ~ '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$'\n          then least(now(), greatest(now() - interval '1 day', (e->>'at')::timestamptz))\n        else now()\n      end as at\n    from jsonb_array_elements(arr) as e\n    where e->>'event' in (\n      'signup_viewed', 'signup_step', 'signup_started', 'signup_completed',\n      'email_confirmed', 'onboarding_step', 'onboarding_completed',\n      'writer_started', 'writer_draft_generated', 'rfp_posted',\n      'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_failed', 'checkout_completed',\n      'trial_started', 'follow_buyer', 'claim_started', 'claim_verified',\n      'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'\n    )\n  ) x\n  left join public.users_profile u on u.id = x.uid\n  left join lateral (\n    select case o.country when 'Canada' then 'CA' when 'United States' then 'US' end as cc\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    where om.user_id = u.id\n    limit 1\n  ) oc on x.country is null;\nend;\n$function$\n"
     },
     {
       "name": "record_sponsor_click",
@@ -21072,7 +21589,7 @@
     },
     {
       "name": "site_analytics_report",
-      "definition": "CREATE OR REPLACE FUNCTION public.site_analytics_report(p_from date, p_to date)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  with rng as (\n    select greatest(least(p_from, p_to), p_to - 400) as f, p_to as t\n  ),\n  daily as (\n    select coalesce(v.day, pv.day) as day, coalesce(v.market, pv.market) as market,\n      coalesce(v.visitors, 0) as visitors, coalesce(pv.views, 0) as page_views\n    from (\n      select day, case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, count(*)::int as visitors\n      from public.site_visitors, rng where day between rng.f and rng.t group by 1, 2\n    ) v\n    full join (\n      select day, case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, sum(views)::int as views\n      from public.site_page_views, rng where day between rng.f and rng.t group by 1, 2\n    ) pv on pv.day = v.day and pv.market = v.market\n  ),\n  pages as (\n    select market, path, views from (\n      select market, path, views, row_number() over (partition by market order by views desc, path) as rk\n      from (\n        select case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, path, sum(views)::int as views\n        from public.site_page_views, rng where day between rng.f and rng.t group by 1, 2\n      ) a\n    ) b where rk <= 15\n  ),\n  refs as (\n    select market, host, visits from (\n      select market, host, visits, row_number() over (partition by market order by visits desc, host) as rk\n      from (\n        select case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, referrer_host as host, sum(visits)::int as visits\n        from public.site_referrers, rng where day between rng.f and rng.t group by 1, 2\n      ) a\n    ) b where rk <= 15\n  ),\n  signups as (\n    select case sa.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      sa.channel, coalesce(sa.method, 'unknown') as method, coalesce(sa.role, up.primary_role, 'unknown') as role, count(*)::int as n\n    from public.signup_attribution sa\n    left join public.users_profile up on up.id = sa.user_id\n    , rng\n    where sa.signed_up_at >= rng.f and sa.signed_up_at < rng.t + 1\n    group by 1, 2, 3, 4\n  ),\n  accounts as (\n    select count(*)::int as total,\n      count(*) filter (where sa.user_id is null)::int as without_row\n    from public.users_profile up\n    left join public.signup_attribution sa on sa.user_id = up.id\n    , rng\n    where up.created_at >= rng.f and up.created_at < rng.t + 1\n      and up.primary_role not in ('admin', 'super_admin')\n  ),\n  events as (\n    select case e.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      e.event,\n      case\n        when e.role in ('trade', 'supplier') then 'trade'\n        when e.role in ('property_manager', 'real_estate_agent') then 'pm'\n        when e.role = 'public_buyer' then 'town'\n        else 'other'\n      end as role_group,\n      count(distinct coalesce(e.user_id::text, e.anon_hash, e.id::text))::int as actors,\n      count(*)::int as n\n    from public.site_events e, rng\n    where e.created_at >= rng.f and e.created_at < rng.t + 1\n    group by 1, 2, 3\n  )\n  select jsonb_build_object(\n    'from', (select f from rng),\n    'to', (select t from rng),\n    'daily', coalesce((select jsonb_agg(jsonb_build_object('day', day, 'market', market, 'visitors', visitors, 'page_views', page_views) order by day, market) from daily), '[]'::jsonb),\n    'top_pages', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'path', path, 'views', views) order by market, views desc, path) from pages), '[]'::jsonb),\n    'top_referrers', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'host', host, 'visits', visits) order by market, visits desc, host) from refs), '[]'::jsonb),\n    'signups', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'channel', channel, 'method', method, 'role', role, 'n', n)) from signups), '[]'::jsonb),\n    'accounts', (select jsonb_build_object('total', total, 'without_row', without_row) from accounts),\n    'events', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'event', event, 'role_group', role_group, 'actors', actors, 'n', n)) from events), '[]'::jsonb)\n  );\n$function$\n"
+      "definition": "CREATE OR REPLACE FUNCTION public.site_analytics_report(p_from date, p_to date)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  with rng as (\n    select greatest(least(p_from, p_to), p_to - 400) as f, p_to as t\n  ),\n  daily as (\n    select coalesce(v.day, pv.day) as day, coalesce(v.market, pv.market) as market,\n      coalesce(v.visitors, 0) as visitors, coalesce(pv.views, 0) as page_views\n    from (\n      select day, case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, count(*)::int as visitors\n      from public.site_visitors, rng where day between rng.f and rng.t group by 1, 2\n    ) v\n    full join (\n      select day, case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, sum(views)::int as views\n      from public.site_page_views, rng where day between rng.f and rng.t group by 1, 2\n    ) pv on pv.day = v.day and pv.market = v.market\n  ),\n  pages as (\n    select market, path, views from (\n      select market, path, views, row_number() over (partition by market order by views desc, path) as rk\n      from (\n        select case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, path, sum(views)::int as views\n        from public.site_page_views, rng where day between rng.f and rng.t group by 1, 2\n      ) a\n    ) b where rk <= 15\n  ),\n  refs as (\n    select market, host, visits from (\n      select market, host, visits, row_number() over (partition by market order by visits desc, host) as rk\n      from (\n        select case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, referrer_host as host, sum(visits)::int as visits\n        from public.site_referrers, rng where day between rng.f and rng.t group by 1, 2\n      ) a\n    ) b where rk <= 15\n  ),\n  signups as (\n    select case sa.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      sa.channel, coalesce(sa.method, 'unknown') as method, coalesce(sa.role, up.primary_role, 'unknown') as role, count(*)::int as n\n    from public.signup_attribution sa\n    left join public.users_profile up on up.id = sa.user_id\n    , rng\n    where sa.signed_up_at >= rng.f and sa.signed_up_at < rng.t + 1\n    group by 1, 2, 3, 4\n  ),\n  accounts as (\n    select count(*)::int as total,\n      count(*) filter (where sa.user_id is null)::int as without_row\n    from public.users_profile up\n    left join public.signup_attribution sa on sa.user_id = up.id\n    , rng\n    where up.created_at >= rng.f and up.created_at < rng.t + 1\n      and up.primary_role not in ('admin', 'super_admin')\n  ),\n  events as (\n    select case e.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      e.event,\n      case\n        when e.role in ('trade', 'supplier') then 'trade'\n        when e.role in ('property_manager', 'real_estate_agent') then 'pm'\n        when e.role = 'public_buyer' then 'town'\n        else 'other'\n      end as role_group,\n      count(distinct coalesce(e.user_id::text, e.anon_hash, e.id::text))::int as actors,\n      count(*)::int as n\n    from public.site_events e, rng\n    where e.created_at >= rng.f and e.created_at < rng.t + 1\n    group by 1, 2, 3\n  ),\n  -- Where unfinished sign-ups stopped: the sign-up wizard's steps and the\n  -- onboarding form's steps (and which field was refused), per market.\n  steps as (\n    select case e.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      e.event,\n      coalesce(left(e.props->>'step', 40), '') as step,\n      coalesce(left(e.props->>'field', 40), '') as field,\n      count(distinct coalesce(e.user_id::text, e.anon_hash, e.id::text))::int as actors,\n      count(*)::int as n\n    from public.site_events e, rng\n    where e.event in ('signup_step', 'onboarding_step')\n      and e.created_at >= rng.f and e.created_at < rng.t + 1\n    group by 1, 2, 3, 4\n  )\n  select jsonb_build_object(\n    'from', (select f from rng),\n    'to', (select t from rng),\n    'daily', coalesce((select jsonb_agg(jsonb_build_object('day', day, 'market', market, 'visitors', visitors, 'page_views', page_views) order by day, market) from daily), '[]'::jsonb),\n    'top_pages', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'path', path, 'views', views) order by market, views desc, path) from pages), '[]'::jsonb),\n    'top_referrers', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'host', host, 'visits', visits) order by market, visits desc, host) from refs), '[]'::jsonb),\n    'signups', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'channel', channel, 'method', method, 'role', role, 'n', n)) from signups), '[]'::jsonb),\n    'accounts', (select jsonb_build_object('total', total, 'without_row', without_row) from accounts),\n    'events', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'event', event, 'role_group', role_group, 'actors', actors, 'n', n)) from events), '[]'::jsonb),\n    'steps', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'event', event, 'step', step, 'field', field, 'actors', actors, 'n', n)) from steps), '[]'::jsonb)\n  );\n$function$\n"
     },
     {
       "name": "town_closes_at",

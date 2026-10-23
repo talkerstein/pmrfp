@@ -114,3 +114,42 @@ identical. The latest remote upload is **not complete**: Cloudflare returned
 error 7500 (daily free row-write allowance exhausted) before accepting the
 manifest CREATE. The new empty target is not serving traffic. Existing verified
 full/rebuilt remote copies are unchanged. Continuous CDC remains unimplemented.
+
+
+## October 23 continuation
+
+The daily quota reset was confirmed by successful staging writes. The pending
+10,776-record candidate was fully loaded and verified, backed up from actual
+remote reads, restored and rechecked. Current master replay and live shared
+column definitions match across 101 public tables.
+
+After the approved three-table reader extension, the consistent source snapshot
+contains 11,873 records across 102 copied tables (including Auth IDs only). Its
+11,754-record rebuilt candidate preserves authoritative fields and passes full
+remote schema/record/FK checks plus actual readback backup/restore. All three new
+tables remain fully preserved; they are empty at this checkpoint.
+
+The copied-data preview is bound to that fresh candidate in read-only mode.
+Public taxonomy comparisons match source anon projections: 45 categories,
+88 regions, 21 property types. English/French browser filters were exercised.
+Default Supabase behavior, production D1 rejection, fixed selectors, pagination,
+inactive-row exclusion and upstream failure handling have integration coverage.
+
+Full suite: 2,458 passed, two skipped. Targeted: 86 passed. Offline migration:
+21 passed. Typecheck, targeted lint, DB grant checker and production build pass.
+The existing contract-history NFT warning and edge/static-generation warning
+remain. An existing cron fixture needed its clock pinned now that its Oct 21
+records have aged outside the real-clock window; no cron behavior changed.
+
+See `d1/preview-report-2026-10-23.json`. No production cutover, continuous CDC,
+full Auth/Storage recovery or application/job parity is claimed.
+
+
+The public-board Worker and Next provider also passed live parity: all 1,792
+published rows and category links matched source anon output. The provider
+requires the expected validated dataset; malformed selectors, cross-shard
+cursors, unpublished rows, private columns and mismatched checkpoints fail
+closed. App-provider tests verify four-load concurrency, overlapping-request
+deduplication, distinct checkpoint cache keys and no source fallback. The local
+English filtered page rendered through D1. The staging query plan still requires
+production scan/index tuning; no extra index changed the copied schema.

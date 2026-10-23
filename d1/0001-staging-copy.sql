@@ -78,6 +78,26 @@ CREATE TABLE "badge_hits" (
   CONSTRAINT "badge_hits_slug_check" CHECK (((length(slug) >= 1) AND (length(slug) <= 120)))
 );
 
+CREATE TABLE "badge_rewards" (
+  "organization_id" TEXT NOT NULL,
+  "granted_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  "kind" TEXT NOT NULL,
+  "days" INTEGER NOT NULL,
+  "domain" TEXT NOT NULL,
+  "distinct_days" INTEGER NOT NULL,
+  "detected_on" TEXT,
+  "trial_started_before" TEXT,
+  "trial_ends_before" TEXT,
+  "trial_started_after" TEXT NOT NULL,
+  "trial_ends_after" TEXT NOT NULL,
+  CONSTRAINT "badge_rewards_days_check" CHECK (((days >= 1) AND (days <= 31))),
+  CONSTRAINT "badge_rewards_distinct_days_check" CHECK ((distinct_days >= 2)),
+  CONSTRAINT "badge_rewards_domain_check" CHECK (((length(domain) >= 3) AND (length(domain) <= 253))),
+  CONSTRAINT "badge_rewards_kind_check" CHECK ((kind IN ('start', 'extend', 'reopen'))),
+  CONSTRAINT "badge_rewards_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+  CONSTRAINT "badge_rewards_pkey" PRIMARY KEY (organization_id)
+);
+
 CREATE TABLE "bid_results" (
   "id" TEXT NOT NULL,
   "award_history_id" TEXT NOT NULL,
@@ -455,6 +475,23 @@ CREATE TABLE "duplicate_reviews" (
   CONSTRAINT "duplicate_reviews_resolved_by_fkey" FOREIGN KEY (resolved_by) REFERENCES users_profile(id) ON DELETE SET NULL,
   CONSTRAINT "duplicate_reviews_source_check" CHECK ((source IN ('onboarding', 'signup', 'admin'))),
   CONSTRAINT "duplicate_reviews_status_check" CHECK ((status IN ('open', 'dismissed', 'merged', 'disabled')))
+);
+
+CREATE TABLE "email_consents" (
+  "id" INTEGER NOT NULL,
+  "user_id" TEXT NOT NULL,
+  "scope" TEXT NOT NULL,
+  "source" TEXT NOT NULL,
+  "wording_version" TEXT NOT NULL,
+  "lang" TEXT,
+  "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "email_consents_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
+  CONSTRAINT "email_consents_pkey" PRIMARY KEY (id),
+  CONSTRAINT "email_consents_scope_check" CHECK ((scope IN ('service', 'marketing'))),
+  CONSTRAINT "email_consents_source_check" CHECK ((source IN ('signup_form', 'onboarding', 'google_signup', 'settings', 'other'))),
+  CONSTRAINT "email_consents_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE CASCADE,
+  CONSTRAINT "email_consents_user_id_scope_source_key" UNIQUE (user_id, scope, source),
+  CONSTRAINT "email_consents_wording_version_check" CHECK (((length(wording_version) >= 1) AND (length(wording_version) <= 40)))
 );
 
 CREATE TABLE "email_suppressions" (
@@ -900,7 +937,7 @@ CREATE TABLE "lifecycle_sends" (
   CONSTRAINT "lifecycle_sends_pkey" PRIMARY KEY (id),
   CONSTRAINT "lifecycle_sends_resend_id_check" CHECK (((resend_id IS NULL) OR (length(resend_id) <= 100))),
   CONSTRAINT "lifecycle_sends_status_check" CHECK ((status IN ('sending', 'sent', 'skipped', 'failed'))),
-  CONSTRAINT "lifecycle_sends_step_check" CHECK ((step IN ('rescue_2h', 'rescue_1d', 'rescue_3d', 'review_pending', 'welcome', 'market', 'get_found', 'trial_offer', 'benchmark', 'community', 'founding', 'trial_day1', 'trial_day7', 'trial_day12', 'trial_expired', 'trial_winback'))),
+  CONSTRAINT "lifecycle_sends_step_check" CHECK ((step IN ('rescue_2h', 'rescue_1d', 'rescue_3d', 'review_pending', 'welcome', 'market', 'get_found', 'trial_offer', 'benchmark', 'community', 'founding', 'trial_day1', 'trial_day7', 'trial_day12', 'trial_expired', 'trial_winback', 'badge', 'badge_reminder', 'badge_thanks', 'welcome_back'))),
   CONSTRAINT "lifecycle_sends_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users_profile(id) ON DELETE CASCADE
 );
 
@@ -1355,6 +1392,26 @@ CREATE TABLE "rfp_categories" (
   CONSTRAINT "rfp_categories_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE
 );
 
+CREATE TABLE "rfp_changes" (
+  "id" TEXT NOT NULL,
+  "rfp_id" TEXT NOT NULL,
+  "slug" TEXT NOT NULL,
+  "field" TEXT NOT NULL,
+  "old_value" TEXT NOT NULL DEFAULT '',
+  "new_value" TEXT NOT NULL DEFAULT '',
+  "source_key" TEXT,
+  "change_day" TEXT NOT NULL,
+  "changed_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  CONSTRAINT "rfp_changes_field_check" CHECK ((field IN ('closing_date', 'title', 'status'))),
+  CONSTRAINT "rfp_changes_new_value_check" CHECK ((length(new_value) <= 500)),
+  CONSTRAINT "rfp_changes_old_value_check" CHECK ((length(old_value) <= 500)),
+  CONSTRAINT "rfp_changes_once_a_day" UNIQUE (rfp_id, field, old_value, new_value, change_day),
+  CONSTRAINT "rfp_changes_pkey" PRIMARY KEY (id),
+  CONSTRAINT "rfp_changes_rfp_id_fkey" FOREIGN KEY (rfp_id) REFERENCES rfp_posts(id) ON DELETE CASCADE,
+  CONSTRAINT "rfp_changes_slug_check" CHECK (((length(slug) >= 1) AND (length(slug) <= 300))),
+  CONSTRAINT "rfp_changes_source_key_check" CHECK (((source_key IS NULL) OR (length(source_key) <= 60)))
+);
+
 CREATE TABLE "rfp_documents" (
   "id" TEXT NOT NULL,
   "rfp_id" TEXT NOT NULL,
@@ -1561,7 +1618,7 @@ CREATE TABLE "site_events" (
   "utm_campaign" TEXT,
   "props" TEXT NOT NULL DEFAULT '{}' CHECK ("props" IS NULL OR json_valid("props")),
   "created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  CONSTRAINT "site_events_event_check" CHECK ((event IN ('signup_started', 'signup_completed', 'onboarding_completed', 'writer_started', 'writer_draft_generated', 'rfp_posted', 'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_completed', 'trial_started', 'follow_buyer', 'claim_started', 'claim_verified', 'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'))),
+  CONSTRAINT "site_events_event_check" CHECK ((event IN ('signup_viewed', 'signup_step', 'signup_started', 'signup_completed', 'email_confirmed', 'onboarding_step', 'onboarding_completed', 'writer_started', 'writer_draft_generated', 'rfp_posted', 'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_failed', 'checkout_completed', 'trial_started', 'follow_buyer', 'claim_started', 'claim_verified', 'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'))),
   CONSTRAINT "site_events_lang_check" CHECK (((lang IS NULL) OR (lang IN ('en', 'fr', 'es')))),
   CONSTRAINT "site_events_pkey" PRIMARY KEY (id),
   CONSTRAINT "site_events_props_check" CHECK (((json_type(props) = 'object') AND (octet_length((props)) <= 1000))),
@@ -2090,6 +2147,8 @@ CREATE INDEX digest_subscribers_send_idx ON digest_subscribers (status, send_buc
 
 CREATE INDEX duplicate_reviews_status_idx ON duplicate_reviews (status, created_at DESC);
 
+CREATE INDEX email_consents_user_idx ON email_consents (user_id);
+
 CREATE INDEX forum_poll_votes_option_idx ON forum_poll_votes (option_id);
 
 CREATE INDEX forum_posts_author_idx ON forum_posts (author_id, created_at DESC);
@@ -2219,6 +2278,10 @@ CREATE INDEX review_invites_org_idx ON review_invites (organization_id, created_
 CREATE INDEX rfp_categories_cat_idx ON rfp_categories (category_id);
 
 CREATE INDEX rfp_categories_rfp_idx ON rfp_categories (rfp_id);
+
+CREATE INDEX rfp_changes_rfp_idx ON rfp_changes (rfp_id);
+
+CREATE INDEX rfp_changes_slug_idx ON rfp_changes (slug, changed_at DESC);
 
 CREATE INDEX rfp_documents_rfp_idx ON rfp_documents (rfp_id);
 
