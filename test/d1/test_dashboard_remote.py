@@ -15,9 +15,12 @@ class FakeRemote:
         cur=self.db.execute(sql,params or []);result=[dict(r) for r in cur.fetchall()];self.db.commit()
         return [{'success':True,'results':result}]
     def batch(self,items):
+        results=[]
         with self.db:
-            for item in items:self.db.execute(item['sql'],item.get('params',[]))
-        return [{'success':True} for _ in items]
+            for item in items:
+                cursor=self.db.execute(item['sql'],item.get('params',[]))
+                results.append({'success':True,'results':[dict(row) for row in cursor.fetchall()]})
+        return results
 
 class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
     def test_dashboard_source_checksums_and_counts(self):
@@ -41,6 +44,14 @@ class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
         fake.db.execute("UPDATE users_profile SET full_name='changed'");fake.db.commit()
         with self.assertRaises(ValueError):remote.verify(fake,s)
         fake.db.close()
+    def test_batched_readback_covers_multiple_pages_without_duplicates(self):
+        rows=self.seed();template=next(iter(rows['regions'].values()))
+        rows['regions']={}
+        for n in range(503):
+            row={**template,'id':str(n),'slug':'region-'+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        snapshot=self.snapshot(rows,'paged.jsonl');fake=FakeRemote();self.addCleanup(fake.db.close)
+        r=remote.load(fake,snapshot);self.assertEqual(r['records'],505)
+        remote.verify(fake,snapshot,backup_path=self.root/'paged.sqlite');m.validate(snapshot,self.root/'paged.sqlite')
     def test_remote_refuses_unrecognized_or_different_snapshot(self):
         fake=FakeRemote();fake.query('CREATE TABLE precious(id TEXT)')
         with self.assertRaises(ValueError):remote.load(fake,self.snapshot(self.seed()))
