@@ -7,13 +7,21 @@ backup/restore rehearsal. It now includes an opt-in synthetic saved-RFP preview;
 remains authoritative. Existing production business rows, row policies, jobs, storage objects and Vercel configuration are unchanged. The user approved a temporary migration reader and narrower PUBLIC execution grants on 19 definer functions; see [READER-ACCESS.md](READER-ACCESS.md). At the user's request, one isolated Auth test account and its ordinary profile were created for preview verification; source bookmarks and public business listings were not created.
 
 Repository baseline refreshed to `origin/master` at
-`da918b5`,
-2026-10-22. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
+`a70342d`,
+2026-10-23. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
 The other chat's checkout was not modified. The grants fix (#164), city-source work
 (#163), and migration-reconciliation fixes (#165/#166) landed during this work;
 this branch was rebased onto them without modifying those patches. The live
 copy below is the earlier point-in-time snapshot, not a fresh post-reconciliation
 export. Repeat the live audit before a later data synchronization or cutover.
+
+## October 23 update
+
+The daily D1 write allowance reset. The pending 10,776-record copy is now fully uploaded, verified and restored from its actual readback backup. A fresh live audit includes 101 public tables; shared columns match current master. The user authorized SELECT-only reader grants on the three added tables (`badge_rewards`, `email_consents`, `rfp_changes`), retaining the October 29 expiry and zero table writes/Auth password access. The new tables are preserved in full, including when empty.
+
+Today’s consistent export contains 11,819 public records and 54 Auth IDs (11,873 total). Its approved rebuilt candidate has 11,754 records and is verified on D1, including readback/restore; authoritative fields remain identical. The copied-data Worker now serves that candidate in read-only mode. The original full-copy and earlier rebuilt databases remain available.
+
+Public category/region/property-type lookup reads now have an opt-in D1 backend, with fixed projections, active-only anon-equivalent filtering, bound pagination and a private gateway. Live comparison matched every field of 45 categories, 88 regions and 21 property types. English/French browser filters work. Production selection is explicitly blocked; private listing data and jobs still use Supabase. The public board now also has an opt-in D1 provider: all 1,792 published rows and category links matched source output; validated dataset identity and provider-specific caches are enforced. Full application tests: 2,458 passed, two skipped; build, typecheck, targeted lint and 21 migration tests pass. See `preview-report-2026-10-23.json` and [PREVIEW.md](PREVIEW.md).
 
 ## October 22 update
 

@@ -55,3 +55,17 @@ No cleanup command is run automatically by this proposal.
 
 Relevant platform references: [Supabase database connections](https://supabase.com/docs/guides/database/connecting-to-postgres)
 and [inherited privileges](https://supabase.com/docs/guides/troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c).
+
+
+## October 23 approved extension
+
+Three new source tables were found during the next metadata audit. The user
+explicitly authorized SELECT-only access to `badge_rewards`, `email_consents`
+and `rfp_changes`. The guarded proposal is
+`d1/reader-access-extension-proposal-2026-10-23.sql`; its approved rendering was
+applied through the dashboard. The expiry, role memberships, credential and
+other privileges did not change. Live reader verification confirms 101 readable
+public tables, zero writable tables and no Auth password-column privilege.
+The ACL preflight still shows only the four audited read-only PUBLIC definer
+helpers and no PUBLIC table-write or schema-create grants. The fresh snapshot
+covers all 101 tables, including the three empty new tables.

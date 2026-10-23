@@ -140,3 +140,73 @@ account’s daily free D1 row-write quota (error 7500). It is not a validated co
 and no Worker is bound to it. The allowance resets October 23 at 00:00 UTC
 (05:30 India time), or an authorized paid-plan upgrade can remove this free-tier
 limit. No billing change was made. Existing remote copies remain available.
+
+
+## October 23 continuation
+
+The free-tier daily write allowance reset. Yesterday’s pending 10,776-record
+candidate is uploaded, verified and restored. The fresh 101-table source export
+has 11,873 records; its separately checksummed rebuilt candidate has 11,754.
+The latter is loaded in `pmrfp-rebuilt-staging-20261023`
+(`9c41192c-bd59-471e-8baa-a5675d7f2c47`), all fields/schema/FKs match, and its
+actual D1 readback backup was restored and revalidated. The new tables for badge
+rewards, consent and tender changes default to full preservation, never rebuild.
+
+The copied-read Worker config now binds this fresh database. Its read-only mode
+continues to reject bookmark writes. The synthetic-write Worker remains separate.
+No production binding, domain or Vercel environment was switched.
+
+The new `/v1/taxonomy` endpoint permits GET only, requires the gateway secret,
+and accepts only the three fixed table names and a validated UUID cursor.
+It mirrors the current anon RLS rule (`active`) and returns only existing public
+lookup columns, with 250-row pages. It does not invoke Auth or accept caller SQL,
+user IDs, filters, arbitrary limits or table names. Invalid data/pagination and
+upstream failures fail closed; the app does not fall back to source reads.
+
+To enable lookup reads in a local/preview server, set
+`PMRFP_TAXONOMY_BACKEND=d1`, `PMRFP_D1_API_URL` and
+`PMRFP_D1_GATEWAY_SECRET` privately. The default is Supabase;
+`VERCEL_ENV=production` rejects D1. The gateway credential is server-only.
+The same URL setting also controls saved-RFP calls, so choose the read-only
+copied-data Worker for a copied-data preview and the synthetic Worker for write
+testing. Production cache/freshness policies remain a later cutover gate.
+
+Live comparison against cookieless Supabase public reads matched every field of
+45 categories, 88 regions and 21 property types. Browser verification on the local
+board passed in French and English; selecting Roofing produced 15 listings.
+The shared public listing feed also has the opt-in D1 provider described below. A local host-binding rewrite
+loop was resolved by starting Next with `--hostname localhost`; no routing code
+was changed. Use `http://localhost:3017/rfps` (English uses no `/en` prefix).
+
+Tests: 21 offline migration tests; 86 targeted preview/karma/existing read tests;
+2,458 full-suite passes and two skips; typecheck, targeted lint, explicit-grant
+check and Next production build pass. An existing cron test now pins its clock
+to its dated fixture. Native D1 staging and serving checks above are separate
+from the Node/SQLite integration tests. Continuous synchronization and full app
+parity remain incomplete.
+
+
+## Public board preview
+
+Set `PMRFP_BOARD_BACKEND=d1` and
+`PMRFP_D1_DATASET_SHA256=ebda76eb9c50facc3abac845d8d08cf6b7c145bb9a18294f0097b4a9b93d7dc8`
+with the copied-read Worker URL/gateway settings above. The Worker requires the
+matching validated migration manifest. The client rejects another dataset or
+invalid pagination; source fallback is absent. Production selection is blocked.
+
+`/v1/board` is GET-only behind the gateway and accepts only shard 0–15 and an
+optional UUID cursor within that shard. It selects published listings only,
+using the existing public board fields and category-link ordering. Scope,
+contacts, budgets, documents, keep-alive tokens and organization/user records
+are excluded. Categories and public board data share the ordinary application
+renderers; signed-in private detail/entitlement reads are still Supabase-backed.
+
+The existing 16-shard cache, six-hour safety TTL, tag and four-load concurrency
+limit remain. Provider, API URL and expected dataset hash form the cache identity
+and single-flight key, so copied snapshots cannot reuse Supabase or another
+checkpoint's shard. Live comparison matched all 1,792 public listings and their
+category links exactly, and the English filtered board rendered successfully.
+
+D1 scan-cost tuning remains a production gate: the current staging plan uses the
+status index and temporary ordering. No index overlays were added to the verified
+copy, and no production cost reduction or continuous synchronization is claimed.
