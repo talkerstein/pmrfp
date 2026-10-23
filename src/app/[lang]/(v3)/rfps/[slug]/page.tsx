@@ -84,6 +84,7 @@ import { getOpenRfpCounts } from "@/lib/data/rfp-counts";
 import { isGcPackage, sourceTypeLabel, tradeWords } from "@/lib/gc/packages";
 import { getAwardById, listPackagesForAward } from "@/lib/gc/data";
 import { getAwardIndex } from "@/lib/data/award-intel";
+import { loadOpenDataAwardRows } from "@/lib/open-data/load";
 import { benchmarkView } from "@/lib/data/price-benchmarks";
 import { benchmarkForListing, benchmarkPath } from "@/lib/data/price-benchmarks-load";
 import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
@@ -408,7 +409,9 @@ export default async function RfpDetailPage({
   const summaryText = openListing ? bidCheck?.plainSummary ?? (summaryFallback ? `${summaryFallback}${closesText}` : null) : null;
 
   // 3. What similar work sold for: the median is free, the band and the winners are Trade Pro.
-  const similarWork = openListing ? similarWorkFor(teaser, await getAwardIndex().catch(() => []), torontoToday()) : null;
+  const similarWork = openListing
+    ? similarWorkFor(teaser, [...(await getAwardIndex().catch(() => [])), ...(await loadOpenDataAwardRows().catch(() => []))], torontoToday())
+    : null;
 
   // 4. Looks like a re-tender: same buyer, same trade and place, same words in the title. Winner and amount are Trade Pro.
   const benchData = openListing && isPublicTender && buyerKeyName ? await loadBenchmarkData().catch(() => null) : null;

@@ -22,6 +22,8 @@ export interface AwardRow {
   winnerSlug: string | null;
   /** Award date, YYYY-MM-DD, when the notice has one (lib/rfp-detail/similar-work windows on it). */
   date?: string | null;
+  /** The licence credit to show when this row feeds a block (open-data rows; board notices carry their own on the tender page). */
+  credit?: string | null;
 }
 
 export interface AwardIntel {

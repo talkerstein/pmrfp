@@ -57,6 +57,14 @@ export interface AwardHistoryInput {
   licence: string;
   attribution: string;
   as_of: string;
+  /**
+   * Open-data batch 1 (migration 20261023000100): a sole-source / limited-
+   * tender award. Such rows are history only; they never feed price medians.
+   * Absent on older sources (the column defaults to false).
+   */
+  non_competitive?: boolean;
+  /** "open bidding", "competitive (traditional)", "non-competitive (Emergency)"… */
+  procurement_method?: string | null;
 }
 
 export type BidStatus = "awarded" | "apparent_low" | "not_awarded" | "submitted";

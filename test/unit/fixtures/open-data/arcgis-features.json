@@ -1,0 +1,342 @@
+{
+ "surrey": [
+  {
+   "attributes": {
+    "ObjectId": 6,
+    "PermitNumber": "25-136912-000-00 B2",
+    "IssuedDate": "20261015",
+    "ValueOfConstruction": 100000,
+    "BuildingGeneralContractorOrganization": "Lund Projects\nLangley, British Columbia, Canada, V3A 9J5",
+    "SubDescription": "Place of Worship",
+    "WorkDescription": "* See Description"
+   }
+  },
+  {
+   "attributes": {
+    "ObjectId": 8,
+    "PermitNumber": "26-036919-000-00 B7",
+    "IssuedDate": "20261015",
+    "ValueOfConstruction": 685965,
+    "BuildingGeneralContractorOrganization": "Natt Star Homes Ltd\n9328 127 St\nSurrey, British Columbia, Canada, V3V 6C5",
+    "SubDescription": "Duplex",
+    "WorkDescription": "New"
+   }
+  },
+  {
+   "attributes": {
+    "ObjectId": 9,
+    "PermitNumber": "26-036922-000-00 B7",
+    "IssuedDate": "20261015",
+    "ValueOfConstruction": 202500,
+    "BuildingGeneralContractorOrganization": "Natt Star Homes Ltd\n9328 127 St\nSurrey, British Columbia, Canada, V3V 6C5",
+    "SubDescription": "Garden Suite",
+    "WorkDescription": "New"
+   }
+  },
+  {
+   "attributes": {
+    "ObjectId": 10,
+    "PermitNumber": "26-044836-000-00 B7",
+    "IssuedDate": "20261015",
+    "ValueOfConstruction": 300000,
+    "BuildingGeneralContractorOrganization": null,
+    "SubDescription": "Barn",
+    "WorkDescription": "New"
+   }
+  },
+  {
+   "attributes": {
+    "ObjectId": 11,
+    "PermitNumber": "26-054701-000-00 BC",
+    "IssuedDate": "20261015",
+    "ValueOfConstruction": 102434,
+    "BuildingGeneralContractorOrganization": "Commander Warehouse Equipment Ltd\n5225 192 St\nSurrey, British Columbia, Canada, V3S 8E5",
+    "SubDescription": "Warehouse",
+    "WorkDescription": "Tenant Improvement"
+   }
+  },
+  {
+   "attributes": {
+    "ObjectId": 16,
+    "PermitNumber": "25-090135-000-00 B7",
+    "IssuedDate": "20261014",
+    "ValueOfConstruction": 700000,
+    "BuildingGeneralContractorOrganization": "Nest Builders Ltd\n12412 96A Ave\nSurrey, British Columbia, Canada, V3V 2A8",
+    "SubDescription": "Single Family (Secondary Suite)",
+    "WorkDescription": "New"
+   }
+  }
+ ],
+ "maple-ridge": [
+  {
+   "attributes": {
+    "OBJECTID": 107012,
+    "PermitNumber": "22-118029",
+    "IssueDate": 1787777021000,
+    "ConstructionValue": 650000,
+    "ContractorName": "N D HOMES LTD",
+    "SubDescription": "Single Detached",
+    "WorkDescription": "New with Rental Suite"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 111596,
+    "PermitNumber": "23-117706",
+    "IssueDate": 1781856000000,
+    "ConstructionValue": 195000,
+    "ContractorName": "A TOUCH OF BRASS LTD",
+    "SubDescription": "Industrial",
+    "WorkDescription": "Renovation"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 115264,
+    "PermitNumber": "24-116564",
+    "IssueDate": 1783981244000,
+    "ConstructionValue": 500000,
+    "ContractorName": "ZEST HOMES LTD",
+    "SubDescription": "Single Detached",
+    "WorkDescription": "New"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 116934,
+    "PermitNumber": "25-004381",
+    "IssueDate": 1769620523000,
+    "ConstructionValue": 550000,
+    "ContractorName": "CAVALIER HOMES LTD",
+    "SubDescription": "Single Detached",
+    "WorkDescription": "New with Rental Suite"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 117501,
+    "PermitNumber": "25-008344",
+    "IssueDate": 1782979200000,
+    "ConstructionValue": 450000,
+    "ContractorName": "EPIC NE ALBION HOMES LTD",
+    "SubDescription": "Single Detached",
+    "WorkDescription": "New"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 117523,
+    "PermitNumber": "25-008552",
+    "IssueDate": 1767686400000,
+    "ConstructionValue": 100000,
+    "ContractorName": "HIGH MARK MECHANICAL & ELECTRICAL SERVICES LTD",
+    "SubDescription": "Apartment",
+    "WorkDescription": "Renovation"
+   }
+  }
+ ],
+ "airdrie": [
+  {
+   "attributes": {
+    "OBJECTID": 5099,
+    "PermitNumber": "PRACC202600185",
+    "DateIssued": "2026-02-10",
+    "ConstructionValue": 280500,
+    "Contractor": "ROCKYVIEW SCHOOLS",
+    "Workclass": "Institutional and Public Use",
+    "ApplicationType": "Accessory"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 5177,
+    "PermitNumber": "PRACC202600343",
+    "DateIssued": "2026-03-24",
+    "ConstructionValue": 820000,
+    "Contractor": "AKELA CONSTRUCTION LTD",
+    "Workclass": "Commercial/Industrial",
+    "ApplicationType": "Accessory"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 5435,
+    "PermitNumber": "PRACC202600921",
+    "DateIssued": "2026-05-01",
+    "ConstructionValue": 387500,
+    "Contractor": "MIMAR SERVICES LTD",
+    "Workclass": "Commercial/Industrial",
+    "ApplicationType": "Accessory"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 5460,
+    "PermitNumber": "PRACC202600979",
+    "DateIssued": "2026-04-15",
+    "ConstructionValue": 160986,
+    "Contractor": "CDM MECHANICAL LTD",
+    "Workclass": "Institutional and Public Use",
+    "ApplicationType": "Accessory"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 5494,
+    "PermitNumber": "PRACC202601060",
+    "DateIssued": "2026-04-23",
+    "ConstructionValue": 385000,
+    "Contractor": "PRIMARY ENGINEERING AND CONSTRUCTION CORPORATION",
+    "Workclass": "Commercial/Industrial",
+    "ApplicationType": "Accessory"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 9609,
+    "PermitNumber": "PRACC202601152",
+    "DateIssued": "2026-07-27",
+    "ConstructionValue": 193000,
+    "Contractor": "LANDFORM INC",
+    "Workclass": "Commercial/Industrial",
+    "ApplicationType": "Accessory"
+   }
+  }
+ ],
+ "grande-prairie": [
+  {
+   "attributes": {
+    "RecordID": 6875771,
+    "PermitNumber": "PR251786-BD1",
+    "DateIssued": 1771949044000,
+    "VALUATION": 446400,
+    "CONTRACTOR_NAME": "STUDIO HOMES 2021 INC.",
+    "PermitType": "Building - Residential",
+    "PermitWorkItemType": "New Single Family Dwelling w/ Garage"
+   }
+  },
+  {
+   "attributes": {
+    "RecordID": 6875822,
+    "PermitNumber": "PR251820-BD1",
+    "DateIssued": 1769118432000,
+    "VALUATION": 255600,
+    "CONTRACTOR_NAME": "GRANDE WEST BUILDERS LTD.",
+    "PermitType": "Building - Residential",
+    "PermitWorkItemType": "New Semi-Detached"
+   }
+  },
+  {
+   "attributes": {
+    "RecordID": 6875823,
+    "PermitNumber": "PR251821-BD1",
+    "DateIssued": 1769122642000,
+    "VALUATION": 127800,
+    "CONTRACTOR_NAME": "GRANDE WEST BUILDERS LTD.",
+    "PermitType": "Building - Residential",
+    "PermitWorkItemType": "Basement Development"
+   }
+  },
+  {
+   "attributes": {
+    "RecordID": 6875824,
+    "PermitNumber": "PR251823-BD1",
+    "DateIssued": 1769095647000,
+    "VALUATION": 232200,
+    "CONTRACTOR_NAME": "GRANDE WEST BUILDERS LTD.",
+    "PermitType": "Building - Residential",
+    "PermitWorkItemType": "New Semi-Detached"
+   }
+  },
+  {
+   "attributes": {
+    "RecordID": 6875825,
+    "PermitNumber": "PR251824-BD1",
+    "DateIssued": 1769122829000,
+    "VALUATION": 127800,
+    "CONTRACTOR_NAME": "GRANDE WEST BUILDERS LTD.",
+    "PermitType": "Building - Residential",
+    "PermitWorkItemType": "Basement Development"
+   }
+  },
+  {
+   "attributes": {
+    "RecordID": 6875858,
+    "PermitNumber": "PR261239-BD1",
+    "DateIssued": 1789593045000,
+    "VALUATION": 234360,
+    "CONTRACTOR_NAME": "DERKSEN BUILDERS",
+    "PermitType": "Building - Residential",
+    "PermitWorkItemType": "New Semi-Detached"
+   }
+  }
+ ],
+ "kitchener": [
+  {
+   "attributes": {
+    "OBJECTID": 64236,
+    "PERMITNO": "23102776",
+    "ISSUE_DATE": 1792022400000,
+    "CONSTRUCTION_VALUE": 900000,
+    "CONTRACTOR": null,
+    "PERMIT_TYPE": "Residential Building (Multi)",
+    "SUB_WORK_TYPE": "Apartment"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 67092,
+    "PERMITNO": "24107852",
+    "ISSUE_DATE": 1781222400000,
+    "CONSTRUCTION_VALUE": 140000,
+    "CONTRACTOR": null,
+    "PERMIT_TYPE": "Residential Building (Multi)",
+    "SUB_WORK_TYPE": "Apartment"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 67860,
+    "PERMITNO": "24116817",
+    "ISSUE_DATE": 1788134400000,
+    "CONSTRUCTION_VALUE": 650000,
+    "CONTRACTOR": "RAISON HOMES INC",
+    "PERMIT_TYPE": "Residential Building (House)",
+    "SUB_WORK_TYPE": "Semi-Detached Dwelling"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 67876,
+    "PERMITNO": "24117061",
+    "ISSUE_DATE": 1788134400000,
+    "CONSTRUCTION_VALUE": 650000,
+    "CONTRACTOR": "RAISON HOMES INC",
+    "PERMIT_TYPE": "Residential Building (House)",
+    "SUB_WORK_TYPE": "Semi-Detached Dwelling"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 68093,
+    "PERMITNO": "24119813",
+    "ISSUE_DATE": 1781740800000,
+    "CONSTRUCTION_VALUE": 164000,
+    "CONTRACTOR": "DECOPLAN INC",
+    "PERMIT_TYPE": "Residential Building (House)",
+    "SUB_WORK_TYPE": "Garden Suite"
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 68377,
+    "PERMITNO": "24122531",
+    "ISSUE_DATE": 1785974400000,
+    "CONSTRUCTION_VALUE": 4160000,
+    "CONTRACTOR": "A & F GREENFIELD HOMES LTD",
+    "PERMIT_TYPE": "Residential Building (Multi)",
+    "SUB_WORK_TYPE": "Rowhouse (3 or More)"
+   }
+  }
+ ]
+}

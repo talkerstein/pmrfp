@@ -111,6 +111,14 @@
       "schedule": "35 10 5 * *"
     },
     {
+      "path": "/api/cron/open-data/weekly",
+      "schedule": "15 10 * * 1"
+    },
+    {
+      "path": "/api/cron/open-data/monthly",
+      "schedule": "50 10 2 * *"
+    },
+    {
       "path": "/api/cron/insights-brief",
       "schedule": "40 13 * * 1"
     },

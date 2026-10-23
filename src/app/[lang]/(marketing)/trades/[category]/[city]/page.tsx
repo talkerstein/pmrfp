@@ -36,6 +36,7 @@ import { getTemplatesForTrade } from "@/lib/seo/rfp-templates";
 import { localizeRfpTemplate } from "@/lib/seo/rfp-templates.fr";
 import { PRICING, SITE } from "@/lib/site";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
+import { OpenDataTradeBlocks } from "@/components/public/open-data-blocks";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
@@ -563,6 +564,9 @@ export default async function TradeCityPage({
           )}
         </Container>
       )}
+
+      {/* Open data (cities with data only): recent big permits; Calgary's most active contractors in this trade. Renders nothing otherwise. */}
+      <OpenDataTradeBlocks city={region.name} tradeSlug={cat.slug} tradeLabel={cat.name} />
 
       <Container className="pb-12">
         <SponsorSlot

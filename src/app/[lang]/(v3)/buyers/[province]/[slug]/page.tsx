@@ -22,6 +22,9 @@ import { buyerPageExtras, followRegionSlug } from "@/lib/towns/page-data";
 import { ClaimCta, ManagedRows, TownWidgetCode, UpcomingPurchases, VerifiedBadge } from "@/components/towns/blocks";
 import { TownPageView } from "@/components/towns/town-page";
 import { FollowBlock } from "@/components/follows/blocks";
+import { CalgaryActiveSummary, ComingUp } from "@/components/public/open-data-blocks";
+import { loadCalgaryTop, loadPlannedProcurements } from "@/lib/open-data/load";
+import { buyerKey } from "@/lib/contract-history/model";
 import { provincePath } from "@/lib/buyers/province";
 import { inSentence } from "@/lib/towns/names";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -96,6 +99,11 @@ export default async function BuyerPageView({ params }: { params: Params }) {
 
   const b = p.buyer;
   const name = b.name;
+  // Open data (24 h tagged cache): the City of Toronto's planned procurements; Calgary's most active trade contractors.
+  const [planned, calgaryTop] = await Promise.all([
+    loadPlannedProcurements(b.name).catch(() => []),
+    buyerKey(b.name) === "city of calgary" ? loadCalgaryTop().catch(() => []) : Promise.resolve([]),
+  ]);
   // "Follow": the region picked at sign-up when a signed-out visitor follows.
   const regionSlug = await followRegionSlug(p);
   const province = regionName(p.province, lang);
@@ -257,6 +265,8 @@ export default async function BuyerPageView({ params }: { params: Params }) {
           <p className="muted">{fmt(t.page.openNone, { name })}</p>
         )}
         {managed && managed.upcoming.length > 0 && <UpcomingPurchases managed={managed} no={++no} />}
+        {planned.length > 0 && <ComingUp rows={planned} no={++no} />}
+        {calgaryTop.some((l) => l.list.rows.length > 0) && <CalgaryActiveSummary lists={calgaryTop} no={++no} />}
 
         <SH2 no={++no} id="awards">{fmt(t.page.awardsTitle, { name })}</SH2>
         {p.awards.count ? (
