@@ -1,0 +1,174 @@
+{
+ "hvac": [
+  {
+   "contractor": "DRIVE MECHANICAL",
+   "permits": "628"
+  },
+  {
+   "contractor": "MODERN HVAC",
+   "permits": "562"
+  },
+  {
+   "contractor": "CUSTOM MECHANICAL HEATING AB",
+   "permits": "406"
+  },
+  {
+   "contractor": "OCEAN MECHANICAL",
+   "permits": "339"
+  },
+  {
+   "contractor": "BA HVAC",
+   "permits": "331"
+  },
+  {
+   "contractor": "CLIMATIC AIR SYSTEMS",
+   "permits": "268"
+  },
+  {
+   "contractor": "MASTERTECH MECHANICAL",
+   "permits": "232"
+  },
+  {
+   "contractor": "ALBERTA HEATING",
+   "permits": "212"
+  },
+  {
+   "contractor": "LARKIN SHEET METAL",
+   "permits": "195"
+  },
+  {
+   "contractor": "SUNNY HEATING & COOLING",
+   "permits": "186"
+  },
+  {
+   "contractor": "INFILLS MECHANICALS",
+   "permits": "183"
+  },
+  {
+   "contractor": "A1 HEATING AND AIRCONDITIONING",
+   "permits": "177"
+  },
+  {
+   "contractor": "WIEHLER MECHANICAL",
+   "permits": "159"
+  },
+  {
+   "contractor": "W & J HEATING",
+   "permits": "159"
+  }
+ ],
+ "electrical": [
+  {
+   "permits": "1249"
+  },
+  {
+   "contractor": "4-STAR ELECTRIC",
+   "permits": "785"
+  },
+  {
+   "contractor": "SKYFIRE ENERGY",
+   "permits": "729"
+  },
+  {
+   "contractor": "WALTERS ELECTRICAL CONTRACTING",
+   "permits": "584"
+  },
+  {
+   "contractor": "ARPI'S INDUSTRIES",
+   "permits": "470"
+  },
+  {
+   "contractor": "FIREFLY SOLAR",
+   "permits": "447"
+  },
+  {
+   "contractor": "ZENO RENEWABLES",
+   "permits": "418"
+  },
+  {
+   "contractor": "RIK'S ELECTRICAL",
+   "permits": "367"
+  },
+  {
+   "contractor": "ACTION FURNACE",
+   "permits": "357"
+  },
+  {
+   "contractor": "ECO TECH ELECTRICAL",
+   "permits": "334"
+  },
+  {
+   "contractor": "BRILLIANT ELECTRICAL SERVICES TEAM",
+   "permits": "330"
+  },
+  {
+   "contractor": "FIRST IDEAL ELECTRICAL",
+   "permits": "314"
+  },
+  {
+   "contractor": "SUN ELECTRICAL",
+   "permits": "307"
+  },
+  {
+   "contractor": "ACE ELECTRIC SERVICES",
+   "permits": "297"
+  }
+ ],
+ "plumbing": [
+  {
+   "permits": "944"
+  },
+  {
+   "contractor": "BEACH'S QUALITY DRYWALL",
+   "permits": "645"
+  },
+  {
+   "contractor": "PETE THE PLUMBER",
+   "permits": "473"
+  },
+  {
+   "contractor": "A CLASS PLUMBING",
+   "permits": "277"
+  },
+  {
+   "contractor": "SIDHU PLUMBING",
+   "permits": "258"
+  },
+  {
+   "contractor": "A GRADE PLUMBING",
+   "permits": "257"
+  },
+  {
+   "contractor": "SUNDANCE PLUMBING GAS & HEATING",
+   "permits": "229"
+  },
+  {
+   "contractor": "5 STAR PLUMBING HEATING",
+   "permits": "214"
+  },
+  {
+   "contractor": "CANYON PLUMBING & HEATING*",
+   "permits": "213"
+  },
+  {
+   "contractor": "HK PLUMBING AND CONSTRUCTION",
+   "permits": "197"
+  },
+  {
+   "contractor": "WIEHLER MECHANICAL",
+   "permits": "186"
+  },
+  {
+   "contractor": "CARRY ON PLUMBING",
+   "permits": "177"
+  },
+  {
+   "contractor": "A FLOW PLUMBING",
+   "permits": "165"
+  },
+  {
+   "contractor": "PLUMBING AND HEATING DOCTORS",
+   "permits": "164"
+  }
+ ]
+}

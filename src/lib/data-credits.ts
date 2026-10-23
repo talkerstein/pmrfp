@@ -269,6 +269,27 @@ export const CREDITS: readonly Credit[] = [
     fr: "Source : Texas Department of Transportation, Bid Tabulations (data.texas.gov). Totaux des soumissions tels que lus; n'indique pas qu'un contrat a été octroyé.",
     es: "Fuente: Texas Department of Transportation, Bid Tabulations (data.texas.gov). Totales de las ofertas tal como se leyeron; no indica que se haya adjudicado un contrato.",
   },
+  // ---- Open data batch 1 (2026-10-23): Vancouver and the ArcGIS permit pilot cities
+  {
+    en: "Contains information licensed under the Open Government Licence – Vancouver.",
+    fr: "Contient des informations visées par la Licence du gouvernement ouvert – Vancouver (Open Government Licence – Vancouver).",
+    es: "Contiene información bajo la Open Government Licence – Vancouver (Licencia de Gobierno Abierto – Vancouver).",
+  },
+  {
+    en: "Contains information licensed under the Open Government Licence – Maple Ridge.",
+    fr: "Contient des informations visées par la Licence du gouvernement ouvert – Maple Ridge (Open Government Licence – Maple Ridge).",
+    es: "Contiene información bajo la Open Government Licence – Maple Ridge (Licencia de Gobierno Abierto – Maple Ridge).",
+  },
+  {
+    en: "Contains information licensed under the Open Government Licence – City of Airdrie.",
+    fr: "Contient des informations visées par la Licence du gouvernement ouvert – Ville d'Airdrie (Open Government Licence – City of Airdrie).",
+    es: "Contiene información bajo la Open Government Licence – City of Airdrie (Licencia de Gobierno Abierto – Ciudad de Airdrie).",
+  },
+  {
+    en: "Contains information licensed under the Open Government Licence – City of Grande Prairie.",
+    fr: "Contient des informations visées par la Licence du gouvernement ouvert – Ville de Grande Prairie (Open Government Licence – City of Grande Prairie).",
+    es: "Contiene información bajo la Open Government Licence – City of Grande Prairie (Licencia de Gobierno Abierto – Ciudad de Grande Prairie).",
+  },
 ];
 
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();

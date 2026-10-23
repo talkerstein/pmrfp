@@ -42,6 +42,8 @@ export interface SimilarWork {
   /** The band is the middle half (25th to 75th percentile), not lowest to highest. */
   middleHalf: boolean;
   winners: { name: string; wins: number; slug: string | null }[];
+  /** Licence credits for open-data rows behind the numbers (present only when there are some). */
+  credits?: string[];
 }
 
 /** What a viewer without Trade Pro gets: the median and how many awards it rests on. Nothing else. */
@@ -52,6 +54,7 @@ export interface SimilarWorkFree {
   awards: number;
   valued: number;
   median: number | null;
+  credits?: string[];
 }
 
 export type SimilarWorkView = { pro: true; data: SimilarWork } | { pro: false; data: SimilarWorkFree };
@@ -95,7 +98,9 @@ export function similarWorkFor(
       w.wins++;
       wins.set(key, w);
     }
+    const credits = [...new Set(rows.map((r) => r.credit).filter((c): c is string => Boolean(c)))];
     return {
+      ...(credits.length ? { credits } : {}),
       scope,
       trade,
       currency,
@@ -128,6 +133,6 @@ export function similarWorkFor(
 /** The viewer's version. The free one is a new object, so a band or a name can't leak into the page. */
 export function similarWorkView(sw: SimilarWork, pro: boolean): SimilarWorkView {
   if (pro) return { pro: true, data: sw };
-  const { scope, trade, currency, awards, valued, median } = sw;
-  return { pro: false, data: { scope, trade, currency, awards, valued, median } };
+  const { scope, trade, currency, awards, valued, median, credits } = sw;
+  return { pro: false, data: { scope, trade, currency, awards, valued, median, ...(credits ? { credits } : {}) } };
 }

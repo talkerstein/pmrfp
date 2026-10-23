@@ -6,6 +6,7 @@ import type { SimilarWorkView } from "@/lib/rfp-detail/similar-work";
 import { MIN_AWARDS } from "@/lib/data/award-intel";
 import { moneyShort } from "@/lib/rfp-detail/format";
 import { tradeWords } from "@/lib/gc/packages";
+import { localizeCredits } from "@/lib/data-credits";
 import { getLang, getT } from "@/i18n/server";
 import { fmt, plural } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
@@ -104,6 +105,9 @@ export function SimilarWorkCard({
         </p>
       )}
       <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{t.footnote}</p>
+      {localizeCredits(d.credits ?? [], lang).map((c) => (
+        <p key={c} className="mt-1 text-[11px] leading-relaxed text-muted-foreground" data-credit="open-data">{c}</p>
+      ))}
     </Block>
   );
 }

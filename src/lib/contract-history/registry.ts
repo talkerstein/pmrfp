@@ -5,9 +5,11 @@
  * source module's header (checked again 2026-10-16).
  *
  * Not imported, and why:
- *  - Vancouver Awarded Contracts (CA-11): robots.txt on opendata.vancouver.ca
- *    now disallows /api/ and /explore/dataset/*\/download for every bot but
- *    Googlebot. Needs the City's permission (or a published bulk file).
+ *  - Vancouver Awarded Contracts (CA-11, BC-V01): robots.txt on opendata.vancouver.ca
+ *    disallows /api/ and /explore/dataset/*\/download for every bot but
+ *    Googlebot, so no code fetches it. It IS loaded, from a file the owner
+ *    downloads in a browser (mode "local": scripts/run-open-data.mjs
+ *    vancouver-awards <file>, src/lib/open-data/vancouver.ts).
  *  - Chicago Contracts (US-05): no licence on the dataset, Data Portal Terms
  *    of Use not reviewed. Optional; skipped.
  *  - Hamilton / Bids&Tenders, MERX, BC Bid (captcha), SEAO notice pages:
@@ -21,6 +23,8 @@ import { OGL_CANADA_ATTRIBUTION, SEAO_ATTRIBUTION } from "@/lib/tenders/sources"
 import { TORONTO_ATTRIBUTION } from "@/lib/data/toronto-awards";
 import { collectUsaSpending, USASPENDING_ATTRIBUTION, USASPENDING_LICENCE, USASPENDING_SOURCE } from "./sources/usaspending";
 import { collectTxdot, TXDOT_ATTRIBUTION, TXDOT_DATASET_URL, TXDOT_LICENCE, TXDOT_SOURCE } from "@/lib/bid-results/txdot";
+import { collectTorontoNonCompetitive, TORONTO_NC_PACKAGE, TORONTO_NC_SOURCE, TORONTO_OGL } from "@/lib/open-data/toronto";
+import { VANCOUVER_ATTRIBUTION, VANCOUVER_AWARDS_PAGE, VANCOUVER_AWARDS_SOURCE, VANCOUVER_LICENCE } from "@/lib/open-data/vancouver";
 import { addMonths } from "@/lib/intel/model";
 import type { ParsedBatch } from "./model";
 
@@ -50,8 +54,11 @@ export interface HistorySource {
   /** The credit stored on its rows (award_history.attribution) and shown wherever they surface. */
   attribution: string;
   url: string;
-  /** cron = fetched by /api/cron/award-history/<group>; upload = an admin uploads the file (robots.txt bars bots). */
-  mode: "cron" | "upload";
+  /**
+   * cron = fetched by /api/cron/award-history/<group>; upload = an admin uploads the file (robots.txt bars bots);
+   * local = loaded by a script the owner runs on their machine (scripts/run-open-data.mjs), never by a cron.
+   */
+  mode: "cron" | "upload" | "local";
   group: HistoryGroup | null;
   collect?: (p: RunParams) => Promise<ParsedBatch & { files?: string[]; file?: string; pending?: boolean; fileList?: string }>;
 }
@@ -99,6 +106,27 @@ export const HISTORY_SOURCES: HistorySource[] = [
     mode: "cron",
     group: "weekly",
     collect: (p) => collectToronto({ since: p.since, asOf: p.today }),
+  },
+  {
+    key: TORONTO_NC_SOURCE,
+    label: "City of Toronto — non-competitive contracts (sole source, history only)",
+    country: "CA",
+    licence: TORONTO_OGL,
+    attribution: TORONTO_ATTRIBUTION,
+    url: TORONTO_NC_PACKAGE,
+    mode: "cron",
+    group: "weekly",
+    collect: (p) => collectTorontoNonCompetitive({ asOf: p.today }),
+  },
+  {
+    key: VANCOUVER_AWARDS_SOURCE,
+    label: "City of Vancouver — awarded contracts with every bid (local load; robots.txt bars bots)",
+    country: "CA",
+    licence: VANCOUVER_LICENCE,
+    attribution: VANCOUVER_ATTRIBUTION,
+    url: VANCOUVER_AWARDS_PAGE,
+    mode: "local",
+    group: null,
   },
   {
     key: MONTREAL_SOURCE,
