@@ -103,3 +103,41 @@ For a D1 backup, use `wrangler d1 export` into `.d1-private`, then restore its S
 to a NEW local database and run `migrate.py validate`. Never restore over the
 serving database as part of a rehearsal. A database export does not back up
 Supabase Storage blobs or Supabase Auth credentials.
+
+## Offline reversible change journal
+
+`journal.py` compares two complete validated snapshots with the same catalog and
+creates a private, checksummed before/after journal. Schema changes are rejected;
+review and migrate the schema separately first. This still reads full snapshots
+from Postgres. It is not CDC, a live remote delta applier, or a production rollback
+implementation.
+
+```sh
+python3 scripts/d1/journal.py plan BEFORE.jsonl AFTER.jsonl .d1-private/delta.json
+python3 scripts/d1/journal.py apply-local .d1-private/delta.json \
+  .d1-private/rehearsal.sqlite --backup .d1-private/before-delta.sqlite
+python3 scripts/d1/journal.py apply-local .d1-private/delta.json \
+  .d1-private/rehearsal.sqlite --backup .d1-private/before-reverse.sqlite --reverse
+```
+
+Use the appropriate `D1_MIGRATION_CATALOG` and `D1_MIGRATION_SCHEMA` paths for both
+snapshots. The output contains private rows; keep it ignored, mode 0600, and out
+of logs. Output journals and backups cannot overwrite existing files. Applying
+requires the exact whole-database baseline, validates every before-image and
+final destination hash, reserves the writer before baseline checks, captures a
+consistent backup, and checks all rows, integrity and foreign keys before the
+transaction commits. Cascaded rows reparented in the next snapshot are restored.
+Reverse application uses the same validation and backup requirements. A duplicate
+replay is rejected unless the journal is a genuine no-op. An error rolls back the
+target transaction; preserve its backup for review.
+
+The offline replayer rejects a target containing `_migration_manifest`; serving
+checkpoint transitions need their own remote atomic protocol. It must never
+leave a validated manifest claiming old data after a local journal mutation.
+
+Oct 23 resumed-session rehearsal: a fresh 11,953-record source snapshot produced
+an 11,831-record rebuilt candidate with authoritative fields unchanged. The
+144-change journal was applied to a separate restore of actual earlier D1
+readback, validated against the new snapshot, reversed, and validated against
+the original 11,754-record snapshot. The deployed copied-read checkpoint was
+not mutated. See `d1/resumed-report-2026-10-23.json` for aggregate evidence.

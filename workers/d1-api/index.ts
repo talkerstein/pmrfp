@@ -2,6 +2,7 @@ import { D1ApiError, readSaveInput, type D1Binding } from "../../src/lib/d1/cont
 import { verifyGateway, verifyUser, type AuthConfig } from "./auth";
 import { changeSavedRfp, listSavedRfps } from "./saved-rfps";
 
+import { readRfpDetail } from "./detail";
 import { listPublicBoard } from "./board";
 import { listPublicTaxonomy } from "./taxonomy";
 
@@ -14,7 +15,7 @@ export interface Env extends AuthConfig {
 const json = (value: unknown, status = 200) => Response.json(value, {
   status, headers: { "cache-control": "no-store, private", "x-content-type-options": "nosniff" },
 });
-/** No arbitrary SQL, caller-selected user, admin impersonation, CORS or public data endpoint. */
+/** Fixed gateway-protected operations; private reads additionally require live user authorization. */
 export async function handleRequest(request: Request, env: Env, fetcher: typeof fetch = globalThis.fetch.bind(globalThis)): Promise<Response> {
   try {
     await verifyGateway(request.headers.get("x-pmrfp-gateway-key"), env.GATEWAY_SECRET);
@@ -26,6 +27,11 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
     if (url.pathname === "/v1/taxonomy") {
       if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
       return json(await listPublicTaxonomy(env.DB, url));
+    }
+    if (url.pathname === "/v1/rfp-detail") {
+      if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
+      await verifyUser(request, env, fetcher);
+      return json(await readRfpDetail(env.DB, request, env, fetcher));
     }
     if (url.pathname !== "/v1/saved-rfps" || url.search) throw new D1ApiError(404, "not_found");
     if (request.method !== "GET" && request.method !== "POST") throw new D1ApiError(405, "method_not_allowed");
