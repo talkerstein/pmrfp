@@ -141,3 +141,39 @@ an 11,831-record rebuilt candidate with authoritative fields unchanged. The
 readback, validated against the new snapshot, reversed, and validated against
 the original 11,754-record snapshot. The deployed copied-read checkpoint was
 not mutated. See `d1/resumed-report-2026-10-23.json` for aggregate evidence.
+
+## Synthetic remote journal protocol (native verification blocked)
+
+`remote_journal.apply` accepts only the pinned `journal-canary` generation and
+snapshots explicitly marked `synthetic-test`. Copied business-data generations
+are rejected. It recomputes the journal from both complete snapshots, simulates
+cascade handling locally, verifies the entire remote baseline and writes a
+private actual-readback backup before mutation. Bound checkpoint/before-image
+guards, deferred-FK mutations and a destination `loading` manifest execute in
+one batch. Only a successful full schema/row/FK/integrity readback promotes that
+destination to `validated`. Retrying after an uncertain response recognizes the
+destination checkpoint and verifies/finalizes it without replaying mutations.
+Reversal follows the same backup and validation protocol.
+
+Cloudflare documents rollback of a batch if a statement fails:
+[D1 batch transactions](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch).
+Local integration tests cover rollback, response loss after commit, before-image
+races, incomplete destinations, reversal, idempotent recovery and isolation.
+Those tests are not native Cloudflare verification.
+
+The isolated canary `pmrfp-journal-canary-20261023`
+(`e41a9e60-2022-4511-94b9-12866f921671`) was created. Its first schema write
+was refused with Cloudflare error 7500: account daily free-tier row-write quota
+exhausted. No synthetic data was loaded and no business copy was changed.
+Native forward/failure/recovery/reverse testing remains pending after the
+2026-10-24 00:00 UTC reset (05:30 India time). No paid-plan upgrade was made.
+
+Remote verification now reads ten independently paginated tables per API batch,
+retaining 250-row pages, ordered primary keys, duplicate detection, exact schema
+and every-field validation, and the before/after manifest guard. This reduces
+network round trips; it does not reduce the full-snapshot data read requirement.
+
+Despite the write quota block, the new batched verifier was tested against the
+actual deployed copy: all 11,754 records across 102 tables matched every field,
+with identical schema and valid foreign keys. This verification made no writes.
+The complete offline migration/rebuild/journal suite now has 40 passing tests.
