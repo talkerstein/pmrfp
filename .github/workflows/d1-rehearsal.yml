@@ -7,6 +7,8 @@ on:
       - 'test/d1/**'
       - 'test/d1-api/**'
       - 'src/lib/d1/**'
+      - 'src/lib/data/taxonomy.ts'
+      - 'src/lib/data/board-snapshot.ts'
       - 'src/app/api/save-rfp/route.ts'
       - 'src/app/**/dashboard/saved-rfps/page.tsx'
       - 'src/lib/karma/rules.ts'
@@ -20,6 +22,8 @@ on:
       - 'test/d1/**'
       - 'test/d1-api/**'
       - 'src/lib/d1/**'
+      - 'src/lib/data/taxonomy.ts'
+      - 'src/lib/data/board-snapshot.ts'
       - 'src/app/api/save-rfp/route.ts'
       - 'src/app/**/dashboard/saved-rfps/page.tsx'
       - 'src/lib/karma/rules.ts'
@@ -51,5 +55,5 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test API authorization, synthetic writes, public projections and rebuild preservation
-        run: npx vitest run test/d1-api test/unit/karma-rules.test.ts
+        run: npx vitest run test/d1-api test/unit/karma-rules.test.ts test/unit/rfp-read-optimization.test.ts
       - run: npm run typecheck
