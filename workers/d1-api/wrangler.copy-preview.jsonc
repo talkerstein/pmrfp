@@ -1,0 +1,14 @@
+{
+  "name": "pmrfp-d1-copied-read-preview",
+  "main": "index.ts",
+  "compatibility_date": "2026-10-22",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "workers_dev": true,
+  "vars": { "SAVED_RFPS_MODE": "read-only" },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "pmrfp-rebuilt-staging-20261023",
+    "database_id": "9c41192c-bd59-471e-8baa-a5675d7f2c47"
+  }],
+  "observability": { "enabled": false }
+}
