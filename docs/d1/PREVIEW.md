@@ -210,3 +210,37 @@ category links exactly, and the English filtered board rendered successfully.
 D1 scan-cost tuning remains a production gate: the current staging plan uses the
 status index and temporary ordering. No index overlays were added to the verified
 copy, and no production cost reduction or continuous synchronization is claimed.
+
+## Private RFP detail preview (Oct 23)
+
+`PMRFP_DETAIL_BACKEND=d1` opts `getFullRfp` into the copied-read Worker using
+its existing URL, gateway secret and pinned dataset hash. Default is Supabase;
+production D1 selection is blocked. `/v1/rfp-detail?slug=...` is GET-only,
+requires the gateway and a live verified Supabase Auth token, and returns only
+the fields already consumed by the full-detail mapper. No owner IDs,
+keep-alive tokens or arbitrary row fields are returned.
+
+A copied entitlement must not authorize private data. Before reading D1, the
+Worker asks the current source `rfp_posts` RLS for **ID only**, using that same
+user's token and a fixed slug filter. An empty result returns null; errors,
+redirects, malformed results and Auth failures fail closed. D1 must contain that
+exact authorized ID and slug in a validated checkpoint. Missing copied rows
+return `record_not_synced`; the client rejects another dataset. There is no
+fallback full-row source read. Source RLS remains the authorization authority,
+including paid/trial, owner, organization and admin rules. This is a temporary
+bridge, not an independently authoritative D1 permission system.
+
+The detail page still uses its existing Supabase access shell and auxiliary
+category, taxonomy and public-photo reads. Documents, public tender notice URLs,
+town listings and write actions are unchanged. Copied content can be older than
+source content; this preview remains unsuitable for production until ongoing
+synchronization and freshness guarantees are implemented.
+
+Worker version `53a01a80-482e-425c-9abe-037ee1f2f138` is deployed on the
+copied-read preview. A real free test session was denied private detail exactly
+as source RLS required, with no source writes. Positive paid/owner/admin source
+sessions have not been verified against the deployed endpoint. Local integration
+tests cover authorized rows, immediate permission revocation, drafts, malformed
+permissions, source outages, ID/slug mismatches, checkpoint mismatch, projection,
+transport and the actual application mapper. Do not count the live denial as a
+successful paid-user end-to-end test.

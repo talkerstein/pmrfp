@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { d1DetailEnabled } from "@/lib/d1/detail-backend";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
@@ -281,8 +282,9 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     return r ? demoToDetail(r) : null;
   }
   const supabase = await createClient();
-  const { data } = await supabase.from("rfp_posts").select("*").eq("slug", slug).maybeSingle();
-  const r = data as RfpFullRow | null;
+  const r: RfpFullRow | null = d1DetailEnabled()
+    ? await (await import("@/lib/d1/detail-server")).d1RfpDetail(slug)
+    : (await supabase.from("rfp_posts").select("*").eq("slug", slug).maybeSingle()).data as RfpFullRow | null;
   if (!r) return null;
   const [regionMap, propMap, cats, photos] = await Promise.all([
     idNameMap(supabase, "regions"),
