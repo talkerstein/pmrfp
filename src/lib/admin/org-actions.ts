@@ -8,6 +8,7 @@ import { karmaSyncAfter } from "@/lib/karma/sync";
 import { logAudit } from "@/lib/audit";
 import { purgeOutCache } from "@/lib/links/data";
 import { normalizeBlockedDomain } from "@/lib/spam/blocked";
+import { rescreenExistingOrganizations } from "@/lib/spam/server";
 
 const ORGS = "/admin/organizations";
 const EDITED = `${ORGS}?view=edited`;
@@ -191,6 +192,19 @@ export async function resolveHeldOrganizationAction(formData: FormData): Promise
   revalidatePath(ORGS);
   revalidatePath("/directory");
   redirect(HELD);
+}
+
+/**
+ * Admin: run the spam check over the companies already listed. Companies that
+ * would be held are flagged (nofollow + noindex, shown in the held queue); no
+ * status changes and nothing is deleted. Decide each one in the queue.
+ */
+export async function screenExistingOrganizationsAction(): Promise<void> {
+  const admin = await requireRole(["admin", "super_admin"]);
+  const r = await rescreenExistingOrganizations(createServiceClient());
+  await logAudit({ actorUserId: admin.userId, action: "organization.spam_screen_existing", metadata: r });
+  revalidatePath(ORGS);
+  redirect(`${HELD}&screened=${r.checked}&flagged=${r.flagged}`);
 }
 
 /** Admin: mark a company's website link trusted (followed from day one) or take that back. */

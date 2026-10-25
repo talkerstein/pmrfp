@@ -58,6 +58,7 @@ import {
   addBlockedDomainAction,
   removeBlockedDomainAction,
   resolveHeldOrganizationAction,
+  screenExistingOrganizationsAction,
   setLinkTrustedAction,
 } from "@/lib/admin/org-actions";
 
@@ -187,6 +188,7 @@ describe("admin gating: the spam-check and link actions need an admin", () => {
   it("a non-admin is stopped before any database client is created", async () => {
     await expect(resolveHeldOrganizationAction(fd({ id: "o1", decision: "approved" }))).rejects.toThrow("forbidden");
     await expect(setLinkTrustedAction(fd({ id: "o1", trusted: "1" }))).rejects.toThrow("forbidden");
+    await expect(screenExistingOrganizationsAction()).rejects.toThrow("forbidden");
     await expect(addBlockedDomainAction(fd({ domain: "bad-seo.com" }))).rejects.toThrow("forbidden");
     await expect(removeBlockedDomainAction(fd({ domain: "bad-seo.com" }))).rejects.toThrow("forbidden");
     expect(h.serviceCalls).toBe(0);

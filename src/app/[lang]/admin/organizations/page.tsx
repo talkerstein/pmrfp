@@ -14,6 +14,7 @@ import {
   reinstateOrganizationAction,
   resolveHeldOrganizationAction,
   reviewOrganizationAction,
+  screenExistingOrganizationsAction,
   setLinkTrustedAction,
   suspendOrganizationAction,
 } from "@/lib/admin/org-actions";
@@ -57,7 +58,7 @@ const DEMO_ORGS: OrgRow[] = [
 
 const VIEWS = ["all", "waiting", "held", "edited", "suspended"] as const;
 type View = (typeof VIEWS)[number];
-type Search = { view?: string; stale?: string };
+type Search = { view?: string; stale?: string; screened?: string; flagged?: string };
 
 const isEdited = (o: OrgRow) => o.profile_status === "approved" && Boolean(o.review_flagged_at);
 /** The spam check flagged it (new listing held or rejected, or a live one flagged after an edit). */
@@ -155,7 +156,21 @@ export default async function AdminOrganizationsPage({ params, searchParams }: {
       {view === "edited" ? (
         <EditedQueue rows={rows} reviewReady={reviewReady} stale={Boolean(sp.stale)} />
       ) : view === "held" ? (
-        <HeldQueue rows={rows} risk={risk} />
+        <>
+          {sp.screened && (
+            <p className="mb-4 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+              Checked {sp.screened} listed companies; {sp.flagged ?? "0"} flagged. Flagged companies stay live (nofollow, noindex) until you decide below.
+            </p>
+          )}
+          {!isDemoMode() && (
+            <form action={screenExistingOrganizationsAction} className="mb-4">
+              <button className="rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary" title="Scores every listed company with the sign-up rules and flags the ones that would be held. Changes no status.">
+                Run the spam check on existing companies
+              </button>
+            </form>
+          )}
+          <HeldQueue rows={rows} risk={risk} />
+        </>
       ) : rows.length === 0 ? (
         <EmptyState title="No organizations here" description="Registered companies will appear here." />
       ) : (

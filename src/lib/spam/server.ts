@@ -106,6 +106,62 @@ export async function screenOrganization(db: Db, input: ScreenInput): Promise<Sc
 }
 
 /**
+ * Admin-triggered pass over the companies that are already listed: scores each
+ * one and, when it would be held, flags it (risk_flagged: nofollow + noindex,
+ * visible in the "Held by spam check" queue). It never changes a profile_status
+ * or deletes anything; the admin decides in the queue. Staff / test / trusted
+ * companies are skipped. At most `limit` companies per run.
+ */
+export async function rescreenExistingOrganizations(db: Db, limit = 400): Promise<{ checked: number; flagged: number; skipped: number }> {
+  const out = { checked: 0, flagged: 0, skipped: 0 };
+  const { data: orgs } = await db
+    .from("organizations")
+    .select("id,name,website,email,phone,short_description,full_description,city,province,country,profile_status")
+    .in("organization_type", ["trade_company", "supplier"])
+    .in("profile_status", ["approved", "pending_review"])
+    .eq("is_demo", false)
+    .neq("status", "deleted")
+    .order("created_at", { ascending: true })
+    .limit(limit);
+  const rows = (orgs ?? []) as {
+    id: string; name: string; website: string | null; email: string | null; phone: string | null; short_description: string | null;
+    full_description: string | null; city: string | null; province: string | null; country: string | null; profile_status: string;
+  }[];
+  const { data: members } = rows.length ? await db.from("organization_members").select("organization_id,user_id").in("organization_id", rows.map((r) => r.id)) : { data: [] };
+  const owner = new Map<string, string>();
+  for (const m of (members ?? []) as { organization_id: string; user_id: string }[]) if (!owner.has(m.organization_id)) owner.set(m.organization_id, m.user_id);
+  const userIds = [...new Set(owner.values())];
+  const { data: users } = userIds.length ? await db.from("users_profile").select("id,email").in("id", userIds) : { data: [] };
+  const emailOf = new Map(((users ?? []) as { id: string; email: string }[]).map((u) => [u.id, u.email]));
+
+  for (const r of rows) {
+    const userId = owner.get(r.id);
+    const risk = await screenOrganization(db, {
+      organizationId: r.id,
+      name: r.name,
+      website: r.website,
+      email: r.email,
+      accountEmail: userId ? emailOf.get(userId) : null,
+      phone: r.phone,
+      shortDescription: r.short_description,
+      fullDescription: r.full_description,
+      city: r.city,
+      province: r.province,
+      country: r.country,
+      userId: userId ?? "",
+    });
+    if (risk.skipped) {
+      out.skipped++;
+      continue;
+    }
+    out.checked++;
+    if (risk.hold) out.flagged++;
+    await recordOrgRisk(db, r.id, risk, "backfill", r.profile_status !== "approved");
+  }
+  return out;
+}
+
+/**
  * Saves the result: the admin-only organization_risk row and the public
  * risk_flagged boolean. A clean score removes a stale flag (and keeps the
  * row only if an admin had decided on it). Never throws.
@@ -114,7 +170,7 @@ export async function recordOrgRisk(
   db: Db,
   organizationId: string,
   risk: ScreenResult,
-  source: "onboarding" | "profile_edit",
+  source: "onboarding" | "profile_edit" | "backfill",
   held: boolean,
 ): Promise<void> {
   if (risk.skipped) return;
