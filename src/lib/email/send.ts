@@ -894,6 +894,35 @@ export async function sendAdminNewSignup(p: {
   );
 }
 
+/**
+ * The spam check rejected a listing outright (score 6+ or a blocked domain).
+ * Held listings (score 3 to 5) only show in /admin/organizations?view=held.
+ */
+export async function sendAdminListingRejected(p: {
+  name: string;
+  website?: string | null;
+  email?: string | null;
+  score: number;
+  reasons: string[];
+}): Promise<void> {
+  await send(
+    SIGNUP_ALERT,
+    `PMRFP spam check rejected a listing: ${p.name}`,
+    layout(
+      "Listing rejected by the spam check",
+      `<ul>
+        <li><strong>Company:</strong> ${escHtml(p.name)}</li>
+        <li><strong>Website:</strong> ${escHtml(p.website || "(none)")}</li>
+        <li><strong>Email:</strong> ${escHtml(p.email || "(none)")}</li>
+        <li><strong>Score:</strong> ${p.score}</li>
+        <li><strong>Why:</strong> ${p.reasons.map(escHtml).join("; ") || "(none)"}</li>
+       </ul>
+       <p>The sign-up itself still works; only the listing page is off. Nothing was deleted.</p>
+       <p>${btn(`${BASE}/admin/organizations?view=held`, "Open the spam-check queue")}</p>`,
+    ),
+  );
+}
+
 export async function sendAdminContactEmail(params: { name: string; email: string; requestType: string; message: string }): Promise<void> {
   await send(
     adminInbox(),

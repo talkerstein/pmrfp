@@ -27,11 +27,11 @@ export default async function AdminLayout({
   const [pending, orgs, buyers] = db
     ? await Promise.all([
         pendingReviewCount(db).catch(() => 0),
-        organizationReviewCounts(db).catch(() => ({ waiting: 0, edited: 0 })),
+        organizationReviewCounts(db).catch(() => ({ waiting: 0, edited: 0, held: 0 })),
         buyerReviewCounts(db).catch(() => ({ claims: 0, requests: 0 })),
       ])
-    : [0, { waiting: 0, edited: 0 }, { claims: 0, requests: 0 }];
-  const orgBadge = orgs.waiting + orgs.edited;
+    : [0, { waiting: 0, edited: 0, held: 0 }, { claims: 0, requests: 0 }];
+  const orgBadge = orgs.waiting + orgs.edited + orgs.held;
   const buyerBadge = buyers.claims + buyers.requests;
   const nav = ADMIN_NAV.map((item) => {
     if (item.href === "/admin/rfps" && pending > 0) return { ...item, badge: pending };

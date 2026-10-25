@@ -411,7 +411,8 @@ describe("badge emails: copy", () => {
   it("explains the SEO play honestly: verification and a profile link, 'can help', and no promise of rankings", () => {
     const en = renderStep("badge", sampleCopyData("badge", "en", "CA"), CTX).text;
     expect(en).toMatch(/check that you're listed/);
-    expect(en).toMatch(/link to your PMRFP profile/);
+    // The one honest line about the link (earn the link): badge + 14 days live => a followed link.
+    expect(en).toMatch(/Once the badge is on your site and your profile has been live 14 days, your PMRFP link to your website becomes a followed link\./);
     expect(en).toMatch(/can help search engines understand your business, but we can't promise rankings/);
     expect(en).toMatch(/footer or contact page/);
     for (const lang of LANGS) {

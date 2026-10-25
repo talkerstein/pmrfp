@@ -65,12 +65,19 @@ export function localBusinessSchema(v: {
    * on the page: markup must match visible reviews.
    */
   aggregateRating?: { ratingValue: number; reviewCount: number };
+  /**
+   * The company's own website, ONLY when PMRFP's link to it is earned
+   * (lib/links/policy structuredDataUrl). Never pass a member's website
+   * otherwise: structured data must not hand out what the page withholds.
+   */
+  sameAs?: string | null;
 }) {
   return {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: v.name,
     url: `${BASE}/directory/${v.slug}`,
+    ...(v.sameAs ? { sameAs: [v.sameAs] } : {}),
     description: v.shortDescription ?? undefined,
     image: absolute(v.logoUrl),
     logo: absolute(v.logoUrl),

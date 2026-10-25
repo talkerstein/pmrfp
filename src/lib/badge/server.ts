@@ -30,7 +30,7 @@ export async function loadHitRows(db: Db, slugs: string[]): Promise<{ rows: Badg
 }
 
 /** Every badge_hits row with a real referrer (installs are few: one row per day, badge and site). */
-async function loadAllHitRows(db: Db): Promise<{ rows: BadgeHitRow[]; error: SelectError | null }> {
+export async function loadAllHitRows(db: Db): Promise<{ rows: BadgeHitRow[]; error: SelectError | null }> {
   const rows: BadgeHitRow[] = [];
   for (let from = 0; from < MAX_HIT_ROWS; from += PAGE) {
     const { data, error } = await db

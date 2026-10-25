@@ -31,6 +31,7 @@ import { InsightsCard } from "@/components/insights/insights-card";
 import { dashboardInsights } from "@/lib/insights/dashboard";
 import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
 import { BadgeInstallCard } from "@/components/dashboard/badge-install-card";
+import { WebsiteLinkCard } from "@/components/dashboard/website-link-card";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -210,6 +211,10 @@ export default async function TradeDashboardHome({
 
       {org?.profile_status === "approved" && org.slug && (
         <BadgeInstallCard org={{ id: org.id, slug: org.slug, name: org.name, website: org.website }} lang={lang} paid={Boolean(session.paid)} />
+      )}
+
+      {org?.profile_status === "approved" && org.slug && (
+        <WebsiteLinkCard org={org} lang={lang} paid={Boolean(session.paid)} />
       )}
 
       {!session.hasTradeAccess && (

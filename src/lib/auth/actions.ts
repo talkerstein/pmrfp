@@ -18,7 +18,9 @@ import {
   signInSchema,
   signUpSchema,
 } from "@/lib/validations";
-import { sendAdminNewSignup, sendWelcomeEmail } from "@/lib/email/send";
+import { sendAdminListingRejected, sendAdminNewSignup, sendWelcomeEmail } from "@/lib/email/send";
+import { screenOrganization, recordOrgRisk } from "@/lib/spam/server";
+import { statusFromRisk } from "@/lib/spam/org-risk";
 import { lifecycleEnabled } from "@/lib/lifecycle/config";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
@@ -587,6 +589,33 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
 
   const admin = isServiceConfigured() ? createServiceClient() : await createClient();
 
+  // Spam check (lib/spam/org-risk): a directory listing with a known SEO/spam
+  // domain, a second organization from the same owner, a keyword-stuffed or
+  // gibberish name, or a mismatched country is held for an admin (or, at
+  // score 6+ / a blocked domain, rejected) instead of going live at once. The
+  // sign-up itself is never blocked. Real contractors with a business email
+  // and a phone score 0 and are approved exactly as before.
+  const normalStatus: "approved" | "pending_review" = isListing
+    ? categories.length > 0 && regions.length > 0
+      ? "approved"
+      : "pending_review"
+    : "approved";
+  const risk = isListing && isServiceConfigured()
+    ? await screenOrganization(createServiceClient(), {
+        name: data.name,
+        website: data.website,
+        email: data.email,
+        accountEmail: session.profile.email,
+        phone: data.phone,
+        shortDescription: data.shortDescription,
+        city: data.city,
+        province: data.province,
+        country: isUsState(data.province) ? "United States" : "Canada",
+        userId: session.userId,
+      }).catch(() => null)
+    : null;
+  const listingStatus = risk ? statusFromRisk(risk, normalStatus) : normalStatus;
+
   // Create org
   const slug = `${slugify(data.name)}-${Math.random().toString(36).slice(2, 6)}`;
   const orgType = isSupplier ? "supplier" : isListing ? "trade_company" : isBuilder ? "builder" : isLandlord ? "landlord" : "property_manager";
@@ -611,11 +640,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
       // them in /admin/organizations), and admins can suspend anything
       // retroactively. This is also what makes the gated trade×city pages turn
       // on without manual work.
-      profile_status: isListing
-        ? categories.length > 0 && regions.length > 0
-          ? "approved"
-          : "pending_review"
-        : "approved",
+      profile_status: listingStatus,
   };
   let { data: org, error: orgErr } = await admin
     .from("organizations")
@@ -650,6 +675,21 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     role: "owner",
   });
   if (acknowledged.length) await flagDifferentCompany(org.id, acknowledged, session.userId);
+  if (risk && !risk.skipped) {
+    await recordOrgRisk(createServiceClient(), org.id, risk, "onboarding", listingStatus === "pending_review");
+    if (risk.hold) {
+      await logAudit({
+        actorUserId: session.userId,
+        action: listingStatus === "rejected" ? "organization.spam_rejected" : "organization.spam_held",
+        entityType: "organization",
+        entityId: org.id,
+        metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) },
+      });
+    }
+    if (listingStatus === "rejected") {
+      await sendAdminListingRejected({ name: data.name, website: data.website, email: data.email, score: risk.score, reasons: risk.reasons.map((r) => r.detail) }).catch(() => undefined);
+    }
+  }
 
   if (isListing) {
     const { data: catRows } = await admin.from("trade_categories").select("id,slug").in("slug", categories);
@@ -680,7 +720,7 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
     kind: isBuilder ? "general_contractor" : isLandlord ? "landlord" : isSupplier ? "supplier" : isListing ? "trade" : "property_manager",
     companyName: data.name,
     profileSlug: isListing ? slug : null,
-    live: isListing && categories.length > 0 && regions.length > 0,
+    live: isListing && listingStatus === "approved" && categories.length > 0 && regions.length > 0,
     tradeSlug: isListing ? categories[0] ?? null : null,
   });
 

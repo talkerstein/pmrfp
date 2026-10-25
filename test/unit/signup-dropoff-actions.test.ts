@@ -39,7 +39,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { signUp: h.signUp, signInWithOtp: h.signInWithOtp } }),
 }));
 vi.mock("@/lib/audit", () => ({ logAudit: async () => undefined }));
-vi.mock("@/lib/email/send", () => ({ sendAdminNewSignup: vi.fn(), sendWelcomeEmail: vi.fn() }));
+vi.mock("@/lib/email/send", () => ({ sendAdminNewSignup: vi.fn(), sendWelcomeEmail: vi.fn(), sendAdminListingRejected: vi.fn() }));
 vi.mock("@/lib/ghl/sync", () => ({ syncPmrfpUserToGhl: vi.fn() }));
 vi.mock("@/lib/lifecycle/config", () => ({ lifecycleEnabled: () => false }));
 vi.mock("@/lib/digest/link", () => ({ linkDigestSubscriber: vi.fn() }));
@@ -225,8 +225,8 @@ describe("email consent is recorded with the wording they saw", () => {
   });
 
   describe("onboarding", () => {
-    const session = { userId: "u9", profile: { primary_role: "trade", email: "owner@marlinleads.com", full_name: "P K", status: "active", onboarding_completed: false }, organization: null };
-    const fields = { lang: "en", name: "Marlin Leads", province: "Ontario", categories: ["janitorial"], regions: ["toronto"] };
+    const session = { userId: "u9", profile: { primary_role: "trade", email: "owner@acmecleaning.ca", full_name: "P K", status: "active", onboarding_completed: false }, organization: null };
+    const fields = { lang: "en", name: "Acme Cleaning", province: "Ontario", categories: ["janitorial"], regions: ["toronto"] };
     beforeEach(() => {
       h.session = session;
     });
@@ -245,9 +245,9 @@ describe("email consent is recorded with the wording they saw", () => {
     });
 
     it("a blank contact email falls back to the account's own, and a bare website gets https://", async () => {
-      await redirectOf(completeOnboardingAction({}, form({ ...fields, email: "", website: "marlinleads.com" })));
+      await redirectOf(completeOnboardingAction({}, form({ ...fields, email: "", website: "acmecleaning.ca" })));
       expect(h.db.tables.organizations).toHaveLength(1);
-      expect(h.db.tables.organizations[0]).toMatchObject({ email: "owner@marlinleads.com", website: "https://marlinleads.com", province: "Ontario" });
+      expect(h.db.tables.organizations[0]).toMatchObject({ email: "owner@acmecleaning.ca", website: "https://acmecleaning.ca", province: "Ontario" });
     });
 
     it("records which field a refused form named, as a funnel step", async () => {
@@ -259,7 +259,7 @@ describe("email consent is recorded with the wording they saw", () => {
 });
 
 describe("Stripe checkout events", () => {
-  const session = { userId: "u9", profile: { primary_role: "trade", email: "owner@marlinleads.com", onboarding_completed: true }, organization: { id: "org-1", organization_type: "trade_company" }, paid: false };
+  const session = { userId: "u9", profile: { primary_role: "trade", email: "owner@acmecleaning.ca", onboarding_completed: true }, organization: { id: "org-1", organization_type: "trade_company" }, paid: false };
 
   it("checkout_started is recorded when Stripe has made the page, with the plan and the price's interval", async () => {
     const r = await createTradeCheckout(session as never, { plan: "pro", interval: "monthly" }, "link");

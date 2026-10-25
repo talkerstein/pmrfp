@@ -1,4 +1,5 @@
 /** Display-shaped types returned by the data-access layer to the UI. */
+import type { LinkOrg } from "@/lib/links/policy";
 
 export interface VendorListItem {
   slug: string;
@@ -44,6 +45,14 @@ export interface VendorDetail extends VendorListItem {
    * schema markup; rich-result rules require first-party reviews). */
   googleRating: number | null;
   googleReviewCount: number | null;
+  /**
+   * What decides whether the website link is followed (lib/links/policy). All
+   * "no" when the columns can't be read, so the safe answer is nofollow. The
+   * website here is the real one even when it isn't shown (contact hidden).
+   */
+  link: LinkOrg;
+  /** organizations.email_domain_verified (the profile quality bar, lib/links/indexing). */
+  emailDomainVerified: boolean;
 }
 
 export interface RfpListItem {

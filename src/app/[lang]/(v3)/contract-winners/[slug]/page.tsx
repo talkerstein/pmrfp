@@ -26,7 +26,10 @@ import { packageLevels } from "@/lib/karma/data";
 import { benchmarkView } from "@/lib/data/price-benchmarks";
 import { benchmarkForWinner, benchmarkPath } from "@/lib/data/price-benchmarks-load";
 import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card";
-import { getWinnerClaim, websiteHref } from "@/lib/claims/data";
+import { getWinnerClaim } from "@/lib/claims/data";
+import { getOrgLinkOrg } from "@/lib/links/data";
+import { websiteLink } from "@/lib/links/policy";
+import { WebsiteAnchor } from "@/components/links/website-anchor";
 import { DigestSignupBlock } from "@/components/growth/digest-signup-block";
 import { BidAlertBox } from "@/components/growth/bid-alert-box";
 import { getRegions } from "@/lib/data/taxonomy";
@@ -127,7 +130,9 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
     getWinnerClaim(w.slug),
   ]);
   const g = getT("growth").winner;
-  const site = claim ? websiteHref(claim.website) : null;
+  // The claimed company's website: followed only when earned (lib/links/policy), else nofollow through /out/<slug>.
+  const claimLink = claim ? await getOrgLinkOrg(claim.orgSlug) : null;
+  const site = claim ? websiteLink({ ...(claimLink ?? {}), website: claim.website, slug: claim.orgSlug }) : null;
   // Reputation level of the company behind each package (level 2+, poster stays anonymous).
   const pkgLevels = await packageLevels(packages.map((pk) => pk.slug));
   // Open work in the same trades — the "you could be bidding on this" hook.
@@ -185,7 +190,7 @@ export default async function WinnerPage({ params }: { params: Promise<{ slug: s
                 </p>
                 {claim.description && <p>{claim.description}</p>}
                 <p className="small">
-                  {site && <><a className="ext" href={site} target="_blank" rel="noopener">{g.website}</a> · </>}
+                  {site && <><WebsiteAnchor link={site} className="ext">{g.website}</WebsiteAnchor> · </>}
                   {claim.phone && <><a href={`tel:${claim.phone.replace(/[^\d+]/g, "")}`}>{claim.phone}</a> · </>}
                   {claim.email && <><a href={`mailto:${claim.email}`}>{claim.email}</a> · </>}
                   <a href={L(`/directory/${claim.orgSlug}`)}>{g.directory} →</a>

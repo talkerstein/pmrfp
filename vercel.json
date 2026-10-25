@@ -67,6 +67,10 @@
       "schedule": "10 8 * * *"
     },
     {
+      "path": "/api/cron/link-signals",
+      "schedule": "25 8 * * *"
+    },
+    {
       "path": "/api/cron/major-projects",
       "schedule": "26 9 * * 0"
     },

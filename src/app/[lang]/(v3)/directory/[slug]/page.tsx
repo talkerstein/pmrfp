@@ -18,6 +18,9 @@ import { listOrgProjects, listPublishedReviews } from "@/lib/data/projects";
 import { reviewStats } from "@/lib/projects/reviews";
 import { oneDecimal } from "@/components/projects/public";
 import { SITE } from "@/lib/site";
+import { websiteLink, structuredDataUrl } from "@/lib/links/policy";
+import { WebsiteAnchor } from "@/components/links/website-anchor";
+import { descriptionLength, profileIndexable } from "@/lib/links/indexing";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
@@ -54,9 +57,21 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   // Absolute on SITE.url (as before), with hreflang for each language.
   const alt = alternatesFor(l, path);
   const languages = Object.fromEntries(Object.entries(alt.languages ?? {}).map(([k, href]) => [k, `${base}${href}`]));
+  // Profiles below the quality bar (lib/links/indexing) stay visible to people
+  // but are noindex,follow and out of the sitemap.
+  const projects = await listOrgProjects(v.id, 1);
+  const indexable = profileIndexable({
+    approved: true,
+    riskFlagged: v.link.riskFlagged,
+    descriptionLength: descriptionLength(v.shortDescription, v.fullDescription),
+    hasLogo: Boolean(v.logoUrl),
+    projectCount: projects.length,
+    emailDomainVerified: v.emailDomainVerified,
+  });
   return {
     title,
     description,
+    ...(indexable ? {} : { robots: { index: false, follow: true } }),
     alternates: { canonical: url, languages },
     // The colocated opengraph-image.tsx supplies the og:image / twitter:image.
     openGraph: { type: "profile", title, description, url },
@@ -103,6 +118,9 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
   ]);
   const rating = reviewStats(reviews);
   const showContact = v.contactVisibility === "show_contact";
+  // The website link: followed only when earned (lib/links/policy), else a
+  // nofollow link through /out/<slug>, which counts the visit.
+  const site = v.website ? websiteLink({ ...v.link, website: v.website, slug: v.slug }) : null;
   const place = [v.city, v.province].filter((x): x is string => Boolean(x)).map((x) => regionName(x, lang)).join(", ");
   const trades = v.categories.map((c) => tradeName(c, lang));
   const catSlug = new Map(categories.map((c) => [c.name, c.slug]));
@@ -153,6 +171,7 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
           categories: v.categories,
           logoUrl: v.logoUrl,
           aggregateRating: rating.count > 0 ? { ratingValue: rating.average, reviewCount: rating.count } : undefined,
+          sameAs: showContact ? structuredDataUrl({ ...v.link, website: v.link.website }) : undefined,
         })}
       />
       <JsonLd
@@ -401,11 +420,11 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
               <>
                 <div className="k">{tp.contact}</div>
                 <div className="ls">
-                  {v.website && (
-                    <a href={v.website} target="_blank" rel="noopener noreferrer">
+                  {site && (
+                    <WebsiteAnchor link={site}>
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#282B59" strokeWidth="2" aria-hidden><circle cx="9" cy="9" r="7" /><path d="M2 9h14M9 2c2.5 2.5 2.5 11.5 0 14M9 2c-2.5 2.5-2.5 11.5 0 14" /></svg>
-                      {v.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-                    </a>
+                      {site.label}
+                    </WebsiteAnchor>
                   )}
                   {v.email && (
                     <a href={`mailto:${v.email}`}>
