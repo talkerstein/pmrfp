@@ -1,28 +1,22 @@
-import { gateKit } from "@/components/trial/gate-kit";
+import { ViewerAbout, ViewerCta, ViewerPro, ViewerRelated, type ViewerLabels } from "@/components/major-projects/viewer";
+import { trialSignUpHref } from "@/lib/entitlement/gate";
 import type { Metadata } from "next";
 import { RecordFooter } from "@/components/public/record-footer";
 import { localizeCredit } from "@/lib/data-credits";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
-import { getMajorProject, getMajorProjects, getProjectProFields } from "@/lib/major-projects/data";
-import { frozenSourceDate, isThinProject, linkedListings, relatedWork, type RelatedCandidate } from "@/lib/major-projects/filters";
-import { compactDollars, isPastContract } from "@/lib/data/fomo";
-import { listAllRfpsCached } from "@/lib/data/trade-city";
-import { getCategories } from "@/lib/data/taxonomy";
-import { getSession, hasActiveTradeAccess } from "@/lib/access/access";
-import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
-import { upgradeInterval } from "@/lib/billing/checkout-flow";
-import { rfpMarket } from "@/lib/visitor-geo";
+import { getMajorProject, getMajorProjects } from "@/lib/major-projects/data";
+import { frozenSourceDate, isThinProject, linkedListings } from "@/lib/major-projects/filters";
+import { compactDollars } from "@/lib/data/fomo";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath, type Locale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate } from "@/i18n/format";
-import { regionName, tradeName } from "@/i18n/terms";
+import { regionName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { FreeGate } from "@/components/growth/free-gate";
-import { majorProjectView } from "@/lib/growth/gate";
 
 export const revalidate = 86400;
 
@@ -64,41 +58,49 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
   const p = await getMajorProject(slug);
   if (!p) notFound();
 
-  const [session, access, board, categories, allProjects] = await Promise.all([
-    getSession(),
-    hasActiveTradeAccess(),
-    listAllRfpsCached().catch(() => []),
-    getCategories().catch(() => []),
-    // The same cached snapshot getMajorProject() just read: no extra query.
-    getMajorProjects(),
-  ]);
-  // Trade Pro fields come through the visitor's own session: RLS decides.
-  const pro = access ? await getProjectProFields(p.id) : null;
-  const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
-  const proHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
-  // Trial-first: an eligible company starts its free trial in one click and comes back here unlocked.
-  const gate = await gateKit(session, { returnPath: `/major-projects/${slug}`, paidHref: proHref });
-
-  // Related work from the shared board snapshot — Canada only (a project's province is always Canadian).
-  const slugByName = new Map(categories.map((c) => [c.name, c.slug]));
-  const nameBySlug = new Map(categories.map((c) => [c.slug, c.name]));
-  const candidates: RelatedCandidate[] = board
-    .filter((r) => rfpMarket(r) === "CA")
-    .map((r) => ({
-      slug: r.slug,
-      title: r.title,
-      city: r.city,
-      province: r.province,
-      categorySlugs: r.categories.map((c) => slugByName.get(c) ?? "").filter(Boolean),
-      deadline: r.deadline,
-      isOpen: r.status === "open",
-      isAward: isPastContract(r),
-    }));
-  const related = session ? relatedWork(p, candidates) : { open: [], awards: [] };
-  const trades = p.tradesNeeded.map((s) => nameBySlug.get(s)).filter((x): x is string => Boolean(x));
-  // Free-account gate: signed-out visitors (crawlers included) get the summary only;
-  // the details below are rendered from `member`, which is null for them.
-  const { member } = majorProjectView(p, { trades, open: related.open, awards: related.awards }, Boolean(session));
+  // ISR page: nothing here may read the visitor (cookies()/headers()/session), or the route
+  // throws DYNAMIC_SERVER_USAGE and returns 500. The server HTML is the signed-out version;
+  // the viewer islands (components/major-projects/viewer) fill in member and Pro parts in the browser.
+  const allProjects = await getMajorProjects();
+  const returnPath = `/major-projects/${p.slug}`;
+  const signUpTrial = trialSignUpHref("projects", returnPath);
+  const labels: ViewerLabels = {
+    status: t.facts.status,
+    statusText: m.statuses[p.status],
+    statusAsOf: t.statusAsOf,
+    sourceWording: t.sourceWording,
+    size: t.size,
+    timeline: t.timeline,
+    evidenceLabel: t.evidenceLabel,
+    evidence: t.evidence,
+    caveats: t.caveats,
+    trades: t.trades,
+    tradesNote: t.tradesNote,
+    openTitle: t.openTitle,
+    openNone: t.openNone,
+    openCloses: t.openCloses,
+    awardsTitle: t.awardsTitle,
+    awardsBody: t.awardsBody,
+    gc: t.gc,
+    gcUnknown: t.gcUnknown,
+    bidLink: t.bidLink,
+    bidRoute: t.bidRoute,
+    noRoute: t.noRoute,
+  };
+  const cta = (label: string, className: string) => (
+    <ViewerCta
+      slug={p.slug}
+      source="projects"
+      returnTo={returnPath}
+      href={L(signUpTrial)}
+      trialLabel={getT("trialFirst").cta.start}
+      paidLabel={label}
+      plansHref={L("/pricing")}
+      plansLabel={getT("trialFirst").cta.seePlans}
+      className={className}
+      plansClassName="lnk"
+    />
+  );
   const here = `/major-projects/${p.slug}`;
   const sourceName = m.sourceNames[p.source] ?? p.source;
   // Other public sources listing the same project (linked, never merged).
@@ -147,99 +149,34 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
               <tr><th scope="row">{t.category}</th><td>{m.categories[p.category]}</td></tr>
               <tr>
                 <th scope="row">{t.facts.status}</th>
-                <td>
-                  {member?.statusDate ? fmt(t.statusAsOf, { status: m.statuses[p.status], date: day(member.statusDate, lang) }) : m.statuses[p.status]}
-                  {member?.statusRaw && member.statusRaw.toLowerCase() !== m.statuses[p.status].toLowerCase() && <span className="sub"> {fmt(t.sourceWording, { text: member.statusRaw })}</span>}
-                </td>
+                <td>{m.statuses[p.status]}</td>
               </tr>
-              {member?.size && <tr><th scope="row">{t.size}</th><td>{member.size}</td></tr>}
-              {member?.timeline && <tr><th scope="row">{t.timeline}</th><td>{member.timeline}</td></tr>}
-              {member?.evidence && <tr><th scope="row">{t.evidenceLabel}</th><td data-evidence={member.evidence}>{t.evidence[member.evidence]}</td></tr>}
             </tbody>
           </table>
         </div>
-        {member?.caveats && <p className="small muted"><b>{t.caveats}:</b> {member.caveats}</p>}
-        {!member && <FreeGate kind="project" path={here} />}
-
-        {member && member.trades.length > 0 && (
-          <>
-            <SH2 no={++no} id="trades">{t.trades}</SH2>
-            <p>{member.trades.map((n) => tradeName(n, lang)).join(" · ")}</p>
-            <p className="small muted">{t.tradesNote}</p>
-          </>
-        )}
+        <ViewerAbout slug={p.slug} labels={labels} />
+        <FreeGate kind="project" path={here} />
 
         <SH2 no={++no} id="bid-list">{t.bidTitle}</SH2>
         <p>{t.bidIntro}</p>
         <ol>
           {t.bidSteps.map((s) => <li key={s}>{s}</li>)}
         </ol>
-        {pro ? (
-          <div className="s-dtw" data-panel="pro">
-            <table className="s-dt">
-              <tbody>
-                <tr><th scope="row">{t.gc}</th><td>{pro.generalContractor ?? t.gcUnknown}</td></tr>
-                {pro.bidListUrl && <tr><th scope="row">{t.bidLink}</th><td><a className="ext" href={pro.bidListUrl} target="_blank" rel="noopener noreferrer nofollow">{pro.bidListUrl.replace(/^https?:\/\/(www\.)?/, "")}</a></td></tr>}
-                <tr><th scope="row">{t.bidRoute}</th><td>{pro.bidRoute ?? t.noRoute}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="g-cta" data-panel="locked">
-            <h3 className="hd">{t.lockedHead}</h3>
-            {p.hasGc && <p>{t.lockedHasGc}</p>}
-            {p.hasBidRoute && <p>{t.lockedHasRoute}</p>}
-            <p>{t.lockedNone}</p>
-            <div className="acts">
-              {gate.btn("projects", t.lockedCta, "btn mint lg", { plansClassName: "lnk" })}
-            </div>
-          </div>
-        )}
-
-        {member && (
-        <>
-        <SH2 no={++no} id="open">{t.openTitle}</SH2>
-        {member.open.length ? (
-          <ul className="s-table" data-list="open">
-            {member.open.map((r) => (
-              <li key={r.slug}>
-                <span className="code" aria-hidden>{r.deadline ? Number(r.deadline.slice(8, 10)) : "—"}</span>
-                <span>
-                  <a className="nm" href={L(`/rfps/${r.slug}`)}>{r.title}</a>
-                  {r.deadline && <span className="lic">{fmt(t.openCloses, { date: day(r.deadline, lang) })}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted">{t.openNone}</p>
-        )}
-
-        {member.awards.length > 0 && (
-          <>
-            <SH2 no={++no} id="awards">{t.awardsTitle}</SH2>
-            <p className="small muted">{t.awardsBody}</p>
-            <ul className="s-table" data-list="awards">
-              {member.awards.map((r) => (
-                <li key={r.slug}>
-                  <span className="code" aria-hidden>{r.deadline ? Number(r.deadline.slice(8, 10)) : "—"}</span>
-                  <span>
-                    <a className="nm" href={L(`/rfps/${r.slug}`)}>{r.title}</a>
-                    {r.deadline && <span className="lic">{day(r.deadline, lang)}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-        </>
-        )}
+        <div className="g-cta" data-panel="locked">
+          <h3 className="hd">{t.lockedHead}</h3>
+          {p.hasGc && <p>{t.lockedHasGc}</p>}
+          {p.hasBidRoute && <p>{t.lockedHasRoute}</p>}
+          <p>{t.lockedNone}</p>
+          <div className="acts">{cta(t.lockedCta, "btn mint lg")}</div>
+        </div>
+        <ViewerPro slug={p.slug} labels={labels} />
+        <ViewerRelated slug={p.slug} labels={labels} />
 
         <div className="g-cta">
           <h3 className="hd">{t.ctaHead}</h3>
           <p>{t.ctaBody}</p>
           <div className="acts">
-            {gate.btn("projects", t.ctaBtn, "btn mint lg", { plansClassName: "lnk" })}
+            {cta(t.ctaBtn, "btn mint lg")}
             <a href={L("/rfps")} className="lnk">{t.ctaBoard} →</a>
           </div>
         </div>

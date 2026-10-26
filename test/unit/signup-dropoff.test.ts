@@ -178,7 +178,7 @@ describe("an upgrade link resumes checkout", () => {
   });
 
   it("every public 'Unlock' link asks for a plan the shop can sell", () => {
-    for (const f of ["src/app/[lang]/(v3)/rfps/[slug]/page.tsx", "src/app/[lang]/(v3)/benchmarks/[trade]/[province]/page.tsx", "src/app/[lang]/(v3)/major-projects/[slug]/page.tsx"]) {
+    for (const f of ["src/app/[lang]/(v3)/rfps/[slug]/page.tsx", "src/app/[lang]/(v3)/benchmarks/[trade]/[province]/page.tsx", "src/app/api/major-projects/[slug]/viewer/route.ts"]) {
       const src = read(f);
       expect(src, f).toContain("upgradeInterval(");
       expect(src, f).not.toContain('"/dashboard/billing?plan=pro&interval=monthly"');
