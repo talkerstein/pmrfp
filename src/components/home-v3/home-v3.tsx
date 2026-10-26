@@ -566,6 +566,14 @@ export function HomeV3({
           </section>
         )}
 
+        <div className="v3-wrap">
+          <div className="v3-band" aria-hidden>
+            <div className="marquee" style={{ display: "flex", width: "max-content", animationDuration: "45s" }}>
+              {bigwords.concat(bigwords).map((x, i) => <span key={i} className={i % 2 ? "o" : undefined}>{x} ·</span>)}
+            </div>
+          </div>
+        </div>
+
         <section className="v3-wrap v3-trades">
           <div className="v3-trades-head">
             <div>
@@ -892,11 +900,6 @@ export function HomeV3({
               </a>
 
               <div className="v3-card navy v3-spon">
-                <div className="bw" aria-hidden>
-                  <div className="marquee" style={{ display: "flex", width: "max-content", animationDuration: "45s" }}>
-                    {bigwords.concat(bigwords).map((x, i) => <span key={i} className={i % 2 ? "o" : undefined}>{x} ·</span>)}
-                  </div>
-                </div>
                 <div className="v3-spon-in">
                   <div className="v3-spon-l">
                     <div className="v3-label mint">{t.platform.sponsor.label}</div>

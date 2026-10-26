@@ -379,9 +379,9 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 .v3-chat > div.tags { align-self: flex-start; background: #FFFFFF; color: var(--ink); border-radius: 20px 20px 20px 6px; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 5px; max-width: 270px; }
 .v3-chat > div.tags span { font-size: 13px; font-weight: 700; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
 .v3-spon { grid-column: span 12; padding: 0; min-height: 0; }
-.v3-spon .bw { overflow: hidden; padding-top: 18px; }
-.v3-spon .bw span { font-family: var(--fp); font-weight: 700; font-size: 104px; line-height: 1; letter-spacing: -.04em; white-space: nowrap; padding-right: 40px; color: var(--mint); -webkit-text-stroke: 1.5px var(--mint); }
-.v3-spon .bw span.o { color: rgba(145,242,207,0.14); }
+.v3-band { margin-top: 56px; border-radius: 24px; background: var(--navy); overflow: hidden; padding: 22px 0; }
+.v3-band span { font-family: var(--fp); font-weight: 700; font-size: 104px; line-height: 1; letter-spacing: -.04em; white-space: nowrap; padding-right: 40px; color: var(--mint); -webkit-text-stroke: 1.5px var(--mint); }
+.v3-band span.o { color: rgba(145,242,207,0.14); }
 .v3-spon-in { padding: 28px 36px 36px; display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 14px; align-items: stretch; }
 .v3-spon-l { display: flex; flex-direction: column; padding-right: 20px; }
 .v3-spon-l .hd { font-size: 34px; line-height: 1.08; letter-spacing: -.03em; flex-grow: 1; }
@@ -752,11 +752,11 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
   .v3-chat { margin-top: 16px; flex-grow: 0; }
   .v3-chat > div.tags { display: none; }
   .v3-spon { padding: 0; }
-  .v3-spon .bw { padding-top: 14px; }
-  .v3-spon .bw span { font-size: 64px; padding-right: 26px; -webkit-text-stroke: 0; }
-  .v3-spon .bw span.o { color: rgba(145,242,207,0.2); }
-  .pmrfp-v3 .v3-spon .marquee { animation-duration: 35s; }
-  .v3-spon-in { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 8px; }
+  .v3-band { margin-top: 40px; border-radius: 20px; padding: 16px 0; }
+  .v3-band span { font-size: 64px; padding-right: 26px; -webkit-text-stroke: 0; }
+  .v3-band span.o { color: rgba(145,242,207,0.2); }
+  .pmrfp-v3 .v3-band .marquee { animation-duration: 35s; }
+  .v3-spon-in { padding: 24px; display: flex; flex-direction: column; gap: 8px; }
   .v3-spon-l { display: contents; }
   .v3-spon-l .hd { font-size: 26px; line-height: 1.1; margin-bottom: 10px; }
   .v3-spon-l .v3-pill { order: 5; margin-top: 8px; align-self: stretch; display: flex; height: 50px; padding: 0; align-items: center; justify-content: center; }
