@@ -105,6 +105,9 @@ export const STEP_LABEL: Record<string, string> = {
   email_confirmed: "Confirmed their email",
   onboarding_completed: "Finished onboarding",
   upgrade_clicked: "Clicked upgrade",
+  trial_cta_clicked: "Clicked a free-trial button",
+  trial_started: "Started the free trial",
+  trial_banner_upgrade_clicked: "Clicked Upgrade in the trial banner",
   checkout_started: "Started checkout",
   checkout_completed: "Paid",
   writer_started: "Started the RFP Writer",
@@ -121,7 +124,7 @@ export interface MarketView {
   signups: number;
   signupsByChannel: { channel: string; label: string; n: number }[];
   signupsByMethod: { method: string; n: number }[];
-  funnel: { shared: FunnelStep[]; trade: FunnelStep[]; pm: FunnelStep[] };
+  funnel: { shared: FunnelStep[]; trade: FunnelStep[]; pm: FunnelStep[]; trial: FunnelStep[] };
   /** Other activity, distinct people. */
   activity: { event: string; n: number }[];
   /** The sign-up wizard and the onboarding form, step by step: where unfinished sign-ups stopped. */
@@ -191,6 +194,14 @@ export function marketView(raw: RawReport, market: Market): MarketView {
         step("checkout_started", actors(raw, market, "checkout_started", TRADE_SIDE)),
         step("checkout_completed", actors(raw, market, "checkout_completed", TRADE_SIDE)),
       ]),
+      // Trial-first conversion: button clicked (anyone) -> trial started -> Upgrade in the banner -> paid.
+      // Distinct people per event, so a visitor who clicks signed out and starts after sign-up counts once in each.
+      trial: funnel([
+        step("trial_cta_clicked", actors(raw, market, "trial_cta_clicked")),
+        step("trial_started", actors(raw, market, "trial_started", TRADE_SIDE)),
+        step("trial_banner_upgrade_clicked", actors(raw, market, "trial_banner_upgrade_clicked", TRADE_SIDE)),
+        step("checkout_completed", actors(raw, market, "checkout_completed", TRADE_SIDE)),
+      ]),
       pm: funnel([
         step("onboarding_completed", actors(raw, market, "onboarding_completed", PM_SIDE)),
         step("writer_started", actors(raw, market, "writer_started", PM_SIDE)),
@@ -211,7 +222,10 @@ export function marketView(raw: RawReport, market: Market): MarketView {
       "checkout_failed",
       "writer_started",
       "writer_draft_generated",
+      "trial_cta_clicked",
       "trial_started",
+      "trial_banner_upgrade_clicked",
+      "missed_bids_card_viewed",
       "rfp_posted",
       "follow_buyer",
       "claim_started",

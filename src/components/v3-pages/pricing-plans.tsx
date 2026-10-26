@@ -1,5 +1,6 @@
 "use client";
 
+import { annualSaving } from "@/lib/pricing/annual";
 import { useState, type ReactNode } from "react";
 import { PRICING } from "@/lib/site";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
@@ -81,7 +82,8 @@ export function PricingPlans({
   };
 
   const proM = monthly && proMonthly;
-  const proSave = PRICING.proMonthly * 12 - PRICING.proAnnual;
+  // From the real price constants (lib/pricing/annual); 0 hides the "save" label when yearly isn't cheaper.
+  const proSave = annualSaving()?.save ?? 0;
   const note = (tpl: string, vals: Record<string, number>) => {
     if (!m.known) return <Sk w="12em" />;
     const out: Record<string, string> = {};
@@ -120,7 +122,7 @@ export function PricingPlans({
             <div role="group" aria-label={t.interval} className="vp-toggle">
               <button type="button" aria-pressed={!monthly} onClick={() => pick(false)} className="tgl">
                 {t.annual}
-                <span className="sv">{m.known ? fmt(t.save, { n: m.money(proSave) }) : <Sk w="4em" />}</span>
+                {proSave > 0 && <span className="sv">{m.known ? fmt(t.save, { n: m.money(proSave) }) : <Sk w="4em" />}</span>}
               </button>
               <button type="button" aria-pressed={monthly} onClick={() => pick(true)} className="tgl">{t.monthly}</button>
             </div>

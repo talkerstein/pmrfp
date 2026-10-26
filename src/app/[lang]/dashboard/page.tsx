@@ -27,6 +27,11 @@ import { PriceBenchmarkCard } from "@/components/benchmarks/price-benchmark-card
 import { getMemberMarket } from "@/lib/leads/load";
 import { MarketPanel } from "@/components/leads/market-panel";
 import { TrialFlash, TrialStartForm, TrialStatus, canStartTrial } from "@/components/leads/trial";
+import { gateKit } from "@/components/trial/gate-kit";
+import { MissedBidsCard } from "@/components/trial/missed-bids-card";
+import { ProLedgerCard } from "@/components/trial/pro-ledger-card";
+import { loadMissedBids } from "@/lib/entitlement/missed-bids-server";
+import { loadTrialUsage } from "@/lib/entitlement/usage-server";
 import { InsightsCard } from "@/components/insights/insights-card";
 import { dashboardInsights } from "@/lib/insights/dashboard";
 import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
@@ -65,7 +70,13 @@ export default async function TradeDashboardHome({
     }),
   ]);
   const onTrial = !session.paid && session.trial?.status === "active";
-  const trialOffer = !demo && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: org?.organization_type });
+  const trialOffer = !demo && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: org?.organization_type, organizationStatus: org?.status, organizationProfileStatus: org?.profile_status });
+  // Trial-first (lib/entitlement/gate): every Pro gate on this page offers the free trial in one click when the company can still start one.
+  const gate = await gateKit(demo ? null : session, { returnPath: "/dashboard", paidHref: "/dashboard/billing?plan=pro&interval=monthly" });
+  // "Bids you may have missed" (free members) and "Pro this month" (trial or paid): real counts, or nothing.
+  const missed = demo ? null : await loadMissedBids(session);
+  const ledgerSince = ledgerStart(session.trial?.status === "active" ? session.trial.startedAt : null);
+  const ledger = !demo && session.hasTradeAccess ? await loadTrialUsage(session.userId, org?.id ?? null, ledgerSince) : null;
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
   const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
   // Price benchmarks for this company's trades, in its own country and province first.
@@ -94,7 +105,11 @@ export default async function TradeDashboardHome({
       <TrialFlash value={flash} />
       <TrialStatus trial={session.trial} paid={session.paid} country={country} />
 
+      <MissedBidsCard missed={missed} offer={gate.offer("missed_bids")} />
+
       {market && <MarketPanel market={market} session={session} country={country} />}
+
+      {ledger && <ProLedgerCard usage={ledger} />}
 
       {insights && (
         <InsightsCard insights={insights.insights} persona={insights.persona} lang={lang} isPro={insights.isPro} marketHref={insights.marketHref} />
@@ -155,6 +170,7 @@ export default async function TradeDashboardHome({
                 view={benchmarkView(benchmark, session.hasTradeAccess)}
                 href={benchmarkPath(tradeSlug, benchmark.province)}
                 upgradeHref="/dashboard/billing?plan=pro&interval=monthly"
+                cta={gate.btn("benchmark", getT("benchmarks").card.ctaLocked, "inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700", { plansClassName: "text-xs text-muted-foreground underline" })}
               />
             ))}
           </div>
@@ -222,7 +238,7 @@ export default async function TradeDashboardHome({
           <h2 className="text-base font-semibold">{t.upsellTitle}</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t.upsellBody}</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            {trialOffer && <TrialStartForm source="dashboard" label={tl.start} lang={lang} />}
+            {trialOffer && <TrialStartForm source="dashboard" label={getT("trialFirst").cta.start} lang={lang} returnTo="/dashboard" />}
             <ActivateButton variant={trialOffer ? "outline" : "default"} />
           </div>
           {trialOffer && <p className="mt-2 text-xs text-muted-foreground">{tl.note}</p>}
@@ -276,4 +292,13 @@ async function orgTradeSlugs(orgId: string | null, demo: boolean): Promise<strin
   return ((data as unknown as { trade_categories: { slug: string } | null }[] | null) ?? [])
     .map((r) => r.trade_categories?.slug)
     .filter((s): s is string => Boolean(s));
+}
+
+/**
+ * Where "Pro this month" starts counting: the first of this month (UTC), or
+ * the day an active trial began when that is later (nothing before Pro).
+ */
+function ledgerStart(trialStartedAt: string | null, now: Date = new Date()): string {
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  return trialStartedAt && trialStartedAt > monthStart ? trialStartedAt : monthStart;
 }

@@ -39,11 +39,25 @@ export const SITE_EVENTS = [
   // PMRFP for Towns, Part C.
   "sealed_opened",
   "award_published",
+  // Trial-first conversion (migration 20261025000100). The three clicks and
+  // views are reported by the browser; trial_started stays server-side.
+  "trial_cta_clicked",
+  "trial_banner_upgrade_clicked",
+  "missed_bids_card_viewed",
 ] as const;
 export type SiteEvent = (typeof SITE_EVENTS)[number];
 
 /** What the browser beacon may report. Everything else comes from the server. */
-export const CLIENT_EVENTS = ["signup_viewed", "signup_step", "pricing_viewed", "upgrade_clicked", "writer_started"] as const;
+export const CLIENT_EVENTS = [
+  "signup_viewed",
+  "signup_step",
+  "pricing_viewed",
+  "upgrade_clicked",
+  "writer_started",
+  "trial_cta_clicked",
+  "trial_banner_upgrade_clicked",
+  "missed_bids_card_viewed",
+] as const;
 export type ClientEvent = (typeof CLIENT_EVENTS)[number];
 
 export function isSiteEvent(v: unknown): v is SiteEvent {

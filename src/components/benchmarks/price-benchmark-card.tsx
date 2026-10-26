@@ -20,10 +20,13 @@ export function PriceBenchmarkCard({
   view,
   href,
   upgradeHref,
+  cta,
 }: {
   view: BenchmarkView;
   href: string;
   upgradeHref: string | null;
+  /** Replaces the upgrade button (the trial-first gate, components/trial/pro-gate-cta). */
+  cta?: React.ReactNode;
 }) {
   const t = getT("benchmarks").card;
   const lang = getLang();
@@ -86,9 +89,11 @@ export function PriceBenchmarkCard({
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         {!view.pro && b.enough && upgradeHref ? (
           <>
-            <Link href={upgradeHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700">
-              {t.ctaLocked}
-            </Link>
+            {cta ?? (
+              <Link href={upgradeHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700">
+                {t.ctaLocked}
+              </Link>
+            )}
             <Link href={href} className="text-sm font-medium text-teal-700 hover:underline">{t.cta} →</Link>
           </>
         ) : (

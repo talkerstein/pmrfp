@@ -193,14 +193,21 @@ describe("what similar work sold for: who sees what", () => {
 });
 
 describe("the 14-day trial control", () => {
+  const trial = { mode: "trial", href: "/start-trial?source=listing&return=%2Frfps%2Fx", plansHref: "/pricing" } as const;
   it("is a one-click trial when trials are open and the viewer can start one", () => {
-    const h = render(<ProCta trial plansHref="/dashboard/billing?plan=pro&interval=monthly" />);
+    const h = render(<ProCta offer={trial} returnTo="/rfps/x" />);
     expect(h).toContain('data-trial="listing"');
-    expect(h).toContain("Try Trade Pro free for 14 days");
+    expect(h).toContain("Start 14-day free trial (no card)");
     expect(h).toContain("No card. One trial per company.");
   });
+  it("is the same label as a sign-up link for a visitor", () => {
+    const h = render(<ProCta offer={{ mode: "signup_trial", href: "/sign-up?role=trade&plan=trial&source=listing", plansHref: "/pricing" }} returnTo="/rfps/x" />);
+    expect(h).toContain("Start 14-day free trial (no card)");
+    expect(h).toContain("plan=trial");
+    expect(h).toContain("See plans");
+  });
   it("is a link to the plans otherwise (a property manager, a used trial, trials not open)", () => {
-    const h = render(<ProCta trial={false} plansHref="/pricing" />);
+    const h = render(<ProCta offer={{ mode: "paid", href: "/pricing", plansHref: "/pricing" }} returnTo="/rfps/x" />);
     expect(h).not.toContain("data-trial");
     expect(h).toContain('href="/pricing"');
     expect(h).toContain("See Trade Pro plans");

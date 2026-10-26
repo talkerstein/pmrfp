@@ -9,6 +9,7 @@ import { RfpCard } from "@/components/public/rfp-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { getT, setLangFrom } from "@/i18n/server";
+import { gateKit } from "@/components/trial/gate-kit";
 import type { Metadata } from "next";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
@@ -29,6 +30,8 @@ export default async function RfpFeedPage({ params }: { params: Promise<object> 
   // Photos: only PMRFP-posted listings can have them, so this stays one small query.
   const rfps = await withPublicRfpPhotos(listed).catch(() => listed);
   const locked = !session.hasTradeAccess && !demo;
+  // Trial-first: "Activate" is a free trial in one click for a company that can still start one.
+  const gate = await gateKit(demo ? null : session, { returnPath: "/dashboard/rfps", paidHref: "/dashboard/billing" });
 
   return (
     <div>
@@ -46,9 +49,7 @@ export default async function RfpFeedPage({ params }: { params: Promise<object> 
               <strong className="text-foreground">{t.lockedTitle}</strong> {t.lockedBody}
             </span>
           </div>
-          <Link href="/dashboard/billing" className={buttonVariants()}>
-            {t.activate}
-          </Link>
+          {gate.btn("gate", t.activate, buttonVariants(), { plansClassName: "text-sm text-muted-foreground underline" })}
         </div>
       )}
 

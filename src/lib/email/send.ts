@@ -961,6 +961,8 @@ export async function sendTenderDigest(
     sponsorHtml?: string;
     /** "From buyers you follow" (lib/follows/email-copy weeklyFollowSectionHtml), or "". */
     followedHtml?: string;
+    /** "Bids you may have missed" (lib/entitlement/missed-bids-email), behind MISSED_BIDS_BLOCK_ENABLED, or "". */
+    missedHtml?: string;
   },
 ): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -995,6 +997,7 @@ export async function sendTenderDigest(
       headline,
       `${matches}
        ${params.followedHtml ?? ""}
+       ${params.missedHtml ?? ""}
        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 8px;background:#F6F7FB;border:1px solid #E6E8F0;border-radius:12px;">
          <tr><td style="padding:20px 20px 12px 20px;">
            <p style="margin:0 0 12px;font-weight:700;color:#1B1E45;font-size:16px">What Trade Pro adds</p>

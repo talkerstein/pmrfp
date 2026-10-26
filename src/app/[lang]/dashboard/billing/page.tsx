@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { ActivateButton, ManageBillingButton } from "@/components/dashboard/billing-actions";
 import { TrialStartForm, canStartTrial } from "@/components/leads/trial";
+import { annualSaving } from "@/lib/pricing/annual";
 import { PRICING } from "@/lib/site";
 import { parsePlanIntent, type PlanIntent } from "@/lib/billing/plan-intent";
 import type { Metadata } from "next";
@@ -84,7 +85,9 @@ export default async function BillingPage({
         : t.plans.pro;
   const intentName = intent ? (lang === "en" ? intent.name : t.plans[intent.plan]) : "";
   const intentPriceLabel = intent ? (lang === "en" ? intent.priceLabel : intentPrice(intent, t.perMonth, t.perYear)) : "";
-  const annualSaving = PRICING.proMonthly * 12 - PRICING.proAnnual;
+  // The real saving from the price constants; null (and no line) unless yearly is actually cheaper.
+  const saving = annualSaving();
+  const annualSavingN = saving?.save ?? 0;
   const monthlyEnabled = Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY);
 
   return (
@@ -98,11 +101,11 @@ export default async function BillingPage({
       )}
 
       {/* No card, one click: the way in for a company that isn't ready to pay (14 days, once per company). */}
-      {!isActive && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type }) && (
+      {!isActive && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status }) && (
         <div className="mb-4 rounded-lg border border-border bg-card p-5">
           <p className="font-semibold text-foreground">{t.trialHead}</p>
           <p className="mt-1 text-sm text-muted-foreground">{t.trialBody}</p>
-          <div className="mt-4"><TrialStartForm source="billing" label={getT("leads").trial.start} lang={lang} variant="outline" /></div>
+          <div className="mt-4"><TrialStartForm source="billing" label={getT("trialFirst").cta.start} lang={lang} returnTo="/dashboard/billing" /></div>
         </div>
       )}
 
@@ -155,7 +158,7 @@ export default async function BillingPage({
               </p>
             )}
             {sub.status === "active" && isMonthly && (
-              <p className="mt-3 text-xs text-muted-foreground">{fmt(t.switchAnnual, { n: annualSaving })}</p>
+              <p className="mt-3 text-xs text-muted-foreground">{fmt(t.switchAnnual, { n: annualSavingN })}</p>
             )}
             <div className="mt-5 flex flex-wrap gap-3">
               <ManageBillingButton />
@@ -177,6 +180,11 @@ export default async function BillingPage({
             <div className="eyebrow text-muted-foreground">{t.currentPlan}</div>
             <div className="mt-1 text-xl font-semibold">{t.free}</div>
             <p className="mt-3 max-w-2xl text-sm text-muted-foreground">{t.freeBody}</p>
+            {saving && monthlyEnabled && (
+              <p className="mt-3 text-sm font-medium text-foreground" data-section="annual-compare">
+                {fmt(getT("trialFirst").compare, { annual: saving.annual, yearly: saving.yearly, monthly: saving.monthly, save: saving.save })}
+              </p>
+            )}
             {monthlyEnabled ? (
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {/* Annual — primary */}
@@ -189,7 +197,7 @@ export default async function BillingPage({
                       {fmt(t.currencyYear, { currency: PRICING.currency })}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs font-medium text-teal-ink">{fmt(t.bestValue, { n: annualSaving })}</p>
+                  <p className="mt-1 text-xs font-medium text-teal-ink">{saving ? fmt(t.bestValue, { n: saving.save }) : null}</p>
                   <div className="mt-3">
                     <ActivateButton
                       label={t.activateAnnual}

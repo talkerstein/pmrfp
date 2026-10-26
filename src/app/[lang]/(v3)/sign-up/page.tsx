@@ -6,6 +6,7 @@ import { signupRoleFromLink, type SignupLinkRole } from "@/lib/auth/signup-link"
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { parsePlanIntent } from "@/lib/billing/plan-intent";
 import { checkoutPath } from "@/lib/billing/checkout-flow";
+import { trialNextFromSignUp } from "@/lib/entitlement/gate";
 import { SIGNUP_INTENT_COOKIE, parseIntent, withRememberedIntent } from "@/lib/auth/signup-intent";
 import { parseAwardRef } from "@/lib/gc/packages";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
@@ -68,7 +69,7 @@ export default async function SignUpPage({
   searchParams,
   params,
 }: {
-  searchParams: Promise<{ role?: string; kind?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string; region?: string; claim?: string; sent?: string; error?: string }>;
+  searchParams: Promise<{ role?: string; kind?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string; region?: string; claim?: string; sent?: string; error?: string; source?: string; return?: string }>;
   params: Promise<object>;
 }) {
   const lang = await setLangFrom(params);
@@ -107,7 +108,9 @@ export default async function SignUpPage({
   // The link itself said who they are (outreach, a town page): skip the "who are you?" step.
   const roleFromLink = Boolean(linkedRole);
   // Back-compat: older links pass ?template=X; promote it to a `next` path.
-  const next = safeNextPath(rawNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? checkoutPath(intent.plan, intent.interval) : null));
+  // plan=trial&return=/rfps/x: the free trial from a Pro gate. It resumes at /start-trial after the emailed link and onboarding.
+  const trialNext = trialNextFromSignUp({ plan: query.plan, source: query.source, return: query.return });
+  const next = safeNextPath(rawNext ?? trialNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? checkoutPath(intent.plan, intent.interval) : null));
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
 
   const { country, province } = await getVisitorCountry();
@@ -135,7 +138,7 @@ export default async function SignUpPage({
   return (
     <>
       {/* First-party funnel: the sign-up page opened (lib/tracking). */}
-      <TrackOnMount event="signup_viewed" props={{ role: initialRole ?? null, plan: intent?.plan ?? null }} />
+      <TrackOnMount event="signup_viewed" props={{ role: initialRole ?? null, plan: intent?.plan ?? (trialNext ? "trial" : null) }} />
       <SignUpFlow
         initialRegions={initialRegions}
         lang={lang}

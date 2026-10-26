@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { AnalyticsConsent } from "@/components/analytics-consent";
+import { TrialBanner } from "@/components/trial/trial-banner";
 import { CONSENT_ATTR, clarityId, gaMeasurementId } from "@/lib/tracking/ga";
 import { JsonLd, organizationSchema, websiteSchema } from "@/lib/seo/jsonld";
 import { SITE } from "@/lib/site";
@@ -80,6 +81,8 @@ export default async function RootLayout({
         <JsonLd data={organizationSchema()} />
         <JsonLd data={websiteSchema()} />
         <I18nProvider lang={lang} messages={clientMessages(lang)}>
+          {/* Trial countdown / "your trial ended" note; draws nothing unless a signed-in company has a trial. */}
+          <TrialBanner />
           {children}
           {/* Clear of the dashboards' bottom tab bar on phones. */}
           <Toaster mobileOffset={{ bottom: 88 }} />

@@ -84,12 +84,12 @@ export function MarketPanel({ market, session, country }: { market: MemberMarket
           <div className="max-w-2xl">
             <p className="font-semibold text-foreground">{plural(leads.length, t.market.freeMore, { n: num(leads.length), total: num(counts.total) })}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t.market.freePitch}</p>
-            {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type }) && (
+            {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status }) && (
               <p className="mt-1 text-xs text-muted-foreground">{t.trial.note}</p>
             )}
           </div>
-          {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type }) ? (
-            <TrialStartForm source="leads" label={t.trial.start} lang={lang} />
+          {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status }) ? (
+            <TrialStartForm source="leads" label={getT("trialFirst").cta.start} lang={lang} returnTo="/dashboard" />
           ) : (
             <Link href="/dashboard/billing?plan=pro&interval=annual" className={buttonVariants()}>
               {fmt(t.market.seeAll, { total: num(counts.total) })}

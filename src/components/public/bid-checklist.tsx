@@ -16,12 +16,15 @@ export function BidChecklist({
   check,
   locked,
   proHref,
+  cta,
   translated = false,
   showSummary = true,
 }: {
   check: BidCheck;
   locked: boolean;
   proHref: string;
+  /** Replaces the upgrade button (the trial-first gate, components/trial/pro-gate-cta). */
+  cta?: React.ReactNode;
   /** The source notice is in French (SEAO): say the summary is a translation. */
   translated?: boolean;
   /** False when the page already shows the plain-language summary in its own block. */
@@ -66,9 +69,13 @@ export function BidChecklist({
           <p className="mt-1 text-sm text-muted-foreground">
             {t.lockedBody}
           </p>
-          <Link href={proHref} className={cn(buttonVariants({ size: "sm" }), "mt-3")}>
-            {t.lockedCta}
-          </Link>
+          {cta ? (
+            <div className="mt-3">{cta}</div>
+          ) : (
+            <Link href={proHref} className={cn(buttonVariants({ size: "sm" }), "mt-3")}>
+              {t.lockedCta}
+            </Link>
+          )}
         </div>
       ) : (
         <>
