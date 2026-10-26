@@ -21,7 +21,10 @@ const ACTIVITY_LABEL: Record<string, string> = {
   checkout_failed: "Checkout could not be created (Stripe)",
   writer_started: "Started the RFP Writer (anyone)",
   writer_draft_generated: "Generated an RFP draft",
+  trial_cta_clicked: "Clicked a free-trial button (anyone)",
   trial_started: "Started a Trade Pro trial",
+  trial_banner_upgrade_clicked: "Clicked Upgrade in the trial banner",
+  missed_bids_card_viewed: "Saw the Bids you may have missed card",
   rfp_posted: "Posted a job (PMs, GCs, towns)",
   follow_buyer: "Followed a buyer or town",
   claim_started: "Submitted a claim",
@@ -197,6 +200,13 @@ function MarketColumn({ v }: { v: MarketView }) {
           <FunnelTable steps={v.funnel.pm} />
         </div>
       </div>
+      <div className="mt-4" data-testid="trial-funnel">
+        <h4 className="mb-1 text-sm font-semibold">Free trial</h4>
+        <FunnelTable steps={v.funnel.trial} />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Trial start rate: {trialStartRate(v.funnel.trial)} of the people who clicked a trial button started one (distinct people per step; sign-up can come between the click and the start).
+        </p>
+      </div>
 
       <h3 className="mb-2 mt-6 font-semibold">Sign-ups by source</h3>
       {v.signupsByChannel.length === 0 ? (
@@ -294,4 +304,11 @@ function FunnelTable({ steps }: { steps: FunnelStep[] }) {
       ))}
     </AdminTable>
   );
+}
+
+/** trial_started / trial_cta_clicked from the trial funnel, or "–" when nobody clicked. */
+function trialStartRate(steps: FunnelStep[]): string {
+  const clicked = steps.find((s) => s.key === "trial_cta_clicked")?.n ?? 0;
+  const started = steps.find((s) => s.key === "trial_started")?.n ?? 0;
+  return clicked > 0 ? pct(Math.min(1, started / clicked)) : "–";
 }

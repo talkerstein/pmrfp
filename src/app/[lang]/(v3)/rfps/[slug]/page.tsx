@@ -19,7 +19,9 @@ import { PrepareChecklist } from "@/components/rfp-detail/prepare-checklist";
 import { PurchasingRules } from "@/components/rfp-detail/purchasing-rules";
 import { PlatformGuide } from "@/components/rfp-detail/platform-guide";
 import { RelatedBlock } from "@/components/rfp-detail/related-block";
-import { canStartTrial } from "@/components/leads/trial";
+import { ProGateCta } from "@/components/trial/pro-gate-cta";
+import { insightsUi } from "@/lib/insights/ui-copy";
+import { buttonVariants } from "@/components/ui/button";
 import { buildRfpMeta, metaBuyer, metaKindOf, specificIssuer } from "@/lib/rfp-detail/meta";
 import { buyerKindOf, countdownOf, statedValue, workTypeOf } from "@/lib/rfp-detail/facts";
 import { similarWorkFor, similarWorkView } from "@/lib/rfp-detail/similar-work";
@@ -33,6 +35,8 @@ import { buyerOffice, buyerProfileData } from "@/lib/rfp-detail/buyer-profile";
 import { valueLabel } from "@/lib/rfp-detail/format";
 import { getManagedPagesSnapshot } from "@/lib/towns/managed-data";
 import { trialsOpen } from "@/lib/entitlement/server";
+import { gateOffer, whoFromSession } from "@/lib/entitlement/gate";
+import type { TrialSource } from "@/lib/entitlement/trial";
 import { loadBenchmarkData } from "@/lib/data/price-benchmarks-load";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { canonicalProvince } from "@/lib/data/price-benchmarks";
@@ -254,11 +258,20 @@ export default async function RfpDetailPage({
   const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
   const upgradeHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
   const annualHref = session ? "/dashboard/billing?plan=pro&interval=annual" : signUpHrefForPlan("pro", "annual");
+  // Trial-first: wherever this page offers Trade Pro, an eligible company gets a one-click free trial that
+  // brings it back here unlocked; a visitor gets sign-up for the trial; everyone else keeps the paid link.
+  const trialsOn = configured ? await trialsOpen().catch(() => false) : false;
+  const gateWho = whoFromSession(session, trialsOn);
+  const returnPath = `/rfps/${teaser.slug}`;
+  const offerFor = (source: TrialSource) => gateOffer(gateWho, { source, returnPath, paidHref: upgradeHref });
+  const gateBtn = (source: TrialSource, paidLabel: string, className?: string, extra: { showPlans?: boolean; plansClassName?: string } = {}) => (
+    <ProGateCta offer={offerFor(source)} source={source} returnTo={returnPath} paidLabel={paidLabel} className={className} {...extra} />
+  );
   // An open listing that isn't a town's own post gets the depth blocks (summary, buyer, similar work …).
   const openListing = !town && !isAward && !isClosed;
   const bidChecklist = bidCheck ? (
     // The plain-language summary has its own block on open listings, so the checklist doesn't repeat it.
-    <BidChecklist check={bidCheck} locked={!showFull} proHref={upgradeHref} translated={isPublicTender && tenderSource.key === "seao"} showSummary={!openListing} />
+    <BidChecklist check={bidCheck} locked={!showFull} proHref={upgradeHref} cta={gateBtn("checklist", getT("shared").checklist.lockedCta, buttonVariants({ size: "sm" }))} translated={isPublicTender && tenderSource.key === "seao"} showSummary={!openListing} />
   ) : null;
   // The board (cached): "the next one" on award pages, similar open RFPs everywhere.
   const [wholeBoard, categories, regions] = await Promise.all([
@@ -294,6 +307,7 @@ export default async function RfpDetailPage({
       view={benchmarkView(bench.benchmark, showFull)}
       href={benchmarkPath(bench.tradeSlug, bench.benchmark.province)}
       upgradeHref={upgradeHref}
+      cta={gateBtn("benchmark", getT("benchmarks").card.ctaLocked, "inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-indigo-700", { plansClassName: "text-xs text-muted-foreground underline" })}
     />
   ) : null;
   // "What similar work sold for" on open listings is its own block (SimilarWorkCard, below):
@@ -307,6 +321,7 @@ export default async function RfpDetailPage({
       view={positioningView(positioning, configured ? entitlementsOf(session) : { pro: showFull, intel: showFull })}
       lang={lang}
       upgradeHref={upgradeHref}
+      cta={gateBtn("gate", insightsUi(lang).pos.unlockPro, "inline-block rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-indigo-700", { plansClassName: "text-xs text-muted-foreground underline" })}
     />
   ) : null;
 
@@ -432,14 +447,8 @@ export default async function RfpDetailPage({
         )
       : null;
 
-  // The 14-day trial control, only when a block below actually has something locked.
-  const hasLockedBlock = !pro && Boolean(retenderRaw || similarWork?.median != null);
-  const trialOffer =
-    hasLockedBlock && configured
-      ? (await trialsOpen().catch(() => false)) &&
-        (!session || canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type ?? null }))
-      : false;
-  const proCta = <ProCta trial={trialOffer} plansHref={upgradeHref} />;
+  // The 14-day trial control inside the locked blocks below (never a way to hide their free parts).
+  const proCta = <ProCta offer={offerFor("listing")} returnTo={returnPath} />;
 
   // 5. Change log: what the importer saw change on notices we read.
   const changes = openListing && isPublicTender ? await loadRfpChanges(teaser.slug) : [];
@@ -634,7 +643,7 @@ export default async function RfpDetailPage({
                 ) : locked && !session ? (
                   <>
                     <a href={L(freeSignupHref)} className="v3-pill mint vp-big vp-ic" data-cta="free-account"><Bookmark stroke="#1B1D3A" />{v.freeCta}</a>
-                    <a href={L(upgradeHref)} className="vp-ghost light vp-ic"><LockIcon stroke="#91F2CF" />{v.unlock}</a>
+                    {gateBtn("gate", v.unlock, "vp-ghost light vp-ic", { plansClassName: "vp-dnote" })}
                     <span className="vp-dnote">{v.freeNote}</span>
                   </>
                 ) : freeRespond ? (
@@ -651,10 +660,10 @@ export default async function RfpDetailPage({
                     {bidHref ? (
                       <a href={bidHref} target="_blank" rel="noopener noreferrer" className="v3-pill mint vp-big">{permission ? source.bidLabel : v.officialNotice} ↗</a>
                     ) : (
-                      <a href={L(upgradeHref)} className="v3-pill mint vp-big vp-ic"><LockIcon />{v.unlock}</a>
+                      gateBtn("gate", v.unlock, "v3-pill mint vp-big vp-ic", { plansClassName: "vp-dnote" })
                     )}
                     {saveLink("vp-ghost light vp-ic")}
-                    {bidHref && <a href={L(upgradeHref)} className="vp-ghost light vp-ic"><LockIcon stroke="#91F2CF" />{v.unlock}</a>}
+                    {bidHref && gateBtn("gate", v.unlock, "vp-ghost light vp-ic", { plansClassName: "vp-dnote" })}
                   </>
                 ) : (
                   <>
@@ -912,6 +921,12 @@ export default async function RfpDetailPage({
                     ))}
                   </div>
                 </div>
+                {offerFor("gate").mode !== "paid" && (
+                  <div className="vp-pay-trial" data-gate-row="trial">
+                    {gateBtn("gate", v.unlock, "v3-pill mint vp-big")}
+                    <p className="vp-dnote">{getT("trialFirst").cta.note}</p>
+                  </div>
+                )}
                 <PaywallPlans t={v.paywall.plans} lang={lang} monthlyEnabled={monthlyEnabled} hrefs={{ monthly: upgradeHref, annual: annualHref }}>
                   {saveLink("vp-ghost light vp-ic")}
                   <span className="vp-pay-note">

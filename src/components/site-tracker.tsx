@@ -29,6 +29,14 @@ export function SiteTracker() {
       const target = e.target instanceof Element ? e.target : null;
       if (!target) return;
       const tagged = target.closest<HTMLElement>("[data-track]");
+      // Trial-first CTAs (lib/entitlement/gate): the button/link says where it sits in data-source.
+      const kind = tagged?.dataset.track;
+      if (kind === "trial_cta_clicked" || kind === "trial_banner_upgrade_clicked") {
+        track(kind, { source: tagged?.dataset.source ?? null });
+        // "Upgrade" in the banner is also an upgrade click for the trade funnel.
+        if (kind === "trial_banner_upgrade_clicked") track("upgrade_clicked", { plan: "pro", where: "trial_banner" });
+        return;
+      }
       if (tagged?.dataset.track === "upgrade_clicked") {
         track("upgrade_clicked", { plan: tagged.dataset.plan ?? null, where: tagged.dataset.where ?? null });
         return;

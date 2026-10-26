@@ -11,6 +11,9 @@ import { countImpression, flushImpressions } from "@/lib/sponsors/impressions";
 import { dominantPlace } from "@/lib/sponsors/model";
 import { freeDigestMatches, orgCountries, regionCountryMap } from "@/lib/alerts/country";
 import { activeTrialOrgIds } from "@/lib/entitlement/server";
+import { computeMissedBids, type MissedRfp } from "@/lib/entitlement/missed-bids";
+import { missedBidsEmailEnabled, missedBidsEmailHtml, missedBidsTrialUrl } from "@/lib/entitlement/missed-bids-email";
+import { recipientLangs } from "@/lib/pm-jobs/server";
 import { pmJobAlertKey } from "@/lib/pm-jobs/alerts";
 import { isPmJobSource } from "@/lib/pm-jobs/rules";
 import { weeklyFollowItems } from "@/lib/follows/alerts-server";
@@ -154,6 +157,13 @@ export async function GET(request: Request) {
   // Free members' followed buyers: their listings this week (nobody follows anything: nothing more is read).
   const followed = await weeklyFollowItems(supabase, { userIds, since: weekAgo, today });
   const sameDay = buyerFollowAlertsEnabled();
+  // "Bids you may have missed": one compact section in this same email, off unless MISSED_BIDS_BLOCK_ENABLED.
+  // Counted from this week's published bids (open and closed) with the same match as the list below.
+  const missedOn = missedBidsEmailEnabled();
+  const langs = missedOn ? await recipientLangs(supabase, userIds) : new Map();
+  const weekRfps: MissedRfp[] = missedOn
+    ? ((rfps ?? []) as unknown as RfpRow[]).map((r) => ({ id: r.id, title: r.title, slug: r.slug, deadline: r.deadline, region_id: r.region_id, province: r.province, rfp_categories: r.rfp_categories }))
+    : [];
   const slugById = new Map(openRfps.map((r) => [r.id, r.slug]));
 
   let sent = 0;
@@ -168,6 +178,7 @@ export async function GET(request: Request) {
     const regs = regsByOrg.get(org.id) ?? new Set<string>();
     const countries = orgCountries(org, ownRegsByOrg.get(org.id) ?? [], countryByRegion);
     const orgMatches = cats?.size ? freeDigestMatches(openRfps, { categories: cats, regions: regs, countries }, nationalIds, countryByRegion) : [];
+    const missed = missedOn && cats?.size ? computeMissedBids(weekRfps, { categories: cats, regions: regs, countries }, nationalIds, countryByRegion, today) : null;
     if (!orgMatches.length && !follows) continue;
 
     // Label by the trade that matched most often ("snow removal tenders").
@@ -217,6 +228,7 @@ export async function GET(request: Request) {
           { sameDay },
         ),
         closingSoon: matches.filter((m) => m.deadline && m.deadline <= weekAhead).length,
+        missedHtml: missed ? missedBidsEmailHtml(langs.get(userId) ?? "en", missed, missedBidsTrialUrl(base, langs.get(userId) ?? "en")) : "",
         // Monthly first: the one trade that has paid chose monthly.
         upgradeUrl: `${base}/dashboard/billing?plan=pro&interval=monthly`,
         annualUrl: `${base}/dashboard/billing?plan=pro&interval=annual`,

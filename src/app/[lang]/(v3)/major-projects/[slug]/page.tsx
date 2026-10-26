@@ -1,3 +1,4 @@
+import { gateKit } from "@/components/trial/gate-kit";
 import type { Metadata } from "next";
 import { RecordFooter } from "@/components/public/record-footer";
 import { localizeCredit } from "@/lib/data-credits";
@@ -75,6 +76,8 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
   const pro = access ? await getProjectProFields(p.id) : null;
   const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
   const proHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
+  // Trial-first: an eligible company starts its free trial in one click and comes back here unlocked.
+  const gate = await gateKit(session, { returnPath: `/major-projects/${slug}`, paidHref: proHref });
 
   // Related work from the shared board snapshot — Canada only (a project's province is always Canadian).
   const slugByName = new Map(categories.map((c) => [c.name, c.slug]));
@@ -188,7 +191,7 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
             {p.hasBidRoute && <p>{t.lockedHasRoute}</p>}
             <p>{t.lockedNone}</p>
             <div className="acts">
-              <a href={L(proHref)} className="btn mint lg">{t.lockedCta}</a>
+              {gate.btn("projects", t.lockedCta, "btn mint lg", { plansClassName: "lnk" })}
             </div>
           </div>
         )}
@@ -236,7 +239,7 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
           <h3 className="hd">{t.ctaHead}</h3>
           <p>{t.ctaBody}</p>
           <div className="acts">
-            <a href={L(proHref)} className="btn mint lg">{t.ctaBtn}</a>
+            {gate.btn("projects", t.ctaBtn, "btn mint lg", { plansClassName: "lnk" })}
             <a href={L("/rfps")} className="lnk">{t.ctaBoard} →</a>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import Link from "@/i18n/link";
 import { buttonVariants } from "@/components/ui/button";
 import { startTrialAction } from "@/lib/entitlement/actions";
-import type { TrialSource, TrialState } from "@/lib/entitlement/trial";
+import { orgIsHeld, type TrialSource, type TrialState } from "@/lib/entitlement/trial";
 import { FOUNDING_PATH, foundingPrice, isSoldOut } from "@/lib/founding/config";
 import { cachedLifetimeCount } from "@/lib/founding/server";
 import type { CountryCode } from "@/lib/visitor-geo";
@@ -10,12 +10,35 @@ import { fmt, formatDate, plural } from "@/i18n/format";
 import type { Locale } from "@/i18n/config";
 
 /** One-click trial start: a plain form posting to the server action (no client JS). */
-export function TrialStartForm({ source, label, variant = "default", lang }: { source: TrialSource; label: string; variant?: "default" | "outline"; lang: Locale }) {
+export function TrialStartForm({
+  source,
+  label,
+  variant = "default",
+  lang,
+  returnTo,
+  className,
+}: {
+  source: TrialSource;
+  label: string;
+  variant?: "default" | "outline";
+  lang: Locale;
+  /** The page to come back to, unlocked (a same-site path; validated again on the server). */
+  returnTo?: string | null;
+  /** Replaces the default button look (the v3 pages style their own buttons). */
+  className?: string;
+}) {
   return (
     <form action={startTrialAction} className="inline">
       <input type="hidden" name="source" value={source} />
       <input type="hidden" name="lang" value={lang} />
-      <button type="submit" className={buttonVariants({ variant, size: "lg" })} data-action="start-trial">
+      {returnTo && <input type="hidden" name="return" value={returnTo} />}
+      <button
+        type="submit"
+        className={className ?? buttonVariants({ variant, size: "lg" })}
+        data-action="start-trial"
+        data-track="trial_cta_clicked"
+        data-source={source}
+      >
         {label}
       </button>
     </form>
@@ -30,8 +53,20 @@ export function foundingPriceLabel(country: CountryCode, lang: Locale): string {
 }
 
 /** Can this company start a trial? Trade companies that don't pay and never had one. */
-export function canStartTrial(p: { paid?: boolean; trial?: TrialState; organizationType?: string | null }): boolean {
-  return p.organizationType === "trade_company" && !p.paid && (p.trial?.status ?? "none") === "none";
+export function canStartTrial(p: {
+  paid?: boolean;
+  trial?: TrialState;
+  organizationType?: string | null;
+  organizationStatus?: string | null;
+  organizationProfileStatus?: string | null;
+  riskFlagged?: boolean | null;
+}): boolean {
+  return (
+    p.organizationType === "trade_company" &&
+    !p.paid &&
+    (p.trial?.status ?? "none") === "none" &&
+    !orgIsHeld({ status: p.organizationStatus, profileStatus: p.organizationProfileStatus, riskFlagged: p.riskFlagged })
+  );
 }
 
 /**
@@ -76,7 +111,7 @@ export async function TrialStatus({ trial, paid, country }: { trial?: TrialState
   );
 }
 
-const FLASH_KEYS = ["started", "used", "paid", "role", "org", "suspended", "signin", "unavailable"] as const;
+const FLASH_KEYS = ["started", "used", "paid", "role", "org", "suspended", "held", "signin", "unavailable"] as const;
 type FlashKey = (typeof FLASH_KEYS)[number];
 
 /** The one-line result after the trial button (?trial=started|used|…). */

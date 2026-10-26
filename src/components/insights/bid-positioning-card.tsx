@@ -13,7 +13,7 @@ import type { PositioningView } from "@/lib/insights/positioning";
  * Intelligence = the buyer's usual winners. Locked parts are rendered from
  * counts only, so the gated values are never in the HTML.
  */
-export function BidPositioningCard({ view, lang, upgradeHref }: { view: PositioningView; lang: Locale; upgradeHref: string }) {
+export function BidPositioningCard({ view, lang, upgradeHref, cta }: { view: PositioningView; lang: Locale; upgradeHref: string; cta?: React.ReactNode }) {
   const t = insightsUi(lang).pos;
   const c = fmtFor(lang);
   const money = (x: number) => c.money(x, view.currency);
@@ -42,7 +42,7 @@ export function BidPositioningCard({ view, lang, upgradeHref }: { view: Position
         ) : view.locks.band ? (
           <div data-pos="band-locked">
             <p className="flex items-center gap-2 text-muted-foreground"><Lock className="size-3.5" aria-hidden />{t.bandLocked(view.bandCount)}</p>
-            <Link href={upgradeHref} className="mt-1 inline-block text-xs font-medium text-teal-700 hover:underline">{t.unlockPro} →</Link>
+            {cta ? <div className="mt-2">{cta}</div> : <Link href={upgradeHref} className="mt-1 inline-block text-xs font-medium text-teal-700 hover:underline">{t.unlockPro} →</Link>}
           </div>
         ) : view.bandCount > 0 ? (
           <p className="text-muted-foreground" data-pos="band-thin">{t.bandThin(view.bandCount, view.bandMin)}</p>

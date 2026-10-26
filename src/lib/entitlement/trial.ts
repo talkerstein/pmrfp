@@ -12,7 +12,22 @@
 export const TRIAL_DAYS = 14;
 const DAY_MS = 86_400_000;
 
-export const TRIAL_SOURCES = ["dashboard", "pricing", "leads", "billing", "listing"] as const;
+export const TRIAL_SOURCES = [
+  "dashboard",
+  "pricing",
+  "leads",
+  "billing",
+  "listing",
+  // Trial-first conversion: every Pro gate says where the click came from.
+  "gate",
+  "award",
+  "benchmark",
+  "projects",
+  "checklist",
+  "missed_bids",
+  "banner",
+  "digest",
+] as const;
 export type TrialSource = (typeof TRIAL_SOURCES)[number];
 
 export function parseTrialSource(v: unknown): TrialSource {
@@ -57,7 +72,19 @@ export function isProEntitled(p: { paid: boolean; trial: TrialState | null | und
   return p.paid || p.trial?.status === "active";
 }
 
-export type TrialRefusal = "signin" | "org" | "role" | "suspended" | "paid" | "used" | "unavailable" | null;
+export type TrialRefusal = "signin" | "org" | "role" | "suspended" | "held" | "paid" | "used" | "unavailable" | null;
+
+/**
+ * An organization the team has turned away or paused never gets a free
+ * trial: rejected or suspended in review, a deleted account, or one flagged
+ * for risk (organizations.risk_flagged, the spam check from the earned-links
+ * work). A new
+ * company still waiting in review (draft / pending_review) is NOT held: that
+ * is every new sign-up, and the trial is how they find out what Pro does.
+ */
+export function orgIsHeld(p: { status?: string | null; profileStatus?: string | null; riskFlagged?: boolean | null }): boolean {
+  return Boolean(p.riskFlagged) || p.status === "deleted" || p.profileStatus === "rejected" || p.profileStatus === "suspended";
+}
 
 /**
  * Can this organization start a trial now? Most actionable reason first.
@@ -67,6 +94,10 @@ export function trialRefusal(p: {
   signedIn: boolean;
   organizationType: string | null | undefined;
   organizationStatus?: string | null;
+  /** organizations.profile_status: draft | pending_review | approved | rejected | suspended. */
+  organizationProfileStatus?: string | null;
+  /** organizations.risk_flagged: the spam check flagged this company. */
+  riskFlagged?: boolean | null;
   paid: boolean;
   existing: TrialRow | null | undefined;
 }): TrialRefusal {
@@ -74,6 +105,7 @@ export function trialRefusal(p: {
   if (!p.organizationType) return "org";
   if (p.organizationType !== "trade_company") return "role";
   if (p.organizationStatus === "suspended") return "suspended";
+  if (orgIsHeld({ status: p.organizationStatus, profileStatus: p.organizationProfileStatus, riskFlagged: p.riskFlagged })) return "held";
   if (p.paid) return "paid";
   if (p.existing) return "used";
   return null;

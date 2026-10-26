@@ -1,3 +1,4 @@
+import { gateKit } from "@/components/trial/gate-kit";
 import type { Metadata } from "next";
 import { RecordFooter } from "@/components/public/record-footer";
 import { BidAlertBox } from "@/components/growth/bid-alert-box";
@@ -84,6 +85,8 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
   const view = gateBenchmarkView(benchmarkView(b, pro), signedIn);
   const askInterval = upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY));
   const upgradeHref = session ? `/dashboard/billing?plan=pro&interval=${askInterval}` : signUpHrefForPlan("pro", askInterval);
+  // Trial-first: an eligible company starts its free trial in one click and comes back here unlocked.
+  const gate = await gateKit(session, { returnPath: benchmarkPath(r.category.slug, r.province), paidHref: upgradeHref });
 
   const path = L(benchmarkPath(r.category.slug, r.province));
   const base = SITE.url.replace(/\/$/, "");
@@ -140,7 +143,7 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
       <div className="blur" aria-hidden><span /><span /><span /></div>
       <p>{fmt(tp.lockedBody, { n: n(b.valued), trade, province })}</p>
       <div className="acts">
-        <a href={L(upgradeHref)} className="btn mint lg">{tp.lockedCta}</a>
+        {gate.btn("benchmark", tp.lockedCta, "btn mint lg", { plansClassName: "lnk" })}
         <span className="small muted">{fmt(tp.lockedNote, { price: PRICING.proMonthly })}</span>
       </div>
     </div>
@@ -314,7 +317,7 @@ export default async function BenchmarkPage({ params, searchParams }: { params: 
                 </div>
               ) : null
             ) : (
-              <div className="s-callout" data-locked="winners"><p>{tp.winnersLocked}</p><p><a href={L(upgradeHref)}>{tp.lockedCta} →</a></p></div>
+              <div className="s-callout" data-locked="winners"><p>{tp.winnersLocked}</p><p>{gate.btn("benchmark", tp.lockedCta + " →", "btn mint", { plansClassName: "lnk" })}</p></div>
             )}
           </>
         )}

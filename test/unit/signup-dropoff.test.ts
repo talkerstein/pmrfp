@@ -61,7 +61,9 @@ describe("funnel event semantics", () => {
 
   it("the migration lets the database accept exactly these events, and relabels only old page-view rows", () => {
     const sql = read("supabase/migrations/20261022000100_signup_funnel_and_consent.sql");
-    for (const e of SITE_EVENTS) expect(sql, e).toContain(`'${e}'`);
+    // Events added later (trial-first conversion) are allowed by their own migration.
+    const later = read("supabase/migrations/20261025000100_trial_first_events.sql");
+    for (const e of SITE_EVENTS) expect(sql + later, e).toContain(`'${e}'`);
     // Old rows carry no `method`; the new submit rows always do.
     expect(sql).toMatch(/set event = 'signup_viewed'[\s\S]*event = 'signup_started'[\s\S]*\(props->>'method'\) is null/);
     // Safe to run twice.

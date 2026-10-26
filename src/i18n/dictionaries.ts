@@ -51,6 +51,7 @@ import portfolioClient from "./messages/portfolioClient";
 import growth from "./messages/growth";
 import growthClient from "./messages/growthClient";
 import leads from "./messages/leads";
+import trialFirst from "./messages/trialFirst";
 import intel from "./messages/intel";
 import bidResults from "./messages/bidResults";
 import policies from "./messages/policies";
@@ -113,6 +114,7 @@ const NAMESPACES = {
   growth,
   growthClient,
   leads,
+  trialFirst,
   intel,
   bidResults,
   policies,

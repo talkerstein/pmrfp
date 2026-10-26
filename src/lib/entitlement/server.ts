@@ -41,6 +41,8 @@ export async function startOrgTrial(
     signedIn: Boolean(session),
     organizationType: org?.organization_type,
     organizationStatus: org?.status,
+    organizationProfileStatus: org?.profile_status,
+    riskFlagged: org?.risk_flagged,
     paid: Boolean(session?.paid),
     existing: existing.row,
   });
