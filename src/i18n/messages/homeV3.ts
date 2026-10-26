@@ -256,7 +256,6 @@ const en = {
     allRfps: "All open RFPs",
   },
   footer: {
-    about: "Built in Toronto by the team behind PermitClub, in partnership with Talkerstein Consulting Group.",
     address: "5050 Dufferin St., Toronto, ON M3H 5T5",
     find: "Find work",
     who: "Who it's for",
@@ -579,7 +578,6 @@ const fr: typeof en = {
     allRfps: "Tous les appels d'offres ouverts",
   },
   footer: {
-    about: "Conçu à Toronto par l'équipe derrière PermitClub, en partenariat avec Talkerstein Consulting Group.",
     address: "5050, rue Dufferin, Toronto (Ontario) M3H 5T5",
     find: "Trouver du travail",
     who: "À qui ça s'adresse",
@@ -901,7 +899,6 @@ const es: typeof en = {
     allRfps: "Todas las licitaciones abiertas",
   },
   footer: {
-    about: "Hecho en Toronto por el equipo de PermitClub, en alianza con Talkerstein Consulting Group.",
     address: "5050 Dufferin St., Toronto, ON M3H 5T5",
     find: "Encontrar trabajo",
     who: "Para quién es",
