@@ -6,6 +6,7 @@ import { indexableWinners } from "@/lib/data/winners";
 import { monthlyAwards, reportMonths } from "@/lib/data/monthly-winners";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { listVendors } from "@/lib/data/directory";
+import { getNoindexSlugs } from "@/lib/links/data";
 import { listResources } from "@/lib/data/resources";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { listQualifyingCombos } from "@/lib/data/trade-city";
@@ -96,9 +97,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/forum/rules", priority: 0.3, freq: "yearly" },
   ];
 
-  const [rfps, vendors, resources, categories, regions, tradeCityCombos, caseStudies, toronto] = await Promise.all([
+  const [rfps, vendors, noindexSlugs, resources, categories, regions, tradeCityCombos, caseStudies, toronto] = await Promise.all([
     listRfps().catch(() => []),
     listVendors().catch(() => []),
+    getNoindexSlugs(),
     listResources().catch(() => []),
     getCategories().catch(() => []),
     getRegions().catch(() => []),
@@ -143,7 +145,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({ url: `${base}/toronto-contracts/${s.slug}`, lastModified: s.latest ? new Date(`${s.latest}T12:00:00Z`) : now, changeFrequency: "monthly", priority: 0.5 });
   // Only open RFPs are indexable (see isIndexableRfp); everything else stays out.
   for (const r of rfps.filter(isIndexableRfp)) entries.push({ url: `${base}/rfps/${r.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
-  for (const v of vendors) entries.push({ url: `${base}/directory/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
+  // Thin or spam-flagged profiles are noindex (lib/links/indexing), so they stay out of the sitemap too.
+  for (const v of vendors.filter((x) => !noindexSlugs.has(x.slug))) entries.push({ url: `${base}/directory/${v.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   for (const a of resources) entries.push({ url: `${base}/resources/${a.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
   // Same thin-content guard as the trade page: a trade with no companies and no
   // RFPs is noindexed there, so it must not be in the sitemap either.

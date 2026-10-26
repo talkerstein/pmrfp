@@ -160,6 +160,7 @@ export const ADMIN_NAV = [
   { href: "/admin/analytics", label: "Site Analytics" },
   { href: "/admin/signups", label: "Sign-up Sources" },
   { href: "/admin/duplicates", label: "Duplicates" },
+  { href: "/admin/blocked-domains", label: "Blocked Domains" },
   { href: "/admin/weekly-email", label: "Weekly Email" },
   { href: "/admin/lifecycle", label: "Lifecycle Emails" },
   { href: "/admin/forum", label: "Forum" },

@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { JobApplyForm } from "@/components/jobs/job-forms";
 import { JsonLd } from "@/lib/seo/jsonld";
 import { getJob } from "@/lib/jobs/data";
+import { getOrgLinkOrg } from "@/lib/links/data";
+import { structuredDataUrl } from "@/lib/links/policy";
 import { jobPostingJsonLd, payLabelIn } from "@/lib/jobs/rules";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -62,6 +64,8 @@ export default async function JobPage({ params }: Props) {
   const job = await getJob(slug);
   if (!job) notFound();
   const open = isOpen(job);
+  // The employer's own website goes into the JobPosting markup only when PMRFP's link to it is earned (lib/links/policy).
+  const employerSite = open ? structuredDataUrl({ ...((await getOrgLinkOrg(job.company.slug)) ?? {}), website: job.company.website }) : undefined;
   const pay = payLabelIn(lang, labels.pay, job.payMin, job.payMax, job.payUnit);
   const where = [job.city, job.province && regionName(job.province, lang)].filter(Boolean).join(", ");
   const listed = job.company.type === "trade_company" || job.company.type === "supplier";
@@ -86,7 +90,7 @@ export default async function JobPage({ params }: Props) {
             payUnit: job.payUnit,
             company: {
               name: job.company.name,
-              url: job.company.website ?? `${BASE}/directory/${job.company.slug}`,
+              url: employerSite ?? `${BASE}/directory/${job.company.slug}`,
               logo: job.company.logoUrl ? `${BASE}${job.company.logoUrl.startsWith("/") ? "" : "/"}${job.company.logoUrl}` : null,
             },
             url: `${BASE}/jobs/${job.slug}`,

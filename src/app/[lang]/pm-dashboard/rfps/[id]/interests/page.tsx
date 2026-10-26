@@ -318,7 +318,7 @@ function ContactLines({ contact, website }: { contact: { name: string | null; em
       )}
       {website && (
         <p>
-          <a href={website.startsWith("http") ? website : `https://${website}`} target="_blank" rel="noopener noreferrer" className="text-teal-ink hover:underline">
+          <a href={website.startsWith("http") ? website : `https://${website}`} target="_blank" rel="noopener noreferrer nofollow ugc" className="text-teal-ink hover:underline">
             {website.replace(/^https?:\/\//, "")}
           </a>
         </p>

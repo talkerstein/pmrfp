@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/dashboard", "/pm-dashboard", "/admin", "/onboarding", "/checkout", "/go/"],
+        disallow: ["/api/", "/dashboard", "/pm-dashboard", "/admin", "/onboarding", "/checkout", "/go/", "/out/"],
         // Bing, Yandex and others slow down to this many seconds between
         // requests. Googlebot ignores Crawl-delay (it is steered from Search
         // Console), so Google indexing is unaffected.

@@ -28,7 +28,7 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 type BucketName =
   | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
   | "photo-upload" | "project-draft" | "project-publish" | "review" | "public-read"
-  | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source" | "beacon";
+  | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source" | "beacon" | "out-click";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
@@ -58,6 +58,8 @@ const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${n
   "buyer-source": { tokens: 5, window: "10 m" },
   // First-party analytics beacon (/api/t): about one call per page a person opens.
   beacon: { tokens: 60, window: "60 s" },
+  // Click-out redirect (/out/<company>): a person follows a few links a minute.
+  "out-click": { tokens: 30, window: "60 s" },
 };
 
 let _redis: Redis | null = null;
@@ -185,15 +187,14 @@ const beaconWindows = new Map<string, { start: number; hits: number }>();
 const BEACON_KEYS_MAX = 10_000;
 
 /**
- * The /api/t beacon's limit (60 a minute per IP). Upstash when configured;
- * otherwise a per-instance counter in memory. Never the Supabase fallback:
- * analytics must not add a database call to every page view. The key is a
- * hash of the IP; nothing is stored. Fails open.
+ * Upstash when configured; otherwise a per-instance counter in memory. Never
+ * the Supabase fallback: these routes must not add a database call to every
+ * hit. The key is a hash of the IP; nothing is stored. Fails open.
  */
-export async function checkBeaconLimit(ip: string, now = Date.now()): Promise<RateLimitInfo | null> {
+async function lightLimit(bucket: "beacon" | "out-click", ip: string, now: number): Promise<RateLimitInfo | null> {
   if (!ip || ip === "unknown") return null;
-  const key = createHash("sha256").update(`beacon:${ip}`).digest("hex");
-  const limiter = getLimiter("beacon");
+  const key = createHash("sha256").update(`${bucket}:${ip}`).digest("hex");
+  const limiter = getLimiter(bucket);
   if (limiter) {
     try {
       const result = await limiter.limit(key);
@@ -202,7 +203,7 @@ export async function checkBeaconLimit(ip: string, now = Date.now()): Promise<Ra
       // Redis unavailable: fall through to the in-memory counter.
     }
   }
-  const { tokens, window } = BUCKETS.beacon;
+  const { tokens, window } = BUCKETS[bucket];
   const span = windowSeconds(window) * 1000;
   let w = beaconWindows.get(key);
   if (!w || now - w.start >= span) {
@@ -212,6 +213,16 @@ export async function checkBeaconLimit(ip: string, now = Date.now()): Promise<Ra
   }
   w.hits += 1;
   return w.hits > tokens ? { limit: tokens, remaining: 0, reset: w.start + span } : null;
+}
+
+/** The /api/t beacon's limit (60 a minute per IP). */
+export async function checkBeaconLimit(ip: string, now = Date.now()): Promise<RateLimitInfo | null> {
+  return lightLimit("beacon", ip, now);
+}
+
+/** The /out/<company> click-out limit (30 a minute per IP). */
+export async function checkOutLimit(ip: string, now = Date.now()): Promise<RateLimitInfo | null> {
+  return lightLimit("out-click", ip, now);
 }
 
 /** Tests only. */

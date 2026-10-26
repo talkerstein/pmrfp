@@ -9,6 +9,8 @@ import {
 } from "@/lib/demo-data";
 import type { VendorDetail, VendorFilters, VendorListItem } from "@/lib/data/types";
 import { publicLevels } from "@/lib/karma/data";
+import { LINK_COLUMNS, linkOrgFromRow, type LinkRow } from "@/lib/links/data";
+import type { LinkOrg } from "@/lib/links/policy";
 import { directorySortKey } from "@/lib/karma/perks";
 import { accountGeo, regionCountry, type CountryCode } from "@/lib/visitor-geo";
 
@@ -260,6 +262,8 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
       portfolioPhotos: [],
       googleRating: null,
       googleReviewCount: null,
+      link: { slug: v.slug, website: v.website },
+      emailDomainVerified: false,
     };
   }
   const supabase = createReadClient();
@@ -290,6 +294,22 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     googleReviewCount = gr?.google_review_count ?? null;
   }
   const [isPlatinum, levels] = await Promise.all([platinumSlugs(supabase).then((s) => s.has(r.slug)), publicLevels()]);
+  // "Earn the link" signals (migration 20261024000100), queried on their own
+  // like the Google columns: a database without them, or a failed read, means
+  // "not earned" (nofollow), never a broken profile.
+  let link: LinkOrg = { slug: r.slug, website: r.website };
+  let emailDomainVerified = false;
+  {
+    const { data: l, error: le } = await supabase
+      .from("organizations")
+      .select(`${LINK_COLUMNS},email_domain_verified`)
+      .eq("id", r.id)
+      .maybeSingle();
+    if (!le && l) {
+      link = { ...linkOrgFromRow(l as unknown as LinkRow), website: r.website };
+      emailDomainVerified = Boolean((l as { email_domain_verified?: boolean }).email_domain_verified);
+    }
+  }
   return {
     id: r.id,
     level: levels.get(r.id) ?? null,
@@ -318,5 +338,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     email: showContact ? r.email : null,
     phone: showContact ? r.phone : null,
     portfolioPhotos,
+    link,
+    emailDomainVerified,
   };
 }

@@ -12,7 +12,10 @@ import type { Organization } from "@/types/db";
 import {
   clearProfileReviewAction,
   reinstateOrganizationAction,
+  resolveHeldOrganizationAction,
   reviewOrganizationAction,
+  screenExistingOrganizationsAction,
+  setLinkTrustedAction,
   suspendOrganizationAction,
 } from "@/lib/admin/org-actions";
 import { REVIEW_FIELD_LABELS, clipValue, parseReviewChanges } from "@/lib/organizations/profile-review";
@@ -25,11 +28,26 @@ type OrgRow = Pick<
   Organization,
   "id" | "name" | "slug" | "organization_type" | "profile_status" | "status" | "verified" | "profile_completion_score" | "created_at" | "updated_at"
 > &
-  Pick<Organization, "approved_at" | "review_flagged_at" | "review_changes">;
+  Pick<Organization, "approved_at" | "review_flagged_at" | "review_changes"> &
+  Partial<Pick<Organization, "website" | "link_trusted" | "risk_flagged" | "link_earned_at">>;
 
 const BASE_COLUMNS = "id, name, slug, organization_type, profile_status, status, verified, profile_completion_score, created_at, updated_at";
 /** Migration 20261021000030. */
 const REVIEW_COLUMNS = `${BASE_COLUMNS}, approved_at, review_flagged_at, review_changes`;
+/** Migration 20261024000100 (earn the link + spam check). */
+const LINK_COLUMNS = `${REVIEW_COLUMNS}, website, link_trusted, risk_flagged, link_earned_at`;
+
+/** organization_risk, as the admin sees it. */
+interface RiskRow {
+  organization_id: string;
+  score: number;
+  reasons: { code: string; points: number; detail: string }[];
+  held: boolean;
+  blocked: boolean;
+  decision: string | null;
+  source: string;
+  evaluated_at: string;
+}
 
 const DEMO_ORGS: OrgRow[] = [
   { id: "1", name: "Northline Electrical Ltd.", slug: "northline", organization_type: "trade_company", profile_status: "approved", status: "active", verified: true, profile_completion_score: 88, created_at: "2026-05-18", updated_at: "2026-10-20", approved_at: "2026-05-19", review_flagged_at: "2026-10-20", review_changes: { website: { from: "https://northline.ca", to: "https://northline-electric.ca" } } },
@@ -38,35 +56,53 @@ const DEMO_ORGS: OrgRow[] = [
   { id: "4", name: "Apex Asphalt & Concrete", slug: "apex", organization_type: "trade_company", profile_status: "pending_review", status: "active", verified: false, profile_completion_score: 61, created_at: "2026-05-21", updated_at: "2026-05-21" },
 ];
 
-const VIEWS = ["all", "waiting", "edited", "suspended"] as const;
+const VIEWS = ["all", "waiting", "held", "edited", "suspended"] as const;
 type View = (typeof VIEWS)[number];
-type Search = { view?: string; stale?: string };
+type Search = { view?: string; stale?: string; screened?: string; flagged?: string };
 
 const isEdited = (o: OrgRow) => o.profile_status === "approved" && Boolean(o.review_flagged_at);
+/** The spam check flagged it (new listing held or rejected, or a live one flagged after an edit). */
+const isHeld = (o: OrgRow) => Boolean(o.risk_flagged) && o.status !== "deleted";
 const FILTER: Record<View, (o: OrgRow) => boolean> = {
   all: () => true,
   waiting: (o) => o.profile_status === "pending_review",
+  held: isHeld,
   edited: isEdited,
   suspended: (o) => o.profile_status === "suspended" && o.status !== "deleted",
 };
 const VIEW_LABEL: Record<View, string> = {
   all: "All",
   waiting: "Waiting for approval",
+  held: "Held by spam check",
   edited: "Edited since approval",
   suspended: "Suspended",
 };
 
-async function loadOrgs(): Promise<{ rows: OrgRow[]; reviewReady: boolean }> {
-  if (isDemoMode()) return { rows: DEMO_ORGS, reviewReady: true };
+async function loadOrgs(): Promise<{ rows: OrgRow[]; reviewReady: boolean; risk: Map<string, RiskRow> }> {
+  if (isDemoMode()) return { rows: DEMO_ORGS, reviewReady: true, risk: new Map() };
   const supabase = await createClient();
   const list = (columns: string) =>
     supabase.from("organizations").select(columns).order("created_at", { ascending: false }).returns<OrgRow[]>();
-  const { data, error } = await list(REVIEW_COLUMNS);
-  if (!error) return { rows: data ?? [], reviewReady: true };
-  if (!isSchemaMissing(error)) return { rows: [], reviewReady: true };
-  // Deployed before the migration ran: the list still works, without the edit queue.
-  const old = await list(BASE_COLUMNS);
-  return { rows: old.data ?? [], reviewReady: false };
+  let res = await list(LINK_COLUMNS);
+  let reviewReady = true;
+  if (res.error && isSchemaMissing(res.error)) res = await list(REVIEW_COLUMNS);
+  if (res.error && isSchemaMissing(res.error)) {
+    // Deployed before the migrations ran: the list still works, without the edit queue.
+    res = await list(BASE_COLUMNS);
+    reviewReady = false;
+  }
+  const rows = res.error && !isSchemaMissing(res.error) ? [] : (res.data ?? []);
+  const risk = new Map<string, RiskRow>();
+  const flagged = rows.filter((o) => o.risk_flagged).map((o) => o.id);
+  if (flagged.length) {
+    const { data } = await supabase
+      .from("organization_risk")
+      .select("organization_id,score,reasons,held,blocked,decision,source,evaluated_at")
+      .in("organization_id", flagged)
+      .returns<RiskRow[]>();
+    for (const r of data ?? []) risk.set(r.organization_id, r);
+  }
+  return { rows, reviewReady, risk };
 }
 
 export default async function AdminOrganizationsPage({ params, searchParams }: { params: Promise<object>; searchParams?: Promise<Search> }) {
@@ -75,7 +111,7 @@ export default async function AdminOrganizationsPage({ params, searchParams }: {
   const sp = (await searchParams) ?? {};
   const view: View = (VIEWS as readonly string[]).includes(sp.view ?? "") ? (sp.view as View) : "all";
 
-  const { rows: all, reviewReady } = await loadOrgs();
+  const { rows: all, reviewReady, risk } = await loadOrgs();
   const counts = Object.fromEntries(VIEWS.map((v) => [v, all.filter(FILTER[v]).length])) as Record<View, number>;
   // Waiting companies first: they're invisible in the directory until approved.
   const rows = all
@@ -111,8 +147,30 @@ export default async function AdminOrganizationsPage({ params, searchParams }: {
           `${counts.edited} approved ${counts.edited === 1 ? "company" : "companies"} changed name, website, logo, description or email: still live, worth a look.`}
       </p>
 
+      {counts.held > 0 && view !== "held" && (
+        <p className="mb-4 text-sm text-amber-800">
+          <Link href="/admin/organizations?view=held" className="font-semibold underline">{counts.held} {counts.held === 1 ? "company is" : "companies are"} held by the spam check</Link>: not auto-approved, link nofollow.
+        </p>
+      )}
+
       {view === "edited" ? (
         <EditedQueue rows={rows} reviewReady={reviewReady} stale={Boolean(sp.stale)} />
+      ) : view === "held" ? (
+        <>
+          {sp.screened && (
+            <p className="mb-4 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+              Checked {sp.screened} listed companies; {sp.flagged ?? "0"} flagged. Flagged companies stay live (nofollow, noindex) until you decide below.
+            </p>
+          )}
+          {!isDemoMode() && (
+            <form action={screenExistingOrganizationsAction} className="mb-4">
+              <button className="rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary" title="Scores every listed company with the sign-up rules and flags the ones that would be held. Changes no status.">
+                Run the spam check on existing companies
+              </button>
+            </form>
+          )}
+          <HeldQueue rows={rows} risk={risk} />
+        </>
       ) : rows.length === 0 ? (
         <EmptyState title="No organizations here" description="Registered companies will appear here." />
       ) : (
@@ -151,6 +209,15 @@ export default async function AdminOrganizationsPage({ params, searchParams }: {
                     </form>
                   </div>
                 )}
+                {o.profile_status === "approved" && !isDemoMode() && (
+                  <form action={setLinkTrustedAction}>
+                    <input type="hidden" name="id" value={o.id} />
+                    <input type="hidden" name="trusted" value={o.link_trusted ? "0" : "1"} />
+                    <button className="rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary" title="Trusted companies get a followed website link from day one">
+                      {o.link_trusted ? "Untrust link" : "Trust link"}
+                    </button>
+                  </form>
+                )}
                 {FILTER.suspended(o) && !isDemoMode() && (
                   <form action={reinstateOrganizationAction}>
                     <input type="hidden" name="id" value={o.id} />
@@ -165,6 +232,69 @@ export default async function AdminOrganizationsPage({ params, searchParams }: {
         </AdminTable>
       )}
     </>
+  );
+}
+
+/**
+ * Listings the spam check flagged (lib/spam/org-risk), with the reasons.
+ * New ones wait in pending_review, auto-rejected ones are off, and a live
+ * company flagged after an edit stays live (nofollow, noindex) until decided.
+ */
+function HeldQueue({ rows, risk }: { rows: OrgRow[]; risk: Map<string, RiskRow> }) {
+  if (rows.length === 0) {
+    return <EmptyState title="Nothing held by the spam check" description="New or edited listings with a blocked domain, several companies from one owner, a keyword-stuffed or gibberish name, or a mismatched country show up here with the reasons." />;
+  }
+  return (
+    <ul className="space-y-4">
+      {rows.map((o) => {
+        const r = risk.get(o.id);
+        const state =
+          o.profile_status === "rejected" ? "auto-rejected: page is off" : o.profile_status === "pending_review" ? "held: page is hidden until you decide" : o.profile_status === "approved" ? "live, but nofollow and noindex" : o.profile_status;
+        return (
+          <li key={o.id} className="rounded-lg border border-border bg-card p-5" data-held={o.id}>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-base font-semibold">{dash(o.name)}</h2>
+              <p className="text-xs text-muted-foreground">
+                Score {r?.score ?? "?"}{r?.blocked ? " · blocked domain" : ""} · {state} · {fmtDate(r?.evaluated_at ?? o.created_at)}
+              </p>
+            </div>
+            <p className="mt-1 break-all text-sm text-muted-foreground">{o.website || "no website"}</p>
+            {r?.reasons?.length ? (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+                {r.reasons.map((x, i) => (
+                  <li key={`${x.code}-${i}`}>
+                    <span className="font-medium">{x.points > 0 ? "+" : ""}{x.points}</span> {x.detail}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">No reasons on record.</p>
+            )}
+            {!isDemoMode() && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(["approved", "rejected", "suspended"] as const).map((d) => (
+                  <form key={d} action={resolveHeldOrganizationAction}>
+                    <input type="hidden" name="id" value={o.id} />
+                    <input type="hidden" name="decision" value={d} />
+                    <button
+                      className={
+                        d === "approved"
+                          ? "rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                          : d === "rejected"
+                            ? "rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary"
+                            : "rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-800 hover:bg-red-50"
+                      }
+                    >
+                      {d === "approved" ? "Approve" : d === "rejected" ? "Reject" : "Suspend"}
+                    </button>
+                  </form>
+                ))}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

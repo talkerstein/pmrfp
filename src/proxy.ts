@@ -126,6 +126,7 @@ export const config = {
     // Website widgets (/embed/*, /embed.js) and the service worker skip the
     // session refresh: they're public, framed by other sites, and must stay cacheable.
     // So does the analytics beacon (/api/t): no Auth call per page view.
-    "/((?!_next/static|_next/image|embed/|embed\.js|sw\.js|manifest\.webmanifest|favicon.ico|api/t$|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // /out/<company> (click-out redirect) also skips it: one cached lookup, no Auth call, no page logic.
+    "/((?!_next/static|_next/image|embed/|out/|embed\.js|sw\.js|manifest\.webmanifest|favicon.ico|api/t$|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

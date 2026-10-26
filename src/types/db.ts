@@ -74,6 +74,14 @@ export interface Organization {
   review_flagged_at?: string | null;
   /** {"field": {"from", "to"}} since the last admin check. */
   review_changes?: Record<string, { from: unknown; to: unknown }> | null;
+  /** Earn the link (migration 20261024000100; lib/links/policy). Absent before it runs. */
+  link_trusted?: boolean;
+  link_paid?: boolean;
+  link_badge?: boolean;
+  link_earned_at?: string | null;
+  risk_flagged?: boolean;
+  email_domain_verified?: boolean;
+  profile_indexable?: boolean;
   created_at: string;
   updated_at: string;
 }

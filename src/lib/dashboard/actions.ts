@@ -15,7 +15,7 @@ import { pendingReviewCount } from "@/lib/pm-jobs/server";
 import { getSession } from "@/lib/access/access";
 import { isUsState } from "@/lib/geo";
 import { companyProfileSchema, rfpPostSchema } from "@/lib/validations";
-import { sendAdminNewRfp } from "@/lib/email/send";
+import { sendAdminListingRejected, sendAdminNewRfp } from "@/lib/email/send";
 import {
   GC_PACKAGE,
   GC_UNAVAILABLE_MESSAGE,
@@ -29,6 +29,9 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { logAudit } from "@/lib/audit";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { profileStatusPatch, reviewChanges } from "@/lib/organizations/profile-review";
+import { screenOrganization, recordOrgRisk } from "@/lib/spam/server";
+import { purgeOutCache } from "@/lib/links/data";
+import { websiteDomain } from "@/lib/badge/install";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, splitLocale, type Locale } from "@/i18n/config";
 
 /**
@@ -173,6 +176,49 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   };
   const { error } = await supabase.from("organizations").update(patch).eq("id", orgId);
   if (error) return { error: t.saveFailed };
+
+  // Earn the link + spam check (lib/links, lib/spam). A new website domain
+  // starts the badge check over (the old install was on another site), and the
+  // click-out cache forgets the old address. A changed name, website or email
+  // on a directory listing is screened again: a blocked domain or a very high
+  // score takes the listing page down (rejected); a score of 3 to 5 flags it
+  // for the admin queue and, if it was live, keeps it live but nofollow/noindex.
+  if (isServiceConfigured()) {
+    const service = createServiceClient();
+    if (websiteDomain(before.website) !== websiteDomain(patch.website)) {
+      await service.from("organizations").update({ link_badge: false, link_earned_at: null }).eq("id", orgId);
+    }
+    purgeOutCache();
+    const listing = before.organization_type === "trade_company" || before.organization_type === "supplier";
+    const trustChanged = reviewChanges(before, patch).some((c) => c.field === "name" || c.field === "website" || c.field === "email");
+    if (listing && (trustChanged || before.profile_status !== "approved")) {
+      const risk = await screenOrganization(service, {
+        organizationId: orgId,
+        name: d.name,
+        website: patch.website,
+        email: d.email,
+        accountEmail: session.profile.email,
+        phone: patch.phone,
+        shortDescription: patch.short_description,
+        fullDescription: patch.full_description,
+        city: patch.city,
+        province: patch.province,
+        country: before.country,
+        userId: session.userId,
+      }).catch(() => null);
+      if (risk && !risk.skipped) {
+        const goesPending = (nextStatus ?? before.profile_status) !== "approved";
+        await recordOrgRisk(service, orgId, risk, "profile_edit", risk.hold && goesPending);
+        if (risk.reject) {
+          await service.from("organizations").update({ profile_status: "rejected" }).eq("id", orgId);
+          await logAudit({ actorUserId: session.userId, action: "organization.spam_rejected", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
+          await sendAdminListingRejected({ name: d.name, website: patch.website, email: d.email, score: risk.score, reasons: risk.reasons.map((r) => r.detail) }).catch(() => undefined);
+        } else if (risk.hold) {
+          await logAudit({ actorUserId: session.userId, action: "organization.spam_held", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
+        }
+      }
+    }
+  }
 
   const stayedLive = before.profile_status === "approved";
   if (stayedLive) {

@@ -63,7 +63,7 @@ const EN: BadgeStrings = {
     subject: "Put your PMRFP badge on your website (2 minutes)",
     intro: (c) => `${c} is listed on PMRFP. Here's a small PMRFP badge for your website footer or contact page.`,
     imgAlt: "The PMRFP badge: Listed on pmrfp.com",
-    why: "Why add it: visitors can check that you're listed and click through to your projects and reviews. It also gives your site a link to your PMRFP profile. Links from relevant directories can help search engines understand your business, but we can't promise rankings.",
+    why: "Why add it: visitors can check that you're listed and click through to your projects and reviews. Links from relevant directories can help search engines understand your business, but we can't promise rankings. Once the badge is on your site and your profile has been live 14 days, your PMRFP link to your website becomes a followed link.",
     install: "It takes about two minutes. Paste this code where you want the badge to show:",
     platforms: ["WordPress: Appearance, Widgets, Custom HTML", "Wix: Add, Embed Code, Embed HTML", "Squarespace: edit footer, add a Code block", "Shopify: Themes, Edit code, footer"],
     noSite: "Your profile doesn't list a website yet. Add it, and we'll tell you when we see the badge on it.",
@@ -100,16 +100,16 @@ const EN: BadgeStrings = {
 const FR: BadgeStrings = {
   badge: {
     subject: "Mettez votre badge PMRFP sur votre site Web (2 minutes)",
-    intro: (c) => `${c} figure au répertoire PMRFP. Voici un petit badge PMRFP pour le pied de page ou la page de contact de votre site Web.`,
+    intro: (c) => `${c} figure au répertoire PMRFP. Voici un petit badge pour le pied de page ou la page de contact de votre site.`,
     imgAlt: "Le badge PMRFP : Listed on pmrfp.com",
-    why: "Pourquoi l'ajouter : les visiteurs voient que vous êtes inscrit et accèdent à vos projets et à vos avis. Votre site obtient aussi un lien vers votre profil PMRFP. Les liens de répertoires pertinents peuvent aider les moteurs de recherche à comprendre votre entreprise, sans garantie de classement.",
-    install: "Ça prend environ deux minutes. Collez ce code là où le badge doit s'afficher :",
+    why: "Pourquoi : les visiteurs voient que vous êtes inscrit et accèdent à vos projets et avis. Les liens de répertoires pertinents peuvent aider les moteurs de recherche à comprendre votre entreprise, sans garantie de classement. Badge sur votre site et profil en ligne depuis 14 jours : le lien de PMRFP vers votre site devient un lien suivi.",
+    install: "Deux minutes. Collez ce code là où le badge doit s'afficher :",
     platforms: ["WordPress : Apparence, Widgets, HTML personnalisé", "Wix : Ajouter, Code d'intégration, HTML", "Squarespace : pied de page, bloc Code", "Shopify : Thèmes, Modifier le code, pied de page"],
     noSite: "Votre profil n'indique pas encore de site Web. Ajoutez-le, et nous vous dirons quand le badge y apparaît.",
     noSiteCta: "Ajouter votre site Web",
     send: "Envoyer ceci à la personne qui gère votre site",
     page: "Votre page de badge, avec version sombre",
-    reward: (n) => `Dès que nous le verrons sur votre site, nous ajouterons ${n} jours de Trade Pro, gratuitement.`,
+    reward: (n) => `Dès qu'il s'affiche sur votre site : ${n} jours de Trade Pro offerts.`,
   },
   reminder: {
     subject: "Votre badge PMRFP vous attend toujours",
@@ -127,7 +127,7 @@ const FR: BadgeStrings = {
   },
   back: {
     subject: (f) => (f ? `Content de vous revoir sur PMRFP, ${f} : un badge pour votre site` : "Content de vous revoir sur PMRFP : un badge pour votre site"),
-    intro: (c) => `Content de vous revoir sur PMRFP. Nous avons ajouté un petit badge PMRFP pour le pied de page ou la page de contact du site de ${c}.`,
+    intro: (c) => `Content de vous revoir sur PMRFP. Voici un petit badge pour le pied de page ou la page de contact du site de ${c}.`,
   },
   mail: {
     subject: "Veuillez ajouter notre badge PMRFP au site Web",
@@ -139,16 +139,16 @@ const FR: BadgeStrings = {
 const ES: BadgeStrings = {
   badge: {
     subject: "Ponga la insignia de PMRFP en su sitio web (2 minutos)",
-    intro: (c) => `${c} está en el directorio de PMRFP. Aquí tiene una pequeña insignia de PMRFP para el pie de página o la página de contacto de su sitio web.`,
+    intro: (c) => `${c} está en PMRFP. Aquí tiene una pequeña insignia para el pie de página o la página de contacto de su sitio.`,
     imgAlt: "La insignia de PMRFP: Listed on pmrfp.com",
-    why: "Por qué agregarla: los visitantes comprueban que usted está registrado y entran a sus proyectos y reseñas. Su sitio también enlaza a su perfil de PMRFP. Los enlaces de directorios relevantes pueden ayudar a los buscadores a entender su negocio, pero no prometemos posiciones.",
-    install: "Toma unos dos minutos. Pegue este código donde quiera que aparezca la insignia:",
+    why: "Por qué: los visitantes comprueban que usted está registrado y ven sus proyectos y reseñas. Los enlaces de directorios relevantes pueden ayudar a los buscadores a entender su negocio, pero no prometemos posiciones. Con la insignia en su sitio y el perfil publicado 14 días, el enlace de PMRFP a su sitio pasa a ser un enlace seguido.",
+    install: "Dos minutos. Pegue este código donde quiera la insignia:",
     platforms: ["WordPress: Apariencia, Widgets, HTML personalizado", "Wix: Agregar, Código para insertar, HTML", "Squarespace: pie de página, bloque de Código", "Shopify: Temas, Editar código, pie de página"],
     noSite: "Su perfil todavía no tiene un sitio web. Agréguelo y le avisaremos cuando veamos la insignia.",
     noSiteCta: "Agregar su sitio web",
     send: "Enviar esto a quien administra su sitio",
     page: "Su página de la insignia, con versión oscura",
-    reward: (n) => `Cuando la veamos en su sitio, le agregaremos ${n} días de Trade Pro, gratis.`,
+    reward: (n) => `Al verla en su sitio: ${n} días de Trade Pro gratis.`,
   },
   reminder: {
     subject: "Su insignia de PMRFP sigue esperando",
@@ -166,7 +166,7 @@ const ES: BadgeStrings = {
   },
   back: {
     subject: (f) => (f ? `Bienvenido de nuevo a PMRFP, ${f}: una insignia para su sitio` : "Bienvenido de nuevo a PMRFP: una insignia para su sitio"),
-    intro: (c) => `Bienvenido de nuevo a PMRFP. Agregamos una pequeña insignia de PMRFP para el pie de página o la página de contacto del sitio web de ${c}.`,
+    intro: (c) => `Bienvenido de nuevo a PMRFP. Agregamos una pequeña insignia para el pie de página o la página de contacto del sitio de ${c}.`,
   },
   mail: {
     subject: "Por favor agregue nuestra insignia de PMRFP al sitio web",

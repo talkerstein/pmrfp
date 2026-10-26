@@ -41,6 +41,12 @@ const BLOCKED_BOT_UA = new RegExp(BLOCKED_BOTS.join("|"), "i");
 /** Script libraries (no browser, no crawler identity) fetching web pages. */
 const SCRIPT_UA = /^(?:python-requests|python-httpx|Python-urllib|aiohttp|libwww-perl|Go-http-client|Wget|Java\/)/i;
 
+/** A crawler, SEO tool or script library (never a person's browser): for routes that must not reveal anything to them. */
+export function isNonHumanAgent(userAgent: string | null | undefined): boolean {
+  const ua = String(userAgent ?? "").trim();
+  return !ua || BLOCKED_BOT_UA.test(ua) || SCRIPT_UA.test(ua);
+}
+
 /** Paths only a vulnerability scanner asks for. */
 const PROBE_PATH = new RegExp(
   [

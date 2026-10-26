@@ -8,11 +8,11 @@
  */
 
 const en = {
-  linkNote: "This profile links directly to {company}'s website.",
-  signupLinkNote: "Your profile links directly to your website",
+  linkNote: "{company}'s own website, linked from this profile.",
+  signupLinkNote: "Your profile shows your website link",
   supplierLink: {
-    title: "Your profile links directly to your website",
-    body: "Every approved listing shows your website as a standard link, next to your trades, regions and projects.",
+    title: "Your profile shows your website",
+    body: "Every approved listing shows your website next to your trades, regions and projects. Add our badge to your site or become a paying member, and once your profile has been live 14 days the link becomes a followed link. We don't promise rankings.",
   },
   resourcesCard: {
     eyebrow: "Guide",
@@ -22,16 +22,16 @@ const en = {
   },
   forAgencies: {
     meta: {
-      title: "Free Construction Citations & Backlinks for Your Clients | PMRFP",
-      description: "Marketing and SEO agencies: list your construction clients on PMRFP for free. A standard website link, consistent business details, trade and city pages, project pages and a badge.",
+      title: "Free Directory Listings for Your Construction Clients | PMRFP",
+      description: "Marketing and SEO agencies: list your real construction clients on PMRFP for free. Consistent business details, trade and city pages, project pages and a badge. A followed website link is earned, not given.",
     },
     crumb: "For agencies",
     badge: "Get the badge",
-    title: "Free citations and backlinks for your construction clients",
+    title: "A free directory listing for your construction clients",
     lead: "If you do marketing or SEO for trades, general contractors or building suppliers, a PMRFP listing is a free, relevant citation in a construction directory used by property managers and builders in Canada and the U.S.",
     getTitle: "What a listing gives your client",
     get: [
-      { t: "A standard website link", d: "The profile links straight to the company's website. It is a normal link: we do not add nofollow to it." },
+      { t: "A website link that is earned", d: "The profile shows the company's website. The link is nofollow at first. It becomes a normal followed link once the profile has been live 14 days, has passed our spam checks, and the company has added our badge to its own site or become a paying member. We don't promise rankings." },
       { t: "Consistent business details", d: "Company name, website, phone, email and service regions in one structured profile, so you can keep them matched with the rest of their citations." },
       { t: "Trade × city and region pages", d: "Approved companies appear on the directory pages for their trades and the regions they serve." },
       { t: "Project pages", d: "Case studies and past projects get their own pages, with photos and scope, linked from the profile." },
@@ -44,13 +44,15 @@ const en = {
     how: [
       "Create the listing with the client's own email at the trade sign-up page. Listings are free.",
       "Fill in trades, service regions, website and a description. Add a project or two if they have them.",
-      "We review new listings. Once approved, the profile is public and included in our sitemap.",
+      "We check new listings for spam. A real, complete profile goes live right away; anything that looks like a satellite or keyword-stuffed page waits for a person. Thin profiles stay out of search engines.",
     ],
     howCta: "List a client, free",
     multi: "Adding several clients? Email {email} and we will help you set them up. There is no separate bulk tool.",
     dontTitle: "What we do not do",
     dont: [
-      "We do not sell links. A listing is free, and paid plans buy visibility on PMRFP, not links.",
+      "We do not sell links. A listing is free, and paid plans are membership on PMRFP, not a purchase of links.",
+      "We do not give followed links to free sign-ups. A followed link is earned: the badge on the company's own site or a paid plan, plus a profile that has been live 14 days and passes our checks.",
+      "We do not accept satellite or doorway listings (keyword-stuffed names, several companies from one owner, blocked domains). We hold or reject them.",
       "We do not require keyword anchor text, and we do not edit anchors to order.",
       "A listing never depends on your client linking back to us. The badge is optional.",
     ],
@@ -59,10 +61,10 @@ const en = {
     guideCta: "Best directories for contractors (2026)",
     faqTitle: "Questions agencies ask",
     faq: [
-      { q: "Is the website link followed?", a: "Yes. The website link on an approved profile is a standard link with no nofollow attribute." },
-      { q: "Do you charge?", a: "No. Listing a company is free. Optional paid plans exist for more visibility on PMRFP, and they are never required for a listing or its website link." },
+      { q: "Is the website link followed?", a: "Not at first. Every website link starts as nofollow. It becomes a normal followed link when the profile has been live 14 days, has passed our spam checks, and the company has installed our badge on its own site or has an active paid plan. We make no promise about rankings." },
+      { q: "Do you charge?", a: "No. Listing a company is free. Optional paid plans exist, and a paid plan is one way (not the only way) to earn the followed link." },
       { q: "Can I list multiple clients?", a: "Yes. Sign each one up with their own email, or email info@pmrfp.com and we will help you set up several at once." },
-      { q: "Is the profile indexed?", a: "Approved profiles are open to search engines in robots.txt and listed in our XML sitemap." },
+      { q: "Is the profile indexed?", a: "Approved profiles with real content (a description, a logo, a project or a business email on the company's own domain) are open to search engines and listed in our XML sitemap. Thin profiles are marked noindex until they have more." },
     ],
   },
   directories: {
@@ -107,11 +109,11 @@ const en = {
 };
 
 const fr: typeof en = {
-  linkNote: "Ce profil renvoie directement au site Web de {company}.",
-  signupLinkNote: "Votre profil renvoie directement à votre site Web",
+  linkNote: "Le site Web de {company}, accessible depuis ce profil.",
+  signupLinkNote: "Votre profil affiche le lien vers votre site Web",
   supplierLink: {
-    title: "Votre profil renvoie directement à votre site Web",
-    body: "Chaque fiche approuvée affiche votre site Web par un lien standard, avec vos métiers, régions et projets.",
+    title: "Votre profil affiche votre site Web",
+    body: "Chaque fiche approuvée affiche votre site Web avec vos métiers, régions et projets. Ajoutez notre badge à votre site ou devenez membre payant : une fois votre profil en ligne depuis 14 jours, le lien devient un lien suivi. Aucun classement n'est promis.",
   },
   resourcesCard: {
     eyebrow: "Guide",
@@ -121,16 +123,16 @@ const fr: typeof en = {
   },
   forAgencies: {
     meta: {
-      title: "Citations et liens gratuits pour vos clients en construction | PMRFP",
-      description: "Agences marketing et SEO : inscrivez gratuitement vos clients en construction sur PMRFP. Lien standard vers le site, coordonnées cohérentes, pages métier et ville, pages de projets et badge.",
+      title: "Fiches gratuites dans l'annuaire pour vos clients en construction | PMRFP",
+      description: "Agences marketing et SEO : inscrivez gratuitement vos vrais clients en construction sur PMRFP. Coordonnées cohérentes, pages métier et ville, pages de projets et badge. Un lien suivi vers le site se mérite, il ne s'offre pas.",
     },
     crumb: "Pour les agences",
     badge: "Obtenir le badge",
-    title: "Citations et liens gratuits pour vos clients en construction",
+    title: "Une fiche gratuite dans l'annuaire pour vos clients en construction",
     lead: "Si vous faites du marketing ou du SEO pour des entrepreneurs spécialisés, des entrepreneurs généraux ou des fournisseurs, une fiche PMRFP est une citation gratuite et pertinente dans un annuaire de la construction utilisé par des gestionnaires immobiliers et des constructeurs au Canada et aux États-Unis.",
     getTitle: "Ce que la fiche apporte à votre client",
     get: [
-      { t: "Un lien standard vers le site", d: "Le profil renvoie directement au site de l'entreprise. C'est un lien normal : nous n'y ajoutons pas de nofollow." },
+      { t: "Un lien vers le site, à mériter", d: "Le profil affiche le site de l'entreprise. Le lien est d'abord nofollow. Il devient un lien suivi normal quand le profil est en ligne depuis 14 jours, a passé nos contrôles anti-pourriel, et que l'entreprise a ajouté notre badge à son propre site ou est devenue membre payante. Aucun classement n'est promis." },
       { t: "Des coordonnées cohérentes", d: "Nom, site Web, téléphone, courriel et régions desservies dans un profil structuré, faciles à garder identiques aux autres citations." },
       { t: "Pages métier × ville et région", d: "Les entreprises approuvées apparaissent dans l'annuaire pour leurs métiers et les régions qu'elles desservent." },
       { t: "Pages de projets", d: "Études de cas et projets passés ont leur propre page, avec photos et portée, liée au profil." },
@@ -143,13 +145,15 @@ const fr: typeof en = {
     how: [
       "Créez la fiche avec le courriel du client sur la page d'inscription des entreprises. L'inscription est gratuite.",
       "Indiquez métiers, régions, site Web et description. Ajoutez un ou deux projets s'il y en a.",
-      "Nous vérifions les nouvelles fiches. Une fois approuvé, le profil est public et inclus dans notre plan de site.",
+      "Nous vérifions les nouvelles fiches contre le pourriel. Un profil réel et complet est publié tout de suite; ce qui ressemble à une page satellite ou bourrée de mots-clés attend une personne. Les profils trop minces restent hors des moteurs de recherche.",
     ],
     howCta: "Inscrire un client, gratuitement",
     multi: "Plusieurs clients à inscrire? Écrivez à {email} et nous vous aiderons. Il n'y a pas d'outil d'import en lot.",
     dontTitle: "Ce que nous ne faisons pas",
     dont: [
-      "Nous ne vendons pas de liens. La fiche est gratuite; les forfaits payants achètent de la visibilité sur PMRFP, pas des liens.",
+      "Nous ne vendons pas de liens. La fiche est gratuite; un forfait payant est un abonnement à PMRFP, pas un achat de liens.",
+      "Nous ne donnons pas de lien suivi aux inscriptions gratuites. Un lien suivi se mérite : le badge sur le site de l'entreprise ou un forfait payant, plus un profil en ligne depuis 14 jours qui passe nos contrôles.",
+      "Nous n'acceptons pas les fiches satellites ou de contournement (noms bourrés de mots-clés, plusieurs entreprises d'un même propriétaire, domaines bloqués). Nous les retenons ou les refusons.",
       "Nous n'exigeons pas d'ancre avec mots-clés et ne modifions pas les ancres sur demande.",
       "Une fiche ne dépend jamais d'un lien de votre client vers nous. Le badge est facultatif.",
     ],
@@ -158,10 +162,10 @@ const fr: typeof en = {
     guideCta: "Meilleurs annuaires pour entrepreneurs (2026)",
     faqTitle: "Questions fréquentes des agences",
     faq: [
-      { q: "Le lien vers le site est-il suivi (follow)?", a: "Oui. Le lien vers le site sur un profil approuvé est un lien standard, sans attribut nofollow." },
-      { q: "Est-ce payant?", a: "Non. L'inscription d'une entreprise est gratuite. Des forfaits payants facultatifs offrent plus de visibilité sur PMRFP; ils ne sont jamais requis pour la fiche ni pour son lien." },
+      { q: "Le lien vers le site est-il suivi (follow)?", a: "Pas au départ. Tout lien vers un site commence en nofollow. Il devient un lien suivi normal quand le profil est en ligne depuis 14 jours, a passé nos contrôles anti-pourriel, et que l'entreprise a installé notre badge sur son propre site ou a un forfait payant actif. Aucune promesse de classement." },
+      { q: "Est-ce payant?", a: "Non. L'inscription d'une entreprise est gratuite. Des forfaits payants facultatifs existent; un forfait payant est une façon (pas la seule) de mériter le lien suivi." },
       { q: "Puis-je inscrire plusieurs clients?", a: "Oui. Inscrivez chacun avec son propre courriel, ou écrivez à info@pmrfp.com et nous vous aiderons à en créer plusieurs." },
-      { q: "Le profil est-il indexé?", a: "Les profils approuvés sont ouverts aux moteurs de recherche dans robots.txt et inscrits dans notre plan de site XML." },
+      { q: "Le profil est-il indexé?", a: "Les profils approuvés avec du vrai contenu (description, logo, projet ou courriel professionnel sur le domaine de l'entreprise) sont ouverts aux moteurs de recherche et inscrits dans notre plan de site XML. Les profils trop minces sont en noindex tant qu'ils n'ont pas plus." },
     ],
   },
   directories: {
@@ -206,11 +210,11 @@ const fr: typeof en = {
 };
 
 const es: typeof en = {
-  linkNote: "Este perfil enlaza directamente al sitio web de {company}.",
-  signupLinkNote: "Tu perfil enlaza directamente a tu sitio web",
+  linkNote: "El sitio web de {company}, enlazado desde este perfil.",
+  signupLinkNote: "Tu perfil muestra el enlace a tu sitio web",
   supplierLink: {
-    title: "Tu perfil enlaza directamente a tu sitio web",
-    body: "Cada ficha aprobada muestra tu sitio web con un enlace estándar, junto a tus oficios, regiones y proyectos.",
+    title: "Tu perfil muestra tu sitio web",
+    body: "Cada ficha aprobada muestra tu sitio web junto a tus oficios, regiones y proyectos. Agrega nuestra insignia a tu sitio o hazte miembro de pago: cuando tu perfil lleve 14 días publicado, el enlace pasa a ser un enlace seguido. No prometemos posiciones.",
   },
   resourcesCard: {
     eyebrow: "Guía",
@@ -220,16 +224,16 @@ const es: typeof en = {
   },
   forAgencies: {
     meta: {
-      title: "Citas y backlinks gratis para tus clientes de construcción | PMRFP",
-      description: "Agencias de marketing y SEO: registra gratis a tus clientes de construcción en PMRFP. Enlace estándar a su web, datos coherentes, páginas por oficio y ciudad, proyectos y una insignia.",
+      title: "Fichas gratis en el directorio para tus clientes de construcción | PMRFP",
+      description: "Agencias de marketing y SEO: registra gratis a tus clientes reales de construcción en PMRFP. Datos coherentes, páginas por oficio y ciudad, proyectos y una insignia. Un enlace seguido a su web se gana, no se regala.",
     },
     crumb: "Para agencias",
     badge: "Obtener la insignia",
-    title: "Citas y backlinks gratis para tus clientes de construcción",
+    title: "Una ficha gratis en el directorio para tus clientes de construcción",
     lead: "Si haces marketing o SEO para contratistas de oficios, contratistas generales o proveedores, una ficha en PMRFP es una cita gratuita y relevante en un directorio de construcción que usan administradores de propiedades y constructores en Canadá y EE. UU.",
     getTitle: "Lo que la ficha le da a tu cliente",
     get: [
-      { t: "Un enlace estándar a su web", d: "El perfil enlaza directamente al sitio de la empresa. Es un enlace normal: no le añadimos nofollow." },
+      { t: "Un enlace a su web que se gana", d: "El perfil muestra el sitio de la empresa. El enlace es nofollow al principio. Pasa a ser un enlace seguido normal cuando el perfil lleva 14 días publicado, pasó nuestros controles antispam y la empresa agregó nuestra insignia a su propio sitio o es miembro de pago. No prometemos posiciones." },
       { t: "Datos de negocio coherentes", d: "Nombre, sitio web, teléfono, correo y regiones en un perfil estructurado, fácil de mantener igual que sus otras citas." },
       { t: "Páginas por oficio × ciudad y región", d: "Las empresas aprobadas aparecen en el directorio por sus oficios y las regiones que atienden." },
       { t: "Páginas de proyectos", d: "Casos de estudio y proyectos pasados tienen su propia página, con fotos y alcance, enlazada desde el perfil." },
@@ -242,13 +246,15 @@ const es: typeof en = {
     how: [
       "Crea la ficha con el correo del cliente en la página de registro para empresas. Es gratis.",
       "Completa oficios, regiones, sitio web y descripción. Añade uno o dos proyectos si los hay.",
-      "Revisamos las fichas nuevas. Una vez aprobado, el perfil es público y se incluye en nuestro sitemap.",
+      "Revisamos las fichas nuevas contra el spam. Un perfil real y completo se publica de inmediato; lo que parezca una página satélite o llena de palabras clave espera a una persona. Los perfiles muy escasos quedan fuera de los buscadores.",
     ],
     howCta: "Registrar a un cliente, gratis",
     multi: "¿Varios clientes? Escribe a {email} y te ayudamos a darlos de alta. No hay una herramienta de carga masiva.",
     dontTitle: "Lo que no hacemos",
     dont: [
-      "No vendemos enlaces. La ficha es gratis; los planes de pago compran visibilidad en PMRFP, no enlaces.",
+      "No vendemos enlaces. La ficha es gratis; un plan de pago es una membresía en PMRFP, no la compra de enlaces.",
+      "No damos enlaces seguidos a los registros gratuitos. Un enlace seguido se gana: la insignia en el sitio de la empresa o un plan de pago, más un perfil con 14 días publicado que pasa nuestros controles.",
+      "No aceptamos fichas satélite ni de puerta de entrada (nombres llenos de palabras clave, varias empresas de un mismo dueño, dominios bloqueados). Las retenemos o las rechazamos.",
       "No exigimos texto ancla con palabras clave ni editamos anclas por encargo.",
       "Una ficha nunca depende de que tu cliente nos enlace. La insignia es opcional.",
     ],
@@ -257,10 +263,10 @@ const es: typeof en = {
     guideCta: "Mejores directorios para contratistas (2026)",
     faqTitle: "Preguntas de las agencias",
     faq: [
-      { q: "¿El enlace al sitio web es follow?", a: "Sí. El enlace al sitio en un perfil aprobado es un enlace estándar sin atributo nofollow." },
-      { q: "¿Cobran?", a: "No. Registrar una empresa es gratis. Hay planes de pago opcionales para más visibilidad en PMRFP; nunca son necesarios para la ficha ni para su enlace." },
+      { q: "¿El enlace al sitio web es follow?", a: "Al principio no. Todo enlace a un sitio web empieza como nofollow. Pasa a ser un enlace seguido normal cuando el perfil lleva 14 días publicado, pasó nuestros controles antispam y la empresa instaló nuestra insignia en su propio sitio o tiene un plan de pago activo. No prometemos posiciones." },
+      { q: "¿Cobran?", a: "No. Registrar una empresa es gratis. Hay planes de pago opcionales, y un plan de pago es una forma (no la única) de ganar el enlace seguido." },
       { q: "¿Puedo registrar varios clientes?", a: "Sí. Registra a cada uno con su propio correo, o escribe a info@pmrfp.com y te ayudamos a crear varios." },
-      { q: "¿El perfil está indexado?", a: "Los perfiles aprobados están abiertos a los buscadores en robots.txt e incluidos en nuestro sitemap XML." },
+      { q: "¿El perfil está indexado?", a: "Los perfiles aprobados con contenido real (descripción, logotipo, un proyecto o un correo profesional en el dominio de la empresa) están abiertos a los buscadores e incluidos en nuestro sitemap XML. Los perfiles muy escasos llevan noindex hasta tener más." },
     ],
   },
   directories: {

@@ -37,7 +37,7 @@ export function browserOptedOut(nav: { doNotTrack?: string | null; globalPrivacy
   return dnt === "1" || dnt === "yes";
 }
 
-const UNTRACKED = /^\/(?:(?:en|fr|es)\/)?(?:embed|api|auth|admin|_next)(?:\/|$)/;
+const UNTRACKED = /^\/(?:(?:en|fr|es)\/)?(?:embed|api|auth|admin|out|go|_next)(?:\/|$)/;
 
 /** Pages whose views we count (not the widgets, the API, auth or admin). */
 export function trackablePath(path: string | null | undefined): boolean {
