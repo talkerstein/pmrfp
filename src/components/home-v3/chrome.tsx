@@ -243,7 +243,6 @@ export function V3Footer({ t, lang }: { t: V3ChromeMessages; lang: Locale }) {
         <div className="v3-foot-grid">
           <div>
             <div className="brand"><Image src={V3_MARK} alt="" width={30} height={30} /><span>pmrfp.com</span></div>
-            <div className="txt">{f.about}</div>
             <div className="txt">{f.address}</div>
           </div>
           {cols.map(([title, links]) => (
