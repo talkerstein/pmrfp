@@ -66,6 +66,7 @@ import townJobsClient from "./messages/townJobsClient";
 import townResults from "./messages/townResults";
 import townResultsClient from "./messages/townResultsClient";
 import rfpDepth from "./messages/rfpDepth";
+import openData from "./messages/openData";
 
 const NAMESPACES = {
   common,
@@ -127,6 +128,7 @@ const NAMESPACES = {
   townResults,
   townResultsClient,
   rfpDepth,
+  openData,
 };
 
 type Namespaces = typeof NAMESPACES;

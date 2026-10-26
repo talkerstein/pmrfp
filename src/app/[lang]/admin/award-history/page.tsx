@@ -74,7 +74,7 @@ export default async function AdminAwardHistoryPage({ params }: { params: Promis
             </TableCell>
             <TableCell>{s.country}</TableCell>
             <TableCell className="max-w-[220px] text-xs">{s.licence}</TableCell>
-            <TableCell className="max-w-[240px] text-xs">{s.mode === "upload" ? "Admin upload (robots.txt bars bots)" : SCHEDULE[s.group ?? ""] ?? s.group}</TableCell>
+            <TableCell className="max-w-[240px] text-xs">{s.mode === "upload" ? "Admin upload (robots.txt bars bots)" : s.mode === "local" ? "Local script (robots.txt bars bots): see /admin/open-data" : SCHEDULE[s.group ?? ""] ?? s.group}</TableCell>
             <TableCell>{counts.get(s.key)?.rows ?? "–"}</TableCell>
             <TableCell className="whitespace-nowrap">{counts.get(s.key)?.asOf ?? "–"}</TableCell>
           </TableRow>

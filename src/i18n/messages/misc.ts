@@ -10,6 +10,7 @@
  * {monthly} PRICING.proMonthly, {featuredAnnual} PRICING.featuredAnnual, {email} SITE.email.
  */
 import { COPY } from "@/lib/site";
+import { openDataAboutSources } from "@/lib/open-data/credits";
 import { PHOTOS } from "@/lib/photos";
 import {
   OGL_CANADA_ATTRIBUTION,
@@ -57,6 +58,7 @@ const en = {
       { name: "Government of Yukon", what: "Yukon tenders", licence: OGL_YUKON_ATTRIBUTION as string },
       { name: "Nova Scotia", what: "Past public contracts", licence: OGL_NS_ATTRIBUTION as string },
       { name: "SAM.gov", what: "U.S. federal building and facility contract opportunities", licence: SAM_ATTRIBUTION as string },
+      ...openDataAboutSources("en"),
     ],
     /** {report} and {winners} are links. */
     awardsBody: "We also publish what the award data shows: the {report} and the {winners}.",
@@ -942,6 +944,7 @@ const fr: typeof en = {
         licence:
           "Source : SAM.gov Contract Opportunities, U.S. General Services Administration (données du gouvernement fédéral américain, domaine public).",
       },
+      ...openDataAboutSources("fr"),
     ],
     awardsBody: "Nous publions aussi ce que révèlent les données d'octroi : le {report} et les {winners}.",
     reportLink: "rapport sur les contrats publics de construction",
@@ -1843,6 +1846,7 @@ const es: typeof en = {
         licence:
           "Fuente: SAM.gov Contract Opportunities, U.S. General Services Administration (datos del gobierno federal de EE. UU., dominio público).",
       },
+      ...openDataAboutSources("es"),
     ],
     awardsBody: "También publicamos lo que muestran los datos de adjudicación: el {report} y las {winners}.",
     reportLink: "informe de contratos públicos de edificios",
