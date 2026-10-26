@@ -182,6 +182,12 @@ describe("startOrgTrial (the server-side checks behind the button)", () => {
       expect(inserted).toEqual([]);
     }
   });
+  it("held: a company the spam check flagged never gets a trial, even when approved", async () => {
+    const { db, inserted } = fakeDb(null);
+    const s = session({ organization: { id: "o4", organization_type: "trade_company", status: "active", profile_status: "approved", risk_flagged: true } as never });
+    expect(await real(s, "gate", NOW, db)).toEqual({ ok: false, reason: "held" });
+    expect(inserted).toEqual([]);
+  });
   it("no session / no company / table missing", async () => {
     const { db } = fakeDb(null);
     expect(await real(null, "gate", NOW, db)).toEqual({ ok: false, reason: "signin" });

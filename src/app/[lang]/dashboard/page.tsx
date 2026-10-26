@@ -70,7 +70,7 @@ export default async function TradeDashboardHome({
     }),
   ]);
   const onTrial = !session.paid && session.trial?.status === "active";
-  const trialOffer = !demo && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: org?.organization_type, organizationStatus: org?.status, organizationProfileStatus: org?.profile_status });
+  const trialOffer = !demo && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: org?.organization_type, organizationStatus: org?.status, organizationProfileStatus: org?.profile_status, riskFlagged: org?.risk_flagged });
   // Trial-first (lib/entitlement/gate): every Pro gate on this page offers the free trial in one click when the company can still start one.
   const gate = await gateKit(demo ? null : session, { returnPath: "/dashboard", paidHref: "/dashboard/billing?plan=pro&interval=monthly" });
   // "Bids you may have missed" (free members) and "Pro this month" (trial or paid): real counts, or nothing.

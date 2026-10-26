@@ -129,7 +129,7 @@ export function whoFromSession(
     paid?: boolean;
     trial?: TrialState;
     profile?: { onboarding_completed?: boolean | null } | null;
-    organization?: { organization_type?: string | null; status?: string | null; profile_status?: string | null } | null;
+    organization?: { organization_type?: string | null; status?: string | null; profile_status?: string | null; risk_flagged?: boolean | null } | null;
   } | null,
   trialsOpen: boolean,
 ): GateWho {
@@ -139,6 +139,7 @@ export function whoFromSession(
     organizationType: session?.organization?.organization_type ?? null,
     organizationStatus: session?.organization?.status ?? null,
     organizationProfileStatus: session?.organization?.profile_status ?? null,
+    riskFlagged: Boolean(session?.organization?.risk_flagged),
     paid: Boolean(session?.paid),
     trial: session?.trial,
     trialsOpen,

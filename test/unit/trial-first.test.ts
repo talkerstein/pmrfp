@@ -112,6 +112,8 @@ describe("the upgrade CTA matrix (gateMode / gateOffer)", () => {
   it("whoFromSession reads the organization and trial off a session", () => {
     const who = whoFromSession({ paid: false, trial: trialState(null), profile: { onboarding_completed: true }, organization: tradeOrg }, true);
     expect(who).toMatchObject({ signedIn: true, onboarded: true, organizationType: "trade_company", organizationProfileStatus: "pending_review", trialsOpen: true });
+    expect(whoFromSession({ organization: { ...tradeOrg, risk_flagged: true }, profile: { onboarding_completed: true } }, true).riskFlagged).toBe(true);
+    expect(gateMode(whoFromSession({ paid: false, trial: trialState(null), profile: { onboarding_completed: true }, organization: { ...tradeOrg, risk_flagged: true } }, true))).toBe("paid");
     expect(whoFromSession(null, true).signedIn).toBe(false);
   });
 });

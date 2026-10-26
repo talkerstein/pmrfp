@@ -101,7 +101,7 @@ export default async function BillingPage({
       )}
 
       {/* No card, one click: the way in for a company that isn't ready to pay (14 days, once per company). */}
-      {!isActive && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status }) && (
+      {!isActive && canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status, riskFlagged: session.organization?.risk_flagged }) && (
         <div className="mb-4 rounded-lg border border-border bg-card p-5">
           <p className="font-semibold text-foreground">{t.trialHead}</p>
           <p className="mt-1 text-sm text-muted-foreground">{t.trialBody}</p>

@@ -59,12 +59,13 @@ export function canStartTrial(p: {
   organizationType?: string | null;
   organizationStatus?: string | null;
   organizationProfileStatus?: string | null;
+  riskFlagged?: boolean | null;
 }): boolean {
   return (
     p.organizationType === "trade_company" &&
     !p.paid &&
     (p.trial?.status ?? "none") === "none" &&
-    !orgIsHeld({ status: p.organizationStatus, profileStatus: p.organizationProfileStatus })
+    !orgIsHeld({ status: p.organizationStatus, profileStatus: p.organizationProfileStatus, riskFlagged: p.riskFlagged })
   );
 }
 

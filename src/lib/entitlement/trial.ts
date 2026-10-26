@@ -77,7 +77,8 @@ export type TrialRefusal = "signin" | "org" | "role" | "suspended" | "held" | "p
 /**
  * An organization the team has turned away or paused never gets a free
  * trial: rejected or suspended in review, a deleted account, or one flagged
- * for risk (the #183 flag, passed in by the caller once it exists). A new
+ * for risk (organizations.risk_flagged, the spam check from the earned-links
+ * work). A new
  * company still waiting in review (draft / pending_review) is NOT held: that
  * is every new sign-up, and the trial is how they find out what Pro does.
  */
@@ -95,7 +96,7 @@ export function trialRefusal(p: {
   organizationStatus?: string | null;
   /** organizations.profile_status: draft | pending_review | approved | rejected | suspended. */
   organizationProfileStatus?: string | null;
-  /** Flagged as risky/spam (the #183 flag), when that flag exists. */
+  /** organizations.risk_flagged: the spam check flagged this company. */
   riskFlagged?: boolean | null;
   paid: boolean;
   existing: TrialRow | null | undefined;

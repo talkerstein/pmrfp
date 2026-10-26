@@ -84,11 +84,11 @@ export function MarketPanel({ market, session, country }: { market: MemberMarket
           <div className="max-w-2xl">
             <p className="font-semibold text-foreground">{plural(leads.length, t.market.freeMore, { n: num(leads.length), total: num(counts.total) })}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t.market.freePitch}</p>
-            {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status }) && (
+            {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status, riskFlagged: session.organization?.risk_flagged }) && (
               <p className="mt-1 text-xs text-muted-foreground">{t.trial.note}</p>
             )}
           </div>
-          {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status }) ? (
+          {canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type, organizationStatus: session.organization?.status, organizationProfileStatus: session.organization?.profile_status, riskFlagged: session.organization?.risk_flagged }) ? (
             <TrialStartForm source="leads" label={getT("trialFirst").cta.start} lang={lang} returnTo="/dashboard" />
           ) : (
             <Link href="/dashboard/billing?plan=pro&interval=annual" className={buttonVariants()}>

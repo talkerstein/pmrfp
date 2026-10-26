@@ -45,6 +45,7 @@ export default async function StartTrialPage({
     organizationType: org.organization_type,
     organizationStatus: org.status,
     organizationProfileStatus: org.profile_status,
+    riskFlagged: org.risk_flagged,
     paid: Boolean(session.paid),
     existing: session.trial && session.trial.status !== "none" ? { startedAt: session.trial.startedAt ?? "", endsAt: session.trial.endsAt ?? "" } : null,
   });
