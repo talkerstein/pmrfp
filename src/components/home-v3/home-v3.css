@@ -753,7 +753,7 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
   .v3-chat > div.tags { display: none; }
   .v3-spon { padding: 0; }
   .v3-band { margin-top: 40px; border-radius: 20px; padding: 16px 0; }
-  .v3-band span { font-size: 64px; padding-right: 26px; -webkit-text-stroke: 0; }
+  .v3-band span { font-size: 42px; letter-spacing: -.03em; padding-right: 18px; -webkit-text-stroke: 0; }
   .v3-band span.o { color: rgba(145,242,207,0.2); }
   .pmrfp-v3 .v3-band .marquee { animation-duration: 35s; }
   .v3-spon-in { padding: 24px; display: flex; flex-direction: column; gap: 8px; }

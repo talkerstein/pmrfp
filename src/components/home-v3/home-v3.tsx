@@ -386,7 +386,9 @@ export function HomeV3({
     factLine(t.platform.bigwords.regions, data.regions),
     ...(top.length ? [fmt(t.platform.bigwords.awarded, { value: w.value })] : []),
   ].filter((x): x is string => x != null);
-  const stats = ([[pub, t.stats.open], [data.openPm, t.stats.pm], [data.closing7, t.stats.closing], [data.trades, t.stats.trades]] as const).filter(
+  /** A big "0 property-manager RFPs" reads as an empty board, so while there are none that slot shows awarded contracts. */
+  const second = data.openPm ? ([data.openPm, t.stats.pm] as const) : ([top.length && w.contracts ? w.contracts : null, t.stats.awarded] as const);
+  const stats = ([[pub, t.stats.open], second, [data.closing7, t.stats.closing], [data.trades, t.stats.trades]] as const).filter(
     (s): s is readonly [number, string] => s[0] != null,
   );
   /** " · 0 property-manager RFPs" after the public-tender count; empty while unknown. */
