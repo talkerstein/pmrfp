@@ -29,6 +29,7 @@ import { TrackOnMount } from "@/components/track";
 import { buyerDisplayName } from "@/lib/towns/claimable";
 import { parseBuyerKey } from "@/lib/towns/managed";
 import { PUBLIC_BUYER_ROLE, claimOnboardingHref } from "@/lib/towns/paths";
+import { communityOfferNote, parseCommunityCampaign } from "@/lib/campaigns/community";
 
 type ValidRole = SignupLinkRole;
 
@@ -69,7 +70,7 @@ export default async function SignUpPage({
   searchParams,
   params,
 }: {
-  searchParams: Promise<{ role?: string; kind?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string; region?: string; claim?: string; sent?: string; error?: string; source?: string; return?: string }>;
+  searchParams: Promise<{ role?: string; kind?: string; next?: string; template?: string; plan?: string; interval?: string; award?: string; region?: string; claim?: string; sent?: string; error?: string; source?: string; return?: string; campaign?: string }>;
   params: Promise<object>;
 }) {
   const lang = await setLangFrom(params);
@@ -112,6 +113,8 @@ export default async function SignUpPage({
   const trialNext = trialNextFromSignUp({ plan: query.plan, source: query.source, return: query.return });
   const next = safeNextPath(rawNext ?? trialNext ?? (template ? `/pm-dashboard/rfps/new?template=${template}` : intent ? checkoutPath(intent.plan, intent.interval) : null));
   const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in";
+  // A community group's unlisted page (/welcome/<code>): confirm its link was used. Wording only; free registration is free for everyone.
+  const campaign = parseCommunityCampaign(query.campaign);
 
   const { country, province } = await getVisitorCountry();
   const [google, categories, regions, counts, open] = await Promise.all([
@@ -154,6 +157,7 @@ export default async function SignUpPage({
         stats={{ open: counts.open, closing7: counts.closing7, trades: categories.length, regions: regions.length }}
         trades={trades}
         regions={regionChips}
+        offer={campaign ? communityOfferNote(campaign) : null}
       />
     </>
   );
