@@ -475,6 +475,7 @@
 .v3-su-notice { margin-top: 16px; font-size: 13px; line-height: 1.5; color: var(--ink); }
 .pmrfp-v3 .v3-su-notice a { color: var(--navy); font-weight: 700; text-decoration: underline; }
 .v3-su-legal { margin-top: 22px; font-size: 12px; line-height: 1.5; color: var(--sub); }
+.v3-su-offer { margin: 20px 40px 0; border-radius: 14px; background: #E6FBF3; color: #0E5A43; border: 1px solid #91F2CF; padding: 12px 16px; font-weight: 700; }
 .v3-su-err { margin: 20px 40px 0; border-radius: 14px; background: #FDECEC; color: #9B1C1C; padding: 12px 16px; font-weight: 700; }
 
 .v3-su-done { display: flex; align-items: center; gap: 20px; }
@@ -639,7 +640,7 @@
   .v3-su-go { white-space: normal; min-height: 52px; }
   .v3-su-back { order: 2; }
   .v3-su-back[hidden] { display: none; }
-  .v3-su-err { margin: 16px 20px 0; }
+  .v3-su-offer, .v3-su-err { margin: 16px 20px 0; }
   .v3-su-done h1 { font-size: 34px; }
   .v3-su-checkout { flex-direction: column; align-items: flex-start; }
   .v3-su-next .big { font-size: 28px; width: 64px; }

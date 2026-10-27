@@ -46,6 +46,8 @@ export interface SignupProps {
   regions: { slug: string; name: string }[];
   /** Regions picked before they arrive (a town page's "Follow this town"). */
   initialRegions?: string[];
+  /** A community group's link was used (lib/campaigns/community): shown as a confirmation on every step. */
+  offer?: string | null;
 }
 
 export function SignUpFlow(p: SignupProps) {
@@ -199,6 +201,7 @@ export function SignUpFlow(p: SignupProps) {
             <Stepper labels={t.steps} step={step} onGo={(i) => setStep(Math.max(locked ? 1 : 0, i))} />
           </SignupTop>
 
+          {p.offer && <div role="status" className="v3-su-offer" data-testid="community-offer">✓ {p.offer}</div>}
           {state.error && <div role="alert" className="v3-su-err">{state.error}</div>}
 
           <input type="hidden" name="lang" value={lang} />
