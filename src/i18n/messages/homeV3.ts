@@ -63,6 +63,7 @@ const en = {
     pm: "property-manager RFPs open",
     closing: "close in the next 7 days",
     trades: "trades covered",
+    awarded: "public contracts awarded in Canada",
     regions: "regions in Canada and the U.S.",
     /** Shown instead of a count when live data can't load (never a made-up number). */
     loading: "Live numbers loading",
@@ -387,6 +388,7 @@ const fr: typeof en = {
     pm: "appels d'offres de gestionnaires ouverts",
     closing: "clôturent dans les 7 prochains jours",
     trades: "corps de métier couverts",
+    awarded: "contrats publics adjugés au Canada",
     regions: "régions au Canada et aux États-Unis",
     loading: "Chiffres en direct en cours de chargement",
   },
@@ -708,6 +710,7 @@ const es: typeof en = {
     pm: "RFP de administradores abiertas",
     closing: "cierran en los próximos 7 días",
     trades: "oficios cubiertos",
+    awarded: "contratos públicos adjudicados en Canadá",
     regions: "regiones en Canadá y EE. UU.",
     loading: "Cargando cifras en vivo",
   },
