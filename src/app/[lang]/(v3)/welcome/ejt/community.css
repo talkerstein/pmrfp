@@ -85,6 +85,7 @@
   .cm-ctas .cm-btn { flex: 1 1 100%; }
   .cm-offer { padding: 22px; }
   .cm-why, .cm-paths { padding-top: 56px; }
+  .cm-why-img { aspect-ratio: 16 / 9; border-radius: 20px; }
   .cm-path { padding: 24px; }
   .cm-path-ctas, .cm-path-ctas .cm-btn { align-self: stretch; }
   .cm-how, .cm-faq { padding-top: 64px; }
