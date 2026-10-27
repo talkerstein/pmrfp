@@ -79,6 +79,11 @@ export function SignUpFlow(p: SignupProps) {
   const [method, setMethod] = useState<"link" | "password">("link");
   const emailRef = useRef<HTMLInputElement>(null);
   const passRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const companyRef = useRef<HTMLInputElement>(null);
+  // A community group's link: name (and company) asked up front, so the account
+  // has them even if the emailed link is never clicked.
+  const askName = !!p.offer;
 
   const isSeller = role === "" || SELLERS.includes(role);
   const pickTrades = isSeller || role === "talent";
@@ -132,7 +137,7 @@ export function SignUpFlow(p: SignupProps) {
   summary.push({ k: t.sumPlan, v: isSeller ? (pro ? t.planPro : t.planFree) : t.planPoster, tone: "mint" });
 
   const goDetails = () => {
-    const fields = [emailRef.current, method === "password" ? passRef.current : null];
+    const fields = [nameRef.current, companyRef.current, emailRef.current, method === "password" ? passRef.current : null];
     const bad = fields.find((f) => f && !f.checkValidity());
     if (bad) {
       setDetailsError(true);
@@ -253,6 +258,14 @@ export function SignUpFlow(p: SignupProps) {
             {/* The email is the one thing the account needs: it comes first, so on a phone it isn't five screens below the trade and region pickers. */}
             <div className="v3-su-block">
               <input type="hidden" name="method" value={method} />
+              {askName && (
+                <div className="v3-su-two" style={{ marginTop: 0, marginBottom: 12 }}>
+                  <label className="v3-su-fld"><span>{t.yourName}</span><input ref={nameRef} name="fullName" type="text" required maxLength={120} autoComplete="name" onBlur={(e) => { const name = e.currentTarget.value; setTyped((x) => ({ ...x, name })); }} /></label>
+                  {role !== "talent" && role !== "visitor" && (
+                    <label className="v3-su-fld"><span>{isSeller ? t.companyName : t.companyIfAny}</span><input ref={companyRef} name="pref_company" type="text" required={isSeller} maxLength={120} autoComplete="organization" /></label>
+                  )}
+                </div>
+              )}
               <div className="v3-su-two" style={{ marginTop: 0 }}>
                 <label className="v3-su-fld"><span>{t.workEmail}</span><input ref={emailRef} name="email" type="email" required autoComplete="email" placeholder="you@example.com" onBlur={(e) => { const email = e.currentTarget.value; setTyped((x) => ({ ...x, email })); }} /></label>
                 {method === "password" && (
@@ -264,7 +277,7 @@ export function SignUpFlow(p: SignupProps) {
                 <button type="button" className="v3-su-chip" aria-pressed={method === "password"} onClick={() => setMethod("password")}>{t.methodPassword}</button>
               </div>
               <div className="v3-su-note">{t.emailNote} {method === "link" ? t.methodLinkNote : t.passwordHint}</div>
-              {detailsError && <div className="v3-su-note" role="alert" style={{ color: "#9B1C1C", fontWeight: 700 }}>{t.fillIn}</div>}
+              {detailsError && <div className="v3-su-note" role="alert" style={{ color: "#9B1C1C", fontWeight: 700 }}>{askName ? t.fillInName : t.fillIn}</div>}
             </div>
 
             {/* Trade + region picks are optional; name and company are asked at onboarding. */}
