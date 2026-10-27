@@ -128,7 +128,7 @@ export default async function CommunityWelcomePage({ params }: { params: Promise
             The electrician a neighbour swears by. The property manager a friend from shul trusts. PMRFP makes those businesses easier to find, and makes it easier to send work their way.
           </p>
           <p>
-            We can&rsquo;t do much about City Hall or what everything costs this year. We can make the next good referral a little easier.
+            Everything costs more this year, and a bad hire costs the most. We can make the next good referral a little easier.
           </p>
         </div>
       </section>
