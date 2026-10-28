@@ -184,7 +184,8 @@ const en = {
     finish: "Finish & go to dashboard",
     createOrg: "Create organization",
     moreDetails: "Add more details (optional)",
-    moreDetailsHint: "Website, phone, email, city, a short description and how buyers contact you. You can add all of this later.",
+    websiteHint: "Your public listing links to this site. Optional, but it is how customers find you.",
+    moreDetailsHint: "Phone, email, city, a short description and how buyers contact you. You can add all of this later.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -458,7 +459,8 @@ const fr: typeof en = {
     finish: "Terminer et aller au tableau de bord",
     createOrg: "Créer l'organisation",
     moreDetails: "Ajouter plus de détails (facultatif)",
-    moreDetailsHint: "Site web, téléphone, courriel, ville, courte description et façon dont les acheteurs vous joignent. Vous pourrez tout ajouter plus tard.",
+    websiteHint: "Votre fiche publique renvoie vers ce site. Facultatif, mais c'est ainsi que les clients vous trouvent.",
+    moreDetailsHint: "Téléphone, courriel, ville, courte description et façon dont les acheteurs vous joignent. Vous pourrez tout ajouter plus tard.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -730,7 +732,8 @@ const es: typeof en = {
     finish: "Terminar e ir al panel",
     createOrg: "Crear la organización",
     moreDetails: "Agregar más detalles (opcional)",
-    moreDetailsHint: "Sitio web, teléfono, correo, ciudad, una breve descripción y cómo pueden contactarle los compradores. Puede agregarlo todo después.",
+    websiteHint: "Su ficha pública enlaza a este sitio. Opcional, pero así le encuentran los clientes.",
+    moreDetailsHint: "Teléfono, correo, ciudad, una breve descripción y cómo pueden contactarle los compradores. Puede agregarlo todo después.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {

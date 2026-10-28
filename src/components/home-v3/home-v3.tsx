@@ -181,6 +181,8 @@ export function HomeV3({
   // Country-first: one country's numbers, lists and awards at a time.
   const data = market === "US" && dataUs ? dataUs : dataCa;
   const here = where[market === "US" && dataUs ? "US" : "CA"];
+  // The visitor's own country leads the area pick: a U.S. visitor must not land on Ontario.
+  const areaOpts = market === "US" ? [...data.areaOptions.filter((o) => o.country === "us"), ...data.areaOptions.filter((o) => o.country !== "us")] : data.areaOptions;
   const rate = useUsdPerCad();
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
@@ -409,7 +411,7 @@ export function HomeV3({
     const q = new URLSearchParams();
     const trade = String(f.get("trade") ?? "");
     if (trade) q.set("category", trade);
-    const area = data.areaOptions[Number(f.get("area") ?? 0)];
+    const area = areaOpts[Number(f.get("area") ?? 0)];
     if (area?.region) q.set("region", area.region);
     if (area?.country) q.set("country", area.country);
     const qs = q.toString();
@@ -423,7 +425,7 @@ export function HomeV3({
     e.preventDefault();
     setFormError(null);
     const f = new FormData(e.currentTarget);
-    const area = data.areaOptions[Number(f.get("area") ?? 0)];
+    const area = areaOpts[Number(f.get("area") ?? 0)];
     const fd = new FormData();
     fd.set("email", String(f.get("email") ?? ""));
     fd.set("role", "trade");
@@ -449,7 +451,7 @@ export function HomeV3({
   );
   const areaSelect = (
     <select name="area">
-      {data.areaOptions.map((o, i) => (
+      {areaOpts.map((o, i) => (
         <option key={o.label} value={i}>{t.areas[o.label] ?? o.label}</option>
       ))}
     </select>

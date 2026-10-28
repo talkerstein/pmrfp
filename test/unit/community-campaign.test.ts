@@ -35,3 +35,13 @@ describe("community campaign links", () => {
     expect(action).toMatch(/formData\.get\("pref_company"\)/);
   });
 });
+
+describe("popup area order", () => {
+  it("leads with the visitor's own country so a U.S. visitor does not land on Ontario", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/components/home-v3/home-v3.tsx", "utf8");
+    expect(src).toContain('const areaOpts = market === "US"');
+    expect(src).not.toContain("data.areaOptions[Number(");
+    expect(src).toContain("areaOpts.map((o, i)");
+  });
+});
