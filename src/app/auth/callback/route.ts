@@ -66,7 +66,9 @@ export async function GET(request: NextRequest) {
     await trackEvent(EVENT.EMAIL_CONFIRMED, { method: "link", via: credential.kind, hasNext: !!safeNextPath(next) }, { userId: fresh.user.id, role: session?.profile.primary_role ?? null });
   }
   await trackEvent(EVENT.SIGNIN_COMPLETED, { method: method === "link" ? "link" : "google", hasNext: !!safeNextPath(next) });
-  const to = postOAuthRedirect(
+  // A password-reset link goes straight to the new-password page, even for a half-onboarded account.
+  const resetTo = credential.kind === "token_hash" && credential.type === "recovery" ? safeNextPath(next) : null;
+  const to = resetTo ?? postOAuthRedirect(
     next,
     session
       ? { onboardingCompleted: session.profile.onboarding_completed, home: roleHome(session.profile.primary_role) }

@@ -120,7 +120,7 @@ describe("a sign-up's plan and return path survive the emailed link", () => {
   it("accepts a token_hash link (works in any browser) as well as a code, and spots a fresh confirmation", () => {
     expect(callbackCredential(new URLSearchParams("code=abc"))).toEqual({ kind: "code", code: "abc" });
     expect(callbackCredential(new URLSearchParams("token_hash=abcdefgh12345&type=email"))).toEqual({ kind: "token_hash", tokenHash: "abcdefgh12345", type: "email" });
-    expect(callbackCredential(new URLSearchParams("token_hash=abcdefgh12345&type=recovery"))).toBeNull();
+    expect(callbackCredential(new URLSearchParams("token_hash=abcdefgh12345&type=recovery"))).toEqual({ kind: "token_hash", tokenHash: "abcdefgh12345", type: "recovery" });
     expect(callbackCredential(new URLSearchParams("token_hash=short&type=email"))).toBeNull();
     expect(callbackCredential(new URLSearchParams(""))).toBeNull();
     const now = Date.UTC(2026, 9, 22, 20, 4, 0);
