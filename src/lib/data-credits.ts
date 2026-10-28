@@ -220,6 +220,11 @@ export const CREDITS: readonly Credit[] = [
     es: "Fuente: North Carolina electronic Vendor Portal (eVP), Departamento de Administración de Carolina del Norte — aviso público de convocatoria.",
   },
   {
+    en: "Source: University of North Carolina System Office, Opportunities to Do Business with the Universities (northcarolina.edu) — public solicitation notice.",
+    fr: "Source : bureau du système de l'Université de la Caroline du Nord, Opportunities to Do Business with the Universities (northcarolina.edu) — avis public de sollicitation.",
+    es: "Fuente: Oficina del Sistema de la Universidad de Carolina del Norte, Opportunities to Do Business with the Universities (northcarolina.edu) — aviso público de convocatoria.",
+  },
+  {
     en: "Source: South Carolina Business Opportunities (SCBO), SC Division of Procurement Services — public advertisement.",
     fr: "Source : South Carolina Business Opportunities (SCBO), division des services d'approvisionnement de la Caroline du Sud — avis public.",
     es: "Fuente: South Carolina Business Opportunities (SCBO), División de Servicios de Adquisiciones de Carolina del Sur — anuncio público.",

@@ -16,6 +16,8 @@ export const LA_COUNTY_ATTRIBUTION =
 
 export const NC_EVP_ATTRIBUTION =
   "Source: North Carolina electronic Vendor Portal (eVP), NC Department of Administration — public solicitation notice.";
+export const UNC_SYSTEM_ATTRIBUTION =
+  "Source: University of North Carolina System Office, Opportunities to Do Business with the Universities (northcarolina.edu) — public solicitation notice.";
 export const SCBO_ATTRIBUTION =
   "Source: South Carolina Business Opportunities (SCBO), SC Division of Procurement Services — public advertisement.";
 export const LA_CITY_ATTRIBUTION =
@@ -24,6 +26,7 @@ export const LA_CITY_ATTRIBUTION =
 // Suffixes end in the source's own id, so a title word can't match.
 export const US_STATE_SOURCES: [suffix: RegExp, source: PublicTenderSource][] = [
   [/-ncevp-[a-f0-9]{32}$/, { key: "nc-evp", past: false, badge: "Public tender · North Carolina", issuer: "a North Carolina public body", portal: "the NC eVP portal", bidLabel: "Open on NC eVP", attribution: NC_EVP_ATTRIBUTION }],
+  [/-uncs-\d+$/, { key: "unc-system", past: false, badge: "Public tender · UNC System", issuer: "a University of North Carolina campus", portal: "the UNC System opportunities board", bidLabel: "Open the UNC System notice", attribution: UNC_SYSTEM_ATTRIBUTION }],
   [/-scbo-\d+$/, { key: "scbo", past: false, badge: "Public tender · South Carolina", issuer: "a South Carolina public body", portal: "SC Business Opportunities", bidLabel: "Open the SCBO ad", attribution: SCBO_ATTRIBUTION }],
   [/-lacr-\d+$/, { key: "la-city", past: false, badge: "Public tender · City of Los Angeles", issuer: "a City of Los Angeles agency", portal: "RAMP LA", bidLabel: "Open on RAMP LA", attribution: LA_CITY_ATTRIBUTION }],
   [/-flvbs-\d+$/, { key: "florida-vbs", past: false, badge: "Public tender · State of Florida", issuer: "a Florida state agency", portal: "the Florida Vendor Bid System", bidLabel: "Open on Florida VBS", attribution: FL_VBS_ATTRIBUTION }],

@@ -131,6 +131,7 @@ const SOURCE_TYPES: Record<string, BuyerType> = {
   delaware: "provincial",
   "florida-vbs": "provincial",
   "nc-evp": "provincial",
+  "unc-system": "provincial",
   scbo: "provincial",
 };
 
