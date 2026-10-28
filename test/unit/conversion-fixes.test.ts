@@ -166,10 +166,15 @@ describe("sign-up: email + trade + region, passwordless option", () => {
     expect(signUpSchema.safeParse({ fullName: "A", email: "a@b.com", password: "longenough", role: "trade" }).success).toBe(true);
   });
 
-  it("the form: no name or company field, plain 'Email' label, method toggle, role picker kept", () => {
+  it("the form: no name or company field (except on a community group's link), plain 'Email' label, method toggle, role picker kept", () => {
     const flow = src("src/components/home-v3/signup-flow.tsx");
-    expect(flow).not.toMatch(/name="fullName"/);
-    expect(flow).not.toMatch(/name="pref_company"/);
+    // Name and company appear only inside the community-link block.
+    const gated = flow.slice(flow.indexOf("{askName && ("));
+    expect(flow.indexOf("{askName && (")).toBeGreaterThan(0);
+    expect(flow.indexOf('name="fullName"')).toBeGreaterThan(flow.indexOf("{askName && ("));
+    expect(flow.split('name="fullName"').length).toBe(2);
+    expect(flow.split('name="pref_company"').length).toBe(2);
+    expect(gated.indexOf('name="pref_company"')).toBeLessThan(gated.indexOf('name="email"'));
     expect(flow).toMatch(/name="method"/);
     expect(flow).toMatch(/<SignupRolePicker/);
     expect(flow.indexOf("<ContinueWithGoogle")).toBeLessThan(flow.indexOf('name="email"'));

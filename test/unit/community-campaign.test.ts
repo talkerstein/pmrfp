@@ -24,4 +24,14 @@ describe("community campaign links", () => {
     expect(page).toMatch(/robots: \{ index: false, follow: false/);
     expect(readFileSync("src/app/sitemap.ts", "utf8")).not.toMatch(/welcome/);
   });
+
+  it("a group link asks for the name (and company) on the sign-up form, under the fields the action reads", () => {
+    const flow = readFileSync("src/components/home-v3/signup-flow.tsx", "utf8");
+    expect(flow).toMatch(/const askName = !!p\.offer;/);
+    expect(flow).toMatch(/name="fullName" type="text" required/);
+    expect(flow).toMatch(/name="pref_company" type="text" required=\{isSeller\}/);
+    const action = readFileSync("src/lib/auth/actions.ts", "utf8");
+    expect(action).toMatch(/formData\.get\("fullName"\)/);
+    expect(action).toMatch(/formData\.get\("pref_company"\)/);
+  });
 });
