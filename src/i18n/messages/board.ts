@@ -544,6 +544,13 @@ const fr: typeof en = {
         attribution:
           "Source : North Carolina electronic Vendor Portal (eVP), département de l'Administration de la Caroline du Nord — avis d'appel d'offres public.",
       },
+      "unc-system": {
+        issuer: "un campus de l'Université de la Caroline du Nord",
+        portal: "le tableau d'occasions du système UNC",
+        bidLabel: "Ouvrir l'avis du système UNC",
+        attribution:
+          "Source : bureau du système de l'Université de la Caroline du Nord, Opportunities to Do Business with the Universities (northcarolina.edu) — avis public de sollicitation.",
+      },
       scbo: {
         issuer: "un organisme public de la Caroline du Sud",
         portal: "SC Business Opportunities",
@@ -923,6 +930,13 @@ const es: typeof en = {
         bidLabel: "Abrir en NC eVP",
         attribution:
           "Fuente: North Carolina electronic Vendor Portal (eVP), Departamento de Administración de Carolina del Norte — aviso de licitación pública.",
+      },
+      "unc-system": {
+        issuer: "un campus de la Universidad de Carolina del Norte",
+        portal: "el tablero de oportunidades del sistema UNC",
+        bidLabel: "Abrir el aviso del sistema UNC",
+        attribution:
+          "Fuente: Oficina del Sistema de la Universidad de Carolina del Norte, Opportunities to Do Business with the Universities (northcarolina.edu) — aviso de licitación pública.",
       },
       scbo: {
         issuer: "un organismo público de Carolina del Sur",

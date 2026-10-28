@@ -27,6 +27,10 @@
       "schedule": "40 12 * * *"
     },
     {
+      "path": "/api/cron/unc-system-tenders",
+      "schedule": "42 12 * * *"
+    },
+    {
       "path": "/api/cron/canada-local-tenders",
       "schedule": "48 12 * * *"
     },
