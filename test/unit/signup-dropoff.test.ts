@@ -243,7 +243,10 @@ describe("onboarding asks only what it needs", () => {
     expect(upFront).toContain('name="province"');
     expect(upFront).toContain('name="categories"');
     expect(upFront).toContain('name="regions"');
-    for (const field of ['name="website"', 'name="phone"', 'name="email"', 'name="city"']) expect(upFront, field).not.toContain(field);
+    for (const field of ['name="phone"', 'name="email"', 'name="city"']) expect(upFront, field).not.toContain(field);
+    // The website sits up front for company listings (optional): the public listing links to it, so hiding it cost the backlink.
+    expect(upFront).toContain('name="website"');
+    expect(upFront).not.toMatch(/name="website"[^>]*required/);
   });
 });
 

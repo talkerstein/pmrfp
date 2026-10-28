@@ -126,6 +126,12 @@ export function OnboardingForm({
           <Field label={t.companyName} required><Input name="name" required defaultValue={echoed("name") ?? defaultName ?? undefined} /></Field>
         )}
         <Field label={t.province}><Input name="province" defaultValue={echoed("province") ?? defaultProvinceFor(lang)} /></Field>
+        {isListing && (
+          <div className="sm:col-span-2">
+            <Field label={t.website}><Input name="website" placeholder="example.com" defaultValue={echoed("website")} /></Field>
+            <p className="mt-1 text-xs text-muted-foreground">{t.websiteHint}</p>
+          </div>
+        )}
       </div>
 
       {isListing && (
@@ -154,7 +160,7 @@ export function OnboardingForm({
         <summary className="cursor-pointer text-sm font-medium">{t.moreDetails}</summary>
         <p className="mt-1 text-xs text-muted-foreground">{t.moreDetailsHint}</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label={t.website}><Input name="website" placeholder="example.com" defaultValue={echoed("website")} /></Field>
+          {!isListing && <Field label={t.website}><Input name="website" placeholder="example.com" defaultValue={echoed("website")} /></Field>}
           <Field label={t.phone}><Input name="phone" defaultValue={echoed("phone")} /></Field>
           <Field label={t.email}><Input name="email" type="email" defaultValue={echoed("email")} /></Field>
           <Field label={t.city}><Input name="city" defaultValue={echoed("city")} /></Field>
