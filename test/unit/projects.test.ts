@@ -26,14 +26,15 @@ describe("plan limits", () => {
     expect(photoLimit(false)).toBe(FREE_PHOTO_LIMIT);
     expect(photoLimit(true)).toBe(PAID_PHOTO_LIMIT);
     expect(canAddProject(false, 0)).toBe(true);
-    expect(canAddProject(false, 1)).toBe(false);
+    expect(canAddProject(false, 4)).toBe(true);
+    expect(canAddProject(false, 5)).toBe(false);
     expect(canAddProject(true, 40)).toBe(true);
   });
 
   it("explains what blocks a publish", () => {
     expect(publishLimitError({ paid: false, existingProjects: 0, photoCount: 3 })).toBeNull();
     expect(publishLimitError({ paid: false, existingProjects: 0, photoCount: 4 })).toMatch(/free plan allows 3/);
-    expect(publishLimitError({ paid: false, existingProjects: 1, photoCount: 1 })).toMatch(/one project/);
+    expect(publishLimitError({ paid: false, existingProjects: 5, photoCount: 1 })).toMatch(/5 projects/);
     expect(publishLimitError({ paid: true, existingProjects: 9, photoCount: 24 })).toBeNull();
     expect(publishLimitError({ paid: true, existingProjects: 9, photoCount: 25 })).toMatch(/Up to 24/);
   });

@@ -33,10 +33,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Photo uploads aren't set up here yet." }, { status: 503 });
   }
 
-  // Free plan: one project. Don't take photos for a second one it can't publish.
+  // Free plan: 5 projects. Don't take photos for a second one it can't publish.
   if (!session.hasTradeAccess && !canAddProject(false, await countActiveProjects(session.organization.id, db))) {
     return NextResponse.json(
-      { error: "The free plan includes one project. Upgrade to Trade Pro to add more.", code: "plan_limit" },
+      { error: "The free plan includes 5 projects. Upgrade to Trade Pro to add more.", code: "plan_limit" },
       { status: 403 },
     );
   }

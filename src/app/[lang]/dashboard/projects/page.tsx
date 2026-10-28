@@ -40,6 +40,7 @@ export default async function ProjectsPage({
   await setLangFrom(params);
   const lang = getLang();
   const t = getT("dash").projects;
+  const tn = getT("dash").newProject;
   const p = getT("portfolio").dash;
   const pc = getT("portfolioClient");
   const session = await requireRole(["trade", "supplier"]);
@@ -119,6 +120,16 @@ export default async function ProjectsPage({
           </Link>
           .
         </p>
+      )}
+
+      {!paid && !canAdd && (
+        <section className="mb-6 rounded-xl border border-teal-300 bg-teal-50/60 p-4 sm:p-5">
+          <h2 className="text-base font-semibold">{tn.usedTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{tn.usedBody}</p>
+          <Link href="/pricing" className={buttonVariants({ size: "lg" }) + " mt-3"}>
+            {p.upgrade}
+          </Link>
+        </section>
       )}
 
       {/* What projects are for: shown above the list so the payoff is the first thing read. */}
