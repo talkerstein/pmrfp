@@ -58,7 +58,7 @@ export async function submitCaseStudyAction(formData: FormData): Promise<void> {
   // Same plan limit as photo projects: the typed form used to skip it.
   if (!canAddProject(session.hasTradeAccess, await countActiveProjects(session.organization.id))) {
     redirect(
-      `/dashboard/case-studies/new?error=${encodeURIComponent("The free plan includes one project. Upgrade to Trade Pro to add more.")}`,
+      `/dashboard/case-studies/new?error=${encodeURIComponent("The free plan includes 5 projects. Upgrade to Trade Pro to add more.")}`,
     );
   }
 

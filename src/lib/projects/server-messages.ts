@@ -19,7 +19,7 @@ export const SERVER_MESSAGE_TEMPLATES = {
   addPhoto: "Add at least one photo.",
   notThisProject: "One of those photos isn't from this project. Remove it and try again.",
   tickPhotos: "Tick \"I've checked the photos\" to publish.",
-  freeProjectLimit: "The free plan includes one project. Upgrade to Trade Pro to add more.",
+  freeProjectLimit: "The free plan includes 5 projects. Upgrade to Trade Pro to add more.",
   projectsNotOn: "Projects aren't switched on yet. Try again soon.",
   publishFailed: "Couldn't save the project. Try again in a minute.",
   reviewsPro: "Review requests are part of Trade Pro.",
