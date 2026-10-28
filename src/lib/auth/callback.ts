@@ -14,8 +14,8 @@
  *    The callback accepts it already, so the change is a no-risk switch.
  */
 
-export type EmailOtpType = "signup" | "magiclink" | "email";
-const OTP_TYPES: readonly string[] = ["signup", "magiclink", "email"];
+export type EmailOtpType = "signup" | "magiclink" | "email" | "recovery" | "invite" | "email_change";
+const OTP_TYPES: readonly string[] = ["signup", "magiclink", "email", "recovery", "invite", "email_change"];
 
 export type CallbackCredential =
   | { kind: "code"; code: string }

@@ -392,7 +392,7 @@ export async function forgotPasswordAction(_prev: ActionState, formData: FormDat
   if (!isSupabaseConfigured()) return { error: m.demo };
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/reset-password`,
+    redirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", "/reset-password"),
   });
   return { success: m.resetSent };
 }
