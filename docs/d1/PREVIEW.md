@@ -244,3 +244,87 @@ tests cover authorized rows, immediate permission revocation, drafts, malformed
 permissions, source outages, ID/slug mismatches, checkpoint mismatch, projection,
 transport and the actual application mapper. Do not count the live denial as a
 successful paid-user end-to-end test.
+
+## October 29 refreshed checkpoint
+
+The branch is rebased onto master `ff0958c`. The source/repository schema now
+contains 108 public tables; a new dated catalog and candidate schema preserve
+all seven added tables and nine added columns. The historical October 23 files
+and verified checkpoints are retained. Current source dependency inventory:
+120 relations, 20 RPCs and 35 crons; this inventory is not completed app parity.
+
+A consistent 55,471-record source export produced a 55,322-record rebuilt
+candidate under the existing approved policy, with all authoritative fields
+unchanged. The new staging generation `rebuilt-20261029` uses database
+`c78304a9-1baa-4b62-a9e6-b7ad0d408be6`. All 109 tables (including Auth IDs),
+every field, schema, foreign keys and integrity passed remote verification.
+The actual readback backup restored into a separate local database and matched.
+The full upload completed; there was no new quota block during this run.
+
+The D1-only board index is reproducible with `schema.py --public-board-index`.
+It is part of the dated expected D1 schema and its verified hash, rather than an
+untracked exception to schema comparison. Native EXPLAIN uses
+`d1_rfp_posts_status_id_idx (status=? AND id>? AND id<?)` without a temporary
+outer sort. This changes no source Postgres index or authoritative row. Broader
+workload/cost tuning remains required before production.
+
+Copied-read Worker version `ad1773e5-3391-4d1c-957c-797224e74772` serves this
+validated candidate in read-only mode. Its dataset pin is
+`3182d4a3eff4ac51183e44db06a02ee4b8c09a486bbf1ff9fa86a16984e1098c`.
+Live Worker comparisons matched every public field of 1,794 published RFPs,
+45 categories, 88 regions and 21 property types against the **captured consistent
+source snapshot**, not a claim of ongoing synchronization with later source
+writes. English/French browser filters showed 12 current Canadian Roofing
+listings. A stale browser redirect cache required a fresh local preview query;
+ordinary server page requests returned HTTP 200, with no routing code change.
+
+Teaser and card-photo lookup paths now propagate D1 failures and leave absent
+checkpoint slugs absent. They cannot fill a copied preview from newer source
+RFPs. Supabase-only fallback remains available within the Supabase provider;
+explicit auxiliary photo reads remain source-backed. Full paid-session
+verification is prepared behind the guarded temporary-trial proposal and needs
+its separate approval before any test entitlement is created. Production traffic,
+Vercel production settings and customer business rows are unchanged.
+
+### Paid detail and revocation verified
+
+The user separately approved creating a non-public draft test company and a
+30-minute Trade Pro trial for the existing synthetic account. The guarded SQL
+is `d1/temporary-trial-test-proposal-2026-10-29.sql`; no credentials, Stripe
+objects, subscriptions or customer rows were changed. An anonymous source read
+confirmed the draft company was invisible. The deployed D1 detail client matched
+every projected field from the captured source row, and a real browser sign-in
+rendered that copied project scope through `PMRFP_DETAIL_BACKEND=d1`.
+
+The trial was then ended early as approved. Both a new private API request by
+the same account and a reload of its existing browser session denied private
+detail; the scope disappeared and the subscription gate returned. The test
+company/membership and expired trial remain private for audit. This verifies a
+real trial-based paid read and revocation; owner/admin live cases and remaining
+private flows still need broader coverage.
+
+### Pending 311-change staging replay
+
+A later consistent export contains 55,677 source records; its approved rebuilt
+candidate has 55,529 records. The 311-change journal spans 16 tables, including
+new/edited RFPs, categories and change history, plus the approved test fixture.
+Only the pinned copied-data preview can opt into this protocol, and its checked
+Worker config must remain read-only. The local preview is paused during staging
+mutation; this is not a live production update protocol.
+
+Native D1 rejected overly deep safety-check expressions; the generator now
+balances AND trees and limits guard groups/parameters. Every native read-only
+guard and an equivalent-size read-only batch passed. The full journal then
+replayed forward, backward and forward again against an actual D1 readback
+restored locally with a 64-level expression limit, with every field/FK verified.
+The native mutation was subsequently refused by the daily D1 quota before it
+committed. A fresh native readback reverified the original 55,322-record
+checkpoint intact; the Worker/preview retains that snapshot. Native real-data
+forward/reverse verification remains pending after October 30, 00:00 UTC
+(05:30 India). The synthetic native recovery checks above remain valid; do not
+confuse them with a completed real-data replay or D1-to-Supabase rollback.
+
+Verification now uses primary-key keyset pagination rather than OFFSET, avoiding
+repeated scans of earlier pages. The retained native checkpoint check reported
+55,444 data rows read for 55,322 records. Full snapshots are still required for
+comparison: continuous low-egress change capture remains unimplemented.

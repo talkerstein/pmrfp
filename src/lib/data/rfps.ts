@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { d1DetailEnabled } from "@/lib/d1/detail-backend";
+import { d1BoardEnabled } from "@/lib/d1/board-backend";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
@@ -192,11 +193,12 @@ export function filterAndSort(
   return mapped;
 }
 
-/** Snapshot lookup that never throws (a failing snapshot falls back to a direct read). */
+/** Supabase can retry its source; a D1 preview must retain its checkpoint boundary. */
 async function boardRowFor(slug: string): Promise<BoardRow | null> {
   try {
     return (await getBoardIndex()).get(slug) ?? null;
-  } catch {
+  } catch (error) {
+    if (d1BoardEnabled()) throw error;
     return null;
   }
 }
@@ -217,7 +219,9 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     ]);
     return { ...toListItem(snap, m, todayUtc()), photoUrls: photos.get(snap.id) ?? [] };
   }
-  // Not in the snapshot yet (published in the last few minutes) or snapshot unavailable.
+  // A D1 preview stays pinned to its validated checkpoint, including absent slugs.
+  if (d1BoardEnabled()) return null;
+  // Supabase may fill a temporarily missing/stale shared snapshot from its own source.
   const { data } = await supabase.from("rfp_public").select("*").eq("slug", slug).maybeSingle();
   const r = data as RfpPublicRow | null;
   if (!r) return null;
@@ -380,7 +384,8 @@ export async function withPublicRfpPhotos(items: RfpListItem[]): Promise<RfpList
   let index: Map<string, BoardRow> | null = null;
   try {
     index = await getBoardIndex();
-  } catch {
+  } catch (error) {
+    if (d1BoardEnabled()) throw error;
     index = null;
   }
   for (const s of slugs) {
@@ -388,7 +393,7 @@ export async function withPublicRfpPhotos(items: RfpListItem[]): Promise<RfpList
     if (id) idBySlug.set(s, id);
   }
   const missing = slugs.filter((s) => !idBySlug.has(s));
-  if (missing.length) {
+  if (missing.length && !d1BoardEnabled()) {
     const { data, error } = await client.from("rfp_public").select("id,slug").in("slug", missing).order("id");
     if (error) throw error;
     for (const row of (data ?? []) as { id: string; slug: string }[]) idBySlug.set(row.slug, row.id);

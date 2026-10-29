@@ -1,14 +1,26 @@
-"""Atomic, resumable remote journal rehearsal. Synthetic canary database ONLY.
+"""Atomic, resumable journal rehearsal for pinned non-production targets.
 
-Copied datasets and production are deliberately excluded. No arbitrary remote SQL
+Copied-data preview requires explicit opt-in and read-only configuration. Production
+is excluded. No arbitrary remote SQL
 interface is exposed. Full snapshots/readbacks remain the verification authority.
 """
-import contextlib
+import contextlib,json
 import migrate as m
 import journal as j
 import remote as r
 
 CANARY_NAME = 'pmrfp-journal-canary-20261023'
+COPIED_PREVIEW_NAME = 'pmrfp-rebuilt-staging-20261029'
+
+
+def all_of(parts):
+    # Balanced boolean trees stay below native D1 expression-depth limits even
+    # when a before-image compares a wide row alongside other row guards.
+    parts=list(parts)
+    if not parts:return '1'
+    while len(parts)>1:
+        parts=['('+parts[i]+' AND '+parts[i+1]+')' if i+1<len(parts) else parts[i] for i in range(0,len(parts),2)]
+    return parts[0]
 
 
 def statements(journal, before, after, specs):
@@ -16,13 +28,22 @@ def statements(journal, before, after, specs):
     batch = [{'sql': 'PRAGMA defer_foreign_keys=ON', 'params': []}]
     guard = "SELECT CASE WHEN (SELECT source_sha256=? AND state='validated' FROM _migration_manifest WHERE id=1) THEN 1 ELSE json('journal_checkpoint_mismatch') END"
     batch.append({'sql': guard, 'params': [journal['before_snapshot_sha256']]})
+    guards=[];guard_params=[]
+    def flush_guards():
+        if guards:
+            batch.append({'sql':"SELECT CASE WHEN "+all_of(guards)+" THEN 1 ELSE json('journal_before_image_mismatch') END",'params':list(guard_params)})
+            guards.clear();guard_params.clear()
     for change in journal['changes']:
         table, row = change['table'], change['before']
         columns = list(row) if row is not None else specs[table]['pk']
         values = [row[k] for k in columns] if row is not None else m.parse_json(change['key'])
-        predicate = ' AND '.join(m.ident(k) + ' IS ?' for k in columns)
+        predicate = all_of(m.ident(k) + ' IS ?' for k in columns)
         exists = 'EXISTS (SELECT 1 FROM ' + m.ident(table) + ' WHERE ' + predicate + ')'
-        batch.append({'sql': "SELECT CASE WHEN " + (exists if row is not None else 'NOT ' + exists) + " THEN 1 ELSE json('journal_before_image_mismatch') END", 'params': values})
+        predicate='('+ (exists if row is not None else 'NOT '+exists)+')'
+        # Native D1 has a shallower expression budget than local SQLite.
+        if len(guards)>=20 or len(guard_params)+len(values)>100 or sum(map(len,guards))+len(predicate)>90000:flush_guards()
+        guards.append(predicate);guard_params.extend(values)
+    flush_guards()
     with contextlib.closing(m.connect(':memory:')) as db:
         db.executescript(m.SCHEMA.read_text());db.execute('BEGIN');db.execute('PRAGMA defer_foreign_keys=ON')
         for table, records in before.items():
@@ -52,16 +73,23 @@ def statements(journal, before, after, specs):
     return batch
 
 
-def apply(remote, before_path, after_path, journal, backup_path, reverse=False):
-    # Enforce isolation before reads, backups or writes; no serving generation accepted.
-    if remote.name != CANARY_NAME:raise ValueError('Remote journal is restricted to the synthetic canary')
+def apply(remote, before_path, after_path, journal, backup_path, reverse=False,allow_copied_preview=False):
+    # Physical copied-data rehearsal is explicit and pinned; production is never accepted.
+    copied=allow_copied_preview and remote.name==COPIED_PREVIEW_NAME
+    if remote.name!=CANARY_NAME and not copied:raise ValueError('Remote journal is restricted to the synthetic canary or explicit copied preview')
+    if copied:
+        config=json.loads((m.ROOT/'workers/d1-api/wrangler.copy-preview.jsonc').read_text())
+        if config.get('name')!='pmrfp-d1-copied-read-preview' or config.get('vars',{}).get('SAVED_RFPS_MODE')!='read-only' or config['d1_databases'][0]['database_id']!=r.TARGETS['rebuilt-20261029'][0]:raise ValueError('Copied preview must retain its pinned read-only configuration')
     specs = j.validate(journal)
     expected = j.plan(before_path, after_path)
     if journal != expected:raise ValueError('Journal does not match supplied snapshots')
     catalog = m.load_catalog()
     before, before_meta, before_sha = m.read_snapshot(before_path, catalog)
     after, after_meta, after_sha = m.read_snapshot(after_path, catalog)
-    if before_meta.get('source') != 'synthetic-test' or after_meta.get('source') != 'synthetic-test':raise ValueError('Only synthetic source snapshots are permitted')
+    if copied:
+        policy=m.digest((m.ROOT/'d1/rebuild-policy.json').read_bytes())
+        if any(meta.get('source')!='approved-derived-rebuild' or meta.get('rebuild_policy_sha256')!=policy or not meta.get('parent_snapshot_sha256') for meta in [before_meta,after_meta]):raise ValueError('Copied preview requires independently validated approved rebuild snapshots')
+    elif before_meta.get('source')!='synthetic-test' or after_meta.get('source')!='synthetic-test':raise ValueError('Only synthetic source snapshots are permitted')
     if reverse:
         before, after = after, before;before_path, after_path = after_path, before_path;before_sha, after_sha = after_sha, before_sha
         journal = {**journal, 'before_snapshot_sha256': before_sha, 'after_snapshot_sha256': after_sha,

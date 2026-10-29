@@ -69,3 +69,29 @@ public tables, zero writable tables and no Auth password-column privilege.
 The ACL preflight still shows only the four audited read-only PUBLIC definer
 helpers and no PUBLIC table-write or schema-create grants. The fresh snapshot
 covers all 101 tables, including the three empty new tables.
+
+## Approved renewal — October 29
+
+The user approved renewing the same reader through November 5, 2026 at 15:30
+India time (10:00 UTC) and SELECT-only access to seven new tables:
+`blocked_domains`, `contractor_activity`, `open_data_runs`, `org_link_clicks`,
+`organization_risk`, `permit_leads`, and `planned_procurements`. The applied SQL
+also narrows PUBLIC execution of `guard_organization_link_fields()` to the
+existing app roles, retaining ordinary trigger invocation. Its definition and
+the four existing read helpers are pinned by hash before the transaction runs.
+
+The guarded review SQL is `d1/reader-renewal-proposal-2026-10-29.sql`, generated
+by `scripts/d1/renew_reader.py`. It verifies the exact 108-table inventory,
+existing role flags/expiry/memberships, absence of table-write/schema-create
+privileges, inherited definer inventory and denied Auth password access before
+changing anything. It does not change the reader credential or default grants.
+The local PGlite test verifies the guard, credential preservation, read-only
+access, Auth ID-only view, denied privileged-trigger attachment and preserved
+app-trigger invocation.
+
+Live dashboard verification after application: 108 readable tables, zero
+writable tables, no encrypted-password SELECT, no guard-function EXECUTE for the
+reader, and continued Auth ID-view SELECT. Expiry is November 5 at 10:00 UTC.
+Production schema columns match repository base `ff0958c` across 108 tables;
+source-only `rls_auto_enable` and the previously documented storage-policy
+baseline difference remain. This renewal does not migrate application writes.

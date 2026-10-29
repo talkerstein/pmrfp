@@ -1,4 +1,5 @@
-import unittest
+import unittest,json,sqlite3
+from unittest.mock import patch
 from test_migrate import FixtureMixin
 from test_dashboard_remote import FakeRemote
 import migrate as m
@@ -15,10 +16,52 @@ class RemoteJournalTests(FixtureMixin, unittest.TestCase):
         first,second,journal,fake=self.prepare();result=q.apply(fake,first,second,journal,self.root/'forward.sqlite');self.assertFalse(result['recovered']);r.verify(fake,second);m.validate(first,self.root/'forward.sqlite')
         again=q.apply(fake,first,second,journal,self.root/'retry.sqlite');self.assertTrue(again['recovered']);self.assertFalse((self.root/'retry.sqlite').exists())
         q.apply(fake,first,second,journal,self.root/'reverse.sqlite',reverse=True);r.verify(fake,first);m.validate(second,self.root/'reverse.sqlite')
+    def test_wide_before_images_work_under_native_expression_depth_limit(self):
+        db=m.connect(':memory:');db.executescript(m.SCHEMA.read_text())
+        db.execute("INSERT INTO rfp_posts(id,title,slug,summary,keep_alive_token) VALUES ('test-rfp','Test','test-rfp','Before','synthetic-token')")
+        db.execute("INSERT INTO regions(id,name,slug) VALUES ('region','Region','region')")
+        before=m.read_target(db,self.specs);db.execute("UPDATE rfp_posts SET summary='After'")
+        for n in range(19):db.execute('INSERT INTO regions(id,name,slug) VALUES(?,?,?)',('new-'+str(n),'New','new-'+str(n)))
+        after=m.read_target(db,self.specs);db.close()
+        first=self.snapshot(before,'wide-before.jsonl');second=self.snapshot(after,'wide-after.jsonl');journal=j.plan(first,second)
+        fake=FakeRemote();fake.name=q.CANARY_NAME;self.addCleanup(fake.db.close);r.load(fake,first)
+        if not hasattr(fake.db,'setlimit'):self.skipTest('SQLite runtime does not expose expression-depth limits')
+        fake.db.setlimit(sqlite3.SQLITE_LIMIT_EXPR_DEPTH,64)
+        q.apply(fake,first,second,journal,self.root/'wide.sqlite');r.verify(fake,second)
+    def test_before_image_guards_are_packed_within_parameter_limits(self):
+        first=self.snapshot(self.seed(),'before-packed.jsonl');rows=self.seed(2);template=next(iter(rows['regions'].values()))
+        for n in range(220):
+            row={**template,'id':'packed-'+str(n),'slug':'packed-'+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        second=self.snapshot(rows,'after-packed.jsonl');journal=j.plan(first,second)
+        before,_,_=m.read_snapshot(first,self.cat);after,_,_=m.read_snapshot(second,self.cat)
+        batch=q.statements(journal,before,after,self.specs)
+        self.assertTrue(all(len(item['params'])<=100 for item in batch));self.assertTrue(all(item['sql'].count('SELECT')<=21 for item in batch));self.assertLess(len(batch),len(journal['changes'])+30)
+        fake=FakeRemote();fake.name=q.CANARY_NAME;self.addCleanup(fake.db.close);r.load(fake,first)
+        q.apply(fake,first,second,journal,self.root/'packed.sqlite');r.verify(fake,second)
     def test_noop_never_creates_an_unrecoverable_loading_checkpoint(self):
         first,_,_,fake=self.prepare();journal=j.plan(first,first)
         result=q.apply(fake,first,first,journal,self.root/'noop.sqlite');self.assertTrue(result['noop'])
         self.assertFalse((self.root/'noop.sqlite').exists());self.assertEqual(r.manifest(fake)[0]['state'],'validated')
+    def approved_snapshot(self,path,name):
+        records=[m.parse_json(line) for line in path.read_text().splitlines()]
+        records[0].update(source='approved-derived-rebuild',parent_snapshot_sha256=records[-1]['sha256'],rebuild_policy_sha256=m.digest((m.ROOT/'d1/rebuild-policy.json').read_bytes()))
+        body=''.join(m.canonical(record)+'\n' for record in records[:-1]);records[-1]['sha256']=m.digest(body.encode())
+        output=self.root/name;output.write_text(body+m.canonical(records[-1])+'\n');return output
+    def test_copied_preview_requires_opt_in_and_approved_rebuild_provenance(self):
+        first=self.approved_snapshot(self.snapshot(self.seed(),'raw-before.jsonl'),'before-approved.jsonl')
+        second=self.approved_snapshot(self.snapshot(self.seed(2),'raw-after.jsonl'),'after-approved.jsonl')
+        journal=j.plan(first,second);fake=FakeRemote();fake.name=q.COPIED_PREVIEW_NAME;self.addCleanup(fake.db.close);r.load(fake,first)
+        with self.assertRaises(ValueError):q.apply(fake,first,second,journal,self.root/'not-approved.sqlite')
+        q.apply(fake,first,second,journal,self.root/'forward-approved.sqlite',allow_copied_preview=True);r.verify(fake,second)
+        q.apply(fake,first,second,journal,self.root/'reverse-approved.sqlite',reverse=True,allow_copied_preview=True);r.verify(fake,first)
+    def test_copied_preview_rejects_synthetic_metadata_and_unsafe_binding_before_mutation(self):
+        first,second,journal,fake=self.prepare();fake.name=q.COPIED_PREVIEW_NAME;calls=fake.calls
+        with self.assertRaisesRegex(ValueError,'approved rebuild'):q.apply(fake,first,second,journal,self.root/'bad-source.sqlite',allow_copied_preview=True)
+        self.assertEqual(fake.calls,calls)
+        config=self.root/'workers/d1-api';config.mkdir(parents=True);(config/'wrangler.copy-preview.jsonc').write_text(json.dumps({'name':'pmrfp-d1-copied-read-preview','vars':{'SAVED_RFPS_MODE':'sandbox-write'},'d1_databases':[{'database_id':'wrong'}]}))
+        with patch.object(m,'ROOT',self.root):
+            with self.assertRaisesRegex(ValueError,'read-only configuration'):q.apply(fake,first,second,journal,self.root/'bad-binding.sqlite',allow_copied_preview=True)
+        self.assertEqual(fake.calls,calls)
     def test_serving_target_and_tampered_journal_rejected_without_writes(self):
         first,second,journal,fake=self.prepare();calls=fake.calls;fake.name='pmrfp-rebuilt-staging-20261023'
         with self.assertRaisesRegex(ValueError,'synthetic canary'):q.apply(fake,first,second,journal,self.root/'bad.sqlite')

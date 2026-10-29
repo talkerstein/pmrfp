@@ -33,6 +33,6 @@ const catalog={source:'repository-reconstruction', migrations:files, adaptations
  event_triggers:await query(`select evtname as name,evtevent as event,evtenabled as enabled,evtfoid::regproc::text as function from pg_event_trigger order by evtname`),
  views:await query(`select viewname,definition from pg_views where schemaname='public' order by viewname`),
  buckets:await query(`select * from storage.buckets order by id`)};
-await writeFile('d1/postgres-catalog.json',JSON.stringify(catalog,null,2)+'\n');
+await writeFile(process.argv[2] || 'd1/postgres-catalog.json',JSON.stringify(catalog,null,2)+'\n');
 console.log(JSON.stringify({tables:new Set(catalog.columns.map(c=>c.table_name)).size,policies:catalog.policies.length,functions:catalog.functions.length,triggers:catalog.triggers.length,views:catalog.views.length}));
 await db.close();
