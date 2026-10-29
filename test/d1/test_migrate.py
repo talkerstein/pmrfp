@@ -34,6 +34,16 @@ class MigrationTests(FixtureMixin, unittest.TestCase):
     def test_deterministic_schema_and_all_tables(self):
         sql,gaps=generate(self.cat);self.assertEqual(sql,m.SCHEMA.read_text());self.assertTrue(gaps)
         self.assertEqual(set(self.specs), {c['table_name'] for c in self.cat['columns']} | {'_auth_users'})
+    def test_public_board_serving_index_removes_shard_sort_without_changing_rows(self):
+        sql,_=generate(self.cat,public_board_index=True)
+        db=m.connect(':memory:');self.addCleanup(db.close);db.executescript(sql)
+        for n in range(40):db.execute("INSERT INTO rfp_posts(id,title,slug,status,keep_alive_token) VALUES(?,?,?,'published',?)",(str(n),'Test','test-'+str(n),'token-'+str(n)))
+        before=db.execute("SELECT id FROM rfp_posts WHERE status='published' AND id>=? AND id<? ORDER BY id LIMIT 25",('1','3')).fetchall()
+        plan=' '.join(str(tuple(row)) for row in db.execute("EXPLAIN QUERY PLAN SELECT id FROM rfp_posts WHERE status='published' AND id>=? AND id<? ORDER BY id LIMIT 25",('1','3')))
+        self.assertIn('d1_rfp_posts_status_id_idx',plan);self.assertNotIn('TEMP B-TREE',plan)
+        db.execute('DROP INDEX d1_rfp_posts_status_id_idx')
+        after=db.execute("SELECT id FROM rfp_posts WHERE status='published' AND id>=? AND id<? ORDER BY id LIMIT 25",('1','3')).fetchall()
+        self.assertEqual([tuple(r) for r in before],[tuple(r) for r in after])
     def test_initial_copy_and_all_record_hashes(self):
         s=self.snapshot(self.seed());result=m.sync(s,self.target)
         self.assertEqual(set(result['validated']),set(self.specs));self.assertFalse(result['cutover_ready']);m.validate(s,self.target)

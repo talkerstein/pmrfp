@@ -13,7 +13,7 @@ def convert_expr(s):
     if any(t in s for t in ['::','~','<@','@>','&&','ARRAY[','ANY (','ALL (']):raise ValueError('Postgres expression requires explicit port')
     return s
 
-def generate(c):
+def generate(c,public_board_index=False):
     gaps=[]; statements=['-- STAGING COPY ONLY. No RLS, RPCs, views or application triggers are provided.', 'PRAGMA foreign_keys=ON;', 'CREATE TABLE "_auth_users" ("id" TEXT NOT NULL PRIMARY KEY);']
     tables=sorted(set(x['table_name'] for x in c['columns']))
     for table in tables:
@@ -64,6 +64,9 @@ def generate(c):
         except ValueError:gaps.append({'kind':'index','table':idx['tablename'],'name':idx['indexname'],'definition':idx['indexdef']})
     for kind,key in [('policy','policies'),('function','functions'),('trigger','triggers'),('view','views'),('event-trigger','event_triggers')]:
         for item in c.get(key,[]):gaps.append({'kind':kind,**item})
+    if public_board_index:
+        if not {'id','status'}.issubset({x['column_name'] for x in c['columns'] if x['table_name']=='rfp_posts'}):raise ValueError('Public board index requires audited RFP columns')
+        statements.append('CREATE INDEX d1_rfp_posts_status_id_idx ON rfp_posts(status,id);')
     gaps+= [{'kind':'index-extension',**x} for x in c.get('adaptations',[])]
     return '\n\n'.join(statements)+'\n',gaps
 if __name__=='__main__':
@@ -71,7 +74,8 @@ if __name__=='__main__':
     p.add_argument('--catalog',default=str(ROOT/'d1/postgres-catalog.json'))
     p.add_argument('--sql',default=str(ROOT/'d1/0001-staging-copy.sql'))
     p.add_argument('--gaps',default=str(ROOT/'d1/porting-gaps.json'))
-    a=p.parse_args();c=json.loads(Path(a.catalog).read_text());sql,gaps=generate(c)
+    p.add_argument('--public-board-index',action='store_true',help='Add the audited D1 status/id board serving index')
+    a=p.parse_args();c=json.loads(Path(a.catalog).read_text());sql,gaps=generate(c,a.public_board_index)
     Path(a.sql).write_text(sql)
     Path(a.gaps).write_text(json.dumps(gaps,indent=2)+'\n')
     print(json.dumps({'tables':len(set(x['table_name'] for x in c['columns'])),'unported_behaviors':len(gaps)}))
