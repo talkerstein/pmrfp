@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { HardHat } from "lucide-react";
 import { Container } from "@/components/container";
 import { JobPostForm } from "@/components/jobs/job-forms";
+import { JobWizard } from "@/components/jobs/job-wizard";
 import { getSession } from "@/lib/access/access";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { FREE_JOB_LIMIT, JOB_DAYS } from "@/lib/jobs/rules";
@@ -57,10 +58,18 @@ export default async function PostJobPage({ params }: { params: Promise<object> 
 
       <div className="mt-8 rounded-2xl border border-border bg-card p-6 sm:p-8">
         {approved ? (
-          <JobPostForm
-            trades={trades.map((c) => ({ slug: c.slug, name: tradeName(c.name, lang) }))}
-            regions={regions.map((r) => ({ slug: r.slug, name: regionName(r.name, lang) }))}
-          />
+          // The guided wizard is English for now; French and Spanish keep the plain form.
+          lang === "en" ? (
+            <JobWizard
+              trades={trades.map((c) => ({ slug: c.slug, name: tradeName(c.name, lang) }))}
+              regions={regions.map((r) => ({ slug: r.slug, name: regionName(r.name, lang) }))}
+            />
+          ) : (
+            <JobPostForm
+              trades={trades.map((c) => ({ slug: c.slug, name: tradeName(c.name, lang) }))}
+              regions={regions.map((r) => ({ slug: r.slug, name: regionName(r.name, lang) }))}
+            />
+          )
         ) : (
           <p className="text-sm text-muted-foreground">
             {t.pending}{" "}
