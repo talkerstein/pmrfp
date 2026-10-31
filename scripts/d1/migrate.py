@@ -158,7 +158,10 @@ def restore(source,target):
         if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Invalid backup')
         backup(db,target)
 
-def export_snapshot(output):
+def capture_metadata_sql(meta):
+    return "("+"'"+canonical(meta).replace("'","''")+"'::jsonb || jsonb_build_object('change_capture',jsonb_build_object('protocol',1,'bootstrap',true,'ids',(SELECT COALESCE(jsonb_agg(id::text ORDER BY id),'[]'::jsonb) FROM d1_migration.outbox WHERE acknowledged_at IS NULL))))::text"
+
+def export_snapshot(output,capture_outbox=False):
     """Read-only PostgreSQL snapshot, numeric text, auth IDs only. No credentials in argv."""
     catalog=load_catalog();specs=table_specs(catalog)
     if not (os.environ.get('PGHOST') or os.environ.get('PGSERVICE')):raise ValueError('Set PGHOST, PGDATABASE, PGUSER and PGPASSWORD (or PGSERVICE) securely')
@@ -169,7 +172,10 @@ def export_snapshot(output):
     public_tables=sorted(t for t in specs if t!='_auth_users')
     table_guard="(SELECT jsonb_agg(tablename ORDER BY tablename) FROM pg_tables WHERE schemaname='public')"
     sql.append("SELECT 1 / CASE WHEN "+table_guard+" = '"+canonical(public_tables).replace("'","''")+"'::jsonb THEN 1 ELSE 0 END AS table_guard \\g /dev/null")
-    sql.append('SELECT '+"'"+canonical(meta).replace("'","''")+"'::text;")
+    if capture_outbox:
+        sql.append("SELECT 1 / CASE WHEN (SELECT obj_description(oid,'pg_namespace') FROM pg_namespace WHERE nspname='d1_migration')='pmrfp-d1-change-capture-v1; reviewed 2026-10-31' AND (SELECT count(*) FROM d1_migration.outbox WHERE acknowledged_at IS NULL)<=75000 THEN 1 ELSE 0 END AS capture_guard \\g /dev/null")
+        sql.append('SELECT '+capture_metadata_sql(meta)+';')
+    else:sql.append('SELECT '+"'"+canonical(meta).replace("'","''")+"'::text;")
     # Abort on column/type/generated-column drift before exporting any rows.
     for table,spec in specs.items():
         if table=='_auth_users':
@@ -205,13 +211,13 @@ def export_snapshot(output):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);sub=p.add_subparsers(dest='command',required=True)
-    e=sub.add_parser('export');e.add_argument('--output',required=True)
+    e=sub.add_parser('export');e.add_argument('--output',required=True);e.add_argument('--capture-outbox',action='store_true')
     for name in ['sync','validate']:
         q=sub.add_parser(name);q.add_argument('--snapshot',required=True);q.add_argument('--target',required=True)
         if name=='sync':q.add_argument('--backup')
     r=sub.add_parser('restore');r.add_argument('--backup',required=True);r.add_argument('--target',required=True)
     args=p.parse_args()
-    if args.command=='export':result=export_snapshot(args.output)
+    if args.command=='export':result=export_snapshot(args.output,args.capture_outbox)
     elif args.command=='sync':result=sync(args.snapshot,args.target,args.backup)
     elif args.command=='validate':result=validate(args.snapshot,args.target)
     else:restore(args.backup,args.target);result={'restored':True}

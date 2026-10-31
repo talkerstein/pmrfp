@@ -233,3 +233,22 @@ Full native readback now pages by the complete primary key, including composite
 keys, with duplicate detection and ten-query batches. OFFSET is absent. This
 keeps verification scans linear in record count and reduces avoidable read-quota
 use; it does not turn full-source export into CDC.
+
+## Large atomic journal payloads
+
+When an ordinary replay exceeds 500 statements, the rehearsal packs rows into
+JSON scalar vectors: at most 100 rows and 90,000 UTF-8 bytes per bound payload.
+SQL identifiers still come only from the audited catalog; row values remain
+bound data. Integer safety is checked before packing. Full-row before-images and
+absence checks use correlated indexed lookups against each vector. Upserts retain
+explicit column projections and conflict targets. Deletes use the complete
+primary key with `IN (SELECT ... FROM json_each(?))`, driving key lookups instead
+of repeatedly scanning the target table. Local EXPLAIN regression coverage checks
+the composite-key plan.
+
+Packing changes statement representation only: the manifest guard, all row
+guards, mutations and loading transition remain in one atomic batch. The same
+full native readback, foreign-key/integrity checks, protected backups and final
+validated-manifest transition remain required. Oversized rows/batches fail
+closed. This is still a pinned non-production rehearsal with preview consumers
+paused, not a production live-update protocol.

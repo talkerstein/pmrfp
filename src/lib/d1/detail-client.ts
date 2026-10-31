@@ -16,7 +16,7 @@ export class D1DetailClient {
     try {
       response = await this.fetcher(url, { headers: { authorization: `Bearer ${token}`, "x-pmrfp-gateway-key": this.config.secret }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(20000) });
       result = await response.json();
-    } catch { throw new D1ApiError(503, "gateway_unavailable"); }
+    } catch (error) { this.config.onFetchError?.(error); throw new D1ApiError(503, "gateway_unavailable"); }
     if (!response.ok) {
       const code = response.status === 401 ? "sign_in_required" : response.status === 409 ? "record_not_synced" : "gateway_unavailable";
       throw new D1ApiError([401,409].includes(response.status) ? response.status : 503, code);

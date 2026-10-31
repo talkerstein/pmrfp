@@ -16,7 +16,7 @@ export class D1BoardClient {
       try {
         const response = await this.fetcher(url, { headers: { "x-pmrfp-gateway-key": this.config.secret }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(12000) });
         if (!response.ok) throw new Error("Board read failed"); result = await response.json();
-      } catch { throw new D1ApiError(503, "gateway_unavailable"); }
+      } catch (error) { this.config.onFetchError?.(error); throw new D1ApiError(503, "gateway_unavailable"); }
       if (!result || typeof result !== "object" || !("dataset" in result) || result.dataset !== this.config.dataset || !("items" in result) || !Array.isArray(result.items) || result.items.length > BOARD_PAGE_SIZE || !("next" in result)) throw new D1ApiError(503, "gateway_unavailable");
       let last: string = after ?? "";
       for (const raw of result.items) {

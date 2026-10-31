@@ -7,13 +7,36 @@ backup/restore rehearsal. It now includes an opt-in synthetic saved-RFP preview;
 remains authoritative. Existing production business rows, row policies, jobs, storage objects and Vercel configuration are unchanged. The user approved a temporary migration reader and narrower PUBLIC execution grants on 19 definer functions; see [READER-ACCESS.md](READER-ACCESS.md). At the user's request, one isolated Auth test account and its ordinary profile were created for preview verification; source bookmarks and public business listings were not created.
 
 Repository baseline refreshed to `origin/master` at
-`a70342d`,
-2026-10-23. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
+`29b376e`,
+2026-10-31. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
 The other chat's checkout was not modified. The grants fix (#164), city-source work
 (#163), and migration-reconciliation fixes (#165/#166) landed during this work;
-this branch was rebased onto them without modifying those patches. The live
-copy below is the earlier point-in-time snapshot, not a fresh post-reconciliation
-export. Repeat the live audit before a later data synchronization or cutover.
+this branch was rebased onto them without modifying those patches. The dated sections below preserve historical checkpoints. The October 31
+section and checkpoint report describe the latest validated copy. Repeat the
+live audit before a later synchronization or cutover.
+
+## October 31 update
+
+The branch is rebased onto master `29b376e`. The previously quota-blocked
+311-change journal passed native forward/reverse/reapply, with complete
+schema/field/FK verification and restored baseline/final readback backups.
+The resulting validated checkpoint contains 55,529 records. See
+`d1/checkpoint-2026-10-31.json`; older dated sections below remain historical.
+
+A new read-only export contains 71,467 records; its approved derived-data
+candidate contains 71,316. Shared source columns, constraints, indexes, policies,
+functions, row triggers and views still match October 29. Event-trigger names,
+events and states match, with extension function qualification differences under
+the reader search path. No new grants or source business-data writes were needed.
+
+The next 16,057-change journal passed local forward/reverse/reapply against an
+actual native readback with every field/FK checked. Large journals now pack
+bounded scalar vectors into parameterized `json_each` queries while retaining
+one atomic batch, before-image checks and a 500-statement cap. A 653-change
+synthetic native canary verifies failure rollback and reversal. Native forward/reverse/reapply of the fresh real-data candidate now passes,
+including restored baseline/final readback backups. The validated 71,316-record
+checkpoint matches all public fields for 1,802 listings and taxonomy. This does
+not implement continuous synchronization, source rollback or production cutover.
 
 ## October 23 update
 
