@@ -1,6 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
 import { execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
 import { expect,it } from 'vitest';
 const reader='d1_migration_reader_20261022';
 const uuid=(n:number)=>`00000000-0000-4000-8000-${n.toString().padStart(12,'0')}`;
@@ -64,7 +63,7 @@ it('preserves source RLS and detaches without deleting queued data or customer r
   const policies=(await db.query("SELECT policyname,qual,with_check FROM pg_policies WHERE tablename='items'")).rows;
   await db.exec(approved(proposal()));await db.exec('SET ROLE authenticated');
   await expect(db.exec(`INSERT INTO items VALUES('${uuid(8)}','FORBIDDEN')`)).rejects.toThrow('row-level security');
-  const start=performance.now();await db.exec("INSERT INTO items SELECT gen_random_uuid(),repeat('PRIVATE_ROW_BODY',500) FROM generate_series(1,500)");const elapsed=performance.now()-start;
+  await db.exec("INSERT INTO items SELECT gen_random_uuid(),repeat('PRIVATE_ROW_BODY',500) FROM generate_series(1,500)");
   await db.exec('RESET ROLE');
   const size=(await db.query<{events:number;bytes:number}>("SELECT count(*)::int AS events,sum(pg_column_size(o))::int AS bytes FROM d1_migration.outbox o")).rows[0];expect(size.events).toBe(500);expect(size.bytes).toBeLessThan(256000);
   expect((await db.query("SELECT count(*)::int AS count FROM d1_migration.outbox WHERE key::text LIKE '%PRIVATE%'")).rows[0]).toEqual({count:0});
@@ -74,6 +73,5 @@ it('preserves source RLS and detaches without deleting queued data or customer r
   await db.exec(detach);await db.exec(`SET ROLE authenticated;INSERT INTO items VALUES('${uuid(9)}','after-detach');RESET ROLE`);
   expect((await db.query('SELECT count(*)::int AS count FROM d1_migration.outbox')).rows[0]).toEqual({count:500});expect((await db.query('SELECT count(*)::int AS count FROM items')).rows[0]).toEqual({count:502});
   await db.exec('SET ROLE '+reader);await expect(db.query('SELECT * FROM d1_migration.outbox')).rejects.toThrow('permission denied');expect((await db.query('SELECT id FROM items')).rows).toHaveLength(502);
-  writeFileSync('.d1-private/change-capture-fixture-report-20261031.json',JSON.stringify({fixtureOnly:true,sourceRowsInserted:500,events:size.events,metadataBytes:size.bytes,fixtureInsertMs:Math.round(elapsed),customerRowsRetained:true,sourceRlsPreserved:true,detachPreservesQueue:true,productionApplied:false},null,2),{mode:0o600});
  }finally{await db.close();}
 });
