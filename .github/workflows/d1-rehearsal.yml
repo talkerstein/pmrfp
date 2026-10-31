@@ -1,0 +1,61 @@
+name: D1 migration rehearsal tests
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/d1/**'
+      - 'test/d1/**'
+      - 'test/d1-api/**'
+      - 'src/lib/d1/**'
+      - 'src/lib/data/taxonomy.ts'
+      - 'src/lib/data/board-snapshot.ts'
+      - 'src/lib/data/rfps.ts'
+      - 'src/app/api/save-rfp/route.ts'
+      - 'src/app/**/dashboard/saved-rfps/page.tsx'
+      - 'src/lib/karma/rules.ts'
+      - 'workers/d1-api/**'
+      - 'd1/**'
+      - '.github/workflows/d1-rehearsal.yml'
+  push:
+    branches: [codex/d1-staged-migration]
+    paths:
+      - 'scripts/d1/**'
+      - 'test/d1/**'
+      - 'test/d1-api/**'
+      - 'src/lib/d1/**'
+      - 'src/lib/data/taxonomy.ts'
+      - 'src/lib/data/board-snapshot.ts'
+      - 'src/lib/data/rfps.ts'
+      - 'src/app/api/save-rfp/route.ts'
+      - 'src/app/**/dashboard/saved-rfps/page.tsx'
+      - 'src/lib/karma/rules.ts'
+      - 'workers/d1-api/**'
+      - 'd1/**'
+      - '.github/workflows/d1-rehearsal.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test copies, reconciliation, validation and restore without credentials
+        run: python3 -m unittest discover -s test/d1 -v
+
+  worker-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Test API authorization, synthetic writes, public projections and rebuild preservation
+        run: npx vitest run test/d1-api test/unit/karma-rules.test.ts test/unit/rfp-read-optimization.test.ts
+      - run: npm run typecheck

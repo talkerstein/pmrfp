@@ -1,0 +1,167 @@
+{
+  "public_table_write_grants": [],
+  "public_definer_execute": [
+    {
+      "schema": "public",
+      "name": "enforce_free_response_allowance",
+      "arguments": "",
+      "signature": "public.enforce_free_response_allowance()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "enforce_town_invite_cap",
+      "arguments": "",
+      "signature": "public.enforce_town_invite_cap()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "forum_posts_changed",
+      "arguments": "",
+      "signature": "public.forum_posts_changed()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "forum_ratings_changed",
+      "arguments": "",
+      "signature": "public.forum_ratings_changed()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "forum_reputation_changed",
+      "arguments": "",
+      "signature": "public.forum_reputation_changed()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "forum_threads_changed",
+      "arguments": "",
+      "signature": "public.forum_threads_changed()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "forum_votes_changed",
+      "arguments": "",
+      "signature": "public.forum_votes_changed()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "guard_organization_privileged",
+      "arguments": "",
+      "signature": "public.guard_organization_privileged()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "guard_rfp_post_status",
+      "arguments": "",
+      "signature": "public.guard_rfp_post_status()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "guard_town_interest",
+      "arguments": "",
+      "signature": "public.guard_town_interest()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "guard_town_job_results",
+      "arguments": "",
+      "signature": "public.guard_town_job_results()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "guard_town_post",
+      "arguments": "",
+      "signature": "public.guard_town_post()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "guard_users_profile_insert",
+      "arguments": "",
+      "signature": "public.guard_users_profile_insert()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "guard_users_profile_privileged",
+      "arguments": "",
+      "signature": "public.guard_users_profile_privileged()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "handle_new_user",
+      "arguments": "",
+      "signature": "public.handle_new_user()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "has_active_trade_access",
+      "arguments": "uid uuid",
+      "signature": "public.has_active_trade_access(uuid)",
+      "returns": "boolean"
+    },
+    {
+      "schema": "public",
+      "name": "has_intel_access",
+      "arguments": "uid uuid",
+      "signature": "public.has_intel_access(uuid)",
+      "returns": "boolean"
+    },
+    {
+      "schema": "public",
+      "name": "is_admin",
+      "arguments": "uid uuid",
+      "signature": "public.is_admin(uuid)",
+      "returns": "boolean"
+    },
+    {
+      "schema": "public",
+      "name": "is_org_member",
+      "arguments": "uid uuid, org uuid",
+      "signature": "public.is_org_member(uuid, uuid)",
+      "returns": "boolean"
+    },
+    {
+      "schema": "public",
+      "name": "marketplace_increment_views",
+      "arguments": "p_slug text",
+      "signature": "public.marketplace_increment_views(text)",
+      "returns": "void"
+    },
+    {
+      "schema": "public",
+      "name": "marketplace_listings_guard",
+      "arguments": "",
+      "signature": "public.marketplace_listings_guard()",
+      "returns": "trigger"
+    },
+    {
+      "schema": "public",
+      "name": "rls_auto_enable",
+      "arguments": "",
+      "signature": "public.rls_auto_enable()",
+      "returns": "event_trigger"
+    },
+    {
+      "schema": "public",
+      "name": "track_profile_review",
+      "arguments": "",
+      "signature": "public.track_profile_review()",
+      "returns": "trigger"
+    }
+  ],
+  "public_schema_create": []
+}
