@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_rethrow } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parseBearerHeader } from "@/lib/access/request-session";
 import { D1ApiError } from "./contracts";
@@ -14,7 +15,7 @@ export function d1SavedRfpsEnabled(): boolean {
 export function d1SavedRfpsClient(): D1SavedRfpsClient {
   return new D1SavedRfpsClient({
     url: process.env.PMRFP_D1_API_URL || "", secret: process.env.PMRFP_D1_GATEWAY_SECRET || "",
-    allowLocal: process.env.NODE_ENV !== "production",
+    onFetchError: unstable_rethrow, allowLocal: process.env.NODE_ENV !== "production",
   });
 }
 /** Cookie access tokens are only forwarded. The Worker checks them with Supabase Auth on every request. */

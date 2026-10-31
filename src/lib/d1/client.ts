@@ -17,9 +17,9 @@ export class D1SavedRfpsClient {
         headers: { authorization: `Bearer ${token}`, "x-pmrfp-gateway-key": this.config.secret, ...(body ? { "content-type": "application/json" } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
-    } catch { throw new D1ApiError(503, "gateway_unavailable"); }
+    } catch (error) { this.config.onFetchError?.(error); throw new D1ApiError(503, "gateway_unavailable"); }
     let json: unknown;
-    try { json = await response.json(); } catch { throw new D1ApiError(503, "gateway_unavailable"); }
+    try { json = await response.json(); } catch (error) { this.config.onFetchError?.(error); throw new D1ApiError(503, "gateway_unavailable"); }
     if (!response.ok) {
       // Keep only allowlisted error identifiers; upstream response bodies may contain sensitive details.
       const codes = ["sign_in_required", "account_inactive", "trade_or_supplier_required", "profile_not_synced", "not_found", "invalid_request", "missing_rfp", "writes_not_enabled"];

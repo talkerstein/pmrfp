@@ -328,3 +328,31 @@ Verification now uses primary-key keyset pagination rather than OFFSET, avoiding
 repeated scans of earlier pages. The retained native checkpoint check reported
 55,444 data rows read for 55,322 records. Full snapshots are still required for
 comparison: continuous low-egress change capture remains unimplemented.
+
+
+## October 31 completed checkpoint
+
+Both the old 311-change replay and the fresh 16,057-change journal passed native
+D1 forward/reverse/final reapplication, complete field/schema/FK comparison and
+restored baseline/final readback backups. The copied read-only Worker now serves
+71,316 records at dataset `284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941`.
+All public fields match the captured source for 1,802 listings and all taxonomy.
+
+Public listing-card and teaser photo metadata now has a fixed gateway-protected
+D1 operation. It returns only public image documents on published parents,
+validates inputs/checkpoints, pages by document ID and retains chronological
+image ordering. All 1,802 parents and three public photos match the source;
+the French browser page rendered the expected 800 × 452 image. Private/owner
+photo reads and image storage remain Supabase-backed. Worker version:
+`9c41f94a-154f-4b6f-ab6c-1433162c2cc8`; copied-data writes remain disabled.
+
+Server adapters now preserve Next.js control-flow errors instead of converting
+no-store prerender bailouts into gateway failures. Genuine transport errors
+remain sanitized and never fall back to Supabase. Verification: 2,794 application
+tests passed (three skipped), 59 offline tests, typecheck, targeted lint, grant
+checks and the production build with 785 pages. See VERIFICATION-2026-10-31.md.
+
+The tested source change-capture/receipt-acknowledgement proposal is not installed.
+It requires approval for private queue permissions and source capture triggers;
+see CHANGE-CAPTURE.md. Continuous low-egress synchronization, remaining app/job
+conversion and production cutover remain incomplete.

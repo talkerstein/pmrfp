@@ -5,6 +5,7 @@ import { changeSavedRfp, listSavedRfps } from "./saved-rfps";
 import { readRfpDetail } from "./detail";
 import { listPublicBoard } from "./board";
 import { listPublicTaxonomy } from "./taxonomy";
+import { listPublicPhotos } from "./photos";
 
 export interface Env extends AuthConfig {
   DB: D1Binding;
@@ -20,6 +21,10 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
   try {
     await verifyGateway(request.headers.get("x-pmrfp-gateway-key"), env.GATEWAY_SECRET);
     const url = new URL(request.url);
+    if (url.pathname === "/v1/rfp-photos") {
+      if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
+      return json(await listPublicPhotos(env.DB, url));
+    }
     if (url.pathname === "/v1/board") {
       if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
       return json(await listPublicBoard(env.DB, url));

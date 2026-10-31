@@ -19,7 +19,7 @@ export class D1TaxonomyClient {
         const response = await this.fetcher(url, { headers: { "x-pmrfp-gateway-key": this.config.secret }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(12000) });
         if (!response.ok) throw new Error("Upstream unavailable");
         result = await response.json();
-      } catch { throw new D1ApiError(503, "gateway_unavailable"); }
+      } catch (error) { this.config.onFetchError?.(error); throw new D1ApiError(503, "gateway_unavailable"); }
       if (!result || typeof result !== "object" || !("items" in result) || !Array.isArray(result.items) || result.items.length > TAXONOMY_PAGE_SIZE || !("next" in result)) throw new D1ApiError(503, "gateway_unavailable");
       let last: string = after ?? "";
       const fields = TAXONOMY_SELECTS[table].split(",");

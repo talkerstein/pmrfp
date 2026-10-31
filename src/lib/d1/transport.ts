@@ -1,5 +1,9 @@
 import { D1ApiError } from "./contracts";
-export interface D1ClientConfig { url: string; secret: string; allowLocal?: boolean }
+export interface D1ClientConfig {
+  url: string; secret: string; allowLocal?: boolean;
+  /** Server adapters may rethrow framework control flow before transport errors are sanitized. */
+  onFetchError?: (error: unknown) => void;
+}
 /** Gateway secrets stay on a fixed configured origin; URLs cannot carry credentials. */
 export function gatewayEndpoint(config: D1ClientConfig, path: string): URL {
   let url: URL;

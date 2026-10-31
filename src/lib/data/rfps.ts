@@ -215,7 +215,7 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     const [m, photos] = await Promise.all([
       boardLookups(),
       // Imported public tenders never carry uploaded photos.
-      snap.sourceType === "public_source" ? new Map<string, string[]>() : publicPhotosByRfp(supabase, [snap.id]),
+      snap.sourceType === "public_source" ? new Map<string, string[]>() : publicPhotosByRfp(supabase, [snap.id], true),
     ]);
     return { ...toListItem(snap, m, todayUtc()), photoUrls: photos.get(snap.id) ?? [] };
   }
@@ -398,7 +398,7 @@ export async function withPublicRfpPhotos(items: RfpListItem[]): Promise<RfpList
     if (error) throw error;
     for (const row of (data ?? []) as { id: string; slug: string }[]) idBySlug.set(row.slug, row.id);
   }
-  const photos = await publicPhotosByRfp(client, [...new Set(idBySlug.values())].sort());
+  const photos = await publicPhotosByRfp(client, [...new Set(idBySlug.values())].sort(), true);
   return items.map((r) => {
     const id = idBySlug.get(r.slug);
     return { ...r, photoUrls: id ? photos.get(id) ?? [] : [] };
@@ -435,9 +435,14 @@ async function categoriesByRfp(
 async function publicPhotosByRfp(
   supabase: SupabaseClient,
   rfpIds: string[],
+  publicCards = false,
 ): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();
   if (rfpIds.length === 0) return map;
+  if (publicCards && d1BoardEnabled()) {
+    const { d1PublicPhotos } = await import("@/lib/d1/photos-server");
+    return d1PublicPhotos(rfpIds);
+  }
   for (const ids of chunks(rfpIds)) {
     const { data } = await supabase
       .from("rfp_documents")

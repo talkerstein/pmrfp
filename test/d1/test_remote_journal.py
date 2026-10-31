@@ -42,6 +42,47 @@ class RemoteJournalTests(FixtureMixin, unittest.TestCase):
         first,_,_,fake=self.prepare();journal=j.plan(first,first)
         result=q.apply(fake,first,first,journal,self.root/'noop.sqlite');self.assertTrue(result['noop'])
         self.assertFalse((self.root/'noop.sqlite').exists());self.assertEqual(r.manifest(fake)[0]['state'],'validated')
+    def test_large_json_packed_batch_roundtrips_and_rejects_raced_before_image(self):
+        first=self.snapshot(self.seed(),'large-before.jsonl');rows=self.seed(2);template=next(iter(rows['regions'].values()))
+        for n in range(650):
+            row={**template,'id':'large-'+str(n),'slug':'large-'+str(n),'name':'Quoted " text \\ and Unicode é '+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        second=self.snapshot(rows,'large-after.jsonl');journal=j.plan(first,second)
+        before,_,_=m.read_snapshot(first,self.cat);after,_,_=m.read_snapshot(second,self.cat)
+        batch=q.statements(journal,before,after,self.specs)
+        self.assertLess(len(batch),50);self.assertTrue(any('json_each' in item['sql'] for item in batch))
+        self.assertTrue(all(len(p.encode())<=90000 for item in batch for p in item['params'] if isinstance(p,str)))
+        fake=FakeRemote();fake.name=q.CANARY_NAME;self.addCleanup(fake.db.close);r.load(fake,first)
+        q.apply(fake,first,second,journal,self.root/'large-forward.sqlite');r.verify(fake,second)
+        q.apply(fake,first,second,journal,self.root/'large-reverse.sqlite',reverse=True);r.verify(fake,first)
+        original=fake.batch
+        def raced(items):
+            if items[0]['sql'].startswith('PRAGMA'):fake.query("UPDATE users_profile SET full_name='race'")
+            return original(items)
+        fake.batch=raced
+        with self.assertRaises(Exception):q.apply(fake,first,second,journal,self.root/'large-race.sqlite')
+        self.assertEqual(r.manifest(fake)[0]['source_sha256'],journal['before_snapshot_sha256'])
+        self.assertEqual(fake.db.execute("SELECT count(*) FROM regions WHERE id LIKE 'large-%'").fetchone()[0],0)
+    def test_json_payload_chunks_are_bounded(self):
+        self.assertEqual(len(list(q.json_chunks([[str(n)] for n in range(201)]))),3)
+        with self.assertRaisesRegex(ValueError,'payload bound'):list(q.json_chunks([['x'*90000]]))
+        self.assertEqual(len(next(q.json_chunks([['x'*89994]])).encode()),90000)
+        with self.assertRaisesRegex(ValueError,'payload bound'):list(q.json_chunks([['x'*89995]]))
+    def test_packed_composite_deletes_use_primary_key_lookups(self):
+        db=sqlite3.connect(':memory:');self.addCleanup(db.close)
+        db.execute('CREATE TABLE entries(a TEXT NOT NULL,b TEXT NOT NULL,value TEXT,PRIMARY KEY(a,b))')
+        db.executemany('INSERT INTO entries VALUES(?,?,?)',[('a','1','keep'),('a','2','remove'),('b','1','remove')])
+        actions=[('delete','entries',('a','b'),'DELETE FROM entries WHERE a=? AND b=?',key) for key in [['a','2'],['b','1']]]
+        batch=q.packed_mutations(actions);self.assertEqual(len(batch),1);item=batch[0]
+        plan=[row[3] for row in db.execute('EXPLAIN QUERY PLAN '+item['sql'],item['params'])]
+        self.assertTrue(any(detail.startswith('SEARCH entries USING ') and 'INDEX' in detail and '(a=? AND b=?)' in detail for detail in plan),plan)
+        db.execute(item['sql'],item['params']);self.assertEqual(db.execute('SELECT * FROM entries').fetchall(),[('a','1','keep')])
+    def test_large_integer_is_rejected_before_json_packing(self):
+        first=self.snapshot(self.seed(),'integer-before.jsonl');rows=self.seed(2);template=next(iter(rows['regions'].values()))
+        for n in range(650):
+            row={**template,'id':'integer-'+str(n),'slug':'integer-'+str(n),'sort_order':2**54 if n==0 else n};rows['regions'][m.canonical([row['id']])]=row
+        second=self.snapshot(rows,'integer-after.jsonl');journal=j.plan(first,second)
+        before,_,_=m.read_snapshot(first,self.cat);after,_,_=m.read_snapshot(second,self.cat)
+        with self.assertRaisesRegex(ValueError,'Unsafe integer'):q.statements(journal,before,after,self.specs)
     def approved_snapshot(self,path,name):
         records=[m.parse_json(line) for line in path.read_text().splitlines()]
         records[0].update(source='approved-derived-rebuild',parent_snapshot_sha256=records[-1]['sha256'],rebuild_policy_sha256=m.digest((m.ROOT/'d1/rebuild-policy.json').read_bytes()))
