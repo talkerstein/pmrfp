@@ -28,7 +28,7 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 type BucketName =
   | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
   | "photo-upload" | "project-draft" | "project-publish" | "review" | "public-read"
-  | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source" | "beacon" | "out-click";
+  | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source" | "beacon" | "out-click" | "cert-upload";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
@@ -60,6 +60,8 @@ const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${n
   beacon: { tokens: 60, window: "60 s" },
   // Click-out redirect (/out/<company>): a person follows a few links a minute.
   "out-click": { tokens: 30, window: "60 s" },
+  // Vendor certificate uploads (the PM's and the vendor's no-account link): a few files, a retry or two.
+  "cert-upload": { tokens: 20, window: "10 m" },
 };
 
 let _redis: Redis | null = null;
