@@ -70,6 +70,8 @@ import rfpDepth from "./messages/rfpDepth";
 import openData from "./messages/openData";
 import certs from "./messages/certs";
 import certsClient from "./messages/certsClient";
+import contracts from "./messages/contracts";
+import contractsClient from "./messages/contractsClient";
 
 const NAMESPACES = {
   common,
@@ -135,13 +137,15 @@ const NAMESPACES = {
   openData,
   certs,
   certsClient,
+  contracts,
+  contractsClient,
 };
 
 type Namespaces = typeof NAMESPACES;
 export type Messages = { [K in keyof Namespaces]: Namespaces[K]["en"] };
 
 /** Namespaces shipped to the browser for client components. */
-export const CLIENT_NAMESPACES = ["common", "sharedClient", "boardClient", "directoryClient", "salesClient", "writer", "auth", "dashClient", "pmClient", "jobsClient", "miscClient", "partnersClient", "marketplaceClient", "forumClient", "foundingClient", "portfolioClient", "growthClient", "correctionsClient", "dedupeClient", "pmJobsClient", "townJobsClient", "townResultsClient", "certsClient"] as const satisfies readonly (keyof Messages)[];
+export const CLIENT_NAMESPACES = ["common", "sharedClient", "boardClient", "directoryClient", "salesClient", "writer", "auth", "dashClient", "pmClient", "jobsClient", "miscClient", "partnersClient", "marketplaceClient", "forumClient", "foundingClient", "portfolioClient", "growthClient", "correctionsClient", "dedupeClient", "pmJobsClient", "townJobsClient", "townResultsClient", "certsClient", "contractsClient"] as const satisfies readonly (keyof Messages)[];
 export type ClientMessages = Pick<Messages, (typeof CLIENT_NAMESPACES)[number]>;
 
 export function getDictionary(lang: Locale): Messages {

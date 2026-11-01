@@ -43,6 +43,7 @@ const en = {
       pmWriter: "RFP Writer",
       pmTrusted: "Trusted trades",
       pmCerts: "Vendor insurance",
+      pmContracts: "Contract renewals",
     },
     /** Short names under the phone tab-bar icons (src/lib/pwa/tabs.ts). */
     tabs: {
@@ -408,6 +409,7 @@ const fr: typeof en = {
       pmWriter: "Rédacteur d'appels d'offres",
       pmTrusted: "Entrepreneurs de confiance",
       pmCerts: "Assurances des fournisseurs",
+      pmContracts: "Renouvellements de contrats",
     },
     tabs: {
       home: "Accueil",
@@ -778,6 +780,7 @@ const es: typeof en = {
       pmWriter: "Redactor de RFP",
       pmTrusted: "Contratistas de confianza",
       pmCerts: "Seguros de proveedores",
+      pmContracts: "Renovaciones de contratos",
     },
     tabs: {
       home: "Inicio",
