@@ -68,6 +68,7 @@ import townResults from "./messages/townResults";
 import townResultsClient from "./messages/townResultsClient";
 import rfpDepth from "./messages/rfpDepth";
 import openData from "./messages/openData";
+import roster from "./messages/roster";
 import certs from "./messages/certs";
 import certsClient from "./messages/certsClient";
 
@@ -133,6 +134,7 @@ const NAMESPACES = {
   townResultsClient,
   rfpDepth,
   openData,
+  roster,
   certs,
   certsClient,
 };

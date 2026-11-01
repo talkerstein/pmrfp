@@ -42,6 +42,7 @@ const en = {
       pmPost: "Post an RFP",
       pmWriter: "RFP Writer",
       pmTrusted: "Trusted trades",
+      pmRoster: "After-hours roster",
       pmCerts: "Vendor insurance",
     },
     /** Short names under the phone tab-bar icons (src/lib/pwa/tabs.ts). */
@@ -407,6 +408,7 @@ const fr: typeof en = {
       pmPost: "Publier un appel d'offres",
       pmWriter: "Rédacteur d'appels d'offres",
       pmTrusted: "Entrepreneurs de confiance",
+      pmRoster: "Liste d'urgence",
       pmCerts: "Assurances des fournisseurs",
     },
     tabs: {
@@ -777,6 +779,7 @@ const es: typeof en = {
       pmPost: "Publicar una RFP",
       pmWriter: "Redactor de RFP",
       pmTrusted: "Contratistas de confianza",
+      pmRoster: "Lista de emergencia",
       pmCerts: "Seguros de proveedores",
     },
     tabs: {

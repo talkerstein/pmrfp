@@ -119,6 +119,7 @@ export const PM_NAV = [
   { href: "/pm-dashboard/rfps/new", label: "Post an RFP" },
   { href: "/rfp-writer", label: "RFP Writer" },
   { href: "/pm-dashboard/saved-vendors", label: "Trusted trades" },
+  { href: "/pm-dashboard/roster", label: "After-hours roster" },
   { href: "/pm-dashboard/vendor-insurance", label: "Vendor insurance" },
   { href: "/jobs/manage", label: "Hiring" },
 ] as const;
@@ -212,6 +213,7 @@ export const FOOTER_COLS = [
     heading: "Resources",
     links: [
       { label: "RFP Writer (free)", href: "/rfp-writer" },
+      { label: "After-hours vendor roster (free)", href: "/after-hours-vendor-roster" },
       { label: "Vendor insurance tracker (free)", href: "/vendor-insurance-tracker" },
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },

@@ -13,6 +13,7 @@ const LINK_KEY: Record<string, FooterKey> = {
   "/reports/public-building-contracts": "report", "/reports/contract-winners": "monthly", "/trades": "trades", "/regions": "regions", "/ontario": "ontario", "/alberta": "alberta", "/toronto-contracts": "toronto", "/suppliers": "suppliers",
   "/for-trades": "forTrades", "/for-property-managers": "forPms", "/become-a-supplier": "becomeSupplier", "/for/real-estate": "forRealtors", "/for": "solutions",
   "/get-found": "getFound", "/pricing": "pricing", "/advertise": "advertise",
+  "/after-hours-vendor-roster": "roster",
   "/rfp-writer": "writer", "/vendor-insurance-tracker": "certs", "/rfp-templates": "templates", "/cost-guides": "costGuides", "/resources": "guides",
   "/projects": "caseStudies", "/vs": "compare", "/badge": "badge", "/widgets": "widgets",
   "/services-for-trades": "services", "/refer-a-trade": "refer",
