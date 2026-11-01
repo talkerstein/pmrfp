@@ -290,6 +290,7 @@ const en = {
     monthlyReports: "Monthly contract winners",
     contractsReport: "Public contracts report",
     directories: "Contractor directories",
+    bidCompare: "Bid comparison sheet (free)",
     legal: "PMRFP is a platform for posting RFPs and finding trades. We do not guarantee project availability, bid success, contract awards or revenue. Public tender sources are not affiliated with PMRFP.",
   },
   sticky: {
@@ -614,6 +615,7 @@ const fr: typeof en = {
     monthlyReports: "Gagnants de contrats par mois",
     contractsReport: "Rapport sur les contrats publics",
     directories: "Répertoires d'entrepreneurs",
+    bidCompare: "Tableau comparatif des soumissions (gratuit)",
     legal: "PMRFP est une plateforme pour publier des appels d'offres et trouver des entrepreneurs. Nous ne garantissons ni la disponibilité des projets, ni le succès des soumissions, ni l'octroi de contrats, ni des revenus. Les sources publiques d'appels d'offres ne sont pas affiliées à PMRFP.",
   },
   sticky: {
@@ -937,6 +939,7 @@ const es: typeof en = {
     monthlyReports: "Ganadores de contratos por mes",
     contractsReport: "Informe de contratos públicos",
     directories: "Directorios de contratistas",
+    bidCompare: "Cuadro comparativo de ofertas (gratis)",
     legal: "PMRFP es una plataforma para publicar RFP y encontrar contratistas. No garantizamos la disponibilidad de proyectos, el éxito de las ofertas, la adjudicación de contratos ni ingresos. Las fuentes públicas de licitaciones no están afiliadas a PMRFP.",
   },
   sticky: {

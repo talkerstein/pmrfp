@@ -27,6 +27,7 @@ const NAV_KEY: Record<string, keyof Shell["nav"]> = {
   "/dashboard/settings": "settings",
   "/pm-dashboard": "home",
   "/pm-dashboard/rfps": "pmRfps",
+  "/pm-dashboard/bid-comparisons": "pmBids",
   "/pm-dashboard/rfps/new": "pmPost",
   "/rfp-writer": "pmWriter",
   "/pm-dashboard/saved-vendors": "pmTrusted",

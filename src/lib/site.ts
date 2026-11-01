@@ -116,6 +116,7 @@ export const TRADE_NAV = [
 export const PM_NAV = [
   { href: "/pm-dashboard", label: "Home" },
   { href: "/pm-dashboard/rfps", label: "My RFPs" },
+  { href: "/pm-dashboard/bid-comparisons", label: "Bid comparisons" },
   { href: "/pm-dashboard/rfps/new", label: "Post an RFP" },
   { href: "/rfp-writer", label: "RFP Writer" },
   { href: "/pm-dashboard/saved-vendors", label: "Trusted trades" },
@@ -215,6 +216,7 @@ export const FOOTER_COLS = [
       { label: "Vendor insurance tracker (free)", href: "/vendor-insurance-tracker" },
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
+      { label: "Bid comparison sheet (free)", href: "/bid-comparison" },
       { label: "Guides", href: "/resources" },
       { label: "Case Studies", href: "/projects" },
       { label: "Compare", href: "/vs" },
