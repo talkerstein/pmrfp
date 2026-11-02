@@ -16,6 +16,7 @@ const LINK_KEY: Record<string, FooterKey> = {
   "/rfp-writer": "writer", "/rfp-templates": "templates", "/cost-guides": "costGuides", "/resources": "guides",
   "/projects": "caseStudies", "/vs": "compare", "/badge": "badge", "/widgets": "widgets",
   "/services-for-trades": "services", "/refer-a-trade": "refer",
+  "/inspection-report-to-quotes": "reportQuotes",
   "/about": "about", "/contact": "contact", "/terms": "terms", "/privacy": "privacy", "/disclaimer": "disclaimer", "/corrections": "corrections",
 };
 const COL_KEY = ["work", "who", "resources"] as const;

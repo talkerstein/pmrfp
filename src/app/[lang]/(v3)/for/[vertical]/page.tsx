@@ -104,7 +104,7 @@ export default async function VerticalPage({ params }: { params: Promise<{ verti
           getHead: t.changesTitle,
           tags: v.features,
           today: { head: t.today, items: v.pains },
-          features: v.valueProps.map((x) => ({ t: x.title, d: x.desc })),
+          features: v.valueProps.map((x) => ({ t: x.title, d: x.desc, href: x.href })),
           steps: t.steps[buyer ? "buyer" : "seller"].map((s) => ({ t: s.title, d: s.desc })),
           sellerSub: getT("sales").forTrades.pricing.body,
           faq: v.faqs,
