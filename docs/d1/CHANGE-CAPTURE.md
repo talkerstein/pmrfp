@@ -1,6 +1,22 @@
 # Source change-capture proposal — October 31
 
-**Review only. Not installed in Supabase. Production remains authoritative there.**
+**Installed in Supabase on November 2 after explicit user approval. Production remains authoritative there.**
+
+## November 2 installation
+
+The guarded October 31 proposal completed successfully. A separate TLS-verified
+reader query confirmed 108 registered tables, 216 capture triggers, zero
+application-table write grants and the unchanged November 5, 10:00 UTC reader
+expiry. Normal application activity produced five pending events at the initial
+check; no synthetic customer writes were used. The pre-install catalog audit
+matched the reviewed columns, constraints, indexes, policies, functions, row
+triggers, views and publications. Event trigger definitions also matched after
+normalizing schema-qualified function names.
+
+The consistent full bootstrap, native replay/rollback/reapply, restored backups
+and acknowledgement of all 11 captured receipts are now verified. Newer source
+events remain pending. The
+remaining sections describe the reviewed design and its boundaries.
 
 The next writable-preview dependency is durable tracking of source changes,
 including account/membership changes and deletes. The current complete-snapshot
@@ -79,5 +95,5 @@ rollback, existing RLS, private-schema isolation, denied customer writes and
 trigger attachment, bounded/idempotent acknowledgement, late lower IDs and
 non-destructive detach. Offline tests also reject invalid receipt IDs, unsafe
 source connections, unrelated rebuilt candidates and native verification failure
-before any acknowledgement call. No source installation or live acknowledgement
-has occurred.
+before any acknowledgement call. The source installation is verified as described above. All 11 bootstrap receipts were acknowledged only after the final native
+validation, including restoration of the temporary preview-test timestamp.

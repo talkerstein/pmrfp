@@ -6,6 +6,7 @@ import { D1DetailClient } from '../../src/lib/d1/detail-client';
 import { d1DetailEnabled } from '../../src/lib/d1/detail-backend';
 import type { D1Binding, D1Statement } from '../../src/lib/d1/contracts';
 const secret='synthetic-gateway-secret-at-least-32-characters',dataset='a'.repeat(64),token='synthetic.token.signature';
+const updatedAt='2026-11-02T04:00:00.123456+00:00';
 const id='00000000-0000-4000-8000-000000000001',user='00000000-0000-4000-8000-000000000002';
 let db:DatabaseSync,env:Env,permission:unknown,permissionStatus:number;
 function statement(sql:string,values:(string|number|null)[]=[]):D1Statement {
@@ -16,7 +17,7 @@ const source=vi.fn<typeof fetch>(async(input,init)=>{
  expect(url.origin).toBe('https://source.test'); expect(init?.redirect).toBe('manual'); expect(init?.cache).toBe('no-store');
  expect(new Headers(init?.headers).get('authorization')).toBe('Bearer '+token);
  if(url.pathname==='/auth/v1/user')return Response.json({id:user});
- expect(url.pathname).toBe('/rest/v1/rfp_posts');expect(Object.fromEntries(url.searchParams)).toEqual({select:'id',slug:'eq.private-job',limit:'2'});
+ expect(url.pathname).toBe('/rest/v1/rfp_posts');expect(Object.fromEntries(url.searchParams)).toEqual({select:'id,updated_at',slug:'eq.private-job',limit:'2'});
  return Response.json(permission,{status:permissionStatus});
 });
 const request=(query='slug=private-job',method='GET',key=secret,bearer=token)=>handleRequest(new Request('https://worker.test/v1/rfp-detail?'+query,{method,headers:{'x-pmrfp-gateway-key':key,authorization:'Bearer '+bearer}}),env,source);
@@ -26,7 +27,8 @@ beforeEach(()=>{
  db.exec('CREATE TABLE _migration_manifest(id INTEGER PRIMARY KEY,source_sha256 TEXT,state TEXT)');db.prepare("INSERT INTO _migration_manifest VALUES(1,?,'validated')").run(dataset);
  db.prepare("INSERT INTO rfp_posts(id,title,slug,status,scope,contact_email,budget_min,keep_alive_token,source_notes) VALUES(?,'Private job','private-job','published','PRIVATE_SCOPE','buyer@example.invalid','12345.67','SECRET_KEEP_ALIVE','Source notes')").run(id);
  env={DB:{prepare:statement} as D1Binding,GATEWAY_SECRET:secret,SUPABASE_URL:'https://source.test',SUPABASE_ANON_KEY:'public-test-key'};
- permission=[{id}];permissionStatus=200;source.mockClear();
+ db.prepare('UPDATE rfp_posts SET updated_at=?').run(updatedAt);
+ permission=[{id,updated_at:updatedAt}];permissionStatus=200;source.mockClear();
 });
 afterEach(()=>{db.close();vi.unstubAllEnvs();});
 it('requires live Auth and source RLS before returning only allowed detail fields',async()=>{
@@ -39,7 +41,7 @@ it('immediately denies a revoked entitlement even when the old copy still contai
 });
 it('hides unpublished rows from users denied by source RLS and supports actual source-authorized owners',async()=>{
  db.exec("UPDATE rfp_posts SET status='draft'");permission=[];expect(await client().get(token,'private-job')).toBeNull();
- permission=[{id}];expect((await client().get(token,'private-job'))?.status).toBe('draft');
+ permission=[{id,updated_at:updatedAt}];expect((await client().get(token,'private-job'))?.status).toBe('draft');
 });
 it.each([301,401,403,429,500])('fails closed on source permission HTTP %s',async(status)=>{
  permissionStatus=status;const response=await request();expect(response.status).toBe(503);expect(await response.text()).not.toContain('PRIVATE_SCOPE');
@@ -48,8 +50,8 @@ it.each([null,{},[{id:'bad'}],[{id},{id}],{error:'PRIVATE_SOURCE_ERROR'}])('reje
  permission=value;const response=await request();expect(response.status).toBe(503);expect(await response.text()).not.toContain('PRIVATE_SOURCE_ERROR');
 });
 it('refuses an authorized record not synchronized under the same ID and slug',async()=>{
- permission=[{id:user}];await expect(client().get(token,'private-job')).rejects.toMatchObject({status:409,code:'record_not_synced'});
- db.exec("UPDATE rfp_posts SET slug='changed-slug'");permission=[{id}];expect((await request()).status).toBe(409);
+ permission=[{id:user,updated_at:updatedAt}];await expect(client().get(token,'private-job')).rejects.toMatchObject({status:409,code:'record_not_synced'});
+ db.exec("UPDATE rfp_posts SET slug='changed-slug'");permission=[{id,updated_at:updatedAt}];expect((await request()).status).toBe(409);
 });
 it('requires validated and pinned checkpoint, never accepting another snapshot',async()=>{
  db.exec("UPDATE _migration_manifest SET state='loading'");expect((await request()).status).toBe(503);expect(source).toHaveBeenCalledTimes(1);
@@ -73,4 +75,18 @@ it('drops unknown upstream fields and rejects invalid detail data',async()=>{
 it('keeps Supabase as default and blocks production cutover',()=>{
  vi.stubEnv('PMRFP_DETAIL_BACKEND','');expect(d1DetailEnabled()).toBe(false);vi.stubEnv('PMRFP_DETAIL_BACKEND','d1');vi.stubEnv('VERCEL_ENV','preview');expect(d1DetailEnabled()).toBe(true);
  vi.stubEnv('VERCEL_ENV','production');expect(()=>d1DetailEnabled()).toThrow('production_cutover_not_enabled');vi.stubEnv('PMRFP_DETAIL_BACKEND','invalid');expect(()=>d1DetailEnabled()).toThrow('invalid_backend_configuration');
+});
+
+it('refuses stale copied private fields immediately when the source revision changes',async()=>{
+ expect(await client().get(token,'private-job')).not.toBeNull();
+ permission=[{id,updated_at:'2026-11-02T04:00:00.123457Z'}];
+ const response=await request();expect(response.status).toBe(409);expect(await response.text()).not.toMatch(/PRIVATE_SCOPE|buyer@example/);
+ await expect(client().get(token,'private-job')).rejects.toMatchObject({status:409,code:'record_not_synced'});
+});
+it('normalizes UTC formatting without dropping microseconds or exposing revision metadata',async()=>{
+ db.prepare('UPDATE rfp_posts SET updated_at=?').run('2026-11-02T04:00:00.123400Z');permission=[{id,updated_at:'2026-11-02T04:00:00.1234+00:00'}];
+ const row=await client().get(token,'private-job');expect(row).not.toBeNull();expect(row).not.toHaveProperty('updated_at');
+});
+it.each([undefined,null,'bad','2026-11-02T04:00:00.1234567Z','2026-11-02T04:00:00+01:00'])('fails closed on an invalid live revision %j',async(value)=>{
+ permission=[{id,updated_at:value}];const response=await request();expect(response.status).toBe(503);expect(await response.text()).not.toContain('PRIVATE_SCOPE');
 });

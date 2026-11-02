@@ -27,5 +27,15 @@ it('keeps the test company non-public, gates private RFPs and revokes access on 
   expect((await db.query('SELECT scope FROM rfp_posts')).rows).toEqual([{scope:'SYNTHETIC_PRIVATE_SCOPE'}]);await db.exec('RESET ROLE');
   await db.exec("UPDATE trade_trials SET started_at=now()-interval '2 seconds',ends_at=now()-interval '1 second';SET ROLE authenticated");
   expect((await db.query('SELECT scope FROM rfp_posts')).rows).toEqual([]);
+  await db.exec('RESET ROLE');
+  const renewal=readFileSync('d1/temporary-freshness-trial-proposal-2026-11-02.sql','utf8');
+  await expect(db.exec(renewal)).rejects.toThrow('requires approval');await db.exec('ROLLBACK');
+  await db.exec(renewal.replace('__APPROVE_D1_FRESHNESS_TRIAL_20261102__','approved-d1-freshness-trial-v1'));
+  expect((await db.query("SELECT ends_at>now()+interval '14 minutes' AND ends_at<=now()+interval '15 minutes' AS bounded FROM trade_trials")).rows).toEqual([{bounded:true}]);
+  expect((await db.query('SELECT count(*)::int AS count FROM subscriptions')).rows).toEqual([{count:0}]);
+  await db.exec('SET ROLE anon');expect((await db.query('SELECT id FROM organizations')).rows).toEqual([]);
+  await db.exec('RESET ROLE;SET ROLE authenticated');expect((await db.query('SELECT scope FROM rfp_posts')).rows).toHaveLength(1);
+  await db.exec('RESET ROLE');await db.exec(readFileSync('d1/temporary-freshness-trial-revoke-2026-11-02.sql','utf8'));await db.exec('SET ROLE authenticated');
+  expect((await db.query('SELECT scope FROM rfp_posts')).rows).toEqual([]);
  }finally{await db.close();}
 });

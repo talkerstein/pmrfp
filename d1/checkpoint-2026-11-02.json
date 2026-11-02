@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-02",
+  "productionCutover": false,
+  "productionBackend": "supabase",
+  "sourceChangeCapture": {
+    "installedAfterExplicitApproval": true,
+    "registeredTables": 108,
+    "enabledTriggers": 216,
+    "queueContainsKeysOnly": true,
+    "readerApplicationWriteGrants": 0,
+    "readerExpiry": "2026-11-05T10:00:00Z",
+    "bootstrapReceipts": 11,
+    "acknowledged": true,
+    "newAcknowledgements": 11
+  },
+  "sourceSnapshot": {
+    "records": 79341,
+    "sha256": "9f72854981db07a44bda2fd35095ddff4a1f6989eee4385e58522288cce6de76"
+  },
+  "rebuiltCandidate": {
+    "source_snapshot_sha256": "9f72854981db07a44bda2fd35095ddff4a1f6989eee4385e58522288cce6de76",
+    "rebuilt_snapshot_sha256": "96913c89ae72fc68ba73cc8bad3d59727ce6480f9927f77f8a5a4ee5e5c8ce2b",
+    "tables": 109,
+    "records": 79179,
+    "scored_at": "2026-11-02T04:20:13.889841+00:00",
+    "authoritative_fields": "identical",
+    "rebuilt_fields": "approved-policy-only",
+    "cutover_ready": false
+  },
+  "journal": {
+    "changes": 14272,
+    "nativeStatus": "forward-reverse-reapply-and-restored-backups-passed",
+    "initialBulkFailure": {
+      "httpStatus": 500,
+      "code": 7500,
+      "category": "internal-error",
+      "checkpointUnchanged": true
+    },
+    "readOnlyBeforeImageGuardsPassed": 207,
+    "atomicStatements": 413,
+    "baselineRecords": 71316,
+    "finalRecords": 79179
+  },
+  "stagedTransport": {
+    "offlineTestsPassed": 67,
+    "syntheticNativeFailureRollbackForwardReversePassed": true,
+    "metadataCleanupVerifiedByExactSchemaReadback": true
+  },
+  "remaining": [
+    "low-egress current-row consumer and scheduling",
+    "freshness-gated writes and broader application conversion",
+    "production cutover approval"
+  ],
+  "publicApiParity": {
+    "publishedRfps": 1795,
+    "categories": 45,
+    "regions": 88,
+    "propertyTypes": 21,
+    "photos": 3,
+    "allProjectedFieldsIdentical": true
+  },
+  "privateDetailFreshness": {
+    "workerVersion": "da41cb6b-fc97-4f5f-a606-1796b34d2a48",
+    "liveSourceMetadata": "id,updated_at",
+    "currentStaleRestoredAndRevokedSessionVerified": true,
+    "testTrialExpiredAgain": true,
+    "sourceCustomerRowsChanged": 0
+  },
+  "validation": {
+    "offlineMigrationTestsPassed": 67,
+    "relevantWorkerTestsPassed": 141,
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "nativeValidationAfterTemporaryPreviewTest": "passed"
+  }
+}

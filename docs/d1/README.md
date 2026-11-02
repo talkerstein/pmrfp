@@ -11,9 +11,28 @@ Repository baseline refreshed to `origin/master` at
 2026-10-31. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
 The other chat's checkout was not modified. The grants fix (#164), city-source work
 (#163), and migration-reconciliation fixes (#165/#166) landed during this work;
-this branch was rebased onto them without modifying those patches. The dated sections below preserve historical checkpoints. The October 31
-section and checkpoint report describe the latest validated copy. Repeat the
+this branch was rebased onto them without modifying those patches. The dated sections below preserve historical checkpoints. The dated sections and checkpoint reports describe each validated copy. Repeat the
 live audit before a later synchronization or cutover.
+
+## November 2 update
+
+After explicit approval, the guarded source change-tracking setup was installed:
+108 registered public tables and 216 enabled capture triggers. The private queue
+contains only operation/key metadata. Reader security checks confirm RLS on its
+tables, no app-role schema access, no application-table write grants and the
+unchanged November 5 expiry. Normal source activity produced captured events;
+no customer fixture writes were made. See [CHANGE-CAPTURE.md](CHANGE-CAPTURE.md).
+
+A consistent full bootstrap contains 79,341 source records and 11 captured queue
+receipts. The approved rebuild preserves all authoritative fields and contains
+79,179 records. Its 14,272-change journal passed local forward/reverse/reapply
+against the actual prior native readback. Native forward/reverse/reapply and restored baseline/final backups passed.
+All public API fields matched the new source snapshot; the copied Worker also
+rejects private RFP details whose live source revision differs from D1. An
+approved temporary test trial verified current/stale/restored reads and same-session
+revocation; it is expired again. All 11 bootstrap receipts were acknowledged only after another complete native
+validation; newer events remain pending. See
+[VERIFICATION-2026-11-02.md](VERIFICATION-2026-11-02.md). Production traffic remains on Supabase.
 
 ## October 31 update
 
