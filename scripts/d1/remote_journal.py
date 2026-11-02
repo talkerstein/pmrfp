@@ -8,6 +8,7 @@ import contextlib,json
 import migrate as m
 import journal as j
 import remote as r
+import journal_payloads as payloads
 
 CANARY_NAME = 'pmrfp-journal-canary-20261023'
 COPIED_PREVIEW_NAME = 'pmrfp-rebuilt-staging-20261029'
@@ -150,6 +151,9 @@ def apply(remote, before_path, after_path, journal, backup_path, reverse=False,a
         result = r.verify(remote, before_path)
         return {**result, 'recovered': False, 'reverse': reverse, 'changed_records': 0, 'noop': True}
     manifest = r.manifest(remote)
+    # Recover only this exact operation's abandoned private transport rows.
+    # Application rows are still protected by the checkpoint/before-image guards.
+    payloads.cleanup(remote,payloads.operation_id(journal))
     if manifest and manifest[0]['source_sha256'] == after_sha and manifest[0]['state'] in ('loading', 'validated') and before_sha != after_sha:
         # An earlier response may have been lost after atomic commit, or after verification.
         result = r.finalize(remote, after_path)
@@ -159,6 +163,7 @@ def apply(remote, before_path, after_path, journal, backup_path, reverse=False,a
     r.verify(remote, before_path, backup_path=backup_path)
     # The entire list is one D1 transaction. A failure rolls back every mutation;
     # an uncertain response is settled from the destination manifest on retry.
-    remote.batch(batch)
+    transport=payloads.execute(remote,batch,journal) if payloads.needed(batch) else None
+    if transport is None:remote.batch(batch)
     result = r.finalize(remote, after_path)
-    return {**result, 'recovered': False, 'reverse': reverse, 'changed_records': len(journal['changes']), 'batch_statements': len(batch)}
+    return {**result, 'recovered': False, 'reverse': reverse, 'changed_records': len(journal['changes']), 'batch_statements': len(batch), 'transport':transport}

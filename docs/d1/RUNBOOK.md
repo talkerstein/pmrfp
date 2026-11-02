@@ -252,3 +252,28 @@ full native readback, foreign-key/integrity checks, protected backups and final
 validated-manifest transition remain required. Oversized rows/batches fail
 closed. This is still a pinned non-production rehearsal with preview consumers
 paused, not a production live-update protocol.
+
+### Large journal transport (November 2)
+
+A 14,272-change copied-preview journal produced a 412-statement request containing
+large before/after images. Cloudflare repeatedly returned HTTP 500/code 7500
+with only an internal-error reference; the original validated checkpoint remained
+unchanged. The same 207 before-image statements passed in smaller read-only
+requests. Request size is a suspected cause, not a confirmed Cloudflare limit.
+
+`scripts/d1/journal_payloads.py` conservatively stages packed payloads when the
+serialized REST batch exceeds 4 MB. Each upload is bounded to 900 KB after JSON
+encoding, including Unicode escaping. Actual staged bytes are read back and
+compared. The final batch refers to indexed payload IDs, retains every original
+checkpoint/full-row guard and mutation, and drops the private payload table in
+the same transaction before advancing the manifest. Missing payloads raise an
+error; they cannot silently skip checks or writes. This does not split the
+application-data transaction.
+
+An interrupted upload can leave `_migration_journal_payloads`. Retry only the
+same pinned rehearsal operation: cleanup requires the exact known table schema
+and matching journal SHA ownership. Unrecognized schema/ownership is refused.
+Only transport metadata is removed; application tables are not touched by
+staging or cleanup. Keep a single migration consumer and pause owned local
+preview consumers throughout physical forward/reverse/reapply tests. Finish all
+reversal tests before acknowledging any source capture receipts.
