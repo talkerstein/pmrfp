@@ -98,7 +98,7 @@ const en = {
     ],
   },
   trades: {
-    eyebrow: "For tradesmen",
+    eyebrow: "For trades",
     title: "See what is open in your trade.",
     yourTrade: "Your trade",
     yourArea: "Your area",
@@ -297,7 +297,7 @@ const fr: typeof en = {
     home: "Accueil PMRFP",
     main: "Principal",
     findWork: "Trouver du travail",
-    hireTrades: "Engager un entrepreneur",
+    hireTrades: "Engager un pro",
     rfps: "Appels d'offres ouverts",
     rfpsHint: "Appels d'offres publics et de gestionnaires immobiliers",
     directory: "Répertoire des entrepreneurs",

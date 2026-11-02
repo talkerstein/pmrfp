@@ -424,10 +424,10 @@ export function HomeV3({
                       </a>
                     ))}
                   </div>
-                  {d === 0 && pub != null && (
+                  {d === 0 && !!pub && (
                     <a className="live" href={L(H.rfps)}>
                       <span className="v3-dot" />
-                      <span><b>{fmt(t.hero.openNow, { n: num(pub), where: here })}</b>{data.closing7 != null && <span className="c">{fmt(t.hero.closing, { n: num(data.closing7) })}</span>}</span>
+                      <span><b>{fmt(t.hero.openNow, { n: num(pub), where: here })}</b>{!!data.closing7 && <span className="c">{fmt(t.hero.closing, { n: num(data.closing7) })}</span>}</span>
                     </a>
                   )}
                 </div>
@@ -470,7 +470,7 @@ export function HomeV3({
               <Image src={data.big.img} alt="" fill sizes="(max-width: 1023px) 100vw, 480px" className="v3-img" />
               <span className="sh" />
               <span className="in">
-                {data.big.n != null && <span className="n">{num(data.big.n)}</span>}
+                {!!data.big.n && <span className="n">{num(data.big.n)}</span>}
                 <span className="row"><span className="nm">{data.big.name}</span><span className="on">{t.trades.openNow}</span></span>
               </span>
             </a>
@@ -478,7 +478,7 @@ export function HomeV3({
               <a key={x.name} className="v3-tt zoom" href={L(x.href)}>
                 <Image src={x.img} alt="" fill sizes="(max-width: 1023px) 50vw, 230px" className="v3-img" />
                 <span className="sh" />
-                <span className="in">{x.n != null && <span className="n">{num(x.n)}</span>}<span className="nm">{x.name}</span></span>
+                <span className="in">{!!x.n && <span className="n">{num(x.n)}</span>}<span className="nm">{x.name}</span></span>
               </a>
             ))}
             <a className="v3-allt lift" href={L(H.trades)}>

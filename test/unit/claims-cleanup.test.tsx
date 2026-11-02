@@ -214,4 +214,28 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
       expect(html).not.toMatch(/class="c">\d/);
     });
   }
+
+  it("hides the hero's live strip and tile counts at zero, and only a zero closing line when tenders are open", async () => {
+    const { getDictionary, clientMessages } = await import("@/i18n/dictionaries");
+    const { I18nProvider } = await import("@/i18n/provider");
+    const d = getDictionary("en");
+    const render = (openPublic: number, closing7: number) =>
+      renderToStaticMarkup(
+        <I18nProvider lang="en" messages={clientMessages("en")}>
+          <HomeV3
+            data={{ ...structuredClone(V3_FALLBACK), openPublic, closing7, big: { ...V3_FALLBACK.big, n: 0 }, tiles: V3_FALLBACK.tiles.map((x) => ({ ...x, n: 0 })) }}
+            dataUs={null}
+            where={d.common.market.where}
+            t={d.homeV3}
+            lang="en"
+          />
+        </I18nProvider>,
+      );
+    const none = render(0, 0);
+    expect(none).not.toContain('class="live"');
+    expect(none).not.toContain('<span class="n">0</span>');
+    const some = render(12, 0);
+    expect(some).toContain('class="live"');
+    expect(some).not.toContain("0 close in the next 7 days. See them");
+  });
 });
