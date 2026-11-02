@@ -34,11 +34,9 @@ describe("v3 buttons never force a page wider than the screen", () => {
     expect(d["flex-shrink"]).toBe("0");
   });
 
-  it("the home hero's button row and columns can shrink and wrap", () => {
+  it("the home hero's two doors and the trade search can shrink", () => {
     const s = css("home-v3/home-v3.css");
-    expect(decls(s, ".v3-hero-ctas")["flex-wrap"]).toBe("wrap");
-    expect(decls(s, ".v3-hero-main")["min-width"]).toBe("0");
-    expect(decls(s, ".v3-hero-side")["min-width"]).toBe("0");
+    expect(decls(s, ".v3-door")["min-width"]).toBe("0");
     expect(decls(s, ".v3-search")["min-width"]).toBe("0");
   });
 

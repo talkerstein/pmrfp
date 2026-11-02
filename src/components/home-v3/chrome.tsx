@@ -9,7 +9,7 @@
  */
 import "./home-v3.css";
 import Image from "next/image";
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { isPmAudiencePath, rememberAudience } from "@/lib/audience/pm";
 import { VIEWS_COOKIE, readCookie } from "@/lib/growth/interruptions";
@@ -119,6 +119,47 @@ function V3FootLang() {
 
 /* ------------------------------------------------------------------ header */
 
+/**
+ * A nav pulldown, grouped by what the visitor came to do: opens on hover or
+ * click on desktop. The mobile menu shows the same links as a plain labelled
+ * list, nothing to open. Links stay in the HTML either way, for crawlers.
+ */
+function V3NavGroup({ label, items }: { label: string; items: { href: string; label: string; hint: string; current?: "page" }[] }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <div ref={box} className={`v3-navgrp${open ? " open" : ""}`}>
+      <button type="button" className="v3-navbtn" aria-expanded={open} data-active={items.some((i) => i.current) || undefined} onClick={() => setOpen((o) => !o)}>
+        {label}
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M2.5 4.5L6 8l3.5-3.5" /></svg>
+      </button>
+      <div className="v3-navmenu">
+        <div className="v3-navpanel">
+          <div className="v3-navhd">{label}</div>
+          {items.map((i) => (
+            <a key={i.href} href={i.href} aria-current={i.current}><b>{i.label}</b><span>{i.hint}</span></a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function V3Header({
   t,
   lang,
@@ -168,11 +209,21 @@ export function V3Header({
           </a>
           <nav id="v3-nav" aria-label={t.nav.main} className={`v3-nav${menu ? " open" : ""}`}>
             <div className="v3-nav-links">
-              <a href={L(V3H.rfps)} aria-current={cur(V3H.rfps)}>{t.nav.rfps}</a>
+              <V3NavGroup
+                label={t.nav.findWork}
+                items={[
+                  { href: L(V3H.rfps), label: t.nav.rfps, hint: t.nav.rfpsHint, current: cur(V3H.rfps) },
+                  { href: L(V3H.winners), label: t.nav.winners, hint: t.nav.winnersHint, current: cur(V3H.winners) },
+                ]}
+              />
               {/* Property-manager side: the free RFP writer, no sign-up until "Post it free". */}
-              <a href={L(V3H.writer)} aria-current={cur(V3H.writer)}>{t.nav.writer}</a>
-              <a href={L(V3H.directory)} aria-current={cur(V3H.directory)}>{t.nav.directory}</a>
-              <a href={L(V3H.winners)} aria-current={cur(V3H.winners)}>{t.nav.winners}</a>
+              <V3NavGroup
+                label={t.nav.hireTrades}
+                items={[
+                  { href: L(V3H.writer), label: t.nav.writer, hint: t.nav.writerHint, current: cur(V3H.writer) },
+                  { href: L(V3H.directory), label: t.nav.directory, hint: t.nav.directoryHint, current: cur(V3H.directory) },
+                ]}
+              />
               <a href={L(V3H.jobs)} aria-current={cur(V3H.jobs)}>{t.nav.jobs}</a>
               <a href={L(V3H.forum)} aria-current={cur(V3H.forum)}>{t.nav.forum}</a>
               <a href={L(V3H.pricing)} aria-current={cur(V3H.pricing)}>{t.nav.pricing}</a>
