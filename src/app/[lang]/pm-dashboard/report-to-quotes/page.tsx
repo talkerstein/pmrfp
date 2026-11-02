@@ -6,7 +6,12 @@ import { PageHeader } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { NewReport } from "@/components/report-quotes/new-report";
+import { ForwardingCard } from "@/components/report-quotes/forwarding-card";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isServiceConfigured } from "@/lib/supabase/config";
+import { inboundConfig } from "@/lib/report-quotes/inbound";
+import { getOrCreateInbox, loadInboundLog, type Inbox, type InboundLogRow } from "@/lib/report-quotes/inbound-server";
 import { CA_PROVINCES, US_STATE_NAMES } from "@/lib/geo";
 import { accountGeo } from "@/lib/visitor-geo";
 import { DAILY_UPLOAD_LIMIT, isPastRetention, uploadsLeft } from "@/lib/report-quotes/rules";
@@ -83,6 +88,13 @@ export default async function ReportQuotesPage({ params }: { params: Promise<obj
   const home = accountGeo(org)?.province ?? "";
   const left = uploadsLeft(used);
   const u = r.upload;
+  const ib = r.inbound;
+  // Forwarding by email: shown only when INBOUND_EMAIL_DOMAIN / INBOUND_EMAIL_SECRET are set.
+  const inboundCfg = inboundConfig();
+  const [inbox, inboundLog]: [Inbox | null, InboundLogRow[]] =
+    inboundCfg && isServiceConfigured()
+      ? await Promise.all([getOrCreateInbox(createServiceClient(), inboundCfg, org.id, session.userId), loadInboundLog(db, session.userId)])
+      : [null, []];
 
   return (
     <div className="space-y-8">
@@ -124,6 +136,43 @@ export default async function ReportQuotesPage({ params }: { params: Promise<obj
         <p className="mt-3 text-xs text-muted-foreground">{t.disclaimer}</p>
       </section>
 
+      {inbox && (
+        <ForwardingCard
+          address={inbox.address}
+          s={{
+            title: ib.title,
+            body: ib.body,
+            addressLabel: ib.addressLabel,
+            copy: ib.copy,
+            copied: ib.copied,
+            steps: ib.steps.map((step) => fmt(step, { limit: DAILY_UPLOAD_LIMIT })),
+            private: ib.private,
+            rotate: ib.rotate,
+            rotateNote: ib.rotateNote,
+            rotated: ib.rotated,
+            errors: ib.errors,
+          }}
+        >
+          <div className="mt-4 border-t border-border pt-3">
+            <h3 className="text-sm font-semibold">{ib.logTitle}</h3>
+            {inboundLog.length === 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">{ib.logEmpty}</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-border text-sm">
+                {inboundLog.map((row) => (
+                  <li key={row.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-2">
+                    <span className="min-w-0 truncate">{[row.subject, row.from_address].filter(Boolean).join(" · ") || "—"}</span>
+                    <span className={`text-xs ${row.outcome === "created" ? "text-emerald-700" : "text-muted-foreground"}`}>
+                      {row.outcome === "created" ? plural(row.report_ids.length, ib.outcome.created) : ib.outcome[row.outcome]} · {formatDate(row.received_at, lang)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </ForwardingCard>
+      )}
+
       <section>
         <h2 className="text-lg font-semibold">{t.listTitle}</h2>
         {rows.length === 0 ? (
@@ -160,9 +209,14 @@ export default async function ReportQuotesPage({ params }: { params: Promise<obj
                         .join(" · ")}
                     </p>
                   </div>
-                  <Link href={`/pm-dashboard/report-to-quotes/${row.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                    {t.open}
-                  </Link>
+                  <span className="flex items-center gap-2">
+                    <Link href={`/pm-dashboard/report-to-quotes/${row.id}/summary`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                      {r.summary.rowLink}
+                    </Link>
+                    <Link href={`/pm-dashboard/report-to-quotes/${row.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                      {t.open}
+                    </Link>
+                  </span>
                 </li>
               );
             })}

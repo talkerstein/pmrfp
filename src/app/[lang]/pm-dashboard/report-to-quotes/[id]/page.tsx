@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import Link from "@/i18n/link";
 import { PageHeader } from "@/components/dashboard/stat-card";
+import { buttonVariants } from "@/components/ui/button";
 import { ReviewEditor, type EditorItem, type SendSummary, type TrustedOption } from "@/components/report-quotes/review-editor";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -106,7 +108,15 @@ export default async function ReportReviewPage({
 
   return (
     <div>
-      <PageHeader title={report.title} description={r.dash.description} />
+      <PageHeader
+        title={report.title}
+        description={r.dash.description}
+        action={
+          <Link href={`${DASH}/${report.id}/summary`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            {r.summary.open}
+          </Link>
+        }
+      />
       <ReviewEditor
         // A fresh read (Try again) remounts the editor with the new items.
         key={report.extracted_at ?? "none"}

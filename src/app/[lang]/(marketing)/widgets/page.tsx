@@ -71,7 +71,9 @@ export default async function WidgetsPage({
           : null,
     trusted: trusted?.list?.published ? { handle: trusted.list.handle } : null,
     townBids,
+    reportQuotes: org ? { ref: org.slug } : null,
   };
+  const rq = getT("reportQuotes").widget;
 
   // Open on the tab the member can actually use, unless a link asked for one.
   const asked = WIDGET_KINDS.find((k) => k === sp.w);
@@ -116,6 +118,14 @@ export default async function WidgetsPage({
             return { slug: r.slug, name: r.province ? `${name}, ${regionName(r.province, lang)}` : name };
           })}
           access={access}
+          reportQuotes={{
+            tab: { label: rq.tabLabel, for: rq.tabFor, blurb: rq.tabBlurb },
+            note: rq.note,
+            lockedIn: rq.lockedIn,
+            lockedInCta: rq.lockedInCta,
+            lockedOut: rq.lockedOut,
+            qr: { title: rq.qrTitle, body: rq.qrBody, caption: rq.qrCaption, svg: rq.qrSvg, png: rq.qrPng, print: rq.qrPrint },
+          }}
         />
 
         <section className="mt-16">

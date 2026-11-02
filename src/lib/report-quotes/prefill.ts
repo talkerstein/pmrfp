@@ -60,6 +60,7 @@ export async function reportRfpPrefill(
       ...(report.city ? { city: report.city } : {}),
       ...(report.region ? { province: report.region } : {}),
       ...(regionSlug && regions.some((r) => r.slug === regionSlug) ? { regionSlug } : {}),
+      fromReport: { reportId: report.id, tradeSlug },
     },
     notice: fmt(t.rfp.notice, { title: report.title }),
   };

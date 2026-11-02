@@ -32,6 +32,7 @@ import { profileStatusPatch, reviewChanges } from "@/lib/organizations/profile-r
 import { screenOrganization, recordOrgRisk } from "@/lib/spam/server";
 import { purgeOutCache } from "@/lib/links/data";
 import { websiteDomain } from "@/lib/badge/install";
+import { linkRfpFromForm } from "@/lib/report-quotes/rfp-link";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, splitLocale, type Locale } from "@/i18n/config";
 
 /**
@@ -459,6 +460,8 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   const { data: catRows } = await supabase.from("trade_categories").select("id,slug").in("slug", categories);
   if (catRows?.length)
     await supabase.from("rfp_categories").insert(catRows.map((c: { id: string }) => ({ rfp_id: rfp.id, category_id: c.id })));
+  // Report → Quotes: remember which trade group this RFP came from (its Repair Cost Summary shows the quotes). Never blocks the post.
+  await linkRfpFromForm(supabase, formData, rfp.id, session.userId);
 
   // Persist photo URLs (uploaded client-side to rfp-photos public bucket) as
   // rfp_documents rows with visibility='public'. Only accept HTTPS URLs that
