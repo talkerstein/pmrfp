@@ -755,7 +755,8 @@ describe("QR code encoder", () => {
     const q = qrEncode("hello")!;
     expect([q.version, q.mask]).toEqual([1, 0]);
     expect(rows("hello")).toEqual(HELLO);
-    // Multi-block versions with version information (v7, v8, v11, v15), same reference library.
+    // Multi-block versions with version information (v7, v8, v11, v15): the same reference library's
+    // output with the mask this encoder picks (its own mask scoring can pick a different, equally valid mask).
     expect(digest("https://pmrfp.com/inspection-report-to-quotes?ref=acme-home-inspections&utm_source=widget&utm_medium=qr&utm_campaign=report-quotes")).toBe(
       "189b55a703aae5a4e962ce8223f8887e4f7beaf68fb7ddb3d315548f2be5757c",
     );
