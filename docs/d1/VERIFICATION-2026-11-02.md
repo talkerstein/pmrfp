@@ -55,7 +55,7 @@ again. The trial was revoked early and the same Auth session immediately lost
 access. No source customer records, subscriptions, charges, Stripe objects or
 credentials changed. The test trial is expired again.
 
-Relevant Worker contracts: 141 passing tests. Offline migration suite: 67
+Relevant Worker contracts: 147 passing tests. Offline migration suite: 84
 passing tests. Typecheck and targeted lint pass. Earlier dated application build
 and UI evidence remain historical; no new browser UI verification is claimed here.
 
@@ -65,6 +65,10 @@ After another complete native validation following the temporary preview test,
 all 11 bootstrap receipts were acknowledged successfully. Newer source receipts
 remain pending. Reversing this acknowledged checkpoint requires a new full
 source bootstrap.
-Low-egress current-row extraction, replay scheduling, durable consumer receipts,
-freshness-gated writes and broader app conversion remain unfinished. Auth and
+Low-egress extraction and durable checkpoint code are locally tested, including
+real PostgreSQL-compatible truncation/delete/late-ID/precision cases and source
+function/role guards. Live read-only preflight passes. The first native metadata
+canary hit D1 daily write quota before registration; no live incremental replay
+has occurred. Scheduling, freshness-gated writes and broader app conversion
+remain unfinished. See [INCREMENTAL-CONSUMER.md](INCREMENTAL-CONSUMER.md). Auth and
 Storage still use Supabase, and production cutover remains blocked.

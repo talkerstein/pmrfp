@@ -7,6 +7,7 @@ Use CLOUDFLARE_API_TOKEN, or explicitly opt into the local Wrangler OAuth file.
 import argparse,contextlib,graphlib,json,os,re,subprocess,time,urllib.request,urllib.error
 from pathlib import Path
 import migrate as m
+import capture_state
 ACCOUNT='f4e9b098134981b108024243b2a72ed4'
 DATABASE='80b90607-2f8d-4f9b-a646-658f2ebad0bc'
 NAME='pmrfp-migration-staging-v2-20261021'
@@ -138,6 +139,9 @@ def verify_schema(remote):
         db.executescript(m.SCHEMA.read_text())
         expected_schema={r['name']:r['sql'] for r in db.execute("SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND type IN ('table','index')")}
     remote_schema={r['name']:r['sql'] for r in remote.query("SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND type IN ('table','index')")[0]['results'] if r['name'] not in ['_cf_KV','_migration_manifest']}
+    if capture_state.TABLE in remote_schema:
+        if not capture_state.schema_ok(remote_schema.pop(capture_state.TABLE)):raise ValueError('Unrecognized capture metadata schema')
+        capture_state.read(remote)
     def normalized_sql(sql):return re.sub(r'\s+',' ',re.sub(r'\bIF NOT EXISTS\s*','',sql,flags=re.I)).strip().rstrip(';')
     if set(remote_schema)!=set(expected_schema) or any(normalized_sql(remote_schema[k])!=normalized_sql(v) for k,v in expected_schema.items()):raise ValueError('Remote candidate schema mismatch')
 

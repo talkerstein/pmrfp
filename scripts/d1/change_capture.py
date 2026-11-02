@@ -1,10 +1,24 @@
 """Generate review-only source outbox setup. Never connects to or modifies a database."""
-import argparse,json
+import argparse,json,re
 from pathlib import Path
 import migrate as m
 
 READER='d1_migration_reader_20261022'
 def literal(value):return "'"+value.replace("'","''")+"'"
+
+def role_guard():
+    return f"""current_user='{READER}' AND EXISTS(SELECT 1 FROM pg_roles WHERE rolname=current_user AND rolcanlogin AND NOT rolinherit AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND rolbypassrls AND rolvaliduntil>clock_timestamp() AND rolvaliduntil<='2026-11-05 10:00:00+00'::timestamptz)
+AND NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=current_user))
+AND NOT EXISTS(SELECT 1 FROM pg_tables WHERE schemaname='public' AND has_table_privilege(current_user,format('%I.%I',schemaname,tablename),'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+AND NOT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef AND has_function_privilege(current_user,p.oid,'EXECUTE') AND p.proname NOT IN ('has_active_trade_access','has_intel_access','is_admin','is_org_member'))"""
+
+def function_guard(catalog):
+    """Compare the installed private definer bodies/configuration before use."""
+    definitions=re.findall(r'CREATE FUNCTION d1_migration\.(capture_row|capture_truncate|acknowledge)\([^;]*?AS \$(\w+)\$(.*?)\$\2\$;',generate(catalog),re.S)
+    expected=sorted([{'name':name,'body':body,'definer':True,'config':['search_path=pg_catalog'],'language':'plpgsql','args':'p_ids bigint[], p_destination_sha256 text' if name=='acknowledge' else '','returns':'integer' if name=='acknowledge' else 'trigger'} for name,_,body in definitions],key=lambda row:row['name'])
+    if len(expected)!=3:raise ValueError('Cannot identify reviewed capture function bodies')
+    actual="(SELECT jsonb_agg(jsonb_build_object('name',p.proname,'body',p.prosrc,'definer',p.prosecdef,'config',p.proconfig,'language',l.lanname,'args',pg_get_function_identity_arguments(p.oid),'returns',p.prorettype::regtype::text) ORDER BY p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace JOIN pg_language l ON l.oid=p.prolang WHERE n.nspname='d1_migration' AND p.proname IN ('capture_row','capture_truncate','acknowledge'))"
+    return actual+'='+literal(m.canonical(expected))+'::jsonb'
 def generate(catalog):
     specs={name:spec for name,spec in m.table_specs(catalog).items() if name!='_auth_users'}
     registry=[{'table':name,'pk':spec['pk']} for name,spec in sorted(specs.items())]

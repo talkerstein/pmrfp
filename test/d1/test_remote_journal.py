@@ -95,6 +95,15 @@ class RemoteJournalTests(FixtureMixin, unittest.TestCase):
         with self.assertRaises(ValueError):q.apply(fake,first,second,journal,self.root/'not-approved.sqlite')
         q.apply(fake,first,second,journal,self.root/'forward-approved.sqlite',allow_copied_preview=True);r.verify(fake,second)
         q.apply(fake,first,second,journal,self.root/'reverse-approved.sqlite',reverse=True,allow_copied_preview=True);r.verify(fake,first)
+    def test_acknowledged_copied_checkpoint_cannot_be_reversed(self):
+        first=self.approved_snapshot(self.snapshot(self.seed(),'raw-state-before.jsonl'),'state-before.jsonl')
+        second=self.approved_snapshot(self.snapshot(self.seed(2),'raw-state-after.jsonl'),'state-after.jsonl')
+        journal=j.plan(first,second);fake=FakeRemote();fake.name=q.COPIED_PREVIEW_NAME;self.addCleanup(fake.db.close);r.load(fake,first)
+        q.apply(fake,first,second,journal,self.root/'state-forward.sqlite',allow_copied_preview=True)
+        r.capture_state.write(fake,'f'*64,journal['after_snapshot_sha256'],'a'*64)
+        with self.assertRaisesRegex(ValueError,'Cannot reverse an acknowledged checkpoint'):
+            q.apply(fake,first,second,journal,self.root/'state-reverse.sqlite',reverse=True,allow_copied_preview=True)
+        r.verify(fake,second);self.assertFalse((self.root/'state-reverse.sqlite').exists())
     def test_copied_preview_rejects_synthetic_metadata_and_unsafe_binding_before_mutation(self):
         first,second,journal,fake=self.prepare();fake.name=q.COPIED_PREVIEW_NAME;calls=fake.calls
         with self.assertRaisesRegex(ValueError,'approved rebuild'):q.apply(fake,first,second,journal,self.root/'bad-source.sqlite',allow_copied_preview=True)

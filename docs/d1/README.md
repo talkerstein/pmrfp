@@ -34,6 +34,16 @@ revocation; it is expired again. All 11 bootstrap receipts were acknowledged onl
 validation; newer events remain pending. See
 [VERIFICATION-2026-11-02.md](VERIFICATION-2026-11-02.md). Production traffic remains on Supabase.
 
+The incremental consumer is now prepared and locally tested: current-key reads,
+deletes, key changes, truncation, Auth ID refresh and durable receipt-history
+checks. Live read-only source preflight passes. The native control-state canary
+hit the account's daily D1 write limit before installation; the copied preview
+remains validated and its 11 acknowledged receipts are retained. Live incremental
+replay and scheduling are not yet active. See
+[INCREMENTAL-CONSUMER.md](INCREMENTAL-CONSUMER.md) for exact recovery/resume steps.
+Current checks: 84 offline migration tests and 147 relevant Worker contracts pass;
+typecheck and targeted lint are clean. No new production build/UI check is claimed.
+
 ## October 31 update
 
 The branch is rebased onto master `29b376e`. The previously quota-blocked

@@ -36,11 +36,12 @@ class CaptureTests(FixtureMixin,unittest.TestCase):
         source,candidate=self.snapshots([str(n) for n in range(1,1202)]);calls=[]
         def runner(args,**kwargs):
             sql=kwargs['input'].decode();calls.append((args,sql));self.assertNotIn('UPDATE public.',sql);self.assertNotIn('DELETE FROM',sql)
+            if 'json_build_object' in sql:return SimpleNamespace(returncode=0,stdout=json.dumps({'receiptDigest':'a'*64,'acknowledgedReceipts':1201}).encode())
             return SimpleNamespace(returncode=0,stdout=b'0')
-        with patch.dict(os.environ,self.env()),patch.object(a.r,'verify',return_value={'records':3}) as verify:
+        with patch.dict(os.environ,self.env()),patch.object(a.r,'verify',return_value={'records':3}) as verify,patch.object(a.capture_state,'write') as checkpoint:
             report=a.acknowledge(SimpleNamespace(name=a.TARGET),source,candidate,runner)
-        self.assertEqual(len(calls),3);self.assertEqual(report['newAcknowledgements'],0);self.assertEqual(report['capturedReceipts'],1201);verify.assert_called_once()
-        self.assertTrue(all('BEGIN READ WRITE' in sql and 'd1_migration.acknowledge' in sql for _,sql in calls))
+        self.assertEqual(len(calls),4);self.assertEqual(report['newAcknowledgements'],0);self.assertEqual(report['capturedReceipts'],1201);verify.assert_called_once();checkpoint.assert_called_once()
+        self.assertTrue(all('SERIALIZABLE READ WRITE' in sql and 'd1_migration.acknowledge' in sql for _,sql in calls[:-1]));self.assertTrue(report['durableConsumerCheckpoint'])
     def test_wrong_target_or_unverified_source_connection_never_acknowledges(self):
         source,candidate=self.snapshots();runner=Mock()
         with self.assertRaises(ValueError):a.acknowledge(SimpleNamespace(name='production'),source,candidate,runner)
@@ -51,5 +52,30 @@ class CaptureTests(FixtureMixin,unittest.TestCase):
         sql=m.capture_metadata_sql({'kind':'meta'})
         self.assertIn('acknowledged_at IS NULL',sql);self.assertIn('id::text ORDER BY id',sql);self.assertNotIn('id>',sql)
         self.assertIn("'bootstrap',true",sql)
+    def incremental(self):
+        source,candidate=self.snapshots();_,_,source_sha=m.read_snapshot(source,self.cat);_,_,candidate_sha=m.read_snapshot(candidate,self.cat)
+        capture={'protocol':1,'bootstrap':False,'ids':['2','9'],'base_source_sha256':source_sha,'base_candidate_sha256':candidate_sha,'base_receipt_digest':'c'*64}
+        next_source=self.remeta(source,'incremental.jsonl',source='postgres-repeatable-read-incremental',change_capture=capture);_,_,next_sha=m.read_snapshot(next_source,self.cat)
+        next_candidate=self.remeta(candidate,'incremental-candidate.jsonl',parent_snapshot_sha256=next_sha)
+        return next_source,next_candidate,{'source_sha256':source_sha,'candidate_sha256':candidate_sha,'receipt_digest':'c'*64}
+    def test_incremental_ack_requires_matching_durable_baseline_and_receipt_history(self):
+        source,candidate,baseline=self.incremental();runner=Mock()
+        with patch.dict(os.environ,self.env()),patch.object(a.r,'verify',return_value={'records':3}),patch.object(a.capture_state,'read',return_value=None):
+            with self.assertRaisesRegex(ValueError,'durable consumer'):a.acknowledge(SimpleNamespace(name=a.TARGET),source,candidate,runner)
+        runner.assert_not_called()
+        calls=[]
+        def execute(args,**kwargs):
+            sql=kwargs['input'].decode();calls.append(sql)
+            if 'json_build_object' in sql:return SimpleNamespace(returncode=0,stdout=json.dumps({'receiptDigest':'c'*64 if len(calls)==1 else 'd'*64,'acknowledgedReceipts':11}).encode())
+            return SimpleNamespace(returncode=0,stdout=b'0')
+        with patch.dict(os.environ,self.env()),patch.object(a.r,'verify',return_value={'records':3}),patch.object(a.capture_state,'read',return_value=baseline),patch.object(a.capture_state,'write') as checkpoint:
+            report=a.acknowledge(SimpleNamespace(name=a.TARGET),source,candidate,execute)
+        self.assertEqual(len(calls),3);self.assertIn('NOT(id=ANY(ARRAY[2,9]',calls[0]);self.assertIn('SERIALIZABLE READ WRITE',calls[1]);self.assertIn('Receipt belongs to another checkpoint',calls[1]);self.assertTrue(report['durableConsumerCheckpoint']);checkpoint.assert_called_once()
+    def test_rewound_source_history_refuses_ack_before_any_metadata_writes(self):
+        source,candidate,baseline=self.incremental();calls=[]
+        def execute(args,**kwargs):calls.append(kwargs['input'].decode());return SimpleNamespace(returncode=0,stdout=json.dumps({'receiptDigest':'f'*64,'acknowledgedReceipts':12}).encode())
+        with patch.dict(os.environ,self.env()),patch.object(a.r,'verify',return_value={'records':3}),patch.object(a.capture_state,'read',return_value=baseline):
+            with self.assertRaisesRegex(ValueError,'receipt history changed'):a.acknowledge(SimpleNamespace(name=a.TARGET),source,candidate,execute)
+        self.assertEqual(len(calls),1);self.assertIn('READ ONLY',calls[0])
 
 if __name__=='__main__':unittest.main()

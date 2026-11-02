@@ -147,6 +147,8 @@ def apply(remote, before_path, after_path, journal, backup_path, reverse=False,a
         before, after = after, before;before_path, after_path = after_path, before_path;before_sha, after_sha = after_sha, before_sha
         journal = {**journal, 'before_snapshot_sha256': before_sha, 'after_snapshot_sha256': after_sha,
                    'changes': [{**c, 'before': c['after'], 'after': c['before']} for c in journal['changes']]}
+        acknowledged=r.capture_state.read(remote) if copied else None
+        if acknowledged is not None and acknowledged['candidate_sha256']==before_sha:raise ValueError('Cannot reverse an acknowledged checkpoint; a new full source bootstrap is required')
     if before_sha == after_sha:
         result = r.verify(remote, before_path)
         return {**result, 'recovered': False, 'reverse': reverse, 'changed_records': 0, 'noop': True}

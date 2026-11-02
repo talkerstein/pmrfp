@@ -77,9 +77,11 @@ checkpoint invalidates the incremental baseline and requires a new full source
 bootstrap.
 
 Row-key capture and a verified full-bootstrap acknowledgement are prepared.
-Low-egress current-row extraction, continuous replay scheduling, transaction
-coalescing, durable consumer receipts and freshness-gated application writes
-remain unimplemented. Installing the queue does not complete those gates.
+Low-egress current-row extraction, transaction coalescing and durable consumer
+checkpoint code are now prepared and locally tested; live read-only source
+guards pass. Native activation/first live replay are blocked by D1 write quota.
+Continuous scheduling and freshness-gated application writes remain unimplemented.
+See [INCREMENTAL-CONSUMER.md](INCREMENTAL-CONSUMER.md). Installing the queue does not complete those gates.
 Future source schema changes require another audit and trigger registration.
 
 ## Recovery and verification
