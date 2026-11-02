@@ -119,7 +119,7 @@ def statements(journal, before, after, specs):
     batch.append({'sql': "UPDATE _migration_manifest SET source_sha256=?,state='loading' WHERE id=1", 'params': [journal['after_snapshot_sha256']]})
     if any(len(item['params']) > 100 or len(item['sql'].encode()) > 100000 for item in batch):raise ValueError('Journal exceeds bounded D1 statement limits')
     if any(isinstance(v, int) and abs(v) > 2**53 - 1 for item in batch for v in item['params']):raise ValueError('Unsafe integer for remote JSON API')
-    if len(batch)>500:
+    if len(batch)>500 or payloads.needed(batch):
         batch=batch[:2]+packed_guards(journal,specs)+packed_mutations(actions)+batch[-1:]
     if len(batch)>500:raise ValueError('Canary journal exceeds atomic batch bound')
     if any(len(item['sql'].encode())>100000 for item in batch):raise ValueError('Journal exceeds bounded D1 statement limits')

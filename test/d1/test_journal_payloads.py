@@ -73,3 +73,13 @@ class PayloadTests(FixtureMixin,unittest.TestCase):
         class Other:
             name='production'
         with self.assertRaisesRegex(ValueError,'pinned rehearsal'):p.execute(Other(),[],{})
+    def test_large_body_under_statement_cap_is_packed_before_staging(self):
+        first=self.snapshot(self.seed(),'wide-before.jsonl');rows=self.seed(2)
+        template=next(iter(rows['regions'].values()))
+        for n in range(180):
+            row={**template,'id':'wide-'+str(n),'slug':'wide-'+str(n),'name':'x'*30000+str(n)}
+            rows['regions'][m.canonical([row['id']])]=row
+        second=self.snapshot(rows,'wide-after.jsonl');journal=j.plan(first,second)
+        fake=FakeRemote();fake.name=q.CANARY_NAME;self.addCleanup(fake.db.close);r.load(fake,first)
+        result=q.apply(fake,first,second,journal,self.root/'wide-transport.sqlite')
+        self.assertEqual(result['transport']['transport'],'staged-private-payloads');r.verify(fake,second);self.absent(fake)
