@@ -36,6 +36,7 @@ let unit: typeof import("next/dist/server/app-render/work-unit-async-storage.ext
 let patched: typeof import("next/dist/server/lib/patch-fetch").createPatchedFetcher;
 let counts: typeof import("@/lib/data/rfp-counts").getOpenRfpCounts;
 let listRfps: typeof import("@/lib/data/rfps").listRfps;
+let getTaxonomyRows: typeof import("@/lib/data/taxonomy").getTaxonomyRows;
 let backing: MemoryBackingStore;
 
 beforeAll(async () => {
@@ -46,6 +47,7 @@ beforeAll(async () => {
   patched = (await import("next/dist/server/lib/patch-fetch")).createPatchedFetcher;
   counts = (await import("@/lib/data/rfp-counts")).getOpenRfpCounts;
   listRfps = (await import("@/lib/data/rfps")).listRfps;
+  getTaxonomyRows = (await import("@/lib/data/taxonomy")).getTaxonomyRows;
 });
 beforeEach(() => { backing = new MemoryBackingStore(); });
 
@@ -60,6 +62,41 @@ function render<T>(route: string, run: () => Promise<T>) {
 }
 
 describe("Next framework cache regressions", () => {
+  it("persists paginated HTTP 206 taxonomy reads, preserves inactive rows, and refreshes after invalidation", async () => {
+    const rows = Array.from({ length: 251 }, (_, i) => ({
+      id: String(i).padStart(4, "0"), slug: `region-${i}`, name: `Region ${i}`,
+      active: i !== 0, province: "Ontario", country: "Canada", parent_id: null, sort_order: i,
+    }));
+    const db = createFakePostgrest({ regions: rows });
+    const upstream: typeof fetch = async (input, init) => {
+      const response = await db.fetch(input, init);
+      return new Response(await response.text(), { status: 206, headers: response.headers });
+    };
+    const nextFetch = patched(upstream, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+    fixture.client = createClient("https://fixture.supabase.co", "fixture-key", {
+      auth: { persistSession: false },
+      global: { fetch: createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch) },
+    });
+    const query = () => getTaxonomyRows("regions");
+    const first = await render("/regions", query);
+    expect(first.result).toHaveLength(251);
+    expect(first.result[0].active).toBe(false);
+    expect(db.count("regions")).toBe(2);
+    const second = await render("/rfps", query);
+    expect(second.result).toEqual(first.result);
+    expect(db.count("regions")).toBe(2);
+    for (const context of [first, second]) {
+      expect(context.renderUnit.tags).toContain(TAXONOMY_DATA_TAG);
+      expect(context.renderUnit.revalidate).toBe(21600);
+    }
+    rows[0].name = "Renamed region";
+    backing.expireTag(TAXONOMY_DATA_TAG);
+    expect((await render("/regions", query)).result[0].name).toBe("Renamed region");
+    expect(db.count("regions")).toBe(4);
+    backing.now += 21601000;
+    await render("/regions", query);
+    expect(db.count("regions")).toBe(6);
+  });
   it("caches a recovered read and retains render tags and TTL", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     const error = new TypeError("fetch failed", { cause: Object.assign(new Error("socket closed"), { code: "UND_ERR_SOCKET" }) });
