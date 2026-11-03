@@ -347,6 +347,7 @@ button.v3-pill { font: inherit; font-weight: 700; border: 0; cursor: pointer; }
 /* ------------------------------------------------------------ final cta + browse + footer */
 .v3-final { background: var(--mint); color: var(--ink); }
 .v3-final-in { padding-top: 88px; padding-bottom: 88px; display: grid; grid-template-columns: auto 1fr auto; column-gap: 48px; align-items: center; }
+.v3-final-in.two { grid-template-columns: 1fr auto; }
 .v3-final .big { font-family: var(--fp); font-weight: 700; font-size: 180px; line-height: .85; letter-spacing: -.05em; }
 .v3-final h2 { font-family: var(--fp); font-weight: 700; font-size: 44px; line-height: 1.05; letter-spacing: -.03em; }
 .v3-final .note { margin-top: 12px; font-size: 17px; }

@@ -684,7 +684,8 @@ export function HomeV3({
         <section className="v3-wrap v3-also">
           <h2 className="v3-h3">{t.also.title}</h2>
           <div className="v3-also-grid">
-            {t.also.items.map((x, i) => (
+            {/* The last two items are for trade companies. */}
+            {t.also.items.slice(0, pm ? 3 : undefined).map((x, i) => (
               <a key={x.name} href={L(ALSO_HREF[i])}><b>{x.name}</b><span>{x.what}</span></a>
             ))}
           </div>
@@ -720,7 +721,7 @@ export function HomeV3({
 
         {pm ? (
         <section className="v3-final">
-          <div className="v3-wrap v3-final-in">
+          <div className="v3-wrap v3-final-in two">
             <div>
               <h2>{t.sides.pm.finalTitle}</h2>
               <div className="note">{t.sides.pm.finalNote}</div>
