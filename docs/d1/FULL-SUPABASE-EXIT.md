@@ -17,9 +17,10 @@ hashes, tokens or object paths.
   passkeys, SAML providers, OAuth clients or OAuth consents were found.
 - Eight buckets with 61 recorded objects: 54 logos, four RFP photos, and three
   **private** project photos. Metadata records 47,617,486 bytes. Object contents,
-  58 public objects (46,839,955 bytes) now have verified local backups, including
-  source ETag, length, MIME and checksum checks. Three private objects remain
-  pending; R2 copy/readback is in progress.
+  All 61 objects (47,617,486 bytes) have checksummed local backups and matching
+  native R2 readbacks. Public downloads validated Source ETags, length and MIME;
+  the three private files were downloaded through the authenticated dashboard
+  and matched captured Source sizes/checksums.
 - Preserve bucket MIME/size constraints, organization ownership, object paths and
   public/private separation. Existing Supabase URLs require a serving/remapping
   strategy; the old Supabase hostname cannot be redirected by this application.
@@ -62,8 +63,9 @@ storage gateway that checks the current user and organization before each privat
 operation. [R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/)
 are bearer access until expiry; choose short expiry or authenticated streaming
 where immediate revocation is required. Do not enable public access to private
-project photos. Preserve original files until checksummed copies and application
-upload/download/delete flows pass.
+project photos. The copied files remain in a private bucket; application serving and
+upload/download/delete flows still need to be built and verified. Preserve all
+original files through the cutover/rollback window.
 
 Read-only API preflight confirms access to four existing R2 buckets. Migration
 bucket upload/readback passed a synthetic canary. The new migration bucket

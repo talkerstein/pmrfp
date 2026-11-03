@@ -74,3 +74,21 @@ a protected local 69-account export was checksummed, with no secret values print
 or committed and no real-account Cloudflare import. A new private R2 migration
 bucket was created. See [FULL-SUPABASE-EXIT.md](FULL-SUPABASE-EXIT.md) for remaining
 gates and the boundaries of this evidence.
+
+## R2 file backup/copy
+
+All 61 captured objects now have checksummed local backups and matching native
+R2 readbacks: 58 public source files (46,839,955 bytes) and three private project
+photos (777,531 bytes). Every file was downloaded back from the new R2 bucket and
+its SHA-256 compared with the validated source backup. Public downloads checked
+source ETag, length and MIME; private dashboard downloads matched captured source
+size and MD5/ETag. Source objects were not modified or deleted.
+
+The migration bucket `pmrfp-storage-migration-20261103` has its managed development
+URL disabled and no custom domains, verified again after all uploads. A synthetic
+put/get checksum canary passed and its test object was removed. No application
+storage gateway, URL remapping, private access serving or storage cutover is
+implemented by these copies. The storage downloader adds five offline boundary
+and tamper tests, bringing that suite to 89 passing tests. CI also verifies 149
+relevant Worker contracts and five isolated Auth tests; typecheck and targeted
+lint pass. Production traffic remains on Supabase.

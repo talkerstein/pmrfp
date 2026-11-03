@@ -38,8 +38,9 @@ confirmed the completion target is a full Supabase exit, including Auth and
 Storage. Five synthetic Auth login tests and two export permission tests pass.
 The explicitly approved expiring private Auth view is installed; its protected
 local export contains 69 accounts. A private R2 migration bucket was created;
-58 public source files have checksummed local backups; R2 upload/readback is in
-progress, with three private files still pending. See [FULL-SUPABASE-EXIT.md](FULL-SUPABASE-EXIT.md).
+all 61 source files (47,617,486 bytes), including three private project photos,
+have checksummed local backups and matching native R2 readbacks. The R2 bucket
+remains private; application storage URLs/serving are not switched. See [FULL-SUPABASE-EXIT.md](FULL-SUPABASE-EXIT.md).
 
 ## November 2 update
 

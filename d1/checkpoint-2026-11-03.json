@@ -45,7 +45,7 @@
   "remaining": [
     "repeatable operational runner and monitored scheduling",
     "native Auth replacement and account/profile/session/email flows",
-    "R2 file copies and equivalent storage access rules",
+    "R2 serving gateway, access rules, upload/delete flows and URL remapping",
     "broader application writes/jobs/billing conversion and end-to-end tests",
     "final backup/reconciliation, rollback and approved full cutover"
   ],
@@ -268,16 +268,15 @@
     "protectedLocalExportChecksumVerified": true
   },
   "r2": {
-    "existingAccountListAccess": true,
-    "existingBuckets": 4,
-    "migrationBucketCreated": true,
-    "sourceFilesCopied": false,
-    "bucketName": "pmrfp-storage-migration-20261103",
-    "privacyVerified": {
-      "managedDevelopmentUrlEnabled": false,
-      "customDomains": 0
-    },
-    "syntheticPutAndReadbackPassed": true
+    "bucket": "pmrfp-storage-migration-20261103",
+    "copiedObjects": 61,
+    "privateObjects": 3,
+    "verifiedBytes": 47617486,
+    "allNativeReadbackChecksumsMatch": true,
+    "managedDevelopmentUrlEnabled": false,
+    "customDomains": 0,
+    "sourceFilesChanged": 0,
+    "applicationStorageCutover": false
   },
   "storagePublicBackup": {
     "publicObjectsDownloaded": 58,
@@ -285,5 +284,12 @@
     "privateObjectsSkipped": 3,
     "allFilesChecksummed": true,
     "sourceWrites": 0
+  },
+  "validation": {
+    "offlineMigrationTestsPassed": 89,
+    "workerContractTestsPassed": 149,
+    "authRehearsalTestsPassed": 5,
+    "typecheck": "passed",
+    "targetedLint": "passed"
   }
 }
