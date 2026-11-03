@@ -14,6 +14,7 @@
 
 import { ImageResponse } from "next/og";
 import { WORDMARK_WHITE_URI } from "./wordmark";
+import type { OgLogo } from "./logo";
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = "image/png" as const;
@@ -134,6 +135,143 @@ export function renderOgImage({ eyebrow, title: rawTitle, subline, caption }: OG
             </div>
           )}
         </div>
+      </div>
+    ),
+    OG_SIZE,
+  );
+}
+
+export interface CompanyOGProps {
+  name: string;
+  /** From loadOgLogo. Null shows `initials` on a teal tile instead. */
+  logo: OgLogo | null;
+  initials: string;
+  /** Small-caps line under the name, e.g. "Supplier · Concord, Ontario". */
+  eyebrow: string;
+  /** Optional line under the eyebrow, e.g. the company's trades. */
+  subline?: string;
+  /** Optional bottom-right caption, e.g. years in business. */
+  caption?: string;
+}
+
+/**
+ * Share card for one company, built around its logo. Slack shows only the
+ * middle square of the image as a small thumbnail, so the logo and name stay
+ * inside the central 630px. The wordmark and caption sit just outside it: they
+ * show on full-size previews and never get cut in half on a cropped one.
+ */
+export function renderCompanyOgImage({ name: rawName, logo, initials, eyebrow, subline, caption }: CompanyOGProps): ImageResponse {
+  const clean = (text: string, max: number) => {
+    const t = text.replace(/�/g, "");
+    return t.length > max ? t.slice(0, max - 1).replace(/\s+\S*$/, "") + "…" : t;
+  };
+  const name = clean(rawName, 70);
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: `linear-gradient(135deg, ${COLORS.indigo} 0%, ${COLORS.indigoDeep} 100%)`,
+          color: COLORS.paper,
+          fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        }}
+      >
+        {logo ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 264,
+              minWidth: 264,
+              padding: 24,
+              borderRadius: 28,
+              background: COLORS.paper,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logo.src} width={logo.width} height={logo.height} alt="" />
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 216,
+              height: 216,
+              borderRadius: 28,
+              background: COLORS.teal,
+              color: COLORS.indigo,
+              fontSize: 96,
+              fontWeight: 700,
+            }}
+          >
+            {initials}
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "block",
+            maxWidth: 620,
+            marginTop: 26,
+            fontSize: name.length > 44 ? 40 : name.length > 26 ? 48 : 60,
+            fontWeight: 700,
+            lineHeight: 1.1,
+            letterSpacing: -1,
+            textAlign: "center",
+          }}
+        >
+          {name}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            maxWidth: 620,
+            marginTop: 16,
+            color: COLORS.teal,
+            fontSize: 20,
+            fontWeight: 600,
+            letterSpacing: 3,
+            textTransform: "uppercase",
+            textAlign: "center",
+          }}
+        >
+          {clean(eyebrow, 40)}
+        </div>
+        {subline && (
+          <div style={{ display: "flex", maxWidth: 620, marginTop: 10, color: COLORS.paperDim, fontSize: 24, textAlign: "center" }}>
+            {clean(subline, 46)}
+          </div>
+        )}
+
+        <div style={{ display: "flex", position: "absolute", left: 48, bottom: 40 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={WORDMARK_WHITE_URI} height={34} alt="PMRFP" />
+        </div>
+        {caption && (
+          <div
+            style={{
+              display: "flex",
+              position: "absolute",
+              right: 48,
+              bottom: 44,
+              maxWidth: 236,
+              color: COLORS.paperFaint,
+              fontSize: 20,
+              fontWeight: 500,
+              textAlign: "right",
+            }}
+          >
+            {clean(caption, 30)}
+          </div>
+        )}
       </div>
     ),
     OG_SIZE,

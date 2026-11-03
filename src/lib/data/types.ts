@@ -27,6 +27,8 @@ export interface VendorListItem {
 
 export interface VendorDetail extends VendorListItem {
   id: string;
+  /** Supplier rather than trade company (organizations.organization_type). */
+  isSupplier: boolean;
   fullDescription: string | null;
   yearsInBusiness: number | null;
   employeeCountRange: string | null;
