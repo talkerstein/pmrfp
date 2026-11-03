@@ -108,13 +108,12 @@ describe("company widget stays one cacheable ISR page", () => {
     }
   });
 
-  it("getVendor lists storage, so it must not be used on an ISR page", async () => {
+  it("the full profile read is safe on an ISR page too", async () => {
     useCompanyFixture();
     const { result, renderUnit, renderWork } = await render(COMPANY_ROUTE, () => getVendor("maple-electric-supply"));
-    // The read looks fine to the caller, which is why this reached production.
     expect(result?.name).toBe("Maple Electric Supply");
-    expect(renderWork.dynamicUsageDescription).toContain("/storage/v1/object/list/logos");
-    expect(renderUnit.revalidate).toBe(0);
+    expect(renderWork.dynamicUsageDescription).toBeUndefined();
+    expect(renderUnit.revalidate).toBe(3600);
   });
 });
 

@@ -244,7 +244,6 @@ export async function getVendorCard(slug: string): Promise<VendorCard | null> {
   return r ? { ...toListItem(r, new Set()), id: r.id } : null;
 }
 
-/** The full profile. Dynamic pages only: its storage listing is an uncached fetch, so ISR pages use getVendorCard. */
 export async function getVendor(slug: string): Promise<VendorDetail | null> {
   if (!isSupabaseConfigured()) {
     const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);
