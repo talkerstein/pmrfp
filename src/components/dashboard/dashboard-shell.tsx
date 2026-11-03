@@ -32,6 +32,7 @@ const NAV_KEY: Record<string, keyof Shell["nav"]> = {
   "/rfp-writer": "pmWriter",
   "/pm-dashboard/saved-vendors": "pmTrusted",
   "/pm-dashboard/vendor-insurance": "pmCerts",
+  "/pm-dashboard/contracts": "pmContracts",
 };
 
 /** Phone tab-bar short names (src/lib/pwa/tabs.ts TAB_LABELS), by href. */

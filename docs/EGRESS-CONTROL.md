@@ -1,5 +1,35 @@
 # Public database bandwidth controls
 
+## November 2, 2026: public taxonomy and render CPU
+
+Taxonomy pages now cache their parsed anonymous results explicitly (250 rows per
+entry, the existing six-hour taxonomy TTL and invalidation tag). This also covers
+HTTP 206 responses, which Next 16.2.6's patched fetch only stores when their status
+is 200. Offsets and database URL remain part of the cache key. Inactive lookup
+rows remain available; request/user cookies and private data are never inputs.
+No change to access checks, full-board contents, page filters or write invalidation.
+
+Deadline scans reuse the immutable Toronto-time Intl formatter instead of
+constructing it for every row. Tender-source matching reuses results for known,
+bounded-length slugs in a capped 8,192-entry process cache. Its labels depend only
+on shipped rules, not database state or membership. Unknown and oversized slugs
+are not retained. Clock-dependent dates and user entitlements are not memoized
+across requests.
+
+A local before/after benchmark of 6,000 deadline/source evaluations produced
+identical results, taking 162.1 ms before and 11.1 ms after. This measures those
+helpers only, not total page CPU or billing savings. A real-Next cache regression
+test proves two paginated upstream reads on a cold taxonomy load, zero additional
+reads on a second render, and correct refresh after tag invalidation or TTL expiry.
+Toronto midnight and daylight-saving tests cover date freshness.
+
+Validation: typecheck, targeted lint and production build passed. Full suite:
+2,688 passed, 3 skipped, 6 failed. The same six failures reproduce on untouched
+commit 29b376e (one buyer-follow fixture and five Node 26/jsdom localStorage
+failures). Production credentials returned by this agent's CLI env pull were
+redacted; local page checks use demo data. Actual upstream response statuses,
+signed-in live workflows and sustained cost reduction need production observation.
+
 The 6 October 2026 Supabase audit found PMRFP at 26.265 GB egress in the 29 September–29 October cycle. Checked days were 99.9–100% PostgREST traffic. Live logs showed repeated Node-origin queries for the RFP board, categories/photos, taxonomy, directory and case studies. File migration is not the immediate remedy.
 
 ## Behavior
