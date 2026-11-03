@@ -253,6 +253,7 @@ const en = {
     },
     writeRfp: "Write my RFP — free tool",
     caption: "Retail, office, industrial, condo: post the work for any building you run.",
+    certs: { title: "Track vendor insurance free", body: "Every vendor's liability and WSIB/WCB (or COI and workers' comp) expiry in one list, with reminders before anything lapses." },
     how: {
       eyebrow: "How it works",
       title: "A focused way to source commercial trades",
@@ -658,6 +659,7 @@ const fr: typeof en = {
     },
     writeRfp: "Rédiger mon appel d'offres — outil gratuit",
     caption: "Commerce de détail, bureaux, industriel, copropriété : publiez les travaux de tout immeuble que vous gérez.",
+    certs: { title: "Suivez gratuitement les assurances de vos fournisseurs", body: "Les échéances de la responsabilité civile et des attestations CNESST/WSIB/WCB de chaque fournisseur dans une seule liste, avec des rappels avant qu'une couverture n'expire." },
     how: {
       eyebrow: "Comment ça marche",
       title: "Une façon ciblée de trouver des entrepreneurs commerciaux",
@@ -1061,6 +1063,7 @@ const es: typeof en = {
     },
     writeRfp: "Redactar mi RFP — herramienta gratuita",
     caption: "Comercios, oficinas, naves industriales, condominios: publique los trabajos de cualquier edificio que administre.",
+    certs: { title: "Lleve el registro de seguros de proveedores gratis", body: "El vencimiento del COI y del seguro de compensación laboral (WSIB/WCB en Canadá) de cada proveedor en una sola lista, con recordatorios antes de que algo venza." },
     how: {
       eyebrow: "Cómo funciona",
       title: "Una forma enfocada de encontrar contratistas comerciales",

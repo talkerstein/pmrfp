@@ -141,6 +141,10 @@
     {
       "path": "/api/cron/site-tracking-purge",
       "schedule": "40 8 * * 0"
+    },
+    {
+      "path": "/api/cron/vendor-cert-reminders",
+      "schedule": "12 13 * * *"
     }
   ]
 }
