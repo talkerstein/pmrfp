@@ -55,9 +55,12 @@ jobs:
         with:
           node-version: 24
 
+      # Pinned on purpose. CLI v3 (Nov 2, 2026) can't load the [inbucket] section in
+      # supabase/config.toml and changes which database db commands target. Move to
+      # v3 in its own change, not through "latest".
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       - name: Check secrets
         run: |
