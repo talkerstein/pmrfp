@@ -56,6 +56,9 @@ export interface RfpPostDefaults {
   fromWriter?: boolean;
   /** Set when the defaults came from a Report → Quotes trade group (the new RFP is linked back to it). */
   fromReport?: { reportId: string; tradeSlug: string };
+  /** Re-tendering a service contract (lib/contracts): posting links the new RFP to it. */
+  contractId?: string;
+  retenderNotice?: string;
 }
 
 /** Same key the RFP Writer saves to (components/rfp-writer/wizard.tsx). */
@@ -142,6 +145,9 @@ export function RfpPostForm({
           <span className="font-semibold">{t.fromWriterStrong}</span> {t.fromWriterBody}
         </div>
       )}
+
+      {defaults?.contractId && <input type="hidden" name="contractId" value={defaults.contractId} />}
+      {defaults?.retenderNotice && <div className="rounded-md border border-teal-300 bg-teal-100 px-4 py-3 text-sm text-teal-ink">{defaults.retenderNotice}</div>}
 
       {defaults?.templateName && (
         <div className="rounded-md border border-teal-300 bg-teal-100 px-4 py-3 text-sm text-teal-ink">

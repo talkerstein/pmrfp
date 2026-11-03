@@ -19,6 +19,13 @@ describe("fomo helpers (real data only)", () => {
     expect(closingLabel(daysUntil("2026-10-30", now))).toBeNull();
     expect(closingLabel(daysUntil("2026-09-20", now))).toBeNull();
   });
+  it("updates the Toronto date at midnight and handles daylight-saving boundaries", () => {
+    expect(daysUntil("2026-11-02", new Date("2026-11-02T04:59:59Z"))).toBe(1);
+    expect(daysUntil("2026-11-02", new Date("2026-11-02T05:00:00Z"))).toBe(0);
+    expect(daysUntil("2026-03-08", new Date("2026-03-08T06:59:59Z"))).toBe(0);
+    expect(daysUntil("2026-03-08", new Date("2026-03-08T07:00:00Z"))).toBe(0);
+    expect(daysUntil(null)).toBeNull();
+  });
   it("formats headline totals", () => {
     expect(compactDollars(184_442_480)).toBe("$184M");
     expect(compactDollars(1_250_000)).toBe("$1.3M");

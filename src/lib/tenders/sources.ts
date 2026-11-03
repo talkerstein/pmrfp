@@ -117,9 +117,14 @@ const ALL: [suffix: RegExp, source: PublicTenderSource][] = [...SOURCES, [suffix
 /** Every public-tender source label (each has a credit; see lib/data-credits). */
 export const PUBLIC_TENDER_SOURCES: readonly PublicTenderSource[] = ALL.map(([, src]) => src);
 const MATCHERS = ALL.map(([re, src]): [rightmost: RegExp, source: PublicTenderSource] => [new RegExp(`^.*(${re.source})`), src]);
+// Source labels depend only on shipped rules and the immutable slug, never user access or database state.
+const sourceBySlug = new Map<string, PublicTenderSource>();
+const MAX_SOURCE_CACHE_ENTRIES = 8192;
 
 /** The source whose marker sits nearest the end of the slug (with a valid reference after it). */
 export function publicTenderSource(slug: string): PublicTenderSource {
+  const cached = sourceBySlug.get(slug);
+  if (cached) return cached;
   let best = CANADABUYS;
   let bestAt = -1;
   for (const [re, src] of MATCHERS) {
@@ -127,6 +132,11 @@ export function publicTenderSource(slug: string): PublicTenderSource {
     if (!m) continue;
     const at = slug.length - m[1].length;
     if (at > bestAt) [best, bestAt] = [src, at];
+  }
+  // Do not retain arbitrary unknown/oversized URL inputs, and bound memory across warm requests.
+  if (bestAt >= 0 && slug.length <= 300) {
+    if (sourceBySlug.size >= MAX_SOURCE_CACHE_ENTRIES) sourceBySlug.delete(sourceBySlug.keys().next().value!);
+    sourceBySlug.set(slug, best);
   }
   return best;
 }

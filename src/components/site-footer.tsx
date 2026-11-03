@@ -13,10 +13,13 @@ const LINK_KEY: Record<string, FooterKey> = {
   "/reports/public-building-contracts": "report", "/reports/contract-winners": "monthly", "/trades": "trades", "/regions": "regions", "/ontario": "ontario", "/alberta": "alberta", "/toronto-contracts": "toronto", "/suppliers": "suppliers",
   "/for-trades": "forTrades", "/for-property-managers": "forPms", "/become-a-supplier": "becomeSupplier", "/for/real-estate": "forRealtors", "/for": "solutions",
   "/get-found": "getFound", "/pricing": "pricing", "/advertise": "advertise",
-  "/rfp-writer": "writer", "/rfp-templates": "templates", "/cost-guides": "costGuides", "/resources": "guides",
+  "/after-hours-vendor-roster": "roster",
+  "/rfp-writer": "writer", "/vendor-insurance-tracker": "certs", "/rfp-templates": "templates", "/cost-guides": "costGuides", "/resources": "guides",
+  "/contract-renewal-calendar": "contracts",
   "/projects": "caseStudies", "/vs": "compare", "/badge": "badge", "/widgets": "widgets",
   "/services-for-trades": "services", "/refer-a-trade": "refer",
   "/inspection-report-to-quotes": "reportQuotes",
+  "/bid-comparison": "bidCompare",
   "/about": "about", "/contact": "contact", "/terms": "terms", "/privacy": "privacy", "/disclaimer": "disclaimer", "/corrections": "corrections",
 };
 const COL_KEY = ["work", "who", "resources"] as const;

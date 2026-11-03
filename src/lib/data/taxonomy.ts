@@ -1,6 +1,8 @@
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { TAXONOMY_DATA_TAG, TAXONOMY_DATA_TTL } from "@/lib/supabase/public-cache";
 import {
   DEMO_CATEGORIES,
   DEMO_PROPERTY_TYPES,
@@ -25,13 +27,24 @@ const SELECTS: Record<TaxonomyTable, string> = {
 
 // One canonical projection per table, reused by dropdowns, maps and region
 // trees. No active=true filter here: preserve every row allowed by anon RLS.
+const getTaxonomyPage = unstable_cache(
+  async (table: TaxonomyTable, from: number, _projectUrl: string): Promise<TaxonomyRow[]> => {
+    void _projectUrl; // Scope Next's cache key to the database without storing request/user state.
+    const { data, error } = await createReadClient().from(table).select(SELECTS[table]).order("id").range(from, from + 249);
+    if (error) throw error;
+    return (data ?? []) as unknown as TaxonomyRow[];
+  },
+  ["public-taxonomy-page-v1"],
+  { tags: [TAXONOMY_DATA_TAG], revalidate: TAXONOMY_DATA_TTL },
+);
+
+// Cache parsed pages explicitly: Next's fetch cache does not persist HTTP 206.
+// Small page entries also stay below the Data Cache size limit as regions grow.
 export const getTaxonomyRows = cache(async (table: TaxonomyTable): Promise<TaxonomyRow[]> => {
   const out: TaxonomyRow[] = [];
-  const client = createReadClient();
+  const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   for (let from = 0; ; from += 250) {
-    const { data, error } = await client.from(table).select(SELECTS[table]).order("id").range(from, from + 249);
-    if (error) throw error;
-    const page = (data ?? []) as unknown as TaxonomyRow[];
+    const page = await getTaxonomyPage(table, from, projectUrl);
     out.push(...page);
     if (page.length < 250) return out;
   }

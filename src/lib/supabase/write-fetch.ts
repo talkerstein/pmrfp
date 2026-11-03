@@ -21,6 +21,9 @@ export function createWriteFetch(baseUrl: string, transport: typeof fetch = (...
     const table = url.pathname.match(/^\/rest\/v1\/([^/]+)$/)?.[1] ?? null;
     const wrote = response.ok && url.origin === origin && WRITE_METHODS.includes(method);
     if (!wrote || !table) return response;
+    // Only trust an explicit zero total, never an empty/minimal response body.
+    // Conditional updates and duplicate-ignoring inserts can succeed without writes.
+    if (response.headers.get("content-range") === "*/0") return response;
     if (RFP_TABLES.has(table)) {
       // Board writes come in bursts (tender imports upsert in batches). Mark
       // the board stale instead of expiring it: visitors keep getting the
@@ -28,7 +31,6 @@ export function createWriteFetch(baseUrl: string, transport: typeof fetch = (...
       // expire:0 here made every concurrent visitor rebuild the whole board
       // from the database at the same moment (incident 2026-10-09).
       revalidateTag(RFPS_TAG, "max");
-      revalidateTag(PUBLIC_DATA_TAG, "max");
     } else if (table === "major_projects") {
       // Weekly import and admin review: serve the previous list while one
       // background refresh reloads the snapshot (same reasoning as the board).

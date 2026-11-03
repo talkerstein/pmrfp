@@ -41,8 +41,12 @@ const en = {
       pmRfps: "My RFPs",
       pmPost: "Post an RFP",
       pmReport: "Report → Quotes",
+      pmBids: "Bid comparisons",
       pmWriter: "RFP Writer",
       pmTrusted: "Trusted trades",
+      pmRoster: "After-hours roster",
+      pmCerts: "Vendor insurance",
+      pmContracts: "Contract renewals",
     },
     /** Short names under the phone tab-bar icons (src/lib/pwa/tabs.ts). */
     tabs: {
@@ -406,8 +410,12 @@ const fr: typeof en = {
       pmRfps: "Mes appels d'offres",
       pmPost: "Publier un appel d'offres",
       pmReport: "Rapport → Soumissions",
+      pmBids: "Comparaisons de soumissions",
       pmWriter: "Rédacteur d'appels d'offres",
       pmTrusted: "Entrepreneurs de confiance",
+      pmRoster: "Liste d'urgence",
+      pmCerts: "Assurances des fournisseurs",
+      pmContracts: "Renouvellements de contrats",
     },
     tabs: {
       home: "Accueil",
@@ -776,8 +784,12 @@ const es: typeof en = {
       pmRfps: "Mis RFP",
       pmPost: "Publicar una RFP",
       pmReport: "Informe → Cotizaciones",
+      pmBids: "Comparaciones de ofertas",
       pmWriter: "Redactor de RFP",
       pmTrusted: "Contratistas de confianza",
+      pmRoster: "Lista de emergencia",
+      pmCerts: "Seguros de proveedores",
+      pmContracts: "Renovaciones de contratos",
     },
     tabs: {
       home: "Inicio",
