@@ -95,6 +95,29 @@ export function verifyCertUnsubscribe(kind: string | null, id: string | null, to
 }
 
 /*
+ * Contract Renewal Calendar (lib/contracts): the PM's renewal digest
+ * opt-out, keyed by user, its own prefix; flips
+ * notification_preferences.contract_reminders.
+ */
+function signContract(userId: string, key: string): string {
+  return createHmac("sha256", key).update(`contract-unsub:${userId}`).digest("base64url");
+}
+
+export function contractUnsubscribeUrl(base: string, userId: string): string | null {
+  const key = secret();
+  if (!key) return null;
+  return `${base}/api/email/contract-unsubscribe?u=${encodeURIComponent(userId)}&t=${signContract(userId, key)}`;
+}
+
+export function verifyContractUnsubscribe(userId: string | null, token: string | null): boolean {
+  const key = secret();
+  if (!key || !userId || !token) return false;
+  const expected = Buffer.from(signContract(userId, key));
+  const given = Buffer.from(token);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}
+
+/*
  * The lifecycle sequence (lib/lifecycle: onboarding tips, trial and offer
  * emails): same secret, its own prefix, so this link only stops those emails
  * and can't turn off someone's alerts (or the other way round).

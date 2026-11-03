@@ -24,6 +24,7 @@ import {
   parseAwardRef,
 } from "@/lib/gc/packages";
 import { getLinkableAward } from "@/lib/gc/data";
+import { linkRetenderRfp } from "@/lib/contracts/server";
 import type { ActionState } from "@/lib/auth/actions";
 import { getDictionary } from "@/i18n/dictionaries";
 import { logAudit } from "@/lib/audit";
@@ -527,6 +528,9 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
     revalidatePath(`/buyers/${town.page.buyerKey}`);
     redirect(localizePath(`/buyer-dashboard/jobs/${rfp.id}?posted=${done.status === "published" ? "live" : "review"}&alerts=${done.alerts}&n=${done.wouldEmail}`, lang));
   }
+
+  // Re-tendered from the contract renewal calendar: the contract shows this RFP.
+  await linkRetenderRfp(supabase, formData.get("contractId"), rfp.id);
 
   // Admin heads-up (ADMIN_NOTIFICATION_EMAIL, else info@pmrfp.com), with how many are now waiting.
   const pending = isServiceConfigured() ? await pendingReviewCount(createServiceClient()).catch(() => null) : null;
