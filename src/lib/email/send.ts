@@ -663,6 +663,16 @@ export async function sendTownJobEmail(to: string, e: BuiltEmail, lang: EmailLan
     : undefined;
   await send(to, e.subject, layout(e.title, e.bodyHtml, e.footnote || undefined, { lang, referralPs: false }), headers, { utm });
 }
+/**
+ * A Vendor Insurance Tracker email (lib/vendor-certs/email-copy: the
+ * vendor's upload request and renewal reminder, the PM's expiry digest) in
+ * the shared shell, with one-click List-Unsubscribe headers when there's a
+ * link. Callers check the do-not-contact list first.
+ */
+export async function sendVendorCertEmail(to: string, e: BuiltEmail, lang: EmailLang, utm: string, unsubscribeUrl?: string | null): Promise<void> {
+  await sendTownJobEmail(to, e, lang, utm, unsubscribeUrl);
+}
+
 type Contact = { name: string | null; company: string | null; email: string | null; phone: string | null };
 
 /** To a trade whose response the poster declined (with their optional note). */

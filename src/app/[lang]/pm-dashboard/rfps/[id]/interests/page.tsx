@@ -157,6 +157,13 @@ export default async function RfpInterestsPage({
           ) : undefined
         }
       />
+      {session.profile.primary_role !== "public_buyer" && interests.length > 0 && (
+        <p className="-mt-3 mb-4">
+          <Link href={`/pm-dashboard/bid-comparisons?rfp=${id}`} title={getT("bidCompare").links.compareBidsHint} className="inline-flex items-center rounded-full border border-teal-300 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-900 hover:bg-teal-100">
+            {getT("bidCompare").links.compareBids}
+          </Link>
+        </p>
+      )}
 
       {interests.length > 0 && (
         <p className="-mt-2 mb-4 text-sm text-muted-foreground">

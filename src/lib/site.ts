@@ -116,9 +116,13 @@ export const TRADE_NAV = [
 export const PM_NAV = [
   { href: "/pm-dashboard", label: "Home" },
   { href: "/pm-dashboard/rfps", label: "My RFPs" },
+  { href: "/pm-dashboard/bid-comparisons", label: "Bid comparisons" },
   { href: "/pm-dashboard/rfps/new", label: "Post an RFP" },
   { href: "/rfp-writer", label: "RFP Writer" },
   { href: "/pm-dashboard/saved-vendors", label: "Trusted trades" },
+  { href: "/pm-dashboard/roster", label: "After-hours roster" },
+  { href: "/pm-dashboard/vendor-insurance", label: "Vendor insurance" },
+  { href: "/pm-dashboard/contracts", label: "Contract renewals" },
   { href: "/jobs/manage", label: "Hiring" },
 ] as const;
 
@@ -211,8 +215,12 @@ export const FOOTER_COLS = [
     heading: "Resources",
     links: [
       { label: "RFP Writer (free)", href: "/rfp-writer" },
+      { label: "After-hours vendor roster (free)", href: "/after-hours-vendor-roster" },
+      { label: "Vendor insurance tracker (free)", href: "/vendor-insurance-tracker" },
+      { label: "Contract renewal calendar (free)", href: "/contract-renewal-calendar" },
       { label: "RFP Templates", href: "/rfp-templates" },
       { label: "Cost Guides", href: "/cost-guides" },
+      { label: "Bid comparison sheet (free)", href: "/bid-comparison" },
       { label: "Guides", href: "/resources" },
       { label: "Case Studies", href: "/projects" },
       { label: "Compare", href: "/vs" },

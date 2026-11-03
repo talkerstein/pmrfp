@@ -145,6 +145,8 @@ const en = {
     notFound: "Trade not found",
     verifiedTrade: "Verified trade",
     trade: "Trade",
+    verifiedSupplier: "Verified supplier",
+    supplier: "Supplier",
     years: { one: "{n} years in business", other: "{n} years in business" },
   },
 };
@@ -297,6 +299,8 @@ const fr: typeof en = {
     notFound: "Entreprise introuvable",
     verifiedTrade: "Entrepreneur vérifié",
     trade: "Entrepreneur",
+    verifiedSupplier: "Fournisseur vérifié",
+    supplier: "Fournisseur",
     years: { one: "{n} an en affaires", other: "{n} ans en affaires" },
   },
 };
@@ -447,6 +451,8 @@ const es: typeof en = {
     notFound: "Contratista no encontrado",
     verifiedTrade: "Contratista verificado",
     trade: "Contratista",
+    verifiedSupplier: "Proveedor verificado",
+    supplier: "Proveedor",
     years: { one: "{n} año de trayectoria", other: "{n} años de trayectoria" },
   },
 };
