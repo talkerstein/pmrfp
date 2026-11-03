@@ -54,6 +54,7 @@ import leads from "./messages/leads";
 import trialFirst from "./messages/trialFirst";
 import intel from "./messages/intel";
 import bidResults from "./messages/bidResults";
+import bidCompare from "./messages/bidCompare";
 import policies from "./messages/policies";
 import correctionsClient from "./messages/correctionsClient";
 import buyers from "./messages/buyers";
@@ -121,6 +122,7 @@ const NAMESPACES = {
   trialFirst,
   intel,
   bidResults,
+  bidCompare,
   policies,
   correctionsClient,
   buyers,
