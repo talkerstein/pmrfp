@@ -4,6 +4,9 @@ import type { Locale } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
 import sharedClient from "@/i18n/messages/sharedClient";
 
+// Formatting rules are immutable; constructing this per listing dominates large board scans.
+const torontoDayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" });
+
 /**
  * Urgency from REAL data only — countdowns from actual closing dates, dollar
  * totals from actual award notices. Nothing here invents a number: if the
@@ -28,7 +31,7 @@ export function parseAward(summary: string | null): { winner: string | null; amo
  *  tomorrow's deadlines every evening after 8 pm Toronto time. */
 export function daysUntil(deadline: string | null, now = new Date()): number | null {
   if (!deadline) return null;
-  const todayLocal = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(now);
+  const todayLocal = torontoDayFormatter.format(now);
   const today = Date.parse(todayLocal);
   return Math.round((Date.parse(deadline.slice(0, 10)) - today) / 86_400_000);
 }

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { createPublicReadFetch, RFPS_TAG, TAXONOMY_DATA_TAG } from "@/lib/supabase/public-cache";
+import { createPublicReadFetch, PUBLIC_DATA_TAG, RFPS_TAG, TAXONOMY_DATA_TAG } from "@/lib/supabase/public-cache";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createFakePostgrest, uuidFor } from "./fixtures/fake-postgrest";
 
@@ -8,11 +8,12 @@ const fixture = vi.hoisted(() => ({ client: null as unknown as SupabaseClient })
 vi.mock("@/lib/supabase/read", () => ({ createReadClient: () => fixture.client }));
 vi.mock("@/lib/supabase/config", () => ({ isSupabaseConfigured: () => true }));
 
-// Execute Next 16.2.6's real unstable_cache and patched fetch/async contexts.
+// Execute the installed Next's real unstable_cache and patched fetch/async contexts.
 // Only the upstream and incremental-cache backing store are local fixtures.
 class MemoryBackingStore {
   now = 0;
   entries = new Map<string, { value: { revalidate: number }; tags: string[]; expires: number }>();
+  async generateSimpleCacheKey(value: string) { return value; }
   async generateCacheKey(url: unknown, init: RequestInit = {}) {
     // Match the inputs used by Next's IncrementalCache (no signal or tags).
     return JSON.stringify([url, init.method, Object.fromEntries(new Headers(init.headers)),
@@ -36,6 +37,10 @@ let unit: typeof import("next/dist/server/app-render/work-unit-async-storage.ext
 let patched: typeof import("next/dist/server/lib/patch-fetch").createPatchedFetcher;
 let counts: typeof import("@/lib/data/rfp-counts").getOpenRfpCounts;
 let listRfps: typeof import("@/lib/data/rfps").listRfps;
+let getTaxonomyRows: typeof import("@/lib/data/taxonomy").getTaxonomyRows;
+let getVendor: typeof import("@/lib/data/directory").getVendor;
+let CompanyWidget: typeof import("@/app/embed/company/[slug]/page").default;
+let getPortfolioPhotos: typeof import("@/lib/data/portfolio-photos").getPortfolioPhotos;
 let backing: MemoryBackingStore;
 
 beforeAll(async () => {
@@ -46,20 +51,177 @@ beforeAll(async () => {
   patched = (await import("next/dist/server/lib/patch-fetch")).createPatchedFetcher;
   counts = (await import("@/lib/data/rfp-counts")).getOpenRfpCounts;
   listRfps = (await import("@/lib/data/rfps")).listRfps;
+  getTaxonomyRows = (await import("@/lib/data/taxonomy")).getTaxonomyRows;
+  getVendor = (await import("@/lib/data/directory")).getVendor;
+  CompanyWidget = (await import("@/app/embed/company/[slug]/page")).default;
+  getPortfolioPhotos = (await import("@/lib/data/portfolio-photos")).getPortfolioPhotos;
 });
 beforeEach(() => { backing = new MemoryBackingStore(); });
 
 function render<T>(route: string, run: () => Promise<T>) {
   const renderUnit = { type: "prerender-legacy", phase: "render", revalidate: Infinity, tags: null as string[] | null, implicitTags: { tags: [] } };
-  const renderWork = { route, isStaticGeneration: true, incrementalCache: backing, pendingRevalidates: {} as Record<string, Promise<unknown>> };
+  const renderWork = { route, isStaticGeneration: true, incrementalCache: backing, pendingRevalidates: {} as Record<string, Promise<unknown>>, dynamicUsageDescription: undefined as string | undefined };
   return work.run(renderWork as never, () => unit.run(renderUnit as never, async () => {
     const result = await run();
     await Promise.all(Object.values(renderWork.pendingRevalidates));
-    return { result, renderUnit };
+    return { result, renderUnit, renderWork };
   }));
 }
 
+function useCompanyFixture() {
+  const company = {
+    id: uuidFor(1), slug: "maple-electric-supply", name: "Maple Electric Supply", city: "Toronto", province: "Ontario",
+    logo_url: null, verified: true, featured: false, years_in_business: 12, profile_status: "approved", is_demo: false,
+    organization_categories: [{ trade_categories: { name: "Electrical", slug: "electrical" } }],
+    organization_regions: [{ regions: { name: "Toronto", slug: "toronto", country: "Canada" } }],
+    organization_property_types: [],
+  };
+  const db = createFakePostgrest({ organizations: [company, { ...company, slug: "pending-co", profile_status: "pending" }, { ...company, slug: "demo-co", is_demo: true }] });
+  const nextFetch = patched(db.fetch, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+  fixture.client = createClient("https://fixture.supabase.co", "fixture-key", {
+    auth: { persistSession: false },
+    global: { fetch: createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch) },
+  });
+}
+
+const COMPANY_ROUTE = "/embed/company/[slug]";
+const companyWidget = (slug: string) => render(COMPANY_ROUTE, () => CompanyWidget({ params: Promise.resolve({ slug }) }));
+
+// Production, 2026-11-02: /embed/company/<real company> answered 500 with "Page
+// changed from static to dynamic at runtime". Next records an uncached fetch on
+// the render even when the caller catches the throw, then fails the ISR response.
+describe("company widget stays one cacheable ISR page", () => {
+  it("renders a real company without an uncached fetch", async () => {
+    useCompanyFixture();
+    const { result, renderUnit, renderWork } = await companyWidget("maple-electric-supply");
+    expect(renderWork.dynamicUsageDescription).toBeUndefined();
+    expect(renderUnit.revalidate).toBe(3600);
+    expect(result.props).toMatchObject({ title: "Maple Electric Supply", subtitle: "Toronto, Ontario", eyebrow: "Verified on PMRFP" });
+  });
+
+  it("does not show unapproved or seeded companies", async () => {
+    useCompanyFixture();
+    for (const slug of ["pending-co", "demo-co", "no-such-company"]) {
+      const { result, renderWork } = await companyWidget(slug);
+      expect(renderWork.dynamicUsageDescription).toBeUndefined();
+      expect(result.props.title).toBeUndefined();
+    }
+  });
+
+  it("the full profile read is safe on an ISR page too", async () => {
+    useCompanyFixture();
+    const { result, renderUnit, renderWork } = await render(COMPANY_ROUTE, () => getVendor("maple-electric-supply"));
+    expect(result?.name).toBe("Maple Electric Supply");
+    expect(renderWork.dynamicUsageDescription).toBeUndefined();
+    expect(renderUnit.revalidate).toBe(3600);
+  });
+});
+
 describe("Next framework cache regressions", () => {
+  it("refreshes tender reads without evicting directory data, while preserving general invalidation", async () => {
+    const upstream = vi.fn<typeof fetch>().mockImplementation(async () => Response.json([{ id: "public-row" }]));
+    const nextFetch = patched(upstream, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+    const read = createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch);
+    const query = () => Promise.all(["rfp_public", "rfp_posts", "rfp_categories", "rfp_documents", "organizations"].map(
+      (table) => read(`https://fixture.supabase.co/rest/v1/${table}`, {
+        headers: { apikey: "fixture-key", authorization: "Bearer fixture-key" },
+      }).then((response) => response.json()),
+    ));
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(5);
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(5);
+    backing.expireTag(RFPS_TAG);
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(9);
+    const tables = upstream.mock.calls.slice(5).map(([url]) => new URL(String(url)).pathname.split("/").pop());
+    expect(tables).not.toContain("organizations");
+    backing.expireTag(PUBLIC_DATA_TAG);
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(14);
+  });
+
+  it("keeps public portfolio storage POSTs safe in static embeds and refreshes their cached result", async () => {
+    const upstream = vi.fn<typeof fetch>().mockImplementation(async () => Response.json([
+      { name: "portfolio-one.jpg", id: "one" }, { name: "logo.png", id: "two" },
+    ]));
+    const nextFetch = patched(upstream, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+    fixture.client = createClient("https://fixture.supabase.co", "fixture-key", {
+      auth: { persistSession: false },
+      global: { fetch: createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch) },
+    });
+    const query = () => getPortfolioPhotos("company-one");
+    const first = await render("/embed/company/one", query);
+    expect(first.result).toHaveLength(1);
+    expect(first.result[0]).toContain("/logos/company-one/portfolio-one.jpg");
+    const second = await render("/embed/company/one", query);
+    expect(second.result).toEqual(first.result);
+    expect(upstream).toHaveBeenCalledTimes(1);
+    expect(upstream.mock.calls[0][1]?.method).toBe("POST");
+    for (const context of [first, second]) {
+      expect(context.renderUnit.revalidate).toBe(3600);
+      expect(context.renderUnit.tags).toContain(PUBLIC_DATA_TAG);
+    }
+    await render("/embed/company/two", () => getPortfolioPhotos("company-two"));
+    expect(upstream).toHaveBeenCalledTimes(2);
+    backing.expireTag(PUBLIC_DATA_TAG);
+    await render("/embed/company/one", query);
+    expect(upstream).toHaveBeenCalledTimes(3);
+    backing.now += 3601000;
+    await render("/embed/company/one", query);
+    expect(upstream).toHaveBeenCalledTimes(4);
+  });
+
+  it("does not cache failed portfolio listings as empty results", async () => {
+    const upstream = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ message: "Unavailable" }, { status: 400 }))
+      .mockResolvedValueOnce(Response.json([{ name: "portfolio-recovered.jpg", id: "one" }]));
+    const nextFetch = patched(upstream, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+    fixture.client = createClient("https://fixture.supabase.co", "fixture-key", {
+      auth: { persistSession: false },
+      global: { fetch: createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch) },
+    });
+    const query = () => getPortfolioPhotos("recovered-company");
+    expect((await render("/embed/company/recovered", query)).result).toEqual([]);
+    expect((await render("/embed/company/recovered", query)).result[0]).toContain("portfolio-recovered.jpg");
+    expect(upstream).toHaveBeenCalledTimes(2);
+  });
+
+  it("persists paginated HTTP 206 taxonomy reads, preserves inactive rows, and refreshes after invalidation", async () => {
+    const rows = Array.from({ length: 251 }, (_, i) => ({
+      id: String(i).padStart(4, "0"), slug: `region-${i}`, name: `Region ${i}`,
+      active: i !== 0, province: "Ontario", country: "Canada", parent_id: null, sort_order: i,
+    }));
+    const db = createFakePostgrest({ regions: rows });
+    const upstream: typeof fetch = async (input, init) => {
+      const response = await db.fetch(input, init);
+      return new Response(await response.text(), { status: 206, headers: response.headers });
+    };
+    const nextFetch = patched(upstream, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+    fixture.client = createClient("https://fixture.supabase.co", "fixture-key", {
+      auth: { persistSession: false },
+      global: { fetch: createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch) },
+    });
+    const query = () => getTaxonomyRows("regions");
+    const first = await render("/regions", query);
+    expect(first.result).toHaveLength(251);
+    expect(first.result[0].active).toBe(false);
+    expect(db.count("regions")).toBe(2);
+    const second = await render("/rfps", query);
+    expect(second.result).toEqual(first.result);
+    expect(db.count("regions")).toBe(2);
+    for (const context of [first, second]) {
+      expect(context.renderUnit.tags).toContain(TAXONOMY_DATA_TAG);
+      expect(context.renderUnit.revalidate).toBe(21600);
+    }
+    rows[0].name = "Renamed region";
+    backing.expireTag(TAXONOMY_DATA_TAG);
+    expect((await render("/regions", query)).result[0].name).toBe("Renamed region");
+    expect(db.count("regions")).toBe(4);
+    backing.now += 21601000;
+    await render("/regions", query);
+    expect(db.count("regions")).toBe(6);
+  });
   it("caches a recovered read and retains render tags and TTL", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     const error = new TypeError("fetch failed", { cause: Object.assign(new Error("socket closed"), { code: "UND_ERR_SOCKET" }) });

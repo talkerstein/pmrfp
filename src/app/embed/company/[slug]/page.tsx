@@ -1,6 +1,6 @@
 import { BadgeCheck, MapPin, Users } from "lucide-react";
 import { WidgetLogo, WidgetShell, WidgetUnavailable } from "@/components/embed/widget-shell";
-import { getVendor } from "@/lib/data/directory";
+import { getVendorCard } from "@/lib/data/directory";
 import { getRecommendedBy } from "@/lib/trusted/data";
 import { outLink } from "@/lib/embed/widgets";
 import { SITE } from "@/lib/site";
@@ -17,7 +17,7 @@ function more(items: string[], n: number): string {
 /** A trade's or supplier's PMRFP card, for its own website. */
 export default async function CompanyWidget({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const vendor = await getVendor(slug);
+  const vendor = await getVendorCard(slug);
   if (!vendor) return <WidgetUnavailable href={outLink(SITE.url, "/directory", "company")} />;
   const recommenders = await getRecommendedBy(vendor.id);
   const profile = outLink(SITE.url, `/directory/${vendor.slug}`, "company");

@@ -254,6 +254,7 @@ const en = {
     writeRfp: "Write my RFP — free tool",
     caption: "Retail, office, industrial, condo: post the work for any building you run.",
     certs: { title: "Track vendor insurance free", body: "Every vendor's liability and WSIB/WCB (or COI and workers' comp) expiry in one list, with reminders before anything lapses." },
+    contracts: { title: "Never miss a contract renewal", body: "Every service contract's end date in one free calendar, with a reminder before each renewal window and next term's RFP pre-filled." },
     how: {
       eyebrow: "How it works",
       title: "A focused way to source commercial trades",
@@ -660,6 +661,7 @@ const fr: typeof en = {
     writeRfp: "Rédiger mon appel d'offres — outil gratuit",
     caption: "Commerce de détail, bureaux, industriel, copropriété : publiez les travaux de tout immeuble que vous gérez.",
     certs: { title: "Suivez gratuitement les assurances de vos fournisseurs", body: "Les échéances de la responsabilité civile et des attestations CNESST/WSIB/WCB de chaque fournisseur dans une seule liste, avec des rappels avant qu'une couverture n'expire." },
+    contracts: { title: "Ne ratez plus un renouvellement de contrat", body: "La date de fin de chaque contrat de service dans un calendrier gratuit, avec un rappel avant chaque période de renouvellement et l'appel d'offres du prochain terme déjà rempli." },
     how: {
       eyebrow: "Comment ça marche",
       title: "Une façon ciblée de trouver des entrepreneurs commerciaux",
@@ -1064,6 +1066,7 @@ const es: typeof en = {
     writeRfp: "Redactar mi RFP — herramienta gratuita",
     caption: "Comercios, oficinas, naves industriales, condominios: publique los trabajos de cualquier edificio que administre.",
     certs: { title: "Lleve el registro de seguros de proveedores gratis", body: "El vencimiento del COI y del seguro de compensación laboral (WSIB/WCB en Canadá) de cada proveedor en una sola lista, con recordatorios antes de que algo venza." },
+    contracts: { title: "No vuelva a perder una renovación de contrato", body: "La fecha de fin de cada contrato de servicio en un calendario gratuito, con un recordatorio antes de cada periodo de renovación y la RFP del próximo periodo ya completada." },
     how: {
       eyebrow: "Cómo funciona",
       title: "Una forma enfocada de encontrar contratistas comerciales",
