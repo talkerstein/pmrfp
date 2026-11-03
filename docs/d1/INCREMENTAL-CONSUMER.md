@@ -1,4 +1,28 @@
-# Incremental consumer — prepared November 2
+# Incremental consumer — live manual cycles verified November 3
+
+The historical November 2 preparation/resume notes below are retained for context.
+On November 3 the quota-reset metadata canary and idempotent bootstrap registration
+passed. Two manual incremental cycles then completed native forward replay, exact
+field/schema/FK validation, restored baseline/final backups, bounded source ACKs
+and durable consumer-state advancement. No unattended scheduler is enabled.
+
+The first cycle captured 36,943 receipts, compared its complete reconstruction
+against a full source read in the same transaction, and advanced to 87,793 rebuilt
+records. The second captured 329 receipts using 150 row packets (31,745 bytes),
+with no full-source transfer, and advanced to 87,866 rebuilt records. Both exact
+journals passed local forward/reverse/reapply; native failure rollback/reversal
+was checked on the isolated synthetic canary. Real-data native reversal was not
+repeated today, to avoid duplicate daily-quota consumption. Actual before/after
+readbacks were restored and verified. See [VERIFICATION-2026-11-03.md](VERIFICATION-2026-11-03.md).
+
+The active baseline artifacts are now `reader-snapshot-20261103-cycle2.jsonl`
+and `reader-rebuilt-20261103-cycle2.jsonl` in ignored private artifacts. Do not
+re-register or replay the earlier November 2 bootstrap over this acknowledged
+checkpoint. Retained source receipt history contains 37,283 acknowledged events;
+newer and late-committing events remain pending. Reader/ACK expiry is unchanged.
+
+## Historical November 2 preparation
+
 
 **Local tests and live read-only preflight pass. Native activation and the first
 live incremental replay are blocked by the exhausted D1 daily write allowance.**

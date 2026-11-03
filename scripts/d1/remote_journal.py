@@ -30,7 +30,9 @@ def json_chunks(rows):
     for row in rows:
         encoded=m.canonical(row);extra=len(encoded.encode())
         if extra+2>90000:raise ValueError('Journal row exceeds packed payload bound')
-        if chunk and (len(chunk)>=100 or size+extra+1>90000):
+        # Each vector is one bound parameter, regardless of row count. Retain
+        # the byte bound while avoiding hundreds of tiny statements for keys.
+        if chunk and (len(chunk)>=500 or size+extra+1>90000):
             yield m.canonical(chunk);chunk=[];size=2
         size+=extra+(1 if chunk else 0);chunk.append(row)
     if chunk:yield m.canonical(chunk)

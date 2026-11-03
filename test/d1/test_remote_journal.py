@@ -63,7 +63,10 @@ class RemoteJournalTests(FixtureMixin, unittest.TestCase):
         self.assertEqual(r.manifest(fake)[0]['source_sha256'],journal['before_snapshot_sha256'])
         self.assertEqual(fake.db.execute("SELECT count(*) FROM regions WHERE id LIKE 'large-%'").fetchone()[0],0)
     def test_json_payload_chunks_are_bounded(self):
-        self.assertEqual(len(list(q.json_chunks([[str(n)] for n in range(201)]))),3)
+        self.assertEqual(len(list(q.json_chunks([[str(n)] for n in range(501)]))),2)
+        chunks=list(q.json_chunks([['é'*1000] for _ in range(201)]))
+        self.assertTrue(all(len(chunk.encode())<=90000 for chunk in chunks))
+        self.assertEqual(sum(len(json.loads(chunk)) for chunk in chunks),201)
         with self.assertRaisesRegex(ValueError,'payload bound'):list(q.json_chunks([['x'*90000]]))
         self.assertEqual(len(next(q.json_chunks([['x'*89994]])).encode()),90000)
         with self.assertRaisesRegex(ValueError,'payload bound'):list(q.json_chunks([['x'*89995]]))

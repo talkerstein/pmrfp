@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'scripts/d1/**'
+      - 'scripts/d1-auth/**'
       - 'test/d1/**'
       - 'test/d1-api/**'
       - 'src/lib/d1/**'
@@ -20,6 +21,7 @@ on:
     branches: [codex/d1-staged-migration]
     paths:
       - 'scripts/d1/**'
+      - 'scripts/d1-auth/**'
       - 'test/d1/**'
       - 'test/d1-api/**'
       - 'src/lib/d1/**'
@@ -59,3 +61,16 @@ jobs:
       - name: Test API authorization, synthetic writes, public projections and rebuild preservation
         run: npx vitest run test/d1-api test/unit/karma-rules.test.ts test/unit/rfp-read-optimization.test.ts
       - run: npm run typecheck
+
+  auth-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: scripts/d1-auth/package-lock.json
+      - run: npm ci --prefix scripts/d1-auth --ignore-scripts
+      - name: Test synthetic credential import, login, bans and session revocation
+        run: npm test --prefix scripts/d1-auth

@@ -14,6 +14,33 @@ The other chat's checkout was not modified. The grants fix (#164), city-source w
 this branch was rebased onto them without modifying those patches. The dated sections below preserve historical checkpoints. The dated sections and checkpoint reports describe each validated copy. Repeat the
 live audit before a later synchronization or cutover.
 
+## November 3 update
+
+The quota-reset and durable consumer metadata canaries passed. The existing
+79,179-record bootstrap is registered idempotently (zero duplicate ACKs).
+The first live incremental extraction reconstructed 87,958 source records from
+36,943 captured receipts; every field matched a full source read in the same
+transaction. The approved rebuilt candidate contains 87,793 records. A fresh
+read-only schema audit matches November 2 after capture installation.
+
+A 23,874-change journal passed local forward/reverse/reapply. Larger, still
+byte-bounded vectors avoid the earlier 500-statement packing refusal. All 89
+offline tests pass, and native synthetic failure rollback/reversal pass. Native
+real-data forward replay, exact readback and restored baseline/final backups
+pass. Public API parity passes for 1,794 listings, taxonomy and photo metadata.
+All captured events were acknowledged and durable metadata advanced. A second
+normal cycle fetched 150 row packets (31,745 bytes) with no full-source transfer,
+applied 155 changes, passed native readback/restored backups and API parity, and
+acknowledged 329 events. The current copied preview contains 87,866 records. See
+[VERIFICATION-2026-11-03.md](VERIFICATION-2026-11-03.md). Production remains on
+Supabase; broader application conversion and cutover are unfinished. The user
+confirmed the completion target is a full Supabase exit, including Auth and
+Storage. Five synthetic Auth login tests and two export permission tests pass.
+The explicitly approved expiring private Auth view is installed; its protected
+local export contains 69 accounts. A private R2 migration bucket was created;
+58 public source files have checksummed local backups; R2 upload/readback is in
+progress, with three private files still pending. See [FULL-SUPABASE-EXIT.md](FULL-SUPABASE-EXIT.md).
+
 ## November 2 update
 
 After explicit approval, the guarded source change-tracking setup was installed:

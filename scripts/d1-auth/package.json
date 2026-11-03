@@ -1,0 +1,8 @@
+{
+  "name": "pmrfp-auth-migration-rehearsal",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" },
+  "dependencies": { "better-auth": "1.7.15", "bcryptjs": "3.0.3" },
+  "engines": { "node": ">=24" }
+}

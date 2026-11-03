@@ -97,3 +97,5 @@ mobile/ios/
 /workers/**/.wrangler/
 /workers/**/.d1-private/
 /workers/**/.dev.vars*
+
+/scripts/d1-auth/node_modules/

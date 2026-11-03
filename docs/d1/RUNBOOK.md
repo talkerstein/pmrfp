@@ -237,7 +237,7 @@ use; it does not turn full-source export into CDC.
 ## Large atomic journal payloads
 
 When an ordinary replay exceeds 500 statements, the rehearsal packs rows into
-JSON scalar vectors: at most 100 rows and 90,000 UTF-8 bytes per bound payload.
+JSON scalar vectors: at most 500 rows and 90,000 UTF-8 bytes per bound payload.
 SQL identifiers still come only from the audited catalog; row values remain
 bound data. Integer safety is checked before packing. Full-row before-images and
 absence checks use correlated indexed lookups against each vector. Upserts retain
