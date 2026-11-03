@@ -178,12 +178,9 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
     expect(V3_FALLBACK.regions).toBeNull();
     expect(V3_FALLBACK.big.n).toBeNull();
     expect(V3_FALLBACK.tiles.every((x) => x.n === null)).toBe(true);
-    expect(V3_FALLBACK.chips).toEqual([]);
     expect(V3_FALLBACK.closingCa).toEqual([]);
-    expect(V3_FALLBACK.ticker).toEqual([]);
     expect(V3_FALLBACK.toast).toEqual([]);
     expect(V3_FALLBACK.alerts).toEqual([]);
-    expect(V3_FALLBACK.awards).toEqual([]);
     expect(V3_FALLBACK.winners.top).toEqual([]);
     expect(JSON.stringify(V3_FALLBACK)).not.toMatch(/\$\d|534|523/);
   });
@@ -203,9 +200,8 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
           <HomeV3 data={structuredClone(V3_FALLBACK)} dataUs={null} where={d.common.market.where} t={d.homeV3} lang={lang} />
         </I18nProvider>,
       );
-      const t = d.homeV3;
-      // The neutral line stands in for the counts.
-      expect(html).toContain(t.stats.loading);
+      // The live strip in the hero is hidden, never guessed.
+      expect(html).not.toContain('class="live"');
       // No stats band, no "534"-style big number, no fake tenders or winners.
       expect(html).not.toContain("v3-stats");
       expect(html).not.toContain('class="big"');
@@ -218,4 +214,29 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
       expect(html).not.toMatch(/class="c">\d/);
     });
   }
+
+  it("keeps the live strip out of the hero until a side is picked, and hides tile counts and a zero closing line", async () => {
+    const { getDictionary, clientMessages } = await import("@/i18n/dictionaries");
+    const { I18nProvider } = await import("@/i18n/provider");
+    const d = getDictionary("en");
+    const render = (openPublic: number, closing7: number) =>
+      renderToStaticMarkup(
+        <I18nProvider lang="en" messages={clientMessages("en")}>
+          <HomeV3
+            data={{ ...structuredClone(V3_FALLBACK), openPublic, closing7, big: { ...V3_FALLBACK.big, n: 0 }, tiles: V3_FALLBACK.tiles.map((x) => ({ ...x, n: 0 })) }}
+            dataUs={null}
+            where={d.common.market.where}
+            t={d.homeV3}
+            lang="en"
+          />
+        </I18nProvider>,
+      );
+    const none = render(0, 0);
+    expect(none).not.toContain('class="live"');
+    expect(none).not.toContain('<span class="n">0</span>');
+    const some = render(12, 0);
+    expect(some).not.toContain('class="live"');
+    expect(some).toContain("Which one are you?");
+    expect(some).not.toContain("0 close in the next 7 days. See them");
+  });
 });

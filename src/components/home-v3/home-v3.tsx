@@ -4,17 +4,16 @@ import "./home-v3.css";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
-import { audienceFromCookie, rememberAudience } from "@/lib/audience/pm";
+import { audienceFromCookie, rememberAudience, type Audience } from "@/lib/audience/pm";
 import { PROMPT_COOKIE, QUIET_AFTER_INPUT_MS, TOAST_COOKIE, VIEWS_COOKIE, mayInterrupt, mayToast, quietEnough, readCookie } from "@/lib/growth/interruptions";
 import { V3Footer, V3Header, foundingLabel } from "./chrome";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
 import { FOUNDING } from "@/lib/founding/config";
-import { sponsorPrice } from "@/lib/sponsors/pricing";
 import { toUsd } from "@/lib/markets";
 import { localizePath, type Locale } from "@/i18n/config";
-import { fmt, formatNumber, plural } from "@/i18n/format";
+import { fmt, formatNumber } from "@/i18n/format";
 import type { Messages } from "@/i18n/dictionaries";
 
 /* ------------------------------------------------------------------ data */
@@ -42,12 +41,10 @@ export interface V3Data {
   foundingLeft: number | null;
   big: V3Trade & { img: string };
   tiles: (V3Trade & { img: string })[];
-  chips: V3Trade[];
   tradeOptions: { value: string; label: string }[];
   areaOptions: { label: string; region?: string; country?: "ca" | "us" }[];
   closingCa: V3Closing[];
   closingUs: V3Closing[];
-  ticker: { tag: string; title: string; when: string; href: string }[];
   toast: { tag: string; color: string; title: string }[];
   alertTrade: string;
   alerts: { where: string; title: string; href: string }[];
@@ -60,7 +57,6 @@ export interface V3Data {
     /** Latest monthly report ("September 2026"), when one exists. */
     report?: { month: string; href: string };
   };
-  awards: { trade: string; value: string; title: string; buyer: string; winner: string; date: string; href: string }[];
   /** Crawlable links to trade × city pages and fresh tenders (SEO). */
   browse: { combos: { href: string; label: string; n: number }[]; newest: { href: string; title: string; city: string | null }[] };
 }
@@ -69,41 +65,23 @@ export interface V3Data {
 
 const IMG = {
   mark: "/brand/mark-white.svg",
-  electrical: "/images/photos/electrical-panel-testing.webp",
-  pmLobby: "/images/home/pm-lobby.webp",
-  retail: "/images/photos/retail-power-centre-aerial.webp",
-  condo: "/images/photos/condo-midrise.webp",
-  keys: "/images/photos/keys-in-door.webp",
-  warehouse: "/images/photos/warehouse-loading-docks.webp",
-  crew: "/images/photos/site-crew-deck.webp",
   roofing: "/images/home/hero-roofing.webp",
-  hvac: "/images/home/trade-hvac.webp",
-  cleaning: "/images/home/trade-cleaning.webp",
 };
 
 const H = {
-  home: "/",
   founding: "/founding-500",
   rfps: "/rfps",
-  directory: "/directory",
   trades: "/trades",
   regions: "/regions",
   winners: "/contract-winners",
   jobs: "/jobs",
-  postJob: "/jobs/post",
   forum: "/forum",
-  pricing: "/pricing",
-  marketplace: "/marketplace",
   talent: "/talent",
-  talentSignUp: "/sign-up?role=talent",
-  signIn: "/sign-in",
   joinTrade: "/sign-up?role=trade",
   // Property managers write the RFP first; sign-up comes only at "Post it free".
   postRfp: "/rfp-writer",
   landlord: "/sign-up?role=landlord",
-  realtor: "/sign-up?role=real_estate_agent",
   supplier: "/sign-up?role=supplier",
-  suppliers: "/suppliers",
   gcPackage: "/gc-packages/new",
   forRealEstate: "/for/real-estate",
   advertise: "/advertise",
@@ -112,22 +90,19 @@ const H = {
   featured: signUpHrefForPlan("featured", "annual"),
 };
 
-const AUD_IMG = [IMG.electrical, IMG.pmLobby, IMG.retail, IMG.condo, IMG.keys, IMG.warehouse, IMG.crew];
-const AUD_HREF = [H.joinTrade, H.postRfp, H.landlord, H.postRfp, H.realtor, H.supplier, H.gcPackage];
-const DECK = [IMG.roofing, IMG.hvac, IMG.electrical, IMG.cleaning];
-const TF_D = ["translate(0px,0px) rotate(-3deg)", "translate(34px,10px) rotate(5deg)", "translate(60px,24px) rotate(11deg)", "translate(-22px,16px) rotate(-10deg)"];
-const TF_M = ["translate(0px,0px) rotate(-3deg)", "translate(30px,8px) rotate(5deg)", "translate(54px,20px) rotate(11deg)", "translate(-20px,14px) rotate(-10deg)"];
-const PAL = [["#91F2CF", "#1B1D3A"], ["#282B59", "#FFFFFF"], ["#4A4E85", "#FFFFFF"], ["#FFFFFF", "#1B1D3A"]];
-/** Forum bubbles: desktop x/y, mobile x/y, desktop font size, palette. */
-const BUBBLES = [
-  ["0%", "4%", "0%", "2%", 19, 0], ["36%", "0%", "34%", "0%", 15, 1], ["74%", "4%", "68%", "6%", 15, 2], ["50%", "24%", "40%", "24%", 16, 3], ["4%", "34%", "0%", "30%", 15, 2],
-  ["30%", "48%", "22%", "50%", 18, 0], ["74%", "50%", "70%", "48%", 15, 1], ["0%", "70%", "0%", "72%", 15, 3], ["24%", "78%", "28%", "78%", 15, 1], ["62%", "76%", "72%", "76%", 17, 0],
-] as const;
-const FACES = [["#EEEEF8", "#282B59", "#91F2CF"], ["#DDFBF0", "#282B59", "#1B1D3A"], ["#282B59", "#FFFFFF", "#91F2CF"], ["#91F2CF", "#282B59", "#1B1D3A"], ["#EEEEF8", "#4A4E85", "#282B59"]].map((f) => ({ bg: f[0], fg: f[1], hat: f[2] }));
+/** Where each hero choice goes without JavaScript. With it, the click tailors this page instead. */
+const SIDE_HREF: Record<Audience, string> = { pm: "/for-property-managers", trade: "/for-trades" };
+/** One link per t.sides.pm.tools. */
+const PM_TOOL_HREF = ["/vendor-insurance-tracker", "/contract-renewal-calendar", "/bid-comparison", "/after-hours-vendor-roster"];
+/** One link per t.sides.pm.also and t.sides.trade.also. */
+const SIDE_ALSO_HREF: Record<Audience, string[]> = {
+  pm: [H.landlord, "/for/condo-boards", H.gcPackage, H.forRealEstate],
+  trade: [H.supplier, H.jobs],
+};
+/** One link per t.also.items. */
+const ALSO_HREF = [H.forum, H.jobs, H.talent, H.joinTrade, H.advertise];
 const SMALL_BG = ["#4A4E85", "#444879", "#3D416F", "#363A66", "#30335D"];
-const BARS = [{ h: 16, c: "#4A4E85" }, { h: 26, c: "#5A6394" }, { h: 36, c: "#3E9F85" }, { h: 46, c: "#5FD3AC" }, { h: 56, c: "#91F2CF" }];
 
-const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const vars = (v: Record<string, string | number>) => v as CSSProperties;
 
 /* ------------------------------------------------------------------ shared bits */
@@ -138,19 +113,12 @@ const Check = ({ size = 22 }: { size?: number }) => (
 const SmallCheck = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#1B1D3A" strokeWidth="2.5" aria-hidden><path d="M2.5 7.5l3 3 6-6.5" /></svg>
 );
+const Arrow = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M4 10h12M11 5l5 5-5 5" /></svg>
+);
 const CloseX = ({ size, stroke }: { size: number; stroke: string }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={stroke} strokeWidth="2.5" aria-hidden><path d="M3 3l10 10M13 3L3 13" /></svg>
 );
-function Face({ f }: { f: (typeof FACES)[number] }) {
-  return (
-    <svg viewBox="0 0 44 48" fill={f.fg} aria-hidden>
-      <circle cx="22" cy="18" r="10" />
-      <path d="M2 48c2-12 10-17 20-17s18 5 20 17z" />
-      <path d="M10 14c0-8 5-12 12-12s12 4 12 12z" fill={f.hat} />
-      <rect x="8" y="13" width="28" height="3" rx="1.5" fill={f.hat} />
-    </svg>
-  );
-}
 /** Fixed-width placeholder while the visitor's market (and so the currency) is unknown. */
 const Sk = ({ w }: { w: string }) => <span className="v3-sk" aria-hidden style={{ width: w }} />;
 
@@ -186,9 +154,6 @@ export function HomeV3({
   const rate = useUsdPerCad();
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => (lang === "en" ? String(n) : formatNumber(n, lang));
-  /** A "{n} …" line, or null (hidden) when the count is unknown. Lines without {n} pass through. */
-  const factLine = (tpl: string, n: number | null): string | null =>
-    !tpl.includes("{n}") ? tpl : n == null ? null : fmt(tpl, { n: num(n) });
   /**
    * Open PUBLIC tenders: the headline counters say "public tenders", and the
    * property-manager RFPs are counted on their own (persona QA 2026-10-21:
@@ -198,6 +163,22 @@ export function HomeV3({
   /** A click on a property-manager CTA: no trade popup or toast for this visitor from now on. */
   const pickPm = () => rememberAudience("pm");
 
+  /** The side picked in the hero: tailors the hero and the sections below it. Null until someone picks. */
+  const [side, setSide] = useState<Audience | null>(null);
+  const pm = side === "pm";
+  const panelRef = useRef<HTMLDivElement>(null);
+  const pickSide = (next: Audience, e: { preventDefault(): void }) => {
+    e.preventDefault();
+    rememberAudience(next);
+    setSide(next);
+    requestAnimationFrame(() => panelRef.current?.focus());
+  };
+  // A returning visitor starts on their side. Read after hydration, because the server page is the same for everyone.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSide(audienceFromCookie(document.cookie));
+  }, []);
+
   /* One currency per visitor: CAD in Canada, USD in the U.S.; nothing until we know which. */
   const known = market != null;
   const us = market === "US";
@@ -206,20 +187,13 @@ export function HomeV3({
     const n = formatNumber(us ? toUsd(cad, rate) : cad, lang);
     return lang === "fr" ? `${n} $` : `$${n}`;
   };
-  /** Sponsorship prices are set per currency (lib/sponsors/pricing), never converted. */
-  const sponsorMoney = (tier: "province" | "national") => {
-    const n = formatNumber(sponsorPrice(tier, us ? "US" : "CA").amount, lang);
-    return lang === "fr" ? `${n} $` : `$${n}`;
-  };
   const foundingMoney = () => {
     const n = formatNumber(us ? FOUNDING.priceUsd : FOUNDING.priceCad, lang);
     return `${lang === "fr" ? `${n} $` : `$${n}`} ${currency}`;
   };
 
-  const [active, setActive] = useState(0);
-  const [tick, setTick] = useState(0);
-  const user = useRef(false);
-  const [deck, setDeck] = useState(0);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [pastHero, setPastHero] = useState(false);
   const [modal, setModal] = useState(false);
   const seen = useRef(false);
   const lastFocus = useRef<HTMLElement | null>(null);
@@ -248,17 +222,6 @@ export function HomeV3({
   }, []);
 
   useEffect(() => {
-    const still = reducedMotion();
-    const timer = setInterval(() => {
-      if (user.current || still) return;
-      setActive((a) => (a + 1) % 7);
-      setTick((x) => x + 1);
-    }, 4000);
-    const timer2 = setInterval(() => {
-      if (still) return;
-      setDeck((d) => (d + 1) % 4);
-    }, 2800);
-
     // Trade popup and toast: only per lib/growth/interruptions (never for
     // property managers, once per visitor, never before a first-time visitor
     // interacts, never right under a click).
@@ -300,7 +263,8 @@ export function HomeV3({
     const arm = () => {
       if (armed) return;
       armed = true;
-      timers.push(setTimeout(openToast, 4000), setTimeout(openPrompt, 9000));
+      // Long enough to read the page first; exit intent can still open the popup sooner.
+      timers.push(setTimeout(openToast, 30000), setTimeout(openPrompt, 45000));
     };
     const onInput = () => {
       lastInput = Date.now();
@@ -322,14 +286,21 @@ export function HomeV3({
     };
     document.addEventListener("mouseleave", onLeave);
     return () => {
-      clearInterval(timer);
-      clearInterval(timer2);
       timers.forEach(clearTimeout);
       window.removeEventListener("pointerdown", onInput);
       window.removeEventListener("keydown", onInput);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("mouseleave", onLeave);
     };
+  }, []);
+
+  // The sticky bar waits until the visitor is past the hero, so it never competes with the hero's choice.
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setPastHero(!e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   useEffect(() => {
@@ -355,26 +326,7 @@ export function HomeV3({
     return () => document.removeEventListener("keydown", onKey);
   }, [modal, closeModal, sent]);
 
-  const pick = (i: number) => {
-    user.current = true;
-    if (i !== active) {
-      setActive(i);
-      setTick((x) => x + 1);
-    }
-  };
-
-  const aud = t.audience.map((a, i) => ({
-    ...a,
-    img: AUD_IMG[i],
-    href: AUD_HREF[i],
-    fact: factLine(a.fact, i === 0 ? pub : data.regions),
-    // Property managers, landlords, condo boards, builders: the buyer side.
-    pm: i >= 1 && i <= 3,
-  }));
-  const word = aud[active].word;
-  const swapClass = tick % 2 ? "swapb" : "swapa";
   const closing = market === "US" && data.closingUs.length ? data.closingUs : data.closingCa;
-  const ticker = data.ticker.concat(data.ticker);
   // One toast, not a rotation (lib/growth/interruptions).
   const toastItem = data.toast[0] ?? null;
   const showToast = toastOn && !toastOff && !modal && toastItem != null;
@@ -382,23 +334,6 @@ export function HomeV3({
   const showFounding = spots != null;
   const w = data.winners;
   const top = w.top;
-  const bigwords = [
-    factLine(t.platform.bigwords.open, pub),
-    factLine(t.platform.bigwords.trades, data.trades),
-    factLine(t.platform.bigwords.regions, data.regions),
-    ...(top.length ? [fmt(t.platform.bigwords.awarded, { value: w.value })] : []),
-  ].filter((x): x is string => x != null);
-  /** A big "0 property-manager RFPs" reads as an empty board, so while there are none that slot shows awarded contracts. */
-  const second = data.openPm ? ([data.openPm, t.stats.pm] as const) : ([top.length && w.contracts ? w.contracts : null, t.stats.awarded] as const);
-  const stats = ([[pub, t.stats.open], second, [data.closing7, t.stats.closing], [data.trades, t.stats.trades]] as const).filter(
-    (s): s is readonly [number, string] => s[0] != null,
-  );
-  /** " · 0 property-manager RFPs" after the public-tender count; empty while unknown. */
-  const pmPart = data.openPm != null ? ` · ${plural(data.openPm, t.hero.pm, { n: num(data.openPm) })}` : "";
-  const cards = DECK.map((img, i) => {
-    const slot = (i - deck + 4) % 4;
-    return { no: `0${i + 1}`, cap: t.platform.work.steps[i], img, slot, z: 4 - slot, pick: () => setDeck(i) };
-  });
   const plans = [
     { ...t.plans.items[0], price: known ? (lang === "fr" ? "0 $" : "$0") : null, per: t.plans.forever, href: H.joinTrade, pop: false, w: "3ch" },
     { ...t.plans.items[1], price: known ? money(PRICING.proAnnual) : null, per: known ? fmt(t.plans.perYearOr, { currency, monthly: money(PRICING.proMonthly) }) : null, href: H.proAnnual, pop: true, w: "4ch" },
@@ -489,95 +424,93 @@ export function HomeV3({
     <div className="pmrfp-v3" data-live={dataSources?.live.join(",")} data-fallback={dataSources?.fallback.join(",")}>
       <a href="#main" className="v3-skip">{t.skip}</a>
 
-      <V3Header t={t} lang={lang} foundingLeft={data.foundingLeft} onJoin={openModalLink} />
+      <V3Header t={t} lang={lang} foundingLeft={data.foundingLeft} joinHref="/sign-up" />
 
       <main id="main" tabIndex={-1} style={{ outline: "none" }}>
-        <div className="v3-top">
+        <div className="v3-top" ref={heroRef}>
           <section>
             <div className="v3-hero">
-              <div className="v3-hero-main">
-                <div className="v3-hero-eyebrow">
-                  <span className="v3-dot" />
-                  <span className="d">{pub != null ? `${fmt(t.hero.eyebrow, { n: num(pub), where: here })}${pmPart}` : t.stats.loading}</span>
-                  <span className="m">{pub != null ? fmt(t.hero.eyebrowShort, { n: num(pub), where: here }) : t.stats.loading}</span>
-                </div>
-                <h1 className="v3-h1">
-                  {t.hero.title} <span key={tick} className={`w ${swapClass}`} aria-live="off">{word}.</span>
-                </h1>
-              </div>
-              <div className="v3-hero-side">
-                <p className="v3-hero-sub"><span className="d">{t.hero.sub}</span><span className="m">{t.hero.subShort}</span></p>
-                <div className="v3-hero-ctas">
-                  <button type="button" onClick={openModal} className="v3-pill mint">{t.hero.join}</button>
-                  <a href={L(H.postRfp)} onClick={pickPm} className="v3-pill ghost">{t.hero.post}</a>
-                </div>
-              </div>
+              <h1 className="v3-h1">{t.hero.title}</h1>
+              <p className="v3-hero-sub">{t.hero.sub}</p>
             </div>
-
-            <div className="v3-aud-wrap">
-              <div className="v3-aud" role="group" aria-label={t.hero.audience}>
-                {aud.map((p, i) => {
-                  const on = i === active;
-                  const no = `0${i + 1}`;
-                  return (
-                    <div key={p.label} className={`v3-tile${on ? " on" : ""}`} onMouseEnter={() => pick(i)}>
-                      <Image src={p.img} alt="" fill sizes="(max-width: 1023px) 100vw, 680px" className="v3-img" priority={i === 0} />
-                      <div className="v3-tile-shade" />
-                      {!on && (
-                        <button type="button" onClick={() => pick(i)} aria-expanded={false} className="v3-tile-btn">
-                          <span className="grp"><span className="no">{no}</span><span className="lab">{p.label}</span></span>
-                          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#91F2CF" strokeWidth="2.5" aria-hidden><path d="M4 7l5 5 5-5" /></svg>
-                        </button>
-                      )}
-                      {on && (
-                        <div className="v3-tile-body fadeup">
-                          <div className="k">{no} · {p.label}</div>
-                          <div className="h">{p.head}</div>
-                          <div className="p"><span className="d">{p.desc}</span><span className="m">{p.descShort}</span></div>
-                          <div className="row">
-                            <a href={L(p.href)} onClick={p.pm ? pickPm : undefined} className="v3-pill mint"><span className="d">{p.cta}</span><span className="m">{p.ctaShort}</span> →</a>
-                            {p.fact && <span className="fact">{p.fact}</span>}
-                          </div>
+            <div className="v3-pick-wrap">
+              {side == null ? (
+                <div role="group" aria-labelledby="v3-pick-q">
+                  <p className="v3-pick-q" id="v3-pick-q">{t.hero.audience}</p>
+                  <div className="v3-pick">
+                    {(["pm", "trade"] as const).map((s) => (
+                      <a key={s} href={L(SIDE_HREF[s])} onClick={(e) => pickSide(s, e)}>
+                        <span><b>{t.sides[s].pick}</b><span className="w">{t.sides[s].who}</span></span>
+                        <Arrow />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="v3-panel" ref={panelRef} tabIndex={-1}>
+                  <div className="lead">
+                    <h2 className="hd">{t.sides[side].title}</h2>
+                    <p className="sb">{t.sides[side].body}</p>
+                    {pm ? (
+                      <div className="cta"><a href={L(H.postRfp)} className="v3-pill navy">{t.sides.pm.cta}</a></div>
+                    ) : (
+                      <div className="cta">
+                        <a href={L(H.rfps)} className="v3-pill navy">{t.sides.trade.cta}</a>
+                        <a href={L(H.joinTrade)} className="v3-pill line">{t.sides.trade.join}</a>
+                      </div>
+                    )}
+                    <a className="switch" href={L(SIDE_HREF[pm ? "trade" : "pm"])} onClick={(e) => pickSide(pm ? "trade" : "pm", e)}>{t.sides[side].switch}</a>
+                  </div>
+                  <div className="more">
+                    {pm && (
+                      <>
+                        <h3 className="mh">{t.sides.pm.toolsHead}</h3>
+                        <div className="rows">
+                          {t.sides.pm.tools.map((name, i) => (
+                            <a key={name} href={L(PM_TOOL_HREF[i])}><b>{name}</b><Arrow /></a>
+                          ))}
                         </div>
-                      )}
+                      </>
+                    )}
+                    {!pm && !!pub && (
+                      <a className="live" href={L(H.rfps)}>
+                        <span className="v3-dot" />
+                        <span><b>{fmt(t.hero.openNow, { n: num(pub), where: here })}</b>{!!data.closing7 && <span className="c">{fmt(t.hero.closing, { n: num(data.closing7) })}</span>}</span>
+                      </a>
+                    )}
+                    <h3 className="mh">{t.sides[side].alsoHead}</h3>
+                    <div className="also">
+                      {t.sides[side].also.map((name, i) => (
+                        <a key={name} href={L(SIDE_ALSO_HREF[side][i])}>{name}</a>
+                      ))}
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <section className="v3-wrap v3-how">
+          <h2 className="v3-h2">{t.how.title}</h2>
+          <div className={`v3-how-grid${side ? " one" : ""}`}>
+            {/* columns[0] is the trade side, columns[1] the side that hires. */}
+            {t.how.columns.filter((_, i) => !side || i === (pm ? 1 : 0)).map((c) => (
+              <div key={c.head}>
+                <h3 className="v3-h3">{c.head}</h3>
+                <ol>
+                  {c.steps.map((x, i) => (
+                    <li key={x.t}><span className="no" aria-hidden>{i + 1}</span><div><b>{x.t}</b><p>{x.b}</p></div></li>
+                  ))}
+                </ol>
               </div>
-            </div>
-          </section>
-
-          {data.ticker.length > 0 && (
-          <div className="v3-ticker">
-            <div className="marquee">
-              {ticker.map((k, i) => (
-                <a key={i} href={L(k.href)} aria-hidden={i >= data.ticker.length || undefined} tabIndex={i >= data.ticker.length ? -1 : undefined}>
-                  <span className="tg">{k.tag}</span>
-                  <span className="tt">{k.title}</span>
-                  <span className="tw">{k.when}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-          )}
-        </div>
-
-        {stats.length > 0 && (
-          <section className="v3-wrap v3-stats" aria-label={t.stats.open}>
-            {stats.map(([n, l]) => (
-              <div key={l}><div className="n">{num(n)}</div><div className="l">{l}</div></div>
             ))}
-          </section>
-        )}
-
-        <div className="v3-wrap">
-          <div className="v3-band" aria-hidden>
-            <div className="marquee" style={{ display: "flex", width: "max-content", animationDuration: "45s" }}>
-              {bigwords.concat(bigwords).map((x, i) => <span key={i} className={i % 2 ? "o" : undefined}>{x} ·</span>)}
-            </div>
           </div>
-        </div>
+        </section>
 
+        {/* Trade-side sections: a visitor who hires contractors doesn't need them. */}
+        {!pm && (
+        <>
         <section className="v3-wrap v3-trades">
           <div className="v3-trades-head">
             <div>
@@ -596,7 +529,7 @@ export function HomeV3({
               <Image src={data.big.img} alt="" fill sizes="(max-width: 1023px) 100vw, 480px" className="v3-img" />
               <span className="sh" />
               <span className="in">
-                {data.big.n != null && <span className="n">{num(data.big.n)}</span>}
+                {!!data.big.n && <span className="n">{num(data.big.n)}</span>}
                 <span className="row"><span className="nm">{data.big.name}</span><span className="on">{t.trades.openNow}</span></span>
               </span>
             </a>
@@ -604,7 +537,7 @@ export function HomeV3({
               <a key={x.name} className="v3-tt zoom" href={L(x.href)}>
                 <Image src={x.img} alt="" fill sizes="(max-width: 1023px) 50vw, 230px" className="v3-img" />
                 <span className="sh" />
-                <span className="in">{x.n != null && <span className="n">{num(x.n)}</span>}<span className="nm">{x.name}</span></span>
+                <span className="in">{!!x.n && <span className="n">{num(x.n)}</span>}<span className="nm">{x.name}</span></span>
               </a>
             ))}
             <a className="v3-allt lift" href={L(H.trades)}>
@@ -613,11 +546,6 @@ export function HomeV3({
             </a>
           </div>
 
-          <div className="v3-chips hs">
-            {data.chips.map((c) => (
-              <a key={c.name} className="v3-chip lift" href={L(c.href)}><b>{c.name}</b>{c.n != null && <span className="c">{num(c.n)}</span>}</a>
-            ))}
-          </div>
         </section>
 
         <section className="v3-wrap v3-closing">
@@ -641,33 +569,22 @@ export function HomeV3({
           </div>
           </>)}
 
-          {/* No property-manager RFPs open: say so and invite the first (never a made-up listing or testimonial). */}
-          {data.openPm === 0 && (
-            <div className="v3-pmcard">
-              <div>
-                <div className="v3-label">{t.pmEmpty.eyebrow}</div>
-                <h3 className="hd">{t.pmEmpty.title}</h3>
-                <p>{t.pmEmpty.body}</p>
-              </div>
-              <a href={L(H.postRfp)} onClick={pickPm} className="v3-pill navy">{t.pmEmpty.cta}</a>
-            </div>
-          )}
-
           <div className="v3-src">
             <h2 className="v3-h3">{t.sources.title}</h2>
             <div className="note">{t.sources.note}</div>
             <div className="v3-src-grid">
-              {[
-                ["CA", "CanadaBuys", t.sources.federal],
-                ["US", "SAM.gov", t.sources.usFederal],
-                ["TO", "City of Toronto", t.sources.municipal],
-                ["QC", "Québec SEAO", t.sources.provincial],
-                ["NS", "Nova Scotia", t.sources.provincial],
-                ["YT", "Yukon", t.sources.territorial],
-                ["NYC", "NYC City Record", t.sources.municipal],
-                ["+", t.sources.pms, t.sources.private],
-              ].map(([code, name, kind], i) => (
-                <div key={code} style={{ background: i === 7 ? "#91F2CF" : "#FFFFFF" }}>
+              {/* Country-first: this visitor's sources, plus the private RFPs. */}
+              {([
+                ["CA", "CanadaBuys", t.sources.federal, "CA"],
+                ["TO", "City of Toronto", t.sources.municipal, "CA"],
+                ["QC", "Québec SEAO", t.sources.provincial, "CA"],
+                ["NS", "Nova Scotia", t.sources.provincial, "CA"],
+                ["YT", "Yukon", t.sources.territorial, "CA"],
+                ["US", "SAM.gov", t.sources.usFederal, "US"],
+                ["NYC", "NYC City Record", t.sources.municipal, "US"],
+                ["+", t.sources.pms, t.sources.private, null],
+              ] as const).filter((x) => x[3] == null || x[3] === (market ?? "CA")).map(([code, name, kind, country]) => (
+                <div key={code} style={{ background: country == null ? "#91F2CF" : "#FFFFFF" }}>
                   <div className="code">{code}</div>
                   <div className="nm">{name}</div>
                   <div className="kd">{kind}</div>
@@ -699,7 +616,7 @@ export function HomeV3({
                 <b><span className="d">{fmt(t.pro.matches, { n: num(data.alerts.length), trade: data.alertTrade })}</span><span className="m">{fmt(t.pro.matches, { n: num(data.alerts.length), trade: data.alertTrade.split(" / ")[0] })}</span></b>
               </div>
               {data.alerts.map((a, i) => (
-                <a key={a.href + i} href={L(a.href)} className="v3-alert drop" style={vars({ marginLeft: `${i * 36}px`, animationDelay: `${i * 0.35}s`, "--im": `${i * 14}px` })}>
+                <a key={a.href + i} href={L(a.href)} className="v3-alert" style={vars({ marginLeft: `${i * 36}px`, "--im": `${i * 14}px` })}>
                   <div className="hd"><span className="w">{a.where}</span><span className="i">{i + 1}/{data.alerts.length}</span></div>
                   <div className="ti">{a.title}</div>
                   <div className="chips">{t.pro.chips.map((c) => <span key={c}><SmallCheck />{c}</span>)}</div>
@@ -711,8 +628,11 @@ export function HomeV3({
           </div>
         </section>
 
+        </>
+        )}
+
         {/* Contract winners come from public award notices (Canadian today): hidden when the visitor's country has none. */}
-        {top.length > 0 && (
+        {!pm && top.length > 0 && (
         <section className="v3-win">
           <div className="v3-wrap v3-win-in">
             <div className="v3-win-head">
@@ -757,175 +677,21 @@ export function HomeV3({
             )}
             <div className="v3-win-legend"><span>{t.winners.legend}</span><div>{w.report && <><a href={L(w.report.href)} className="mintlink">{fmt(t.winners.readReport, { month: w.report.month })}</a>{" · "}</>}<a href={L(H.winners)} className="mintlink">{t.winners.seeMost}</a></div></div>
 
-            <div className="v3-callout">
-              <p>{fmt(t.winners.callout, { name: w.most.name, n: num(w.most.n) })}</p>
-              <button type="button" onClick={openModal} className="v3-pill mint">{t.winners.calloutCta}</button>
-            </div>
-            <h3 className="v3-h3">{t.winners.justAwarded}</h3>
-            <div className="v3-awards hs">
-              {data.awards.map((a) => (
-                <a key={a.href + a.title} className="v3-award blk" href={L(a.href)}>
-                  <span className="hd"><span className="tr">{a.trade}</span><span className="dt">{a.date}</span></span>
-                  <span className="val">{a.value}</span>
-                  <span className="ti">{a.title}</span>
-                  <span className="by">{t.winners.wonBy} <b>{a.winner}</b><span className="d"> · {a.buyer}</span></span>
-                </a>
-              ))}
-            </div>
           </div>
         </section>
         )}
 
-        <section className="v3-plat">
-          <div className="v3-wrap v3-plat-in">
-            <div className="v3-plat-head">
-              <div>
-                <div className="v3-eyebrow">{t.platform.eyebrow}</div>
-                <h2 className="v3-h2">{t.platform.title} <span className="mk">{t.platform.titleMark}</span></h2>
-              </div>
-              <p>{t.platform.sub}</p>
-            </div>
-
-            <div className="v3-grid">
-              <div className="v3-card white v3-work">
-                <div className="v3-work-l">
-                  <div className="v3-label">{t.platform.work.label}</div>
-                  <h3 className="hd">{t.platform.work.head}</h3>
-                  <div className="v3-steps">
-                    {cards.map((c) => (
-                      <button key={c.no} type="button" aria-pressed={c.slot === 0} onClick={c.pick}><span className="no">{c.no}</span><b>{c.cap}</b></button>
-                    ))}
-                  </div>
-                  <a href={L(H.joinTrade)} className="v3-pill navy v3-work-cta">{t.platform.work.cta}</a>
-                  <div className="v3-work-sub">{t.platform.work.sub}</div>
-                </div>
-                <div className="v3-deck" aria-hidden>
-                  <div className="sun" />
-                  {cards.map((c) => (
-                    <div key={c.no} className="v3-pcard" style={vars({ "--td": TF_D[c.slot], "--tm": TF_M[c.slot], zIndex: c.z })}>
-                      <div className="ph"><Image src={c.img} alt="" fill sizes="250px" className="v3-img" /></div>
-                      <div className="cap"><b>{c.cap}</b><span>{c.no}/04</span></div>
-                    </div>
-                  ))}
-                  <span className="v3-example">{t.platform.work.example}</span>
-                </div>
-              </div>
-
-              <div className="v3-card ink v3-forum">
-                <div className="v3-label mint">{t.platform.forum.label}</div>
-                <h3 className="hd">{t.platform.forum.head}</h3>
-                <div className="v3-bubbles" aria-hidden>
-                  {BUBBLES.map((b, i) => (
-                    <span key={i} className="float" style={vars({ "--xd": b[0], "--yd": b[1], "--xm": b[2], "--ym": b[3], "--fs": `${b[4]}px`, background: PAL[b[5]][0], color: PAL[b[5]][1], animationDuration: `${4 + (i % 4)}s`, animationDelay: `${-i * 0.7}s` })}>{t.platform.forum.bubbles[i]}</span>
-                  ))}
-                </div>
-                <div className="v3-forum-foot">
-                  <a href={L(H.forum)} className="v3-pill mint">{t.platform.forum.cta}</a>
-                  <div aria-hidden>
-                    <div className="v3-bars">
-                      {BARS.map((b, i) => <span key={i} className="wave" style={vars({ "--h": `${b.h}px`, background: b.c, animationDelay: `${i * 0.2}s` })} />)}
-                    </div>
-                    <div className="v3-rank">{t.platform.forum.rank}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="v3-card navy">
-                <div className="v3-label mint">{t.platform.jobs.label}</div>
-                <h3 className="hd">{t.platform.jobs.head} <span className="v3-roll-box" style={{ display: "block" }}>
-                  <span className="roll" style={{ display: "flex" }}>
-                    {[...t.platform.jobs.roll, t.platform.jobs.roll[0]].map((r, i) => <span key={i} aria-hidden={i > 0 || undefined}>{r}</span>)}
-                  </span>
-                </span></h3>
-                <div className="v3-types">
-                  {t.platform.jobs.types.map((x, i) => <span key={x} className={i === 4 ? "on" : undefined}>{x}</span>)}
-                </div>
-                <div className="v3-note">{t.platform.jobs.note}</div>
-                <a href={L(H.postJob)} className="lk" style={{ marginTop: 14 }}>{t.platform.jobs.cta}</a>
-              </div>
-
-              <div className="v3-card white">
-                <div className="v3-label">{t.platform.hiring.label}</div>
-                <h3 className="hd">{t.platform.hiring.head}</h3>
-                <div className="v3-faces">
-                  {FACES.map((f, i) => (
-                    <span key={i} className="v3-face" style={{ background: f.bg }}><Face f={f} /></span>
-                  ))}
-                  <span className="v3-avail"><span className="dot"><span className="ping" /><span /></span>{t.platform.hiring.available}</span>
-                </div>
-                <div className="v3-tags">
-                  <span style={{ background: "#282B59", color: "#FFFFFF" }}>{t.platform.hiring.chips[0]}</span>
-                  <span style={{ background: "#EEEEF8" }}>{t.platform.hiring.chips[1]}</span>
-                  <span style={{ background: "#DDFBF0" }}>{t.platform.hiring.chips[2]}</span>
-                </div>
-                <div className="v3-note" style={{ marginTop: 14 }}>{t.platform.hiring.note}</div>
-                <div className="v3-links2"><a href={L(H.talent)} className="lk">{t.platform.hiring.see}</a><a href={L(H.talentSignUp)} className="lk">{t.platform.hiring.profile}</a></div>
-              </div>
-
-              <a className="v3-card v3-photo zoom" href={L(H.suppliers)}>
-                <Image src={IMG.warehouse} alt="" fill sizes="(max-width: 1023px) 100vw, 400px" className="v3-img" style={{ opacity: 0.6 }} />
-                <span className="sh" />
-                <span className="v3-ring spin" aria-hidden><svg width="96" height="96" viewBox="0 0 96 96"><defs><path id="v3circ" d="M48 48m-36 0a36 36 0 1 1 72 0a36 36 0 1 1 -72 0" /></defs><text fontFamily="IBM Plex Mono, monospace" fontSize="10.5" letterSpacing="2.2" fill="#91F2CF"><textPath href="#v3circ">{t.platform.suppliers.ring}</textPath></text></svg></span>
-                <span className="rel v3-label mint">{t.platform.suppliers.label}</span>
-                <span className="rel hd">{t.platform.suppliers.head}</span>
-                <span className="sub m">{t.platform.suppliers.sub}</span>
-                <span className="cta">{t.platform.suppliers.cta}</span>
-              </a>
-
-              <a className="v3-card v3-photo zoom" href={L(H.landlord)}>
-                <Image src={IMG.retail} alt="" fill sizes="(max-width: 1023px) 100vw, 400px" className="v3-img" style={{ opacity: 0.6 }} />
-                <span className="sh" />
-                <span className="v3-freebadge">{t.platform.landlords.badge}</span>
-                <span className="rel v3-label mint">{t.platform.landlords.label}</span>
-                <span className="rel hd">{t.platform.landlords.head}</span>
-                <span className="sub m">{t.platform.landlords.badge}.</span>
-                <span className="cta">{t.platform.landlords.cta}</span>
-              </a>
-
-              <div className="v3-card mint">
-                <div className="v3-label ink">{t.platform.realtors.label}</div>
-                <h3 className="hd">{t.platform.realtors.head}</h3>
-                <div className="v3-chat">
-                  <div className="drop" style={{ animationDelay: "0s" }}>{t.platform.realtors.message}</div>
-                  <div className="drop url" style={{ animationDelay: "0.6s" }}>{t.platform.realtors.link}</div>
-                  <div className="drop tags" style={{ animationDelay: "1.2s" }}>{t.platform.realtors.tags.map((x) => <span key={x}>{x}</span>)}</div>
-                </div>
-                <div className="v3-note" style={{ marginTop: 14 }}>{known ? fmt(t.platform.realtors.price, { price: `${money(PRICING.realtorAnnual)} ${currency}` }) : <Sk w="14em" />}</div>
-                <a href={L(H.forRealEstate)} className="lk" style={{ marginTop: 10 }}>{t.platform.realtors.cta}</a>
-              </div>
-
-              <a className="v3-card v3-photo zoom" href={L(H.forRealEstate)}>
-                <Image src={IMG.keys} alt="" fill sizes="(max-width: 1023px) 100vw, 400px" className="v3-img" style={{ opacity: 0.65 }} />
-                <span className="sh" />
-                <span className="rel v3-label mint">{t.platform.residential.label}</span>
-                <span className="rel hd">{t.platform.residential.head}</span>
-                <span className="sub">{t.platform.residential.sub}</span>
-                <span className="cta">{t.platform.residential.cta}</span>
-              </a>
-
-              <div className="v3-card navy v3-spon">
-                <div className="v3-spon-in">
-                  <div className="v3-spon-l">
-                    <div className="v3-label mint">{t.platform.sponsor.label}</div>
-                    <h3 className="hd">{t.platform.sponsor.head}</h3>
-                    <a href={L(H.advertise)} className="v3-pill mint">{t.platform.sponsor.cta}</a>
-                  </div>
-                  <div className="v3-offer dk blk">
-                    <div className="t">{t.platform.sponsor.spotlight}</div>
-                    <div className="pr">{known ? <>{sponsorMoney("province")} <small>{fmt(t.platform.sponsor.perMonth, { currency })}</small></> : <Sk w="3.5ch" />}</div>
-                    <div className="bd">{t.platform.sponsor.spotlightBody}</div>
-                  </div>
-                  <div className="v3-offer lt blk">
-                    <div className="t">{t.platform.sponsor.partner}<span className="b">{t.platform.sponsor.partnerBadge}</span></div>
-                    <div className="pr">{known ? <>{sponsorMoney("national")} <small>{fmt(t.platform.sponsor.perMonth, { currency })}</small></> : <Sk w="3.5ch" />}</div>
-                    <div className="bd">{t.platform.sponsor.partnerBody}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <section className="v3-wrap v3-also">
+          <h2 className="v3-h3">{t.also.title}</h2>
+          <div className="v3-also-grid">
+            {/* The last two items are for trade companies. */}
+            {t.also.items.slice(0, pm ? 3 : undefined).map((x, i) => (
+              <a key={x.name} href={L(ALSO_HREF[i])}><b>{x.name}</b><span>{x.what}</span></a>
+            ))}
           </div>
         </section>
 
+        {!pm && (
         <section>
           <div className="v3-wrap v3-plans-in">
             <div className="v3-plans-head">
@@ -951,6 +717,21 @@ export function HomeV3({
           </div>
         </section>
 
+        )}
+
+        {pm ? (
+        <section className="v3-final">
+          <div className="v3-wrap v3-final-in two">
+            <div>
+              <h2>{t.sides.pm.finalTitle}</h2>
+              <div className="note">{t.sides.pm.finalNote}</div>
+            </div>
+            <div className="btns">
+              <a href={L(H.postRfp)} className="v3-pill ink">{t.sides.pm.cta}</a>
+            </div>
+          </div>
+        </section>
+        ) : (
         <section className="v3-final">
           <div className="v3-wrap v3-final-in">
             {pub != null && <div className="big" aria-hidden>{num(pub)}</div>}
@@ -967,6 +748,7 @@ export function HomeV3({
             </div>
           </div>
         </section>
+        )}
 
         {digest && <div className="v3-wrap">{digest}</div>}
 
@@ -1002,6 +784,7 @@ export function HomeV3({
 
       <V3Footer t={t} lang={lang} />
 
+      {pastHero && !pm && (
       <div className="v3-sticky">
         <div className="v3-sticky-in">
           <span className="v3-dot d" style={{ width: 10, height: 10 }} />
@@ -1013,6 +796,7 @@ export function HomeV3({
           <button type="button" onClick={openModal} className="v3-pill mint"><span className="d">{t.sticky.cta}</span><span className="m">{t.sticky.ctaShort}</span></button>
         </div>
       </div>
+      )}
 
       {showToast && toastItem && (
         <div className="v3-toast" role="status">
