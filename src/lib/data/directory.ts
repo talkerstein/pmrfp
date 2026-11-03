@@ -219,6 +219,31 @@ export async function retiredVendorRedirect(slug: string): Promise<string | null
   return cat ? `/trades/${cat}` : "/directory";
 }
 
+/** What the website widget's company card shows. */
+export type VendorCard = Omit<VendorListItem, "featured" | "platinum" | "level"> & { id: string };
+
+/**
+ * A company's card for its own website (/embed/company). Widget pages are ISR,
+ * where one uncached fetch fails the whole response with a 500, even when the
+ * caller catches the error. So this is a single cached REST read and nothing
+ * else, under the same visibility rules as getVendor.
+ */
+export async function getVendorCard(slug: string): Promise<VendorCard | null> {
+  if (!isSupabaseConfigured()) {
+    const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);
+    return v ? { ...demoToListItem(v), id: v.slug } : null;
+  }
+  const { data } = await createReadClient()
+    .from("organizations")
+    .select(ORG_LIST_SELECT)
+    .eq("slug", slug)
+    .eq("profile_status", "approved")
+    .eq("is_demo", false)
+    .maybeSingle();
+  const r = data as unknown as OrgRow | null;
+  return r ? { ...toListItem(r, new Set()), id: r.id } : null;
+}
+
 export async function getVendor(slug: string): Promise<VendorDetail | null> {
   if (!isSupabaseConfigured()) {
     const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);
