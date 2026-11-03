@@ -22,6 +22,7 @@ export const BUYER_PERMISSIONS_TAG = "buyer-permissions";
 export const BUYER_PAGES_TAG = "buyer-pages";
 /** Tables whose writes change the public board. */
 export const RFP_TABLES = new Set(["rfp_posts", "rfp_categories", "rfp_documents"]);
+const RFP_READ_TABLES = new Set([...RFP_TABLES, "rfp_public"]);
 
 type CachedInit = RequestInit & { next?: { revalidate?: number | false; tags?: string[] } };
 
@@ -42,7 +43,10 @@ export function createPublicReadFetch(baseUrl: string, anonKey: string, transpor
     const table = url.pathname.split("/").pop() ?? "";
     const taxonomy = TAXONOMY_TABLES.has(table);
     const tag = taxonomy ? TAXONOMY_DATA_TAG : isForumTable(table) ? FORUM_DATA_TAG : PUBLIC_DATA_TAG;
-    if (publicRead) options.next = { revalidate: taxonomy ? TAXONOMY_DATA_TTL : PUBLIC_DATA_TTL, tags: [tag] };
+    // Tender writes invalidate only tender reads. Keep the general tag too:
+    // directory/taxonomy edits may change joined public tender content.
+    const tags = RFP_READ_TABLES.has(table) ? [tag, RFPS_TAG] : [tag];
+    if (publicRead) options.next = { revalidate: taxonomy ? TAXONOMY_DATA_TTL : PUBLIC_DATA_TTL, tags };
     else options.next = { revalidate: 0 };
     // Every render must invoke Next's patched fetch so its tags and TTL are
     // registered in that render's context. Let Next handle render-local fetch

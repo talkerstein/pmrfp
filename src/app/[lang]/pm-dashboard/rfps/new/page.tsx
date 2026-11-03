@@ -10,6 +10,7 @@ import { localizeRfpTemplate } from "@/lib/seo/rfp-templates.fr";
 import { getLang } from "@/i18n/server";
 import { getLinkableAward, regionSlugById } from "@/lib/gc/data";
 import { parseAwardRef } from "@/lib/gc/packages";
+import { retenderDefaults } from "@/lib/contracts/server";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import { getT, setLangFrom } from "@/i18n/server";
@@ -25,12 +26,12 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function NewRfpPage({
   searchParams, params }: {
-  searchParams: Promise<{ template?: string; draft?: string; kind?: string; award?: string; report?: string; trade?: string; address?: string }>;
+  searchParams: Promise<{ template?: string; draft?: string; kind?: string; award?: string; report?: string; trade?: string; address?: string; contract?: string }>;
 } & { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("pm").newRfp;
   const session = await requireRole(["property_manager", "real_estate_agent"]);
-  const [{ template: templateSlug, draft, kind, award: awardParam, report: reportParam, trade: tradeParam, address: addressParam }, categories, regions, propertyTypes, geo] = await Promise.all([
+  const [{ template: templateSlug, draft, kind, award: awardParam, report: reportParam, trade: tradeParam, address: addressParam, contract }, categories, regions, propertyTypes, geo] = await Promise.all([
     searchParams,
     getCategories(),
     getRegions(),
@@ -46,7 +47,7 @@ export default async function NewRfpPage({
 
   // General contractors post sub-trade packages. ?kind=gc asks for that form;
   // a builder organization gets it by default (?kind=rfp for a plain RFP).
-  const isGc = kind === "gc" || (kind !== "rfp" && session.organization?.organization_type === "builder");
+  const isGc = !contract && (kind === "gc" || (kind !== "rfp" && session.organization?.organization_type === "builder"));
   if (isGc) {
     const award = await getLinkableAward(parseAwardRef(awardParam));
     const awardRegion = await regionSlugById(award?.regionId ?? null);
@@ -83,7 +84,11 @@ export default async function NewRfpPage({
   const template = rawTemplate ? localizeRfpTemplate(rawTemplate, getLang()) : undefined;
   // Report → Quotes hands over one reviewed trade group (?report=&trade=[&address=1]).
   const fromReport = reportParam && tradeParam ? await reportRfpPrefill(reportParam, tradeParam, addressParam === "1", getLang(), categories, regions) : null;
-  const defaults: RfpPostDefaults | undefined = template
+  // ?contract=<id>: re-tendering a service contract from the renewal calendar.
+  const renewal = contract ? await retenderDefaults(session, contract, getLang(), categories) : null;
+  const defaults: RfpPostDefaults | undefined = renewal
+    ? { ...geoDefaults, ...renewal }
+    : template
     ? {
         title: template.titleSample,
         summary: template.summarySample,
