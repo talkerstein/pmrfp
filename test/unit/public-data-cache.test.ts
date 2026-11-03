@@ -36,7 +36,7 @@ describe("public Supabase read caching", () => {
     expect(calls).toHaveLength(2);
     expect(calls[0][0]).not.toBe(calls[1][0]);
     expect(new URL(calls[1][0]).searchParams.get("offset")).toBe("250");
-    expect(calls[0][1]).toMatchObject({ cache: "force-cache", next: { revalidate: 3600, tags: [PUBLIC_DATA_TAG] } });
+    expect(calls[0][1]).toMatchObject({ cache: "force-cache", next: { revalidate: 3600, tags: [PUBLIC_DATA_TAG, RFPS_TAG] } });
   });
 
   it.each([
@@ -68,7 +68,7 @@ describe("public cache invalidation", () => {
     const write = createWriteFetch(base, transport);
     await write(`${base}/rest/v1/rfp_posts?id=eq.example`, { method: "PATCH" });
     expect(revalidateTag).toHaveBeenCalledWith(RFPS_TAG, "max");
-    expect(revalidateTag).toHaveBeenCalledWith(PUBLIC_DATA_TAG, "max");
+    expect(revalidateTag).not.toHaveBeenCalledWith(PUBLIC_DATA_TAG, "max");
     expect(revalidateTag).not.toHaveBeenCalledWith(PUBLIC_DATA_TAG, { expire: 0 });
     expect(transport).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ cache: "no-store" }));
   });
@@ -77,6 +77,22 @@ describe("public cache invalidation", () => {
     await write(`${base}/rest/v1/organizations?id=eq.example`, { method: "PATCH" });
     expect(revalidateTag).toHaveBeenCalledWith(PUBLIC_DATA_TAG, { expire: 0 });
     expect(revalidateTag).not.toHaveBeenCalledWith(RFPS_TAG, expect.anything());
+  });
+  it.each(["rfp_posts", "rfp_categories", "rfp_documents"])("invalidates only tender dependencies after writing %s", async (table) => {
+    const write = createWriteFetch(base, vi.fn(async () => new Response(null, { status: 204 })));
+    await write(`${base}/rest/v1/${table}`, { method: "POST" });
+    expect(revalidateTag).toHaveBeenCalledExactlyOnceWith(RFPS_TAG, "max");
+  });
+  it.each(["rfp_posts", "organizations", "regions", "major_projects", "forum_threads"])("does not invalidate after a confirmed zero-row mutation on %s", async (table) => {
+    const response = new Response(null, { status: 204, headers: { "content-range": "*/0" } });
+    const write = createWriteFetch(base, vi.fn(async () => response));
+    expect(await write(`${base}/rest/v1/${table}`, { method: "PATCH" })).toBe(response);
+    expect(revalidateTag).not.toHaveBeenCalled();
+  });
+  it.each(["*/1", "0-0/1", "*/*", ""])("retains invalidation when a zero-row result is not established: %s", async (range) => {
+    const write = createWriteFetch(base, vi.fn(async () => new Response(null, { status: 204, headers: { "content-range": range } })));
+    await write(`${base}/rest/v1/rfp_posts`, { method: "PATCH" });
+    expect(revalidateTag).toHaveBeenCalledExactlyOnceWith(RFPS_TAG, "max");
   });
   it("does not flush public caches on reads, failed writes or rate-limit counters", async () => {
     const write = createWriteFetch(base, vi.fn(async () => new Response(null, { status: 403 })));

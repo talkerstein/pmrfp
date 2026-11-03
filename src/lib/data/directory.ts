@@ -1,4 +1,5 @@
 import { createReadClient } from "@/lib/supabase/read";
+import { getPortfolioPhotos } from "@/lib/data/portfolio-photos";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   DEMO_SUPPLIERS,
@@ -67,6 +68,7 @@ interface OrgRow {
   id: string;
   slug: string;
   name: string;
+  organization_type: string;
   city: string | null;
   province: string | null;
   short_description: string | null;
@@ -89,7 +91,7 @@ interface OrgRow {
 }
 
 const ORG_SELECT =
-  "id,slug,name,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website,email,phone," +
+  "id,slug,name,organization_type,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website,email,phone," +
   "organization_categories(trade_categories(name,slug))," +
   "organization_regions(regions(name,slug))," +
   "organization_property_types(property_types(name,slug))";
@@ -100,29 +102,6 @@ const ORG_LIST_SELECT =
   "organization_categories(trade_categories(name,slug))," +
   "organization_regions(regions(name,slug,country))," +
   "organization_property_types(property_types(name,slug))";
-
-/**
- * List public portfolio photos for an org. Convention: any object in
- * logos/{orgId}/portfolio-*.{ext} is a portfolio photo. We list by prefix
- * via the anon client (`logos` bucket is public).
- */
-async function getPortfolioPhotos(orgId: string): Promise<string[]> {
-  if (!isSupabaseConfigured()) return [];
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  try {
-    const supabase = createReadClient();
-    const { data } = await supabase.storage.from("logos").list(orgId, {
-      limit: 100,
-      search: "portfolio-",
-      sortBy: { column: "created_at", order: "asc" },
-    });
-    return (data ?? [])
-      .filter((o) => o.name.startsWith("portfolio-"))
-      .map((o) => `${SUPABASE_URL}/storage/v1/object/public/logos/${orgId}/${o.name}`);
-  } catch {
-    return [];
-  }
-}
 
 /**
  * Slugs on the Platinum tier. Queried separately from ORG_SELECT (same
@@ -274,6 +253,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     return {
       ...demoToListItem(v),
       id: v.slug,
+      isSupplier: DEMO_SUPPLIERS.includes(v),
       fullDescription: v.fullDescription,
       yearsInBusiness: v.yearsInBusiness,
       employeeCountRange: v.employeeCountRange,
@@ -338,6 +318,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
   }
   return {
     id: r.id,
+    isSupplier: r.organization_type === "supplier",
     level: levels.get(r.id) ?? null,
     slug: r.slug,
     name: r.name,

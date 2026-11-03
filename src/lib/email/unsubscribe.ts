@@ -70,6 +70,31 @@ export function verifyInviteUnsubscribe(inviteId: string | null, token: string |
 }
 
 /*
+ * Vendor Insurance Tracker (lib/vendor-certs). Two links, two prefixes:
+ * the vendor's ("don't email me about certificates", keyed by the
+ * certificate row, so the address never sits in the link; the route puts
+ * it on email_suppressions) and the PM's digest opt-out (keyed by user;
+ * flips notification_preferences.cert_reminders).
+ */
+function signCert(kind: "vendor" | "digest", id: string, key: string): string {
+  return createHmac("sha256", key).update(`cert-${kind}-unsub:${id}`).digest("base64url");
+}
+
+export function certUnsubscribeUrl(base: string, kind: "vendor" | "digest", id: string): string | null {
+  const key = secret();
+  if (!key) return null;
+  return `${base}/api/email/cert-unsubscribe?k=${kind}&i=${encodeURIComponent(id)}&t=${signCert(kind, id, key)}`;
+}
+
+export function verifyCertUnsubscribe(kind: string | null, id: string | null, token: string | null): kind is "vendor" | "digest" {
+  const key = secret();
+  if (!key || !id || !token || (kind !== "vendor" && kind !== "digest")) return false;
+  const expected = Buffer.from(signCert(kind, id, key));
+  const given = Buffer.from(token);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}
+
+/*
  * The lifecycle sequence (lib/lifecycle: onboarding tips, trial and offer
  * emails): same secret, its own prefix, so this link only stops those emails
  * and can't turn off someone's alerts (or the other way round).
