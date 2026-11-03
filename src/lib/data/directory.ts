@@ -68,6 +68,7 @@ interface OrgRow {
   id: string;
   slug: string;
   name: string;
+  organization_type: string;
   city: string | null;
   province: string | null;
   short_description: string | null;
@@ -90,7 +91,7 @@ interface OrgRow {
 }
 
 const ORG_SELECT =
-  "id,slug,name,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website,email,phone," +
+  "id,slug,name,organization_type,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website,email,phone," +
   "organization_categories(trade_categories(name,slug))," +
   "organization_regions(regions(name,slug))," +
   "organization_property_types(property_types(name,slug))";
@@ -226,6 +227,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     return {
       ...demoToListItem(v),
       id: v.slug,
+      isSupplier: DEMO_SUPPLIERS.includes(v),
       fullDescription: v.fullDescription,
       yearsInBusiness: v.yearsInBusiness,
       employeeCountRange: v.employeeCountRange,
@@ -290,6 +292,7 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
   }
   return {
     id: r.id,
+    isSupplier: r.organization_type === "supplier",
     level: levels.get(r.id) ?? null,
     slug: r.slug,
     name: r.name,
