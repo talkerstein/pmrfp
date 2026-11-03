@@ -37,6 +37,8 @@ let patched: typeof import("next/dist/server/lib/patch-fetch").createPatchedFetc
 let counts: typeof import("@/lib/data/rfp-counts").getOpenRfpCounts;
 let listRfps: typeof import("@/lib/data/rfps").listRfps;
 let getTaxonomyRows: typeof import("@/lib/data/taxonomy").getTaxonomyRows;
+let getVendor: typeof import("@/lib/data/directory").getVendor;
+let CompanyWidget: typeof import("@/app/embed/company/[slug]/page").default;
 let backing: MemoryBackingStore;
 
 beforeAll(async () => {
@@ -48,18 +50,70 @@ beforeAll(async () => {
   counts = (await import("@/lib/data/rfp-counts")).getOpenRfpCounts;
   listRfps = (await import("@/lib/data/rfps")).listRfps;
   getTaxonomyRows = (await import("@/lib/data/taxonomy")).getTaxonomyRows;
+  getVendor = (await import("@/lib/data/directory")).getVendor;
+  CompanyWidget = (await import("@/app/embed/company/[slug]/page")).default;
 });
 beforeEach(() => { backing = new MemoryBackingStore(); });
 
 function render<T>(route: string, run: () => Promise<T>) {
   const renderUnit = { type: "prerender-legacy", phase: "render", revalidate: Infinity, tags: null as string[] | null, implicitTags: { tags: [] } };
-  const renderWork = { route, isStaticGeneration: true, incrementalCache: backing, pendingRevalidates: {} as Record<string, Promise<unknown>> };
+  const renderWork = { route, isStaticGeneration: true, incrementalCache: backing, pendingRevalidates: {} as Record<string, Promise<unknown>>, dynamicUsageDescription: undefined as string | undefined };
   return work.run(renderWork as never, () => unit.run(renderUnit as never, async () => {
     const result = await run();
     await Promise.all(Object.values(renderWork.pendingRevalidates));
-    return { result, renderUnit };
+    return { result, renderUnit, renderWork };
   }));
 }
+
+function useCompanyFixture() {
+  const company = {
+    id: uuidFor(1), slug: "maple-electric-supply", name: "Maple Electric Supply", city: "Toronto", province: "Ontario",
+    logo_url: null, verified: true, featured: false, years_in_business: 12, profile_status: "approved", is_demo: false,
+    organization_categories: [{ trade_categories: { name: "Electrical", slug: "electrical" } }],
+    organization_regions: [{ regions: { name: "Toronto", slug: "toronto", country: "Canada" } }],
+    organization_property_types: [],
+  };
+  const db = createFakePostgrest({ organizations: [company, { ...company, slug: "pending-co", profile_status: "pending" }, { ...company, slug: "demo-co", is_demo: true }] });
+  const nextFetch = patched(db.fetch, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+  fixture.client = createClient("https://fixture.supabase.co", "fixture-key", {
+    auth: { persistSession: false },
+    global: { fetch: createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch) },
+  });
+}
+
+const COMPANY_ROUTE = "/embed/company/[slug]";
+const companyWidget = (slug: string) => render(COMPANY_ROUTE, () => CompanyWidget({ params: Promise.resolve({ slug }) }));
+
+// Production, 2026-11-02: /embed/company/<real company> answered 500 with "Page
+// changed from static to dynamic at runtime". Next records an uncached fetch on
+// the render even when the caller catches the throw, then fails the ISR response.
+describe("company widget stays one cacheable ISR page", () => {
+  it("renders a real company without an uncached fetch", async () => {
+    useCompanyFixture();
+    const { result, renderUnit, renderWork } = await companyWidget("maple-electric-supply");
+    expect(renderWork.dynamicUsageDescription).toBeUndefined();
+    expect(renderUnit.revalidate).toBe(3600);
+    expect(result.props).toMatchObject({ title: "Maple Electric Supply", subtitle: "Toronto, Ontario", eyebrow: "Verified on PMRFP" });
+  });
+
+  it("does not show unapproved or seeded companies", async () => {
+    useCompanyFixture();
+    for (const slug of ["pending-co", "demo-co", "no-such-company"]) {
+      const { result, renderWork } = await companyWidget(slug);
+      expect(renderWork.dynamicUsageDescription).toBeUndefined();
+      expect(result.props.title).toBeUndefined();
+    }
+  });
+
+  it("getVendor lists storage, so it must not be used on an ISR page", async () => {
+    useCompanyFixture();
+    const { result, renderUnit, renderWork } = await render(COMPANY_ROUTE, () => getVendor("maple-electric-supply"));
+    // The read looks fine to the caller, which is why this reached production.
+    expect(result?.name).toBe("Maple Electric Supply");
+    expect(renderWork.dynamicUsageDescription).toContain("/storage/v1/object/list/logos");
+    expect(renderUnit.revalidate).toBe(0);
+  });
+});
 
 describe("Next framework cache regressions", () => {
   it("persists paginated HTTP 206 taxonomy reads, preserves inactive rows, and refreshes after invalidation", async () => {
