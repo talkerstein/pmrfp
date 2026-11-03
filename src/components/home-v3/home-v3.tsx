@@ -4,7 +4,7 @@ import "./home-v3.css";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
-import { audienceFromCookie, rememberAudience } from "@/lib/audience/pm";
+import { audienceFromCookie, rememberAudience, type Audience } from "@/lib/audience/pm";
 import { PROMPT_COOKIE, QUIET_AFTER_INPUT_MS, TOAST_COOKIE, VIEWS_COOKIE, mayInterrupt, mayToast, quietEnough, readCookie } from "@/lib/growth/interruptions";
 import { V3Footer, V3Header, foundingLabel } from "./chrome";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
@@ -90,8 +90,15 @@ const H = {
   featured: signUpHrefForPlan("featured", "annual"),
 };
 
-/** One link per t.doors[door].roles[role]: I do the work, then I hire contractors. */
-const DOOR_HREF = [[H.joinTrade, H.supplier, H.jobs], [H.postRfp, H.landlord, H.postRfp, H.gcPackage, H.forRealEstate]];
+/** Where each hero choice goes without JavaScript. With it, the click tailors this page instead. */
+const SIDE_HREF: Record<Audience, string> = { pm: "/for-property-managers", trade: "/for-trades" };
+/** One link per t.sides.pm.tools. */
+const PM_TOOL_HREF = ["/vendor-insurance-tracker", "/contract-renewal-calendar", "/bid-comparison", "/after-hours-vendor-roster"];
+/** One link per t.sides.pm.also and t.sides.trade.also. */
+const SIDE_ALSO_HREF: Record<Audience, string[]> = {
+  pm: [H.landlord, "/for/condo-boards", H.gcPackage, H.forRealEstate],
+  trade: [H.supplier, H.jobs],
+};
 /** One link per t.also.items. */
 const ALSO_HREF = [H.forum, H.jobs, H.talent, H.joinTrade, H.advertise];
 const SMALL_BG = ["#4A4E85", "#444879", "#3D416F", "#363A66", "#30335D"];
@@ -155,6 +162,22 @@ export function HomeV3({
   const pub = data.openPublic;
   /** A click on a property-manager CTA: no trade popup or toast for this visitor from now on. */
   const pickPm = () => rememberAudience("pm");
+
+  /** The side picked in the hero: tailors the hero and the sections below it. Null until someone picks. */
+  const [side, setSide] = useState<Audience | null>(null);
+  const pm = side === "pm";
+  const panelRef = useRef<HTMLDivElement>(null);
+  const pickSide = (next: Audience, e: { preventDefault(): void }) => {
+    e.preventDefault();
+    rememberAudience(next);
+    setSide(next);
+    requestAnimationFrame(() => panelRef.current?.focus());
+  };
+  // A returning visitor starts on their side. Read after hydration, because the server page is the same for everyone.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSide(audienceFromCookie(document.cookie));
+  }, []);
 
   /* One currency per visitor: CAD in Canada, USD in the U.S.; nothing until we know which. */
   const known = market != null;
@@ -271,7 +294,7 @@ export function HomeV3({
     };
   }, []);
 
-  // The sticky bar waits until the visitor is past the hero, so it never competes with the two doors.
+  // The sticky bar waits until the visitor is past the hero, so it never competes with the hero's choice.
   useEffect(() => {
     const el = heroRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
@@ -410,36 +433,69 @@ export function HomeV3({
               <h1 className="v3-h1">{t.hero.title}</h1>
               <p className="v3-hero-sub">{t.hero.sub}</p>
             </div>
-            <div className="v3-doors" role="group" aria-label={t.hero.audience}>
-              {t.doors.map((door, d) => (
-                <div key={door.head} className="v3-door">
-                  <h2 className="hd">{door.head}</h2>
-                  <p className="sb">{door.sub}</p>
-                  <div className="rows">
-                    {door.roles.map((r, i) => (
-                      // Property managers, landlords, condo boards: the buyer side.
-                      <a key={r.who} href={L(DOOR_HREF[d][i])} onClick={d === 1 && i <= 2 ? pickPm : undefined}>
-                        <span><b>{r.who}</b><span className="w">{r.what}</span></span>
+            <div className="v3-pick-wrap">
+              {side == null ? (
+                <div role="group" aria-labelledby="v3-pick-q">
+                  <p className="v3-pick-q" id="v3-pick-q">{t.hero.audience}</p>
+                  <div className="v3-pick">
+                    {(["pm", "trade"] as const).map((s) => (
+                      <a key={s} href={L(SIDE_HREF[s])} onClick={(e) => pickSide(s, e)}>
+                        <span><b>{t.sides[s].pick}</b><span className="w">{t.sides[s].who}</span></span>
                         <Arrow />
                       </a>
                     ))}
                   </div>
-                  {d === 0 && !!pub && (
-                    <a className="live" href={L(H.rfps)}>
-                      <span className="v3-dot" />
-                      <span><b>{fmt(t.hero.openNow, { n: num(pub), where: here })}</b>{!!data.closing7 && <span className="c">{fmt(t.hero.closing, { n: num(data.closing7) })}</span>}</span>
-                    </a>
-                  )}
                 </div>
-              ))}
+              ) : (
+                <div className="v3-panel" ref={panelRef} tabIndex={-1}>
+                  <div className="lead">
+                    <h2 className="hd">{t.sides[side].title}</h2>
+                    <p className="sb">{t.sides[side].body}</p>
+                    {pm ? (
+                      <div className="cta"><a href={L(H.postRfp)} className="v3-pill navy">{t.sides.pm.cta}</a></div>
+                    ) : (
+                      <div className="cta">
+                        <a href={L(H.rfps)} className="v3-pill navy">{t.sides.trade.cta}</a>
+                        <a href={L(H.joinTrade)} className="v3-pill line">{t.sides.trade.join}</a>
+                      </div>
+                    )}
+                    <a className="switch" href={L(SIDE_HREF[pm ? "trade" : "pm"])} onClick={(e) => pickSide(pm ? "trade" : "pm", e)}>{t.sides[side].switch}</a>
+                  </div>
+                  <div className="more">
+                    {pm && (
+                      <>
+                        <h3 className="mh">{t.sides.pm.toolsHead}</h3>
+                        <div className="rows">
+                          {t.sides.pm.tools.map((name, i) => (
+                            <a key={name} href={L(PM_TOOL_HREF[i])}><b>{name}</b><Arrow /></a>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {!pm && !!pub && (
+                      <a className="live" href={L(H.rfps)}>
+                        <span className="v3-dot" />
+                        <span><b>{fmt(t.hero.openNow, { n: num(pub), where: here })}</b>{!!data.closing7 && <span className="c">{fmt(t.hero.closing, { n: num(data.closing7) })}</span>}</span>
+                      </a>
+                    )}
+                    <h3 className="mh">{t.sides[side].alsoHead}</h3>
+                    <div className="also">
+                      {t.sides[side].also.map((name, i) => (
+                        <a key={name} href={L(SIDE_ALSO_HREF[side][i])}>{name}</a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>
 
         <section className="v3-wrap v3-how">
           <h2 className="v3-h2">{t.how.title}</h2>
-          <div className="v3-how-grid">
-            {t.how.columns.map((c) => (
+          <div className={`v3-how-grid${side ? " one" : ""}`}>
+            {/* columns[0] is the trade side, columns[1] the side that hires. */}
+            {t.how.columns.filter((_, i) => !side || i === (pm ? 1 : 0)).map((c) => (
               <div key={c.head}>
                 <h3 className="v3-h3">{c.head}</h3>
                 <ol>
@@ -452,6 +508,9 @@ export function HomeV3({
           </div>
         </section>
 
+        {/* Trade-side sections: a visitor who hires contractors doesn't need them. */}
+        {!pm && (
+        <>
         <section className="v3-wrap v3-trades">
           <div className="v3-trades-head">
             <div>
@@ -569,8 +628,11 @@ export function HomeV3({
           </div>
         </section>
 
+        </>
+        )}
+
         {/* Contract winners come from public award notices (Canadian today): hidden when the visitor's country has none. */}
-        {top.length > 0 && (
+        {!pm && top.length > 0 && (
         <section className="v3-win">
           <div className="v3-wrap v3-win-in">
             <div className="v3-win-head">
@@ -628,6 +690,7 @@ export function HomeV3({
           </div>
         </section>
 
+        {!pm && (
         <section>
           <div className="v3-wrap v3-plans-in">
             <div className="v3-plans-head">
@@ -653,6 +716,21 @@ export function HomeV3({
           </div>
         </section>
 
+        )}
+
+        {pm ? (
+        <section className="v3-final">
+          <div className="v3-wrap v3-final-in">
+            <div>
+              <h2>{t.sides.pm.finalTitle}</h2>
+              <div className="note">{t.sides.pm.finalNote}</div>
+            </div>
+            <div className="btns">
+              <a href={L(H.postRfp)} className="v3-pill ink">{t.sides.pm.cta}</a>
+            </div>
+          </div>
+        </section>
+        ) : (
         <section className="v3-final">
           <div className="v3-wrap v3-final-in">
             {pub != null && <div className="big" aria-hidden>{num(pub)}</div>}
@@ -669,6 +747,7 @@ export function HomeV3({
             </div>
           </div>
         </section>
+        )}
 
         {digest && <div className="v3-wrap">{digest}</div>}
 
@@ -704,7 +783,7 @@ export function HomeV3({
 
       <V3Footer t={t} lang={lang} />
 
-      {pastHero && (
+      {pastHero && !pm && (
       <div className="v3-sticky">
         <div className="v3-sticky-in">
           <span className="v3-dot d" style={{ width: 10, height: 10 }} />

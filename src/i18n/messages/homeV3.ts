@@ -43,9 +43,9 @@ const en = {
     closeMenu: "Close menu",
   },
   hero: {
-    title: "Find commercial property work, or the trades to do it.",
-    sub: "Trades see open bids and get found. Property managers, landlords and condo boards post jobs free, and matching trades can bid.",
-    audience: "Pick what fits you",
+    title: "Post a property job. Contractors can bid on it.",
+    sub: "Free for property managers, landlords and condo boards. Contractors use PMRFP to find work.",
+    audience: "Which one are you?",
     openNow: "{n} public tenders open {where}",
     closing: "{n} close in the next 7 days. See them →",
   },
@@ -53,29 +53,34 @@ const en = {
     /** Shown instead of a count when live data can't load (never a made-up number). */
     loading: "Live numbers loading",
   },
-  /** The two sides of the board; each role is one tap (hrefs live in the component). */
-  doors: [
-    {
-      head: "I do the work",
-      sub: "Find jobs to bid on and get found by the people hiring.",
-      roles: [
-        { who: "Trades and contractors", what: "See open bids in your trade. Free to join." },
-        { who: "Suppliers", what: "List your products where trades and builders buy." },
-        { who: "Tradespeople looking for a job", what: "See job listings and make a free profile." },
-      ],
+  /** The hero's one question, and what each answer shows (hrefs live in the component). */
+  sides: {
+    pm: {
+      pick: "I hire contractors",
+      who: "Property managers, landlords, condo boards, builders and real estate agents",
+      title: "Get quotes you can compare.",
+      body: "Answer a few questions and the RFP writer drafts your job. Post it free and trades that match can bid, with no pressure to hire.",
+      cta: "Write an RFP free",
+      switch: "I'm a contractor instead",
+      toolsHead: "Free tools for managing vendors",
+      tools: ["Vendor insurance tracker", "Contract renewal calendar", "Bid comparison sheet", "After-hours vendor roster"],
+      alsoHead: "Not a property manager?",
+      also: ["Landlords and owners", "Condo boards", "Builders and general contractors", "Real estate agents"],
+      finalTitle: "Write your first RFP in about two minutes.",
+      finalNote: "No account needed until you post.",
     },
-    {
-      head: "I hire contractors",
-      sub: "Describe the job once and trades that match can bid. Free to post.",
-      roles: [
-        { who: "Property managers", what: "Write an RFP in about two minutes." },
-        { who: "Landlords and owners", what: "Post a repair or maintenance job." },
-        { who: "Condo boards", what: "Run an open, documented RFP." },
-        { who: "Builders and general contractors", what: "Send trade packages out for quotes." },
-        { who: "Real estate agents", what: "Give clients one link to the trades you trust." },
-      ],
+    trade: {
+      pick: "I'm a contractor",
+      who: "Trades, suppliers and people looking for a trade job",
+      title: "See what's open in your trade.",
+      body: "Public tenders and property-manager RFPs, updated every morning. Join free and your company gets a listing in the trade directory.",
+      cta: "See open bids",
+      join: "Join free",
+      switch: "I hire contractors instead",
+      alsoHead: "Something else?",
+      also: ["Suppliers", "Looking for a job"],
     },
-  ],
+  },
   how: {
     title: "How it works",
     columns: [
@@ -322,9 +327,9 @@ const fr: typeof en = {
     closeMenu: "Fermer le menu",
   },
   hero: {
-    title: "Trouvez des travaux en immobilier commercial, ou les entrepreneurs pour les faire.",
-    sub: "Les gens de métier voient les appels d'offres ouverts et se font connaître. Les gestionnaires immobiliers, les propriétaires et les syndicats de copropriété publient leurs travaux gratuitement, et les entrepreneurs correspondants peuvent soumissionner.",
-    audience: "Choisissez ce qui vous correspond",
+    title: "Publiez vos travaux immobiliers. Les entrepreneurs peuvent soumissionner.",
+    sub: "Gratuit pour les gestionnaires immobiliers, les propriétaires et les syndicats de copropriété. Les entrepreneurs utilisent PMRFP pour trouver des contrats.",
+    audience: "Lequel vous correspond ?",
     openNow: "{n} appels d'offres publics ouverts {where}",
     closing: "{n} se terminent dans les 7 prochains jours. Les voir →",
   },
@@ -332,29 +337,34 @@ const fr: typeof en = {
     /** Shown instead of a count when live data can't load (never a made-up number). */
     loading: "Chiffres en direct en cours de chargement",
   },
-  /** The two sides of the board; each role is one tap (hrefs live in the component). */
-  doors: [
-    {
-      head: "Je fais le travail",
-      sub: "Trouvez des travaux à soumissionner et faites-vous découvrir par ceux qui embauchent.",
-      roles: [
-        { who: "Gens de métier et entrepreneurs", what: "Voyez les appels d'offres ouverts dans votre métier. Inscription gratuite." },
-        { who: "Fournisseurs", what: "Inscrivez vos produits là où les entrepreneurs et les constructeurs s'approvisionnent." },
-        { who: "Gens de métier qui cherchent un emploi", what: "Consultez les offres d'emploi et créez un profil gratuit." },
-      ],
+  /** The hero's one question, and what each answer shows (hrefs live in the component). */
+  sides: {
+    pm: {
+      pick: "J'engage des entrepreneurs",
+      who: "Gestionnaires immobiliers, propriétaires, syndicats de copropriété, constructeurs et courtiers",
+      title: "Obtenez des soumissions faciles à comparer.",
+      body: "Répondez à quelques questions et l'outil rédige votre appel d'offres. Publiez-le gratuitement et les entrepreneurs correspondants peuvent soumissionner, sans pression pour embaucher.",
+      cta: "Rédiger un appel d'offres gratuit",
+      switch: "Je suis plutôt entrepreneur",
+      toolsHead: "Outils gratuits pour gérer vos fournisseurs",
+      tools: ["Suivi des assurances des fournisseurs", "Calendrier des renouvellements de contrats", "Tableau comparatif des soumissions", "Liste des fournisseurs d'urgence"],
+      alsoHead: "Vous n'êtes pas gestionnaire immobilier ?",
+      also: ["Propriétaires", "Syndicats de copropriété", "Constructeurs et entrepreneurs généraux", "Courtiers immobiliers"],
+      finalTitle: "Rédigez votre premier appel d'offres en deux minutes environ.",
+      finalNote: "Aucun compte avant de publier.",
     },
-    {
-      head: "J'engage des entrepreneurs",
-      sub: "Décrivez le travail une fois et les entrepreneurs correspondants peuvent soumissionner. Publication gratuite.",
-      roles: [
-        { who: "Gestionnaires immobiliers", what: "Rédigez un appel d'offres en environ deux minutes." },
-        { who: "Propriétaires", what: "Publiez un travail de réparation ou d'entretien." },
-        { who: "Syndicats de copropriété", what: "Menez un appel d'offres ouvert et documenté." },
-        { who: "Constructeurs et entrepreneurs généraux", what: "Envoyez vos lots de travaux en soumission." },
-        { who: "Courtiers immobiliers", what: "Donnez à vos clients un seul lien vers vos entrepreneurs de confiance." },
-      ],
+    trade: {
+      pick: "Je suis entrepreneur",
+      who: "Gens de métier, fournisseurs et personnes qui cherchent un emploi",
+      title: "Voyez ce qui est ouvert dans votre métier.",
+      body: "Appels d'offres publics et de gestionnaires immobiliers, mis à jour chaque matin. Inscrivez-vous gratuitement et votre entreprise obtient une fiche dans le répertoire.",
+      cta: "Voir les appels d'offres",
+      join: "Inscription gratuite",
+      switch: "J'engage plutôt des entrepreneurs",
+      alsoHead: "Autre chose ?",
+      also: ["Fournisseurs", "Je cherche un emploi"],
     },
-  ],
+  },
   how: {
     title: "Comment ça fonctionne",
     columns: [
@@ -602,9 +612,9 @@ const es: typeof en = {
     closeMenu: "Cerrar menú",
   },
   hero: {
-    title: "Encuentre trabajos en propiedades comerciales, o a los contratistas que los hagan.",
-    sub: "Los contratistas ven las licitaciones abiertas y se dan a conocer. Administradores, propietarios y juntas de condominio publican trabajos gratis, y los contratistas que coinciden pueden presentar ofertas.",
-    audience: "Elija lo que le corresponde",
+    title: "Publique su trabajo inmobiliario. Los contratistas pueden ofertar.",
+    sub: "Gratis para administradores de propiedades, propietarios y juntas de condominio. Los contratistas usan PMRFP para encontrar trabajo.",
+    audience: "¿Cuál es su caso?",
     openNow: "{n} licitaciones públicas abiertas {where}",
     closing: "{n} cierran en los próximos 7 días. Verlas →",
   },
@@ -612,29 +622,34 @@ const es: typeof en = {
     /** Shown instead of a count when live data can't load (never a made-up number). */
     loading: "Cargando cifras en vivo",
   },
-  /** The two sides of the board; each role is one tap (hrefs live in the component). */
-  doors: [
-    {
-      head: "Yo hago el trabajo",
-      sub: "Encuentre trabajos para ofertar y que lo encuentren quienes contratan.",
-      roles: [
-        { who: "Oficios y contratistas", what: "Vea las licitaciones abiertas en su oficio. Registro gratis." },
-        { who: "Proveedores", what: "Publique sus productos donde compran contratistas y constructores." },
-        { who: "Personas de oficio que buscan empleo", what: "Vea ofertas de empleo y cree un perfil gratis." },
-      ],
+  /** The hero's one question, and what each answer shows (hrefs live in the component). */
+  sides: {
+    pm: {
+      pick: "Contrato a contratistas",
+      who: "Administradores de propiedades, propietarios, juntas de condominio, constructores y agentes",
+      title: "Reciba cotizaciones fáciles de comparar.",
+      body: "Responda unas preguntas y la herramienta redacta su RFP. Publíquela gratis y los contratistas que coinciden pueden ofertar, sin presión para contratar.",
+      cta: "Redactar una RFP gratis",
+      switch: "Soy contratista",
+      toolsHead: "Herramientas gratuitas para gestionar proveedores",
+      tools: ["Registro de seguros de proveedores", "Calendario de renovación de contratos", "Cuadro comparativo de ofertas", "Lista de proveedores de emergencia"],
+      alsoHead: "¿No administra propiedades?",
+      also: ["Propietarios", "Juntas de condominio", "Constructores y contratistas generales", "Agentes inmobiliarios"],
+      finalTitle: "Redacte su primera RFP en unos dos minutos.",
+      finalNote: "Sin cuenta hasta que publique.",
     },
-    {
-      head: "Contrato a contratistas",
-      sub: "Describa el trabajo una vez y los contratistas que coinciden pueden ofertar. Publicar es gratis.",
-      roles: [
-        { who: "Administradores de propiedades", what: "Redacte una RFP en unos dos minutos." },
-        { who: "Propietarios", what: "Publique un trabajo de reparación o mantenimiento." },
-        { who: "Juntas de condominio", what: "Realice una RFP abierta y documentada." },
-        { who: "Constructores y contratistas generales", what: "Envíe paquetes de trabajo para cotizar." },
-        { who: "Agentes inmobiliarios", what: "Dé a sus clientes un solo enlace a los contratistas en quienes confía." },
-      ],
+    trade: {
+      pick: "Soy contratista",
+      who: "Oficios, proveedores y personas que buscan empleo",
+      title: "Vea lo que está abierto en su oficio.",
+      body: "Licitaciones públicas y RFP de administradores, actualizadas cada mañana. Regístrese gratis y su empresa obtiene una ficha en el directorio de oficios.",
+      cta: "Ver licitaciones abiertas",
+      join: "Registro gratis",
+      switch: "Contrato a contratistas",
+      alsoHead: "¿Otra cosa?",
+      also: ["Proveedores", "Busco empleo"],
     },
-  ],
+  },
   how: {
     title: "Cómo funciona",
     columns: [

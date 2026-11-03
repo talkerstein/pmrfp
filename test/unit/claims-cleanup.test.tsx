@@ -215,7 +215,7 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
     });
   }
 
-  it("hides the hero's live strip and tile counts at zero, and only a zero closing line when tenders are open", async () => {
+  it("keeps the live strip out of the hero until a side is picked, and hides tile counts and a zero closing line", async () => {
     const { getDictionary, clientMessages } = await import("@/i18n/dictionaries");
     const { I18nProvider } = await import("@/i18n/provider");
     const d = getDictionary("en");
@@ -235,7 +235,8 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
     expect(none).not.toContain('class="live"');
     expect(none).not.toContain('<span class="n">0</span>');
     const some = render(12, 0);
-    expect(some).toContain('class="live"');
+    expect(some).not.toContain('class="live"');
+    expect(some).toContain("Which one are you?");
     expect(some).not.toContain("0 close in the next 7 days. See them");
   });
 });
