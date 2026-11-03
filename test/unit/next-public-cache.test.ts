@@ -65,6 +65,29 @@ function render<T>(route: string, run: () => Promise<T>) {
 }
 
 describe("Next framework cache regressions", () => {
+  it("refreshes tender reads without evicting directory data, while preserving general invalidation", async () => {
+    const upstream = vi.fn<typeof fetch>().mockImplementation(async () => Response.json([{ id: "public-row" }]));
+    const nextFetch = patched(upstream, { workAsyncStorage: work, workUnitAsyncStorage: unit });
+    const read = createPublicReadFetch("https://fixture.supabase.co", "fixture-key", nextFetch);
+    const query = () => Promise.all(["rfp_public", "rfp_posts", "rfp_categories", "rfp_documents", "organizations"].map(
+      (table) => read(`https://fixture.supabase.co/rest/v1/${table}`, {
+        headers: { apikey: "fixture-key", authorization: "Bearer fixture-key" },
+      }).then((response) => response.json()),
+    ));
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(5);
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(5);
+    backing.expireTag(RFPS_TAG);
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(9);
+    const tables = upstream.mock.calls.slice(5).map(([url]) => new URL(String(url)).pathname.split("/").pop());
+    expect(tables).not.toContain("organizations");
+    backing.expireTag(PUBLIC_DATA_TAG);
+    await render("/rfps", query);
+    expect(upstream).toHaveBeenCalledTimes(14);
+  });
+
   it("keeps public portfolio storage POSTs safe in static embeds and refreshes their cached result", async () => {
     const upstream = vi.fn<typeof fetch>().mockImplementation(async () => Response.json([
       { name: "portfolio-one.jpg", id: "one" }, { name: "logo.png", id: "two" },
