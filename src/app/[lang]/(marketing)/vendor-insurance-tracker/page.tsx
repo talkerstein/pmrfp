@@ -4,6 +4,8 @@ import { ArrowRight, BellRing, FileCheck2, ListChecks, Send } from "lucide-react
 import { Container, Eyebrow } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/lib/seo/jsonld";
+import { TrackerDemo } from "@/components/vendor-certs/tracker-demo";
+import { isoDay } from "@/lib/vendor-certs/rules";
 import { getSession } from "@/lib/access/access";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { SITE } from "@/lib/site";
@@ -31,12 +33,14 @@ const ICONS = [ListChecks, FileCheck2, Send, BellRing];
  * /vendor-insurance-tracker — the free tool's public page. Country-first:
  * Canadian visitors read WSIB/WCB + CGL, U.S. visitors read COI + workers'
  * comp. The CTA signs a visitor up as a property manager and lands them in
- * the tracker; a signed-in PM goes straight there. The page ends on posting
+ * the tracker; a signed-in PM goes straight there. The try-it box comes
+ * first so a visitor sees their own list before being asked to sign up. The page ends on posting
  * an RFP (the step every PMRFP tool leads to).
  */
 export default async function VendorInsuranceTrackerPage({ params }: { params: Promise<object> }) {
   const lang = await setLangFrom(params);
   const t = getT("certs").landing;
+  const demo = getT("certs").demo;
   const meta = getT("certs").meta;
   const session = await getSession().catch(() => null);
   const { country } = await getVisitorCountry({ session });
@@ -86,7 +90,13 @@ export default async function VendorInsuranceTrackerPage({ params }: { params: P
       </section>
 
       <Container className="py-12">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <h2 className="text-2xl font-semibold tracking-tight">{demo.title}</h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{demo.body[country]}</p>
+        <div className="mt-5">
+          <TrackerDemo t={demo} country={country} today={isoDay(new Date())} ctaHref={ctaHref} />
+        </div>
+
+        <div className="mt-14 grid gap-4 sm:grid-cols-2">
           {t.points[country].map((pt, i) => {
             const Icon = ICONS[i % ICONS.length];
             return (

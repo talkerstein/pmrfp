@@ -362,3 +362,46 @@ export function importVendors(csv: string, country: CertCountry): ImportResult {
   }
   return { rows, skipped, truncated: false };
 }
+
+// ── Try-it box (landing page) ────────────────────────────────────────────
+
+/** Where the try-it box leaves a pasted list, in this browser only, for the tracker's import panel. */
+export const VENDOR_LIST_DRAFT_KEY = "pmrfp:vendor-list-draft";
+
+export interface CheckedVendor {
+  name: string;
+  trade: string | null;
+  expiresOn: string | null;
+  status: CertStatus;
+  days: number | null;
+}
+
+const STATUS_ORDER: Record<CertStatus, number> = { expired: 0, expiring: 1, missing: 2, valid: 3 };
+
+/** A pasted list → each vendor's status, worst first. Same rules as the tracker; nothing is stored. */
+export function checkVendorList(csv: string, country: CertCountry, today: string) {
+  const { rows, skipped, truncated } = importVendors(csv, country);
+  const vendors: CheckedVendor[] = rows
+    .map((r) => ({
+      name: r.vendor_name,
+      trade: r.trade,
+      expiresOn: r.expires_on,
+      status: certStatus(r.expires_on, today),
+      days: r.expires_on ? daysUntil(r.expires_on, today) : null,
+    }))
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+  return { vendors, attention: vendors.filter((v) => v.status !== "valid").length, skipped, truncated };
+}
+
+/** Days from today for the sample rows, so the sample always shows all four statuses. */
+const SAMPLE_OFFSETS = [240, 12, -20, null];
+
+/** The try-it box's starting list: labelled sample vendors with dates relative to `today`. */
+export function sampleVendorList(header: string, rows: readonly { name: string; trade: string }[], today: string): string {
+  const lines = rows.map((r, i) => {
+    const off = SAMPLE_OFFSETS[i % SAMPLE_OFFSETS.length];
+    const date = off == null ? "" : isoDay(new Date(Date.parse(`${today}T00:00:00Z`) + off * 86_400_000));
+    return `${r.name},${r.trade},${date}`;
+  });
+  return [header, ...lines].join("\n");
+}
