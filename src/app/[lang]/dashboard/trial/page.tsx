@@ -24,7 +24,7 @@ export default async function TrialPage({ params }: { params: Promise<object> })
   await setLangFrom(params);
   const lang = getLang();
   const t = getT("leads").trial;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   if (session.paid) redirect(localizePath("/dashboard", lang));
   const { country } = await getVisitorCountry({ session });
   const can = canStartTrial({ paid: session.paid, trial: session.trial, organizationType: session.organization?.organization_type });

@@ -84,7 +84,8 @@ export async function GET(request: Request) {
       .select("id,name,province,country")
       .in("organization_type", ["trade_company", "supplier"])
       .eq("is_demo", false)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .eq("profile_status", "approved"),
     supabase.from("subscriptions").select("organization_id,status"),
     supabase.from("regions").select("id,slug,parent_id,country"),
   ]);

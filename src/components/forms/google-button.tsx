@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 import { oauthCallbackPath } from "@/lib/auth/oauth";
 import { Button } from "@/components/ui/button";
-import { useT } from "@/i18n/provider";
+import { useLang, useT } from "@/i18n/provider";
 
 /**
  * "Continue with Google", then an "or" divider above the email form. Only
@@ -13,6 +13,7 @@ import { useT } from "@/i18n/provider";
  */
 export function ContinueWithGoogle({ next }: { next?: string | null }) {
   const t = useT("auth").google;
+  const lang = useLang();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +22,7 @@ export function ContinueWithGoogle({ next }: { next?: string | null }) {
     setError(null);
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${oauthCallbackPath(next)}` },
+      options: { redirectTo: `${window.location.origin}${oauthCallbackPath(next, lang)}` },
     });
     // On success the browser is already on its way to Google.
     if (error) {

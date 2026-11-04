@@ -292,7 +292,7 @@ const EN: Strings = {
   },
   trialOffer: {
     subject: "Try Trade Pro free for 14 days",
-    intro: (s, t) => `Your free account shows ${s} of your ${t} matched leads.`,
+    intro: (s, t) => `Your free account shows ${s} of your ${t} matched leads. Not all of them are open bids: each one is labelled, and the rest are awards, permits and projects where work may come later.`,
     introSmall: "Your free account shows your leads, without the details that win work.",
     unlock: {
       recurring: (t) => `Trade Pro shows who holds the ${t} contracts near you, what they paid and when they were awarded, so you can plan for the rebid:`,
@@ -334,7 +334,7 @@ const EN: Strings = {
     intro: "Your 14-day trial is running. Three things to do first:",
     feed: (n) =>
       n > 0
-        ? `Open your lead feed: all ${n} matched leads, with contractor names and bid-list links where we have them.`
+        ? `Open your lead feed: all ${n} matched leads, with contractor names and bid-list links where we have them. Open bids are marked; the rest are awards, permits and projects where work may come later.`
         : "Open your lead feed: contractor names and bid-list links show where we have them.",
     alerts: "Check your alert settings, so new matches reach your inbox each morning.",
     save: "Save the bids you want and send interest straight from the listing.",
@@ -426,7 +426,7 @@ const FR: Strings = {
   },
   trialOffer: {
     subject: "Essayez Trade Pro gratuitement pendant 14 jours",
-    intro: (s, t) => `Votre compte gratuit montre ${s} de vos ${t} occasions jumelées.`,
+    intro: (s, t) => `Votre compte gratuit montre ${s} de vos ${t} occasions jumelées. Ce ne sont pas toutes des appels d'offres ouverts : chacune est identifiée, et les autres sont des contrats attribués, des permis et des projets qui peuvent mener à du travail plus tard.`,
     introSmall: "Votre compte gratuit montre vos occasions, sans les détails qui font gagner des contrats.",
     unlock: {
       recurring: (t) => `Trade Pro montre qui détient les contrats en ${t} près de chez vous, à quel prix et quand ils ont été attribués, pour planifier le prochain appel d'offres :`,
@@ -468,7 +468,7 @@ const FR: Strings = {
     intro: "Votre essai de 14 jours est en cours. Trois choses à faire d'abord :",
     feed: (n) =>
       n > 0
-        ? `Ouvrez votre fil : vos ${n} occasions jumelées, avec le nom des entrepreneurs et les liens vers les listes de soumissionnaires quand on les a.`
+        ? `Ouvrez votre fil : vos ${n} occasions jumelées, avec le nom des entrepreneurs et les liens vers les listes de soumissionnaires quand on les a. Les appels d'offres ouverts sont identifiés; les autres sont des contrats attribués, des permis et des projets qui peuvent mener à du travail plus tard.`
         : "Ouvrez votre fil : le nom des entrepreneurs et les liens vers les listes de soumissionnaires s'affichent quand on les a.",
     alerts: "Vérifiez vos réglages d'alertes, pour recevoir les nouvelles occasions chaque matin.",
     save: "Sauvegardez les appels d'offres qui vous intéressent et manifestez votre intérêt directement depuis l'annonce.",
@@ -561,7 +561,7 @@ const ES: Strings = {
   },
   trialOffer: {
     subject: "Pruebe Trade Pro gratis durante 14 días",
-    intro: (s, t) => `Su cuenta gratuita muestra ${s} de sus ${t} oportunidades.`,
+    intro: (s, t) => `Su cuenta gratuita muestra ${s} de sus ${t} oportunidades. No todas son licitaciones abiertas: cada una lleva su etiqueta, y las demás son adjudicaciones, permisos y proyectos que pueden traer trabajo más adelante.`,
     introSmall: "Su cuenta gratuita muestra sus oportunidades, sin los detalles que ayudan a ganar obras.",
     unlock: {
       recurring: (t) => `Trade Pro muestra quién tiene los contratos de ${t} cerca de usted, cuánto cobraron y cuándo se adjudicaron, para planear la próxima licitación:`,
@@ -603,7 +603,7 @@ const ES: Strings = {
     intro: "Su prueba de 14 días está activa. Tres cosas para empezar:",
     feed: (n) =>
       n > 0
-        ? `Abra sus oportunidades: las ${n}, con nombres de contratistas y enlaces a listas de oferentes cuando los tenemos.`
+        ? `Abra sus oportunidades: las ${n}, con nombres de contratistas y enlaces a listas de oferentes cuando los tenemos. Las licitaciones abiertas están marcadas; las demás son adjudicaciones, permisos y proyectos que pueden traer trabajo más adelante.`
         : "Abra sus oportunidades: los nombres de contratistas y los enlaces a listas de oferentes aparecen cuando los tenemos.",
     alerts: "Revise sus alertas, para recibir las nuevas oportunidades cada mañana.",
     save: "Guarde las licitaciones que le interesan y envíe su interés desde el anuncio.",

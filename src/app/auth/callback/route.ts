@@ -9,6 +9,7 @@ import { safeNextPath } from "@/lib/auth/next";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { FRESH_OAUTH_MS, blockDuplicateOAuthUser, existingAccountPath } from "@/lib/dedupe/signup";
 import { recordSignupAttribution } from "@/lib/attribution/record";
+import { DEFAULT_LOCALE, isEnabledLocale, localizePath } from "@/i18n/config";
 
 /** An account this new (and not yet onboarded) gets its sign-up source recorded at the callback. */
 const ATTRIBUTION_WINDOW_MS = 7 * 86_400_000;
@@ -24,7 +25,10 @@ export async function GET(request: NextRequest) {
   const next = request.nextUrl.searchParams.get("next");
   // Google and emailed sign-in links (m=link, lib/auth/magic-link) both land here.
   const method = request.nextUrl.searchParams.get("m");
-  const failed = NextResponse.redirect(new URL(callbackFailurePath(method), request.url));
+  // A French or Spanish sign-up stays in its language (oauthCallbackPath's `l`).
+  const l = request.nextUrl.searchParams.get("l");
+  const lang = isEnabledLocale(l) ? l : DEFAULT_LOCALE;
+  const failed = NextResponse.redirect(new URL(localizePath(callbackFailurePath(method), lang), request.url));
   if (!credential || !isSupabaseConfigured()) return failed;
 
   const supabase = await createClient();
@@ -45,7 +49,7 @@ export async function GET(request: NextRequest) {
   const { data: fresh } = await supabase.auth.getUser();
   if (fresh.user && method !== "link" && Date.now() - Date.parse(fresh.user.created_at) < FRESH_OAUTH_MS) {
     const blocked = await blockDuplicateOAuthUser(fresh.user.id, { beforeRemove: () => supabase.auth.signOut() });
-    if (blocked) return NextResponse.redirect(new URL(existingAccountPath(safeNextPath(next)), request.url));
+    if (blocked) return NextResponse.redirect(new URL(localizePath(existingAccountPath(safeNextPath(next)), lang), request.url));
   }
 
   const session = await getSession();
@@ -74,5 +78,5 @@ export async function GET(request: NextRequest) {
       ? { onboardingCompleted: session.profile.onboarding_completed, home: roleHome(session.profile.primary_role) }
       : null,
   );
-  return NextResponse.redirect(new URL(to, request.url));
+  return NextResponse.redirect(new URL(localizePath(to, lang), request.url));
 }

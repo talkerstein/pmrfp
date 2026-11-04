@@ -141,7 +141,9 @@ export default async function OnboardingPage({
             ? t.headings.landlord
             : role === "property_manager"
             ? t.headings.pm
-            : t.headings.done;
+            : role === "real_estate_agent"
+              ? t.headings.realtor
+              : t.headings.done;
 
   return (
     <Shell
@@ -154,7 +156,9 @@ export default async function OnboardingPage({
             ? t.intros.gc
             : isLandlord
               ? t.intros.landlord
-              : t.intros.buyer
+              : role === "real_estate_agent"
+                ? t.intros.realtor
+                : t.intros.buyer
       }
     >
       {joinErrorText && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{joinErrorText}</p>}

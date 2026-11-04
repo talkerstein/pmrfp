@@ -75,7 +75,7 @@ export async function publicBuyerSignUpAction(formData: FormData): Promise<void>
     options: {
       shouldCreateUser: true,
       data: { primary_role: PUBLIC_BUYER_ROLE, ...(claim ? { claim_buyer: claim } : {}) },
-      emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", next),
+      emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", next, lang),
     },
   });
   if (error) {
