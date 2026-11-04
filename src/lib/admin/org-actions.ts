@@ -9,6 +9,7 @@ import { logAudit } from "@/lib/audit";
 import { purgeOutCache } from "@/lib/links/data";
 import { normalizeBlockedDomain } from "@/lib/spam/blocked";
 import { rescreenExistingOrganizations } from "@/lib/spam/server";
+import { notifyListingApproved } from "@/lib/admin/listing-approved";
 
 const ORGS = "/admin/organizations";
 const EDITED = `${ORGS}?view=edited`;
@@ -38,6 +39,7 @@ export async function reviewOrganizationAction(formData: FormData): Promise<void
     // If the spam check had held it, the admin's call is recorded there too
     // (separate writes: the columns arrive with migration 20261024000100).
     if (decision === "approved") await db.from("organizations").update({ risk_flagged: false }).eq("id", id).eq("risk_flagged", true);
+    if (decision === "approved") await notifyListingApproved(db, id);
     await db
       .from("organization_risk")
       .update({ decision, decided_by: admin.userId, decided_at: new Date().toISOString(), held: false })
@@ -176,10 +178,13 @@ export async function resolveHeldOrganizationAction(formData: FormData): Promise
   if (!id || !["approved", "rejected", "suspended"].includes(decision)) redirect(HELD);
 
   const db = createServiceClient();
+  // A live listing flagged after an edit can land here too: only a listing going live hears about it.
+  const { data: before } = await db.from("organizations").select("profile_status").eq("id", id).maybeSingle<{ profile_status: string }>();
   const patch: Record<string, unknown> = { profile_status: decision };
   if (decision === "approved") patch.risk_flagged = false;
   const { data } = await db.from("organizations").update(patch).eq("id", id).neq("status", "deleted").select("id");
   if (data?.length) {
+    if (decision === "approved" && before?.profile_status !== "approved") await notifyListingApproved(db, id);
     await db
       .from("organization_risk")
       .update({ decision, decided_by: admin.userId, decided_at: new Date().toISOString(), held: false })

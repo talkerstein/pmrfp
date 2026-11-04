@@ -10,6 +10,7 @@
  * Pure and client-safe: no server imports.
  */
 import type { UserRole } from "@/types/db";
+import { DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { safeNextPath } from "@/lib/auth/next";
 
 /** What handle_new_user() assigns when auth metadata has no primary_role. */
@@ -75,10 +76,17 @@ export function resolveRolePick(s: RolePickState, choice: unknown): RolePickResu
   return { ok: true, role: picked, builder: false, orgKind: null };
 }
 
-/** Where Google sends people back to, carrying a safe `next`. */
-export function oauthCallbackPath(next?: string | null): string {
+/**
+ * Where Google sends people back to, carrying a safe `next`. `l` keeps a French
+ * or Spanish sign-up in its language: the callback has no language of its own.
+ */
+export function oauthCallbackPath(next?: string | null, lang?: Locale): string {
   const safe = safeNextPath(next);
-  return safe ? `/auth/callback?next=${encodeURIComponent(safe)}` : "/auth/callback";
+  const params = [
+    ...(safe ? [`next=${encodeURIComponent(safe)}`] : []),
+    ...(lang && lang !== DEFAULT_LOCALE ? [`l=${lang}`] : []),
+  ];
+  return params.length ? `/auth/callback?${params.join("&")}` : "/auth/callback";
 }
 
 /** `/onboarding` with the sign-up page's role (and award, for a GC) pre-selected. */

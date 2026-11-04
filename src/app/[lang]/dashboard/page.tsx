@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { Camera, FileText } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
@@ -10,6 +11,7 @@ import { HUB_DAYS, filterWins, hubWins } from "@/lib/gc/hub";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ActivateButton } from "@/components/dashboard/billing-actions";
+import { ListingStatusBanner } from "@/components/dashboard/listing-status-banner";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
 import { ReputationCard } from "@/components/karma/reputation-card";
 import { RecentUpdates, TRADE_NOTICE_TYPES } from "@/components/pm-jobs/recent-updates";
@@ -17,7 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
-import { hasLocale } from "@/i18n/config";
+import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt, formatNumber, plural } from "@/i18n/format";
 import { tradeName } from "@/i18n/terms";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
@@ -48,14 +50,16 @@ export default async function TradeDashboardHome({
   searchParams,
 }: {
   params: Promise<object>;
-  searchParams?: Promise<{ trial?: string; join?: string }>;
+  searchParams?: Promise<{ trial?: string; join?: string; welcome?: string }>;
 }) {
   await setLangFrom(params);
   const t = getT("dash").home;
   const tl = getT("leads").trial;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   const demo = isDemoMode();
   const org = session.organization;
+  // Signed in before finishing sign-up: finish it, don't show an empty dashboard.
+  if (!demo && !session.profile.onboarding_completed && !org) redirect(localizePath("/onboarding", getLang()));
   const sp = await searchParams;
   const flash = sp?.trial;
   // Country-first: the company's own country (its profile, else the CA|US switch / IP).
@@ -101,6 +105,7 @@ export default async function TradeDashboardHome({
         description={t.description}
       />
 
+      {!demo && <ListingStatusBanner status={org?.profile_status} name={org?.name} slug={org?.slug} welcome={sp?.welcome === "1"} />}
       {!demo && <JoinRequestsCard session={session} back="/dashboard" flash={sp?.join} />}
       <TrialFlash value={flash} />
       <TrialStatus trial={session.trial} paid={session.paid} country={country} />
@@ -118,7 +123,7 @@ export default async function TradeDashboardHome({
       {/* Prominent profile-completion meter — single source of truth for "what
           to do next." Replaces the previous trio (stat / checklist / recommended-
           action) which were spread across the page and visually inconsistent. */}
-      <ProfileCompletionCard org={org} hasActiveSub={session.hasTradeAccess} />
+      <ProfileCompletionCard org={org} />
 
       {!demo && <RecentUpdates userId={session.userId} types={TRADE_NOTICE_TYPES} />}
 

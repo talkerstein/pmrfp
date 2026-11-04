@@ -420,6 +420,8 @@ async function loadMembers(
         profile.status === "active" &&
         org.status === "active" &&
         !org.is_demo &&
+        // A listing turned down or suspended gets no sequence: it has nothing live to build on.
+        !["rejected", "suspended"].includes(org.profile_status) &&
         !["admin", "super_admin"].includes(profile.primary_role),
       paid: paidOrgs.has(org.id),
       trial: trialByOrg.get(org.id) ?? null,

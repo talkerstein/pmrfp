@@ -46,7 +46,7 @@ export default async function BillingPage({
   await setLangFrom(params);
   const lang = getLang();
   const t = getT("dash").billing;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   const sp = await searchParams;
   const intent = parsePlanIntent(sp.plan, sp.interval);
 

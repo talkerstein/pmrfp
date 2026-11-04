@@ -2,6 +2,7 @@ import { requireRole, isDemoMode, hasAnyPaidTier } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories, getRegions, getPropertyTypes } from "@/lib/data/taxonomy";
 import { PageHeader } from "@/components/dashboard/stat-card";
+import { ListingStatusBanner } from "@/components/dashboard/listing-status-banner";
 import { CompanyProfileForm, type CompanyDefaults } from "@/components/forms/company-profile-form";
 import { getT, setLangFrom } from "@/i18n/server";
 import type { Metadata } from "next";
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function CompanyProfilePage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("dash").company;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   const [categories, regions, propertyTypes] = await Promise.all([
     getCategories(),
     getRegions(),
@@ -73,6 +74,7 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
         title={t.title}
         description={t.description}
       />
+      {!isDemoMode() && <ListingStatusBanner status={session.organization?.profile_status} name={session.organization?.name} slug={session.organization?.slug} />}
       <CompanyProfileForm
         defaults={defaults}
         organizationId={session.organization?.id ?? null}

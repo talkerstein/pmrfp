@@ -112,6 +112,17 @@ describe("every sign-up path writes signup_attribution", () => {
     expect(record.byId).toHaveBeenCalledWith(expect.objectContaining({ userId: NEW_ID, method: "magic_link", role: "property_manager" }));
   });
 
+  it("a French sign-up comes back in French, whether the link worked or not", async () => {
+    state.getUser.mockResolvedValue({ data: { user: { id: NEW_ID, created_at: new Date(Date.now() - 3600_000).toISOString() } } });
+    state.session = { userId: NEW_ID, profile: { primary_role: "property_manager", onboarding_completed: false } };
+    const ok = await callback(new NextRequest("https://pmrfp.com/auth/callback?code=abc&m=link&next=%2Fonboarding&l=fr"));
+    expect(ok.headers.get("location")).toContain("/fr/onboarding");
+    const failed = await callback(new NextRequest("https://pmrfp.com/auth/callback?l=fr"));
+    expect(failed.headers.get("location")).toContain("/fr/sign-in");
+    const unknown = await callback(new NextRequest("https://pmrfp.com/auth/callback?l=xx"));
+    expect(unknown.headers.get("location")).not.toContain("/xx/");
+  });
+
   it("Google: at the callback the moment the account exists, then the role when it's picked", async () => {
     const created = new Date(Date.now() - 60_000).toISOString();
     state.getUser.mockResolvedValue({ data: { user: { id: NEW_ID, created_at: created, user_metadata: {} } } });

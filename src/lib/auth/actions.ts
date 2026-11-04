@@ -217,7 +217,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     const linkNext = isTalent ? "/talent/edit" : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
     const { error } = await supabase.auth.signInWithOtp({
       email: parsed.data.email,
-      options: { shouldCreateUser: true, data: metadata, emailRedirectTo: magicLinkRedirect(siteUrl, linkNext) },
+      options: { shouldCreateUser: true, data: metadata, emailRedirectTo: magicLinkRedirect(siteUrl, linkNext, lang) },
     });
     if (error) {
       console.error("[signUp:link]", error.message);
@@ -253,7 +253,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     password: parsed.data.password!,
     options: {
       data: metadata,
-      emailRedirectTo: magicLinkRedirect(siteUrl, confirmNext),
+      emailRedirectTo: magicLinkRedirect(siteUrl, confirmNext, lang),
     },
   });
   if (error) {
@@ -336,7 +336,7 @@ export async function signInLinkAction(_prev: ActionState, formData: FormData): 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
-    options: { shouldCreateUser: false, emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", next) },
+    options: { shouldCreateUser: false, emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", next, lang) },
   });
   // "No such user" is expected for unknown addresses: same answer either way.
   if (error) console.info("[signInLink]", error.message);
@@ -365,7 +365,7 @@ export async function resendSignupLinkAction(_prev: ActionState, formData: FormD
   // signInWithOtp, not auth.resend(): only it carries the PKCE challenge the callback needs.
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
-    options: { shouldCreateUser: false, emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", linkNext) },
+    options: { shouldCreateUser: false, emailRedirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", linkNext, lang) },
   });
   if (error) console.info("[resendSignupLink]", error.message);
   return { success: m.linkSent };
@@ -392,7 +392,7 @@ export async function forgotPasswordAction(_prev: ActionState, formData: FormDat
   if (!isSupabaseConfigured()) return { error: m.demo };
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", "/reset-password"),
+    redirectTo: magicLinkRedirect(process.env.NEXT_PUBLIC_SITE_URL ?? "", "/reset-password", lang),
   });
   return { success: m.resetSent };
 }
@@ -715,13 +715,15 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   // One welcome email per member, with the next step for their kind of account.
   // Trade companies get the lifecycle sequence's Day 0 welcome instead when
   // it's on (lib/lifecycle), so nobody gets two welcomes.
-  if (!(orgType === "trade_company" && lifecycleEnabled())) await sendWelcomeEmail(session.profile.email, {
+  if (listingStatus !== "rejected" && !(orgType === "trade_company" && lifecycleEnabled())) await sendWelcomeEmail(session.profile.email, {
     name: session.profile.full_name,
     kind: isBuilder ? "general_contractor" : isLandlord ? "landlord" : isSupplier ? "supplier" : isListing ? "trade" : "property_manager",
     companyName: data.name,
     profileSlug: isListing ? slug : null,
     live: isListing && listingStatus === "approved" && categories.length > 0 && regions.length > 0,
+    pending: isListing && listingStatus === "pending_review",
     tradeSlug: isListing ? categories[0] ?? null : null,
+    lang,
   });
 
   // Sync the freshly-onboarded user to GHL with the org fields filled in.
@@ -742,5 +744,5 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   if (next) redirect(localizePath(next, lang));
   // A GC lands straight on the package form (award prefilled if they came from one).
   if (isBuilder) redirect(localizePath(gcFormPath(parseAwardRef(formData.get("award")?.toString())), lang));
-  redirect(localizePath(isListing ? "/dashboard" : "/pm-dashboard", lang));
+  redirect(localizePath(isListing ? "/dashboard?welcome=1" : "/pm-dashboard?welcome=1", lang));
 }

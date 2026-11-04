@@ -343,6 +343,8 @@ export function decide(m: MemberState, now: Date, opts: DecideOptions = {}): Dec
   const finalize = (step: StepId, relaxed = false): Decision => {
     const skip = skipReason(step, m);
     if (skip) return { action: "skip", step, reason: skip };
+    // Still under review: no upgrade pitch yet. A wait, because a skip is permanent.
+    if (m.pendingReview && (step === "trial_offer" || step === "founding")) return { action: "wait", step, reason: "not_due" };
     const gate = sendGate(m, now, relaxed);
     return gate ? { action: "wait", step, reason: gate } : { action: "send", step };
   };

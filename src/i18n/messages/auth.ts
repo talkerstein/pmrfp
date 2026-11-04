@@ -147,6 +147,7 @@ const en = {
       gc: "Tell us about your company",
       landlord: "Tell us about your buildings",
       pm: "Tell us about your organization",
+      realtor: "Tell us about your brokerage",
       done: "You're all set",
     },
     intros: {
@@ -154,6 +155,7 @@ const en = {
       gc: "Just the basics — you can post your first sub-trade package right after.",
       landlord: "Just the basics — you can post your first repair or maintenance job right after.",
       buyer: "Just the basics — you can post an RFP right after.",
+      realtor: "Just the basics — you can build your trusted-trades page right after.",
     },
     browseReady: "You're all set to browse the vendor directory and RFP opportunities.",
     startBrowsing: "Start browsing",
@@ -422,6 +424,7 @@ const fr: typeof en = {
       gc: "Parlez-nous de votre entreprise",
       landlord: "Parlez-nous de vos immeubles",
       pm: "Parlez-nous de votre organisation",
+      realtor: "Parlez-nous de votre agence immobilière",
       done: "Tout est prêt",
     },
     intros: {
@@ -429,6 +432,7 @@ const fr: typeof en = {
       gc: "L'essentiel seulement — vous pourrez publier votre premier lot de sous-traitance tout de suite après.",
       landlord: "Seulement l'essentiel — vous pourrez publier votre premier travail de réparation ou d'entretien tout de suite après.",
       buyer: "L'essentiel seulement — vous pourrez publier un appel d'offres tout de suite après.",
+      realtor: "L'essentiel seulement — vous pourrez créer votre page d'entrepreneurs de confiance tout de suite après.",
     },
     browseReady: "Tout est prêt pour parcourir le répertoire des entrepreneurs et les appels d'offres.",
     startBrowsing: "Commencer à explorer",
@@ -695,6 +699,7 @@ const es: typeof en = {
       gc: "Cuéntenos sobre su empresa",
       landlord: "Cuéntenos sobre sus edificios",
       pm: "Cuéntenos sobre su organización",
+      realtor: "Cuéntenos sobre su agencia inmobiliaria",
       done: "Todo listo",
     },
     intros: {
@@ -702,6 +707,7 @@ const es: typeof en = {
       gc: "Solo lo básico; podrá publicar su primer paquete de subcontratación justo después.",
       landlord: "Solo lo básico — puede publicar su primer trabajo de reparación o mantenimiento justo después.",
       buyer: "Solo lo básico; podrá publicar una RFP justo después.",
+      realtor: "Solo lo básico; podrá crear su página de contratistas de confianza justo después.",
     },
     browseReady: "Todo está listo para que explore el directorio de proveedores y las oportunidades de RFP.",
     startBrowsing: "Empezar a explorar",
