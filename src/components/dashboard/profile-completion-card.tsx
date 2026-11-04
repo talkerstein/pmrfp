@@ -16,40 +16,29 @@ import type { Organization } from "@/types/db";
 import { cn } from "@/lib/utils";
 import { getT } from "@/i18n/server";
 import { fmt, plural } from "@/i18n/format";
-import { isUsState } from "@/lib/geo";
+import { finishHref, isStepDone, stepsFor } from "@/lib/organizations/listing-steps";
 
 interface ChecklistItem {
   label: string;
   done: boolean;
   /** Where the user goes to fix this. */
   href: string;
-  /** Priority — higher = surfaced first when this item is the next step. */
-  weight: number;
 }
 
 export function ProfileCompletionCard({ org }: { org: Organization | null }) {
   const t = getT("dash").profile;
-  // WSIB and its provincial cousins are Canadian; a U.S. company can't finish that step.
-  const us = org?.country === "US" || isUsState(org?.province);
-  const checklist: ChecklistItem[] = [
-    { label: t.items.logo, done: Boolean(org?.logo_url), href: "/dashboard/company", weight: 10 },
-    { label: t.items.short, done: Boolean(org?.short_description), href: "/dashboard/company", weight: 9 },
-    { label: t.items.full, done: Boolean(org?.full_description), href: "/dashboard/company", weight: 6 },
-    { label: t.items.website, done: Boolean(org?.website), href: "/dashboard/company", weight: 7 },
-    { label: t.items.phone, done: Boolean(org?.phone), href: "/dashboard/company", weight: 5 },
-    { label: t.items.city, done: Boolean(org?.city), href: "/dashboard/company", weight: 4 },
-    { label: t.items.insurance, done: Boolean(org?.insurance_status), href: "/dashboard/company", weight: 8 },
-    ...(us ? [] : [{ label: t.items.wsib, done: Boolean(org?.wsib_status), href: "/dashboard/company", weight: 6 }]),
-    { label: t.items.team, done: Boolean(org?.employee_count_range), href: "/dashboard/company", weight: 3 },
-  ];
+  // The list and its order come from the "Finish your listing" flow, one question each.
+  const checklist: ChecklistItem[] = stepsFor(org).map((s) => ({
+    label: t.items[s],
+    done: isStepDone(s, org),
+    href: finishHref(s),
+  }));
 
   const completed = checklist.filter((c) => c.done).length;
   const pct = Math.round((completed / checklist.length) * 100);
 
-  // The recommended next step = highest-weight incomplete item.
-  const nextStep = [...checklist]
-    .filter((c) => !c.done)
-    .sort((a, b) => b.weight - a.weight)[0];
+  // The recommended next step = the first incomplete item.
+  const nextStep = checklist.find((c) => !c.done);
 
   // The next checklist item to surface visually (top 6 — keep the card compact).
   const compactList = checklist.slice(0, 6);

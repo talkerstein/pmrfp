@@ -250,7 +250,7 @@ describe("lifecycle copy", () => {
   it("writes in the member's language", () => {
     expect(renderStep("welcome", sampleCopyData("welcome", "fr"), CTX).text).toContain("Bonjour Sam,");
     expect(renderStep("welcome", sampleCopyData("welcome", "es"), CTX).text).toContain("Hola, Sam:");
-    expect(renderStep("welcome", sampleCopyData("welcome", "fr"), CTX).text).toContain("https://pmrfp.com/fr/dashboard/company");
+    expect(renderStep("welcome", sampleCopyData("welcome", "fr"), CTX).text).toContain("https://pmrfp.com/fr/dashboard/company/finish");
     expect(renderStep("founding", sampleCopyData("founding", "es"), CTX).subject).toContain("Fundadores 500");
   });
 
