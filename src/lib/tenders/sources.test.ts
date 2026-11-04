@@ -109,6 +109,64 @@ describe("publicTenderSource: title words never claim the source", () => {
   });
 });
 
+describe("publicTenderSource: every -cb- reference the importer writes beats a title word", () => {
+  const TITLE_WORDS = ["qc", "qca", "tor", "tora", "yk", "ykc", "nsa"];
+  // "tender" is canadabuys.ts's last resort for a row with no reference or URL tail.
+  const REFS = ["cw2466670", "cb-650-24879168", "ws5846022405-doc5846123481", "mx-443841876264", "pw-hn-123-45678", "tender"];
+  const SLUGS = TITLE_WORDS.flatMap((word) =>
+    REFS.flatMap((ref) => [
+      `replacement-of-electric-boilers-mont-joli-${word}-cb-${ref}`,
+      `hvac-maintenance-${word}-region-building-12-cb-${ref}`,
+    ]),
+  );
+
+  it.each(SLUGS)("%s", (slug) => {
+    expect(publicTenderSource(slug)).toMatchObject({ key: "canadabuys", past: false, badge: "Public tender · Gov. of Canada" });
+  });
+
+  it("built by the real CanadaBuys slug builder for a row with no reference", () => {
+    const row = toRfpInsert(
+      {
+        "title-titre-eng": "Replacement of electric boilers - IML Mont-Joli, QC",
+        "referenceNumber-numeroReference": "",
+        "noticeURL-URLavis-eng": "https://canadabuys.canada.ca/en/tender-opportunities/tender-notice/",
+      },
+      "2026-10-12",
+    );
+    expect(row?.slug).toBe("replacement-of-electric-boilers-iml-mont-joli-qc-cb-tender");
+    expect(key(row!.slug)).toBe("canadabuys");
+  });
+});
+
+describe("publicTenderSource: hand-typed references stay with their importer", () => {
+  // Refs from the live feeds (2026-11-03). People type these, so a pattern
+  // stricter than FREE_REF would hand the row to the CanadaBuys fallback.
+  const HAND_TYPED: [slug: string, key: string][] = [
+    ["dvp-retaining-wall-rehabilitations-tor-3-77e-1100", "toronto"],
+    ["supply-and-delivery-of-ball-diamond-infield-mix-tor-3710106-0111", "toronto"],
+    ["fire-hall-roof-replacement-tor-notice9134187160", "toronto"],
+    ["lachine-qc-style-roof-tor-notice9134187160", "toronto"],
+    ["hvac-preventive-maintenance-tora-summary9117177362", "toronto-awards"],
+    ["sidewalk-repairs-various-locations-tora-no-18404", "toronto-awards"],
+    ["watermain-replacement-tora-2352559689-9118205038", "toronto-awards"],
+    ["standing-offer-snow-plowing-yk-rso-rfb-2026-10-5624", "yukon"],
+    ["equipment-rental-pre-qualification-ykc-3081-august-intake", "yukon-closed"],
+    ["equipment-rental-pre-qualification-ykc-march-2026-intake-3081", "yukon-closed"],
+    ["notice-of-intent-to-contract-ykc-acan", "yukon-closed"],
+    ["rfso-nsha-phone-sets-and-accessories-nsa-doc1246688422", "ns-awards"],
+    ["cape-forchu-lookoff-platform-nsa-capeforchulookoff", "ns-awards"],
+    ["nscc-akerley-campus-student-housing-resinous-flooring-nsa-ft2022-035-90373-38", "ns-awards"],
+    ["toiture-du-garage-municipal-qc-2513-23-ha01", "seao"],
+    ["entretien-des-generatrices-qc-op-egen-999-2026-2029", "seao"],
+    ["refection-de-la-toiture-qca-2026-1348a01-4001621", "seao"],
+    ["travaux-de-plomberie-qca-sa-260901-ry-2", "seao"],
+  ];
+
+  it.each(HAND_TYPED)("%s → %s", (slug, k) => {
+    expect(key(slug)).toBe(k);
+  });
+});
+
 describe("archiving scope follows the corrected source", () => {
   const MONT_JOLI = "replacement-of-electric-boilers-iml-mont-joli-qc-cb-cw2466670";
   const row = (slug: string, url: string): ExistingRow => ({ id: slug, slug, title: "t", region_id: null, source_url: url, status: "published", deadline: "2026-09-01", summary: "s" });
