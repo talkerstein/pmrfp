@@ -63,15 +63,15 @@ export default async function AdminOverviewPage({ params }: { params: Promise<ob
         .in("status", ["active", "comped"]),
       supabase
         .from("organizations")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("profile_status", "pending_review"),
       supabase
         .from("rfp_posts")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("status", "pending_review"),
       supabase
         .from("rfp_posts")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("status", "published"),
       supabase.from("rfp_interests").select("*", { count: "exact", head: true }),
       supabase

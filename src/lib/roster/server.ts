@@ -159,6 +159,15 @@ interface OrgContactRow {
   public_contact_visibility: string;
 }
 
+const DIRECTORY_COLS = "id,slug,name,province,country,emergency_service,public_contact_visibility";
+
+/** The contact details these companies chose to show, by id. */
+async function publicContacts(ids: string[]): Promise<Map<string, { phone: string | null; email: string | null }>> {
+  if (!ids.length) return new Map();
+  const { data } = await createReadClient().from("organization_public_contact").select("id,phone,email").in("id", ids);
+  return new Map(((data ?? []) as { id: string; phone: string | null; email: string | null }[]).map((c) => [c.id, c]));
+}
+
 const contactOf = (o: OrgContactRow) => (o.public_contact_visibility === "show_contact" ? { phone: o.phone?.trim() || null, email: cleanEmail(o.email) } : { phone: null, email: null });
 
 /**
@@ -172,7 +181,7 @@ export async function findDirectoryMatches(x: { tradeSlug: string; country: Rost
   if (!list.length) return [];
   const { data, error } = await createReadClient()
     .from("organizations")
-    .select("id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility")
+    .select(DIRECTORY_COLS)
     .in("slug", list.map((v) => v.slug).slice(0, 200))
     .eq("profile_status", "approved")
     .eq("status", "active")
@@ -181,7 +190,9 @@ export async function findDirectoryMatches(x: { tradeSlug: string; country: Rost
     console.error("[roster] directory", error.message);
     return [];
   }
-  const bySlug = new Map(((data ?? []) as OrgContactRow[]).map((o) => [o.slug, o]));
+  const rows = (data ?? []) as unknown as OrgContactRow[];
+  const contacts = await publicContacts(rows.map((o) => o.id));
+  const bySlug = new Map(rows.map((o) => [o.slug, { ...o, phone: contacts.get(o.id)?.phone ?? null, email: contacts.get(o.id)?.email ?? null }]));
   const cands: DirectoryMatch[] = [];
   for (const v of list) {
     const o = bySlug.get(v.slug);
@@ -200,17 +211,18 @@ export async function directoryVendor(orgId: string, country: RosterCountry): Pr
   if (!isSupabaseConfigured()) return null;
   const { data } = await createReadClient()
     .from("organizations")
-    .select("id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility")
+    .select(DIRECTORY_COLS)
     .eq("id", orgId)
     .in("organization_type", ["trade_company", "supplier"])
     .eq("profile_status", "approved")
     .eq("status", "active")
     .eq("is_demo", false)
-    .maybeSingle<OrgContactRow>();
+    .maybeSingle<Omit<OrgContactRow, "phone" | "email">>();
   if (!data) return null;
   const geo = accountGeo(data);
   if (geo && geo.country !== country) return null;
-  return { orgId: data.id, name: data.name, ...contactOf(data) };
+  const c = (await publicContacts([data.id])).get(data.id);
+  return { orgId: data.id, name: data.name, ...contactOf({ ...data, phone: c?.phone ?? null, email: c?.email ?? null }) };
 }
 
 // ── Share links ──────────────────────────────────────────────────────

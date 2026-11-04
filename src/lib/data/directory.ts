@@ -83,15 +83,13 @@ interface OrgRow {
   emergency_service: boolean;
   public_contact_visibility: VendorDetail["contactVisibility"];
   website: string | null;
-  email: string | null;
-  phone: string | null;
   organization_categories: { trade_categories: { name: string; slug: string } | null }[];
   organization_regions: { regions: { name: string; slug: string; country?: string | null } | null }[];
   organization_property_types: { property_types: { name: string; slug: string } | null }[];
 }
 
 const ORG_SELECT =
-  "id,slug,name,organization_type,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website,email,phone," +
+  "id,slug,name,organization_type,city,province,short_description,full_description,logo_url,verified,featured,years_in_business,employee_count_range,insurance_status,wsib_status,emergency_service,public_contact_visibility,website," +
   "organization_categories(trade_categories(name,slug))," +
   "organization_regions(regions(name,slug))," +
   "organization_property_types(property_types(name,slug))";
@@ -282,6 +280,10 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
   const r = data as unknown as OrgRow | null;
   if (!r) return null;
   const showContact = r.public_contact_visibility === "show_contact";
+  // Only what the company chose to show. The columns themselves aren't readable here.
+  const { data: contact } = showContact
+    ? await supabase.from("organization_public_contact").select("email,phone").eq("id", r.id).maybeSingle<{ email: string | null; phone: string | null }>()
+    : { data: null };
   const portfolioPhotos = await getPortfolioPhotos(r.id);
   // Google rating columns arrive with the 20260819 migration. Queried
   // separately from ORG_SELECT so a not-yet-migrated database degrades to
@@ -341,8 +343,8 @@ export async function getVendor(slug: string): Promise<VendorDetail | null> {
     googleReviewCount,
     contactVisibility: r.public_contact_visibility,
     website: showContact ? r.website : null,
-    email: showContact ? r.email : null,
-    phone: showContact ? r.phone : null,
+    email: contact?.email ?? null,
+    phone: contact?.phone ?? null,
     portfolioPhotos,
     link,
     emailDomainVerified,

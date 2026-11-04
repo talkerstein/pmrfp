@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { AlertTriangle } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { StatusBadge } from "@/components/status-badge";
@@ -44,7 +44,7 @@ export default async function AdminReviewsPage({ params }: { params: Promise<obj
 
   let rows: Row[] = [];
   if (!isDemoMode()) {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const run = (cols: string) =>
       supabase.from("vendor_reviews").select(cols).order("created_at", { ascending: false }).limit(200);
     let { data, error } = await run(`${BASE_COLS},${PROJECT_COLS}`);

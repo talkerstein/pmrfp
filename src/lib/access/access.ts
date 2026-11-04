@@ -3,7 +3,8 @@ import { localizePath } from "@/i18n/config";
 import { getLang } from "@/i18n/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { Organization, UserProfile, UserRole } from "@/types/db";
 import { NO_TRIAL, isMissingTableError, isProEntitled, trialState, type TrialState } from "@/lib/entitlement/trial";
 import { intelEntitled, type IntelAccessRow } from "@/lib/entitlement/intel";
@@ -39,7 +40,9 @@ export async function getSession(): Promise<SessionContext | null> {
 
 /**
  * Session context for whoever `supabase` is signed in as. Every read goes
- * through that client, so RLS sees the same user. Pass `accessToken` when
+ * through that client, so RLS sees the same user, except the company's own row:
+ * its private columns are closed to the API, so once RLS has shown the membership
+ * the server reads that one row. Pass `accessToken` when
  * the client carries a bearer token (the mobile app) rather than cookies:
  * getUser(token) checks it with Supabase Auth, so an expired or revoked
  * token gets null.
@@ -69,7 +72,7 @@ export async function loadSessionContext(
 
   let organization: Organization | null = null;
   if (membership?.organization_id) {
-    const { data: org } = await supabase
+    const { data: org } = await (isServiceConfigured() ? createServiceClient() : supabase)
       .from("organizations")
       .select("*")
       .eq("id", membership.organization_id)
