@@ -35,7 +35,7 @@ const en = {
     steps: {
       logo: { title: "Add your logo", why: "It helps people recognize you and shows there's a real company behind the listing.", placeholder: "" },
       short: { title: "Say what you do in a sentence or two", why: "It's the first thing a property manager reads. Say what you do, where, and for what kinds of property.", placeholder: "e.g. Commercial roofing repairs and replacements for condos and apartment buildings." },
-      insurance: { title: "What insurance do you carry?", why: "Property managers ask this before they call. Only say what you can back up with a certificate.", placeholder: "e.g. Fully insured ($5M)" },
+      insurance: { title: "What insurance do you carry?", why: "Property managers ask this before they call. One line is enough, with no policy numbers or documents. Only say what you can back up with a certificate.", placeholder: "e.g. Fully insured ($5M)" },
       website: { title: "What's your website?", why: "People want to see your work before they reach out.", placeholder: "yourcompany.ca" },
       wsib: { title: "Are you in good standing with WSIB, WCB or CNESST?", why: "Many property managers won't bring a contractor on site without a clearance.", placeholder: "e.g. Active" },
       phone: { title: "What's the best phone number?", why: "Some jobs can't wait for an email.", placeholder: "555-555-0100" },
@@ -245,7 +245,7 @@ const fr: typeof en = {
     steps: {
       logo: { title: "Ajoutez votre logo", why: "Il aide les gens à vous reconnaître et montre qu'une vraie entreprise se trouve derrière la fiche.", placeholder: "" },
       short: { title: "Dites ce que vous faites en une ou deux phrases", why: "C'est la première chose que lit un gestionnaire immobilier. Dites ce que vous faites, où et pour quels types d'immeubles.", placeholder: "ex. : Réparation et réfection de toitures commerciales pour les copropriétés et les immeubles locatifs." },
-      insurance: { title: "Quelle assurance avez-vous?", why: "Les gestionnaires posent la question avant d'appeler. Indiquez seulement ce que vous pouvez prouver par un certificat.", placeholder: "ex. : Entièrement assuré (5 M$)" },
+      insurance: { title: "Quelle assurance avez-vous?", why: "Les gestionnaires posent la question avant d'appeler. Une ligne suffit, sans numéro de police ni document. Indiquez seulement ce que vous pouvez prouver par un certificat.", placeholder: "ex. : Entièrement assuré (5 M$)" },
       website: { title: "Quel est votre site Web?", why: "Les gens veulent voir votre travail avant de vous contacter.", placeholder: "votreentreprise.ca" },
       wsib: { title: "Êtes-vous en règle auprès de la CNESST, de la WSIB ou de la WCB?", why: "Bien des gestionnaires n'admettent aucun entrepreneur sur place sans attestation.", placeholder: "ex. : Actif" },
       phone: { title: "Quel est le meilleur numéro pour vous joindre?", why: "Certains travaux ne peuvent pas attendre un courriel.", placeholder: "555-555-0100" },
@@ -459,7 +459,7 @@ const es: typeof en = {
     steps: {
       logo: { title: "Agregue su logotipo", why: "Ayuda a que lo reconozcan y muestra que hay una empresa real detrás de la ficha.", placeholder: "" },
       short: { title: "Diga qué hace en una o dos frases", why: "Es lo primero que lee un administrador de propiedades. Diga qué hace, dónde y para qué tipos de propiedad.", placeholder: "p. ej., Reparación y reemplazo de techos comerciales para condominios y edificios de apartamentos." },
-      insurance: { title: "¿Qué seguro tiene?", why: "Los administradores lo preguntan antes de llamar. Indique solo lo que pueda respaldar con un certificado.", placeholder: "p. ej., totalmente asegurado ($5M)" },
+      insurance: { title: "¿Qué seguro tiene?", why: "Los administradores lo preguntan antes de llamar. Basta con una línea, sin números de póliza ni documentos. Indique solo lo que pueda respaldar con un certificado.", placeholder: "p. ej., totalmente asegurado ($5M)" },
       website: { title: "¿Cuál es su sitio web?", why: "La gente quiere ver su trabajo antes de contactarlo.", placeholder: "suempresa.com" },
       wsib: { title: "¿Está al día con WSIB, WCB o CNESST?", why: "Muchos administradores no dejan entrar a un contratista sin un certificado.", placeholder: "p. ej., activo" },
       phone: { title: "¿Cuál es el mejor número de teléfono?", why: "Algunos trabajos no pueden esperar un correo.", placeholder: "555-555-0100" },
