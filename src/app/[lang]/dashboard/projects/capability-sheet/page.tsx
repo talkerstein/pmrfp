@@ -12,6 +12,7 @@ import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { regionName, tradeName } from "@/i18n/terms";
+import { insuranceText } from "@/lib/organizations/insurance";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -79,7 +80,7 @@ export default async function CapabilitySheetPage({
   const creds = [
     org.years_in_business ? fmt(t.years, { n: formatNumber(org.years_in_business, lang) }) : null,
     org.emergency_service ? t.emergency : null,
-    org.insurance_status ? `${t.insurance}: ${org.insurance_status}` : null,
+    org.insurance_status ? `${t.insurance}: ${insuranceText(org.insurance_status, lang)}` : null,
     org.wsib_status ? `${t.wsib}: ${org.wsib_status}` : null,
   ].filter((x): x is string => Boolean(x));
 

@@ -27,6 +27,7 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
+import { insuranceText } from "@/lib/organizations/insurance";
 
 export const revalidate = 86400;
 
@@ -318,7 +319,7 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
                   )}
                   {(
                     [
-                      [t.insurance, v.insuranceStatus],
+                      [t.insurance, insuranceText(v.insuranceStatus, lang)],
                       [t.wsib, v.wsibStatus],
                     ] as const
                   ).map(([k, val]) =>
