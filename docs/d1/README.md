@@ -1,5 +1,10 @@
 # PMRFP D1 migration — staged data rehearsal
 
+## Current checkpoint — November 5
+
+See [VERIFICATION-2026-11-05.md](VERIFICATION-2026-11-05.md). Reader/ACK/Auth-export access is renewed until November 12, 15:30 India; capture covers 116 public tables. The refreshed 141,068-record candidate is validated locally only. The active native copy remains November 3 (87,866 records), with no new ACKs today. Native synthetic Auth login/session/revocation checks pass; real Auth and storage integration remain unfinished. Free-plan capacity blocks the expanded native refresh. Historical dated sections below describe their original checkpoints.
+
+
 **Status: application conversion is incomplete; production cutover is blocked.**
 This branch implements the audit, candidate D1 copy schemas, consistent exports,
 local incremental reconciliation, private staging import, validation, and local

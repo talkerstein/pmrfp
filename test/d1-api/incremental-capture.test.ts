@@ -5,10 +5,10 @@ import {expect,it} from 'vitest';
 const reader='d1_migration_reader_20261022';
 const uuid=(n:number)=>`00000000-0000-4000-8000-${n.toString().padStart(12,'0')}`;
 const emptyDigest='e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-const python=(code:string,input:unknown)=>execFileSync('python3',['-c',"import sys,json;sys.path.insert(0,'scripts/d1');"+code],{input:JSON.stringify(input),encoding:'utf8'});
+const python=(code:string,input:unknown)=>execFileSync('python3',['-c',"import sys,json;sys.path.insert(0,'scripts/d1');import change_capture;change_capture.EXPIRY='2099-11-05 10:00:00+00';"+code],{input:JSON.stringify(input),encoding:'utf8'});
 async function fixture(){
  const db=new PGlite({extensions:{pg_trgm}});await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;REVOKE CREATE ON SCHEMA public FROM PUBLIC;
- CREATE ROLE ${reader} LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION BYPASSRLS VALID UNTIL '2026-11-05 10:00:00+00';
+ CREATE ROLE ${reader} LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION BYPASSRLS VALID UNTIL '2099-11-05 10:00:00+00';
  CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);INSERT INTO auth.users VALUES('${uuid(1)}');
  CREATE VIEW d1_migration_auth_ids_20261022 AS SELECT id FROM auth.users;
  CREATE TABLE items(id uuid PRIMARY KEY,body text,amount numeric,metadata jsonb,active boolean DEFAULT true);

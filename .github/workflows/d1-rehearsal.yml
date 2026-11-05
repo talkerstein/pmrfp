@@ -15,6 +15,7 @@ on:
       - 'src/app/**/dashboard/saved-rfps/page.tsx'
       - 'src/lib/karma/rules.ts'
       - 'workers/d1-api/**'
+      - 'workers/auth-preview/**'
       - 'd1/**'
       - '.github/workflows/d1-rehearsal.yml'
   push:
@@ -32,6 +33,7 @@ on:
       - 'src/app/**/dashboard/saved-rfps/page.tsx'
       - 'src/lib/karma/rules.ts'
       - 'workers/d1-api/**'
+      - 'workers/auth-preview/**'
       - 'd1/**'
       - '.github/workflows/d1-rehearsal.yml'
 

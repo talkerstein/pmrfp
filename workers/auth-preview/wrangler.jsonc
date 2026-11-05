@@ -1,0 +1,11 @@
+{
+  "name": "pmrfp-auth-synthetic-preview",
+  "main": "../../scripts/d1-auth/worker.mjs",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "compatibility_date": "2026-11-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "vars": {"MODE":"synthetic-only","AUTH_BASE_URL":"https://pmrfp-auth-synthetic-preview.pmrfp.workers.dev"},
+  "d1_databases": [{"binding":"AUTH_DB","database_name":"pmrfp-auth-synthetic-20261105","database_id":"6c9abcfa-9dc7-467f-a6f8-df05b156550b"}],
+  "observability": {"enabled":false}
+}

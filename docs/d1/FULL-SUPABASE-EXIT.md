@@ -1,5 +1,10 @@
 # Complete Supabase exit
 
+## Current checkpoint — November 5
+
+See [VERIFICATION-2026-11-05.md](VERIFICATION-2026-11-05.md). Reader/ACK/Auth-export access is renewed until November 12, 15:30 India; capture covers 116 public tables. The refreshed 141,068-record candidate is validated locally only. The active native copy remains November 3 (87,866 records), with no new ACKs today. Native synthetic Auth login/session/revocation checks pass; real Auth and storage integration remain unfinished. Free-plan capacity blocks the expanded native refresh. Historical dated sections below describe their original checkpoints.
+
+
 On November 3 the user explicitly selected moving **everything** off Supabase,
 including authentication and file storage. A database-only rollout is not the
 completion target. Production remains on Supabase until the replacement passes

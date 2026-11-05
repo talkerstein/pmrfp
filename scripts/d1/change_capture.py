@@ -4,22 +4,25 @@ from pathlib import Path
 import migrate as m
 
 READER='d1_migration_reader_20261022'
+EXPIRY='2026-11-12 10:00:00+00'
 def literal(value):return "'"+value.replace("'","''")+"'"
 
-def role_guard():
+def role_guard(expires=None):
     return f"""current_user='{READER}' AND EXISTS(SELECT 1 FROM pg_roles WHERE rolname=current_user AND rolcanlogin AND NOT rolinherit AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND rolbypassrls AND rolvaliduntil>clock_timestamp() AND rolvaliduntil<='2026-11-05 10:00:00+00'::timestamptz)
 AND NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=current_user))
 AND NOT EXISTS(SELECT 1 FROM pg_tables WHERE schemaname='public' AND has_table_privilege(current_user,format('%I.%I',schemaname,tablename),'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
-AND NOT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef AND has_function_privilege(current_user,p.oid,'EXECUTE') AND p.proname NOT IN ('has_active_trade_access','has_intel_access','is_admin','is_org_member'))"""
+AND NOT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef AND has_function_privilege(current_user,p.oid,'EXECUTE') AND p.proname NOT IN ('has_active_trade_access','has_intel_access','is_admin','is_org_member'))""".replace('2026-11-05 10:00:00+00',expires or EXPIRY)
 
-def function_guard(catalog):
+def function_guard(catalog,expires=None):
     """Compare the installed private definer bodies/configuration before use."""
-    definitions=re.findall(r'CREATE FUNCTION d1_migration\.(capture_row|capture_truncate|acknowledge)\([^;]*?AS \$(\w+)\$(.*?)\$\2\$;',generate(catalog),re.S)
+    definitions=re.findall(r'CREATE FUNCTION d1_migration\.(capture_row|capture_truncate|acknowledge)\([^;]*?AS \$(\w+)\$(.*?)\$\2\$;',generate(catalog,expires=expires),re.S)
     expected=sorted([{'name':name,'body':body,'definer':True,'config':['search_path=pg_catalog'],'language':'plpgsql','args':'p_ids bigint[], p_destination_sha256 text' if name=='acknowledge' else '','returns':'integer' if name=='acknowledge' else 'trigger'} for name,_,body in definitions],key=lambda row:row['name'])
     if len(expected)!=3:raise ValueError('Cannot identify reviewed capture function bodies')
     actual="(SELECT jsonb_agg(jsonb_build_object('name',p.proname,'body',p.prosrc,'definer',p.prosecdef,'config',p.proconfig,'language',l.lanname,'args',pg_get_function_identity_arguments(p.oid),'returns',p.prorettype::regtype::text) ORDER BY p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace JOIN pg_language l ON l.oid=p.prolang WHERE n.nspname='d1_migration' AND p.proname IN ('capture_row','capture_truncate','acknowledge'))"
     return actual+'='+literal(m.canonical(expected))+'::jsonb'
-def generate(catalog):
+def generate(catalog,expires=None):
+    expires=expires or EXPIRY
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2} 10:00:00\+00",expires):raise ValueError("Invalid reviewed expiry")
     specs={name:spec for name,spec in m.table_specs(catalog).items() if name!='_auth_users'}
     registry=[{'table':name,'pk':spec['pk']} for name,spec in sorted(specs.items())]
     expected=m.canonical(registry)
@@ -133,7 +136,7 @@ REVOKE ALL ON FUNCTION d1_migration.capture_row(),d1_migration.capture_truncate(
     sql+="DO $install$ DECLARE t text; BEGIN\n FOREACH t IN ARRAY ARRAY["+','.join(map(literal,sorted(specs)))+"] LOOP\n"
     sql+="  EXECUTE format('CREATE TRIGGER d1_migration_capture AFTER INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION d1_migration.capture_row()',t);\n"
     sql+="  EXECUTE format('CREATE TRIGGER d1_migration_truncate AFTER TRUNCATE ON public.%I FOR EACH STATEMENT EXECUTE FUNCTION d1_migration.capture_truncate()',t);\n END LOOP;\nEND $install$;\n"
-    return sql+'COMMIT;\n'
+    return (sql+'COMMIT;\n').replace('2026-11-05 10:00:00+00',expires)
 
 def detach(catalog):
     specs={name:spec for name,spec in m.table_specs(catalog).items() if name!='_auth_users'}
