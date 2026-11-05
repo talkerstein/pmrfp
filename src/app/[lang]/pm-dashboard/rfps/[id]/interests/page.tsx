@@ -20,6 +20,7 @@ import { attachedProjectsFor, type AttachedProject } from "@/lib/projects/attach
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { canPickOn, isOpenResponse, pmSeesTradeContact, tradeContactCard } from "@/lib/pm-jobs/rules";
 import { formatQuote } from "@/lib/pm-jobs/email-copy";
+import { insuranceText } from "@/lib/organizations/insurance";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -259,7 +260,7 @@ export default async function RfpInterestsPage({
                   <aside className="space-y-2 rounded-md bg-secondary/40 p-3 text-xs">
                     {org?.short_description && <p className="text-muted-foreground">{org.short_description}</p>}
                     {org?.years_in_business ? <p>{fmt(r.years, { n: org.years_in_business })}</p> : null}
-                    {org?.insurance_status && <p><b>{r.insurance}:</b> {org.insurance_status}</p>}
+                    {org?.insurance_status && <p><b>{r.insurance}:</b> {insuranceText(org.insurance_status, lang)}</p>}
                     {org?.wsib_status && <p><b>{r.wsib}:</b> {org.wsib_status}</p>}
                     <div className="border-t border-border pt-2">
                       <div className="font-semibold">{r.contact}</div>

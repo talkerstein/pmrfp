@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { POLICY_NUMBER_MAX } from "@/lib/organizations/insurance";
 
 /** Zod schemas — single source of truth for client + server validation (§24). */
 
@@ -47,7 +48,8 @@ export const companyProfileSchema = z.object({
   fullDescription: z.string().max(2500, "Keep this under 2500 characters").optional(),
   yearsInBusiness: z.coerce.number().int().min(0).max(200).optional(),
   employeeCountRange: z.string().optional(),
-  insuranceStatus: z.string().optional(),
+  insurancePolicyNumber: z.string().trim().max(POLICY_NUMBER_MAX, "Keep the policy number under 80 characters").optional(),
+  removeInsuranceLine: z.boolean().optional(),
   wsibStatus: z.string().optional(),
   emergencyService: z.boolean().optional(),
   publicContactVisibility: z.enum(["show_contact", "request_intro", "hide_contact"]),
