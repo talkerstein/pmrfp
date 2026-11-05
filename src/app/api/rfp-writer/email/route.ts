@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { rfpDraftSchema } from "@/lib/rfp-writer/schema";
+import { checkRateLimit, checkRecipientLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rfpEmailDraftSchema } from "@/lib/rfp-writer/schema";
 import { sendRfpDraftEmail } from "@/lib/email/send";
 import { upsertGhlContact } from "@/lib/ghl/client";
 
@@ -11,9 +11,9 @@ import { upsertGhlContact } from "@/lib/ghl/client";
  * as a PM lead (tagged) so a human can follow up about posting it.
  */
 const bodySchema = z.object({
-  email: z.string().trim().email(),
+  email: z.string().trim().email().max(254),
   name: z.string().trim().max(120).optional(),
-  rfp: rfpDraftSchema,
+  rfp: rfpEmailDraftSchema,
   tradeName: z.string().trim().max(120).optional(),
   lang: z.enum(["en", "fr", "es"]).optional(),
   // Honeypot — must stay empty.
@@ -21,7 +21,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const limited = await checkRateLimit(request, "contact");
+  const limited = await checkRateLimit(request, "rfp-email");
   if (limited) return rateLimitResponse(limited);
 
   let body: unknown;
@@ -34,6 +34,8 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Enter a valid email" }, { status: 422 });
   const d = parsed.data;
   if (d.company_website) return NextResponse.json({ ok: true });
+  const tooMany = await checkRecipientLimit(d.email);
+  if (tooMany) return rateLimitResponse(tooMany);
 
   const [firstName, ...rest] = (d.name ?? "").split(/\s+/).filter(Boolean);
   await Promise.allSettled([

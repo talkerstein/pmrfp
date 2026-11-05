@@ -26,13 +26,18 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 
 type BucketName =
-  | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
+  | "default" | "contact" | "referral" | "rfp-email" | "form-recipient" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
   | "photo-upload" | "project-draft" | "project-publish" | "review" | "public-read"
   | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source" | "beacon" | "out-click" | "cert-upload";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
   contact: { tokens: 5, window: "60 s" },
+  // Referral forms and "Email me this RFP": no login, and they email whatever address is typed.
+  referral: { tokens: 3, window: "10 m" },
+  "rfp-email": { tokens: 3, window: "10 m" },
+  // How many of those emails one address can get in a day, whoever asks.
+  "form-recipient": { tokens: 3, window: "1440 m" },
   "rfp-interest": { tokens: 10, window: "60 s" },
   checkout: { tokens: 10, window: "60 s" },
   "save-rfp": { tokens: 30, window: "60 s" },
@@ -154,6 +159,12 @@ export async function checkRateLimitByIp(
     return { limit: result.limit, remaining: result.remaining, reset: result.reset };
   }
   return checkWithPostgres(ip, bucket);
+}
+
+/** The "form-recipient" limit for one address. The key is a hash, so no address is stored. */
+export async function checkRecipientLimit(email: string): Promise<RateLimitInfo | null> {
+  const key = createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+  return checkRateLimitByIp(key, "form-recipient");
 }
 
 function windowSeconds(window: string): number {

@@ -5,6 +5,7 @@ import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
 import { recentAwardsHtml } from "@/lib/alerts/awards";
 import { majorProjectsHtml } from "@/lib/major-projects/alerts";
 import { tagEmailLinks } from "@/lib/email/utm";
+import { escHtml, removeLinks } from "@/lib/email/parts";
 import { adminNotificationEmail } from "@/lib/pm-jobs/rules";
 import {
   confirmationEmail,
@@ -735,7 +736,7 @@ export async function sendAdminReferral(params: {
 }): Promise<void> {
   const ownerLine =
     params.ownerName || params.ownerEmail || params.ownerPhone
-      ? `<li><strong>Owner / contact:</strong> ${[params.ownerName, params.ownerEmail, params.ownerPhone].filter(Boolean).join(" · ")}</li>`
+      ? `<li><strong>Owner / contact:</strong> ${escHtml([params.ownerName, params.ownerEmail, params.ownerPhone].filter(Boolean).join(" · "))}</li>`
       : `<li><em>Owner contact not provided — referrer will introduce.</em></li>`;
   await send(
     adminInbox(),
@@ -743,13 +744,13 @@ export async function sendAdminReferral(params: {
     layout(
       "New project referral",
       `<ul>
-        <li><strong>Referrer:</strong> ${params.referrerName} (${params.referrerEmail}${params.referrerPhone ? ` · ${params.referrerPhone}` : ""})</li>
-        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${params.referrerAffiliation}</li>` : ""}
-        <li><strong>Location:</strong> ${params.projectCity}, ${params.projectProvince}</li>
-        ${params.projectCategory ? `<li><strong>Category:</strong> ${params.projectCategory}</li>` : ""}
+        <li><strong>Referrer:</strong> ${escHtml(params.referrerName)} (${escHtml(params.referrerEmail)}${params.referrerPhone ? ` · ${escHtml(params.referrerPhone)}` : ""})</li>
+        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${escHtml(params.referrerAffiliation)}</li>` : ""}
+        <li><strong>Location:</strong> ${escHtml(params.projectCity)}, ${escHtml(params.projectProvince)}</li>
+        ${params.projectCategory ? `<li><strong>Category:</strong> ${escHtml(params.projectCategory)}</li>` : ""}
         ${ownerLine}
        </ul>
-       <p><strong>Project:</strong><br/>${params.projectDescription.replace(/\n/g, "<br/>")}</p>
+       <p><strong>Project:</strong><br/>${escHtml(params.projectDescription).replace(/\n/g, "<br/>")}</p>
        <p>${btn(`${BASE}/admin/contact-requests`, "View in admin")}</p>`,
     ),
   );
@@ -758,14 +759,17 @@ export async function sendAdminReferral(params: {
 /**
  * Confirmation to a PROJECT referrer. No cash payout — recognition lane.
  * Public credit on the RFP + top-connectors leaderboard placement.
+ *
+ * Nothing from the form goes in: the address is whatever was typed, with no
+ * login, so form text here would let a stranger write to anyone as PMRFP.
  */
-export async function sendReferralConfirmation(to: string, projectCity: string): Promise<void> {
+export async function sendReferralConfirmation(to: string): Promise<void> {
   await send(
     to,
     "Thanks for the project referral",
     layout(
       "We received your referral",
-      `<p>Thanks for introducing this project in <strong>${projectCity}</strong> to ${SITE.name}.</p>
+      `<p>Thanks for introducing a project to ${SITE.name}.</p>
        <p><strong>What happens next:</strong></p>
        <ol>
          <li>Our team reviews the referral (usually within 1 business day).</li>
@@ -805,7 +809,7 @@ export async function sendAdminTradeReferral(params: {
 }): Promise<void> {
   const contactLine =
     params.tradeContactName || params.tradeContactEmail || params.tradeContactPhone
-      ? `<li><strong>Trade contact:</strong> ${[params.tradeContactName, params.tradeContactEmail, params.tradeContactPhone].filter(Boolean).join(" · ")}</li>`
+      ? `<li><strong>Trade contact:</strong> ${escHtml([params.tradeContactName, params.tradeContactEmail, params.tradeContactPhone].filter(Boolean).join(" · "))}</li>`
       : `<li><em>Trade contact not provided — referrer will introduce.</em></li>`;
   await send(
     adminInbox(),
@@ -813,15 +817,15 @@ export async function sendAdminTradeReferral(params: {
     layout(
       "New trade referral (direct-revenue lane)",
       `<ul>
-        <li><strong>Referrer:</strong> ${params.referrerName} (${params.referrerEmail}${params.referrerPhone ? ` · ${params.referrerPhone}` : ""})</li>
-        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${params.referrerAffiliation}</li>` : ""}
-        <li><strong>Trade company:</strong> ${params.tradeCompanyName}</li>
-        ${params.tradeCategory ? `<li><strong>Category:</strong> ${params.tradeCategory}</li>` : ""}
-        <li><strong>Location:</strong> ${params.tradeCity}, ${params.tradeProvince}</li>
-        ${params.tradeWebsite ? `<li><strong>Website:</strong> <a href="${params.tradeWebsite}">${params.tradeWebsite}</a></li>` : ""}
+        <li><strong>Referrer:</strong> ${escHtml(params.referrerName)} (${escHtml(params.referrerEmail)}${params.referrerPhone ? ` · ${escHtml(params.referrerPhone)}` : ""})</li>
+        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${escHtml(params.referrerAffiliation)}</li>` : ""}
+        <li><strong>Trade company:</strong> ${escHtml(params.tradeCompanyName)}</li>
+        ${params.tradeCategory ? `<li><strong>Category:</strong> ${escHtml(params.tradeCategory)}</li>` : ""}
+        <li><strong>Location:</strong> ${escHtml(params.tradeCity)}, ${escHtml(params.tradeProvince)}</li>
+        ${params.tradeWebsite ? `<li><strong>Website:</strong> <a href="${escHtml(params.tradeWebsite)}">${escHtml(params.tradeWebsite)}</a></li>` : ""}
         ${contactLine}
        </ul>
-       ${params.whyThemNote ? `<p><strong>Why this trade:</strong><br/>${params.whyThemNote.replace(/\n/g, "<br/>")}</p>` : ""}
+       ${params.whyThemNote ? `<p><strong>Why this trade:</strong><br/>${escHtml(params.whyThemNote).replace(/\n/g, "<br/>")}</p>` : ""}
        <p><strong>Fee:</strong> $75 CAD payable to referrer when this trade activates Trade Pro.</p>`,
     ),
   );
@@ -829,14 +833,15 @@ export async function sendAdminTradeReferral(params: {
 
 /**
  * Confirmation to a TRADE referrer. Fee triggers on Trade-Pro-activated.
+ * Nothing from the form goes in, for the same reason as sendReferralConfirmation.
  */
-export async function sendTradeReferralConfirmation(to: string, tradeName: string): Promise<void> {
+export async function sendTradeReferralConfirmation(to: string): Promise<void> {
   await send(
     to,
     "Thanks for the trade referral",
     layout(
       "We received your referral",
-      `<p>Thanks for introducing <strong>${tradeName}</strong> to ${SITE.name}.</p>
+      `<p>Thanks for introducing a trade company to ${SITE.name}.</p>
        <p><strong>What happens next:</strong></p>
        <ol>
          <li>Our team reviews the referral (usually within 1 business day).</li>
@@ -860,9 +865,6 @@ const SIGNUP_ROLE: Record<string, string> = {
   talent: "Tradesperson (jobs)",
   visitor: "Browsing only",
 };
-const escHtml = (s: string) =>
-  s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" })[c]!);
-
 /** One email per new account (email or Google) so no sign-up goes unnoticed. */
 export async function sendAdminNewSignup(p: {
   email: string;
@@ -1023,7 +1025,7 @@ export async function sendTenderDigest(
 /** "Email me this RFP" from the RFP Writer — the draft, plus a one-click path to post it. */
 const RFP_DRAFT = {
   en: {
-    subject: "Your RFP: {title}",
+    subject: "Your RFP draft",
     scope: "Scope",
     requirements: "Requirements",
     submission: "Submission instructions",
@@ -1035,7 +1037,7 @@ const RFP_DRAFT = {
     footnote: "You're getting this because you asked the PMRFP RFP Writer to email you a copy. Review it before sending to bidders — it's a starting draft, not legal advice.",
   },
   fr: {
-    subject: "Votre appel d'offres : {title}",
+    subject: "Votre ébauche d'appel d'offres",
     scope: "Portée des travaux",
     requirements: "Exigences",
     submission: "Instructions de soumission",
@@ -1047,7 +1049,7 @@ const RFP_DRAFT = {
     footnote: "Vous recevez ce courriel parce que vous avez demandé au rédacteur d'appels d'offres de PMRFP de vous en envoyer une copie. Relisez-le avant de l'envoyer aux soumissionnaires : c'est une première version, pas un avis juridique.",
   },
   es: {
-    subject: "Su RFP: {title}",
+    subject: "Su borrador de RFP",
     scope: "Alcance del trabajo",
     requirements: "Requisitos",
     submission: "Instrucciones para presentar ofertas",
@@ -1074,15 +1076,16 @@ export async function sendRfpDraftEmail(
   lang: "en" | "fr" | "es" = "en",
 ): Promise<void> {
   const t = RFP_DRAFT[lang];
-  const esc = (s: string) =>
-    s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  // Anyone can post this to any address with any text, so the subject is fixed
+  // and web addresses don't go out under our name. The draft stays on their screen.
+  const esc = (s: string) => escHtml(removeLinks(s));
   const para = (s: string) => `<p style="white-space:pre-wrap;margin:0 0 16px;line-height:1.5">${esc(s)}</p>`;
   const list = (items: string[]) =>
     `<ul style="margin:0 0 16px;padding-left:20px;line-height:1.5">${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
   const h = (s: string) => `<h2 style="font-size:15px;margin:20px 0 8px;color:#282B59">${s}</h2>`;
   await send(
     to,
-    t.subject.replace("{title}", rfp.title),
+    t.subject,
     layout(
       esc(rfp.title),
       `${para(rfp.summary)}
