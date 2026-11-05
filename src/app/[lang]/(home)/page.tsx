@@ -12,10 +12,11 @@ import { listAllRfpsCached, listQualifyingCombos } from "@/lib/data/trade-city";
 import { awardTotals, winnersFromRfps } from "@/lib/data/winners";
 import { monthlyAwards, reportMonths } from "@/lib/data/monthly-winners";
 import { monthLabel, torontoToday } from "@/lib/data/monthly-winners-load";
-import { compactDollars, daysUntil } from "@/lib/data/fomo";
+import { compactDollars, daysUntil, isPastContract, parseAward } from "@/lib/data/fomo";
 import { boardStats } from "@/lib/data/site-counters";
 import { isIndexableRfp } from "@/lib/seo/rfp-indexing";
 import { inCountry, regionCountry, type CountryCode } from "@/lib/visitor-geo";
+import { publicTenderSource } from "@/lib/tenders/sources";
 import { spotsLeft } from "@/lib/founding/config";
 import { cachedLifetimeCount } from "@/lib/founding/server";
 import type { RfpListItem } from "@/lib/data/types";
@@ -73,6 +74,11 @@ const TILES = [
   { name: "Electrical", img: "/images/home/trade-electrical.webp" },
 ];
 
+/** "$498,992" in English and Spanish, "498 992 $" in French. */
+function dollars(n: number, lang: Locale): string {
+  const s = formatNumber(Math.round(n), lang === "es" ? "en" : lang);
+  return lang === "fr" ? `${s} $` : `$${s}`;
+}
 
 async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs: V3Data | null; live: string[]; fallback: string[] }> {
   const live: string[] = [];
@@ -150,12 +156,13 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
   // design fallback: a block with no U.S. data is left empty (and hidden).
   const dataUs: V3Data = structuredClone(data);
   Object.assign(dataUs, {
-    open: 0, openPm: 0, openPublic: 0, closing7: 0, closingCa: [], closingUs: [], toast: [], alerts: [],
+    open: 0, openPm: 0, openPublic: 0, closing7: 0, closingCa: [], closingUs: [], ticker: [], toast: [], alerts: [], awards: [],
     winners: { ...dataUs.winners, repeat: 0, contracts: 0, value: "", top: [], most: { name: "", n: 0 }, report: undefined },
     browse: { combos: [], newest: [] },
   });
   dataUs.big = { ...dataUs.big, n: 0 };
   dataUs.tiles = dataUs.tiles.map((x) => ({ ...x, n: 0 }));
+  dataUs.chips = [];
   fillBoard(data, inCountry(all, "CA"), "CA");
   fillBoard(dataUs, inCountry(all, "US"), "US");
   return { data, dataUs, live, fallback };
@@ -198,6 +205,12 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
     const tradeHref = (name: string) => (slugOf.get(name) ? `/trades/${slugOf.get(name)}` : "/trades");
     data.big = { name: trade(BIG.name), n: counts.get(BIG.name) ?? 0, img: BIG.img, href: tradeHref(BIG.name) };
     data.tiles = TILES.map((x) => ({ ...x, name: trade(x.name), n: counts.get(x.name) ?? 0, href: tradeHref(x.name) }));
+    const shown = new Set([BIG.name, ...TILES.map((x) => x.name)]);
+    data.chips = [...counts]
+      .filter(([name, n]) => !shown.has(name) && n > 0)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 9)
+      .map(([name, n]) => ({ name: trade(name), n, href: tradeHref(name) }));
     if (cats?.length) {
       data.tradeOptions = [...cats]
         .sort((a, b) => (counts.get(b.name) ?? 0) - (counts.get(a.name) ?? 0) || a.name.localeCompare(b.name))
@@ -219,6 +232,10 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
     // closingCa / closingUs both hold this country's cards (the component picks by market).
     if (closingSoon.length || !primary) data.closingCa = closingSoon.slice(0, 4).map(closingCard);
     data.closingUs = closingSoon.slice(0, 4).map(closingCard);
+    const tickerPool = closingSoon.filter((r) => !isFrench(r)).slice(0, 7);
+    if (tickerPool.length) {
+      data.ticker = tickerPool.map((r) => ({ tag: tag(r), title: r.title, when: fmt(t.closing.closes, { date: short(r.deadline) }), href: `/rfps/${r.slug}` }));
+    }
 
     // Trade Pro example: the busiest trade's next three closers.
     const pool = closingSoon.filter((r) => !isFrench(r) && r.categories[0]);
@@ -257,14 +274,49 @@ async function load(lang: Locale, t: V3Messages): Promise<{ data: V3Data; dataUs
       live.push("winners");
     } else fallback.push("winners");
 
-    // Toast: the next closer, in the page's language only (SEAO's French notices
-    // stay off the English and Spanish pages). Shown once per visitor
-    // (lib/growth/interruptions).
+    // Just awarded: most recent award notices with a winner and an amount, one per source.
+    const awards = spread(
+      rfps
+        .filter((r) => {
+          if (!isPastContract(r)) return false;
+          const a = parseAward(r.summary);
+          return Boolean(a.winner && a.amount);
+        })
+        .sort((a, b) => (b.deadline ?? "").localeCompare(a.deadline ?? "")),
+      (r) => r.slug.match(/-(cba|tora|nsa|qca)-/)?.[1] ?? "",
+    ).slice(0, 3);
+    if (awards.length) {
+      data.awards = awards.map((r) => {
+        const a = parseAward(r.summary);
+        return {
+          trade: r.categories[0] ? trade(r.categories[0]) : "",
+          value: dollars(a.amount ?? 0, lang),
+          title: r.title,
+          buyer: publicTenderSource(r.slug).badge.replace(/^Past public contract · /, ""),
+          winner: a.winner ?? "",
+          date: short(r.deadline),
+          href: `/rfps/${r.slug}`,
+        };
+      });
+      live.push("awards");
+    } else fallback.push("awards");
+
+    // Toast: next closer, another open tender, latest award, in the page's
+    // language only (SEAO's French notices stay off the English and Spanish
+    // pages). The page shows at most one, once per visitor (lib/growth/interruptions).
     const toast: V3Data["toast"] = [];
-    const first = closingSoon.find((r) => lang === "fr" || !isFrench(r));
+    const inPageLanguage = (r: { slug: string }) => lang === "fr" || !isFrench(r);
+    const first = closingSoon.find(inPageLanguage);
     if (first) {
       const d = daysUntil(first.deadline) ?? 0;
       toast.push({ tag: d <= 1 ? t.toastTags.closesTomorrow : fmt(t.toastTags.closesOn, { date: short(first.deadline) }), color: "#8A3F06", title: `${first.title} · ${place(first)}` });
+    }
+    const second = tickerPool.find((r) => r.slug !== first?.slug);
+    if (second) toast.push({ tag: fmt(t.toastTags.openNow, { date: short(second.deadline) }), color: "#15803D", title: `${second.title} · ${place(second)}` });
+    const awardIdx = awards.findIndex(inPageLanguage);
+    if (awardIdx >= 0 && data.awards[awardIdx]) {
+      const w = data.awards[awardIdx];
+      toast.push({ tag: fmt(t.toastTags.awarded, { date: w.date, value: w.value }), color: "#282B59", title: fmt(t.toastTags.wonBy, { title: w.title, winner: w.winner }) });
     }
     if (toast.length) data.toast = toast;
   }
