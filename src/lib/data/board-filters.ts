@@ -120,6 +120,7 @@ const SOURCE_TYPES: Record<string, BuyerType> = {
   nyc: "municipal",
   "la-city": "municipal",
   nanaimo: "municipal",
+  muskoka: "regional",
   saanich: "municipal",
   "portage-la-prairie": "municipal",
   "guelph-eramosa": "municipal",
