@@ -75,6 +75,24 @@ const SEED_ROWS: Seed[] = [
       "Reply to our Oct 15 request to list public facilities and construction tenders (title, short summary, closing date, procurement contact, link back). " +
       "The City's bid page links out to nanaimo.bidsandtenders.ca, whose terms bar automated reads, so nothing is imported: link-out only until the City emails notices to info@pmrfp.com or offers a feed.",
   },
+  {
+    buyerSlug: "district-municipality-of-muskoka",
+    buyerName: "District Municipality of Muskoka",
+    provinceCode: "ON",
+    scope: "buyer",
+    status: "yes",
+    // Yes to title, closing date and a link back, but no way in yet: the
+    // District's page lists no bids of its own (Biddingo until 2026-12-31,
+    // then bids&tenders). Set to "email_notices" once info@pmrfp.com
+    // subscribes to the District's notices, as the District suggested.
+    method: null,
+    grantedOn: "2026-11-05",
+    contact: "Rose Jackson, Manager, Procurement",
+    quote: "Yes, you can list our facilities tenders as the title, closing date and link back to our bids&tenders page.",
+    notes:
+      "Reply to our Nov 4 request to list public facilities tenders. Its earlier reply pointed to its Bid Opportunities page and muskoka.bidsandtenders.ca and suggested subscribing to notifications. " +
+      "Biddingo and bids&tenders are never read automatically, so nothing is imported.",
+  },
   // ---- conditional: link only, no automated reads
   {
     buyerSlug: "nbon",
