@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/public/empty-state";
@@ -80,7 +80,7 @@ const VIEW_LABEL: Record<View, string> = {
 
 async function loadOrgs(): Promise<{ rows: OrgRow[]; reviewReady: boolean; risk: Map<string, RiskRow> }> {
   if (isDemoMode()) return { rows: DEMO_ORGS, reviewReady: true, risk: new Map() };
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const list = (columns: string) =>
     supabase.from("organizations").select(columns).order("created_at", { ascending: false }).returns<OrgRow[]>();
   let res = await list(LINK_COLUMNS);

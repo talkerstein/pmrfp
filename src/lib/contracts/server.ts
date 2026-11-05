@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { rfpPrivateFields } from "@/lib/data/rfp-private";
 import { accountGeo, regionCountry } from "@/lib/visitor-geo";
 import { getAccountGeo } from "@/lib/visitor-geo.server";
 import { sendTownJobEmail } from "@/lib/email/send";
@@ -284,11 +285,12 @@ export async function retenderDefaults(session: SessionContext, contractId: stri
 async function loadSource(db: Db, rfpId: string): Promise<RetenderSource | null> {
   const { data } = await db
     .from("rfp_posts")
-    .select("summary,scope,requirements,submission_instructions,city,province,budget_min,budget_max,regions(slug),property_types(slug),rfp_categories(trade_categories(slug))")
+    .select("summary,scope,requirements,submission_instructions,city,province,regions(slug),property_types(slug),rfp_categories(trade_categories(slug))")
     .eq("id", rfpId)
     .maybeSingle();
   if (!data) return null;
-  const r = data as unknown as {
+  const priv = await rfpPrivateFields(db, rfpId);
+  const r = { ...(data as object), budget_min: priv?.budget_min ?? null, budget_max: priv?.budget_max ?? null } as unknown as {
     summary: string | null;
     scope: string | null;
     requirements: string | null;
