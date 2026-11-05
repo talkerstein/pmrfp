@@ -93,6 +93,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/contract-renewal-calendar", priority: 0.8, freq: "monthly" },
     { path: "/get-found", priority: 0.8, freq: "monthly" },
     { path: "/refer-a-project", priority: 0.9, freq: "monthly" },
+    { path: "/inspection-report-to-quotes", priority: 0.8, freq: "monthly" },
     { path: "/contact", priority: 0.5, freq: "yearly" },
     { path: "/terms", priority: 0.3, freq: "yearly" },
     { path: "/privacy", priority: 0.3, freq: "yearly" },
