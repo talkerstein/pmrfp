@@ -12,7 +12,7 @@ import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config
 import { createServiceClient } from "@/lib/supabase/service";
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { pendingReviewCount } from "@/lib/pm-jobs/server";
-import { getSession } from "@/lib/access/access";
+import { getSession, type SessionContext } from "@/lib/access/access";
 import { isUsState } from "@/lib/geo";
 import { companyProfileSchema, rfpPostSchema } from "@/lib/validations";
 import { sendAdminListingRejected, sendAdminNewRfp } from "@/lib/email/send";
@@ -33,6 +33,7 @@ import { profileStatusPatch, reviewChanges } from "@/lib/organizations/profile-r
 import { screenOrganization, recordOrgRisk } from "@/lib/spam/server";
 import { purgeOutCache } from "@/lib/links/data";
 import { websiteDomain } from "@/lib/badge/install";
+import { FINISH_PATH, isListingStep, patchChanges, stepPatch } from "@/lib/organizations/listing-steps";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, splitLocale, type Locale } from "@/i18n/config";
 
 /**
@@ -84,6 +85,101 @@ function completion(fields: Record<string, unknown>, cats: number, regs: number)
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
+/**
+ * Our own Supabase logos bucket, or null (including empty/cleared). Prevents
+ * URL injection from a malicious client.
+ */
+function ownLogoUrl(raw: string): string | null {
+  const url = raw.trim();
+  if (!url) return null;
+  try {
+    const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
+    const parsed = new URL(url);
+    if (
+      parsed.protocol === "https:" &&
+      parsed.host === supabaseHost &&
+      parsed.pathname.includes("/storage/v1/object/public/logos/")
+    ) {
+      return url;
+    }
+  } catch {
+    // Not a URL; treated as no logo.
+  }
+  return null;
+}
+
+type OrganizationRow = NonNullable<SessionContext["organization"]>;
+
+/**
+ * Everything a company's own edit sets off, for the full form and the
+ * one-question flow alike. Earn the link + spam check (lib/links, lib/spam). A
+ * new website domain starts the badge check over (the old install was on
+ * another site), and the click-out cache forgets the old address. A changed
+ * name, website or email on a directory listing is screened again: a blocked
+ * domain or a very high score takes the listing page down (rejected); a score
+ * of 3 to 5 flags it for the admin queue and, if it was live, keeps it live but
+ * nofollow/noindex.
+ */
+async function afterProfileEdit(
+  session: SessionContext,
+  before: OrganizationRow,
+  patch: Partial<OrganizationRow>,
+  nextStatus: ReturnType<typeof profileStatusPatch>,
+): Promise<void> {
+  const orgId = before.id;
+  const merged = { ...before, ...patch };
+  if (isServiceConfigured()) {
+    const service = createServiceClient();
+    if (websiteDomain(before.website) !== websiteDomain(merged.website)) {
+      await service.from("organizations").update({ link_badge: false, link_earned_at: null }).eq("id", orgId);
+    }
+    purgeOutCache();
+    const listing = before.organization_type === "trade_company" || before.organization_type === "supplier";
+    const trustChanged = reviewChanges(before, patch).some((c) => c.field === "name" || c.field === "website" || c.field === "email");
+    if (listing && (trustChanged || before.profile_status !== "approved")) {
+      const risk = await screenOrganization(service, {
+        organizationId: orgId,
+        name: merged.name,
+        website: merged.website,
+        email: merged.email,
+        accountEmail: session.profile.email,
+        phone: merged.phone,
+        shortDescription: merged.short_description,
+        fullDescription: merged.full_description,
+        city: merged.city,
+        province: merged.province,
+        country: before.country,
+        userId: session.userId,
+      }).catch(() => null);
+      if (risk && !risk.skipped) {
+        const goesPending = (nextStatus ?? before.profile_status) !== "approved";
+        await recordOrgRisk(service, orgId, risk, "profile_edit", risk.hold && goesPending);
+        if (risk.reject) {
+          await service.from("organizations").update({ profile_status: "rejected" }).eq("id", orgId);
+          await logAudit({ actorUserId: session.userId, action: "organization.spam_rejected", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
+          await sendAdminListingRejected({ name: merged.name, website: merged.website, email: merged.email, score: risk.score, reasons: risk.reasons.map((r) => r.detail) }).catch(() => undefined);
+        } else if (risk.hold) {
+          await logAudit({ actorUserId: session.userId, action: "organization.spam_held", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
+        }
+      }
+    }
+  }
+
+  if (before.profile_status === "approved") {
+    // One audit entry per flagged edit (the trigger keeps the running diff).
+    const changes = reviewChanges(before, patch);
+    if (changes.length) {
+      await logAudit({
+        actorUserId: session.userId,
+        action: "organization.profile_edited",
+        entityType: "organization",
+        entityId: orgId,
+        metadata: { changes },
+      });
+    }
+  }
+}
+
 export async function updateCompanyProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = await actionLang(formData);
   const t = messagesFor(lang);
@@ -124,26 +220,7 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   const orgId = session.organization.id;
   const score = completion(d, categories.length, regions.length);
 
-  // Validate the logoUrl points at our own Supabase storage logos bucket. If it
-  // doesn't (including empty/cleared), set logo_url to null. Prevents URL
-  // injection from a malicious client.
-  const rawLogoUrl = formData.get("logoUrl")?.toString().trim() ?? "";
-  let logoUrl: string | null = null;
-  if (rawLogoUrl) {
-    try {
-      const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
-      const parsed = new URL(rawLogoUrl);
-      if (
-        parsed.protocol === "https:" &&
-        parsed.host === supabaseHost &&
-        parsed.pathname.includes("/storage/v1/object/public/logos/")
-      ) {
-        logoUrl = rawLogoUrl;
-      }
-    } catch {
-      logoUrl = null;
-    }
-  }
+  const logoUrl = ownLogoUrl(formData.get("logoUrl")?.toString() ?? "");
 
   // Approved stays approved: an edit no longer takes a company out of the
   // directory, PM job alerts or free responses. Trust-field edits are flagged
@@ -178,63 +255,9 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   const { error } = await supabase.from("organizations").update(patch).eq("id", orgId);
   if (error) return { error: t.saveFailed };
 
-  // Earn the link + spam check (lib/links, lib/spam). A new website domain
-  // starts the badge check over (the old install was on another site), and the
-  // click-out cache forgets the old address. A changed name, website or email
-  // on a directory listing is screened again: a blocked domain or a very high
-  // score takes the listing page down (rejected); a score of 3 to 5 flags it
-  // for the admin queue and, if it was live, keeps it live but nofollow/noindex.
-  if (isServiceConfigured()) {
-    const service = createServiceClient();
-    if (websiteDomain(before.website) !== websiteDomain(patch.website)) {
-      await service.from("organizations").update({ link_badge: false, link_earned_at: null }).eq("id", orgId);
-    }
-    purgeOutCache();
-    const listing = before.organization_type === "trade_company" || before.organization_type === "supplier";
-    const trustChanged = reviewChanges(before, patch).some((c) => c.field === "name" || c.field === "website" || c.field === "email");
-    if (listing && (trustChanged || before.profile_status !== "approved")) {
-      const risk = await screenOrganization(service, {
-        organizationId: orgId,
-        name: d.name,
-        website: patch.website,
-        email: d.email,
-        accountEmail: session.profile.email,
-        phone: patch.phone,
-        shortDescription: patch.short_description,
-        fullDescription: patch.full_description,
-        city: patch.city,
-        province: patch.province,
-        country: before.country,
-        userId: session.userId,
-      }).catch(() => null);
-      if (risk && !risk.skipped) {
-        const goesPending = (nextStatus ?? before.profile_status) !== "approved";
-        await recordOrgRisk(service, orgId, risk, "profile_edit", risk.hold && goesPending);
-        if (risk.reject) {
-          await service.from("organizations").update({ profile_status: "rejected" }).eq("id", orgId);
-          await logAudit({ actorUserId: session.userId, action: "organization.spam_rejected", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
-          await sendAdminListingRejected({ name: d.name, website: patch.website, email: d.email, score: risk.score, reasons: risk.reasons.map((r) => r.detail) }).catch(() => undefined);
-        } else if (risk.hold) {
-          await logAudit({ actorUserId: session.userId, action: "organization.spam_held", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
-        }
-      }
-    }
-  }
+  await afterProfileEdit(session, before, patch, nextStatus);
 
   const stayedLive = before.profile_status === "approved";
-  if (stayedLive) {
-    // One audit entry per flagged edit (the trigger keeps the running diff).
-    const changes = reviewChanges(before, patch);
-    if (changes.length) {
-      await logAudit({
-        actorUserId: session.userId,
-        action: "organization.profile_edited",
-        entityType: "organization",
-        entityId: orgId,
-        metadata: { changes },
-      });
-    }
-  }
 
   // Replace taxonomy links.
   const [{ data: catRows }, { data: regRows }, { data: ptRows }] = await Promise.all([
@@ -256,6 +279,61 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
 
   revalidatePath("/dashboard/company");
   return { success: stayedLive ? t.savedLive : t.saved };
+}
+
+/**
+ * One answer from "Finish your listing" (/dashboard/company/finish): writes only
+ * that column, runs the same after-edit checks as the full form, and moves on to
+ * the next thing missing. Categories and regions aren't touched. An answer that
+ * changes nothing writes nothing, so it can't send a listing back for review.
+ */
+export async function saveListingStepAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const lang = await actionLang(formData);
+  const t = messagesFor(lang);
+  if (!isSupabaseConfigured()) return { error: t.demo };
+  const session = await getSession();
+  if (!session) redirect(localizePath("/sign-in", lang));
+  if (!session.organization) return { error: t.noOrg };
+  const step = formData.get("step");
+  if (!isListingStep(step)) return { error: t.checkForm };
+
+  const raw = step === "logo" ? (ownLogoUrl(formData.get("logoUrl")?.toString() ?? "") ?? "") : (formData.get("value")?.toString() ?? "");
+  const answer = stepPatch(step, raw);
+  if (answer.error) return { error: getDictionary(lang).dashClient.finish.errors[answer.error] };
+
+  const before = session.organization;
+  if (answer.patch && patchChanges(before, answer.patch)) {
+    const supabase = await createClient();
+    const merged = { ...before, ...answer.patch };
+    const [cats, regs] = await Promise.all([
+      supabase.from("organization_categories").select("category_id", { count: "exact", head: true }).eq("organization_id", before.id),
+      supabase.from("organization_regions").select("region_id", { count: "exact", head: true }).eq("organization_id", before.id),
+    ]);
+    const nextStatus = profileStatusPatch(before.profile_status);
+    const patch = {
+      ...answer.patch,
+      profile_completion_score: completion(
+        {
+          shortDescription: merged.short_description,
+          fullDescription: merged.full_description,
+          website: merged.website,
+          phone: merged.phone,
+          city: merged.city,
+          insuranceStatus: merged.insurance_status,
+        },
+        cats.count ?? 0,
+        regs.count ?? 0,
+      ),
+      ...(nextStatus ? { profile_status: nextStatus } : {}),
+    };
+    const { error } = await supabase.from("organizations").update(patch).eq("id", before.id);
+    if (error) return { error: t.saveFailed };
+    await afterProfileEdit(session, before, patch as Partial<OrganizationRow>, nextStatus);
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/company");
+  }
+
+  redirect(localizePath(`${FINISH_PATH}?after=${step}`, lang));
 }
 
 /**

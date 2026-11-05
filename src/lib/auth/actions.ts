@@ -744,5 +744,5 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   if (next) redirect(localizePath(next, lang));
   // A GC lands straight on the package form (award prefilled if they came from one).
   if (isBuilder) redirect(localizePath(gcFormPath(parseAwardRef(formData.get("award")?.toString())), lang));
-  redirect(localizePath(isListing ? "/dashboard?welcome=1" : "/pm-dashboard?welcome=1", lang));
+  redirect(localizePath(isListing ? "/dashboard/company/finish?welcome=1" : "/pm-dashboard?welcome=1", lang));
 }
