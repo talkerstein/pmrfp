@@ -391,6 +391,10 @@ function alertDb(): FakeDb {
 }
 
 describe("BUYER_FOLLOW_ALERTS_ENABLED gates the same-day emails", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("is off unless set to 1 or true", () => {
     expect(buyerFollowAlertsEnabled(undefined)).toBe(false);
     expect(buyerFollowAlertsEnabled("0")).toBe(false);
@@ -440,6 +444,9 @@ describe("BUYER_FOLLOW_ALERTS_ENABLED gates the same-day emails", () => {
   });
 
   it("the hourly cron skips straight away while the flag is off", async () => {
+    // The route reads the real clock; pin it to NOW so the fixtures stay inside the same-day window.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
     h.db = alertDb();
     const { GET } = await import("@/app/api/cron/buyer-follow-alerts/route");
     const res = await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts"));
