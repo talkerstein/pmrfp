@@ -1,3 +1,5 @@
+/** Fictional live-authority protocol, never a copied customer-data checksum. */
+export const SYNTHETIC_DETAIL_DATASET='1aa4d7859f4944ccd4c1f87c3e2bf0339097b5d34809bdd4e752a37bc2bcaa07';
 import { D1ApiError, UUID } from "./contracts";
 export const DETAIL_TEXT = ["summary", "city", "province", "deadline", "scope", "requirements", "desired_start_date", "site_visit_date", "submission_instructions", "contact_name", "contact_email", "contact_phone", "source_type", "gc_project_name", "source_url", "source_notes"] as const;
 export const DETAIL_IDS = ["region_id", "property_type_id", "awarded_rfp_id"] as const;

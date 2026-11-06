@@ -1,3 +1,4 @@
+import {requireSyntheticDetailDatabase,readSyntheticRfpDetail} from './synthetic-detail';
 import { D1ApiError, readSaveInput, type D1Binding } from "../../src/lib/d1/contracts";
 import { verifyGateway, verifyUser, type AuthConfig } from "./auth";
 import { changeSavedRfp, listSavedRfps } from "./saved-rfps";
@@ -43,7 +44,11 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
     }
     if (url.pathname === "/v1/rfp-detail") {
       if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
-      if (env.AUTH_PROVIDER === "native-synthetic") throw new D1ApiError(503, "native_detail_not_enabled");
+      if (env.AUTH_PROVIDER === "native-synthetic") {
+        if(env.SAVED_RFPS_MODE!=="sandbox-write")throw new D1ApiError(503,"native_sandbox_required");
+        await requireSyntheticDetailDatabase(env.DB);
+        return json(await readSyntheticRfpDetail(env.DB,request,await verifyUser(request,env,fetcher)));
+      }
       await verifyUser(request, env, fetcher);
       return json(await readRfpDetail(env.DB, request, env, fetcher));
     }
