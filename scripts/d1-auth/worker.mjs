@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth';
 import { rehearsalOptions } from './rehearsal.mjs';
 import { resetSyntheticPassword } from './atomic-reset.mjs';
 import { syntheticMailOptions, recordSyntheticMail } from './synthetic-mail.mjs';
+import { relaySyntheticMail } from './mail-relay.mjs';
 
 async function gatewayMatches(actual, expected) {
   if (typeof actual !== 'string' || typeof expected !== 'string' || expected.length < 32 || actual.length > 512) return false;
@@ -44,7 +45,7 @@ const worker = {
         return new Response(JSON.stringify({error:'reset_failed'}),{status:400,headers});
       }
     }
-    if(env.SYNTHETIC_RESET==='enabled')options=syntheticMailOptions(options,{origin:env.AUTH_BASE_URL,deliver:message=>recordSyntheticMail(env.AUTH_DB,message)});
+    if(env.SYNTHETIC_RESET==='enabled')options=syntheticMailOptions(options,{origin:env.AUTH_BASE_URL,deliver:async message=>{await recordSyntheticMail(env.AUTH_DB,message);await relaySyntheticMail(message,env);}});
     const auth=betterAuth({...options,baseURL:env.AUTH_BASE_URL,trustedOrigins:[env.AUTH_BASE_URL]});
     const response=await auth.handler(request);
     const secured=new Response(response.body,response);
