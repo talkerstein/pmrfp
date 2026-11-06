@@ -2,7 +2,7 @@
 
 ## November 6 checkpoint
 
-Workers Paid is active after explicit approval. The new isolated native copy contains 143,788 exactly verified records across 117 tables after one normal incremental cycle; its native readback backup has been restored and verified. The separate expanded read-only preview matches 1,786 public listings and taxonomy. All 64 current files have matching R2 readbacks. The approved 76-account Auth shadow copy is sealed, has no sessions or Worker bindings, and does not switch login. All 67,518 bootstrap receipts and 131 follow-up receipts are acknowledged; durable receipt history is 104,932. Native synthetic login-to-D1 and private R2 file operations pass; real account/mail/file integration remains unfinished. See [VERIFICATION-2026-11-06.md](VERIFICATION-2026-11-06.md). Older dated sections remain historical.
+Workers Paid is active after explicit approval. The new isolated native copy contains 144,032 exactly verified records across 117 tables after two normal incremental cycles; its native readback backup has been restored and verified. The separate expanded read-only preview matches 1,786 public listings and taxonomy. All 64 current files have matching R2 readbacks. The approved 76-account Auth shadow copy is sealed, has no sessions or Worker bindings, and does not switch login. All 67,518 bootstrap receipts and 520 follow-up receipts are acknowledged; durable receipt history is 105,321. Native synthetic login-to-D1 and private R2 file operations pass; real account/mail/file integration remains unfinished. See [VERIFICATION-2026-11-06.md](VERIFICATION-2026-11-06.md). Older dated sections remain historical.
 
 ## Current checkpoint — November 5
 

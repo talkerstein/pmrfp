@@ -169,35 +169,63 @@ def verify_schema(remote):
     def normalized_sql(sql):return re.sub(r'\s+',' ',re.sub(r'\bIF NOT EXISTS\s*','',sql,flags=re.I)).strip().rstrip(';')
     if set(remote_schema)!=set(expected_schema) or any(normalized_sql(remote_schema[k])!=normalized_sql(v) for k,v in expected_schema.items()):raise ValueError('Remote candidate schema mismatch')
 
-def read_rows(remote,specs):
+def verification_ranges(specs,expected):
+    # Source keys choose disjoint index ranges, not which destination rows to trust.
+    # First/last ranges are unbounded so unexpected destination keys are included.
+    pending=[]
+    with contextlib.closing(m.connect(':memory:')) as db:
+        db.executescript(m.SCHEMA.read_text())
+        for table,spec in specs.items():
+            types={row['name']:row['type'] for row in db.execute('PRAGMA table_info('+m.ident(table)+')')}
+            if any(types.get(key) not in ['TEXT','INTEGER','REAL','BLOB','NUMERIC'] for key in spec['pk']):raise ValueError('Unrecognized readback key affinity')
+            cols=['k'+str(i) for i in range(len(spec['pk']))]
+            db.execute('CREATE TEMP TABLE _read_keys('+','.join(m.ident(col)+' '+types[key] for col,key in zip(cols,spec['pk']))+')')
+            db.executemany('INSERT INTO _read_keys VALUES('+','.join('?' for _ in cols)+')',([row[key] for key in spec['pk']] for row in expected[table].values()))
+            ordered=[list(row) for row in db.execute('SELECT '+','.join(map(m.ident,cols))+' FROM _read_keys ORDER BY '+','.join(map(m.ident,cols)))]
+            db.execute('DROP TABLE _read_keys')
+            if not ordered:pending.append((table,None,None,0));continue
+            lower=None
+            for start in range(0,len(ordered),250):
+                chunk=ordered[start:start+250];upper=chunk[-1] if start+250<len(ordered) else None
+                pending.append((table,lower,upper,len(chunk)));lower=chunk[-1]
+    return pending
+
+def read_rows(remote,specs,expected=None):
     actual={t:{} for t in specs}
-    pending=[(table,None) for table in specs];batch_limit=10;single_retried=set()
+    pending=verification_ranges(specs,expected) if expected is not None else [(table,None,None,None) for table in specs]
+    batch_limit=10;single_retried=set()
     while pending:
         group,pending=pending[:batch_limit],pending[batch_limit:]
         requests=[]
-        for table,cursor in group:
+        for table,cursor,upper,count in group:
             keys=','.join(map(m.ident,specs[table]['pk']))
-            where='' if cursor is None else ' WHERE ('+keys+')>('+','.join('?' for _ in cursor)+')'
-            requests.append({'sql':'SELECT * FROM '+m.ident(table)+where+' ORDER BY '+keys+' LIMIT 250','params':cursor or []})
+            clauses=[];params=[]
+            for values,operator in [(cursor,'>'),(upper,'<=')]:
+                if values is not None:clauses.append('('+keys+')'+operator+'('+','.join('?' for _ in values)+')');params.extend(values)
+            where=' WHERE '+' AND '.join(clauses) if clauses else ''
+            requests.append({'sql':'SELECT * FROM '+m.ident(table)+where+' ORDER BY '+keys+(' LIMIT 251' if count is not None else ' LIMIT 250'),'params':params})
         try:pages=remote.batch(requests)
-        except (TimeoutError,socket.timeout,ssl.SSLEOFError,ConnectionResetError,urllib.error.URLError) as error:
+        except (TimeoutError,socket.timeout,socket.gaierror,ssl.SSLEOFError,ConnectionResetError,urllib.error.URLError) as error:
             # These are SELECT-only pages. A lost response can be re-read safely;
             # never apply this splitting/retry policy to atomic write batches.
             reason=error.reason if isinstance(error,urllib.error.URLError) else error
-            if not isinstance(reason,(TimeoutError,socket.timeout,ssl.SSLEOFError,ConnectionResetError)):raise
+            if not isinstance(reason,(TimeoutError,socket.timeout,socket.gaierror,ssl.SSLEOFError,ConnectionResetError)):raise
             if len(group)==1:
-                key=(group[0][0],m.canonical(group[0][1]))
+                key=m.canonical(group[0])
                 if key in single_retried:raise
                 single_retried.add(key)
             batch_limit=max(1,len(group)//2);pending=group+pending;continue
         if len(pages)!=len(group):raise ValueError('Incomplete remote readback batch')
-        for (table,cursor),result in zip(group,pages):
+        for (table,cursor,upper,count),result in zip(group,pages):
             page=result['results']
+            if count is not None and len(page)>count:raise ValueError('Unexpected destination keys in verification range')
             for row in page:
                 key=m.canonical([row[k] for k in specs[table]['pk']])
                 if key in actual[table]:raise ValueError('Duplicate remote readback key')
                 actual[table][key]=row
-            if len(page)==250:pending.append((table,[page[-1][k] for k in specs[table]['pk']]))
+            if count is None and len(page)==250:pending.append((table,[page[-1][k] for k in specs[table]['pk']],None,None))
+        progress=getattr(remote,'readback_progress',None)
+        if callable(progress):progress(sum(len(rows) for rows in actual.values()))
     return actual
 
 def verify(remote,snapshot,require_validated=True,backup_path=None):
@@ -206,7 +234,7 @@ def verify(remote,snapshot,require_validated=True,backup_path=None):
     if not before or before[0]['source_sha256']!=sha:raise ValueError('Remote source mismatch')
     if require_validated and before[0]['state']!='validated':raise ValueError('Remote copy is incomplete')
     verify_schema(remote)
-    actual=read_rows(remote,specs)
+    actual=read_rows(remote,specs,expected)
     diffs=m.compare(expected,actual)
     if any(any(v.values()) for v in diffs.values()):raise ValueError('Remote record comparison failed')
     if remote.query('PRAGMA foreign_key_check')[0]['results']:raise ValueError('Remote foreign key violations')

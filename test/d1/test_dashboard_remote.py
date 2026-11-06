@@ -87,11 +87,45 @@ class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
             return original(items)
         fake.batch=interrupted;remote.verify(fake,snapshot);self.assertGreater(len(calls),1)
         calls.clear()
+        def interrupted_dns(items):
+            calls.append(items)
+            if len(calls)==1:raise urllib.error.URLError(socket.gaierror(socket.EAI_AGAIN,'temporary resolver failure'))
+            return original(items)
+        fake.batch=interrupted_dns;remote.verify(fake,snapshot);self.assertGreater(len(calls),1)
+        calls.clear()
         def invalid_certificate(items):
             calls.append(items);raise urllib.error.URLError(ssl.SSLCertVerificationError('certificate rejected'))
         fake.batch=invalid_certificate
         with self.assertRaises(urllib.error.URLError):remote.read_rows(fake,self.specs)
         self.assertEqual(len(calls),1)
+    def test_parallel_verification_ranges_include_unexpected_keys_before_between_and_after_source_keys(self):
+        rows=self.seed();template=next(iter(rows['regions'].values()));rows['regions']={}
+        for n in range(503):
+            row={**template,'id':str(n+100).zfill(4),'slug':'region-'+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        snapshot=self.snapshot(rows,'range-edges.jsonl');fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        columns=list(template)
+        for extra in ['0000','0350-extra','9999']:
+            row={**template,'id':extra,'slug':'extra-'+extra}
+            fake.db.execute('INSERT INTO regions('+','.join(map(m.ident,columns))+') VALUES('+','.join('?' for _ in columns)+')',[row[c] for c in columns]);fake.db.commit()
+            with self.assertRaises(ValueError):remote.verify(fake,snapshot)
+            fake.db.execute('DELETE FROM regions WHERE id=?',(extra,));fake.db.commit()
+        # Equal counts do not hide a substituted key inside one range.
+        fake.db.execute("DELETE FROM regions WHERE id='0100'");row={**template,'id':'0000','slug':'replacement'}
+        fake.db.execute('INSERT INTO regions('+','.join(map(m.ident,columns))+') VALUES('+','.join('?' for _ in columns)+')',[row[c] for c in columns]);fake.db.commit()
+        with self.assertRaises(ValueError):remote.verify(fake,snapshot)
+    def test_parallel_ranges_preserve_sqlite_numeric_and_composite_key_order_without_offsets(self):
+        schema=self.root/'range-schema.sql';schema.write_text(m.SCHEMA.read_text()+'\nCREATE TABLE range_keys(a INTEGER,b TEXT,payload TEXT,PRIMARY KEY(a,b));')
+        specs={'range_keys':{'pk':['a','b']}};expected={'range_keys':{}}
+        fake=FakeRemote();self.addCleanup(fake.db.close);fake.db.execute('CREATE TABLE range_keys(a INTEGER,b TEXT,payload TEXT,PRIMARY KEY(a,b))')
+        for n in range(503):
+            row={'a':n,'b':str(n%7),'payload':'row-'+str(n)};expected['range_keys'][m.canonical([row['a'],row['b']])]=row;fake.db.execute('INSERT INTO range_keys VALUES(?,?,?)',(row['a'],row['b'],row['payload']))
+        fake.db.commit();original=fake.batch;groups=[]
+        def capture(items):
+            groups.append(items);return original(items)
+        fake.batch=capture
+        with patch.object(m,'SCHEMA',schema):actual=remote.read_rows(fake,specs,expected)
+        self.assertEqual(actual,expected);self.assertEqual(len(groups),1);self.assertEqual(len(groups[0]),3)
+        self.assertTrue(all('OFFSET' not in item['sql'] for item in groups[0]))
     def test_resume_inserts_only_missing_rows_after_full_partial_readback(self):
         snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
         fake.query('DELETE FROM users_profile');fake.query("UPDATE _migration_manifest SET state='loading'")

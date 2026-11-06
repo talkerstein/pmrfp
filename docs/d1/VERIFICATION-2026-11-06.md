@@ -88,8 +88,21 @@ The next incremental export initially stopped during native baseline readback on
 
 ## Approved two-message Auth delivery proof
 
-After explicit authorization, actual synthetic verification and reset callbacks each sent one message to `dev@talkerstein.ca` through the protected Vercel relay and Hostinger. Confirmation, password reset, session revocation and replay denial passed. The fixture was restored; temporary Worker and Vercel delivery configuration was removed. Proof and access/expiry details: [AUTH-MAIL-DELIVERY-REHEARSAL-2026-11-06.md](AUTH-MAIL-DELIVERY-REHEARSAL-2026-11-06.md). Total SMTP messages today: three (the received standalone transport test plus these two callback tests). Receipt of both callback messages remains unconfirmed. Default delivery is disabled, and real account email integration remains unfinished.
+After explicit authorization, actual synthetic verification and reset callbacks each sent one message to `dev@talkerstein.ca` through the protected Vercel relay and Hostinger. Confirmation, password reset, session revocation and replay denial passed. The fixture was restored; temporary Worker and Vercel delivery configuration was removed. Proof and access/expiry details: [AUTH-MAIL-DELIVERY-REHEARSAL-2026-11-06.md](AUTH-MAIL-DELIVERY-REHEARSAL-2026-11-06.md). Total SMTP messages today: three (the received standalone transport test plus these two callback tests). The user confirmed receipt of both callback messages. Default delivery is disabled, and real account email integration remains unfinished.
 
 The app photo path also passed its deployed proof after reusing the existing real Sharp decoder/orientation/1920px JPEG re-encoding and metadata stripping (`fe1b9f8`). Its readback matches sanitized bytes, not the original upload; metadata-bearing and corrupt-image contract tests cover that boundary.
 
 Native cycle-two forward replay next stopped before mutation on a transient TLS EOF during readback. SELECT-only retries now also cover transient TLS EOF/reset errors with one bounded single-page retry; certificate verification errors still fail immediately, and atomic writes are unaffected. All 96 Python tests pass (one environment-specific skip). No cycle-two receipts have been acknowledged at this point.
+
+
+## Completed second normal incremental cycle
+
+The new native copy now contains 144,032 exactly verified records across 117 tables, rebuilt from 144,217 Source records. Its dataset is `1d8c95baa251b7b5ce8eb8a5e198d328f8d6a46419164c953c43d684fed6a396`; raw Source snapshot is `b37b839b8be666522fe896ef14c3e5060082c777b9b4b4b7a62aa2103af8e567`.
+
+Capture read 389 events and 343 row packets totaling 88,370 bytes, without a full Source transfer. The approved rebuild produced 346 changes. Local exact forward/reverse/reapply passed; native atomic forward used 369 statements. Full native comparisons passed, actual native before/after backups were restored and validated, and 389 receipts were acknowledged. Durable retained receipt history is 105,321; today's total new acknowledgements are 68,038. Public parity still matches 1,786 listings, 45 categories, 88 regions and 21 property types in every projected field.
+
+Private evidence: `incremental-report-20261106-cycle2.json`, `native-replay-report-20261106-cycle2.json`, `acknowledge-report-20261106-cycle2.json`, `live-public-parity-report-20261106-cycle2.json`. Future captures must use the cycle-two Source/candidate snapshots and this durable checkpoint, not an earlier baseline. The existing main application preview selection remains unchanged.
+
+Readback now groups disjoint primary-key ranges rather than serializing every large table's pages. Bounds use SQLite's key affinities/order; the first/last ranges cover keys outside the Source inventory, overfull ranges fail, and every returned field is still compared. Tests cover extra keys before/between/after Source keys, equal-count key replacement, numeric/composite ordering, lost responses, TLS/DNS retries and immediate certificate-error refusal. All 98 Python tests pass (one runtime-specific skip). A second read-only verifier refused to overwrite an existing native backup; the existing backup and both restored copies were independently validated. No Source customer rows changed.
+
+Both Auth callback emails were confirmed received. The temporary sending deployment was deleted, the default preview alias points to the sending-disabled deployment, and an actual POST probe returned `validated: true, emailsSent: 0, mode: synthetic-capture`.
