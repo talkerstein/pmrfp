@@ -22,3 +22,10 @@ it('bounds uploads and preserves owner/visibility denials without exposing provi
  const oversized=await handleNativePhotoPreview(request(),project,photo,env,async()=>new Response(null,{headers:{'content-type':'image/jpeg','content-length':String(4*1024*1024+1)}}));expect(oversized.status).toBe(413);
  const removed=await handleNativePhotoPreview(request('DELETE'),project,photo,env,async()=>new Response(null,{status:204}));expect(removed.status).toBe(204);expect(await removed.text()).toBe('');
 });
+it('reuses real image decoding, orientation, resizing and metadata stripping before R2; corrupt JPEG never reaches storage',async()=>{
+ const sharp=(await import('sharp')).default;
+ const input=await sharp({create:{width:2100,height:2,channels:3,background:'#f00'}}).jpeg().withMetadata({orientation:1,exif:{IFD0:{Artist:'MUST_NOT_RETAIN'}}}).toBuffer();
+ const fetcher=vi.fn(async(_url,init)=>{const output=Buffer.from(init.body as ArrayBuffer);const metadata=await sharp(output).metadata();expect(metadata.width).toBe(1920);expect(metadata.exif).toBeUndefined();expect(metadata.icc).toBeUndefined();return Response.json({ok:true});});
+ const response=await handleNativePhotoPreview(request('PUT',new Uint8Array(input).buffer),project,photo,env,fetcher as typeof fetch);expect(response.status).toBe(200);expect(await response.json()).toMatchObject({ok:true,width:1920});expect(fetcher).toHaveBeenCalledTimes(1);
+ const denied=await handleNativePhotoPreview(request('PUT',new Uint8Array([255,216,255,0,0])),project,photo,env,fetcher as typeof fetch);expect(denied.status).toBe(422);expect(fetcher).toHaveBeenCalledTimes(1);
+});
