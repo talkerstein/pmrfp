@@ -1,0 +1,3706 @@
+[
+  {
+    "kind": "default",
+    "table": "audit_logs",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "award_history",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "award_history",
+    "name": "award_history_notice_url_check",
+    "definition": "CHECK (((notice_url IS NULL) OR (notice_url ~ '^https://'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "award_history",
+    "name": "award_history_source_check",
+    "definition": "CHECK ((source ~ '^[a-z0-9-]{2,40}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "bid_results",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "buyer_claims",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_claims",
+    "name": "buyer_claims_buyer_key_check",
+    "definition": "CHECK ((buyer_key ~ '^[a-z0-9-]{2,40}/[a-z0-9][a-z0-9-]{0,119}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "buyer_domains",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_domains",
+    "name": "buyer_domains_buyer_key_check",
+    "definition": "CHECK ((buyer_key ~ '^[a-z0-9-]{2,40}/[a-z0-9][a-z0-9-]{0,119}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_domains",
+    "name": "buyer_domains_domain_check",
+    "definition": "CHECK (((domain ~ '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'::text) AND (char_length(domain) <= 253)))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_follows",
+    "name": "buyer_follows_buyer_slug_check",
+    "definition": "CHECK ((buyer_slug ~ '^[a-z0-9-]{2,40}/[a-z0-9][a-z0-9-]{0,119}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_pages",
+    "name": "buyer_pages_bids_url_check",
+    "definition": "CHECK (((bids_url IS NULL) OR ((char_length(bids_url) <= 500) AND (bids_url ~* '^https?://'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_pages",
+    "name": "buyer_pages_buyer_key_check",
+    "definition": "CHECK ((buyer_key ~ '^[a-z0-9-]{2,40}/[a-z0-9][a-z0-9-]{0,119}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_pages",
+    "name": "buyer_pages_contact_email_check",
+    "definition": "CHECK (((contact_email IS NULL) OR ((char_length(contact_email) <= 254) AND (contact_email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_pages",
+    "name": "buyer_pages_logo_url_check",
+    "definition": "CHECK (((logo_url IS NULL) OR ((char_length(logo_url) <= 500) AND (logo_url ~* '^https://'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_pages",
+    "name": "buyer_pages_platform_url_check",
+    "definition": "CHECK (((platform_url IS NULL) OR ((char_length(platform_url) <= 500) AND (platform_url ~* '^https?://'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_pages",
+    "name": "buyer_pages_vendor_registration_url_check",
+    "definition": "CHECK (((vendor_registration_url IS NULL) OR ((char_length(vendor_registration_url) <= 500) AND (vendor_registration_url ~* '^https?://'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_permissions",
+    "name": "buyer_permissions_buyer_slug_check",
+    "definition": "CHECK ((buyer_slug ~ '^[a-z0-9][a-z0-9-]{1,119}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_permissions",
+    "name": "buyer_permissions_feed_url_check",
+    "definition": "CHECK (((feed_url IS NULL) OR ((char_length(feed_url) <= 500) AND (feed_url ~* '^https?://'::text))))"
+  },
+  {
+    "kind": "default",
+    "table": "buyer_source_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_buyer_slug_check",
+    "definition": "CHECK (((buyer_slug IS NULL) OR (buyer_slug ~ '^[a-z0-9][a-z0-9-]{1,119}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_feed_url_check",
+    "definition": "CHECK (((feed_url IS NULL) OR ((char_length(feed_url) <= 500) AND (feed_url ~* '^https?://'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_tenders_url_check",
+    "definition": "CHECK (((char_length(tenders_url) <= 500) AND (tenders_url ~* '^https?://'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "buyer_source_requests",
+    "name": "buyer_source_requests_work_email_check",
+    "definition": "CHECK ((((char_length(work_email) >= 3) AND (char_length(work_email) <= 254)) AND (work_email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "case_studies",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "case_study_share_links",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "case_study_share_links",
+    "name": "case_study_share_links_token_check",
+    "definition": "CHECK ((token ~ '^[A-Za-z0-9_-]{32}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "contact_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "correction_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "correction_requests",
+    "name": "correction_requests_contact_email_check",
+    "definition": "CHECK ((((length(contact_email) >= 3) AND (length(contact_email) <= 254)) AND (contact_email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "device_push_tokens",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "digest_subscribers",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "digest_subscribers",
+    "column": "send_bucket",
+    "definition": "(floor((random() * (4)::double precision)))::smallint"
+  },
+  {
+    "kind": "default",
+    "table": "duplicate_reviews",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "identity",
+    "table": "email_consents",
+    "column": "id"
+  },
+  {
+    "kind": "default",
+    "table": "forum_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "forum_categories",
+    "name": "forum_categories_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{2,60}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "forum_mod_log",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_poll_options",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_polls",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_posts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "forum_profiles",
+    "name": "forum_profiles_handle_check",
+    "definition": "CHECK ((handle ~ '^[a-z0-9_]{3,30}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "forum_reports",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_reputation_events",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "forum_threads",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "forum_threads",
+    "name": "forum_threads_short_id_check",
+    "definition": "CHECK ((short_id ~ '^[a-z0-9]{6,12}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "forum_threads",
+    "name": "forum_threads_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{1,80}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "insight_brief_log",
+    "name": "insight_brief_log_week_check",
+    "definition": "CHECK ((week ~ '^\\d{4}-W\\d{2}$'::text))"
+  },
+  {
+    "kind": "identity",
+    "table": "insight_rejections",
+    "column": "id"
+  },
+  {
+    "kind": "default",
+    "table": "job_applications",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "job_posts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "job_posts",
+    "column": "expires_at",
+    "definition": "(CURRENT_DATE + 30)"
+  },
+  {
+    "kind": "check",
+    "table": "job_posts",
+    "name": "job_posts_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{3,90}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "karma_events",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "lifecycle_sends",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "major_projects",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "major_projects",
+    "name": "major_projects_bid_list_url_check",
+    "definition": "CHECK (((bid_list_url IS NULL) OR (bid_list_url ~ '^https?://'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "major_projects",
+    "name": "major_projects_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9-]{3,120}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "major_projects",
+    "name": "major_projects_source_check",
+    "definition": "CHECK ((source ~ '^[a-z0-9-]{2,40}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "marketplace_listings",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "marketplace_listings",
+    "column": "expires_at",
+    "definition": "(now() + '60 days'::interval)"
+  },
+  {
+    "kind": "check",
+    "table": "marketplace_listings",
+    "name": "marketplace_listings_slug_check",
+    "definition": "CHECK ((slug ~ '^[a-z0-9][a-z0-9-]{2,90}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "marketplace_messages",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "notifications",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_join_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_members",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_property_types",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organization_regions",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "organizations",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "profile_views",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "property_types",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "region_requests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "regional_waitlist",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "regions",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "resources",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "review_invites",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_changes",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_changes",
+    "column": "change_day",
+    "definition": "((now() AT TIME ZONE 'America/Toronto'::text))::date"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_documents",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_interests",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_posts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_posts",
+    "column": "keep_alive_token",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "rfp_posts",
+    "name": "rfp_posts_buyer_key_check",
+    "definition": "CHECK (((buyer_key IS NULL) OR (buyer_key ~ '^[a-z0-9-]{2,40}/[a-z0-9][a-z0-9-]{0,119}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "rfp_posts",
+    "name": "rfp_posts_official_url_check",
+    "definition": "CHECK (((official_url IS NULL) OR ((char_length(official_url) <= 500) AND (official_url ~* '^https?://[^[:space:]]+$'::text))))"
+  },
+  {
+    "kind": "default",
+    "table": "rfp_views",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "rfp_views",
+    "name": "rfp_views_country_check",
+    "definition": "CHECK (((country IS NULL) OR (country ~ '^[A-Z]{2}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "rfp_views",
+    "name": "rfp_views_visitor_hash_check",
+    "definition": "CHECK (((visitor_hash IS NULL) OR (visitor_hash ~ '^[0-9a-f]{32}$'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "saved_rfps",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "signup_attribution",
+    "name": "signup_attribution_country_check",
+    "definition": "CHECK (((country IS NULL) OR (country ~ '^[A-Z]{2}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "signup_attribution",
+    "name": "signup_attribution_landing_path_check",
+    "definition": "CHECK (((landing_path IS NULL) OR ((char_length(landing_path) <= 200) AND (landing_path ~ '^/'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "signup_attribution",
+    "name": "signup_attribution_referrer_host_check",
+    "definition": "CHECK (((referrer_host IS NULL) OR (referrer_host ~ '^[a-z0-9.-]{1,100}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "signup_attribution",
+    "name": "signup_attribution_role_check",
+    "definition": "CHECK (((role IS NULL) OR ((char_length(role) <= 40) AND (role ~ '^[a-z_]+$'::text))))"
+  },
+  {
+    "kind": "identity",
+    "table": "site_events",
+    "column": "id"
+  },
+  {
+    "kind": "check",
+    "table": "site_events",
+    "name": "site_events_anon_hash_check",
+    "definition": "CHECK (((anon_hash IS NULL) OR (anon_hash ~ '^[0-9a-f]{32}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "site_events",
+    "name": "site_events_country_check",
+    "definition": "CHECK (((country IS NULL) OR (country ~ '^[A-Z]{2}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "site_events",
+    "name": "site_events_path_check",
+    "definition": "CHECK (((path IS NULL) OR ((char_length(path) <= 200) AND (path ~ '^/'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "site_events",
+    "name": "site_events_role_check",
+    "definition": "CHECK (((role IS NULL) OR ((char_length(role) <= 40) AND (role ~ '^[a-z_]+$'::text))))"
+  },
+  {
+    "kind": "check",
+    "table": "site_page_views",
+    "name": "site_page_views_country_check",
+    "definition": "CHECK (((country = ''::text) OR (country ~ '^[A-Z]{2}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "site_page_views",
+    "name": "site_page_views_path_check",
+    "definition": "CHECK ((((char_length(path) >= 1) AND (char_length(path) <= 200)) AND (path ~ '^/'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "site_referrers",
+    "name": "site_referrers_country_check",
+    "definition": "CHECK (((country = ''::text) OR (country ~ '^[A-Z]{2}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "site_referrers",
+    "name": "site_referrers_referrer_host_check",
+    "definition": "CHECK ((referrer_host ~ '^[a-z0-9.-]{1,100}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "site_visitors",
+    "name": "site_visitors_country_check",
+    "definition": "CHECK (((country = ''::text) OR (country ~ '^[A-Z]{2}$'::text)))"
+  },
+  {
+    "kind": "check",
+    "table": "site_visitors",
+    "name": "site_visitors_visitor_hash_check",
+    "definition": "CHECK ((visitor_hash ~ '^[0-9a-f]{32}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "sponsor_clicks",
+    "column": "day",
+    "definition": "((now() AT TIME ZONE 'America/Toronto'::text))::date"
+  },
+  {
+    "kind": "default",
+    "table": "sponsors",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "sponsors",
+    "name": "sponsors_logo_url_check",
+    "definition": "CHECK (((logo_url IS NULL) OR ((char_length(logo_url) <= 500) AND ((logo_url ~ '^https://'::text) OR (logo_url ~ '^/'::text)))))"
+  },
+  {
+    "kind": "check",
+    "table": "sponsors",
+    "name": "sponsors_slug_check",
+    "definition": "CHECK (((slug ~ '^[a-z0-9][a-z0-9-]{1,39}$'::text) AND (slug <> ALL (ARRAY['maple'::text, 'cleverpays'::text, 'talkerstein'::text]))))"
+  },
+  {
+    "kind": "check",
+    "table": "sponsors",
+    "name": "sponsors_url_check",
+    "definition": "CHECK (((char_length(url) <= 500) AND (url ~ '^https://'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "subscriptions",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "talent_contacts",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "talent_endorsements",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "talent_profiles",
+    "name": "talent_profiles_employment_types_check",
+    "definition": "CHECK ((employment_types <@ ARRAY['full_time'::text, 'part_time'::text, 'contract'::text, 'seasonal'::text, 'apprenticeship'::text, 'temporary'::text]))"
+  },
+  {
+    "kind": "check",
+    "table": "talent_profiles",
+    "name": "talent_profiles_handle_check",
+    "definition": "CHECK ((handle ~ '^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "town_invites",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "town_invites",
+    "name": "town_invites_buyer_key_check",
+    "definition": "CHECK (((buyer_key IS NULL) OR (buyer_key ~ '^[a-z0-9-]{2,40}/[a-z0-9][a-z0-9-]{0,119}$'::text)))"
+  },
+  {
+    "kind": "default",
+    "table": "town_job_addenda",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "town_job_addenda",
+    "name": "town_job_addenda_official_url_check",
+    "definition": "CHECK (((official_url IS NULL) OR ((char_length(official_url) <= 500) AND (official_url ~* '^https?://[^[:space:]]+$'::text))))"
+  },
+  {
+    "kind": "identity",
+    "table": "town_job_log",
+    "column": "id"
+  },
+  {
+    "kind": "check",
+    "table": "town_job_log",
+    "name": "town_job_log_event_check",
+    "definition": "CHECK ((event ~ '^[a-z_]{3,40}$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "town_job_questions",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "trade_categories",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "check",
+    "table": "trade_trials",
+    "name": "trade_trials_source_check",
+    "definition": "CHECK ((source ~ '^[a-z0-9_-]{2,30}$'::text))"
+  },
+  {
+    "kind": "check",
+    "table": "trade_trials",
+    "name": "trade_trials_window",
+    "definition": "CHECK (((ends_at > started_at) AND (ends_at <= (started_at + '31 days'::interval))))"
+  },
+  {
+    "kind": "check",
+    "table": "trusted_lists",
+    "name": "trusted_lists_handle_check",
+    "definition": "CHECK ((handle ~ '^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$'::text))"
+  },
+  {
+    "kind": "default",
+    "table": "vendor_reviews",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "default",
+    "table": "winner_claims",
+    "column": "id",
+    "definition": "gen_random_uuid()"
+  },
+  {
+    "kind": "index",
+    "table": "award_history",
+    "name": "award_history_trades_idx",
+    "definition": "CREATE INDEX award_history_trades_idx ON public.award_history USING gin (trade_slugs)"
+  },
+  {
+    "kind": "index",
+    "table": "organizations",
+    "name": "organizations_desc_trgm",
+    "definition": "CREATE INDEX organizations_desc_trgm ON public.organizations USING gin (short_description gin_trgm_ops)"
+  },
+  {
+    "kind": "index",
+    "table": "organizations",
+    "name": "organizations_name_trgm",
+    "definition": "CREATE INDEX organizations_name_trgm ON public.organizations USING gin (name gin_trgm_ops)"
+  },
+  {
+    "kind": "index",
+    "table": "region_requests",
+    "name": "region_requests_name_trgm",
+    "definition": "CREATE INDEX region_requests_name_trgm ON public.region_requests USING gin (raw_name gin_trgm_ops)"
+  },
+  {
+    "kind": "index",
+    "table": "rfp_posts",
+    "name": "rfp_posts_summary_trgm",
+    "definition": "CREATE INDEX rfp_posts_summary_trgm ON public.rfp_posts USING gin (summary gin_trgm_ops)"
+  },
+  {
+    "kind": "index",
+    "table": "rfp_posts",
+    "name": "rfp_posts_title_trgm",
+    "definition": "CREATE INDEX rfp_posts_title_trgm ON public.rfp_posts USING gin (title gin_trgm_ops)"
+  },
+  {
+    "kind": "index",
+    "table": "users_profile",
+    "name": "users_profile_email_norm_idx",
+    "definition": "CREATE INDEX users_profile_email_norm_idx ON public.users_profile USING btree (normalize_email(email))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "policyname": "audit insert admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "policyname": "audit read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "award_history",
+    "policyname": "award history intel read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT has_intel_access(auth.uid()) AS has_intel_access)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "badge_hits",
+    "policyname": "badge hits admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "badge_rewards",
+    "policyname": "badge rewards admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "bid_results",
+    "policyname": "bid results intel read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT has_intel_access(auth.uid()) AS has_intel_access)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_claims",
+    "policyname": "buyer claims own or admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR ( SELECT is_admin(auth.uid()) AS is_admin))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_domains",
+    "policyname": "buyer domains admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_follows",
+    "policyname": "buyer follows own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = ( SELECT auth.uid() AS uid))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_pages",
+    "policyname": "buyer pages member or admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(( SELECT is_admin(auth.uid()) AS is_admin) OR is_org_member(auth.uid(), organization_id))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_permissions",
+    "policyname": "buyer permissions admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_permissions",
+    "policyname": "buyer permissions admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_permissions",
+    "policyname": "buyer permissions admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_source_requests",
+    "policyname": "buyer source requests admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "buyer_source_requests",
+    "policyname": "buyer source requests admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies admin all",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies member insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_studies.organization_id) AND (om.user_id = auth.uid())))) AND (status = ANY (ARRAY['draft'::text, 'pending_review'::text])))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies member update own drafts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_studies.organization_id) AND (om.user_id = auth.uid())))) AND (status = ANY (ARRAY['draft'::text, 'pending_review'::text])))",
+    "with_check": "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_studies",
+    "policyname": "case studies public read published",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'published'::text) AND (visibility = ANY (ARRAY['public'::text, 'unlisted'::text]))) OR (EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_studies.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "case_study_share_links",
+    "policyname": "share links member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = case_study_share_links.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "contact_requests",
+    "policyname": "contact insert public",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "contact_requests",
+    "policyname": "contact read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "contact_requests",
+    "policyname": "contact update admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "correction_requests",
+    "policyname": "corrections admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "correction_requests",
+    "policyname": "corrections admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "( SELECT is_admin(auth.uid()) AS is_admin)",
+    "with_check": "( SELECT is_admin(auth.uid()) AS is_admin)"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "device_push_tokens",
+    "policyname": "push tokens self update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "digest_subscribers",
+    "policyname": "digest subscribers admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "duplicate_reviews",
+    "policyname": "duplicate reviews admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "email_consents",
+    "policyname": "email consents own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "email_suppressions",
+    "policyname": "email suppressions admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_categories",
+    "policyname": "forum categories read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_public OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_category_mods",
+    "policyname": "forum mods read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_category_redirects",
+    "policyname": "forum category redirects read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_mod_log",
+    "policyname": "forum mod log admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_poll_options",
+    "policyname": "forum poll options read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM (forum_polls p\n     JOIN forum_threads t ON ((t.id = p.thread_id)))\n  WHERE ((p.id = forum_poll_options.poll_id) AND (t.status = 'approved'::text)))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_poll_votes",
+    "policyname": "forum poll votes own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_polls",
+    "policyname": "forum polls read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM forum_threads t\n  WHERE ((t.id = forum_polls.thread_id) AND (t.status = 'approved'::text)))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_post_votes",
+    "policyname": "forum votes own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_posts",
+    "policyname": "forum posts read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'approved'::text) AND (EXISTS ( SELECT 1\n   FROM forum_threads t\n  WHERE ((t.id = forum_posts.thread_id) AND (t.status = 'approved'::text))))) OR (author_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_profiles",
+    "policyname": "forum profiles read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((NOT banned) OR is_admin(auth.uid()) OR (user_id = auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_reports",
+    "policyname": "forum reports admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_reputation_events",
+    "policyname": "forum reputation own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_room_follows",
+    "policyname": "forum follows own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_thread_ratings",
+    "policyname": "forum ratings own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "forum_threads",
+    "policyname": "forum threads read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((status = 'approved'::text) OR (author_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "intel_access",
+    "policyname": "intel access member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = intel_access.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "job_applications",
+    "policyname": "job applications employer read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM job_posts j\n  WHERE ((j.id = job_applications.job_id) AND (is_org_member(auth.uid(), j.organization_id) OR is_admin(auth.uid())))))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "job_posts",
+    "policyname": "job posts read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'open'::text) AND (expires_at >= CURRENT_DATE) AND (EXISTS ( SELECT 1\n   FROM organizations o\n  WHERE ((o.id = job_posts.organization_id) AND (o.profile_status = 'approved'::text) AND (o.status = 'active'::text))))) OR is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "karma_events",
+    "policyname": "karma events admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "landing_counts",
+    "policyname": "landing counts admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "lifecycle_sends",
+    "policyname": "lifecycle sends admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "major_projects",
+    "policyname": "major projects pro read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(major_project_is_public(source, approved, review_status) AND has_active_trade_access(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings admin all",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings owner insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "marketplace_listings",
+    "policyname": "marketplace listings read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'active'::text) AND (expires_at > now())) OR (user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notification_preferences",
+    "policyname": "notif_prefs own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notification_preferences",
+    "policyname": "notif_prefs own update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notification_preferences",
+    "policyname": "notif_prefs own upsert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications own read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications own update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "onboarding_steps",
+    "policyname": "onboarding steps admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "org_karma",
+    "policyname": "org karma member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), org_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_categories",
+    "policyname": "org_categories member write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_categories",
+    "policyname": "org_categories public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_join_requests",
+    "policyname": "join requests read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()) OR (EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = organization_join_requests.organization_id) AND (m.user_id = auth.uid()) AND (m.role = ANY (ARRAY['owner'::text, 'admin'::text]))))))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members delete own or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_members",
+    "policyname": "members read own or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_property_types",
+    "policyname": "org_proptypes member write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_property_types",
+    "policyname": "org_proptypes public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_regions",
+    "policyname": "org_regions member write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organization_regions",
+    "policyname": "org_regions public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org delete by admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org insert by authenticated",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org public read approved",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((profile_status = 'approved'::text) AND (status <> 'suspended'::text)) OR is_org_member(auth.uid(), id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "organizations",
+    "policyname": "org update by member or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(is_org_member(auth.uid(), id) OR is_admin(auth.uid()))",
+    "with_check": "(is_org_member(auth.uid(), id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "platform_settings",
+    "policyname": "settings admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "platform_settings",
+    "policyname": "settings public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "profile_views",
+    "policyname": "profile_views insert any",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "profile_views",
+    "policyname": "profile_views read org/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "property_types",
+    "policyname": "property_types admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "property_types",
+    "policyname": "property_types public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(active OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "region_requests",
+    "policyname": "region_requests insert public",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "region_requests",
+    "policyname": "region_requests read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "region_requests",
+    "policyname": "region_requests update admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regional_waitlist",
+    "policyname": "regional_waitlist insert public",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regional_waitlist",
+    "policyname": "regional_waitlist read own/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regional_waitlist",
+    "policyname": "regional_waitlist update admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regions",
+    "policyname": "regions admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "regions",
+    "policyname": "regions public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(active OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "resources",
+    "policyname": "resources admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "resources",
+    "policyname": "resources public read published",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((status = 'published'::text) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "review_invites",
+    "policyname": "review invites member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = review_invites.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_bid_checks",
+    "policyname": "bid checks: members and admins read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(has_active_trade_access(auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_categories",
+    "policyname": "rfp_categories public read published",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(rfp_is_published(rfp_id) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_categories.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_categories",
+    "policyname": "rfp_categories write owner/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_categories.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))",
+    "with_check": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_categories.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_documents",
+    "policyname": "rfp_documents read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((visibility = 'public'::text) AND (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND (r.status = 'published'::text))))) OR ((visibility = 'paid_users'::text) AND has_active_trade_access(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND (r.status = 'published'::text))))) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_documents",
+    "policyname": "rfp_documents write owner/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))",
+    "with_check": "(EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_documents.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_admin(auth.uid())))))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_interests",
+    "policyname": "interest read involved",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), trade_organization_id) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = rfp_interests.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp delete by admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp full read paid/owner/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(((status = 'published'::text) AND has_active_trade_access(auth.uid())) OR (posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), posted_by_organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp insert by pm or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((posted_by_user_id = auth.uid()) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_posts",
+    "policyname": "rfp update by owner or admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), posted_by_organization_id) OR is_admin(auth.uid()))",
+    "with_check": "((posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), posted_by_organization_id) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "rfp_views",
+    "policyname": "rfp_views read admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "saved_rfps",
+    "policyname": "saved delete own",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "saved_rfps",
+    "policyname": "saved insert own",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "saved_rfps",
+    "policyname": "saved read own/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "signup_attribution",
+    "policyname": "signup attribution admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "site_events",
+    "policyname": "site events admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "site_page_views",
+    "policyname": "site page views admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "site_referrers",
+    "policyname": "site referrers admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "site_visitors",
+    "policyname": "site visitors admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsor_clicks",
+    "policyname": "sponsor clicks admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsor_impressions",
+    "policyname": "sponsor impressions admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "sponsors",
+    "policyname": "sponsors admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "subscriptions",
+    "policyname": "subs admin insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "subscriptions",
+    "policyname": "subs admin update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "subscriptions",
+    "policyname": "subs read member/admin",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_contacts",
+    "policyname": "talent contacts org read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_endorsements",
+    "policyname": "talent endorsements read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM talent_profiles t\n  WHERE ((t.user_id = talent_endorsements.talent_user_id) AND (t.published OR (t.user_id = auth.uid()))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_private",
+    "policyname": "talent private owner",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles owner insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "talent_profiles",
+    "policyname": "talent profiles read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(published OR (user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "town_invites",
+    "policyname": "town invites member admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR ( SELECT is_admin(auth.uid()) AS is_admin))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "town_job_addenda",
+    "policyname": "town addenda poster admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(( SELECT is_admin(auth.uid()) AS is_admin) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = town_job_addenda.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "town_job_log",
+    "policyname": "town log member admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(is_org_member(auth.uid(), organization_id) OR ( SELECT is_admin(auth.uid()) AS is_admin))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "town_job_questions",
+    "policyname": "town questions asker poster admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((asker_user_id = auth.uid()) OR ( SELECT is_admin(auth.uid()) AS is_admin) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = town_job_questions.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "town_job_results",
+    "policyname": "town results member admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(( SELECT is_admin(auth.uid()) AS is_admin) OR (EXISTS ( SELECT 1\n   FROM rfp_posts r\n  WHERE ((r.id = town_job_results.rfp_id) AND ((r.posted_by_user_id = auth.uid()) OR is_org_member(auth.uid(), r.posted_by_organization_id))))))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trade_categories",
+    "policyname": "categories admin write",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trade_categories",
+    "policyname": "categories public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(active OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trade_trials",
+    "policyname": "trade trials member read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM organization_members om\n  WHERE ((om.organization_id = trade_trials.organization_id) AND (om.user_id = auth.uid())))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trusted_list_items",
+    "policyname": "trusted list items read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM trusted_lists l\n  WHERE ((l.owner_id = trusted_list_items.owner_id) AND (l.published OR (l.owner_id = auth.uid()))))) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "trusted_lists",
+    "policyname": "trusted lists read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "qual": "(published OR (owner_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "users_profile",
+    "policyname": "profile self insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(id = auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "users_profile",
+    "policyname": "profile self read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "users_profile",
+    "policyname": "profile self update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": "((id = auth.uid()) OR is_admin(auth.uid()))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "vendor_reviews",
+    "policyname": "vendor reviews admin all",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin(auth.uid())",
+    "with_check": "is_admin(auth.uid())"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "public",
+    "tablename": "winner_claims",
+    "policyname": "winner claims own or admin read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR is_admin(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos auth insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((bucket_id = 'logos'::text) AND ((storage.foldername(name))[1] IN ( SELECT (organization_members.organization_id)::text AS organization_id\n   FROM organization_members\n  WHERE (organization_members.user_id = auth.uid()))))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((bucket_id = 'logos'::text) AND (owner = auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((bucket_id = 'logos'::text) AND (owner = auth.uid()))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "logos public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(bucket_id = 'logos'::text)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text]))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text])) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private owner read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "((bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text])) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "private owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((bucket_id = ANY (ARRAY['rfp-documents'::text, 'capability-statements'::text])) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "project-photos public read",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(bucket_id = 'project-photos'::text)",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "rfp-photos auth insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((bucket_id = 'rfp-photos'::text) AND ((storage.foldername(name))[1] IN ( SELECT (organization_members.organization_id)::text AS organization_id\n   FROM organization_members\n  WHERE (organization_members.user_id = auth.uid()))))"
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "rfp-photos owner delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "((bucket_id = 'rfp-photos'::text) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "policy",
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "rfp-photos owner update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "((bucket_id = 'rfp-photos'::text) AND ((owner = auth.uid()) OR is_admin(auth.uid())))",
+    "with_check": null
+  },
+  {
+    "kind": "function",
+    "name": "auto_enable_rls",
+    "definition": "CREATE OR REPLACE FUNCTION public.auto_enable_rls()\n RETURNS event_trigger\n LANGUAGE plpgsql\nAS $function$\r\ndeclare\r\n  obj record;\r\nbegin\r\n  for obj in\r\n    select * from pg_event_trigger_ddl_commands()\r\n    where command_tag = 'CREATE TABLE'\r\n      and schema_name = 'public'\r\n  loop\r\n    execute format('alter table %s enable row level security;', obj.object_identity);\r\n  end loop;\r\nend;\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "award_history_intel_slice",
+    "definition": "CREATE OR REPLACE FUNCTION public.award_history_intel_slice(p_country text, p_since date, p_limit integer DEFAULT 30000)\n RETURNS jsonb\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\n  select coalesce(jsonb_agg(to_jsonb(x) - 'running' order by x.award_date desc, x.id), '[]'::jsonb)\n  from (\n    select h.id, h.source, h.board_ref, h.title, h.buyer, h.winner_business_name, h.winner_is_individual,\n           h.value, h.currency, h.country, h.province, h.city, h.award_date, h.end_date, h.end_date_source,\n           h.potential_end_date, h.number_of_bids, h.trade_slugs, h.notice_url, h.attribution,\n           exists (select 1 from public.bid_results b where b.award_history_id = h.id) as has_bids,\n           coalesce(h.end_date >= current_date - 365, false) as running\n    from public.award_history h\n    where h.country = p_country\n      and (h.award_date >= p_since or h.end_date >= current_date - 365)\n    order by running desc, h.award_date desc, h.id\n    limit least(greatest(coalesce(p_limit, 30000), 1), 60000)\n  ) x;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "enforce_free_response_allowance",
+    "definition": "CREATE OR REPLACE FUNCTION public.enforce_free_response_allowance()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  used integer;\n  month_start timestamptz;\nbegin\n  if not coalesce(new.used_free_allowance, false) then\n    return new;\n  end if;\n  -- One company at a time, so two responses sent at once can't both take the last one.\n  perform pg_advisory_xact_lock(hashtextextended('pmrfp-free-responses:' || new.trade_organization_id::text, 0));\n  month_start := date_trunc('month', now() at time zone 'America/Toronto') at time zone 'America/Toronto';\n  select count(*) into used\n    from public.rfp_interests\n   where trade_organization_id = new.trade_organization_id\n     and used_free_allowance\n     and created_at >= month_start;\n  if used >= 3 then\n    raise exception 'free response limit reached' using errcode = 'P0001', hint = 'pmrfp_free_limit';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "enforce_town_invite_cap",
+    "definition": "CREATE OR REPLACE FUNCTION public.enforce_town_invite_cap()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  used integer;\n  day_start timestamptz;\nbegin\n  if new.status <> 'sent' then\n    return new;\n  end if;\n  perform pg_advisory_xact_lock(hashtextextended('pmrfp-town-invites:' || new.organization_id::text, 0));\n  day_start := date_trunc('day', now() at time zone 'America/Toronto') at time zone 'America/Toronto';\n  select count(*) into used\n    from public.town_invites\n   where organization_id = new.organization_id\n     and status = 'sent'\n     and created_at >= day_start;\n  if used >= 50 then\n    raise exception 'town invite limit reached' using errcode = 'P0001', hint = 'pmrfp_town_invite_cap';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "follow_buyer",
+    "definition": "CREATE OR REPLACE FUNCTION public.follow_buyer(p_user uuid, p_org uuid, p_key text, p_limit integer)\n RETURNS text\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  used integer;\nbegin\n  -- One person at a time, so two follows sent at once can't both take the last free slot.\n  perform pg_advisory_xact_lock(hashtextextended('pmrfp-buyer-follows:' || p_user::text, 0));\n  if exists (select 1 from public.buyer_follows where user_id = p_user and buyer_slug = p_key) then\n    return 'already';\n  end if;\n  if p_limit is not null then\n    select count(*) into used from public.buyer_follows where user_id = p_user;\n    if used >= p_limit then\n      return 'limit';\n    end if;\n  end if;\n  insert into public.buyer_follows (user_id, org_id, buyer_slug) values (p_user, p_org, p_key)\n  on conflict (user_id, buyer_slug) do nothing;\n  return 'followed';\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_bump_view",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_bump_view(tid uuid)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  update public.forum_threads set view_count = view_count + 1 where id = tid and status = 'approved';\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_poll_results",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_poll_results(pid uuid)\n RETURNS TABLE(option_id uuid, votes integer)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select o.id, count(v.user_id)::integer\n  from public.forum_poll_options o\n  left join public.forum_poll_votes v on v.option_id = o.id\n  where o.poll_id = pid\n    and (\n      exists (select 1 from public.forum_poll_votes mine where mine.poll_id = pid and mine.user_id = auth.uid())\n      or public.is_admin(auth.uid())\n    )\n  group by o.id;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_posts_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_posts_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare r record; cid uuid;\nbegin\n  r := coalesce(new, old);\n  perform public.forum_refresh_thread(r.thread_id);\n  select category_id into cid from public.forum_threads where id = r.thread_id;\n  if cid is not null then perform public.forum_refresh_category(cid); end if;\n  perform public.forum_refresh_profile(r.author_id);\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_ratings_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_ratings_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare tid uuid;\nbegin\n  tid := coalesce(new.thread_id, old.thread_id);\n  update public.forum_threads t set\n    rating_sum = (select coalesce(sum(score), 0) from public.forum_thread_ratings where thread_id = tid),\n    rating_count = (select count(*) from public.forum_thread_ratings where thread_id = tid)\n  where t.id = tid;\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_refresh_category",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_refresh_category(cid uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  update public.forum_categories c set\n    thread_count = (select count(*) from public.forum_threads t where t.category_id = cid and t.status = 'approved'),\n    post_count = (select count(*) + coalesce(sum(t.reply_count), 0) from public.forum_threads t where t.category_id = cid and t.status = 'approved'),\n    last_post_at = (select max(t.last_post_at) from public.forum_threads t where t.category_id = cid and t.status = 'approved'),\n    last_thread_id = (select t.id from public.forum_threads t where t.category_id = cid and t.status = 'approved' order by t.last_post_at desc limit 1)\n  where c.id = cid;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_refresh_profile",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_refresh_profile(uid uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  update public.forum_profiles p set\n    post_count = (select count(*) from public.forum_threads where author_id = uid and status = 'approved')\n               + (select count(*) from public.forum_posts where author_id = uid and status = 'approved'),\n    reputation = case when p.is_system then 0\n                 else (select coalesce(sum(points), 0) from public.forum_reputation_events where user_id = uid) end\n  where p.user_id = uid;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_refresh_thread",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_refresh_thread(tid uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  n integer; w integer; last_at timestamptz; last_user uuid;\nbegin\n  select count(*), coalesce(sum(body_words), 0) into n, w\n    from public.forum_posts where thread_id = tid and status = 'approved';\n  select created_at, author_id into last_at, last_user\n    from public.forum_posts where thread_id = tid and status = 'approved'\n    order by created_at desc limit 1;\n  update public.forum_threads t set\n    reply_count = n,\n    words_total = t.body_words + w,\n    last_post_at = coalesce(last_at, t.created_at),\n    last_post_user_id = coalesce(last_user, t.author_id)\n  where t.id = tid;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_reputation_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_reputation_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  perform public.forum_refresh_profile(coalesce(new.user_id, old.user_id));\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_threads_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_threads_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  if tg_op <> 'DELETE' then\n    perform public.forum_refresh_thread(new.id);\n    perform public.forum_refresh_category(new.category_id);\n    perform public.forum_refresh_profile(new.author_id);\n  end if;\n  if tg_op <> 'INSERT' then\n    perform public.forum_refresh_category(old.category_id);\n  end if;\n  if tg_op = 'DELETE' then perform public.forum_refresh_profile(old.author_id); end if;\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "forum_votes_changed",
+    "definition": "CREATE OR REPLACE FUNCTION public.forum_votes_changed()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare pid uuid;\nbegin\n  pid := coalesce(new.post_id, old.post_id);\n  update public.forum_posts set upvote_count = (select count(*) from public.forum_post_votes where post_id = pid) where id = pid;\n  return null;\nend $function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_organization_privileged",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_organization_privileged()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  if auth.uid() is null or public.is_admin(auth.uid()) then\r\n    return new;\r\n  end if;\r\n  if new.profile_status is distinct from old.profile_status\r\n     and new.profile_status not in ('draft', 'pending_review') then\r\n    raise exception 'Only an administrator can set profile_status to %', new.profile_status;\r\n  end if;\r\n  if new.status is distinct from old.status then\r\n    raise exception 'Only an administrator can change organization status';\r\n  end if;\r\n  if new.verified is distinct from old.verified then\r\n    raise exception 'Only an administrator can change verification';\r\n  end if;\r\n  if new.featured is distinct from old.featured then\r\n    raise exception 'Only an administrator can change featured status';\r\n  end if;\r\n  return new;\r\nend;\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_rfp_post_status",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_rfp_post_status()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  uid uuid := auth.uid();\nbegin\n  -- The service role, SQL jobs (no signed-in user) and admins: unchanged.\n  if uid is null or public.is_admin(uid) then\n    return new;\n  end if;\n  if tg_op = 'INSERT' then\n    if new.status not in ('draft', 'pending_review') or new.published_at is not null then\n      raise exception 'A new listing waits for PMRFP review' using errcode = '42501';\n    end if;\n    return new;\n  end if;\n  if new.status is distinct from old.status and new.status in ('published', 'rejected') then\n    raise exception 'Only PMRFP review can publish or reject a listing' using errcode = '42501';\n  end if;\n  if new.published_at is distinct from old.published_at then\n    raise exception 'Only PMRFP review can publish a listing' using errcode = '42501';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_sealed_interest",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_sealed_interest()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  if exists (select 1 from public.rfp_posts r where r.id = new.rfp_id and r.sealed)\n    and coalesce(current_setting('pmrfp.sealed_opening', true), '') <> new.rfp_id::text then\n    raise exception 'Quotes on this job are sealed until closing' using errcode = 'P0001', hint = 'pmrfp_sealed';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_sealed_post",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_sealed_post()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  if new.sealed is distinct from old.sealed then\n    if old.status not in ('draft', 'pending_review')\n      or exists (select 1 from sealed_box.quotes q where q.rfp_id = old.id) then\n      raise exception 'A post''s sealed setting is fixed once it is live' using errcode = '42501', hint = 'pmrfp_sealed_fixed';\n    end if;\n  end if;\n  if old.sealed then\n    if new.buyer_key is distinct from old.buyer_key then\n      raise exception 'A sealed post keeps its town' using errcode = '42501', hint = 'pmrfp_sealed_fixed';\n    end if;\n    if new.deadline is distinct from old.deadline\n      and (now() >= public.town_closes_at(old.deadline, old.buyer_key)\n           or exists (select 1 from sealed_box.openings o where o.rfp_id = old.id and o.status in ('requested', 'opened'))) then\n      raise exception 'The sealed box has closed: its closing date can''t move' using errcode = '42501', hint = 'pmrfp_sealed_closed';\n    end if;\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_town_answer",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_town_answer()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nbegin\n  if old.status = 'answered' and (\n    new.answer is distinct from old.answer\n    or new.public_question is distinct from old.public_question\n    or new.question is distinct from old.question\n    or new.status is distinct from old.status\n  ) then\n    raise exception 'A question is answered once' using errcode = '42501';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_town_interest",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_town_interest()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  src text;\n  kind text;\nbegin\n  select source_type, post_kind into src, kind from public.rfp_posts where id = new.rfp_id;\n  if src = 'public_buyer_direct' then\n    if kind = 'tender_mirror' then\n      raise exception 'Bids on this tender go to the official portal' using errcode = 'P0001', hint = 'pmrfp_official_portal';\n    end if;\n    -- Responding to a public buyer is always free: never one of the 3 a month.\n    new.used_free_allowance := false;\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_town_job_results",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_town_job_results()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  if new.recommended_interest_id is not null\n    and not exists (select 1 from public.rfp_interests i where i.id = new.recommended_interest_id and i.rfp_id = new.rfp_id) then\n    raise exception 'Recommend one of this post''s own responses' using errcode = '23514';\n  end if;\n  if new.award_interest_id is not null\n    and not exists (select 1 from public.rfp_interests i where i.id = new.award_interest_id and i.rfp_id = new.rfp_id) then\n    raise exception 'Award one of this post''s own responses' using errcode = '23514';\n  end if;\n  new.updated_at := now();\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_town_post",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_town_post()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  uid uuid := auth.uid();\nbegin\n  if uid is null or public.is_admin(uid) then\n    return new;\n  end if;\n  if tg_op = 'UPDATE' and old.source_type = 'public_buyer_direct' then\n    if new.source_type is distinct from old.source_type\n      or new.buyer_key is distinct from old.buyer_key\n      or new.buyer_name is distinct from old.buyer_name\n      or new.post_kind is distinct from old.post_kind\n      or new.official_url is distinct from old.official_url\n      or new.posted_by_organization_id is distinct from old.posted_by_organization_id then\n      raise exception 'A town''s post keeps its town and kind' using errcode = '42501';\n    end if;\n    if new.deadline is distinct from old.deadline or new.question_deadline is distinct from old.question_deadline then\n      raise exception 'Change a town''s dates with an addendum' using errcode = '42501';\n    end if;\n    return new;\n  end if;\n  if new.source_type is distinct from 'public_buyer_direct' then\n    return new;\n  end if;\n  -- A new town post (or a listing turned into one): the poster's own public-buyer organization and page.\n  if new.posted_by_organization_id is null\n    or not public.is_org_member(uid, new.posted_by_organization_id)\n    or not exists (select 1 from public.organizations o where o.id = new.posted_by_organization_id and o.organization_type = 'public_buyer') then\n    raise exception 'Only a public buyer posts as a town' using errcode = '42501';\n  end if;\n  if not exists (select 1 from public.buyer_pages p where p.buyer_key = new.buyer_key and p.organization_id = new.posted_by_organization_id)\n    and not exists (select 1 from public.buyer_claims c where c.buyer_key = new.buyer_key and c.user_id = uid and c.status in ('pending', 'verified')) then\n    raise exception 'Post as your own town''s page' using errcode = '42501';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_users_profile_insert",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_users_profile_insert()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  -- Service role / trigger context (no auth.uid()) and admins may set any role.\n  if auth.uid() is null or public.is_admin(auth.uid()) then\n    return new;\n  end if;\n  if new.primary_role in ('admin', 'super_admin') then\n    raise exception 'Not authorized to set primary_role';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "guard_users_profile_privileged",
+    "definition": "CREATE OR REPLACE FUNCTION public.guard_users_profile_privileged()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  if auth.uid() is null or public.is_admin(auth.uid()) then\r\n    return new;\r\n  end if;\r\n  if new.primary_role is distinct from old.primary_role then\r\n    raise exception 'Not authorized to change primary_role';\r\n  end if;\r\n  if new.status is distinct from old.status then\r\n    raise exception 'Not authorized to change account status';\r\n  end if;\r\n  return new;\r\nend;\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "handle_new_user",
+    "definition": "CREATE OR REPLACE FUNCTION public.handle_new_user()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  requested text := nullif(new.raw_user_meta_data->>'primary_role', '');\nbegin\n  insert into public.users_profile (id, email, full_name, primary_role)\n  values (\n    new.id,\n    coalesce(new.email, ''),\n    coalesce(new.raw_user_meta_data->>'full_name', ''),\n    case\n      when requested in ('trade', 'property_manager', 'supplier', 'real_estate_agent', 'visitor', 'talent', 'public_buyer') then requested\n      else 'trade'\n    end\n  )\n  on conflict (id) do nothing;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "has_active_trade_access",
+    "definition": "CREATE OR REPLACE FUNCTION public.has_active_trade_access(uid uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (\n    select 1\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    join public.subscriptions s on s.organization_id = o.id\n    where om.user_id = uid\n      and o.organization_type in ('trade_company','supplier')\n      and o.status <> 'suspended'\n      and s.status in ('active','comped')\n      and s.tier in ('pro','featured')\n  )\n  or exists (\n    select 1\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    join public.trade_trials t on t.organization_id = o.id\n    where om.user_id = uid\n      and o.organization_type = 'trade_company'\n      and o.status <> 'suspended'\n      and t.ends_at > now()\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "has_intel_access",
+    "definition": "CREATE OR REPLACE FUNCTION public.has_intel_access(uid uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select public.is_admin(uid) or exists (\n    select 1\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    join public.intel_access i on i.organization_id = o.id\n    where om.user_id = uid\n      and o.status <> 'suspended'\n      and i.status in ('active','comped','trialing')\n      and (i.expires_at is null or i.expires_at > now())\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "is_admin",
+    "definition": "CREATE OR REPLACE FUNCTION public.is_admin(uid uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n  select exists (\r\n    select 1 from public.users_profile p\r\n    where p.id = uid\r\n      and p.primary_role in ('admin','super_admin')\r\n      and p.status = 'active'\r\n  );\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "is_org_member",
+    "definition": "CREATE OR REPLACE FUNCTION public.is_org_member(uid uuid, org uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n  select exists (\r\n    select 1 from public.organization_members om\r\n    where om.user_id = uid and om.organization_id = org\r\n  );\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "major_project_is_public",
+    "definition": "CREATE OR REPLACE FUNCTION public.major_project_is_public(p_source text, p_approved boolean, p_review_status text)\n RETURNS boolean\n LANGUAGE sql\n IMMUTABLE\nAS $function$\n  select coalesce(p_review_status, 'pending') <> 'rejected'\n     and (p_source <> 'manual' or coalesce(p_approved, false));\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "marketplace_increment_views",
+    "definition": "CREATE OR REPLACE FUNCTION public.marketplace_increment_views(p_slug text)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  update public.marketplace_listings set views = views + 1\n  where slug = p_slug and status = 'active' and expires_at > now();\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "marketplace_listings_guard",
+    "definition": "CREATE OR REPLACE FUNCTION public.marketplace_listings_guard()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  privileged boolean := coalesce(auth.role(), '') = 'service_role' or public.is_admin(auth.uid());\nbegin\n  if privileged then\n    return new;\n  end if;\n  if tg_op = 'INSERT' then\n    new.featured_until := null;\n    new.views := 0;\n    new.expires_at := now() + interval '60 days';\n    if new.status not in ('draft','active') then\n      new.status := 'active';\n    end if;\n    return new;\n  end if;\n  new.featured_until := old.featured_until;\n  new.views := old.views;\n  new.user_id := old.user_id;\n  if old.status = 'removed' then\n    raise exception 'This listing was removed by PMRFP.';\n  end if;\n  if new.status = 'removed' then\n    new.status := old.status;\n  end if;\n  if new.expires_at > now() + interval '60 days' then\n    new.expires_at := now() + interval '60 days';\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "normalize_email",
+    "definition": "CREATE OR REPLACE FUNCTION public.normalize_email(e text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE\nAS $function$\n  select case\n    when split_part(lower(btrim(coalesce(e, ''))), '@', 2) in ('gmail.com', 'googlemail.com')\n      then replace(split_part(split_part(lower(btrim(e)), '@', 1), '+', 1), '.', '') || '@gmail.com'\n    else lower(btrim(coalesce(e, '')))\n  end\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "purge_site_tracking",
+    "definition": "CREATE OR REPLACE FUNCTION public.purge_site_tracking(p_months integer DEFAULT 13)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  -- Never shorter than 13 months, whatever the caller passes.\n  cutoff timestamptz := now() - make_interval(months => greatest(13, coalesce(p_months, 13)));\n  n_events integer;\n  n_visitors integer;\n  n_pages integer;\n  n_referrers integer;\n  n_views integer;\nbegin\n  delete from public.site_events where created_at < cutoff;\n  get diagnostics n_events = row_count;\n  delete from public.site_visitors where day < cutoff::date;\n  get diagnostics n_visitors = row_count;\n  delete from public.site_page_views where day < cutoff::date;\n  get diagnostics n_pages = row_count;\n  delete from public.site_referrers where day < cutoff::date;\n  get diagnostics n_referrers = row_count;\n  -- Only the per-visitor rows this tracking writes.\n  delete from public.rfp_views where visitor_hash is not null and created_at < cutoff;\n  get diagnostics n_views = row_count;\n  return jsonb_build_object('cutoff', cutoff, 'events', n_events, 'visitors', n_visitors, 'pages', n_pages, 'referrers', n_referrers, 'views', n_views);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "rate_limit_hit",
+    "definition": "CREATE OR REPLACE FUNCTION public.rate_limit_hit(p_key text, p_window_seconds integer, p_limit integer)\n RETURNS TABLE(allowed boolean, hits integer, reset_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  w timestamptz := to_timestamp(floor(extract(epoch from now()) / p_window_seconds) * p_window_seconds);\r\n  n integer;\r\nbegin\r\n  insert into public.rate_limit_hits as r (key, window_start, hits)\r\n  values (p_key, w, 1)\r\n  on conflict (key, window_start) do update set hits = r.hits + 1\r\n  returning r.hits into n;\r\n\r\n  -- Opportunistic cleanup (~1% of calls): drop windows older than a day.\r\n  if random() < 0.01 then\r\n    delete from public.rate_limit_hits where window_start < now() - interval '1 day';\r\n  end if;\r\n\r\n  return query select n <= p_limit, n, w + make_interval(secs => p_window_seconds);\r\nend;\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_badge_hits",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_badge_hits(p_rows jsonb)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.badge_hits as b (day, kind, slug, referrer, hits)\n  select day, kind, slug, referrer, sum(n)::int\n  from (\n    select\n      coalesce((r->>'day')::date, (now() at time zone 'America/Toronto')::date) as day,\n      r->>'kind' as kind,\n      left(r->>'slug', 120) as slug,\n      left(lower(coalesce(r->>'referrer', '')), 120) as referrer,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(case when jsonb_typeof(p_rows) = 'array' then p_rows else '[]'::jsonb end) as r\n    where r->>'kind' in ('listed', 'winner', 'karma') and coalesce(r->>'slug', '') <> ''\n  ) x\n  group by day, kind, slug, referrer\n  on conflict (day, kind, slug, referrer)\n  do update set hits = b.hits + excluded.hits;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_landings",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_landings(p_rows jsonb)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.landing_counts as l (day, channel, landing_path, visits)\n  -- Same key twice in one batch is summed first (ON CONFLICT can't touch a row twice).\n  select day, channel, landing_path, sum(n)::int\n  from (\n    select\n      coalesce((r->>'day')::date, (now() at time zone 'America/Toronto')::date) as day,\n      left(r->>'channel', 40) as channel,\n      left(coalesce(r->>'path', ''), 120) as landing_path,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(case when jsonb_typeof(p_rows) = 'array' then p_rows else '[]'::jsonb end) as r\n    where coalesce(r->>'channel', '') <> ''\n  ) x\n  group by day, channel, landing_path\n  on conflict (day, channel, landing_path)\n  do update set visits = l.visits + excluded.visits;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_site_beacon",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_site_beacon(p jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  day_re constant text := '^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$';\n  uuid_re constant text := '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';\n  hash_re constant text := '^[0-9a-f]{32}$';\n  arr jsonb;\nbegin\n  if p is null or jsonb_typeof(p) <> 'object' then\n    return;\n  end if;\n\n  arr := case when jsonb_typeof(p->'visitors') = 'array' then p->'visitors' else '[]'::jsonb end;\n  insert into public.site_visitors as v (day, visitor_hash, country, lang, signed_in)\n  select distinct on (d, h) d, h, c, l, s\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'h' as h,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      case when r->>'lang' in ('en', 'fr', 'es') then r->>'lang' else '' end as l,\n      coalesce(r->>'signed_in', 'false') = 'true' as s\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'h', '') ~ hash_re\n  ) x\n  order by d, h, s desc\n  on conflict (day, visitor_hash) do update set signed_in = v.signed_in or excluded.signed_in;\n\n  arr := case when jsonb_typeof(p->'pages') = 'array' then p->'pages' else '[]'::jsonb end;\n  insert into public.site_page_views as pv (day, path, country, views)\n  select d, path, c, sum(n)::int\n  from (\n    select\n      (r->>'day')::date as d,\n      left(r->>'path', 200) as path,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'path', '') ~ '^/' and coalesce(r->>'n', '') ~ '^\\d{1,6}$'\n  ) x\n  group by d, path, c\n  on conflict (day, path, country) do update set views = pv.views + excluded.views;\n\n  arr := case when jsonb_typeof(p->'referrers') = 'array' then p->'referrers' else '[]'::jsonb end;\n  insert into public.site_referrers as sr (day, referrer_host, country, visits)\n  select d, host, c, sum(n)::int\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'host' as host,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' else '' end as c,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'host', '') ~ '^[a-z0-9.-]{1,100}$' and coalesce(r->>'n', '') ~ '^\\d{1,6}$'\n  ) x\n  group by d, host, c\n  on conflict (day, referrer_host, country) do update set visits = sr.visits + excluded.visits;\n\n  -- Listing views. The poster's own views and admins' don't count as reach.\n  arr := case when jsonb_typeof(p->'views') = 'array' then p->'views' else '[]'::jsonb end;\n  insert into public.rfp_views (rfp_id, viewed_by_user_id, organization_id, view_day, visitor_hash, country, lang)\n  select distinct on (rp.id, x.d, x.h)\n    rp.id, u.id, m.organization_id, x.d, x.h, x.c, x.l\n  from (\n    select\n      (r->>'day')::date as d,\n      r->>'slug' as slug,\n      r->>'h' as h,\n      case when coalesce(r->>'user_id', '') ~ uuid_re then (r->>'user_id')::uuid end as uid,\n      case when coalesce(r->>'country', '') ~ '^[A-Z]{2}$' then r->>'country' end as c,\n      case when r->>'lang' in ('en', 'fr', 'es') then r->>'lang' end as l\n    from jsonb_array_elements(arr) as r\n    where coalesce(r->>'day', '') ~ day_re and coalesce(r->>'h', '') ~ hash_re and coalesce(r->>'slug', '') ~ '^[A-Za-z0-9-]{1,200}$'\n  ) x\n  join public.rfp_posts rp on rp.slug = x.slug\n  left join public.users_profile u on u.id = x.uid\n  left join lateral (\n    select om.organization_id from public.organization_members om where om.user_id = u.id limit 1\n  ) m on true\n  where (u.id is null or (rp.posted_by_user_id is distinct from u.id and u.primary_role not in ('admin', 'super_admin')))\n  on conflict (rfp_id, view_day, visitor_hash) where visitor_hash is not null and view_day is not null do nothing;\n\n  arr := case when jsonb_typeof(p->'events') = 'array' then p->'events' else '[]'::jsonb end;\n  insert into public.site_events (event, path, lang, country, role, user_id, anon_hash, utm_source, utm_medium, utm_campaign, props, created_at)\n  select\n    x.event,\n    x.path,\n    x.lang,\n    -- No request country (the Stripe webhook): the member's company country.\n    coalesce(x.country, oc.cc),\n    coalesce(x.role, case when u.primary_role ~ '^[a-z_]{1,40}$' then u.primary_role end),\n    u.id,\n    x.anon_hash,\n    x.utm_source,\n    x.utm_medium,\n    x.utm_campaign,\n    x.props,\n    x.at\n  from (\n    select\n      e->>'event' as event,\n      case when coalesce(e->>'path', '') ~ '^/' then left(e->>'path', 200) end as path,\n      case when e->>'lang' in ('en', 'fr', 'es') then e->>'lang' end as lang,\n      case when coalesce(e->>'country', '') ~ '^[A-Z]{2}$' then e->>'country' end as country,\n      case when coalesce(e->>'role', '') ~ '^[a-z_]{1,40}$' then e->>'role' end as role,\n      case when coalesce(e->>'user_id', '') ~ uuid_re then (e->>'user_id')::uuid end as uid,\n      case when coalesce(e->>'anon_hash', '') ~ hash_re then e->>'anon_hash' end as anon_hash,\n      nullif(left(e->>'utm_source', 80), '') as utm_source,\n      nullif(left(e->>'utm_medium', 80), '') as utm_medium,\n      nullif(left(e->>'utm_campaign', 80), '') as utm_campaign,\n      case when jsonb_typeof(e->'props') = 'object' and octet_length((e->'props')::text) <= 1000 then e->'props' else '{}'::jsonb end as props,\n      case\n        when coalesce(e->>'at', '') ~ '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$'\n          then least(now(), greatest(now() - interval '1 day', (e->>'at')::timestamptz))\n        else now()\n      end as at\n    from jsonb_array_elements(arr) as e\n    where e->>'event' in (\n      'signup_viewed', 'signup_step', 'signup_started', 'signup_completed',\n      'email_confirmed', 'onboarding_step', 'onboarding_completed',\n      'writer_started', 'writer_draft_generated', 'rfp_posted',\n      'pricing_viewed', 'upgrade_clicked', 'checkout_started', 'checkout_failed', 'checkout_completed',\n      'trial_started', 'follow_buyer', 'claim_started', 'claim_verified',\n      'respond_to_job', 'quote_request_posted', 'sealed_opened', 'award_published'\n    )\n  ) x\n  left join public.users_profile u on u.id = x.uid\n  left join lateral (\n    select case o.country when 'Canada' then 'CA' when 'United States' then 'US' end as cc\n    from public.organization_members om\n    join public.organizations o on o.id = om.organization_id\n    where om.user_id = u.id\n    limit 1\n  ) oc on x.country is null;\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_sponsor_click",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_sponsor_click(p_sponsor text, p_placement text, p_trade text DEFAULT ''::text, p_region text DEFAULT ''::text)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.sponsor_clicks (sponsor, placement, trade, region, clicks)\n  values (left(p_sponsor, 40), left(p_placement, 40), left(coalesce(p_trade, ''), 60), left(coalesce(p_region, ''), 60), 1)\n  on conflict (day, sponsor, placement, trade, region)\n  do update set clicks = public.sponsor_clicks.clicks + 1;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "record_sponsor_impressions",
+    "definition": "CREATE OR REPLACE FUNCTION public.record_sponsor_impressions(p_rows jsonb)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  insert into public.sponsor_impressions as si (day, sponsor, placement, trade, region, impressions)\n  -- Same key twice in one batch is summed first (ON CONFLICT can't touch a row twice).\n  select day, sponsor, placement, trade, region, sum(n)::int\n  from (\n    select\n      coalesce((r->>'day')::date, (now() at time zone 'America/Toronto')::date) as day,\n      left(r->>'sponsor', 40) as sponsor,\n      left(r->>'placement', 40) as placement,\n      left(coalesce(r->>'trade', ''), 60) as trade,\n      left(coalesce(r->>'region', ''), 60) as region,\n      greatest(0, least(100000, coalesce((r->>'n')::int, 0))) as n\n    from jsonb_array_elements(case when jsonb_typeof(p_rows) = 'array' then p_rows else '[]'::jsonb end) as r\n    where coalesce(r->>'sponsor', '') <> '' and coalesce(r->>'placement', '') <> ''\n  ) b\n  group by day, sponsor, placement, trade, region\n  on conflict (day, sponsor, placement, trade, region)\n  do update set impressions = si.impressions + excluded.impressions;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "rfp_is_published",
+    "definition": "CREATE OR REPLACE FUNCTION public.rfp_is_published(p_rfp_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n  select exists (\r\n    select 1 from public.rfp_posts r\r\n    where r.id = p_rfp_id and r.status = 'published'\r\n  );\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "rls_auto_enable",
+    "definition": "CREATE OR REPLACE FUNCTION public.rls_auto_enable()\n RETURNS event_trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog'\nAS $function$\nDECLARE\n  cmd record;\nBEGIN\n  FOR cmd IN\n    SELECT *\n    FROM pg_event_trigger_ddl_commands()\n    WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')\n      AND object_type IN ('table','partitioned table')\n  LOOP\n     IF cmd.schema_name IS NOT NULL AND cmd.schema_name IN ('public') AND cmd.schema_name NOT IN ('pg_catalog','information_schema') AND cmd.schema_name NOT LIKE 'pg_toast%' AND cmd.schema_name NOT LIKE 'pg_temp%' THEN\n      BEGIN\n        EXECUTE format('alter table if exists %s enable row level security', cmd.object_identity);\n        RAISE LOG 'rls_auto_enable: enabled RLS on %', cmd.object_identity;\n      EXCEPTION\n        WHEN OTHERS THEN\n          RAISE LOG 'rls_auto_enable: failed to enable RLS on %', cmd.object_identity;\n      END;\n     ELSE\n        RAISE LOG 'rls_auto_enable: skip % (either system schema or not in enforced list: %.)', cmd.object_identity, cmd.schema_name;\n     END IF;\n  END LOOP;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_box_state",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_box_state(p_rfp uuid, p_actor uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  op sealed_box.openings%rowtype;\n  closes timestamptz;\n  received integer;\n  withdrawn integer;\n  opening jsonb := null;\nbegin\n  select id, sealed, deadline, buyer_key, posted_by_user_id, posted_by_organization_id into r from public.rfp_posts where id = p_rfp;\n  if not found or not r.sealed then return null; end if;\n  if actor is null or not (public.is_org_member(actor, r.posted_by_organization_id) or actor = r.posted_by_user_id or public.is_admin(actor)) then\n    return null;\n  end if;\n  closes := public.town_closes_at(r.deadline, r.buyer_key);\n  select count(*) filter (where status in ('active', 'opened')), count(*) filter (where status = 'withdrawn')\n    into received, withdrawn from sealed_box.quotes where rfp_id = p_rfp;\n  select * into op from sealed_box.openings where rfp_id = p_rfp;\n  if found then\n    opening := jsonb_build_object(\n      'status', case when op.status = 'requested' and now() > op.expires_at then 'expired' else op.status end,\n      'attempt', op.attempt,\n      'requested_by', op.requested_by,\n      'requested_by_name', sealed_box.person_name(op.requested_by),\n      'requested_at', op.requested_at,\n      'expires_at', op.expires_at,\n      'witness_name', op.witness_name,\n      'witness_email', op.witness_email,\n      'confirmed_by', op.confirmed_by,\n      'confirmed_by_name', sealed_box.person_name(op.confirmed_by),\n      'confirmed_method', op.confirmed_method,\n      'witness_confirmed_name', op.witness_confirmed_name,\n      'opened_at', op.opened_at\n    );\n  end if;\n  return jsonb_build_object(\n    'sealed', true,\n    'closes_at', closes,\n    'time_zone', public.town_time_zone(r.buyer_key),\n    'closed', closes is not null and now() >= closes,\n    'received', received,\n    'withdrawn', withdrawn,\n    'members', sealed_box.town_size(r.posted_by_organization_id),\n    'opening', opening\n  );\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_break_glass",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_break_glass(p_rfp uuid, p_actor uuid, p_reason text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  reason text := nullif(trim(coalesce(p_reason, '')), '');\n  quotes jsonb;\n  n integer;\nbegin\n  if actor is null or not public.is_admin(actor) then return jsonb_build_object('ok', false, 'error', 'not_admin'); end if;\n  if reason is null or char_length(reason) < 10 or char_length(reason) > 1000 then return jsonb_build_object('ok', false, 'error', 'reason'); end if;\n  select id, title, sealed, posted_by_organization_id into r from public.rfp_posts where id = p_rfp;\n  if not found or not r.sealed then return jsonb_build_object('ok', false, 'error', 'not_sealed'); end if;\n  select coalesce(jsonb_agg(jsonb_build_object(\n           'quote', q.id, 'status', q.status, 'company', o.name, 'organization_id', q.trade_organization_id,\n           'quote_amount', q.quote_amount, 'quote_kind', q.quote_kind, 'start_date', q.start_date,\n           'quote_notes', q.quote_notes, 'message', q.message, 'version', q.version, 'updated_at', q.updated_at\n         ) order by q.updated_at), '[]'::jsonb), count(*)::integer\n    into quotes, n\n    from sealed_box.quotes q left join public.organizations o on o.id = q.trade_organization_id\n   where q.rfp_id = p_rfp and q.status in ('active', 'opened');\n  perform sealed_box.log(p_rfp, actor, 'sealed_break_glass', jsonb_build_object('reason', reason, 'count', n, 'admin', sealed_box.person_name(actor)));\n  insert into public.notifications (user_id, type, title, message, link_url)\n  select m.user_id, 'sealed_break_glass', 'PMRFP staff looked inside your sealed quote box', left(r.title || ': ' || reason, 500), '/buyer-dashboard/jobs/' || p_rfp::text || '#record'\n    from public.organization_members m where m.organization_id = r.posted_by_organization_id;\n  return jsonb_build_object('ok', true, 'quotes', quotes, 'count', n);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_counts",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_counts(p_rfps uuid[])\n RETURNS TABLE(rfp_id uuid, received integer, opened boolean)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select r.id,\n         (select count(*)::integer from sealed_box.quotes q where q.rfp_id = r.id and q.status in ('active', 'opened')),\n         exists (select 1 from sealed_box.openings o where o.rfp_id = r.id and o.status = 'opened')\n    from public.rfp_posts r\n   where r.id = any (p_rfps) and r.sealed;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_open_cancel",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_open_cancel(p_rfp uuid, p_actor uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  op sealed_box.openings%rowtype;\nbegin\n  if actor is null then return jsonb_build_object('ok', false, 'error', 'signin'); end if;\n  select id, posted_by_organization_id into r from public.rfp_posts where id = p_rfp and sealed for update;\n  if not found then return jsonb_build_object('ok', false, 'error', 'not_sealed'); end if;\n  if not sealed_box.town_member(actor, r.posted_by_organization_id) then return jsonb_build_object('ok', false, 'error', 'not_member'); end if;\n  select * into op from sealed_box.openings where rfp_id = p_rfp for update;\n  if not found or op.status <> 'requested' then return jsonb_build_object('ok', false, 'error', 'no_request'); end if;\n  update sealed_box.openings set status = 'cancelled', witness_token_hash = null, updated_at = now() where rfp_id = p_rfp;\n  perform sealed_box.log(p_rfp, actor, 'opening_cancelled', '{}'::jsonb);\n  return jsonb_build_object('ok', true);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_open_confirm",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_open_confirm(p_rfp uuid, p_actor uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  op sealed_box.openings%rowtype;\n  n integer;\nbegin\n  if actor is null then return jsonb_build_object('ok', false, 'error', 'signin'); end if;\n  select id, sealed, posted_by_organization_id into r from public.rfp_posts where id = p_rfp for update;\n  if not found or not r.sealed then return jsonb_build_object('ok', false, 'error', 'not_sealed'); end if;\n  if not sealed_box.town_member(actor, r.posted_by_organization_id) then return jsonb_build_object('ok', false, 'error', 'not_member'); end if;\n  select * into op from sealed_box.openings where rfp_id = p_rfp for update;\n  if not found or op.status in ('cancelled', 'expired') then return jsonb_build_object('ok', false, 'error', 'no_request'); end if;\n  if op.status = 'opened' then return jsonb_build_object('ok', false, 'error', 'already_open'); end if;\n  if now() > op.expires_at then\n    update sealed_box.openings set status = 'expired', witness_token_hash = null, updated_at = now() where rfp_id = p_rfp;\n    perform sealed_box.log(p_rfp, null, 'opening_expired', jsonb_build_object('requested_at', op.requested_at, 'expires_at', op.expires_at));\n    return jsonb_build_object('ok', false, 'error', 'expired');\n  end if;\n  if op.requested_by is not distinct from actor then return jsonb_build_object('ok', false, 'error', 'same_person'); end if;\n  n := sealed_box.open_box(p_rfp, actor, 'member', null);\n  return jsonb_build_object('ok', true, 'opened', n);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_open_request",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_open_request(p_rfp uuid, p_actor uuid, p_witness_name text DEFAULT NULL::text, p_witness_email text DEFAULT NULL::text, p_token_hash text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  op sealed_box.openings%rowtype;\n  closes timestamptz;\n  size integer;\n  wname text := nullif(trim(coalesce(p_witness_name, '')), '');\n  wemail text := nullif(lower(trim(coalesce(p_witness_email, ''))), '');\n  mine text;\n  next_attempt integer := 1;\n  expires timestamptz := now() + interval '7 days';\nbegin\n  if actor is null then return jsonb_build_object('ok', false, 'error', 'signin'); end if;\n  select id, sealed, status, deadline, buyer_key, posted_by_organization_id into r from public.rfp_posts where id = p_rfp for update;\n  if not found or not r.sealed then return jsonb_build_object('ok', false, 'error', 'not_sealed'); end if;\n  if not sealed_box.town_member(actor, r.posted_by_organization_id) then return jsonb_build_object('ok', false, 'error', 'not_member'); end if;\n  closes := public.town_closes_at(r.deadline, r.buyer_key);\n  if closes is null or now() < closes then return jsonb_build_object('ok', false, 'error', 'not_closed', 'closes_at', closes); end if;\n  if r.status not in ('published', 'closed', 'expired') then return jsonb_build_object('ok', false, 'error', 'not_open'); end if;\n  select * into op from sealed_box.openings where rfp_id = p_rfp for update;\n  if found then\n    if op.status = 'opened' then return jsonb_build_object('ok', false, 'error', 'already_open'); end if;\n    if op.status = 'requested' and now() <= op.expires_at then return jsonb_build_object('ok', false, 'error', 'pending', 'expires_at', op.expires_at); end if;\n    if op.status = 'requested' then\n      update sealed_box.openings set status = 'expired', witness_token_hash = null, updated_at = now() where rfp_id = p_rfp;\n      perform sealed_box.log(p_rfp, null, 'opening_expired', jsonb_build_object('requested_at', op.requested_at, 'expires_at', op.expires_at));\n    end if;\n    next_attempt := op.attempt + 1;\n  end if;\n  size := sealed_box.town_size(r.posted_by_organization_id);\n  if wemail is not null or wname is not null then\n    if size > 1 then return jsonb_build_object('ok', false, 'error', 'use_colleague'); end if;\n    if wname is null or char_length(wname) < 2 or char_length(wname) > 120 then return jsonb_build_object('ok', false, 'error', 'witness_name'); end if;\n    if wemail is null or char_length(wemail) > 254 or wemail !~ '^[^@[:space:]]+@[^@[:space:]]+\\.[a-z]{2,}$' then return jsonb_build_object('ok', false, 'error', 'witness_email'); end if;\n    select lower(email) into mine from public.users_profile where id = actor;\n    if mine is not null and mine = wemail then return jsonb_build_object('ok', false, 'error', 'witness_self'); end if;\n    if p_token_hash is null or p_token_hash !~ '^[0-9a-f]{64}$' then return jsonb_build_object('ok', false, 'error', 'invalid'); end if;\n  elsif size < 2 then\n    return jsonb_build_object('ok', false, 'error', 'needs_witness');\n  end if;\n  insert into sealed_box.openings (rfp_id, status, attempt, requested_by, requested_at, expires_at, witness_name, witness_email, witness_token_hash, confirmed_by, confirmed_method, witness_confirmed_name, opened_at, updated_at)\n  values (p_rfp, 'requested', next_attempt, actor, now(), expires, wname, wemail, case when wemail is null then null else p_token_hash end, null, null, null, null, now())\n  on conflict (rfp_id) do update set\n    status = 'requested', attempt = excluded.attempt, requested_by = excluded.requested_by, requested_at = excluded.requested_at,\n    expires_at = excluded.expires_at, witness_name = excluded.witness_name, witness_email = excluded.witness_email,\n    witness_token_hash = excluded.witness_token_hash, confirmed_by = null, confirmed_method = null,\n    witness_confirmed_name = null, opened_at = null, updated_at = now();\n  perform sealed_box.log(p_rfp, actor, 'opening_requested', jsonb_build_object('witness', wname, 'expires_at', expires, 'attempt', next_attempt));\n  return jsonb_build_object('ok', true, 'expires_at', expires, 'witness', wemail is not null, 'members', size);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_open_witness",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_open_witness(p_rfp uuid, p_token text, p_name text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  op sealed_box.openings%rowtype;\n  n integer;\n  typed text := nullif(trim(coalesce(p_name, '')), '');\nbegin\n  perform 1 from public.rfp_posts where id = p_rfp and sealed for update;\n  if not found then return jsonb_build_object('ok', false, 'error', 'bad_link'); end if;\n  select * into op from sealed_box.openings where rfp_id = p_rfp for update;\n  if not found or op.status <> 'requested' or op.witness_token_hash is null or p_token is null\n    or encode(sha256(convert_to(p_token, 'UTF8')), 'hex') <> op.witness_token_hash then\n    return jsonb_build_object('ok', false, 'error', 'bad_link');\n  end if;\n  if now() > op.expires_at then\n    update sealed_box.openings set status = 'expired', witness_token_hash = null, updated_at = now() where rfp_id = p_rfp;\n    perform sealed_box.log(p_rfp, null, 'opening_expired', jsonb_build_object('requested_at', op.requested_at, 'expires_at', op.expires_at));\n    return jsonb_build_object('ok', false, 'error', 'expired');\n  end if;\n  if typed is null or char_length(typed) < 2 or char_length(typed) > 120 then return jsonb_build_object('ok', false, 'error', 'witness_name'); end if;\n  n := sealed_box.open_box(p_rfp, null, 'witness', typed);\n  return jsonb_build_object('ok', true, 'opened', n);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_open_witness_relink",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_open_witness_relink(p_rfp uuid, p_actor uuid, p_token_hash text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  op sealed_box.openings%rowtype;\nbegin\n  if actor is null then return jsonb_build_object('ok', false, 'error', 'signin'); end if;\n  if p_token_hash is null or p_token_hash !~ '^[0-9a-f]{64}$' then return jsonb_build_object('ok', false, 'error', 'invalid'); end if;\n  select id, posted_by_organization_id into r from public.rfp_posts where id = p_rfp and sealed for update;\n  if not found then return jsonb_build_object('ok', false, 'error', 'not_sealed'); end if;\n  if not sealed_box.town_member(actor, r.posted_by_organization_id) then return jsonb_build_object('ok', false, 'error', 'not_member'); end if;\n  select * into op from sealed_box.openings where rfp_id = p_rfp for update;\n  if not found or op.status <> 'requested' or op.witness_email is null or now() > op.expires_at then\n    return jsonb_build_object('ok', false, 'error', 'no_request');\n  end if;\n  update sealed_box.openings set witness_token_hash = p_token_hash, updated_at = now() where rfp_id = p_rfp;\n  perform sealed_box.log(p_rfp, actor, 'opening_link_resent', jsonb_build_object('witness', op.witness_name));\n  return jsonb_build_object('ok', true, 'witness_email', op.witness_email, 'witness_name', op.witness_name, 'expires_at', op.expires_at);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_quote_own",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_quote_own(p_rfp uuid, p_actor uuid, p_org uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  q sealed_box.quotes%rowtype;\n  r record;\nbegin\n  if actor is null or not public.is_org_member(actor, p_org) then return null; end if;\n  select id, deadline, buyer_key into r from public.rfp_posts where id = p_rfp and sealed;\n  if not found then return null; end if;\n  select * into q from sealed_box.quotes where rfp_id = p_rfp and trade_organization_id = p_org;\n  if not found then return null; end if;\n  return jsonb_build_object(\n    'id', q.id, 'status', q.status, 'version', q.version,\n    'message', q.message, 'relevant_experience', q.relevant_experience, 'availability', q.availability,\n    'quote_amount', q.quote_amount, 'quote_kind', q.quote_kind, 'quote_notes', q.quote_notes,\n    'start_date', q.start_date, 'case_study_ids', to_jsonb(q.case_study_ids), 'lang', q.lang,\n    'created_at', q.created_at, 'updated_at', q.updated_at, 'withdrawn_at', q.withdrawn_at, 'opened_at', q.opened_at,\n    'interest_id', q.interest_id,\n    'closes_at', public.town_closes_at(r.deadline, r.buyer_key)\n  );\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_quote_submit",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_quote_submit(p_rfp uuid, p_actor uuid, p_org uuid, p_message text, p_experience text DEFAULT NULL::text, p_availability text DEFAULT NULL::text, p_amount numeric DEFAULT NULL::numeric, p_kind text DEFAULT NULL::text, p_notes text DEFAULT NULL::text, p_start date DEFAULT NULL::date, p_case_study_ids uuid[] DEFAULT '{}'::uuid[], p_lang text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  o record;\n  q sealed_box.quotes%rowtype;\n  closes timestamptz;\n  ev text;\n  msg text := nullif(trim(coalesce(p_message, '')), '');\nbegin\n  if actor is null then return jsonb_build_object('ok', false, 'error', 'signin'); end if;\n  -- Lock the post: submissions, the closing date and the opening take turns.\n  select id, sealed, status, deadline, buyer_key, posted_by_user_id, posted_by_organization_id into r\n    from public.rfp_posts where id = p_rfp for update;\n  if not found or not r.sealed then return jsonb_build_object('ok', false, 'error', 'not_sealed'); end if;\n  if not public.is_org_member(actor, p_org) then return jsonb_build_object('ok', false, 'error', 'not_member'); end if;\n  if p_org = r.posted_by_organization_id or actor = r.posted_by_user_id then return jsonb_build_object('ok', false, 'error', 'own_job'); end if;\n  select organization_type, status into o from public.organizations where id = p_org;\n  if not found or o.organization_type not in ('trade_company', 'supplier') then return jsonb_build_object('ok', false, 'error', 'role'); end if;\n  if o.status = 'suspended' then return jsonb_build_object('ok', false, 'error', 'suspended'); end if;\n  closes := public.town_closes_at(r.deadline, r.buyer_key);\n  if closes is not null and now() >= closes then\n    -- Refused, and recorded (no identity: the box is still sealed).\n    perform sealed_box.log(p_rfp, null, 'sealed_quote_late', jsonb_build_object('closes_at', closes));\n    return jsonb_build_object('ok', false, 'error', 'late', 'closes_at', closes);\n  end if;\n  if r.status <> 'published' or closes is null then return jsonb_build_object('ok', false, 'error', 'not_open'); end if;\n  if msg is null or char_length(msg) > 2000\n    or (p_amount is not null and (p_amount < 0 or p_amount > 1000000000))\n    or (p_kind is not null and p_kind not in ('estimate', 'firm'))\n    or char_length(coalesce(p_notes, '')) > 2000\n    or char_length(coalesce(p_experience, '')) > 2000\n    or char_length(coalesce(p_availability, '')) > 500\n    or cardinality(coalesce(p_case_study_ids, '{}')) > 3\n    or (p_lang is not null and p_lang not in ('en', 'fr', 'es')) then\n    return jsonb_build_object('ok', false, 'error', 'invalid');\n  end if;\n\n  select * into q from sealed_box.quotes where rfp_id = p_rfp and trade_organization_id = p_org for update;\n  if not found then\n    insert into sealed_box.quotes (rfp_id, trade_organization_id, submitted_by_user_id, message, relevant_experience, availability, quote_amount, quote_kind, quote_notes, start_date, case_study_ids, lang)\n    values (p_rfp, p_org, actor, msg, nullif(trim(coalesce(p_experience, '')), ''), nullif(trim(coalesce(p_availability, '')), ''), p_amount, case when p_amount is null then null else p_kind end, nullif(trim(coalesce(p_notes, '')), ''), p_start, coalesce(p_case_study_ids, '{}'), p_lang)\n    returning * into q;\n    ev := 'sealed_quote_received';\n  elsif q.status = 'opened' then\n    return jsonb_build_object('ok', false, 'error', 'late', 'closes_at', closes);\n  else\n    ev := case when q.status = 'withdrawn' then 'sealed_quote_received' else 'sealed_quote_replaced' end;\n    update sealed_box.quotes set\n      status = 'active',\n      submitted_by_user_id = actor,\n      message = msg,\n      relevant_experience = nullif(trim(coalesce(p_experience, '')), ''),\n      availability = nullif(trim(coalesce(p_availability, '')), ''),\n      quote_amount = p_amount,\n      quote_kind = case when p_amount is null then null else p_kind end,\n      quote_notes = nullif(trim(coalesce(p_notes, '')), ''),\n      start_date = p_start,\n      case_study_ids = coalesce(p_case_study_ids, '{}'),\n      lang = p_lang,\n      version = least(q.version + 1, 1000),\n      withdrawn_at = null,\n      updated_at = now()\n    where id = q.id\n    returning * into q;\n  end if;\n  perform sealed_box.log(p_rfp, null, ev, jsonb_build_object('quote', q.id, 'version', q.version));\n  return jsonb_build_object('ok', true, 'id', q.id, 'action', case when ev = 'sealed_quote_replaced' then 'replaced' else 'received' end, 'version', q.version, 'closes_at', closes);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_quote_withdraw",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_quote_withdraw(p_rfp uuid, p_actor uuid, p_org uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  actor uuid := sealed_box.actor(p_actor);\n  r record;\n  q sealed_box.quotes%rowtype;\n  closes timestamptz;\nbegin\n  if actor is null then return jsonb_build_object('ok', false, 'error', 'signin'); end if;\n  select id, sealed, deadline, buyer_key into r from public.rfp_posts where id = p_rfp for update;\n  if not found or not r.sealed then return jsonb_build_object('ok', false, 'error', 'not_sealed'); end if;\n  if not public.is_org_member(actor, p_org) then return jsonb_build_object('ok', false, 'error', 'not_member'); end if;\n  closes := public.town_closes_at(r.deadline, r.buyer_key);\n  if closes is null or now() >= closes then return jsonb_build_object('ok', false, 'error', 'late', 'closes_at', closes); end if;\n  select * into q from sealed_box.quotes where rfp_id = p_rfp and trade_organization_id = p_org and status = 'active' for update;\n  if not found then return jsonb_build_object('ok', false, 'error', 'not_found'); end if;\n  update sealed_box.quotes set\n    status = 'withdrawn', message = null, relevant_experience = null, availability = null,\n    quote_amount = null, quote_kind = null, quote_notes = null, start_date = null, case_study_ids = '{}',\n    withdrawn_at = now(), updated_at = now()\n  where id = q.id;\n  perform sealed_box.log(p_rfp, null, 'sealed_quote_withdrawn', jsonb_build_object('quote', q.id, 'version', q.version));\n  return jsonb_build_object('ok', true, 'id', q.id);\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_responder_ids",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_responder_ids(p_rfp uuid)\n RETURNS uuid[]\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select coalesce(array_agg(distinct q.submitted_by_user_id) filter (where q.submitted_by_user_id is not null), '{}')\n    from sealed_box.quotes q join public.rfp_posts r on r.id = q.rfp_id\n   where q.rfp_id = p_rfp and r.sealed and q.status = 'active';\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "sealed_witness_info",
+    "definition": "CREATE OR REPLACE FUNCTION public.sealed_witness_info(p_rfp uuid, p_token text)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  r record;\n  op sealed_box.openings%rowtype;\nbegin\n  select * into op from sealed_box.openings where rfp_id = p_rfp;\n  if not found or op.witness_token_hash is null or p_token is null\n    or encode(sha256(convert_to(p_token, 'UTF8')), 'hex') <> op.witness_token_hash then\n    return jsonb_build_object('ok', false, 'error', 'bad_link');\n  end if;\n  if op.status <> 'requested' then return jsonb_build_object('ok', false, 'error', 'bad_link'); end if;\n  if now() > op.expires_at then return jsonb_build_object('ok', false, 'error', 'expired'); end if;\n  select id, title, buyer_name, deadline, buyer_key into r from public.rfp_posts where id = p_rfp;\n  return jsonb_build_object(\n    'ok', true,\n    'title', r.title,\n    'buyer_name', r.buyer_name,\n    'closes_at', public.town_closes_at(r.deadline, r.buyer_key),\n    'received', (select count(*) from sealed_box.quotes q where q.rfp_id = p_rfp and q.status = 'active'),\n    'requested_by_name', sealed_box.person_name(op.requested_by),\n    'requested_at', op.requested_at,\n    'expires_at', op.expires_at,\n    'witness_name', op.witness_name\n  );\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "set_updated_at",
+    "definition": "CREATE OR REPLACE FUNCTION public.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nbegin\r\n  new.updated_at = now();\r\n  return new;\r\nend;\r\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "site_analytics_report",
+    "definition": "CREATE OR REPLACE FUNCTION public.site_analytics_report(p_from date, p_to date)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  with rng as (\n    select greatest(least(p_from, p_to), p_to - 400) as f, p_to as t\n  ),\n  daily as (\n    select coalesce(v.day, pv.day) as day, coalesce(v.market, pv.market) as market,\n      coalesce(v.visitors, 0) as visitors, coalesce(pv.views, 0) as page_views\n    from (\n      select day, case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, count(*)::int as visitors\n      from public.site_visitors, rng where day between rng.f and rng.t group by 1, 2\n    ) v\n    full join (\n      select day, case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, sum(views)::int as views\n      from public.site_page_views, rng where day between rng.f and rng.t group by 1, 2\n    ) pv on pv.day = v.day and pv.market = v.market\n  ),\n  pages as (\n    select market, path, views from (\n      select market, path, views, row_number() over (partition by market order by views desc, path) as rk\n      from (\n        select case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, path, sum(views)::int as views\n        from public.site_page_views, rng where day between rng.f and rng.t group by 1, 2\n      ) a\n    ) b where rk <= 15\n  ),\n  refs as (\n    select market, host, visits from (\n      select market, host, visits, row_number() over (partition by market order by visits desc, host) as rk\n      from (\n        select case country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market, referrer_host as host, sum(visits)::int as visits\n        from public.site_referrers, rng where day between rng.f and rng.t group by 1, 2\n      ) a\n    ) b where rk <= 15\n  ),\n  signups as (\n    select case sa.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      sa.channel, coalesce(sa.method, 'unknown') as method, coalesce(sa.role, up.primary_role, 'unknown') as role, count(*)::int as n\n    from public.signup_attribution sa\n    left join public.users_profile up on up.id = sa.user_id\n    , rng\n    where sa.signed_up_at >= rng.f and sa.signed_up_at < rng.t + 1\n    group by 1, 2, 3, 4\n  ),\n  accounts as (\n    select count(*)::int as total,\n      count(*) filter (where sa.user_id is null)::int as without_row\n    from public.users_profile up\n    left join public.signup_attribution sa on sa.user_id = up.id\n    , rng\n    where up.created_at >= rng.f and up.created_at < rng.t + 1\n      and up.primary_role not in ('admin', 'super_admin')\n  ),\n  events as (\n    select case e.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      e.event,\n      case\n        when e.role in ('trade', 'supplier') then 'trade'\n        when e.role in ('property_manager', 'real_estate_agent') then 'pm'\n        when e.role = 'public_buyer' then 'town'\n        else 'other'\n      end as role_group,\n      count(distinct coalesce(e.user_id::text, e.anon_hash, e.id::text))::int as actors,\n      count(*)::int as n\n    from public.site_events e, rng\n    where e.created_at >= rng.f and e.created_at < rng.t + 1\n    group by 1, 2, 3\n  ),\n  -- Where unfinished sign-ups stopped: the sign-up wizard's steps and the\n  -- onboarding form's steps (and which field was refused), per market.\n  steps as (\n    select case e.country when 'CA' then 'CA' when 'US' then 'US' else 'other' end as market,\n      e.event,\n      coalesce(left(e.props->>'step', 40), '') as step,\n      coalesce(left(e.props->>'field', 40), '') as field,\n      count(distinct coalesce(e.user_id::text, e.anon_hash, e.id::text))::int as actors,\n      count(*)::int as n\n    from public.site_events e, rng\n    where e.event in ('signup_step', 'onboarding_step')\n      and e.created_at >= rng.f and e.created_at < rng.t + 1\n    group by 1, 2, 3, 4\n  )\n  select jsonb_build_object(\n    'from', (select f from rng),\n    'to', (select t from rng),\n    'daily', coalesce((select jsonb_agg(jsonb_build_object('day', day, 'market', market, 'visitors', visitors, 'page_views', page_views) order by day, market) from daily), '[]'::jsonb),\n    'top_pages', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'path', path, 'views', views) order by market, views desc, path) from pages), '[]'::jsonb),\n    'top_referrers', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'host', host, 'visits', visits) order by market, visits desc, host) from refs), '[]'::jsonb),\n    'signups', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'channel', channel, 'method', method, 'role', role, 'n', n)) from signups), '[]'::jsonb),\n    'accounts', (select jsonb_build_object('total', total, 'without_row', without_row) from accounts),\n    'events', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'event', event, 'role_group', role_group, 'actors', actors, 'n', n)) from events), '[]'::jsonb),\n    'steps', coalesce((select jsonb_agg(jsonb_build_object('market', market, 'event', event, 'step', step, 'field', field, 'actors', actors, 'n', n)) from steps), '[]'::jsonb)\n  );\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "town_closes_at",
+    "definition": "CREATE OR REPLACE FUNCTION public.town_closes_at(p_deadline date, p_buyer_key text)\n RETURNS timestamp with time zone\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\n  select case when p_deadline is null then null\n    else ((p_deadline + 1)::timestamp at time zone public.town_time_zone(p_buyer_key)) end;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "town_job_addenda_no_edit",
+    "definition": "CREATE OR REPLACE FUNCTION public.town_job_addenda_no_edit()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nbegin\n  raise exception 'An addendum is never edited: issue another one' using errcode = '42501';\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "town_job_log_append_only",
+    "definition": "CREATE OR REPLACE FUNCTION public.town_job_log_append_only()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nbegin\n  raise exception 'town_job_log is append-only' using errcode = '42501';\nend;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "town_time_zone",
+    "definition": "CREATE OR REPLACE FUNCTION public.town_time_zone(p_buyer_key text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE\n SET search_path TO 'public'\nAS $function$\n  select case split_part(coalesce(p_buyer_key, ''), '/', 1)\n    when 'british-columbia' then 'America/Vancouver'\n    when 'alberta' then 'America/Edmonton'\n    when 'saskatchewan' then 'America/Regina'\n    when 'manitoba' then 'America/Winnipeg'\n    when 'new-brunswick' then 'America/Moncton'\n    when 'nova-scotia' then 'America/Halifax'\n    when 'prince-edward-island' then 'America/Halifax'\n    when 'newfoundland-and-labrador' then 'America/St_Johns'\n    when 'yukon' then 'America/Whitehorse'\n    when 'northwest-territories' then 'America/Yellowknife'\n    when 'nunavut' then 'America/Iqaluit'\n    else 'America/Toronto'\n  end;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "track_profile_review",
+    "definition": "CREATE OR REPLACE FUNCTION public.track_profile_review()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  member_edit boolean := auth.uid() is not null and not public.is_admin(auth.uid());\n  fields text[] := array['name', 'website', 'logo_url', 'short_description', 'full_description', 'email'];\n  f text;\n  old_row jsonb;\n  new_row jsonb;\n  changes jsonb;\n  was jsonb;\nbegin\n  if tg_op = 'INSERT' then\n    if member_edit then\n      new.review_flagged_at := null;\n      new.review_changes := null;\n      new.approved_at := null;\n    end if;\n    if new.profile_status = 'approved' and new.approved_at is null then\n      new.approved_at := now();\n    end if;\n    return new;\n  end if;\n\n  if member_edit and (\n    new.approved_at is distinct from old.approved_at\n    or new.review_flagged_at is distinct from old.review_flagged_at\n    or new.review_changes is distinct from old.review_changes\n  ) then\n    raise exception 'Only an administrator can change profile review fields';\n  end if;\n\n  if new.profile_status = 'approved'\n     and old.profile_status is distinct from 'approved'\n     and new.approved_at is not distinct from old.approved_at then\n    new.approved_at := now();\n  end if;\n\n  -- A member editing an approved company that stays approved.\n  if member_edit and old.profile_status = 'approved' and new.profile_status = 'approved' then\n    old_row := to_jsonb(old);\n    new_row := to_jsonb(new);\n    changes := coalesce(old.review_changes, '{}'::jsonb);\n    foreach f in array fields loop\n      if (old_row -> f) is distinct from (new_row -> f) then\n        was := coalesce(changes -> f -> 'from', old_row -> f);\n        if was = (new_row -> f) then\n          changes := changes - f;\n        else\n          changes := changes || jsonb_build_object(f, jsonb_build_object('from', was, 'to', new_row -> f));\n        end if;\n      end if;\n    end loop;\n    if changes is distinct from coalesce(old.review_changes, '{}'::jsonb) then\n      new.review_changes := changes;\n      new.review_flagged_at := coalesce(old.review_flagged_at, now());\n    end if;\n  end if;\n\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "kind": "trigger",
+    "name": "on_auth_user_created",
+    "table_name": "users",
+    "schema": "auth",
+    "definition": "CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_votes_changed",
+    "table_name": "forum_post_votes",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_votes_changed AFTER INSERT OR DELETE ON public.forum_post_votes FOR EACH ROW EXECUTE FUNCTION forum_votes_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_posts_changed",
+    "table_name": "forum_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_posts_changed AFTER INSERT OR DELETE OR UPDATE OF status, body_words ON public.forum_posts FOR EACH ROW EXECUTE FUNCTION forum_posts_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_reputation_changed",
+    "table_name": "forum_reputation_events",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_reputation_changed AFTER INSERT OR DELETE ON public.forum_reputation_events FOR EACH ROW EXECUTE FUNCTION forum_reputation_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_ratings_changed",
+    "table_name": "forum_thread_ratings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_ratings_changed AFTER INSERT OR DELETE OR UPDATE ON public.forum_thread_ratings FOR EACH ROW EXECUTE FUNCTION forum_ratings_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "forum_threads_changed",
+    "table_name": "forum_threads",
+    "schema": "public",
+    "definition": "CREATE TRIGGER forum_threads_changed AFTER INSERT OR DELETE OR UPDATE OF status, category_id, body_words ON public.forum_threads FOR EACH ROW EXECUTE FUNCTION forum_threads_changed()"
+  },
+  {
+    "kind": "trigger",
+    "name": "job_posts_set_updated",
+    "table_name": "job_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER job_posts_set_updated BEFORE UPDATE ON public.job_posts FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "major_projects_updated_at",
+    "table_name": "major_projects",
+    "schema": "public",
+    "definition": "CREATE TRIGGER major_projects_updated_at BEFORE UPDATE ON public.major_projects FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "marketplace_listings_guard",
+    "table_name": "marketplace_listings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER marketplace_listings_guard BEFORE INSERT OR UPDATE ON public.marketplace_listings FOR EACH ROW EXECUTE FUNCTION marketplace_listings_guard()"
+  },
+  {
+    "kind": "trigger",
+    "name": "marketplace_listings_set_updated",
+    "table_name": "marketplace_listings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER marketplace_listings_set_updated BEFORE UPDATE ON public.marketplace_listings FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "notification_preferences_set_updated",
+    "table_name": "notification_preferences",
+    "schema": "public",
+    "definition": "CREATE TRIGGER notification_preferences_set_updated BEFORE UPDATE ON public.notification_preferences FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "guard_organization_privileged",
+    "table_name": "organizations",
+    "schema": "public",
+    "definition": "CREATE TRIGGER guard_organization_privileged BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION guard_organization_privileged()"
+  },
+  {
+    "kind": "trigger",
+    "name": "organizations_set_updated",
+    "table_name": "organizations",
+    "schema": "public",
+    "definition": "CREATE TRIGGER organizations_set_updated BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "organizations_track_profile_review",
+    "table_name": "organizations",
+    "schema": "public",
+    "definition": "CREATE TRIGGER organizations_track_profile_review BEFORE INSERT OR UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION track_profile_review()"
+  },
+  {
+    "kind": "trigger",
+    "name": "platform_settings_set_updated",
+    "table_name": "platform_settings",
+    "schema": "public",
+    "definition": "CREATE TRIGGER platform_settings_set_updated BEFORE UPDATE ON public.platform_settings FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "resources_set_updated",
+    "table_name": "resources",
+    "schema": "public",
+    "definition": "CREATE TRIGGER resources_set_updated BEFORE UPDATE ON public.resources FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_interests_00_sealed_guard",
+    "table_name": "rfp_interests",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_interests_00_sealed_guard BEFORE INSERT OR UPDATE OF rfp_id ON public.rfp_interests FOR EACH ROW EXECUTE FUNCTION guard_sealed_interest()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_interests_0_town_guard",
+    "table_name": "rfp_interests",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_interests_0_town_guard BEFORE INSERT ON public.rfp_interests FOR EACH ROW EXECUTE FUNCTION guard_town_interest()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_interests_free_allowance",
+    "table_name": "rfp_interests",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_interests_free_allowance BEFORE INSERT ON public.rfp_interests FOR EACH ROW EXECUTE FUNCTION enforce_free_response_allowance()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_interests_set_updated",
+    "table_name": "rfp_interests",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_interests_set_updated BEFORE UPDATE ON public.rfp_interests FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_posts_guard_sealed",
+    "table_name": "rfp_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_posts_guard_sealed BEFORE UPDATE ON public.rfp_posts FOR EACH ROW EXECUTE FUNCTION guard_sealed_post()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_posts_guard_status",
+    "table_name": "rfp_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_posts_guard_status BEFORE INSERT OR UPDATE ON public.rfp_posts FOR EACH ROW EXECUTE FUNCTION guard_rfp_post_status()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_posts_guard_town",
+    "table_name": "rfp_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_posts_guard_town BEFORE INSERT OR UPDATE ON public.rfp_posts FOR EACH ROW EXECUTE FUNCTION guard_town_post()"
+  },
+  {
+    "kind": "trigger",
+    "name": "rfp_posts_set_updated",
+    "table_name": "rfp_posts",
+    "schema": "public",
+    "definition": "CREATE TRIGGER rfp_posts_set_updated BEFORE UPDATE ON public.rfp_posts FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "sponsors_set_updated",
+    "table_name": "sponsors",
+    "schema": "public",
+    "definition": "CREATE TRIGGER sponsors_set_updated BEFORE UPDATE ON public.sponsors FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "subscriptions_set_updated",
+    "table_name": "subscriptions",
+    "schema": "public",
+    "definition": "CREATE TRIGGER subscriptions_set_updated BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "talent_profiles_set_updated",
+    "table_name": "talent_profiles",
+    "schema": "public",
+    "definition": "CREATE TRIGGER talent_profiles_set_updated BEFORE UPDATE ON public.talent_profiles FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "town_invites_daily_cap",
+    "table_name": "town_invites",
+    "schema": "public",
+    "definition": "CREATE TRIGGER town_invites_daily_cap BEFORE INSERT ON public.town_invites FOR EACH ROW EXECUTE FUNCTION enforce_town_invite_cap()"
+  },
+  {
+    "kind": "trigger",
+    "name": "town_job_addenda_no_edit",
+    "table_name": "town_job_addenda",
+    "schema": "public",
+    "definition": "CREATE TRIGGER town_job_addenda_no_edit BEFORE UPDATE ON public.town_job_addenda FOR EACH ROW EXECUTE FUNCTION town_job_addenda_no_edit()"
+  },
+  {
+    "kind": "trigger",
+    "name": "town_job_log_no_change",
+    "table_name": "town_job_log",
+    "schema": "public",
+    "definition": "CREATE TRIGGER town_job_log_no_change BEFORE DELETE OR UPDATE ON public.town_job_log FOR EACH ROW EXECUTE FUNCTION town_job_log_append_only()"
+  },
+  {
+    "kind": "trigger",
+    "name": "town_job_log_no_truncate",
+    "table_name": "town_job_log",
+    "schema": "public",
+    "definition": "CREATE TRIGGER town_job_log_no_truncate BEFORE TRUNCATE ON public.town_job_log FOR EACH STATEMENT EXECUTE FUNCTION town_job_log_append_only()"
+  },
+  {
+    "kind": "trigger",
+    "name": "town_job_questions_answer_once",
+    "table_name": "town_job_questions",
+    "schema": "public",
+    "definition": "CREATE TRIGGER town_job_questions_answer_once BEFORE UPDATE ON public.town_job_questions FOR EACH ROW EXECUTE FUNCTION guard_town_answer()"
+  },
+  {
+    "kind": "trigger",
+    "name": "town_job_results_guard",
+    "table_name": "town_job_results",
+    "schema": "public",
+    "definition": "CREATE TRIGGER town_job_results_guard BEFORE INSERT OR UPDATE ON public.town_job_results FOR EACH ROW EXECUTE FUNCTION guard_town_job_results()"
+  },
+  {
+    "kind": "trigger",
+    "name": "trusted_lists_set_updated",
+    "table_name": "trusted_lists",
+    "schema": "public",
+    "definition": "CREATE TRIGGER trusted_lists_set_updated BEFORE UPDATE ON public.trusted_lists FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "trigger",
+    "name": "guard_users_profile_insert",
+    "table_name": "users_profile",
+    "schema": "public",
+    "definition": "CREATE TRIGGER guard_users_profile_insert BEFORE INSERT ON public.users_profile FOR EACH ROW EXECUTE FUNCTION guard_users_profile_insert()"
+  },
+  {
+    "kind": "trigger",
+    "name": "guard_users_profile_privileged",
+    "table_name": "users_profile",
+    "schema": "public",
+    "definition": "CREATE TRIGGER guard_users_profile_privileged BEFORE UPDATE ON public.users_profile FOR EACH ROW EXECUTE FUNCTION guard_users_profile_privileged()"
+  },
+  {
+    "kind": "trigger",
+    "name": "users_profile_set_updated",
+    "table_name": "users_profile",
+    "schema": "public",
+    "definition": "CREATE TRIGGER users_profile_set_updated BEFORE UPDATE ON public.users_profile FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+  },
+  {
+    "kind": "view",
+    "viewname": "buyer_follow_counts",
+    "definition": " SELECT buyer_slug,\n    (count(*))::integer AS followers\n   FROM buyer_follows\n  GROUP BY buyer_slug;"
+  },
+  {
+    "kind": "view",
+    "viewname": "buyer_pages_public",
+    "definition": " SELECT p.buyer_key,\n    p.province_code,\n    p.buyer_name,\n    o.name AS organization_name,\n    p.verified_at,\n    p.logo_url,\n        CASE\n            WHEN p.show_contact THEN p.contact_email\n            ELSE NULL::text\n        END AS contact_email,\n        CASE\n            WHEN p.show_contact THEN p.contact_phone\n            ELSE NULL::text\n        END AS contact_phone,\n    p.bids_url,\n    p.platform_url,\n    p.vendor_registration_url,\n    p.intro,\n    p.upcoming,\n    p.updated_at\n   FROM (buyer_pages p\n     JOIN organizations o ON ((o.id = p.organization_id)))\n  WHERE (o.status = 'active'::text);"
+  },
+  {
+    "kind": "view",
+    "viewname": "buyer_permissions_public",
+    "definition": " SELECT buyer_slug,\n    scope,\n    status,\n    method,\n    granted_on\n   FROM buyer_permissions;"
+  },
+  {
+    "kind": "view",
+    "viewname": "d1_migration_auth_ids_20261022",
+    "definition": " SELECT id\n   FROM auth.users;"
+  },
+  {
+    "kind": "view",
+    "viewname": "gc_package_levels",
+    "definition": " SELECT r.slug,\n    k.level\n   FROM (rfp_posts r\n     JOIN org_karma_public k ON ((k.org_id = r.posted_by_organization_id)))\n  WHERE ((r.status = 'published'::text) AND (r.source_type = 'gc_package'::text) AND (k.level >= 2));"
+  },
+  {
+    "kind": "view",
+    "viewname": "karma_ledger",
+    "definition": " SELECT id,\n    org_id,\n    kind,\n    points,\n    source_type,\n    source_id,\n    reason,\n    created_at,\n    reversed_at,\n    reversed_reason\n   FROM karma_events e\n  WHERE (is_org_member(auth.uid(), org_id) OR is_admin(auth.uid()));"
+  },
+  {
+    "kind": "view",
+    "viewname": "major_project_source_counts",
+    "definition": " SELECT source,\n    count(*) FILTER (WHERE ((NOT stale) AND major_project_is_public(source, approved, review_status))) AS live,\n    count(*) FILTER (WHERE stale) AS stale,\n    count(*) FILTER (WHERE (review_status = 'pending'::text)) AS pending,\n    count(*) FILTER (WHERE (review_status = 'rejected'::text)) AS hidden,\n    max(last_seen) AS last_seen\n   FROM major_projects\n  WHERE is_admin(auth.uid())\n  GROUP BY source;"
+  },
+  {
+    "kind": "view",
+    "viewname": "major_projects_public",
+    "definition": " SELECT id,\n    slug,\n    source,\n    country,\n    name,\n    description,\n    category,\n    owner,\n    city,\n    province,\n    region_id,\n    est_value_cad,\n    size,\n    status,\n    status_raw,\n    status_date,\n    timeline,\n    trades_needed,\n    sources,\n    license,\n    evidence,\n    caveats,\n    first_seen,\n    last_seen,\n    stale,\n    stale_since,\n    status_changed_at,\n    updated_at,\n    (general_contractor IS NOT NULL) AS has_gc,\n    ((bid_list_url IS NOT NULL) OR (bid_route IS NOT NULL)) AS has_bid_route,\n    source_updated,\n    link_group\n   FROM major_projects\n  WHERE major_project_is_public(source, approved, review_status);"
+  },
+  {
+    "kind": "view",
+    "viewname": "org_karma_public",
+    "definition": " SELECT k.org_id,\n    k.level\n   FROM (org_karma k\n     JOIN organizations o ON ((o.id = k.org_id)))\n  WHERE ((o.profile_status = 'approved'::text) AND (o.status = 'active'::text) AND (NOT o.is_demo));"
+  },
+  {
+    "kind": "view",
+    "viewname": "region_category_liquidity",
+    "definition": " SELECT oreg.region_id,\n    ocat.category_id,\n    count(DISTINCT o.id) AS paid_org_count\n   FROM ((organizations o\n     JOIN organization_regions oreg ON ((oreg.organization_id = o.id)))\n     JOIN organization_categories ocat ON ((ocat.organization_id = o.id)))\n  WHERE ((o.organization_type = ANY (ARRAY['trade_company'::text, 'supplier'::text])) AND (o.status = 'active'::text) AND (o.profile_status = 'approved'::text) AND (COALESCE(o.is_demo, false) = false))\n  GROUP BY oreg.region_id, ocat.category_id;"
+  },
+  {
+    "kind": "view",
+    "viewname": "region_liquidity",
+    "definition": " SELECT oreg.region_id,\n    count(DISTINCT o.id) AS paid_org_count\n   FROM (organizations o\n     JOIN organization_regions oreg ON ((oreg.organization_id = o.id)))\n  WHERE ((o.organization_type = ANY (ARRAY['trade_company'::text, 'supplier'::text])) AND (o.status = 'active'::text) AND (o.profile_status = 'approved'::text) AND (COALESCE(o.is_demo, false) = false))\n  GROUP BY oreg.region_id;"
+  },
+  {
+    "kind": "view",
+    "viewname": "rfp_award_links",
+    "definition": " SELECT slug,\n    source_url\n   FROM rfp_posts\n  WHERE ((status = 'published'::text) AND (source_type = 'public_source'::text) AND (source_url IS NOT NULL) AND (slug ~ '-(cba|qca|tora|nsa)-[a-z0-9-]+$'::text) AND (summary ~~ 'Awarded %'::text) AND (deadline <= CURRENT_DATE));"
+  },
+  {
+    "kind": "view",
+    "viewname": "rfp_public",
+    "definition": " SELECT id,\n    title,\n    slug,\n    summary,\n    property_type_id,\n    region_id,\n    city,\n    province,\n    deadline,\n    desired_start_date,\n    source_type,\n    is_demo,\n    published_at,\n    created_at,\n    gc_project_name,\n    awarded_rfp_id\n   FROM rfp_posts\n  WHERE (status = 'published'::text);"
+  },
+  {
+    "kind": "view",
+    "viewname": "sponsors_public",
+    "definition": " SELECT id,\n    slug,\n    tier,\n    country,\n    trades,\n    regions,\n    start_date,\n    end_date,\n    status,\n        CASE\n            WHEN (status = 'approved'::text) THEN name\n            ELSE NULL::text\n        END AS name,\n        CASE\n            WHEN (status = 'approved'::text) THEN logo_url\n            ELSE NULL::text\n        END AS logo_url,\n        CASE\n            WHEN (status = 'approved'::text) THEN url\n            ELSE NULL::text\n        END AS url,\n        CASE\n            WHEN (status = 'approved'::text) THEN headline\n            ELSE NULL::text\n        END AS headline,\n        CASE\n            WHEN (status = 'approved'::text) THEN message\n            ELSE NULL::text\n        END AS message,\n        CASE\n            WHEN (status = 'approved'::text) THEN cta\n            ELSE NULL::text\n        END AS cta,\n        CASE\n            WHEN (status = 'approved'::text) THEN headline_fr\n            ELSE NULL::text\n        END AS headline_fr,\n        CASE\n            WHEN (status = 'approved'::text) THEN message_fr\n            ELSE NULL::text\n        END AS message_fr,\n        CASE\n            WHEN (status = 'approved'::text) THEN cta_fr\n            ELSE NULL::text\n        END AS cta_fr\n   FROM sponsors\n  WHERE ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'paused'::text])) AND ((end_date IS NULL) OR (end_date >= (((now() AT TIME ZONE 'America/Toronto'::text))::date - 1))));"
+  },
+  {
+    "kind": "view",
+    "viewname": "town_awards_public",
+    "definition": " SELECT x.rfp_id,\n    x.award_winner_name AS winner_name,\n        CASE\n            WHEN x.award_amount_public THEN x.award_amount\n            ELSE NULL::numeric\n        END AS amount,\n    x.award_date,\n    x.award_published_at\n   FROM (town_job_results x\n     JOIN rfp_posts r ON ((r.id = x.rfp_id)))\n  WHERE ((x.award_published_at IS NOT NULL) AND (r.source_type = 'public_buyer_direct'::text) AND (r.status = ANY (ARRAY['published'::text, 'closed'::text, 'awarded'::text, 'expired'::text])));"
+  },
+  {
+    "kind": "view",
+    "viewname": "town_job_addenda_public",
+    "definition": " SELECT a.id,\n    a.rfp_id,\n    a.number,\n    a.body,\n    a.official_url,\n    a.old_deadline,\n    a.new_deadline,\n    a.created_at\n   FROM (town_job_addenda a\n     JOIN rfp_posts r ON ((r.id = a.rfp_id)))\n  WHERE ((r.source_type = 'public_buyer_direct'::text) AND (r.status = ANY (ARRAY['published'::text, 'closed'::text, 'awarded'::text])));"
+  },
+  {
+    "kind": "view",
+    "viewname": "town_job_qa_public",
+    "definition": " SELECT q.id,\n    q.rfp_id,\n    COALESCE(q.public_question, q.question) AS question,\n    q.answer,\n    q.answered_at\n   FROM (town_job_questions q\n     JOIN rfp_posts r ON ((r.id = q.rfp_id)))\n  WHERE ((q.status = 'answered'::text) AND (r.source_type = 'public_buyer_direct'::text) AND (r.status = ANY (ARRAY['published'::text, 'closed'::text, 'awarded'::text])));"
+  },
+  {
+    "kind": "view",
+    "viewname": "town_posts_public",
+    "definition": " SELECT r.id,\n    r.slug,\n    r.title,\n    r.summary,\n    r.scope,\n    r.requirements,\n    r.submission_instructions,\n        CASE\n            WHEN r.budget_public THEN r.budget_min\n            ELSE NULL::numeric\n        END AS budget_min,\n        CASE\n            WHEN r.budget_public THEN r.budget_max\n            ELSE NULL::numeric\n        END AS budget_max,\n    r.deadline,\n    r.question_deadline,\n    r.city,\n    r.province,\n    r.status,\n    r.published_at,\n    r.buyer_key,\n    COALESCE(p.buyer_name, r.buyer_name) AS buyer_name,\n    r.post_kind,\n    r.official_url,\n    r.official_portal,\n    ((p.organization_id IS NOT NULL) AND (p.organization_id = r.posted_by_organization_id)) AS verified,\n        CASE\n            WHEN (r.contact_visibility = 'public_contact'::text) THEN r.contact_name\n            ELSE NULL::text\n        END AS contact_name,\n        CASE\n            WHEN (r.contact_visibility = 'public_contact'::text) THEN r.contact_email\n            ELSE NULL::text\n        END AS contact_email,\n        CASE\n            WHEN (r.contact_visibility = 'public_contact'::text) THEN r.contact_phone\n            ELSE NULL::text\n        END AS contact_phone\n   FROM (rfp_posts r\n     LEFT JOIN buyer_pages p ON ((p.buyer_key = r.buyer_key)))\n  WHERE ((r.source_type = 'public_buyer_direct'::text) AND (r.status = ANY (ARRAY['published'::text, 'closed'::text, 'awarded'::text])));"
+  },
+  {
+    "kind": "view",
+    "viewname": "town_sealed_public",
+    "definition": " SELECT id AS rfp_id,\n    town_closes_at(deadline, buyer_key) AS closes_at,\n    town_time_zone(buyer_key) AS time_zone,\n    ( SELECT o.opened_at\n           FROM sealed_box.openings o\n          WHERE ((o.rfp_id = r.id) AND (o.status = 'opened'::text))) AS opened_at\n   FROM rfp_posts r\n  WHERE (sealed AND (source_type = 'public_buyer_direct'::text) AND (status = ANY (ARRAY['published'::text, 'closed'::text, 'awarded'::text, 'expired'::text])));"
+  },
+  {
+    "kind": "view",
+    "viewname": "vendor_reviews_public",
+    "definition": " SELECT r.id,\n    r.organization_id,\n    r.case_study_id,\n        CASE\n            WHEN r.show_building THEN btrim(r.reviewer_name)\n            ELSE regexp_replace(btrim(r.reviewer_name), '^(\\S+)\\s+(\\S).*$'::text, '\\1 \\2.'::text)\n        END AS reviewer_display_name,\n        CASE\n            WHEN r.show_building THEN r.reviewer_company\n            ELSE NULL::text\n        END AS reviewer_company,\n    r.rating,\n    r.body,\n    r.verified_via,\n    r.reply,\n    r.reply_at,\n    r.created_at\n   FROM (vendor_reviews r\n     LEFT JOIN case_studies cs ON ((cs.id = r.case_study_id)))\n  WHERE ((r.status = 'published'::text) AND ((r.case_study_id IS NULL) OR (cs.visibility IS DISTINCT FROM 'private'::text)));"
+  },
+  {
+    "kind": "view",
+    "viewname": "winner_claims_public",
+    "definition": " SELECT c.winner_slug,\n    o.name,\n    o.slug AS org_slug,\n    o.logo_url,\n    o.short_description,\n    o.website,\n        CASE\n            WHEN (o.public_contact_visibility = 'show_contact'::text) THEN o.phone\n            ELSE NULL::text\n        END AS phone,\n        CASE\n            WHEN (o.public_contact_visibility = 'show_contact'::text) THEN o.email\n            ELSE NULL::text\n        END AS email,\n    o.city,\n    o.province,\n    o.verified,\n    c.reviewed_at AS claimed_at\n   FROM (winner_claims c\n     JOIN organizations o ON ((o.id = c.organization_id)))\n  WHERE ((c.status = 'approved'::text) AND (o.profile_status = 'approved'::text) AND (o.status = 'active'::text) AND (NOT o.is_demo));"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "issue_graphql_placeholder",
+    "event": "sql_drop",
+    "enabled": "O",
+    "function": "set_graphql_placeholder"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "pgrst_ddl_watch",
+    "event": "ddl_command_end",
+    "enabled": "O",
+    "function": "pgrst_ddl_watch"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "pgrst_drop_watch",
+    "event": "sql_drop",
+    "enabled": "O",
+    "function": "pgrst_drop_watch"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "issue_pg_cron_access",
+    "event": "ddl_command_end",
+    "enabled": "O",
+    "function": "grant_pg_cron_access"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "issue_pg_net_access",
+    "event": "ddl_command_end",
+    "enabled": "O",
+    "function": "grant_pg_net_access"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "issue_pg_graphql_access",
+    "event": "ddl_command_end",
+    "enabled": "O",
+    "function": "grant_pg_graphql_access"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "ensure_rls",
+    "event": "ddl_command_end",
+    "enabled": "O",
+    "function": "rls_auto_enable"
+  },
+  {
+    "kind": "event-trigger",
+    "name": "auto_enable_rls_trigger",
+    "event": "ddl_command_end",
+    "enabled": "O",
+    "function": "auto_enable_rls"
+  }
+]

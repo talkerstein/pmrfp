@@ -440,12 +440,17 @@ describe("BUYER_FOLLOW_ALERTS_ENABLED gates the same-day emails", () => {
   });
 
   it("the hourly cron skips straight away while the flag is off", async () => {
-    h.db = alertDb();
-    const { GET } = await import("@/app/api/cron/buyer-follow-alerts/route");
-    const res = await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts"));
-    expect(await res.json()).toEqual({ skipped: "BUYER_FOLLOW_ALERTS_ENABLED is off", enabled: false });
-    const dry = await (await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts?dry=1"))).json();
-    expect(dry).toMatchObject({ dry: true, state: "dry", wouldEmail: 1 });
+    // This fixture is dated Oct 21; the cron uses the real clock unless pinned.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+    try {
+      h.db = alertDb();
+      const { GET } = await import("@/app/api/cron/buyer-follow-alerts/route");
+      const res = await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts"));
+      expect(await res.json()).toEqual({ skipped: "BUYER_FOLLOW_ALERTS_ENABLED is off", enabled: false });
+      const dry = await (await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts?dry=1"))).json();
+      expect(dry).toMatchObject({ dry: true, state: "dry", wouldEmail: 1 });
+    } finally { vi.useRealTimers(); }
   });
 
   it("the Monday roundup reads each free follower's week", async () => {

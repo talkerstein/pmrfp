@@ -1,0 +1,15 @@
+import {readFileSync,lstatSync,writeFileSync} from 'node:fs';
+import {compare} from 'bcryptjs';
+import {readProtectedExport} from './import-plan.mjs';
+import {existingTestAccountStatements} from './existing-account-plan.mjs';
+const [exportPath,credentialPath,outputPath]=process.argv.slice(2);
+if(!exportPath||!credentialPath||!outputPath)throw Error('Export, protected test credential and new private output paths required');
+const info=lstatSync(credentialPath);if(!info.isFile()||info.isSymbolicLink()||(info.mode&0o077)!==0||info.size>4096)throw Error('Protected test credential required');
+const fixture=JSON.parse(readFileSync(credentialPath,'utf8'));
+if(fixture.email!=='d1-preview-20261022@example.invalid'||typeof fixture.password!=='string'||Buffer.byteLength(fixture.password)>72)throw Error('Existing test credential required');
+const plan=readProtectedExport(exportPath);
+const statements=existingTestAccountStatements(plan,fixture.id,readFileSync(new URL('../../workers/auth-preview/schema.sql',import.meta.url),'utf8'));
+const row=plan.accounts.find(r=>r.user.id===fixture.id&&r.user.email===fixture.email);
+if(!row||!await compare(fixture.password,row.account.password))throw Error('Existing test credential does not match current export');
+writeFileSync(outputPath,JSON.stringify({batch:statements}),{mode:0o600,flag:'wx'});
+console.log(JSON.stringify({preparedAccounts:1,customerAccounts:0,importApplied:false,workerDeployed:false,validForSeconds:900}));

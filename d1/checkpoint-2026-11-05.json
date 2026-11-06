@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-05",
+  "productionBackend": "supabase",
+  "productionCutover": false,
+  "readerExpires": "2026-11-12T10:00:00Z",
+  "registeredPublicTables": 116,
+  "enabledCaptureTriggers": 232,
+  "localSourceRecords": 141250,
+  "localRebuiltRecords": 141068,
+  "localTablesIncludingAuthIds": 117,
+  "capturedPendingReceipts": 62462,
+  "newAcknowledgements": 0,
+  "expandedNativeUploadStarted": false,
+  "activeNativeRecords": 87866,
+  "protectedLocalAuthExportAccounts": 74,
+  "nativeAuthSyntheticAccounts": 4,
+  "nativeAuthFinalChecksPassed": true,
+  "realAuthAccountsImported": 0,
+  "billingChanged": false,
+  "oldStagingBackupVerified": true,
+  "oldStagingDeletedOrReset": false,
+  "verification": "docs/d1/VERIFICATION-2026-11-05.md"
+}

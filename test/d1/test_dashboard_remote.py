@@ -1,0 +1,202 @@
+import csv,hashlib,json,os,sqlite3,sys,tempfile,unittest,io
+import urllib.error,socket,ssl
+from unittest.mock import patch
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'scripts/d1'))
+import migrate as m
+import dashboard_snapshot as d
+import remote
+from test_migrate import FixtureMixin
+
+class FakeRemote:
+    def __init__(self):self.db=sqlite3.connect(':memory:');self.db.row_factory=sqlite3.Row;self.db.execute('PRAGMA foreign_keys=ON');self.calls=0
+    def query(self,sql,params=None):
+        self.calls+=1
+        if ';' in sql.strip().rstrip(';'):
+            self.db.executescript(sql);return [{'success':True,'results':[]}]
+        cur=self.db.execute(sql,params or []);result=[dict(r) for r in cur.fetchall()];self.db.commit()
+        return [{'success':True,'results':result}]
+    def batch(self,items):
+        results=[]
+        with self.db:
+            for item in items:
+                cursor=self.db.execute(item['sql'],item.get('params',[]))
+                results.append({'success':True,'results':[dict(row) for row in cursor.fetchall()]})
+        return results
+
+class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
+    def test_dashboard_source_checksums_and_counts(self):
+        rows=self.seed();source=self.root/'export.csv'
+        with source.open('w') as f:
+            w=csv.DictWriter(f,fieldnames=['table_name','rows','source_md5','row_count']);w.writeheader()
+            # Decode a fixture snapshot back to PostgreSQL-style row objects.
+            records={t:[] for t in self.specs}
+            for line in self.snapshot(rows).read_text().splitlines():
+                r=json.loads(line)
+                if 'table' in r:records[r['table']].append(r['row'])
+            for table,rs in records.items():
+                text=m.canonical(rs);w.writerow({'table_name':table,'rows':text,'source_md5':hashlib.md5(text.encode()).hexdigest(),'row_count':len(rs)})
+        output=self.root/'converted.jsonl';d.convert(source,output);m.sync(output,self.target)
+        source.write_text(source.read_text().replace('first@example.test','other@example.test'))
+        with self.assertRaises(ValueError):d.convert(source,self.root/'corrupt.jsonl')
+        self.assertFalse((self.root/'corrupt.jsonl').exists())
+    def test_remote_complete_copy_and_tamper_detection(self):
+        s=self.snapshot(self.seed());fake=FakeRemote();r=remote.load(fake,s)
+        self.assertEqual(r['records'],3);self.assertFalse(r['cutover_ready']);remote.verify(fake,s,backup_path=self.root/'remote-backup.sqlite');m.validate(s,self.root/'remote-backup.sqlite')
+        fake.db.execute("UPDATE users_profile SET full_name='changed'");fake.db.commit()
+        with self.assertRaises(ValueError):remote.verify(fake,s)
+        fake.db.close()
+    def test_batched_readback_covers_multiple_pages_without_duplicates(self):
+        rows=self.seed();template=next(iter(rows['regions'].values()))
+        rows['regions']={}
+        for n in range(503):
+            row={**template,'id':str(n),'slug':'region-'+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        snapshot=self.snapshot(rows,'paged.jsonl');fake=FakeRemote();self.addCleanup(fake.db.close)
+        statements=[];original=fake.batch
+        def capture(items):
+            statements.extend(item['sql'] for item in items if item['sql'].startswith('SELECT *'))
+            return original(items)
+        fake.batch=capture
+        r=remote.load(fake,snapshot);self.assertEqual(r['records'],505)
+        self.assertTrue(statements);self.assertFalse(any('OFFSET' in sql for sql in statements));self.assertTrue(any('WHERE (' in sql for sql in statements))
+        remote.verify(fake,snapshot,backup_path=self.root/'paged.sqlite');m.validate(snapshot,self.root/'paged.sqlite')
+    def test_read_timeout_shrinks_select_batches_without_skipping_or_duplicating_rows(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        original=fake.batch;calls=[]
+        def interrupted(items):
+            self.assertTrue(all(item['sql'].startswith('SELECT *') for item in items));calls.append(len(items))
+            result=original(items)
+            if len(calls)==1:raise socket.timeout('response lost after SELECT execution')
+            return result
+        fake.batch=interrupted;remote.verify(fake,snapshot)
+        self.assertGreater(calls[0],1);self.assertLess(max(calls[1:]),calls[0])
+    def test_single_select_timeout_stops_without_unbounded_retries(self):
+        fake=FakeRemote();calls=[]
+        def interrupted(items):
+            calls.append(items);raise TimeoutError('unavailable read transport')
+        fake.batch=interrupted
+        with self.assertRaises(TimeoutError):remote.read_rows(fake,{'regions':self.specs['regions']})
+        self.assertEqual(len(calls),2);self.assertTrue(calls[0][0]['sql'].startswith('SELECT *'))
+        fake.db.close()
+    def test_readback_recovers_transient_tls_eof_but_never_retries_certificate_errors(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        original=fake.batch;calls=[]
+        def interrupted(items):
+            self.assertTrue(all(item['sql'].startswith('SELECT *') for item in items));calls.append(items)
+            if len(calls)==1:raise urllib.error.URLError(ssl.SSLEOFError('TLS connection lost'))
+            return original(items)
+        fake.batch=interrupted;remote.verify(fake,snapshot);self.assertGreater(len(calls),1)
+        calls.clear()
+        def interrupted_dns(items):
+            calls.append(items)
+            if len(calls)==1:raise urllib.error.URLError(socket.gaierror(socket.EAI_AGAIN,'temporary resolver failure'))
+            return original(items)
+        fake.batch=interrupted_dns;remote.verify(fake,snapshot);self.assertGreater(len(calls),1)
+        calls.clear()
+        def invalid_certificate(items):
+            calls.append(items);raise urllib.error.URLError(ssl.SSLCertVerificationError('certificate rejected'))
+        fake.batch=invalid_certificate
+        with self.assertRaises(urllib.error.URLError):remote.read_rows(fake,self.specs)
+        self.assertEqual(len(calls),1)
+    def test_parallel_verification_ranges_include_unexpected_keys_before_between_and_after_source_keys(self):
+        rows=self.seed();template=next(iter(rows['regions'].values()));rows['regions']={}
+        for n in range(503):
+            row={**template,'id':str(n+100).zfill(4),'slug':'region-'+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        snapshot=self.snapshot(rows,'range-edges.jsonl');fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        columns=list(template)
+        for extra in ['0000','0350-extra','9999']:
+            row={**template,'id':extra,'slug':'extra-'+extra}
+            fake.db.execute('INSERT INTO regions('+','.join(map(m.ident,columns))+') VALUES('+','.join('?' for _ in columns)+')',[row[c] for c in columns]);fake.db.commit()
+            with self.assertRaises(ValueError):remote.verify(fake,snapshot)
+            fake.db.execute('DELETE FROM regions WHERE id=?',(extra,));fake.db.commit()
+        # Equal counts do not hide a substituted key inside one range.
+        fake.db.execute("DELETE FROM regions WHERE id='0100'");row={**template,'id':'0000','slug':'replacement'}
+        fake.db.execute('INSERT INTO regions('+','.join(map(m.ident,columns))+') VALUES('+','.join('?' for _ in columns)+')',[row[c] for c in columns]);fake.db.commit()
+        with self.assertRaises(ValueError):remote.verify(fake,snapshot)
+    def test_parallel_ranges_preserve_sqlite_numeric_and_composite_key_order_without_offsets(self):
+        schema=self.root/'range-schema.sql';schema.write_text(m.SCHEMA.read_text()+'\nCREATE TABLE range_keys(a INTEGER,b TEXT,payload TEXT,PRIMARY KEY(a,b));')
+        specs={'range_keys':{'pk':['a','b']}};expected={'range_keys':{}}
+        fake=FakeRemote();self.addCleanup(fake.db.close);fake.db.execute('CREATE TABLE range_keys(a INTEGER,b TEXT,payload TEXT,PRIMARY KEY(a,b))')
+        for n in range(503):
+            row={'a':n,'b':str(n%7),'payload':'row-'+str(n)};expected['range_keys'][m.canonical([row['a'],row['b']])]=row;fake.db.execute('INSERT INTO range_keys VALUES(?,?,?)',(row['a'],row['b'],row['payload']))
+        fake.db.commit();original=fake.batch;groups=[]
+        def capture(items):
+            groups.append(items);return original(items)
+        fake.batch=capture
+        with patch.object(m,'SCHEMA',schema):actual=remote.read_rows(fake,specs,expected)
+        self.assertEqual(actual,expected);self.assertEqual(len(groups),1);self.assertEqual(len(groups[0]),3)
+        self.assertTrue(all('OFFSET' not in item['sql'] for item in groups[0]))
+    def test_resume_inserts_only_missing_rows_after_full_partial_readback(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        fake.query('DELETE FROM users_profile');fake.query("UPDATE _migration_manifest SET state='loading'")
+        original=fake.batch;inserted=[]
+        def capture(items):
+            inserted.extend(item for item in items if item['sql'].startswith('INSERT INTO'))
+            return original(items)
+        fake.batch=capture;remote.load(fake,snapshot)
+        self.assertEqual(len(inserted),1);self.assertIn('users_profile',inserted[0]['sql']);remote.verify(fake,snapshot)
+    def test_resume_refuses_changed_existing_rows_before_inserting_anything(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        fake.query("UPDATE users_profile SET full_name='changed'");fake.query("UPDATE _migration_manifest SET state='loading'")
+        original=fake.batch;inserted=[]
+        def capture(items):
+            inserted.extend(item for item in items if item['sql'].startswith('INSERT INTO'))
+            return original(items)
+        fake.batch=capture
+        with self.assertRaisesRegex(ValueError,'Existing staging rows'):remote.load(fake,snapshot)
+        self.assertEqual(inserted,[]);self.assertEqual(remote.manifest(fake)[0]['state'],'loading')
+    def test_validated_same_snapshot_rechecks_without_reopening_loading_state(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        original=fake.query;mutations=[]
+        def capture(sql,params=None):
+            if sql.startswith(('INSERT','UPDATE','CREATE','DELETE')):mutations.append(sql)
+            return original(sql,params)
+        fake.query=capture;remote.load(fake,snapshot);self.assertEqual(mutations,[])
+    def test_remote_refuses_unrecognized_or_different_snapshot(self):
+        fake=FakeRemote();fake.query('CREATE TABLE precious(id TEXT)')
+        with self.assertRaises(ValueError):remote.load(fake,self.snapshot(self.seed()))
+        fake.db.close();fake=FakeRemote();remote.load(fake,self.snapshot(self.seed()))
+        with self.assertRaises(ValueError):remote.load(fake,self.snapshot(self.seed(2),'second.jsonl'))
+        fake.db.close()
+    def test_row_dependencies_and_cycles(self):
+        catalog={'constraints':[{'type':'f','table_name':'child','definition':'FOREIGN KEY (parent_id) REFERENCES parent(id)'}]}
+        rows={'child':{'c':{'id':'c','parent_id':'p'}},'parent':{'p':{'id':'p'}}}
+        self.assertEqual([t for t,_ in remote.order_records(rows,catalog,{})],['parent','child'])
+        rows['child']['c']['parent_id']='missing'
+        with self.assertRaises(ValueError):remote.order_records(rows,catalog,{})
+    def test_remote_errors_classify_failure_without_exposing_sql_or_private_values(self):
+        for message,category in [('FOREIGN KEY constraint failed PRIVATE_ROW','foreign-key-constraint'),('Your account exceeded the free tier daily row write limit PRIVATE_ROW','daily-write-quota'),('Too many SQL variables PRIVATE_ROW','parameter-limit')]:
+            client=remote.Remote.__new__(remote.Remote);client.token='synthetic-token';client.wrangler_auth=False;client.url='https://api.example.invalid/d1'
+            body=json.dumps({'errors':[{'code':7500,'message':message}]}).encode()
+            failure=urllib.error.HTTPError(client.url,400,'bad request',{},io.BytesIO(body))
+            with patch('urllib.request.urlopen',side_effect=failure):
+                with self.assertRaises(RuntimeError) as error:client.request('POST','/query',{'sql':'SELECT ?','params':['PRIVATE_BIND']})
+            self.assertIn(category,str(error.exception));self.assertNotIn('PRIVATE_ROW',str(error.exception));self.assertNotIn('PRIVATE_BIND',str(error.exception));self.assertNotIn('synthetic-token',str(error.exception))
+    def test_generated_dashboard_query_is_read_only_and_complete(self):
+        query=d.sql(self.cat)
+        self.assertIn('REPEATABLE READ READ ONLY',query);self.assertIn('md5(rows)',query)
+        self.assertEqual(query.count(' AS table_name,'),len(self.specs))
+        self.assertNotIn('raw_user_meta_data',query);self.assertNotIn('encrypted_password',query)
+
+if __name__=='__main__':unittest.main()
+
+class PackedBootstrapTests(FixtureMixin, unittest.TestCase):
+    def test_packed_types_fields_and_fk_order_match_exact_snapshot(self):
+        rows=self.seed();template=next(iter(rows['regions'].values()))
+        for n in range(1201):
+            row={**template,'id':'packed-'+str(n),'slug':'packed-'+str(n),'name':'Unicode é " quote \\ newline\n'+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        snapshot=self.snapshot(rows,'packed.jsonl');fake=FakeRemote();self.addCleanup(fake.db.close)
+        batches=[];original=fake.batch
+        def capture(items):
+            if any('json_each(?)' in i['sql'] for i in items):batches.append(items)
+            return original(items)
+        fake.batch=capture;result=remote.load(fake,snapshot,packed=True)
+        self.assertEqual(result['records'],1204);self.assertTrue(batches)
+        self.assertLess(sum(len(batch) for batch in batches),15)
+        remote.verify(fake,snapshot,backup_path=self.root/'packed-backup.sqlite');m.validate(snapshot,self.root/'packed-backup.sqlite')
+    def test_packed_resume_verifies_partial_rows_and_never_overwrites_tampering(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        fake.query('DELETE FROM users_profile');fake.query("UPDATE _migration_manifest SET state='loading'")
+        remote.load(fake,snapshot,packed=True);remote.verify(fake,snapshot)
+        fake.query("UPDATE users_profile SET full_name='tampered'");fake.query("UPDATE _migration_manifest SET state='loading'")
+        with self.assertRaisesRegex(ValueError,'Existing staging rows'):remote.load(fake,snapshot,packed=True)

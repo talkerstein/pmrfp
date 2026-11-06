@@ -1,4 +1,7 @@
 import { cache } from "react";
+import { d1BoardEnabled } from "@/lib/d1/board-backend";
+import { BOARD_SHARDS, shardRange, type BoardRow } from "@/lib/d1/board-contracts";
+export { shardRange, type BoardRow } from "@/lib/d1/board-contracts";
 import { unstable_cache } from "next/cache";
 import { createReadClient } from "@/lib/supabase/read";
 import { RFPS_TAG } from "@/lib/supabase/public-cache";
@@ -31,7 +34,7 @@ import { createLimiter, createSingleFlight } from "@/lib/concurrency";
  * instead of being wrapped in unstable_cache.
  */
 
-export const SNAPSHOT_SHARDS = 16;
+export const SNAPSHOT_SHARDS = BOARD_SHARDS;
 /** Safety net only: every write through write-fetch marks the rfps tag stale. 6 h (was 10 min) because the lowest TTL on a page becomes its ISR TTL. */
 export const SNAPSHOT_REVALIDATE = 21600;
 /** PostgREST's default max rows per response. */
@@ -39,27 +42,6 @@ const PAGE = 1000;
 const READ_TIMEOUT_MS = 10_000;
 /** Warn well before a shard approaches Next's 2 MB data-cache entry limit. */
 const SHARD_WARN_BYTES = 1_500_000;
-
-export interface BoardRow {
-  id: string;
-  slug: string;
-  title: string;
-  summary: string | null;
-  regionId: string | null;
-  propertyTypeId: string | null;
-  city: string | null;
-  province: string | null;
-  deadline: string | null;
-  isDemo: boolean;
-  sourceType: string | null;
-  gcProjectName: string | null;
-  awardedRfpId: string | null;
-  /** When the buyer posted it (importers use the source's posting date), ISO. */
-  publishedAt: string | null;
-  /** When PMRFP first stored it (rfp_posts.created_at), ISO. Insights use it to ignore a feed's first weeks. */
-  createdAt: string | null;
-  categoryIds: string[];
-}
 
 interface RfpPublicRow {
   id: string; slug: string; title: string; summary: string | null;
@@ -70,15 +52,6 @@ interface RfpPublicRow {
 }
 
 const COLUMNS = "id,slug,title,summary,region_id,property_type_id,city,province,deadline,is_demo,source_type,gc_project_name,awarded_rfp_id,published_at,created_at";
-
-/** Inclusive lower / exclusive upper UUID bound of a shard (null = open end). */
-export function shardRange(shard: number): { lo: string | null; hi: string | null } {
-  const bound = (digit: number) => `${digit.toString(16)}0000000-0000-0000-0000-000000000000`;
-  return {
-    lo: shard === 0 ? null : bound(shard),
-    hi: shard === SNAPSHOT_SHARDS - 1 ? null : bound(shard + 1),
-  };
-}
 
 type Builder = {
   gte(column: string, value: string): Builder;
@@ -119,8 +92,8 @@ async function readRange<T extends { id: string }>(
   }
 }
 
-/** Reads one shard straight from Supabase (no cache). Exported for tests and query counting. */
-export async function fetchBoardShard(shard: number): Promise<BoardRow[]> {
+/** Reads one shard straight from Supabase (no cache). */
+async function fetchSupabaseBoardShard(shard: number): Promise<BoardRow[]> {
   const { lo, hi } = shardRange(shard);
   const rows = await readRange<RfpPublicRow>("rfp_public", COLUMNS, "id", lo, hi);
   if (!rows.length) return [];
@@ -153,6 +126,15 @@ export async function fetchBoardShard(shard: number): Promise<BoardRow[]> {
     createdAt: r.created_at ?? null,
     categoryIds: cats.get(r.id) ?? [],
   }));
+  return out;
+}
+
+/** Fixed provider for a shard; D1 errors never fall back to source reads. */
+export async function fetchBoardShard(shard: number): Promise<BoardRow[]> {
+  shardRange(shard);
+  const out = d1BoardEnabled()
+    ? await (await import("@/lib/d1/board-server")).d1BoardShard(shard)
+    : await fetchSupabaseBoardShard(shard);
   const bytes = JSON.stringify(out).length;
   if (bytes > SHARD_WARN_BYTES) {
     console.warn("[board-snapshot] shard is large; raise SNAPSHOT_SHARDS", { shard, rows: out.length, bytes });
@@ -166,7 +148,7 @@ const singleFlight = createSingleFlight();
 const cachedShard = unstable_cache(
   // The project URL is part of the key so preview and production databases never share entries.
   async (shard: number, _projectUrl: string): Promise<BoardRow[]> =>
-    singleFlight(`board-shard:${shard}`, () => limit(() => fetchBoardShard(shard))),
+    singleFlight(`${_projectUrl}:board-shard:${shard}`, () => limit(() => fetchBoardShard(shard))),
   ["board-snapshot-shard-v2"],
   { tags: [RFPS_TAG], revalidate: SNAPSHOT_REVALIDATE },
 );
@@ -177,7 +159,9 @@ const cachedShard = unstable_cache(
  * Sorted by id. Throws when a shard can't be read and isn't cached.
  */
 export const getBoardRows = cache(async (): Promise<BoardRow[]> => {
-  const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const projectUrl = d1BoardEnabled()
+    ? `d1:${process.env.PMRFP_D1_API_URL ?? ""}:${process.env.PMRFP_D1_DATASET_SHA256 ?? ""}`
+    : `supabase:${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`;
   const shards = await Promise.all(Array.from({ length: SNAPSHOT_SHARDS }, (_, i) => cachedShard(i, projectUrl)));
   return shards.flat();
 });
