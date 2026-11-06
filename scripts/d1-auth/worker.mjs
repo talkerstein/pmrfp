@@ -1,17 +1,9 @@
+import {gatewayMatches} from './private-gateway.mjs';
 import { betterAuth } from 'better-auth';
 import { rehearsalOptions } from './rehearsal.mjs';
 import { resetSyntheticPassword } from './atomic-reset.mjs';
 import { syntheticMailOptions, recordSyntheticMail } from './synthetic-mail.mjs';
 import { relaySyntheticMail } from './mail-relay.mjs';
-
-async function gatewayMatches(actual, expected) {
-  if (typeof actual !== 'string' || typeof expected !== 'string' || expected.length < 32 || actual.length > 512) return false;
-  const bytes = new TextEncoder();
-  const [a,b] = await Promise.all([crypto.subtle.digest('SHA-256',bytes.encode(actual)),crypto.subtle.digest('SHA-256',bytes.encode(expected))]);
-  const x=new Uint8Array(a),y=new Uint8Array(b);let difference=0;
-  for(let i=0;i<x.length;i++)difference|=x[i]^y[i];
-  return difference===0;
-}
 
 /** Only synthetic fixtures, behind a private gateway; no source Auth connection. */
 const worker = {
@@ -29,6 +21,10 @@ const worker = {
       return new Response(JSON.stringify({error:'synthetic_dataset_required'}),{status:503,headers});
     }
     if (url.pathname==='/__migration/health' && request.method==='GET') return new Response(JSON.stringify({mode:'synthetic-only',realAccountsImported:false}),{headers});
+    if(url.pathname==='/__migration/mail-relay-health'&&request.method==='GET'){
+      try{if(env.MAIL_RELAY_MODE!=='synthetic-capture')throw Error('disabled');await relaySyntheticMail({kind:'reset',userId:'00000000-0000-4000-8000-000000000011',to:'fixture@example.invalid',url:env.AUTH_BASE_URL+'/api/auth/reset-password/synthetic_probe_token_0001',expiresIn:900},env);return Response.json({validated:true,emailsSent:0},{headers});}
+      catch(error){return Response.json({error:'synthetic_relay_unavailable',stage:['network','http','response'].includes(error?.relayStage)?error.relayStage:'configuration',upstreamStatus:Number.isInteger(error?.relayStatus)?error.relayStatus:null},{status:503,headers});}
+    }
     if (!url.pathname.startsWith('/api/auth/')) return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
     let options=rehearsalOptions(env.AUTH_DB,env.AUTH_SECRET);
     if (url.pathname==='/api/auth/reset-password') {

@@ -39,5 +39,8 @@
   "mailCallbacksEnabled": false,
   "hostingerTestDeliveryConfirmed": true,
   "syntheticAuthMailCallbacksNativeVerified": true,
-  "syntheticAuthMailExternalDeliveryEnabled": false
+  "syntheticAuthMailExternalDeliveryEnabled": false,
+  "syntheticAuthMailRelayNativeDryRunVerified": true,
+  "existingTestAccountNativeCredentialVerified": true,
+  "existingTestAccountRehearsalResourcesRemoved": true
 }

@@ -6,6 +6,7 @@ export function buildSyntheticAuthMessage(input) {
  if(link.origin!==authOrigin||link.hash||link.username||link.password)throw Error('Invalid synthetic link');
  const token=input.kind==='reset'?link.pathname.slice('/api/auth/reset-password/'.length):link.searchParams.get('token');
  if(input.kind==='reset'?!link.pathname.startsWith('/api/auth/reset-password/')||!/^[A-Za-z0-9_-]{16,128}$/.test(token):link.pathname!=='/api/auth/verify-email'||!token||!/^[A-Za-z0-9_.-]{16,2048}$/.test(token))throw Error('Invalid synthetic token');
+ if(new Set(link.searchParams.keys()).size!==[...link.searchParams.keys()].length)throw Error('Duplicate link parameters');
  if([...link.searchParams.keys()].some(k=>!['callbackURL',...(input.kind==='verification'?['token']:[])].includes(k)))throw Error('Invalid link parameters');
  const callback=link.searchParams.get('callbackURL');if(callback&&new URL(callback,authOrigin).origin!==authOrigin)throw Error('Invalid callback');
  return {subject:input.kind==='reset'?'PMRFP preview: reset your password':'PMRFP preview: verify your email',text:`This is an isolated PMRFP migration test.\n\n${input.kind==='reset'?'Reset your test password':'Verify your test email'}: ${link.href}\n\nThis link expires in 15 minutes. If you did not request it, ignore this message.`};
