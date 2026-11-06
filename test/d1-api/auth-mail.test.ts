@@ -25,3 +25,12 @@ it('validates only bounded synthetic callback messages without sending or return
  for(const bad of [{...message,to:'customer@example.com'},{...message,userId:'real-user'},{...message,url:'https://evil.invalid/reset'},{...message,url:message.url+'?callbackURL=https://evil.invalid'},{...message,text:'arbitrary'},{...message,url:message.url+'?callbackURL=/&callbackURL=/'},{...message,url:'x'.repeat(9000)}])expect((await send(bad)).status).toBe(400);
  expect(verify).not.toHaveBeenCalled();
 });
+it('prepared delivery is fixed to the approved test inbox/identity and expires independently of deployment',async()=>{
+ const {sendSyntheticAuthTest}=await import('../../src/lib/d1/hostinger-mail.mjs');
+ const now=Date.now(),config={...env,PMRFP_MIGRATION_MAIL_DELIVERY:'approved-dev-test',PMRFP_MIGRATION_MAIL_DELIVERY_EXPIRES:new Date(now+900000).toISOString()};
+ const message={kind:'reset',userId:'00000000-0000-4000-8000-000000000012',to:'fixture@example.invalid',url:'https://pmrfp-auth-synthetic-preview.pmrfp.workers.dev/api/auth/reset-password/synthetic_reset_token_0001',expiresIn:900};
+ const close=vi.fn(),sendMail=vi.fn(async()=>({accepted:['dev@talkerstein.ca'],rejected:[]})),factory=vi.fn(()=>({sendMail,close}));
+ expect(await sendSyntheticAuthTest(config,message,factory,now)).toEqual({accepted:true,emailsSent:1,mode:'synthetic-delivery-test'});expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({from:'info@pmrfp.com',to:'dev@talkerstein.ca',subject:'PMRFP preview: reset your password'}));expect(close).toHaveBeenCalledTimes(1);
+ for(const [configValue,messageValue] of [[{...config,VERCEL_ENV:'production'},message],[{...config,PMRFP_MIGRATION_MAIL_DELIVERY:''},message],[{...config,PMRFP_MIGRATION_MAIL_DELIVERY_EXPIRES:new Date(now-1).toISOString()},message],[config,{...message,userId:'00000000-0000-4000-8000-000000000011'}],[config,{...message,to:'customer@example.com'}]] as const)await expect(sendSyntheticAuthTest(configValue,messageValue,factory,now)).rejects.toThrow();
+ expect(factory).toHaveBeenCalledTimes(1);
+});

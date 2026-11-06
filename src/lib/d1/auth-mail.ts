@@ -1,9 +1,9 @@
 import {createHash,timingSafeEqual} from 'node:crypto';
-import {verifyHostingerSmtp} from './hostinger-mail.mjs';
+import {verifyHostingerSmtp,sendSyntheticAuthTest} from './hostinger-mail.mjs';
 import {buildSyntheticAuthMessage} from './auth-mail-message.mjs';
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 /** Explicit preview-only transport boundary. No Source Auth; SMTP sending remains disabled. */
-export async function handleMailRelay(request:Request,env:Record<string,string|undefined>,verify=verifyHostingerSmtp):Promise<Response> {
+export async function handleMailRelay(request:Request,env:Record<string,string|undefined>,verify=verifyHostingerSmtp,send=sendSyntheticAuthTest):Promise<Response> {
  if(env.PMRFP_MIGRATION_MAIL_MODE!=='synthetic-only'||!(env.VERCEL_ENV==='preview'||(!env.VERCEL_ENV&&env.NODE_ENV==='development')))return Response.json({error:'mail_preview_not_enabled'},{status:503,headers});
  const key=env.PMRFP_MIGRATION_MAIL_GATEWAY_SECRET,provided=request.headers.get('x-pmrfp-mail-gateway-key');
  if(!key||key.length<32)return Response.json({error:'mail_configuration_unavailable'},{status:503,headers});
@@ -15,7 +15,8 @@ export async function handleMailRelay(request:Request,env:Record<string,string|u
    const chunks:Uint8Array[]=[];let size=0;
    try {for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>8192)throw Error('Body bound');chunks.push(part.value);}}finally{await reader.cancel();}
    const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
-   buildSyntheticAuthMessage(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes)));
+   const message=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));buildSyntheticAuthMessage(message);
+   if(env.PMRFP_MIGRATION_MAIL_DELIVERY==='approved-dev-test')return Response.json(await send(env,message),{headers});
    return Response.json({validated:true,emailsSent:0,mode:'synthetic-capture'},{headers});
   }catch{return Response.json({error:'invalid_synthetic_message'},{status:400,headers});}
  }
