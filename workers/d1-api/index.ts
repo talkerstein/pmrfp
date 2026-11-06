@@ -6,9 +6,11 @@ import { readRfpDetail } from "./detail";
 import { listPublicBoard } from "./board";
 import { listPublicTaxonomy } from "./taxonomy";
 import { listPublicPhotos } from "./photos";
+import { handleSyntheticProjectPhoto, type SandboxBucket } from "./project-photos";
 
 export interface Env extends AuthConfig {
   DB: D1Binding;
+  STORAGE_SANDBOX?: SandboxBucket;
   GATEWAY_SECRET: string;
   /** Writes are enabled only on an explicitly synthetic staging dataset. */
   SAVED_RFPS_MODE?: "read-only" | "sandbox-write";
@@ -21,6 +23,12 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
   try {
     await verifyGateway(request.headers.get("x-pmrfp-gateway-key"), env.GATEWAY_SECRET);
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/v1/project-photos/")) {
+      if (env.AUTH_PROVIDER !== "native-synthetic" || env.SAVED_RFPS_MODE !== "sandbox-write") throw new D1ApiError(503,"native_sandbox_required");
+      const marker=await env.DB.prepare("SELECT value FROM _d1_sandbox WHERE key='dataset'").first<{value:string}>();
+      if(marker?.value!=="synthetic-only")throw new D1ApiError(503,"native_sandbox_required");
+      return await handleSyntheticProjectPhoto(env.DB,env.STORAGE_SANDBOX,request,await verifyUser(request,env,fetcher));
+    }
     if (url.pathname === "/v1/rfp-photos") {
       if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
       return json(await listPublicPhotos(env.DB, url));
@@ -35,11 +43,17 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
     }
     if (url.pathname === "/v1/rfp-detail") {
       if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
+      if (env.AUTH_PROVIDER === "native-synthetic") throw new D1ApiError(503, "native_detail_not_enabled");
       await verifyUser(request, env, fetcher);
       return json(await readRfpDetail(env.DB, request, env, fetcher));
     }
     if (url.pathname !== "/v1/saved-rfps" || url.search) throw new D1ApiError(404, "not_found");
     if (request.method !== "GET" && request.method !== "POST") throw new D1ApiError(405, "method_not_allowed");
+    if (env.AUTH_PROVIDER === "native-synthetic") {
+      if (env.SAVED_RFPS_MODE !== "sandbox-write") throw new D1ApiError(503, "native_sandbox_required");
+      const marker = await env.DB.prepare("SELECT value FROM _d1_sandbox WHERE key='dataset'").first<{ value: string }>();
+      if (marker?.value !== "synthetic-only") throw new D1ApiError(503, "native_sandbox_required");
+    }
     const userId = await verifyUser(request, env, fetcher);
     const now = new Date().toISOString();
     if (request.method === "GET") return json({ items: await listSavedRfps(env.DB, userId, now) });

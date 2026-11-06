@@ -1,8 +1,13 @@
 import { D1ApiError, UUID } from "../../src/lib/d1/contracts";
 
-export interface AuthConfig { SUPABASE_URL: string; SUPABASE_ANON_KEY: string }
+import { verifyNativeSyntheticUser, type NativeSyntheticAuthConfig } from "./native-auth";
+export interface AuthConfig extends NativeSyntheticAuthConfig { SUPABASE_URL: string; SUPABASE_ANON_KEY: string; AUTH_PROVIDER?: "supabase" | "native-synthetic" }
 /** The Auth server checks the access token and current user; JWT claims alone are never trusted. */
 export async function verifyUser(request: Request, env: AuthConfig, fetcher: typeof fetch = globalThis.fetch.bind(globalThis)): Promise<string> {
+  if (env.AUTH_PROVIDER !== undefined && env.AUTH_PROVIDER !== "supabase") {
+    if (env.AUTH_PROVIDER !== "native-synthetic") throw new D1ApiError(503, "auth_provider_unavailable");
+    return verifyNativeSyntheticUser(request, env, fetcher);
+  }
   const header = request.headers.get("authorization") ?? "";
   const match = /^Bearer +([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/i.exec(header);
   if (!match || match[1].length > 4096) throw new D1ApiError(401, "sign_in_required");

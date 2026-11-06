@@ -14,12 +14,26 @@ Production remains on Supabase. No application traffic or live login switch occu
 - After explicit approval, 76 real Auth accounts were atomically copied to sealed `pmrfp-auth-shadow-20261106`. Every mapped field, hash and opaque metadata value matches; all IDs match the native application copy. Zero sessions, verification tokens and Worker bindings. No synthetic serving marker exists. Supabase login stays authoritative. See [AUTH-SHADOW-REVIEW-2026-11-06.md](AUTH-SHADOW-REVIEW-2026-11-06.md).
 - Source storage inventory: ten buckets, 64 objects, 49,339,181 bytes. Three new public logos were copied to the existing private R2 migration bucket. All 61 public objects and three private objects have matching current native R2 readbacks. The three private source metadata revisions are unchanged from their verified source backups. Both newer document buckets are empty. R2 development URL remains disabled and no custom domains exist; application storage URLs are unchanged.
 
-## Checkpoint advancement in progress
+## Completed bootstrap checkpoint
 
-Native validation and restored backup gates passed. Bounded acknowledgements of this bootstrap's 67,518 captured receipts are in progress. Do not treat the new copy as a durable incremental baseline until the acknowledgement report and native capture-state readback are complete. Older/late events not captured by this consistent snapshot remain pending.
+Native validation and restored backup gates passed. All 67,518 captured receipts were acknowledged in bounded transactions; durable consumer-state readback passes. Retained Source acknowledgement history now contains 104,801 events. Older/late events not captured by this consistent snapshot remain pending. A normal follow-up cycle transferred 172 row packets (68,557 bytes), without a full-source transfer, and reconstructed 143,973 source records. Its approved candidate contains 143,788 records. The 175-change journal passed local exact forward/reverse/reapply, native forward replay and exact readback, and restored before/after native backups. A fresh native synthetic staged-journal failure/forward/reversal canary also passed. All 131 captured follow-up receipts were acknowledged; retained history is 104,932 and the durable checkpoint was advanced. Current candidate SHA: `1b2e5b5397d64151aa5aae3df4b94b937a853c81d077f627ed6ddb131a14e3bc`. Public listing/taxonomy parity still passes.
+
+## Native application and file rehearsal
+
+`pmrfp-native-auth-app-sandbox` uses a private service binding to the synthetic Auth Worker, a separate synthetic application D1 database and a separate R2 sandbox bucket. No Supabase Auth is configured. Signed native sessions authorize save/read/unsave, isolate users, deny current profile suspension and Auth bans, and immediately deny reads/writes after logout. Auth metadata roles cannot substitute for current D1 profile/ownership checks. Missing synthetic markers and the Source-dependent private-detail endpoint fail closed.
+
+Native private-image tests pass for owner upload/read/HEAD/delete with byte-hash comparison, non-member denial, current unlisted/private visibility checks, denied non-member writes, immediate membership/visibility revocation and idempotent deletion. Real migration files were not touched. The read/write route is synthetic-only; it does not integrate real application uploads, Sharp processing, share/reviewer access or anonymous serving. Its asynchronous authorization errors are caught at the Worker boundary and return controlled status codes.
+
+## Hostinger SMTP preparation
+
+The user identified the existing active `info@pmrfp.com` Hostinger mailbox and supplied its credential through an owner-only local input form. Verified TLS authentication succeeds from this computer with Python and the Node transport; zero emails were sent. Credential values are not displayed, logged or committed.
+
+Hostinger currently resolves to Cloudflare IP ranges. Workers [block outbound TCP to Cloudflare addresses](https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/), so direct native socket and Node-compatible probes could not connect. The temporary unused SMTP secrets were removed from the synthetic Auth Worker. The existing Vercel/Node application is the selected SMTP transport, without a Supabase dependency.
+
+A new preview-only, gateway-protected `/api/migration/auth-mail` handler verifies SMTP only; sending is not enabled. Its exact Proxy exemption avoids a Source Auth refresh; production is always denied. SMTP/password/gateway/mode configuration is scoped to the migration branch's Preview environment, not Production. Local transport and authorization tests pass. Actual Vercel runtime verification and controlled delivery testing are still pending; real Auth email callbacks are not enabled.
 
 ## Tests and limits
 
-93 Python migration/storage tests, 154 Worker contracts, 18 isolated Auth tests, root typecheck and targeted lint pass. Native synthetic reset and sealed-import rollback/readback checks pass. New Auth imports use no plaintext passwords, sessions, refresh tokens or MFA secrets. Private exports/plans/readbacks are ignored and excluded from Git.
+93 Python migration/storage tests, 170 Worker/application contracts, 18 isolated Auth tests, root typecheck and targeted lint pass. Native synthetic reset and sealed-import rollback/readback checks pass. New Auth imports use no plaintext passwords, sessions, refresh tokens or MFA secrets. Private exports/plans/readbacks are ignored and excluded from Git.
 
 Full exit remains unfinished: monitored change sync, application Auth/profile/verification/reset/mail/mobile flows, current native authorization at application boundaries, R2 serving/ownership/private rules/upload/delete flows, application/job/payment writers and RPC/trigger parity, full end-to-end testing, final reconciliation/rollback and approved cutover. The sealed account copy is not a serving Auth replacement.

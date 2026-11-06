@@ -159,5 +159,5 @@ def export(remote,base_source,base_candidate,output,delta_path,verify_full=False
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['base-source','base-candidate','output','delta-output']:p.add_argument('--'+name,required=True)
-    p.add_argument('--verify-full-source',action='store_true');p.add_argument('--wrangler-auth',action='store_true');args=p.parse_args()
-    print(json.dumps(export(r.Remote(wrangler_auth=args.wrangler_auth,generation='rebuilt-20261029'),args.base_source,args.base_candidate,args.output,args.delta_output,args.verify_full_source),indent=2))
+    p.add_argument('--verify-full-source',action='store_true');p.add_argument('--generation',choices=['rebuilt-20261029','rebuilt-20261106'],default='rebuilt-20261029');p.add_argument('--wrangler-auth',action='store_true');args=p.parse_args()
+    print(json.dumps(export(r.Remote(wrangler_auth=args.wrangler_auth,generation=args.generation),args.base_source,args.base_candidate,args.output,args.delta_output,args.verify_full_source),indent=2))

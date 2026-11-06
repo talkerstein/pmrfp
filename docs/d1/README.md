@@ -2,7 +2,7 @@
 
 ## November 6 checkpoint
 
-Workers Paid is active after explicit approval. The new isolated native copy contains 143,719 exactly verified records across 117 tables; its native readback backup has been restored and verified. The separate expanded read-only preview matches 1,786 public listings and taxonomy. All 64 current files have matching R2 readbacks. The approved 76-account Auth shadow copy is sealed, has no sessions or Worker bindings, and does not switch login. Bootstrap acknowledgements/checkpoint advancement are in progress. See [VERIFICATION-2026-11-06.md](VERIFICATION-2026-11-06.md). Older dated sections remain historical.
+Workers Paid is active after explicit approval. The new isolated native copy contains 143,788 exactly verified records across 117 tables after one normal incremental cycle; its native readback backup has been restored and verified. The separate expanded read-only preview matches 1,786 public listings and taxonomy. All 64 current files have matching R2 readbacks. The approved 76-account Auth shadow copy is sealed, has no sessions or Worker bindings, and does not switch login. All 67,518 bootstrap receipts and 131 follow-up receipts are acknowledged; durable receipt history is 104,932. Native synthetic login-to-D1 and private R2 file operations pass; real account/mail/file integration remains unfinished. See [VERIFICATION-2026-11-06.md](VERIFICATION-2026-11-06.md). Older dated sections remain historical.
 
 ## Current checkpoint — November 5
 
@@ -16,8 +16,8 @@ backup/restore rehearsal. It now includes an opt-in synthetic saved-RFP preview;
 remains authoritative. Existing production business rows, row policies, jobs, storage objects and Vercel configuration are unchanged. The user approved a temporary migration reader and narrower PUBLIC execution grants on 19 definer functions; see [READER-ACCESS.md](READER-ACCESS.md). At the user's request, one isolated Auth test account and its ordinary profile were created for preview verification; source bookmarks and public business listings were not created.
 
 Repository baseline refreshed to `origin/master` at
-`29b376e`,
-2026-10-31. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
+`3ce55b1`,
+2026-11-05. Worktree: `../d1-migration`, branch `codex/d1-staged-migration`.
 The other chat's checkout was not modified. The grants fix (#164), city-source work
 (#163), and migration-reconciliation fixes (#165/#166) landed during this work;
 this branch was rebased onto them without modifying those patches. The dated sections below preserve historical checkpoints. The dated sections and checkpoint reports describe each validated copy. Repeat the
