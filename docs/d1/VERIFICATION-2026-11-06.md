@@ -30,7 +30,7 @@ The user identified the existing active `info@pmrfp.com` Hostinger mailbox and s
 
 Hostinger currently resolves to Cloudflare IP ranges. Workers [block outbound TCP to Cloudflare addresses](https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/), so direct native socket and Node-compatible probes could not connect. The temporary unused SMTP secrets were removed from the synthetic Auth Worker. The existing Vercel/Node application is the selected SMTP transport, without a Supabase dependency.
 
-A new preview-only, gateway-protected `/api/migration/auth-mail` handler verifies SMTP only; sending is not enabled. Its exact Proxy exemption avoids a Source Auth refresh; production is always denied. SMTP/password/gateway/mode configuration is scoped to the migration branch's Preview environment, not Production. Local transport and authorization tests pass. Actual Vercel runtime verification and controlled delivery testing are still pending; real Auth email callbacks are not enabled.
+A new preview-only, gateway-protected `/api/migration/auth-mail` handler verifies SMTP only; sending is not enabled. Its exact Proxy exemption avoids a Source Auth refresh; production is always denied. SMTP/password/gateway/mode configuration is scoped to the migration branch's Preview environment, not Production. Local transport and authorization tests pass. The exact `ab44eca` Vercel Preview successfully authenticated with Hostinger using verified TLS on port 465 and returned `authenticated: true, emailsSent: 0`. Protected proof: `.d1-private/vercel-smtp-verification-20261106.json`. Controlled delivery testing is still pending; real Auth email callbacks are not enabled.
 
 ## Tests and limits
 

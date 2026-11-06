@@ -35,6 +35,6 @@
   "hostingerSmtpLocalVerified": true,
   "hostingerSmtpEmailsSent": 0,
   "mailRelayPreviewOnly": true,
-  "mailRelayVercelRuntimeVerified": false,
+  "mailRelayVercelRuntimeVerified": true,
   "mailCallbacksEnabled": false
 }
