@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { rehearsalOptions } from './rehearsal.mjs';
 import { resetSyntheticPassword } from './atomic-reset.mjs';
+import { syntheticMailOptions, recordSyntheticMail } from './synthetic-mail.mjs';
 
 async function gatewayMatches(actual, expected) {
   if (typeof actual !== 'string' || typeof expected !== 'string' || expected.length < 32 || actual.length > 512) return false;
@@ -28,7 +29,7 @@ const worker = {
     }
     if (url.pathname==='/__migration/health' && request.method==='GET') return new Response(JSON.stringify({mode:'synthetic-only',realAccountsImported:false}),{headers});
     if (!url.pathname.startsWith('/api/auth/')) return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
-    const options=rehearsalOptions(env.AUTH_DB,env.AUTH_SECRET);
+    let options=rehearsalOptions(env.AUTH_DB,env.AUTH_SECRET);
     if (url.pathname==='/api/auth/reset-password') {
       if (env.SYNTHETIC_RESET!=='enabled' || request.method!=='POST') return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
       if (request.headers.get('origin')!==env.AUTH_BASE_URL || url.search || !request.headers.get('content-type')?.startsWith('application/json')) return new Response(JSON.stringify({error:'invalid_reset_request'}),{status:400,headers});
@@ -43,11 +44,7 @@ const worker = {
         return new Response(JSON.stringify({error:'reset_failed'}),{status:400,headers});
       }
     }
-    if(env.SYNTHETIC_RESET==='enabled')options.emailAndPassword={...options.emailAndPassword,
-      revokeSessionsOnPasswordReset:true,
-      // Synthetic transport sink only: no email, URL or reset token is sent/logged.
-      sendResetPassword:async()=>{},
-    };
+    if(env.SYNTHETIC_RESET==='enabled')options=syntheticMailOptions(options,{origin:env.AUTH_BASE_URL,deliver:message=>recordSyntheticMail(env.AUTH_DB,message)});
     const auth=betterAuth({...options,baseURL:env.AUTH_BASE_URL,trustedOrigins:[env.AUTH_BASE_URL]});
     const response=await auth.handler(request);
     const secured=new Response(response.body,response);

@@ -37,3 +37,14 @@ A new preview-only, gateway-protected `/api/migration/auth-mail` handler verifie
 93 Python migration/storage tests, 170 Worker/application contracts, 18 isolated Auth tests, root typecheck and targeted lint pass. Native synthetic reset and sealed-import rollback/readback checks pass. New Auth imports use no plaintext passwords, sessions, refresh tokens or MFA secrets. Private exports/plans/readbacks are ignored and excluded from Git.
 
 Full exit remains unfinished: monitored change sync, application Auth/profile/verification/reset/mail/mobile flows, current native authorization at application boundaries, R2 serving/ownership/private rules/upload/delete flows, application/job/payment writers and RPC/trigger parity, full end-to-end testing, final reconciliation/rollback and approved cutover. The sealed account copy is not a serving Auth replacement.
+
+
+## Generated Auth email callbacks and native link proof
+
+The user confirmed delivery of the single explicitly authorized test from `info@pmrfp.com` to `dev@talkerstein.ca`. No additional SMTP messages were sent. The Vercel verification bridge remains verify-only; live Auth delivery is not connected.
+
+`synthetic-mail.mjs` replaces the reset callback's discarded message with a bounded private synthetic outbox. It accepts only pinned fixture UUIDs, `@example.invalid` recipients, the exact Auth origin, recognized generated paths and same-origin callback URLs. Reset and verification validity are 15 minutes. The outbox retains only the last message per fixture and kind in the isolated Auth D1 verification table; it is not publicly readable and emits no URLs/tokens in responses or logs.
+
+All 24 Auth tests pass, including actual Better Auth callbacks and generated links, verification expiry, reset expiry, replay rejection, old-password denial and session revocation. The deployed native Worker version `4300662c-158e-459a-bf6a-e58716ce0b96` also passed generated verification-link confirmation, unverified/verified login checks, expired reset denial, successful reset, session revocation and reset replay denial. Fixture verification state was restored, test sessions and outbox/reset records removed. Evidence: `.d1-private/auth-mail-outbox-native-report-20261106.json`. No real accounts, Source rows or external email messages were involved in this proof.
+
+The existing Vercel Preview is deployment-protected. SMTP authentication and local test delivery are proven independently; Cloudflare-to-relay authorization and actual Auth message delivery remain separate unfinished work. No protection setting was disabled.

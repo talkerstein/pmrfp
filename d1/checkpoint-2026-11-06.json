@@ -36,5 +36,8 @@
   "hostingerSmtpEmailsSent": 0,
   "mailRelayPreviewOnly": true,
   "mailRelayVercelRuntimeVerified": true,
-  "mailCallbacksEnabled": false
+  "mailCallbacksEnabled": false,
+  "hostingerTestDeliveryConfirmed": true,
+  "syntheticAuthMailCallbacksNativeVerified": true,
+  "syntheticAuthMailExternalDeliveryEnabled": false
 }
