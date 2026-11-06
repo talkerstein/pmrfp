@@ -29,3 +29,11 @@ it('logout revokes upstream and clears the dedicated cookie; failures never fall
  const response=await handleNativeAuthPreview(req(),'sign-out',env,async()=>Response.json({success:true}));expect(response.status).toBe(200);expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
  const denied=await handleNativeAuthPreview(req(),'sign-out',env,async()=>{throw Error('SENSITIVE_PROVIDER_DETAIL');});expect(denied.status).toBe(503);expect(await denied.text()).not.toContain('SENSITIVE');
 });
+it('uses only signed cookie identity for native saved-list reads/writes; rejects caller identities and respects worker denials',async()=>{
+ const config={...env,PMRFP_NATIVE_APP_GATEWAY_SECRET:gateway};
+ const req=(body?:unknown)=>request('saved-rfps',body,{cookie:'source-cookie=MUST_NOT_FORWARD; pmrfp-native-preview='+token});
+ const read=await handleNativeAuthPreview(req(),'saved-rfps',config,async(url,init)=>{expect(url).toBe('https://pmrfp-native-auth-app-sandbox.pmrfp.workers.dev/v1/saved-rfps');expect(init?.headers).toMatchObject({'x-pmrfp-native-session':'__Secure-better-auth.session_token='+token,'x-pmrfp-gateway-key':gateway});expect(JSON.stringify(init)).not.toContain('source-cookie');return Response.json({items:[]});});expect(await read.json()).toEqual({items:[]});
+ const fetcher=vi.fn(async()=>Response.json({ok:true}));expect((await handleNativeAuthPreview(req({rfpId:user.id,action:'save'}),'saved-rfps',config,fetcher as typeof fetch)).status).toBe(200);
+ expect((await handleNativeAuthPreview(req({rfpId:user.id,action:'save',userId:'customer'}),'saved-rfps',config,fetcher as typeof fetch)).status).toBe(400);expect(fetcher).toHaveBeenCalledTimes(1);
+ const denied=await handleNativeAuthPreview(req(),'saved-rfps',config,async()=>Response.json({error:'PRIVATE_SQL_DETAIL'},{status:403}));expect(denied.status).toBe(403);expect(await denied.text()).not.toContain('PRIVATE_SQL');
+});

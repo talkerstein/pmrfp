@@ -1,3 +1,4 @@
+import {parseSaveInput,UUID} from './contracts';
 const origin='https://pmrfp-auth-synthetic-preview.pmrfp.workers.dev';
 const cookieName='pmrfp-native-preview';
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
@@ -14,18 +15,32 @@ async function boundedJson(request:Request){
 export async function handleNativeAuthPreview(request:Request,operation:string,env:Record<string,string|undefined>,fetcher:typeof fetch=fetch):Promise<Response>{
  if(env.PMRFP_NATIVE_AUTH_PREVIEW!=='synthetic-only'||!(env.VERCEL_ENV==='preview'||(!env.VERCEL_ENV&&env.NODE_ENV==='development')))return failure('native_preview_not_enabled',503);
  if(!env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET||env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
- if(!['sign-in','session','sign-out'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
- if(operation==='session'?request.method!=='GET':request.method!=='POST')return failure('invalid_request',400);
+ if(!['sign-in','session','sign-out','saved-rfps'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
+ if(operation==='saved-rfps'?!['GET','POST'].includes(request.method):operation==='session'?request.method!=='GET':request.method!=='POST')return failure('invalid_request',400);
  let body:Record<string,unknown>|undefined;
  if(request.method==='POST'){
   if(request.headers.get('origin')!==new URL(request.url).origin||!request.headers.get('content-type')?.startsWith('application/json'))return failure('invalid_request',400);
   try{body=await boundedJson(request);
-   if(operation==='sign-in'?typeof body.email!=='string'||!/^[-a-z0-9]+@example\.invalid$/.test(body.email)||typeof body.password!=='string'||Buffer.byteLength(body.password)>72||Object.keys(body).some(k=>!['email','password'].includes(k)):Object.keys(body).length!==0)throw Error('Unexpected input');
+   if(operation==='saved-rfps')body={...parseSaveInput(body)};
+   else if(operation==='sign-in'?typeof body.email!=='string'||!/^[-a-z0-9]+@example\.invalid$/.test(body.email)||typeof body.password!=='string'||Buffer.byteLength(body.password)>72||Object.keys(body).some(k=>!['email','password'].includes(k)):Object.keys(body).length!==0)throw Error('Unexpected input');
   }catch{return failure('invalid_request',400);}
  }
  const cookies=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));
  const sessionToken=cookies.length===1?cookies[0].slice(cookieName.length+1):'';
- if(operation==='session'&&!tokenPattern.test(sessionToken))return failure('sign_in_required',401);
+ if(operation==='sign-out'&&cookies.length>0&&!tokenPattern.test(sessionToken))return failure('sign_in_required',401);
+ if((operation==='session'||operation==='saved-rfps')&&!tokenPattern.test(sessionToken))return failure('sign_in_required',401);
+ if(operation==='saved-rfps'){
+  if(!env.PMRFP_NATIVE_APP_GATEWAY_SECRET||env.PMRFP_NATIVE_APP_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
+  try{
+   const response=await fetcher('https://pmrfp-native-auth-app-sandbox.pmrfp.workers.dev/v1/saved-rfps',{method:request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-gateway-key':env.PMRFP_NATIVE_APP_GATEWAY_SECRET,'x-pmrfp-native-session':'__Secure-better-auth.session_token='+sessionToken,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+   if(!response.ok)return failure('native_operation_denied',[400,401,403,404].includes(response.status)?response.status:503);
+   const value:unknown=await response.json();if(!record(value))throw Error('Invalid native response');
+   if(body){if(value.ok!==true)throw Error('Invalid write response');return Response.json({ok:true},{headers});}
+   if(!Array.isArray(value.items)||value.items.length>500)throw Error('Invalid saved list');
+   const items=value.items.map(row=>{if(!record(row)||typeof row.rfpId!=='string'||!UUID.test(row.rfpId)||typeof row.title!=='string'||typeof row.slug!=='string'||typeof row.savedAt!=='string')throw Error('Invalid saved item');return {rfpId:row.rfpId,title:row.title,slug:row.slug,savedAt:row.savedAt};});
+   return Response.json({items},{headers});
+  }catch{return failure('native_preview_unavailable',503);}
+ }
  const endpoint=operation==='sign-in'?'sign-in/email':operation==='session'?'get-session':'sign-out';
  try{
   const response=await fetcher(origin+'/api/auth/'+endpoint,{method:request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-auth-preview-key':env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET,...(body?{origin,'content-type':'application/json'}:{}),...(tokenPattern.test(sessionToken)?{cookie:'__Secure-better-auth.session_token='+sessionToken}:{})},...(body?{body:JSON.stringify(body)}:{})});
