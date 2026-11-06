@@ -67,7 +67,7 @@ function redirectTo(request: NextRequest, pathname: string, status: 307 | 308 = 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   // This new transport has its own preview-only gateway; it must not depend on Source Auth.
-  if (pathname === "/api/migration/auth-mail") return NextResponse.next();
+  if (pathname === "/api/migration/auth-mail" || /^\/api\/migration\/native-auth\/(sign-in|session|sign-out)$/.test(pathname)) return NextResponse.next();
   const isGet = request.method === "GET" || request.method === "HEAD";
 
   // Scanners, SEO-tool crawlers and made-up provinces get an instant bare

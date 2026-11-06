@@ -27,6 +27,7 @@ const worker = {
     }
     if (!url.pathname.startsWith('/api/auth/')) return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
     let options=rehearsalOptions(env.AUTH_DB,env.AUTH_SECRET);
+    options.session={...options.session,expiresIn:900,updateAge:900};
     if (url.pathname==='/api/auth/reset-password') {
       if (env.SYNTHETIC_RESET!=='enabled' || request.method!=='POST') return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
       if (request.headers.get('origin')!==env.AUTH_BASE_URL || url.search || !request.headers.get('content-type')?.startsWith('application/json')) return new Response(JSON.stringify({error:'invalid_reset_request'}),{status:400,headers});
