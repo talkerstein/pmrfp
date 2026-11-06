@@ -64,3 +64,12 @@ Validation for this follow-up: 26 Auth tests, 139 API contracts, root typecheck 
 After separate explicit authorization, exactly the pre-existing migration test account was copied into a separate D1 database and served through a short-lived gateway-protected login-only Worker. Its original bcrypt password and UUID worked; wrong passwords, customer identities, active bans, expired manifest, signup/reset/admin paths were denied. Session lookup and logout revocation passed, with at most 15-minute sessions. No application provider or production setting switched.
 
 The Worker, database and temporary deployment secrets were removed after proof and resource absence verified. The 76-account shadow remains sealed with zero sessions. Evidence: `.d1-private/existing-account-native-report-20261106.json`; design and applied result: [EXISTING-ACCOUNT-AUTH-REHEARSAL-2026-11-06.md](EXISTING-ACCOUNT-AUTH-REHEARSAL-2026-11-06.md). All 31 Auth tests pass, including five additional import/identity/ban/expiry contract tests. This snapshot credential proof does not establish customer ban synchronization or application-wide native Auth integration.
+
+
+## App HTTP cookie-to-native saved-list proof
+
+The branch-only Vercel Preview now has independently gated synthetic login, session, logout and saved-list API routes. They use a dedicated HttpOnly, Secure, SameSite=Lax cookie with a 15-minute age, strip unrelated Source cookies, and return only fixture identity/list fields. Gateway keys and signed session tokens are never returned in JSON. Production is denied even if development variables are present; only the reviewed route paths bypass Source session refresh. The main sign-in page, customer provider and app backend selection remain unchanged.
+
+The actual deployed `eaa5f34` app path passed HTTP login with the fixture UUID, wrong-password/customer denial, save/read/unsave, two-user isolation, profile suspension, live Auth ban, logout and immediate denial of both reads and writes using the old cookie. The source-free native Worker performs fresh session/profile checks. Fixtures were restored and their sessions/saves removed. Proof: `.d1-private/native-auth-app-http-report-20261106.json`. This is deployed HTTP-flow evidence, not a browser UI or real-customer rollout claim.
+
+Local checks for that checkpoint include 146 API contracts, root typecheck and targeted lint. The synthetic Auth Worker now limits issued sessions to 15 minutes (`c7352479-5282-4757-955e-4c6beb5a0754`).

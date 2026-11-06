@@ -4,7 +4,8 @@ const cookieName='pmrfp-native-preview';
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const failure=(error:string,status:number)=>Response.json({error},{status,headers});
 const record=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==='object'&&!Array.isArray(value);
-const tokenPattern=/^(?:[A-Za-z0-9._~-]|%[a-fA-F0-9]{2}){16,4096}$/;
+export const nativePreviewTokenPattern=/^(?:[A-Za-z0-9._~-]|%[a-fA-F0-9]{2}){16,4096}$/;
+export function nativePreviewCookie(request:Request){const matches=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));return matches.length===1?matches[0].slice(cookieName.length+1):'';}
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw Error('Missing body');const chunks:Uint8Array[]=[];let size=0;
  try{for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>2048)throw Error('Body bound');chunks.push(part.value);}}finally{await reader.cancel();}
@@ -27,8 +28,8 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
  }
  const cookies=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));
  const sessionToken=cookies.length===1?cookies[0].slice(cookieName.length+1):'';
- if(operation==='sign-out'&&cookies.length>0&&!tokenPattern.test(sessionToken))return failure('sign_in_required',401);
- if((operation==='session'||operation==='saved-rfps')&&!tokenPattern.test(sessionToken))return failure('sign_in_required',401);
+ if(operation==='sign-out'&&cookies.length>0&&!nativePreviewTokenPattern.test(sessionToken))return failure('sign_in_required',401);
+ if((operation==='session'||operation==='saved-rfps')&&!nativePreviewTokenPattern.test(sessionToken))return failure('sign_in_required',401);
  if(operation==='saved-rfps'){
   if(!env.PMRFP_NATIVE_APP_GATEWAY_SECRET||env.PMRFP_NATIVE_APP_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
   try{
@@ -43,7 +44,7 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
  }
  const endpoint=operation==='sign-in'?'sign-in/email':operation==='session'?'get-session':'sign-out';
  try{
-  const response=await fetcher(origin+'/api/auth/'+endpoint,{method:request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-auth-preview-key':env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET,...(body?{origin,'content-type':'application/json'}:{}),...(tokenPattern.test(sessionToken)?{cookie:'__Secure-better-auth.session_token='+sessionToken}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  const response=await fetcher(origin+'/api/auth/'+endpoint,{method:request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-auth-preview-key':env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET,...(body?{origin,'content-type':'application/json'}:{}),...(nativePreviewTokenPattern.test(sessionToken)?{cookie:'__Secure-better-auth.session_token='+sessionToken}:{})},...(body?{body:JSON.stringify(body)}:{})});
   if(!response.ok)return failure(response.status===401||response.status===403?'sign_in_required':'native_preview_unavailable',response.status===401||response.status===403?401:503);
   const value:unknown=await response.json();
   const secure=new URL(request.url).protocol==='https:'?'; Secure':'';
@@ -53,7 +54,7 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
   if(operation==='sign-in'){
    const upstream=response.headers.getSetCookie().filter(x=>x.startsWith('__Secure-better-auth.session_token='));
    if(upstream.length!==1)return failure('native_preview_unavailable',503);
-   const token=upstream[0].split(';')[0].slice('__Secure-better-auth.session_token='.length);if(!tokenPattern.test(token))return failure('native_preview_unavailable',503);
+   const token=upstream[0].split(';')[0].slice('__Secure-better-auth.session_token='.length);if(!nativePreviewTokenPattern.test(token))return failure('native_preview_unavailable',503);
    result.headers.set('set-cookie',`${cookieName}=${token}; Path=/api/migration/native-auth; HttpOnly; SameSite=Lax; Max-Age=900${secure}`);
   }else if(!record(value.session)||value.session.userId!==value.user.id||typeof value.session.expiresAt!=='string'||!Number.isFinite(Date.parse(value.session.expiresAt))||Date.parse(value.session.expiresAt)<=Date.now())return failure('sign_in_required',401);
   return result;

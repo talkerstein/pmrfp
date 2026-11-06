@@ -42,5 +42,6 @@
   "syntheticAuthMailExternalDeliveryEnabled": false,
   "syntheticAuthMailRelayNativeDryRunVerified": true,
   "existingTestAccountNativeCredentialVerified": true,
-  "existingTestAccountRehearsalResourcesRemoved": true
+  "existingTestAccountRehearsalResourcesRemoved": true,
+  "appCookieToNativeAuthAndSavedListHttpVerified": true
 }
