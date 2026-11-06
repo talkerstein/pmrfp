@@ -11,7 +11,7 @@ import capture_state
 ACCOUNT='f4e9b098134981b108024243b2a72ed4'
 DATABASE='80b90607-2f8d-4f9b-a646-658f2ebad0bc'
 NAME='pmrfp-migration-staging-v2-20261021'
-TARGETS={'rebuilt-20261029':('c78304a9-1baa-4b62-a9e6-b7ad0d408be6','pmrfp-rebuilt-staging-20261029'),'journal-canary':('e41a9e60-2022-4511-94b9-12866f921671','pmrfp-journal-canary-20261023'),'v2':(DATABASE,NAME),'v3':('ea67a920-f736-4eea-a66d-a1a64d45e2b0','pmrfp-migration-staging-v3-20261022'),'rebuilt-v1':('a6d834f8-b00e-410f-91e1-b695209212e1','pmrfp-rebuilt-staging-20261022'),'rebuilt-reader-v1':('08ef9af3-a400-4a73-92d3-702b6ff39662','pmrfp-rebuilt-reader-staging-20261022'),'rebuilt-20261023':('9c41192c-bd59-471e-8baa-a5675d7f2c47','pmrfp-rebuilt-staging-20261023')}
+TARGETS={'rebuilt-20261106':('e91843d9-227b-4fe8-b0ad-f8b648e059ff','pmrfp-rebuilt-staging-20261106'),'rebuilt-20261029':('c78304a9-1baa-4b62-a9e6-b7ad0d408be6','pmrfp-rebuilt-staging-20261029'),'journal-canary':('e41a9e60-2022-4511-94b9-12866f921671','pmrfp-journal-canary-20261023'),'v2':(DATABASE,NAME),'v3':('ea67a920-f736-4eea-a66d-a1a64d45e2b0','pmrfp-migration-staging-v3-20261022'),'rebuilt-v1':('a6d834f8-b00e-410f-91e1-b695209212e1','pmrfp-rebuilt-staging-20261022'),'rebuilt-reader-v1':('08ef9af3-a400-4a73-92d3-702b6ff39662','pmrfp-rebuilt-reader-staging-20261022'),'rebuilt-20261023':('9c41192c-bd59-471e-8baa-a5675d7f2c47','pmrfp-rebuilt-staging-20261023')}
 
 class Remote:
     def __init__(self,wrangler_auth=False,generation='v2'):
@@ -99,7 +99,18 @@ def order_records(rows,catalog,specs):
 def manifest(remote):
     return remote.query('SELECT source_sha256,state FROM _migration_manifest WHERE id=1')[0]['results']
 
-def load(remote,snapshot):
+def packed_bootstrap(ordered,specs,present):
+    """Reuse the tested byte-bounded scalar vectors without reordering FK rows."""
+    from itertools import groupby
+    from remote_journal import json_chunks
+    for table,group in groupby(ordered,key=lambda item:item[0]):
+        spec=specs[table];cols=[c['column_name'] for c in spec['columns'] if c['is_generated']=='NEVER']
+        rows=([row[c] for c in cols] for _,row in group if m.canonical([row[k] for k in spec['pk']]) not in present[table])
+        values=["json_extract(image.value,'$["+str(i)+"]')" for i in range(len(cols))]
+        sql='INSERT INTO '+m.ident(table)+' ('+','.join(map(m.ident,cols))+') SELECT '+','.join(values)+' FROM json_each(?) AS image WHERE 1 ON CONFLICT ('+','.join(map(m.ident,spec['pk']))+') DO NOTHING'
+        for payload in json_chunks(rows):yield {'sql':sql,'params':[payload]},len(json.loads(payload))
+
+def load(remote,snapshot,packed=False):
     catalog=m.load_catalog();specs=m.table_specs(catalog);rows,_,sha=m.read_snapshot(snapshot,catalog)
     ordered=order_records(rows,catalog,specs) # Detect cycles before touching remote.
     if any(isinstance(v,int) and abs(v)>2**53-1 for _,row in ordered for v in row.values()):
@@ -124,6 +135,19 @@ def load(remote,snapshot):
     before_resume=manifest(remote)
     if before_resume!=[{'source_sha256':sha,'state':'loading'}]:raise ValueError('Remote checkpoint changed during resume verification')
     done=sum(len(records) for records in present.values());batch=[]
+    if packed:
+        size=0
+        guard={'sql':"SELECT CASE WHEN (SELECT source_sha256=? AND state='loading' FROM _migration_manifest WHERE id=1) THEN 1 ELSE json('bootstrap_checkpoint_mismatch') END",'params':[sha]}
+        def flush():
+            if batch:remote.batch([guard,*batch])
+        for item,count in packed_bootstrap(ordered,specs,present):
+            encoded=len(json.dumps(item).encode())
+            if encoded>900000:raise ValueError('Bootstrap vector exceeds transport bound')
+            if batch and (len(batch)>=49 or size+encoded>800000):
+                flush();print(json.dumps({'loaded':done}),flush=True);batch=[];size=0
+            batch.append(item);size+=encoded;done+=count
+        flush();print(json.dumps({'loaded':done}),flush=True)
+        return finalize(remote,snapshot)
     for table,row in ordered:
         if m.canonical([row[k] for k in specs[table]['pk']]) in present[table]:continue
         spec=specs[table];cols=[c['column_name'] for c in spec['columns'] if c['is_generated']=='NEVER']

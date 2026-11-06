@@ -78,4 +78,10 @@ class CaptureTests(FixtureMixin,unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'receipt history changed'):a.acknowledge(SimpleNamespace(name=a.TARGET),source,candidate,execute)
         self.assertEqual(len(calls),1);self.assertIn('READ ONLY',calls[0])
 
+    def test_expanded_pinned_copy_still_requires_exact_native_validation_before_ack(self):
+        source,candidate=self.snapshots();runner=Mock();remote=SimpleNamespace(name='pmrfp-rebuilt-staging-20261106')
+        with patch.dict(os.environ,self.env()),patch.object(a.r,'verify',side_effect=ValueError('Native mismatch')):
+            with self.assertRaisesRegex(ValueError,'Native mismatch'):a.acknowledge(remote,source,candidate,runner)
+        runner.assert_not_called()
+
 if __name__=='__main__':unittest.main()

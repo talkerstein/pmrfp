@@ -39,3 +39,6 @@ class CaptureStateTests(FixtureMixin,unittest.TestCase):
         self.assertIsNone(s.read(fake));fake.name='pmrfp-journal-canary-20261023'
         with self.assertRaises(ValueError):s.write(fake,'bad',sha,'c'*64)
         self.assertIsNone(s.read(fake))
+    def test_expanded_pinned_target_stores_and_reads_the_same_guarded_checkpoint(self):
+        _,fake,sha=self.ready();fake.name='pmrfp-rebuilt-staging-20261106'
+        written=s.write(fake,sha,sha,'b'*64);self.assertEqual(s.read(fake),written)

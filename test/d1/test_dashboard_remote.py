@@ -113,3 +113,24 @@ class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
         self.assertNotIn('raw_user_meta_data',query);self.assertNotIn('encrypted_password',query)
 
 if __name__=='__main__':unittest.main()
+
+class PackedBootstrapTests(FixtureMixin, unittest.TestCase):
+    def test_packed_types_fields_and_fk_order_match_exact_snapshot(self):
+        rows=self.seed();template=next(iter(rows['regions'].values()))
+        for n in range(1201):
+            row={**template,'id':'packed-'+str(n),'slug':'packed-'+str(n),'name':'Unicode é " quote \\ newline\n'+str(n)};rows['regions'][m.canonical([row['id']])]=row
+        snapshot=self.snapshot(rows,'packed.jsonl');fake=FakeRemote();self.addCleanup(fake.db.close)
+        batches=[];original=fake.batch
+        def capture(items):
+            if any('json_each(?)' in i['sql'] for i in items):batches.append(items)
+            return original(items)
+        fake.batch=capture;result=remote.load(fake,snapshot,packed=True)
+        self.assertEqual(result['records'],1204);self.assertTrue(batches)
+        self.assertLess(sum(len(batch) for batch in batches),15)
+        remote.verify(fake,snapshot,backup_path=self.root/'packed-backup.sqlite');m.validate(snapshot,self.root/'packed-backup.sqlite')
+    def test_packed_resume_verifies_partial_rows_and_never_overwrites_tampering(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        fake.query('DELETE FROM users_profile');fake.query("UPDATE _migration_manifest SET state='loading'")
+        remote.load(fake,snapshot,packed=True);remote.verify(fake,snapshot)
+        fake.query("UPDATE users_profile SET full_name='tampered'");fake.query("UPDATE _migration_manifest SET state='loading'")
+        with self.assertRaisesRegex(ValueError,'Existing staging rows'):remote.load(fake,snapshot,packed=True)

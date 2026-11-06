@@ -12,6 +12,8 @@ import journal_payloads as payloads
 
 CANARY_NAME = 'pmrfp-journal-canary-20261023'
 COPIED_PREVIEW_NAME = 'pmrfp-rebuilt-staging-20261029'
+COPY_CONFIGS={COPIED_PREVIEW_NAME:('wrangler.copy-preview.jsonc','pmrfp-d1-copied-read-preview','rebuilt-20261029'),
+ 'pmrfp-rebuilt-staging-20261106':('wrangler.expanded-preview.jsonc','pmrfp-d1-expanded-read-preview','rebuilt-20261106')}
 
 
 def all_of(parts):
@@ -130,11 +132,12 @@ def statements(journal, before, after, specs):
 
 def apply(remote, before_path, after_path, journal, backup_path, reverse=False,allow_copied_preview=False):
     # Physical copied-data rehearsal is explicit and pinned; production is never accepted.
-    copied=allow_copied_preview and remote.name==COPIED_PREVIEW_NAME
+    copied=allow_copied_preview and remote.name in COPY_CONFIGS
     if remote.name!=CANARY_NAME and not copied:raise ValueError('Remote journal is restricted to the synthetic canary or explicit copied preview')
     if copied:
-        config=json.loads((m.ROOT/'workers/d1-api/wrangler.copy-preview.jsonc').read_text())
-        if config.get('name')!='pmrfp-d1-copied-read-preview' or config.get('vars',{}).get('SAVED_RFPS_MODE')!='read-only' or config['d1_databases'][0]['database_id']!=r.TARGETS['rebuilt-20261029'][0]:raise ValueError('Copied preview must retain its pinned read-only configuration')
+        filename,worker,generation=COPY_CONFIGS[remote.name]
+        config=json.loads((m.ROOT/'workers/d1-api'/filename).read_text())
+        if config.get('name')!=worker or config.get('vars',{}).get('SAVED_RFPS_MODE')!='read-only' or config['d1_databases'][0]['database_id']!=r.TARGETS[generation][0]:raise ValueError('Copied preview must retain its pinned read-only configuration')
     specs = j.validate(journal)
     expected = j.plan(before_path, after_path)
     if journal != expected:raise ValueError('Journal does not match supplied snapshots')

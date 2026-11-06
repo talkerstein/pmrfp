@@ -57,7 +57,7 @@ def prepare(items,operation):
     return groups,rewritten,payloads
 
 def execute(remote,items,journal):
-    if remote.name not in ('pmrfp-journal-canary-20261023','pmrfp-rebuilt-staging-20261029'):
+    if remote.name not in ('pmrfp-journal-canary-20261023','pmrfp-rebuilt-staging-20261029','pmrfp-rebuilt-staging-20261106'):
         raise ValueError('Payload staging is restricted to pinned rehearsal databases')
     operation=operation_id(journal)
     groups,rewritten,expected=prepare(items,operation)

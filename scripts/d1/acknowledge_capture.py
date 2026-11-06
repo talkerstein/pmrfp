@@ -12,6 +12,7 @@ from change_capture import READER,function_guard,role_guard
 
 PROJECT='tumexryzbzmtijvbloch'
 TARGET='pmrfp-rebuilt-staging-20261029'
+CAPTURE_TARGETS=(TARGET,'pmrfp-rebuilt-staging-20261106')
 
 def plan(source_snapshot,candidate_snapshot):
     catalog=m.load_catalog();source,meta,source_sha=m.read_snapshot(source_snapshot,catalog)
@@ -55,7 +56,7 @@ def check_source_environment():
 
 def acknowledge(remote,source_snapshot,candidate_snapshot,runner=subprocess.run):
     ids,dataset=plan(source_snapshot,candidate_snapshot)
-    if remote.name!=TARGET:raise ValueError('Only the pinned copied-data preview may acknowledge source capture')
+    if remote.name not in CAPTURE_TARGETS:raise ValueError('Only the pinned copied-data preview may acknowledge source capture')
     check_source_environment()
     verified=r.verify(remote,candidate_snapshot)
     _,meta,source_sha=m.read_snapshot(source_snapshot,m.load_catalog())
@@ -80,8 +81,8 @@ def acknowledge(remote,source_snapshot,candidate_snapshot,runner=subprocess.run)
     return {'capturedReceipts':len(ids),'newAcknowledgements':total,'dataset':dataset,'nativeRecordsVerified':verified['records'],'sourceApplicationWrites':0,'customerRowsChanged':False,'durableConsumerCheckpoint':True,'acknowledgedReceiptHistory':history['acknowledgedReceipts']}
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source-snapshot',required=True);p.add_argument('--candidate-snapshot',required=True);p.add_argument('--commit-ack',action='store_true');p.add_argument('--wrangler-auth',action='store_true');args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source-snapshot',required=True);p.add_argument('--candidate-snapshot',required=True);p.add_argument('--commit-ack',action='store_true');p.add_argument('--generation',choices=['rebuilt-20261029','rebuilt-20261106'],default='rebuilt-20261029');p.add_argument('--wrangler-auth',action='store_true');args=p.parse_args()
     ids,dataset=plan(args.source_snapshot,args.candidate_snapshot)
     if not args.commit_ack:result={'plannedReceipts':len(ids),'dataset':dataset,'sourceQueueWrites':0,'dryRun':True}
-    else:result=acknowledge(r.Remote(wrangler_auth=args.wrangler_auth,generation='rebuilt-20261029'),args.source_snapshot,args.candidate_snapshot)
+    else:result=acknowledge(r.Remote(wrangler_auth=args.wrangler_auth,generation=args.generation),args.source_snapshot,args.candidate_snapshot)
     print(json.dumps(result,indent=2))

@@ -30,3 +30,11 @@ test('wrong mode or origin never opens the database',async()=>{
  const db={prepare(){throw Error('MUST_NOT_QUERY')}};
  for(const config of [{...env(db),MODE:'production'},{...env(db),AUTH_BASE_URL:'https://another.invalid'}])assert.equal((await worker.fetch(request(),config)).status,503);
 });
+test('reset requires explicit mode, same origin, JSON and bounded reviewed fields',async()=>{
+ const db={prepare:sql=>({first:async()=>sql.includes('_auth_preview_manifest')?{mode:'synthetic-only-v1'}:{total:4,unsafe:0}})};
+ const send=(config,headers,body)=>worker.fetch(new Request(origin+'/api/auth/reset-password',{method:'POST',headers:{...headers,'x-pmrfp-auth-preview-key':key},body}),config);
+ assert.equal((await send(env(db),{'content-type':'application/json',origin},'{}')).status,404);
+ for(const [headers,body] of [[{'content-type':'application/json',origin:'https://evil.invalid'},'{}'],[{'content-type':'text/plain',origin},'{}'],[{'content-type':'application/json',origin},JSON.stringify({unknown:'field'})],[{'content-type':'application/json',origin},'x'.repeat(1025)]]){
+  assert.equal((await send({...env(db),SYNTHETIC_RESET:'enabled'},headers,body)).status,400);
+ }
+});

@@ -135,7 +135,7 @@ def reconstruct(base_snapshot,delta_path,output,verify_full=False):
     return {'source_snapshot_sha256':sha.hexdigest(),'records':sum(map(len,rows.values())),'capturedReceipts':len(header['ids']),'transferredRowRecords':transferred,'incrementalTransferBytes':delta_bytes,'fullVerificationBytes':full_bytes,'sameTransactionFullComparison':verify_full,'sourceWrites':0}
 
 def export(remote,base_source,base_candidate,output,delta_path,verify_full=False,runner=subprocess.run):
-    if remote.name!=a.TARGET:raise ValueError('Incremental export requires the pinned copied preview')
+    if remote.name not in a.CAPTURE_TARGETS:raise ValueError('Incremental export requires the pinned copied preview')
     a.check_source_environment()
     catalog=m.load_catalog();source,_,source_sha=m.read_snapshot(base_source,catalog);candidate,_,candidate_sha=m.read_snapshot(base_candidate,catalog)
     a.plan(base_source,base_candidate);rebuild.check_preserved(source,candidate,json.loads((m.ROOT/'d1/rebuild-policy.json').read_text()))

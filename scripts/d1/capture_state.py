@@ -50,7 +50,7 @@ def source_digest(runner=subprocess.run,exclude_ids=None,dataset=None):
     return d
 
 def write(remote,source_sha,candidate_sha,receipt_digest):
-    if remote.name not in ('pmrfp-rebuilt-staging-20261029','pmrfp-journal-canary-20261023'):raise ValueError('Capture metadata requires a pinned rehearsal database')
+    if remote.name not in ('pmrfp-rebuilt-staging-20261029','pmrfp-rebuilt-staging-20261106','pmrfp-journal-canary-20261023'):raise ValueError('Capture metadata requires a pinned rehearsal database')
     row=validate(dict(zip(FIELDS,[1,1,source_sha,candidate_sha,m.digest(m.CATALOG.read_bytes()),receipt_digest])))
     existing=read(remote)
     batch=[{'sql':"SELECT CASE WHEN (SELECT source_sha256=? AND state='validated' FROM _migration_manifest WHERE id=1) THEN 1 ELSE json('capture_checkpoint_mismatch') END",'params':[candidate_sha]}]

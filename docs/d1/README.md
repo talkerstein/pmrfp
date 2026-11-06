@@ -1,5 +1,9 @@
 # PMRFP D1 migration — staged data rehearsal
 
+## November 6 checkpoint
+
+Workers Paid is active after explicit approval. The new isolated native copy contains 143,719 exactly verified records across 117 tables; its native readback backup has been restored and verified. The separate expanded read-only preview matches 1,786 public listings and taxonomy. All 64 current files have matching R2 readbacks. The approved 76-account Auth shadow copy is sealed, has no sessions or Worker bindings, and does not switch login. Bootstrap acknowledgements/checkpoint advancement are in progress. See [VERIFICATION-2026-11-06.md](VERIFICATION-2026-11-06.md). Older dated sections remain historical.
+
 ## Current checkpoint — November 5
 
 See [VERIFICATION-2026-11-05.md](VERIFICATION-2026-11-05.md). Reader/ACK/Auth-export access is renewed until November 12, 15:30 India; capture covers 116 public tables. The refreshed 141,068-record candidate is validated locally only. The active native copy remains November 3 (87,866 records), with no new ACKs today. Native synthetic Auth login/session/revocation checks pass; real Auth and storage integration remain unfinished. Free-plan capacity blocks the expanded native refresh. Historical dated sections below describe their original checkpoints.

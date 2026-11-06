@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { rehearsalOptions } from './rehearsal.mjs';
+import { resetSyntheticPassword } from './atomic-reset.mjs';
 
 async function gatewayMatches(actual, expected) {
   if (typeof actual !== 'string' || typeof expected !== 'string' || expected.length < 32 || actual.length > 512) return false;
@@ -28,6 +29,25 @@ const worker = {
     if (url.pathname==='/__migration/health' && request.method==='GET') return new Response(JSON.stringify({mode:'synthetic-only',realAccountsImported:false}),{headers});
     if (!url.pathname.startsWith('/api/auth/')) return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
     const options=rehearsalOptions(env.AUTH_DB,env.AUTH_SECRET);
+    if (url.pathname==='/api/auth/reset-password') {
+      if (env.SYNTHETIC_RESET!=='enabled' || request.method!=='POST') return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
+      if (request.headers.get('origin')!==env.AUTH_BASE_URL || url.search || !request.headers.get('content-type')?.startsWith('application/json')) return new Response(JSON.stringify({error:'invalid_reset_request'}),{status:400,headers});
+      try {
+        const body=await request.text();
+        if(new TextEncoder().encode(body).length>1024)throw Error('Bound exceeded');
+        const input=JSON.parse(body);
+        if(!input || Object.keys(input).some(key=>!['token','newPassword'].includes(key)))throw Error('Unknown field');
+        await resetSyntheticPassword(env.AUTH_DB,input.token,input.newPassword);
+        return new Response(JSON.stringify({status:true}),{headers});
+      } catch {
+        return new Response(JSON.stringify({error:'reset_failed'}),{status:400,headers});
+      }
+    }
+    if(env.SYNTHETIC_RESET==='enabled')options.emailAndPassword={...options.emailAndPassword,
+      revokeSessionsOnPasswordReset:true,
+      // Synthetic transport sink only: no email, URL or reset token is sent/logged.
+      sendResetPassword:async()=>{},
+    };
     const auth=betterAuth({...options,baseURL:env.AUTH_BASE_URL,trustedOrigins:[env.AUTH_BASE_URL]});
     const response=await auth.handler(request);
     const secured=new Response(response.body,response);
