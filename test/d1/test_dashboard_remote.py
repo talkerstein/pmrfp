@@ -1,5 +1,5 @@
 import csv,hashlib,json,os,sqlite3,sys,tempfile,unittest,io
-import urllib.error,socket
+import urllib.error,socket,ssl
 from unittest.mock import patch
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'scripts/d1'))
@@ -76,8 +76,22 @@ class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
             calls.append(items);raise TimeoutError('unavailable read transport')
         fake.batch=interrupted
         with self.assertRaises(TimeoutError):remote.read_rows(fake,{'regions':self.specs['regions']})
-        self.assertEqual(len(calls),1);self.assertTrue(calls[0][0]['sql'].startswith('SELECT *'))
+        self.assertEqual(len(calls),2);self.assertTrue(calls[0][0]['sql'].startswith('SELECT *'))
         fake.db.close()
+    def test_readback_recovers_transient_tls_eof_but_never_retries_certificate_errors(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        original=fake.batch;calls=[]
+        def interrupted(items):
+            self.assertTrue(all(item['sql'].startswith('SELECT *') for item in items));calls.append(items)
+            if len(calls)==1:raise urllib.error.URLError(ssl.SSLEOFError('TLS connection lost'))
+            return original(items)
+        fake.batch=interrupted;remote.verify(fake,snapshot);self.assertGreater(len(calls),1)
+        calls.clear()
+        def invalid_certificate(items):
+            calls.append(items);raise urllib.error.URLError(ssl.SSLCertVerificationError('certificate rejected'))
+        fake.batch=invalid_certificate
+        with self.assertRaises(urllib.error.URLError):remote.read_rows(fake,self.specs)
+        self.assertEqual(len(calls),1)
     def test_resume_inserts_only_missing_rows_after_full_partial_readback(self):
         snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
         fake.query('DELETE FROM users_profile');fake.query("UPDATE _migration_manifest SET state='loading'")

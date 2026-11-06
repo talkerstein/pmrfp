@@ -84,3 +84,12 @@ The actual deployed `0ff8fd1` path passed owner upload/read/HEAD/delete, byte ch
 The app photo proxy is capped at 4 MiB for both uploads and declared download size, below [Vercel's documented 4.5 MB function payload limit](https://vercel.com/docs/functions/limitations#request-body-size). The direct synthetic Worker still has its separate 10 MB bound. A direct Worker upload/download strategy is required before preserving full-size production photo behavior; the tiny native fixture proof does not establish that larger-file path.
 
 The next incremental export initially stopped during native baseline readback on a network timeout, before reading a new Source delta or acknowledging events. Readback now reduces SELECT-only batch sizes after a lost-response timeout; single-page failures stop. Atomic write batches are never split or retried by this change. Regression tests cover a response lost after SELECT execution and bounded failure at one page. All 95 Python tests pass (one environment-specific skip); the guarded export is retried against the unchanged acknowledged baseline.
+
+
+## Approved two-message Auth delivery proof
+
+After explicit authorization, actual synthetic verification and reset callbacks each sent one message to `dev@talkerstein.ca` through the protected Vercel relay and Hostinger. Confirmation, password reset, session revocation and replay denial passed. The fixture was restored; temporary Worker and Vercel delivery configuration was removed. Proof and access/expiry details: [AUTH-MAIL-DELIVERY-REHEARSAL-2026-11-06.md](AUTH-MAIL-DELIVERY-REHEARSAL-2026-11-06.md). Total SMTP messages today: three (the received standalone transport test plus these two callback tests). Receipt of both callback messages remains unconfirmed. Default delivery is disabled, and real account email integration remains unfinished.
+
+The app photo path also passed its deployed proof after reusing the existing real Sharp decoder/orientation/1920px JPEG re-encoding and metadata stripping (`fe1b9f8`). Its readback matches sanitized bytes, not the original upload; metadata-bearing and corrupt-image contract tests cover that boundary.
+
+Native cycle-two forward replay next stopped before mutation on a transient TLS EOF during readback. SELECT-only retries now also cover transient TLS EOF/reset errors with one bounded single-page retry; certificate verification errors still fail immediately, and atomic writes are unaffected. All 96 Python tests pass (one environment-specific skip). No cycle-two receipts have been acknowledged at this point.

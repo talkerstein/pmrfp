@@ -33,7 +33,7 @@
   "nativeSyntheticAuthApplicationProof": true,
   "nativeSyntheticPrivateStorageProof": true,
   "hostingerSmtpLocalVerified": true,
-  "hostingerSmtpEmailsSent": 1,
+  "hostingerSmtpEmailsSent": 3,
   "mailRelayPreviewOnly": true,
   "mailRelayVercelRuntimeVerified": true,
   "mailCallbacksEnabled": false,
@@ -44,5 +44,10 @@
   "existingTestAccountNativeCredentialVerified": true,
   "existingTestAccountRehearsalResourcesRemoved": true,
   "appCookieToNativeAuthAndSavedListHttpVerified": true,
-  "appCookieToNativeAuthAndPrivatePhotoHttpVerified": true
+  "appCookieToNativeAuthAndPrivatePhotoHttpVerified": true,
+  "syntheticAuthVerificationAndResetEmailAccepted": true,
+  "syntheticAuthCallbackEmailsAccepted": 2,
+  "syntheticAuthCallbackInboxDeliveryConfirmed": false,
+  "syntheticAuthMailTemporaryDeliveryConfigurationRemoved": true,
+  "appPhotoSanitizationNativeHttpVerified": true
 }

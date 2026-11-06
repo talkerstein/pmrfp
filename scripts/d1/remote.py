@@ -4,7 +4,7 @@ Pinned to an explicit rehearsal database registry; cannot target production. No 
 created. A partial load stays marked 'loading' until every record and FK passes.
 Use CLOUDFLARE_API_TOKEN, or explicitly opt into the local Wrangler OAuth file.
 """
-import argparse,contextlib,graphlib,json,os,re,subprocess,time,urllib.request,urllib.error,socket
+import argparse,contextlib,graphlib,json,os,re,subprocess,time,urllib.request,urllib.error,socket,ssl
 from pathlib import Path
 import migrate as m
 import capture_state
@@ -171,7 +171,7 @@ def verify_schema(remote):
 
 def read_rows(remote,specs):
     actual={t:{} for t in specs}
-    pending=[(table,None) for table in specs];batch_limit=10
+    pending=[(table,None) for table in specs];batch_limit=10;single_retried=set()
     while pending:
         group,pending=pending[:batch_limit],pending[batch_limit:]
         requests=[]
@@ -180,10 +180,15 @@ def read_rows(remote,specs):
             where='' if cursor is None else ' WHERE ('+keys+')>('+','.join('?' for _ in cursor)+')'
             requests.append({'sql':'SELECT * FROM '+m.ident(table)+where+' ORDER BY '+keys+' LIMIT 250','params':cursor or []})
         try:pages=remote.batch(requests)
-        except (TimeoutError,socket.timeout):
+        except (TimeoutError,socket.timeout,ssl.SSLEOFError,ConnectionResetError,urllib.error.URLError) as error:
             # These are SELECT-only pages. A lost response can be re-read safely;
             # never apply this splitting/retry policy to atomic write batches.
-            if len(group)==1:raise
+            reason=error.reason if isinstance(error,urllib.error.URLError) else error
+            if not isinstance(reason,(TimeoutError,socket.timeout,ssl.SSLEOFError,ConnectionResetError)):raise
+            if len(group)==1:
+                key=(group[0][0],m.canonical(group[0][1]))
+                if key in single_retried:raise
+                single_retried.add(key)
             batch_limit=max(1,len(group)//2);pending=group+pending;continue
         if len(pages)!=len(group):raise ValueError('Incomplete remote readback batch')
         for (table,cursor),result in zip(group,pages):
