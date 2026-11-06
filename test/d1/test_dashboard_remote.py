@@ -1,5 +1,5 @@
 import csv,hashlib,json,os,sqlite3,sys,tempfile,unittest,io
-import urllib.error
+import urllib.error,socket
 from unittest.mock import patch
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'scripts/d1'))
@@ -60,6 +60,24 @@ class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
         r=remote.load(fake,snapshot);self.assertEqual(r['records'],505)
         self.assertTrue(statements);self.assertFalse(any('OFFSET' in sql for sql in statements));self.assertTrue(any('WHERE (' in sql for sql in statements))
         remote.verify(fake,snapshot,backup_path=self.root/'paged.sqlite');m.validate(snapshot,self.root/'paged.sqlite')
+    def test_read_timeout_shrinks_select_batches_without_skipping_or_duplicating_rows(self):
+        snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
+        original=fake.batch;calls=[]
+        def interrupted(items):
+            self.assertTrue(all(item['sql'].startswith('SELECT *') for item in items));calls.append(len(items))
+            result=original(items)
+            if len(calls)==1:raise socket.timeout('response lost after SELECT execution')
+            return result
+        fake.batch=interrupted;remote.verify(fake,snapshot)
+        self.assertGreater(calls[0],1);self.assertLess(max(calls[1:]),calls[0])
+    def test_single_select_timeout_stops_without_unbounded_retries(self):
+        fake=FakeRemote();calls=[]
+        def interrupted(items):
+            calls.append(items);raise TimeoutError('unavailable read transport')
+        fake.batch=interrupted
+        with self.assertRaises(TimeoutError):remote.read_rows(fake,{'regions':self.specs['regions']})
+        self.assertEqual(len(calls),1);self.assertTrue(calls[0][0]['sql'].startswith('SELECT *'))
+        fake.db.close()
     def test_resume_inserts_only_missing_rows_after_full_partial_readback(self):
         snapshot=self.snapshot(self.seed());fake=FakeRemote();self.addCleanup(fake.db.close);remote.load(fake,snapshot)
         fake.query('DELETE FROM users_profile');fake.query("UPDATE _migration_manifest SET state='loading'")

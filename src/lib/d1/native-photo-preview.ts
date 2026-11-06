@@ -1,5 +1,7 @@
 import {UUID} from './contracts';
 import {nativePreviewCookie,nativePreviewTokenPattern} from './native-auth-preview';
+// Stay below Vercel's 4.5 MB function payload limit; full-size uploads need a direct Worker path.
+const maxBytes=4*1024*1024;
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; sandbox"};
 const denied=(error:string,status:number)=>Response.json({error},{status,headers});
 /** Isolated existing synthetic R2 sandbox only; not the real-file archive. */
@@ -13,7 +15,7 @@ export async function handleNativePhotoPreview(request:Request,projectId:string,
   if(request.headers.get('content-type')!=='image/jpeg')return denied('jpeg_required',415);
   const reader=request.body?.getReader();if(!reader)return denied('invalid_request',400);
   const chunks:Uint8Array[]=[];let size=0;
-  try{try{for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>10*1024*1024)return denied('request_too_large',413);chunks.push(part.value);}}finally{await reader.cancel();}
+  try{try{for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>maxBytes)return denied('request_too_large',413);chunks.push(part.value);}}finally{await reader.cancel();}
    if(size<3)return denied('invalid_request',400);bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
   }catch{return denied('invalid_request',400);}
  }
@@ -23,7 +25,8 @@ export async function handleNativePhotoPreview(request:Request,projectId:string,
   if(request.method==='DELETE'){if(response.status!==204)throw Error('Invalid delete response');return new Response(null,{status:204,headers});}
   if(request.method==='PUT')return Response.json({ok:true},{headers});
   if(response.headers.get('content-type')!=='image/jpeg')throw Error('Invalid image response');
-  const resultHeaders=new Headers({...headers,'content-type':'image/jpeg'});const length=response.headers.get('content-length');if(length&&/^\d+$/.test(length)&&Number(length)<=10*1024*1024)resultHeaders.set('content-length',length);
+  const length=response.headers.get('content-length');if(!length||!/^\d+$/.test(length)||Number(length)>maxBytes)return denied('photo_exceeds_preview_limit',413);
+  const resultHeaders=new Headers({...headers,'content-type':'image/jpeg','content-length':length});
   return new Response(request.method==='HEAD'?null:response.body,{status:200,headers:resultHeaders});
  }catch{return denied('native_preview_unavailable',503);}
 }

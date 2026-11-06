@@ -16,8 +16,9 @@ it('streams only JPEG bytes with private headers and forwards only the signed pr
  const head=await handleNativePhotoPreview(request('HEAD'),project,photo,env,fetcher as typeof fetch);expect(await head.text()).toBe('');expect(head.headers.get('content-length')).toBe('4');
 });
 it('bounds uploads and preserves owner/visibility denials without exposing provider details',async()=>{
- const fetcher=vi.fn();expect((await handleNativePhotoPreview(request('PUT',new Uint8Array(10*1024*1024+1)),project,photo,env,fetcher)).status).toBe(413);expect(fetcher).not.toHaveBeenCalled();
+ const fetcher=vi.fn();expect((await handleNativePhotoPreview(request('PUT',new Uint8Array(4*1024*1024+1)),project,photo,env,fetcher)).status).toBe(413);expect(fetcher).not.toHaveBeenCalled();
  const denied=await handleNativePhotoPreview(request(),project,photo,env,async()=>new Response('PRIVATE_SQL_DETAIL',{status:404}));expect(denied.status).toBe(404);expect(await denied.text()).not.toContain('PRIVATE_SQL');
  const invalid=await handleNativePhotoPreview(request(),project,photo,env,async()=>new Response('<html>',{headers:{'content-type':'text/html'}}));expect(invalid.status).toBe(503);
+ const oversized=await handleNativePhotoPreview(request(),project,photo,env,async()=>new Response(null,{headers:{'content-type':'image/jpeg','content-length':String(4*1024*1024+1)}}));expect(oversized.status).toBe(413);
  const removed=await handleNativePhotoPreview(request('DELETE'),project,photo,env,async()=>new Response(null,{status:204}));expect(removed.status).toBe(204);expect(await removed.text()).toBe('');
 });

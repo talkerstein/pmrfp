@@ -4,7 +4,7 @@ Pinned to an explicit rehearsal database registry; cannot target production. No 
 created. A partial load stays marked 'loading' until every record and FK passes.
 Use CLOUDFLARE_API_TOKEN, or explicitly opt into the local Wrangler OAuth file.
 """
-import argparse,contextlib,graphlib,json,os,re,subprocess,time,urllib.request,urllib.error
+import argparse,contextlib,graphlib,json,os,re,subprocess,time,urllib.request,urllib.error,socket
 from pathlib import Path
 import migrate as m
 import capture_state
@@ -171,15 +171,20 @@ def verify_schema(remote):
 
 def read_rows(remote,specs):
     actual={t:{} for t in specs}
-    pending=[(table,None) for table in specs]
+    pending=[(table,None) for table in specs];batch_limit=10
     while pending:
-        group,pending=pending[:10],pending[10:]
+        group,pending=pending[:batch_limit],pending[batch_limit:]
         requests=[]
         for table,cursor in group:
             keys=','.join(map(m.ident,specs[table]['pk']))
             where='' if cursor is None else ' WHERE ('+keys+')>('+','.join('?' for _ in cursor)+')'
             requests.append({'sql':'SELECT * FROM '+m.ident(table)+where+' ORDER BY '+keys+' LIMIT 250','params':cursor or []})
-        pages=remote.batch(requests)
+        try:pages=remote.batch(requests)
+        except (TimeoutError,socket.timeout):
+            # These are SELECT-only pages. A lost response can be re-read safely;
+            # never apply this splitting/retry policy to atomic write batches.
+            if len(group)==1:raise
+            batch_limit=max(1,len(group)//2);pending=group+pending;continue
         if len(pages)!=len(group):raise ValueError('Incomplete remote readback batch')
         for (table,cursor),result in zip(group,pages):
             page=result['results']
