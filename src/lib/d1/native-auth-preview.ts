@@ -20,6 +20,16 @@ const interestResult = z.object({
   z.strictObject({ unlimited: z.literal(false), left: z.number().int().nonnegative(), limit: z.number().int().positive() }),
  ]),
 });
+const buyerResponses = z.object({
+ listing: z.object({ id: z.string().uuid(), title: z.string(), status: z.string() }),
+ items: z.array(z.object({
+  id: z.string().uuid(), status: z.string(), message: z.string().nullable(), createdAt: z.string(),
+  quoteAmount: z.string().nullable(), quoteKind: z.string().nullable(), company: z.string(),
+  contact: z.object({
+   name: z.string().nullable(), company: z.string().nullable(), email: z.string().nullable(), phone: z.string().nullable(),
+  }).nullable(),
+ })).max(1000),
+});
 export function nativePreviewCookie(request:Request){const matches=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));return matches.length===1?matches[0].slice(cookieName.length+1):'';}
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw Error('Missing body');const chunks:Uint8Array[]=[];let size=0;
@@ -68,14 +78,20 @@ async function previewBody(request: Request, operation: string, signupIntent: bo
 export async function handleNativeAuthPreview(request:Request,operation:string,env:Record<string,string|undefined>,fetcher:typeof fetch=fetch):Promise<Response>{
  if(env.PMRFP_NATIVE_AUTH_PREVIEW!=='synthetic-only'||!(env.VERCEL_ENV==='preview'||(!env.VERCEL_ENV&&env.NODE_ENV==='development')))return failure('native_preview_not_enabled',503);
  if(!env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET||env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
- if(!['sign-up','sign-up-link','sign-in-link','magic-verify','sign-in','session','sign-out','saved-rfps','profile','interest'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
+ const url = new URL(request.url);
+ const interestRead = operation==='interest'&&request.method==='GET';
+ if(!['sign-up','sign-up-link','sign-in-link','magic-verify','sign-in','session','sign-out','saved-rfps','profile','interest'].includes(operation)
+  ||(url.search&&!interestRead))return failure('not_found',404);
  const signupIntent = env.PMRFP_NATIVE_PROFILE_PREVIEW === 'signup-intent';
  const newAccount = operation==='sign-up'||operation==='sign-up-link';
  const linkFlow = ['sign-up-link','sign-in-link','magic-verify'].includes(operation);
  if((newAccount&&!signupIntent)||(linkFlow&&env.PMRFP_NATIVE_MAGIC_LINK_PREVIEW!=='enabled'))return failure('not_found',404);
  if(operation==='profile'&&!signupIntent&&env.PMRFP_NATIVE_PROFILE_PREVIEW!=='enabled')return failure('not_found',404);
  if(operation==='interest'&&env.PMRFP_NATIVE_INTEREST_PREVIEW!=='enabled')return failure('not_found',404);
- if(operation==='saved-rfps'?!['GET','POST'].includes(request.method):operation==='session'?request.method!=='GET':request.method!=='POST')return failure('invalid_request',400);
+ const methods = operation==='saved-rfps'||operation==='interest' ? ['GET','POST'] : [operation==='session'?'GET':'POST'];
+ if(!methods.includes(request.method))return failure('invalid_request',400);
+ const rfpId = interestRead ? url.searchParams.get('rfpId') : null;
+ if(interestRead&&(!rfpId||!UUID.test(rfpId)||[...url.searchParams.keys()].length!==1))return failure('invalid_request',400);
  let body:Record<string,unknown>|undefined;
  if(request.method==='POST'){
   if(request.headers.get('origin')!==new URL(request.url).origin||!request.headers.get('content-type')?.startsWith('application/json'))return failure('invalid_request',400);
@@ -110,7 +126,8 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
  if(operation==='saved-rfps'||operation==='profile'||operation==='interest'){
   if(!env.PMRFP_NATIVE_APP_GATEWAY_SECRET||env.PMRFP_NATIVE_APP_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
   try{
-   const endpoint = operation === 'profile' ? '/v1/profile' : operation === 'interest' ? '/v1/rfp-interest' : '/v1/saved-rfps';
+   const endpoint = interestRead ? '/v1/rfp-responses?rfpId='+encodeURIComponent(rfpId!)
+    : operation==='profile' ? '/v1/profile' : operation==='interest' ? '/v1/rfp-interest' : '/v1/saved-rfps';
    const response=await fetcher('https://pmrfp-native-auth-app-sandbox.pmrfp.workers.dev'+endpoint,{method:request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-gateway-key':env.PMRFP_NATIVE_APP_GATEWAY_SECRET,'x-pmrfp-native-session':'__Secure-better-auth.session_token='+sessionToken,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
    if(!response.ok){
     const denied = [400,401,403,404].includes(response.status)
@@ -119,6 +136,11 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
     return failure('native_operation_denied', denied ? response.status : 503);
    }
    const value:unknown=await response.json();if(!record(value))throw Error('Invalid native response');
+   if(interestRead){
+    const result = buyerResponses.parse(value);
+    if(response.status!==200||result.listing.id!==rfpId)throw Error('Unexpected buyer response');
+    return Response.json(result,{headers});
+   }
    if(operation==='interest'){
     if(response.status!==201)throw Error('Invalid interest response');
     return Response.json(interestResult.parse(value),{status:201,headers});

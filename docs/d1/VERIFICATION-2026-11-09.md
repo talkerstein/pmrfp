@@ -24,4 +24,6 @@ For the write rehearsal, `schema.py --exact-decimal-checks` compares numeric ran
 
 The isolated Worker accepted ordinary expressions of interest through the browser and mobile transports, stored exact quotes, and committed the buyer's in-app notice and an outbox entry with the response. Two simultaneous submissions could not both claim the final free response. Duplicate and suspended-company requests were denied, an active trial lifted the allowance, and a simulated outbox or notice failure rolled back the response. Sealed bids, attachment sharing and external delivery still require their own paths.
 
+The buyer read rehearsal returned the ordinary bid only to the listing's authorized buyer. An unrelated buyer and the submitting trade were denied the buyer view. The exact quote was visible with contact details hidden, and explicit contact reveal made the details available through the mobile transport. Suspending the buyer revoked the next read.
+
 Production remains on Supabase. The next release gates are stable file URLs and upload routing; production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback before cutover.

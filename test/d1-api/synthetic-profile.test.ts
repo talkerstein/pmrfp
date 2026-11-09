@@ -170,4 +170,20 @@ it("lets a verified profile respond and rolls back the response when its notific
   expect(await response.json()).toEqual({ ok: true, allowance: { unlimited: false, left: 2, limit: 3 } });
   expect((await submit(enabled)).status).toBe(409);
   expect(sqlite.prepare("SELECT user_id,type FROM notifications").all()).toEqual([{ user_id: otherId, type: "pm_new_response" }]);
+
+  sqlite.prepare("UPDATE users_profile SET primary_role='property_manager' WHERE id=?").run(otherId);
+  sqlite.prepare("UPDATE organizations SET email=?,public_contact_visibility='hide_contact' WHERE id=?")
+    .run("private-trade@example.invalid", org);
+  const buyerRead = (actor: string) => handleRequest(new Request("https://sandbox.invalid/v1/rfp-responses?rfpId=" + rfp, {
+    headers: { "x-pmrfp-gateway-key": gateway, "x-pmrfp-native-session": token },
+  }), enabled, auth(actor));
+  expect((await buyerRead(accountId)).status).toBe(404);
+  const hidden = await buyerRead(otherId);
+  expect(hidden.status).toBe(200);
+  expect((await hidden.json()).items[0]).toMatchObject({ message: "Fixture response", contact: null });
+  sqlite.exec("UPDATE rfp_interests SET contact_revealed=1");
+  const shared = await buyerRead(otherId);
+  expect((await shared.json()).items[0].contact.email).toBe("private-trade@example.invalid");
+  sqlite.prepare("UPDATE users_profile SET status='suspended' WHERE id=?").run(otherId);
+  expect((await buyerRead(otherId)).status).toBe(404);
 });

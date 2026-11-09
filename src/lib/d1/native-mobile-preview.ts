@@ -23,10 +23,11 @@ export async function handleNativeMobilePreview(
 ): Promise<Response> {
   if (env.PMRFP_NATIVE_MOBILE_PREVIEW !== "enabled" || env.VERCEL_ENV !== "preview") return fail("not_found", 404);
   const url = new URL(request.url);
-  if (url.protocol !== "https:" || url.search || request.headers.has("origin")) return fail("invalid_request", 400);
+  const buyerRead = operation === "mobile-interest" && request.method === "GET";
+  if (url.protocol !== "https:" || (url.search && !buyerRead) || request.headers.has("origin")) return fail("invalid_request", 400);
 
   const target = operations[operation];
-  const allowedMethods = target === "saved-rfps" ? ["GET", "POST"] : [target === "session" ? "GET" : "POST"];
+  const allowedMethods = target === "saved-rfps" || target === "interest" ? ["GET", "POST"] : [target === "session" ? "GET" : "POST"];
   if (!allowedMethods.includes(request.method)) return fail("method_not_allowed", 405);
   const authorization = request.headers.get("authorization") ?? "";
   const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";

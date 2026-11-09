@@ -10,6 +10,7 @@ import { listPublicPhotos } from "./photos";
 import { handleSyntheticProjectPhoto, type SandboxBucket } from "./project-photos";
 import { provisionSyntheticProfile } from "./synthetic-profile";
 import { submitSyntheticInterest } from "./synthetic-interest";
+import { listSyntheticBuyerResponses } from "./synthetic-responses";
 
 export interface Env extends AuthConfig {
   DB: D1Binding;
@@ -28,6 +29,14 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
   try {
     await verifyGateway(request.headers.get("x-pmrfp-gateway-key"), env.GATEWAY_SECRET);
     const url = new URL(request.url);
+    if (url.pathname === "/v1/rfp-responses") {
+      if (env.AUTH_PROVIDER !== "native-synthetic" || env.NATIVE_INTEREST_MODE !== "sandbox-write") {
+        throw new D1ApiError(404, "not_found");
+      }
+      if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
+      await requireSyntheticDetailDatabase(env.DB);
+      return json(await listSyntheticBuyerResponses(env.DB, url, await verifyUser(request, env, fetcher)));
+    }
     if (url.pathname === "/v1/rfp-interest") {
       if (env.AUTH_PROVIDER !== "native-synthetic" || env.NATIVE_INTEREST_MODE !== "sandbox-write") {
         throw new D1ApiError(404, "not_found");
