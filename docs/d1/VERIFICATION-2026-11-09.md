@@ -18,4 +18,6 @@ A separate local Workers runtime rehearsal created a synthetic password account,
 
 The local Workers runtime also rehearsed passwordless signup and subsequent sign-in. The link created a session on a different device and carried the original signup choices into the same D1 transaction. The provider stored a hashed token, two concurrent redemptions produced exactly one session, and expired links or accounts banned after issuance were denied.
 
+A passwordless fixture used a recovery link to set its first password. D1 installed the credential, consumed the link and revoked the existing session in one transaction. The same fixture then signed in through the HTTPS mobile preview transport, saved and removed a listing, and lost access after logout. This verifies the server transport with mobile-style requests. The Expo app still needs the matching provider and data API integration. The live source reported Google disabled, and the 79-account export contained only email providers.
+
 Production remains on Supabase. The next release gates are stable file URLs and upload routing; production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback before cutover.

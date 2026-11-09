@@ -12,15 +12,23 @@ export async function resetSyntheticPassword(db, token, password, now = Date.now
   // The pinned native D1 adapter stores dates as ISO text.
   // Fail inside the transaction using the sandbox marker's CHECK constraint.
   const eligible = `SELECT v.value FROM verification v JOIN user u ON u.id=v.value
-    JOIN account a ON a.userId=u.id AND a.providerId='credential'
     WHERE v.identifier=? AND typeof(v.expiresAt)='text' AND julianday(v.expiresAt)>julianday(?)
-      AND u.id LIKE '00000000-0000-4000-8000-0000000000%' AND u.email LIKE '%@example.invalid'`;
+      AND u.id LIKE '00000000-0000-4000-8000-0000000000%' AND u.email LIKE '%@example.invalid'
+      AND u.emailVerified=1`;
   const statement = (sql, ...params) => db.prepare(sql).bind(...params);
   return db.batch([
     statement("INSERT INTO _auth_preview_manifest(id,mode) SELECT 1,'invalid' WHERE NOT EXISTS (SELECT 1 FROM _auth_preview_manifest WHERE id=1 AND mode='synthetic-only-v1')"),
     statement(`UPDATE _auth_preview_manifest SET mode=CASE WHEN (SELECT count(*) FROM (${eligible}))=1 THEN mode ELSE 'invalid' END WHERE id=1`, identifier, timestamp),
     statement(`UPDATE account SET password=?,updatedAt=? WHERE providerId='credential' AND userId=(${eligible})`, encoded, timestamp, identifier, timestamp),
-    statement("UPDATE _auth_preview_manifest SET mode=CASE WHEN changes()=1 THEN mode ELSE 'invalid' END WHERE id=1"),
+    // A verified magic-link account has no credential until its first reset.
+    statement(`INSERT INTO account(id,accountId,providerId,userId,password,createdAt,updatedAt)
+      SELECT ?, eligible.value, 'credential', eligible.value, ?, ?, ? FROM (${eligible}) eligible
+      WHERE NOT EXISTS (SELECT 1 FROM account a WHERE a.userId=eligible.value AND a.providerId='credential')`,
+    crypto.randomUUID(), encoded, timestamp, timestamp, identifier, timestamp),
+    statement(`UPDATE _auth_preview_manifest SET mode=CASE WHEN (
+      SELECT count(*)=1 AND min(accountId=userId AND password=?)=1
+      FROM account WHERE providerId='credential' AND userId=(${eligible})
+    ) THEN mode ELSE 'invalid' END WHERE id=1`, encoded, identifier, timestamp),
     statement(`DELETE FROM session WHERE userId=(${eligible})`, identifier, timestamp),
     statement('DELETE FROM verification WHERE identifier=?', identifier),
     statement("UPDATE _auth_preview_manifest SET mode=CASE WHEN changes()=1 THEN mode ELSE 'invalid' END WHERE id=1"),

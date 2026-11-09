@@ -26,6 +26,22 @@ test('credential write failure preserves token, old credential and sessions for 
  await assert.rejects(resetSyntheticPassword(binding,token,password));assert.equal(state(db),before);
  db.exec('DROP TRIGGER fail_reset');await resetSyntheticPassword(binding,token,password);
 });
+test("a verified passwordless account sets its first password and revokes its existing session atomically", async t => {
+ const {db,binding}=setup(t);
+ db.exec("DELETE FROM account; CREATE TRIGGER fail_credential BEFORE INSERT ON account BEGIN SELECT RAISE(ABORT,'synthetic failure'); END");
+ const before=state(db);
+ await assert.rejects(resetSyntheticPassword(binding,token,password));
+ assert.equal(state(db),before);
+ db.exec("DROP TRIGGER fail_credential");
+ await resetSyntheticPassword(binding,token,password);
+ const credential=db.prepare("SELECT userId,accountId,providerId,password FROM account").get();
+ assert.equal(credential.userId,uid);
+ assert.equal(credential.accountId,uid);
+ assert.equal(credential.providerId,"credential");
+ assert.ok(await compare(password,credential.password));
+ assert.equal(db.prepare("SELECT count(*) n FROM session").get().n,0);
+ assert.equal(db.prepare("SELECT count(*) n FROM verification").get().n,0);
+});
 test('expired, duplicate, foreign-user and missing tokens cannot change any state',async t=>{
  for(const kind of ['expired','duplicate','foreign','missing']){
  const {db,binding}=setup(t);
