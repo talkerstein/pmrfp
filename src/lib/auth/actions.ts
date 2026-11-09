@@ -10,6 +10,9 @@ import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config
 import { getSession, roleHome } from "@/lib/access/access";
 import { buyerTags, isCheckViolation, parseBuyerKind } from "@/lib/auth/org-kind";
 import { safeNextPath } from "@/lib/auth/next";
+import {
+  canaryCookie, canaryCookieOptions, canaryPath, cloudflareCanaryConfig, cloudflareCanarySignIn, isCloudflareCanaryEmail,
+} from "@/lib/auth/cloudflare-canary";
 import { DEFAULT_SIGNUP_ROLE, onboardingPath, resolveRolePick } from "@/lib/auth/oauth";
 import {
   companyProfileSchema,
@@ -303,6 +306,16 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
     password: formData.get("password"),
   });
   if (!parsed.success) return { error: m.enterEmailPassword };
+  const canary = isCloudflareCanaryEmail(parsed.data.email) && cloudflareCanaryConfig();
+  if (canary) {
+    const token = await cloudflareCanarySignIn(canary, parsed.data);
+    if (!token) return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
+    (await cookies()).set(canaryCookie, token, {
+      ...canaryCookieOptions,
+      maxAge: Math.min(900, Math.max(0, Math.floor((canary.until - Date.now()) / 1000))),
+    });
+    redirect(canaryPath);
+  }
   if (!isSupabaseConfigured()) return { error: m.demo };
 
   const supabase = await createClient();
