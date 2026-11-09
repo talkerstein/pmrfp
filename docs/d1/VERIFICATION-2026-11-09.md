@@ -6,8 +6,12 @@ After the native restore checks, Supabase acknowledged all 26,523 captured chang
 
 All 61 public images (48,561,650 bytes) matched their original public metadata and their full R2 readback checksums. The protected app preview issued a short-lived link for the largest image; the direct Worker download matched all 9,593,514 bytes and denied a tampered signature. A fresh aggregate Source inventory matched the archive fingerprint for all 64 object identities, revisions, sizes, MIME types and bucket visibility. No files were added, removed or revised at the time of the check. See [the public image rehearsal](PUBLIC-ASSET-PREVIEW.md).
 
+The preview-only listing integration rendered the hero, gallery and gallery links for three published listings in a loopback app using D1 metadata. Each linked download went through R2 and matched the backup byte for byte. The protected Vercel deployment's metadata backend remains unchanged.
+
 The refreshed snapshot contains no project rows referencing the three archived private project photos. The offline comparison emitted counts only. These files remain sealed in the private migration archive and are not bound to the public Worker. The existing synthetic photo rehearsal remains the upload and access-policy test for future projects.
 
 An isolated D1 canary verified atomic saved-list journal capture. A disposable PostgreSQL rehearsal replayed equivalent synthetic changes into the original table shape and rejected conflicts or gaps atomically. See [the saved-list rollback rehearsal](SAVED-RFP-ROLLBACK-REHEARSAL.md) for the exact scope and remaining requirements.
 
-Production remains on Supabase. The next release gates are stable file URLs and a fresh storage inventory; production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback before cutover.
+A fresh, protected local Auth export and in-memory sealed import rehearsal verified 79 accounts. All 76 earlier accounts were retained with unchanged credentials and account state; three new accounts exist only in the local artifacts. The real Cloudflare Auth shadow remains sealed at 76 accounts and has no serving binding. No account emails or sessions were created.
+
+Production remains on Supabase. The next release gates are stable file URLs and upload routing; production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback before cutover.

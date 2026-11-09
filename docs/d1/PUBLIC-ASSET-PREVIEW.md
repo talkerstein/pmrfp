@@ -10,4 +10,6 @@ The separate app route is Preview-only. It can ask the Worker to issue a 90-seco
 
 The November 9 protected deployment issued the redirect for the largest file. The Worker returned its full 9,593,514 bytes without any Vercel or gateway header and the checksum matched. A modified signature was denied.
 
+A branch-only allowlist lets the listing detail page use this route for copied photos in its hero, gallery and gallery links. In production and for other images, existing URLs and image optimization are retained. Three real listing pages were exercised through a loopback Next.js app using D1 metadata and R2 images. All three downloads matched their full backup hashes (26,752,253 bytes). The protected Vercel deployment still uses its existing metadata provider: its proof covers the image route, while the loopback proof covers the whole listing page.
+
 Do not deploy an allowlist derived from a private or mixed bucket. Keep the generated manifest, deployment entry and secrets out of Git. Before production, refresh the public inventory, decide the stable URL and cache behavior, integrate existing image fields and test the private-file access paths separately.
