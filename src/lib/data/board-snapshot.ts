@@ -3,6 +3,9 @@ import { d1BoardEnabled } from "@/lib/d1/board-backend";
 import { BOARD_SHARDS, shardRange, type BoardRow } from "@/lib/d1/board-contracts";
 export { shardRange, type BoardRow } from "@/lib/d1/board-contracts";
 import { unstable_cache } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
+import { cloudflareBoard } from "./taxonomy-cloudflare";
+import { matchingBoard } from "./board-cloudflare";
 import { createReadClient } from "@/lib/supabase/read";
 import { RFPS_TAG } from "@/lib/supabase/public-cache";
 import { createLimiter, createSingleFlight } from "@/lib/concurrency";
@@ -145,10 +148,22 @@ export async function fetchBoardShard(shard: number): Promise<BoardRow[]> {
 const limit = createLimiter(4);
 const singleFlight = createSingleFlight();
 
+async function readBoardShard(shard: number, matchedMode: boolean): Promise<BoardRow[]> {
+  if (!matchedMode) return fetchBoardShard(shard);
+  const candidate = cloudflareBoard(shard, process.env.PMRFP_PUBLIC_TAXONOMY_GATEWAY ?? "").catch(error => {
+    unstable_rethrow(error);
+    return null;
+  });
+  const [source, replica] = await Promise.all([fetchBoardShard(shard), candidate]);
+  const matched = matchingBoard(source, replica);
+  console.info("[public-board-phase]", shard, matched ? "cloudflare" : "source");
+  return matched ?? source;
+}
+
 const cachedShard = unstable_cache(
   // The project URL is part of the key so preview and production databases never share entries.
-  async (shard: number, _projectUrl: string): Promise<BoardRow[]> =>
-    singleFlight(`${_projectUrl}:board-shard:${shard}`, () => limit(() => fetchBoardShard(shard))),
+  async (shard: number, projectUrl: string, matchedMode: boolean): Promise<BoardRow[]> =>
+    singleFlight(`${projectUrl}:board-shard:${shard}:${matchedMode}`, () => limit(() => readBoardShard(shard, matchedMode))),
   ["board-snapshot-shard-v2"],
   { tags: [RFPS_TAG], revalidate: SNAPSHOT_REVALIDATE },
 );
@@ -159,10 +174,12 @@ const cachedShard = unstable_cache(
  * Sorted by id. Throws when a shard can't be read and isn't cached.
  */
 export const getBoardRows = cache(async (): Promise<BoardRow[]> => {
-  const projectUrl = d1BoardEnabled()
+  const previewD1 = d1BoardEnabled();
+  const projectUrl = previewD1
     ? `d1:${process.env.PMRFP_D1_API_URL ?? ""}:${process.env.PMRFP_D1_DATASET_SHA256 ?? ""}`
     : `supabase:${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`;
-  const shards = await Promise.all(Array.from({ length: SNAPSHOT_SHARDS }, (_, i) => cachedShard(i, projectUrl)));
+  const matchedMode = !previewD1 && process.env.PMRFP_PUBLIC_BOARD_PHASE === "matched";
+  const shards = await Promise.all(Array.from({ length: SNAPSHOT_SHARDS }, (_, i) => cachedShard(i, projectUrl, matchedMode)));
   return shards.flat();
 });
 

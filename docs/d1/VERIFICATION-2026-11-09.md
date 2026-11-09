@@ -28,4 +28,12 @@ The isolated Worker accepted ordinary expressions of interest through the browse
 
 The buyer read rehearsal returned the ordinary bid only to the listing's authorized buyer. An unrelated buyer and the submitting trade were denied the buyer view. The exact quote was visible with contact details hidden, and explicit contact reveal made the details available through the mobile transport. Suspending the buyer revoked the next read.
 
-Production remains on Supabase. The next release gates are stable file URLs and upload routing; production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback before cutover.
+## Live phased rollout
+
+Production served all three public taxonomy lists and the 16 public RFP board shards through the Cloudflare D1 Worker in matched mode. The Worker matched 154 taxonomy rows and 1,792 public listings and their category links. Vercel keeps the normal Supabase reads and uses the D1 response only on a complete match. Supabase supplies the response on a difference, timeout or Worker failure. The two production changes are [PR 218](https://github.com/talkerstein/pmrfp/pull/218) and [PR 219](https://github.com/talkerstein/pmrfp/pull/219). Public smoke checks passed on the live domain.
+
+The rollback for the board phase is the verified taxonomy-only deployment `dpl_CiJtSbD1tsvETSKdYPUq3s8Rv99g`. The deployment from before both phases is `dpl_J8LaakFyvRqm6GAG6ajE9MaWcUbS`. The D1 checkpoint and Supabase receipt history were consistent after promotion, with 116 events waiting for the next refresh. The two matched read modes can fall back independently as new events arrive.
+
+All four copied listing photos still match their public Source revisions. The current R2 preview returns the original files, each 8–10 MB. Live photo delivery stays on the optimized path until a stable R2 route preserves that optimization and respects changes to Source visibility.
+
+Production still depends on Supabase for login, writes, files and other reads. The remaining gates include production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback.
