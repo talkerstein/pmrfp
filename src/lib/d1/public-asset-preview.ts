@@ -16,6 +16,19 @@ export function publicAssetId(source:string):string|null{
  }catch{return null;}
 }
 
+/** Existing listing pages opt in only for the images copied to this preview. */
+export function publicRfpPhotoSource(
+ source:string,env:Record<string,string|undefined>=process.env,
+):{src:string;unoptimized?:true}{
+ if(env.VERCEL_ENV!=='preview'||env.PMRFP_PUBLIC_ASSET_PREVIEW!=='enabled')return {src:source};
+ const allowlist=env.PMRFP_PUBLIC_RFP_ASSET_IDS;
+ if(!allowlist||allowlist.length>6500)return {src:source};
+ const ids=allowlist.split(',');
+ if(!ids.every(id=>hex64.test(id)))return {src:source};
+ const id=publicAssetId(source);
+ return id&&ids.includes(id)?{src:`/api/migration/public-asset/${id}`,unoptimized:true}:{src:source};
+}
+
 /** Private Vercel Preview can mint a browser link; binary bytes bypass Vercel. */
 export async function publicAssetPreviewRedirect(request:Request,id:string,env:Record<string,string|undefined>,fetcher:typeof fetch=fetch):Promise<Response>{
  if(env.VERCEL_ENV!=='preview'||env.PMRFP_PUBLIC_ASSET_PREVIEW!=='enabled')return deny(404);

@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';import {expect,it,vi} from 'vitest';
-import {publicAssetId,publicAssetPreviewRedirect} from '../../src/lib/d1/public-asset-preview';
+import {publicAssetId,publicAssetPreviewRedirect,publicRfpPhotoSource} from '../../src/lib/d1/public-asset-preview';
 const source='https://tumexryzbzmtijvbloch.supabase.co/storage/v1/object/public/';
 const id='a'.repeat(64),signature='b'.repeat(64),origin='https://pmrfp-verified-public-assets-preview.pmrfp.workers.dev';
 const env={VERCEL_ENV:'preview',PMRFP_PUBLIC_ASSET_PREVIEW:'enabled',PMRFP_PUBLIC_ASSET_GATEWAY_SECRET:'private-gateway-0000000000000000'};
@@ -7,6 +7,14 @@ const request=()=>new Request('https://app.invalid/api/migration/public-asset/'+
 it('maps only original public logo and listing image URLs',()=>{
  expect(publicAssetId(source+'logos/a%20b.png')).toBe(createHash('sha256').update('logos/a b.png').digest('hex'));
  for(const value of [source+'project-photos-private/a.jpg',source+'logos/a%2Fb.jpg',source+'logos/a.jpg?token=private',source.replace('supabase.co','other.invalid')+'logos/a.jpg'])expect(publicAssetId(value)).toBeNull();
+});
+it('uses the native preview image only when the exact file is staged and preview is enabled',()=>{
+ const photo=source+'rfp-photos/a.jpg',asset=publicAssetId(photo)!;
+ const preview={...env,PMRFP_PUBLIC_RFP_ASSET_IDS:asset};
+ expect(publicRfpPhotoSource(photo,preview)).toEqual({src:'/api/migration/public-asset/'+asset,unoptimized:true});
+ for(const mode of [{...preview,VERCEL_ENV:'production'},{...preview,PMRFP_PUBLIC_ASSET_PREVIEW:'disabled'},{...preview,PMRFP_PUBLIC_RFP_ASSET_IDS:asset+',oops'},{...preview,PMRFP_PUBLIC_RFP_ASSET_IDS:id}]) {
+  expect(publicRfpPhotoSource(photo,mode)).toEqual({src:photo});
+ }
 });
 it('redirects to the exact short-lived worker asset and sends no Source cookie upstream',async()=>{
  const expiry=Math.floor(Date.now()/1000)+90;const url=`${origin}/v1/assets/${id}?exp=${expiry}&sig=${signature}`;

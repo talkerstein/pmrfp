@@ -52,6 +52,7 @@ import { PaywallPlans } from "@/components/v3-pages/paywall-plans";
 import { PriceLine } from "@/components/v3-pages/price";
 import { winnerKey, winnersFromRfps } from "@/lib/data/winners";
 import { getFullRfp, getPublicTenderNoticeUrl, getRfpTeaser } from "@/lib/data/rfps";
+import { publicRfpPhotoSource } from "@/lib/d1/public-asset-preview";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { loadBuyers } from "@/lib/buyers/load";
 import { buyerPageForRfp, findBuyerPage } from "@/lib/buyers/model";
@@ -328,7 +329,7 @@ export default async function RfpDetailPage({
   const firstTrade = teaser.categories[0];
   const tradeSlug = firstTrade ? categories.find((c) => c.name === firstTrade)?.slug : undefined;
   const regionSlug = teaser.regionName ? regions.find((r) => r.name === teaser.regionName)?.slug : undefined;
-  const heroPhoto = teaser.photoUrls[0] ? { src: teaser.photoUrls[0], alt: "" } : tradePhotoForName(firstTrade);
+  const heroPhoto = teaser.photoUrls[0] ? { ...publicRfpPhotoSource(teaser.photoUrls[0]), alt: "" } : tradePhotoForName(firstTrade);
   const noticeKind = town
     ? getT("townJobs").listing.kind[town.post.post_kind === "tender_mirror" ? "tender_mirror" : "quote_request"]
     : isAward ? t.kind.award : isGc ? t.kind.gc : isPublicTender ? t.kind.public : t.kind.private;
@@ -683,7 +684,7 @@ export default async function RfpDetailPage({
             </div>
 
             <div className="vp-dcard zoom">
-              <Image src={heroPhoto.src} alt={heroPhoto.alt} fill priority sizes="(max-width: 1023px) 100vw, 480px" className="kb vp-hero-img" />
+              <Image {...heroPhoto} alt={heroPhoto.alt} fill priority sizes="(max-width: 1023px) 100vw, 480px" className="kb vp-hero-img" />
               <div className="vp-dcard-shade" />
               {teaser.deadline && (
                 <div className="vp-float float">
@@ -768,11 +769,14 @@ export default async function RfpDetailPage({
 
           {teaser.photoUrls.length > 0 && (
             <div className="vp-photos">
-              {teaser.photoUrls.slice(0, 6).map((u, i) => (
-                <a key={u} href={u} target="_blank" rel="noopener noreferrer" className={i === 0 ? "first" : undefined}>
-                  <Image src={u} alt={fill(t.photos.alt, { n: i + 1 })} fill sizes={i === 0 ? "(min-width: 1024px) 800px, 100vw" : "(min-width: 1024px) 280px, 33vw"} className="vp-img" />
-                </a>
-              ))}
+              {teaser.photoUrls.slice(0, 6).map((u, i) => {
+                const photo = publicRfpPhotoSource(u);
+                return (
+                  <a key={u} href={photo.src} target="_blank" rel="noopener noreferrer" className={i === 0 ? "first" : undefined}>
+                    <Image {...photo} alt={fill(t.photos.alt, { n: i + 1 })} fill sizes={i === 0 ? "(min-width: 1024px) 800px, 100vw" : "(min-width: 1024px) 280px, 33vw"} className="vp-img" />
+                  </a>
+                );
+              })}
               {teaser.photoUrls.length > 6 && <p className="more">{plural(teaser.photoUrls.length - 6, t.photos.more)}</p>}
             </div>
           )}
