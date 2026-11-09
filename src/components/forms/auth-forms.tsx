@@ -3,6 +3,7 @@
 import Link from "@/i18n/link";
 import { useActionState, useEffect, useState } from "react";
 import { localizePath } from "@/i18n/config";
+import { StagingTurnstile } from "@/components/forms/staging-turnstile";
 import { Building2, Hammer, HardHat, KeyRound, Package, Search, Home, UserRound } from "lucide-react";
 import {
   forgotPasswordAction,
@@ -36,10 +37,15 @@ function LangField() {
   return <input type="hidden" name="lang" value={lang} />;
 }
 
-export function SignInForm({ next, startWithLink = false, passwordOnly = false }: { next?: string | null; startWithLink?: boolean; passwordOnly?: boolean }) {
+export function SignInForm({ next, startWithLink = false, passwordOnly = false, turnstileSiteKey }: {
+  next?: string | null;
+  startWithLink?: boolean;
+  passwordOnly?: boolean;
+  turnstileSiteKey?: string;
+}) {
   const t = useT("auth").forms;
   const [useLink, setUseLink] = useState(startWithLink);
-  if (passwordOnly) return <SignInPasswordForm passwordOnly />;
+  if (passwordOnly) return <SignInPasswordForm passwordOnly turnstileSiteKey={turnstileSiteKey} />;
   if (useLink) {
     return (
       <div className="space-y-3">
@@ -80,9 +86,14 @@ function SignInLinkForm({ next }: { next?: string | null }) {
   );
 }
 
-function SignInPasswordForm({ next, passwordOnly = false }: { next?: string | null; passwordOnly?: boolean }) {
+function SignInPasswordForm({ next, passwordOnly = false, turnstileSiteKey }: {
+  next?: string | null;
+  passwordOnly?: boolean;
+  turnstileSiteKey?: string;
+}) {
   const t = useT("auth").forms;
   const [state, action, pending] = useActionState(signInAction, initial);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const lang = useLang();
   const stagingDashboard = localizePath("/dashboard/saved-rfps", lang);
   useEffect(() => {
@@ -107,7 +118,14 @@ function SignInPasswordForm({ next, passwordOnly = false }: { next?: string | nu
         </div>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
+      {passwordOnly && turnstileSiteKey && (
+        <>
+          <StagingTurnstile siteKey={turnstileSiteKey} attempt={state} onToken={setTurnstileToken} />
+          <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
+        </>
+      )}
+      {passwordOnly && !turnstileSiteKey && <p role="alert">Staging sign-in is temporarily unavailable.</p>}
+      <Button type="submit" className="w-full" disabled={pending || (passwordOnly && !turnstileToken)}>
         {pending ? t.signingIn : t.signIn}
       </Button>
     </form>

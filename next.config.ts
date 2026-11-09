@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { isIsolatedD1Staging } from "./src/lib/d1/staging-config";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -115,6 +116,23 @@ const nextConfig: NextConfig = {
         source: "/embed/:path*",
         headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }],
       },
+      ...(isIsolatedD1Staging() ? [
+        {
+          source: "/:path((?!embed/|sw\\.js$).*)",
+          headers: [
+            { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'" },
+            { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          ],
+        },
+        {
+          source: "/:lang(en|fr|es)?/:area(sign-in|dashboard|pm-dashboard|admin)/:rest*",
+          headers: [{ key: "Cache-Control", value: "private, no-store" }],
+        },
+        {
+          source: "/:lang(en|fr|es)?/sign-in",
+          headers: [{ key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; frame-src https://challenges.cloudflare.com" }],
+        },
+      ] : []),
       {
         // The service worker must never be served stale (see Next's PWA guide).
         source: "/sw.js",

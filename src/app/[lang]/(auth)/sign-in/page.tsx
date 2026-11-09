@@ -58,7 +58,8 @@ export default async function SignInPage({
             <ContinueWithGoogle next={next} />
           </div>
         )}
-        <SignInForm next={next} startWithLink={error === "link"} passwordOnly={staging} />
+        <SignInForm next={next} startWithLink={error === "link"} passwordOnly={staging}
+          turnstileSiteKey={staging ? process.env.PMRFP_STAGING_TURNSTILE_SITE_KEY : undefined} />
       </div>
       {!staging && <DemoNotice />}
       {!staging && <p className="mt-6 text-center text-sm text-muted-foreground">

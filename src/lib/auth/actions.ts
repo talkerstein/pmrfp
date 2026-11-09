@@ -1,6 +1,8 @@
 "use server";
 
-import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
+import { isIsolatedD1Staging, stagingEmail } from "@/lib/d1/staging-config";
+import { checkStagingRateLimit, stagingClientIp } from "@/lib/d1/staging-rate-limit";
+import { verifyStagingTurnstile } from "@/lib/d1/staging-turnstile-server";
 import { signInToStaging, signOutOfStaging } from "@/lib/d1/staging-session";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
@@ -301,7 +303,13 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
 export async function signInAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = formLang(formData);
   const m = messages(lang);
-  if (await checkRateLimitByIp(await authIp(), "auth")) {
+  const staging = isIsolatedD1Staging();
+  const stagingIp = staging ? stagingClientIp(await headers()) : null;
+  if (staging) {
+    const limit = await checkStagingRateLimit("auth-ip", stagingIp);
+    if (limit.status === 429) return { error: m.rateLimit };
+    if (limit.status === 503) return { error: "Staging sign-in is temporarily unavailable. Please retry." };
+  } else if (await checkRateLimitByIp(await authIp(), "auth")) {
     return { error: m.rateLimit };
   }
   const parsed = signInSchema.safeParse({
@@ -309,7 +317,15 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
     password: formData.get("password"),
   });
   if (!parsed.success) return { error: m.enterEmailPassword };
-  if (isIsolatedD1Staging()) {
+  if (staging) {
+    if (parsed.data.email === stagingEmail) {
+      const limit = await checkStagingRateLimit("auth-account", stagingEmail);
+      if (limit.status === 429) return { error: m.rateLimit };
+      if (limit.status === 503) return { error: "Staging sign-in is temporarily unavailable. Please retry." };
+    }
+    if (!await verifyStagingTurnstile(formData.get("cf-turnstile-response"), stagingIp)) {
+      return { error: "Complete the security check and try again." };
+    }
     if (!await signInToStaging(parsed.data.email, parsed.data.password)) {
       return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
     }

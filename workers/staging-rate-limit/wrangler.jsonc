@@ -1,0 +1,11 @@
+{
+  "name": "pmrfp-staging-rate-limit",
+  "main": "index.mjs",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "compatibility_date": "2026-11-09",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "durable_objects": { "bindings": [{ "name": "LIMITS", "class_name": "StagingRateLimit" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StagingRateLimit"] }]
+}
