@@ -74,6 +74,15 @@ class MigrationTests(FixtureMixin, unittest.TestCase):
         with self.assertRaises(ValueError):m.sync(s,self.target)
         s=self.snapshot(self.seed());s.write_text(s.read_text().replace(m.digest(m.CATALOG.read_bytes()),'wrong'))
         with self.assertRaises(ValueError):m.sync(s,self.target)
+    def test_interrupted_backup_never_publishes_a_partial_destination(self):
+        class Interrupted:
+            def backup(self,target):
+                target.execute('CREATE TABLE partial(id INTEGER)');target.commit()
+                raise InterruptedError('injected backup interruption')
+        path=self.root/'backup.sqlite'
+        with self.assertRaises(InterruptedError):m.backup(Interrupted(),path)
+        self.assertFalse(path.exists());self.assertEqual(list(self.root.glob('.d1-backup-*')),[])
+
     def test_backup_required_and_never_overwritten(self):
         s=self.snapshot(self.seed());m.sync(s,self.target)
         with self.assertRaises(ValueError):m.sync(s,self.target)

@@ -18,3 +18,6 @@ it('routes the independently gated synthetic private photo path without Source A
 it('routes only the gated native private-detail path without Source Auth',async()=>{
  const {proxy}=await import('../../src/proxy');const response=await proxy(new NextRequest('https://preview.invalid/api/migration/native-auth/rfp-detail/private-test'));expect(response.headers.get('x-middleware-next')).toBe('1');expect(updateSession).not.toHaveBeenCalled();
 });
+it('keeps the gated image redirect independent of Source authentication',async()=>{
+ const {proxy}=await import('../../src/proxy');const response=await proxy(new NextRequest('https://preview.invalid/api/migration/public-asset/'+'a'.repeat(64)));expect(response.headers.get('x-middleware-next')).toBe('1');expect(updateSession).not.toHaveBeenCalled();
+});

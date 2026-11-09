@@ -130,7 +130,7 @@ def statements(journal, before, after, specs):
     return batch
 
 
-def apply(remote, before_path, after_path, journal, backup_path, reverse=False,allow_copied_preview=False):
+def apply(remote, before_path, after_path, journal, backup_path, reverse=False,allow_copied_preview=False,final_backup_path=None):
     # Physical copied-data rehearsal is explicit and pinned; production is never accepted.
     copied=allow_copied_preview and remote.name in COPY_CONFIGS
     if remote.name!=CANARY_NAME and not copied:raise ValueError('Remote journal is restricted to the synthetic canary or explicit copied preview')
@@ -163,7 +163,7 @@ def apply(remote, before_path, after_path, journal, backup_path, reverse=False,a
     payloads.cleanup(remote,payloads.operation_id(journal))
     if manifest and manifest[0]['source_sha256'] == after_sha and manifest[0]['state'] in ('loading', 'validated') and before_sha != after_sha:
         # An earlier response may have been lost after atomic commit, or after verification.
-        result = r.finalize(remote, after_path)
+        result = r.finalize(remote, after_path, backup_path=final_backup_path)
         return {**result, 'recovered': True, 'reverse': reverse, 'changed_records': len(journal['changes'])}
     if manifest != [{'source_sha256': before_sha, 'state': 'validated'}]:raise ValueError('Unexpected canary baseline checkpoint')
     batch = statements(journal, before, after, specs)
@@ -172,5 +172,5 @@ def apply(remote, before_path, after_path, journal, backup_path, reverse=False,a
     # an uncertain response is settled from the destination manifest on retry.
     transport=payloads.execute(remote,batch,journal) if payloads.needed(batch) else None
     if transport is None:remote.batch(batch)
-    result = r.finalize(remote, after_path)
+    result = r.finalize(remote, after_path, backup_path=final_backup_path)
     return {**result, 'recovered': False, 'reverse': reverse, 'changed_records': len(journal['changes']), 'batch_statements': len(batch), 'transport':transport}

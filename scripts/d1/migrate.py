@@ -112,10 +112,15 @@ def connect(path):
 
 def backup(db,path):
     # SQLite online backup is consistent even with WAL; never copy only the main file.
-    fd=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600);os.close(fd)
-    target=sqlite3.connect(path)
-    try:db.backup(target)
-    finally:target.close()
+    path=Path(path)
+    if path.exists() or path.is_symlink():raise FileExistsError('Refusing to replace an existing backup')
+    fd,tmp=tempfile.mkstemp(prefix='.d1-backup-',dir=path.parent);os.close(fd)
+    try:
+        with contextlib.closing(sqlite3.connect(tmp)) as target:db.backup(target)
+        # Publish only after SQLite closes the completed backup. A competing
+        # writer cannot replace an existing path, even after the first check.
+        os.link(tmp,path)
+    finally:Path(tmp).unlink(missing_ok=True)
 
 def sync(snapshot,target,backup_path=None):
     catalog=load_catalog();specs=table_specs(catalog);expected,meta,snapshot_hash=read_snapshot(snapshot,catalog)

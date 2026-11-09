@@ -16,6 +16,7 @@ on:
       - 'src/lib/karma/rules.ts'
       - 'workers/d1-api/**'
       - 'workers/auth-preview/**'
+      - 'workers/storage-preview/**'
       - 'd1/**'
       - '.github/workflows/d1-rehearsal.yml'
   push:
@@ -34,6 +35,7 @@ on:
       - 'src/lib/karma/rules.ts'
       - 'workers/d1-api/**'
       - 'workers/auth-preview/**'
+      - 'workers/storage-preview/**'
       - 'd1/**'
       - '.github/workflows/d1-rehearsal.yml'
 
@@ -62,6 +64,7 @@ jobs:
       - run: npm ci
       - name: Test API authorization, synthetic writes, public projections and rebuild preservation
         run: npx vitest run test/d1-api test/unit/karma-rules.test.ts test/unit/rfp-read-optimization.test.ts
+      - run: node --test workers/storage-preview/worker.test.mjs
       - run: npm run typecheck
 
   auth-rehearsal:
