@@ -14,7 +14,7 @@ it('allows only a no-send verification and never exposes provider diagnostics',a
  const error=await handleMailRelay(request(),env,async()=>{throw Error('SENSITIVE_PROVIDER_DETAIL');});expect(await error.text()).not.toContain('SENSITIVE');expect(error.status).toBe(503);
 });
 it('uses fixed verified Hostinger TLS, disables logging/attachment I/O and closes without sending',async()=>{
- let options:Record<string,unknown>|undefined;const close=vi.fn();const factory=(value:Record<string,unknown>)=>{options=value;return{verify:async()=>true,close,sendMail:()=>{throw Error('MUST_NOT_SEND');}};};
+ let options:import("nodemailer").SMTPTransportOptions|undefined;const close=vi.fn();const factory=(value:import("nodemailer").SMTPTransportOptions)=>{options=value;return{verify:async()=>true,close,sendMail:()=>{throw Error('MUST_NOT_SEND');}};};
  expect(await verifyHostingerSmtp({username:'info@pmrfp.com',password:'synthetic-password'},factory)).toEqual({authenticated:true,emailsSent:0});expect(options).toMatchObject({host:'smtp.hostinger.com',port:465,secure:true,tls:{rejectUnauthorized:true},logger:false,debug:false,disableFileAccess:true,disableUrlAccess:true});expect(close).toHaveBeenCalledTimes(1);
 });
 it('validates only bounded synthetic callback messages without sending or returning tokens',async()=>{

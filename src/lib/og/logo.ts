@@ -58,7 +58,7 @@ export async function loadOgLogo(logoUrl: string | null | undefined): Promise<Og
     const input = Buffer.from(await res.arrayBuffer());
     if (input.length > MAX_BYTES) return null;
 
-    const toPng = (img: sharp.Sharp) =>
+    const toPng = (img: ReturnType<typeof sharp>) =>
       img.resize({ ...LOGO_BOX, fit: "inside" }).png().toBuffer({ resolveWithObject: true });
     const open = () => sharp(input, { limitInputPixels: 50_000_000 });
     // Trim so a logo saved with wide margins still fills its tile. Trimming

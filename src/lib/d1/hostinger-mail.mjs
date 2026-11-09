@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
-/** Node-side SMTP delivery; Workers cannot open TCP to Hostinger's Cloudflare IPs. */
+/** Node-side SMTP delivery; Workers cannot open TCP to Hostinger's Cloudflare IPs.
+ * @param {(options: import('nodemailer').SMTPTransportOptions) => {verify: () => Promise<boolean>, close: () => void}} [factory]
+ */
 export async function verifyHostingerSmtp(env, factory=nodemailer.createTransport) {
   if(env.username!=='info@pmrfp.com'||typeof env.password!=='string'||!env.password||env.password.length>1024)throw Error('SMTP configuration unavailable');
   const transport=factory({host:'smtp.hostinger.com',port:465,secure:true,
@@ -11,7 +13,9 @@ export async function verifyHostingerSmtp(env, factory=nodemailer.createTranspor
   finally {transport.close();}
 }
 
-/** Prepared opt-in rehearsal only: one pinned synthetic identity, fixed recipient. */
+/** Prepared opt-in rehearsal only: one pinned synthetic identity, fixed recipient.
+ * @param {(options: import('nodemailer').SMTPTransportOptions) => {sendMail: (options: import('nodemailer').SendMailOptions) => Promise<{accepted?: unknown[], rejected?: unknown[]}>, close: () => void}} [factory]
+ */
 export async function sendSyntheticAuthTest(env,message,factory=nodemailer.createTransport,now=Date.now()){
   const expires=Date.parse(env.PMRFP_MIGRATION_MAIL_DELIVERY_EXPIRES||'');
   if(env.VERCEL_ENV!=='preview'||env.PMRFP_MIGRATION_MAIL_DELIVERY!=='approved-dev-test'||!Number.isFinite(expires)||expires<=now||expires>now+900000||message.userId!=='00000000-0000-4000-8000-000000000012')throw Error('Synthetic delivery not approved');
