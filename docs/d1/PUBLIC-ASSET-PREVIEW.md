@@ -8,4 +8,6 @@ The private deployment entry imports `assetReader` from `workers/storage-preview
 
 The separate app route is Preview-only. It can ask the Worker to issue a 90-second link for a known image; the private signing key stays on the Worker, and the redirect contains no application session token or gateway key. The signature is bound to the image and its verified revision. The browser downloads from the Worker directly. The app's existing image selections and production settings are unchanged.
 
+The November 9 protected deployment issued the redirect for the largest file. The Worker returned its full 9,593,514 bytes without any Vercel or gateway header and the checksum matched. A modified signature was denied.
+
 Do not deploy an allowlist derived from a private or mixed bucket. Keep the generated manifest, deployment entry and secrets out of Git. Before production, refresh the public inventory, decide the stable URL and cache behavior, integrate existing image fields and test the private-file access paths separately.
