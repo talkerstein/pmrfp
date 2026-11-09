@@ -1,3 +1,4 @@
+import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { SignInForm } from "@/components/forms/auth-forms";
@@ -26,7 +27,8 @@ export default async function SignInPage({
   const { next: rawNext, error, notice } = await searchParams;
   const next = safeNextPath(rawNext);
   const signUpHref = next ? `/sign-up?next=${encodeURIComponent(next)}` : "/sign-up";
-  const google = await isGoogleAuthEnabled();
+  const staging = isIsolatedD1Staging();
+  const google = !staging && await isGoogleAuthEnabled();
 
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
@@ -56,15 +58,15 @@ export default async function SignInPage({
             <ContinueWithGoogle next={next} />
           </div>
         )}
-        <SignInForm next={next} startWithLink={error === "link"} />
+        <SignInForm next={next} startWithLink={error === "link"} passwordOnly={staging} />
       </div>
-      <DemoNotice />
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      {!staging && <DemoNotice />}
+      {!staging && <p className="mt-6 text-center text-sm text-muted-foreground">
         {t.newTo}{" "}
         <Link href={signUpHref} className="font-medium text-teal-700 hover:underline">
           {t.createAccount}
         </Link>
-      </p>
+      </p>}
     </div>
   );
 }

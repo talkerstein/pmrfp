@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "@/i18n/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { localizePath } from "@/i18n/config";
 import { Building2, Hammer, HardHat, KeyRound, Package, Search, Home, UserRound } from "lucide-react";
 import {
   forgotPasswordAction,
@@ -35,9 +36,10 @@ function LangField() {
   return <input type="hidden" name="lang" value={lang} />;
 }
 
-export function SignInForm({ next, startWithLink = false }: { next?: string | null; startWithLink?: boolean }) {
+export function SignInForm({ next, startWithLink = false, passwordOnly = false }: { next?: string | null; startWithLink?: boolean; passwordOnly?: boolean }) {
   const t = useT("auth").forms;
   const [useLink, setUseLink] = useState(startWithLink);
+  if (passwordOnly) return <SignInPasswordForm passwordOnly />;
   if (useLink) {
     return (
       <div className="space-y-3">
@@ -78,9 +80,15 @@ function SignInLinkForm({ next }: { next?: string | null }) {
   );
 }
 
-function SignInPasswordForm({ next }: { next?: string | null }) {
+function SignInPasswordForm({ next, passwordOnly = false }: { next?: string | null; passwordOnly?: boolean }) {
   const t = useT("auth").forms;
   const [state, action, pending] = useActionState(signInAction, initial);
+  const lang = useLang();
+  const stagingDashboard = localizePath("/dashboard/saved-rfps", lang);
+  useEffect(() => {
+    if (state.stagingSignedIn) window.location.assign(stagingDashboard);
+  }, [state.stagingSignedIn, stagingDashboard]);
+  if (state.stagingSignedIn) return <Link href="/dashboard/saved-rfps">Continue to the staging dashboard</Link>;
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
@@ -93,9 +101,9 @@ function SignInPasswordForm({ next }: { next?: string | null }) {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">{t.password}</Label>
-          <Link href="/forgot-password" className="text-xs text-teal-700 hover:underline">
+          {!passwordOnly && <Link href="/forgot-password" className="text-xs text-teal-700 hover:underline">
             {t.forgot}
-          </Link>
+          </Link>}
         </div>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
       </div>

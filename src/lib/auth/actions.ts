@@ -75,6 +75,7 @@ export interface DuplicateCompanyView {
 export interface ActionState {
   error?: string;
   success?: string;
+  stagingSignedIn?: true;
   /** Onboarding: "This company may already be on PMRFP". */
   duplicates?: DuplicateCompanyView[];
   /** Onboarding: the submitted fields, replayed by "It's a different company". */
@@ -312,7 +313,7 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
     if (!await signInToStaging(parsed.data.email, parsed.data.password)) {
       return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
     }
-    redirect(localizePath("/dashboard/saved-rfps", lang));
+    return { stagingSignedIn: true };
   }
   const canary = isCloudflareCanaryEmail(parsed.data.email) && cloudflareCanaryConfig();
   if (canary) {
