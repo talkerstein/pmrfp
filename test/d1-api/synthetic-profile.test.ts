@@ -139,3 +139,35 @@ it("uses the verified account's signup intent and commits profile, notice and at
   expect(sqlite.prepare("SELECT method,role,lang,channel,landing_path,signed_up_at FROM signup_attribution").all())
     .toEqual([{ method: "password", role: "supplier", lang: "fr", channel: "google_organic", landing_path: "/fr/rfps", signed_up_at: signedUpAt }]);
 });
+
+it("lets a verified profile respond and rolls back the response when its notification cannot be recorded", async () => {
+  expect((await request({ role: "trade" })).status).toBe(201);
+  const org = "30000000-0000-4000-8000-000000000001";
+  const rfp = "10000000-0000-4000-8000-000000000001";
+  sqlite.exec(readFileSync("workers/d1-api/interest-sandbox.sql", "utf8"));
+  sqlite.prepare("INSERT INTO _auth_users VALUES(?)").run(otherId);
+  sqlite.prepare("INSERT INTO users_profile(id,email) VALUES(?,?)").run(otherId, "poster@example.invalid");
+  sqlite.prepare("INSERT INTO organizations(id,name,slug,organization_type,profile_status) VALUES(?,?,?,'trade_company','approved')")
+    .run(org, "Fixture Trade", "fixture-trade");
+  sqlite.prepare("INSERT INTO organization_members(id,organization_id,user_id,role) VALUES(?,?,?,'owner')")
+    .run("40000000-0000-4000-8000-000000000001", org, accountId);
+  sqlite.prepare(`INSERT INTO rfp_posts(id,title,slug,status,keep_alive_token,source_type,posted_by_user_id)
+    VALUES(?,?,?,'published',?,'property_manager_direct',?)`).run(rfp, "Fixture Job", "fixture-job", "fixture-token", otherId);
+  const submit = (config: Env) => handleRequest(new Request("https://sandbox.invalid/v1/rfp-interest", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-pmrfp-gateway-key": gateway, "x-pmrfp-native-session": token },
+    body: JSON.stringify({ rfpId: rfp, message: "Fixture response", acceptDisclaimer: true }),
+  }), config, auth());
+  expect((await submit(env)).status).toBe(404);
+  const enabled: Env = { ...env, NATIVE_INTEREST_MODE: "sandbox-write" };
+  sqlite.exec("CREATE TRIGGER fixture_skip_notice BEFORE INSERT ON notifications BEGIN SELECT RAISE(IGNORE); END");
+  expect((await submit(enabled)).status).toBe(503);
+  expect(sqlite.prepare("SELECT COUNT(*) AS n FROM rfp_interests").get()?.n).toBe(0);
+  expect(sqlite.prepare("SELECT COUNT(*) AS n FROM _d1_interest_outbox").get()?.n).toBe(0);
+  sqlite.exec("DROP TRIGGER fixture_skip_notice");
+  const response = await submit(enabled);
+  expect(response.status).toBe(201);
+  expect(await response.json()).toEqual({ ok: true, allowance: { unlimited: false, left: 2, limit: 3 } });
+  expect((await submit(enabled)).status).toBe(409);
+  expect(sqlite.prepare("SELECT user_id,type FROM notifications").all()).toEqual([{ user_id: otherId, type: "pm_new_response" }]);
+});

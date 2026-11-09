@@ -5,6 +5,7 @@ const operations = {
   "mobile-session": "session",
   "mobile-sign-out": "sign-out",
   "mobile-saved-rfps": "saved-rfps",
+  "mobile-interest": "interest",
 } as const;
 
 type MobileOperation = keyof typeof operations;
@@ -45,7 +46,7 @@ export async function handleNativeMobilePreview(
     method: request.method, headers: bridgeHeaders, body, duplex: "half",
   } as RequestInit);
   const response = await handleNativeAuthPreview(bridge, target, env, fetcher);
-  if (!response.ok || target === "session" || target === "saved-rfps") return response;
+  if (!response.ok || target === "session" || target === "saved-rfps" || target === "interest") return response;
   if (target === "sign-out") return Response.json({ ok: true }, { headers: privateHeaders });
 
   const setCookie = response.headers.get("set-cookie") ?? "";

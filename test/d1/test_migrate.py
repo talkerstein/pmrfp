@@ -44,6 +44,24 @@ class MigrationTests(FixtureMixin, unittest.TestCase):
         db.execute('DROP INDEX d1_rfp_posts_status_id_idx')
         after=db.execute("SELECT id FROM rfp_posts WHERE status='published' AND id>=? AND id<? ORDER BY id LIMIT 25",('1','3')).fetchall()
         self.assertEqual([tuple(r) for r in before],[tuple(r) for r in after])
+    def test_write_schema_compares_decimal_amounts_exactly_and_preserves_text(self):
+        catalog = json.loads((m.ROOT / 'd1/production-catalog-2026-11-05.json').read_text())
+        sql, gaps = generate(catalog, exact_decimal_checks=True)
+        self.assertEqual(gaps, generate(catalog)[1])
+        db = m.connect(':memory:')
+        self.addCleanup(db.close)
+        db.executescript(sql)
+        db.execute("INSERT INTO rfp_posts(id,title,slug,status,keep_alive_token) VALUES ('rfp','Fixture','fixture','published','token')")
+        db.execute("INSERT INTO organizations(id,name,slug,organization_type) VALUES ('org','Fixture','fixture','trade_company')")
+        query = "INSERT INTO rfp_interests(id,rfp_id,trade_organization_id,quote_amount) VALUES ('interest','rfp','org',?)"
+        for amount in [None, '2', '99.50', '0002.01', '-0.00', '999999999.999999999999', '1000000000.000']:
+            with self.subTest(accepted=amount):
+                db.execute(query, (amount,))
+                self.assertEqual(db.execute('SELECT quote_amount FROM rfp_interests').fetchone()[0], amount)
+                db.execute('DELETE FROM rfp_interests')
+        for amount in ['1000000000.000000000001', '1000000001', '-0.00000000001', '--0', '1.2.3', '2e1', 'NaN', '9\x000']:
+            with self.subTest(rejected=amount), self.assertRaises(sqlite3.IntegrityError):
+                db.execute(query, (amount,))
     def test_initial_copy_and_all_record_hashes(self):
         s=self.snapshot(self.seed());result=m.sync(s,self.target)
         self.assertEqual(set(result['validated']),set(self.specs));self.assertFalse(result['cutover_ready']);m.validate(s,self.target)

@@ -20,4 +20,8 @@ The local Workers runtime also rehearsed passwordless signup and subsequent sign
 
 A passwordless fixture used a recovery link to set its first password. D1 installed the credential, consumed the link and revoked the existing session in one transaction. The same fixture then signed in through the HTTPS mobile preview transport, saved and removed a listing, and lost access after logout. This verifies the server transport with mobile-style requests. The Expo app still needs the matching provider and data API integration. The live source reported Google disabled, and the 79-account export contained only email providers.
 
+For the write rehearsal, `schema.py --exact-decimal-checks` compares numeric ranges by decimal digits while keeping original values as text. A fresh local import of the 157,539-record candidate validated all 117 tables with those checks. The existing Cloudflare copy keeps its original read schema.
+
+The isolated Worker accepted ordinary expressions of interest through the browser and mobile transports, stored exact quotes, and committed the buyer's in-app notice and an outbox entry with the response. Two simultaneous submissions could not both claim the final free response. Duplicate and suspended-company requests were denied, an active trial lifted the allowance, and a simulated outbox or notice failure rolled back the response. Sealed bids, attachment sharing and external delivery still require their own paths.
+
 Production remains on Supabase. The next release gates are stable file URLs and upload routing; production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback before cutover.

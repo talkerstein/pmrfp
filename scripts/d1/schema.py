@@ -13,11 +13,56 @@ def convert_expr(s):
     if any(t in s for t in ['::','~','<@','@>','&&','ARRAY[','ANY (','ALL (']):raise ValueError('Postgres expression requires explicit port')
     return s
 
-def generate(c,public_board_index=False):
+def decimal_range_check(definition, decimal_columns):
+    """Port the catalog's nonnegative and integer-maximum decimal constraints.
+
+    Decimal columns remain TEXT. Compare their digits instead of relying on
+    SQLite affinity or binary floating point at the exact upper bound.
+    """
+    mentioned = [name for name in decimal_columns
+                 if re.search(r'(?<!\w)' + re.escape(name) + r'(?!\w)', definition)]
+    if not mentioned:
+        return convert_expr(definition)
+    if len(mentioned) != 1:
+        raise ValueError('Multi-column decimal check requires an explicit port')
+    name = re.escape(mentioned[0])
+    compact = re.sub(r'[()\s]', '', definition)
+    match = re.fullmatch(rf'CHECK({name}ISNULLOR)?{name}>=0::numeric(?:AND{name}<=([1-9]\d*)::numeric)?', compact)
+    if not match:
+        raise ValueError('Unsupported decimal check')
+
+    column = ident(mentioned[0])
+    magnitude = f"ltrim({column},'-')"
+    nonnegative = [
+        f"typeof({column})='text'",
+        f"instr({column},char(0))=0",
+        f"({column}={magnitude} OR {column}='-'||{magnitude})",
+        f"substr({magnitude},1,1) GLOB '[0-9]'",
+        f"substr({magnitude},-1) GLOB '[0-9]'",
+        f"{magnitude} NOT GLOB '*[^0-9.]*'",
+        f"length({magnitude})-length(replace({magnitude},'.',''))<=1",
+        f"(substr({column},1,1)<>'-' OR {magnitude} NOT GLOB '*[1-9]*')",
+    ]
+    maximum = match[2]
+    if maximum:
+        dot = f"instr({magnitude}||'.','.')"
+        whole = f"ltrim(substr({magnitude},1,{dot}-1),'0')"
+        fraction = f"substr({magnitude},{dot}+1)"
+        nonnegative.append(
+            f"(length({whole})<{len(maximum)} OR (length({whole})={len(maximum)} AND "
+            f"({whole} COLLATE BINARY < '{maximum}' OR "
+            f"({whole}='{maximum}' AND {fraction} NOT GLOB '*[1-9]*'))))"
+        )
+    predicate = ' AND '.join(nonnegative)
+    nullable = f'{column} IS NULL OR ' if match[1] else ''
+    return f'CHECK ({nullable}({predicate}))'
+
+def generate(c,public_board_index=False,exact_decimal_checks=False):
     gaps=[]; statements=['-- STAGING COPY ONLY. No RLS, RPCs, views or application triggers are provided.', 'PRAGMA foreign_keys=ON;', 'CREATE TABLE "_auth_users" ("id" TEXT NOT NULL PRIMARY KEY);']
     tables=sorted(set(x['table_name'] for x in c['columns']))
     for table in tables:
         cols=[x for x in c['columns'] if x['table_name']==table]; parts=[]
+        decimal_columns = [col['column_name'] for col in cols if col['udt_name'] == 'numeric']
         for col in cols:
             name=col['column_name']; typ=col['udt_name']; default=col['column_default']; dtype='TEXT'
             if typ in ['int2','int4','int8','bool']:dtype='INTEGER'
@@ -47,7 +92,7 @@ def generate(c,public_board_index=False):
             d=con['definition']
             if con['type']=='f':d=d.replace('auth.users','"_auth_users"').replace('public.','')
             elif con['type']=='c':
-                try:d=convert_expr(d)
+                try:d=decimal_range_check(d, decimal_columns) if exact_decimal_checks else convert_expr(d)
                 except ValueError:gaps.append({'kind':'check','table':table,'name':con['name'],'definition':d});continue
             elif con['type'] not in ['p','u']:raise ValueError(f'Unsupported constraint: {con}')
             parts.append('CONSTRAINT '+ident(con['name'])+' '+d)
@@ -75,7 +120,8 @@ if __name__=='__main__':
     p.add_argument('--sql',default=str(ROOT/'d1/0001-staging-copy.sql'))
     p.add_argument('--gaps',default=str(ROOT/'d1/porting-gaps.json'))
     p.add_argument('--public-board-index',action='store_true',help='Add the audited D1 status/id board serving index')
-    a=p.parse_args();c=json.loads(Path(a.catalog).read_text());sql,gaps=generate(c,a.public_board_index)
+    p.add_argument('--exact-decimal-checks',action='store_true',help='Use exact decimal range checks for write rehearsals')
+    a=p.parse_args();c=json.loads(Path(a.catalog).read_text());sql,gaps=generate(c,a.public_board_index,a.exact_decimal_checks)
     Path(a.sql).write_text(sql)
     Path(a.gaps).write_text(json.dumps(gaps,indent=2)+'\n')
     print(json.dumps({'tables':len(set(x['table_name'] for x in c['columns'])),'unported_behaviors':len(gaps)}))

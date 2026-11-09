@@ -33,7 +33,7 @@ export function parseSaveInput(value: unknown): Required<Pick<SaveRfpInput, "act
 }
 
 /** Read an actual bounded stream; Content-Length is not trusted. */
-export async function readD1Json(request: Request): Promise<unknown> {
+export async function readD1Json(request: Request, maxBytes = 4096): Promise<unknown> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) throw new D1ApiError(415, "json_required");
   const reader = request.body?.getReader();
   if (!reader) throw new D1ApiError(400, "invalid_request");
@@ -42,7 +42,7 @@ export async function readD1Json(request: Request): Promise<unknown> {
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
-    if (total > 4096) { await reader.cancel(); throw new D1ApiError(413, "request_too_large"); }
+    if (total > maxBytes) { await reader.cancel(); throw new D1ApiError(413, "request_too_large"); }
     chunks.push(value);
   }
   const bytes = new Uint8Array(total); let offset = 0;

@@ -1,6 +1,6 @@
-import {parseSaveInput,UUID} from './contracts';
+import {D1ApiError,parseSaveInput,readD1Json,UUID} from './contracts';
 import { z } from 'zod';
-import { signUpSchema, signupProfileSchema } from '../validations';
+import { interestSchema, signUpSchema, signupProfileSchema } from '../validations';
 import { FT_COOKIE, parseFirstTouch, serializeFirstTouch } from '../attribution/cookie';
 import { optedOut } from '../tracking/privacy';
 const origin='https://pmrfp-auth-synthetic-preview.pmrfp.workers.dev';
@@ -13,6 +13,13 @@ const previewSignupSchema = signUpSchema.pick({ email: true, fullName: true, pas
  .extend({ lang: z.enum(['en','fr','es']) }).strict();
 const fixtureEmail = /^[-a-z0-9]+@example\.invalid$/;
 const magicLinkToken = /^[A-Za-z]{32}$/;
+const interestResult = z.object({
+ ok: z.literal(true),
+ allowance: z.union([
+  z.strictObject({ unlimited: z.literal(true) }),
+  z.strictObject({ unlimited: z.literal(false), left: z.number().int().nonnegative(), limit: z.number().int().positive() }),
+ ]),
+});
 export function nativePreviewCookie(request:Request){const matches=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));return matches.length===1?matches[0].slice(cookieName.length+1):'';}
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw Error('Missing body');const chunks:Uint8Array[]=[];let size=0;
@@ -20,39 +27,60 @@ async function boundedJson(request:Request){
  const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
  const value:unknown=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));if(!record(value))throw Error('Invalid body');return value;
 }
+async function previewBody(request: Request, operation: string, signupIntent: boolean): Promise<Record<string, unknown>> {
+ if (operation === 'interest') return interestSchema.strict().parse(await readD1Json(request, 32768));
+ const body = await boundedJson(request);
+ switch (operation) {
+  case 'saved-rfps':
+   return { ...parseSaveInput(body) };
+  case 'sign-up':
+  case 'sign-up-link': {
+   const input = previewSignupSchema.parse(body);
+   const passwordValid = operation === 'sign-up'
+    ? Boolean(input.password && Buffer.byteLength(input.password) <= 72) : input.password === undefined;
+   if (!fixtureEmail.test(input.email) || !input.fullName || !passwordValid) throw Error('Invalid fixture signup');
+   return { email: input.email, name: input.fullName, password: input.password, role: input.role, lang: input.lang };
+  }
+  case 'sign-in':
+   if (typeof body.email !== 'string' || !fixtureEmail.test(body.email) || typeof body.password !== 'string'
+     || Buffer.byteLength(body.password) > 72 || Object.keys(body).some(key => !['email','password'].includes(key))) {
+    throw Error('Invalid fixture credentials');
+   }
+   return body;
+  case 'sign-in-link':
+   if (Object.keys(body).length !== 1 || typeof body.email !== 'string' || !fixtureEmail.test(body.email)) {
+    throw Error('Invalid fixture link');
+   }
+   return body;
+  case 'magic-verify':
+   if (Object.keys(body).length !== 1 || typeof body.token !== 'string' || !magicLinkToken.test(body.token)) {
+    throw Error('Invalid fixture token');
+   }
+   return body;
+  case 'profile':
+   if (!signupIntent) return signupProfileSchema.parse(body);
+   break;
+ }
+ if (Object.keys(body).length !== 0) throw Error('Unexpected input');
+ return body;
+}
 /** Opt-in browser cookie bridge for fabricated fixtures only. No Source fallback. */
 export async function handleNativeAuthPreview(request:Request,operation:string,env:Record<string,string|undefined>,fetcher:typeof fetch=fetch):Promise<Response>{
  if(env.PMRFP_NATIVE_AUTH_PREVIEW!=='synthetic-only'||!(env.VERCEL_ENV==='preview'||(!env.VERCEL_ENV&&env.NODE_ENV==='development')))return failure('native_preview_not_enabled',503);
  if(!env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET||env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
- if(!['sign-up','sign-up-link','sign-in-link','magic-verify','sign-in','session','sign-out','saved-rfps','profile'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
+ if(!['sign-up','sign-up-link','sign-in-link','magic-verify','sign-in','session','sign-out','saved-rfps','profile','interest'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
  const signupIntent = env.PMRFP_NATIVE_PROFILE_PREVIEW === 'signup-intent';
  const newAccount = operation==='sign-up'||operation==='sign-up-link';
  const linkFlow = ['sign-up-link','sign-in-link','magic-verify'].includes(operation);
  if((newAccount&&!signupIntent)||(linkFlow&&env.PMRFP_NATIVE_MAGIC_LINK_PREVIEW!=='enabled'))return failure('not_found',404);
  if(operation==='profile'&&!signupIntent&&env.PMRFP_NATIVE_PROFILE_PREVIEW!=='enabled')return failure('not_found',404);
+ if(operation==='interest'&&env.PMRFP_NATIVE_INTEREST_PREVIEW!=='enabled')return failure('not_found',404);
  if(operation==='saved-rfps'?!['GET','POST'].includes(request.method):operation==='session'?request.method!=='GET':request.method!=='POST')return failure('invalid_request',400);
  let body:Record<string,unknown>|undefined;
  if(request.method==='POST'){
   if(request.headers.get('origin')!==new URL(request.url).origin||!request.headers.get('content-type')?.startsWith('application/json'))return failure('invalid_request',400);
-  try{body=await boundedJson(request);
-   if(operation==='saved-rfps')body={...parseSaveInput(body)};
-   else if(newAccount){
-    const input = previewSignupSchema.parse(body);
-    const passwordValid = operation==='sign-up' ? Boolean(input.password && Buffer.byteLength(input.password)<=72) : input.password===undefined;
-    if (!fixtureEmail.test(input.email) || !input.fullName || !passwordValid) {
-     throw Error('Invalid fixture signup');
-    }
-    body = { email: input.email, name: input.fullName, password: input.password, role: input.role, lang: input.lang };
-   }
-   else if(operation==='sign-in-link'){
-    if (Object.keys(body).length!==1||typeof body.email!=='string'||!fixtureEmail.test(body.email)) throw Error('Invalid fixture link');
-   }
-   else if(operation==='magic-verify'){
-    if (Object.keys(body).length!==1||typeof body.token!=='string'||!magicLinkToken.test(body.token)) throw Error('Invalid fixture token');
-   }
-   else if(operation==='profile'&&!signupIntent)body=signupProfileSchema.parse(body);
-   else if(operation==='sign-in'?typeof body.email!=='string'||!/^[-a-z0-9]+@example\.invalid$/.test(body.email)||typeof body.password!=='string'||Buffer.byteLength(body.password)>72||Object.keys(body).some(k=>!['email','password'].includes(k)):Object.keys(body).length!==0)throw Error('Unexpected input');
-  }catch{return failure('invalid_request',400);}
+  try { body = await previewBody(request, operation, signupIntent); }
+  catch(error){return failure('invalid_request',error instanceof D1ApiError?error.status:400);}
  }
  if(newAccount||operation==='sign-in-link'){
   const trackingDisabled = newAccount&&optedOut(request.headers);
@@ -78,17 +106,23 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
  const cookies=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));
  const sessionToken=cookies.length===1?cookies[0].slice(cookieName.length+1):'';
  if(operation==='sign-out'&&cookies.length>0&&!nativePreviewTokenPattern.test(sessionToken))return failure('sign_in_required',401);
- if(['session','saved-rfps','profile'].includes(operation)&&!nativePreviewTokenPattern.test(sessionToken))return failure('sign_in_required',401);
- if(operation==='saved-rfps'||operation==='profile'){
+ if(['session','saved-rfps','profile','interest'].includes(operation)&&!nativePreviewTokenPattern.test(sessionToken))return failure('sign_in_required',401);
+ if(operation==='saved-rfps'||operation==='profile'||operation==='interest'){
   if(!env.PMRFP_NATIVE_APP_GATEWAY_SECRET||env.PMRFP_NATIVE_APP_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
   try{
-   const endpoint = operation === 'profile' ? '/v1/profile' : '/v1/saved-rfps';
+   const endpoint = operation === 'profile' ? '/v1/profile' : operation === 'interest' ? '/v1/rfp-interest' : '/v1/saved-rfps';
    const response=await fetcher('https://pmrfp-native-auth-app-sandbox.pmrfp.workers.dev'+endpoint,{method:request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-gateway-key':env.PMRFP_NATIVE_APP_GATEWAY_SECRET,'x-pmrfp-native-session':'__Secure-better-auth.session_token='+sessionToken,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
    if(!response.ok){
-    const denied = [400,401,403,404].includes(response.status) || (operation === 'profile' && response.status === 409);
+    const denied = [400,401,403,404].includes(response.status)
+     || (operation === 'profile' && response.status === 409)
+     || (operation === 'interest' && [409,413,422,429].includes(response.status));
     return failure('native_operation_denied', denied ? response.status : 503);
    }
    const value:unknown=await response.json();if(!record(value))throw Error('Invalid native response');
+   if(operation==='interest'){
+    if(response.status!==201)throw Error('Invalid interest response');
+    return Response.json(interestResult.parse(value),{status:201,headers});
+   }
    if(operation==='profile'){
     if(typeof value.created!=='boolean'||response.status!==(value.created?201:200))throw Error('Invalid profile response');
     return Response.json({created:value.created},{status:response.status,headers});
