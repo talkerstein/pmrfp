@@ -6,7 +6,7 @@ import { stagingTurnstileAction } from "@/lib/d1/staging-turnstile";
 
 type Turnstile = {
   render: (element: HTMLElement, options: {
-    sitekey: string; action: string; callback: (token: string) => void;
+    sitekey: string; action: string; size: "normal" | "compact"; callback: (token: string) => void;
     "expired-callback": () => void; "error-callback": () => void; "response-field": boolean;
   }) => string;
   remove: (id: string) => void;
@@ -27,6 +27,7 @@ export function StagingTurnstile({ siteKey, attempt, onToken }: {
     const widget = turnstile.render(container.current, {
       sitekey: siteKey,
       action: stagingTurnstileAction,
+      size: container.current.clientWidth < 300 ? "compact" : "normal",
       callback: onToken,
       "expired-callback": () => onToken(""),
       "error-callback": () => onToken(""),

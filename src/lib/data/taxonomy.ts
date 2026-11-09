@@ -1,3 +1,4 @@
+import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cache } from "react";
@@ -58,8 +59,23 @@ const matchedCloudflareTaxonomy = unstable_cache(
   { tags: [TAXONOMY_DATA_TAG], revalidate: 60 },
 );
 
+const cachedStagingTaxonomy = unstable_cache(
+  async (table: TaxonomyTable, _provider: string, _dataset: string): Promise<TaxonomyRow[]> => {
+    void _provider;
+    void _dataset;
+    return (await import("@/lib/d1/taxonomy-server")).d1TaxonomyRows(table);
+  },
+  ["staging-public-taxonomy-v1"],
+  { tags: [TAXONOMY_DATA_TAG], revalidate: 300 },
+);
+
 export const getTaxonomyRows = cache(async (table: TaxonomyTable): Promise<TaxonomyRow[]> => {
-  if (d1TaxonomyEnabled()) return (await import("@/lib/d1/taxonomy-server")).d1TaxonomyRows(table);
+  if (d1TaxonomyEnabled()) {
+    if (isIsolatedD1Staging()) return cachedStagingTaxonomy(
+      table, process.env.PMRFP_D1_API_URL ?? "", process.env.PMRFP_D1_DATASET_SHA256 ?? "",
+    );
+    return (await import("@/lib/d1/taxonomy-server")).d1TaxonomyRows(table);
+  }
   const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   return process.env.PMRFP_PUBLIC_TAXONOMY_PHASE === "matched"
     ? matchedCloudflareTaxonomy(table, projectUrl)
