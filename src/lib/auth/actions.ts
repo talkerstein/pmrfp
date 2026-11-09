@@ -2,8 +2,6 @@
 
 import { isIsolatedD1Staging, stagingEmail } from "@/lib/d1/staging-config";
 import { checkStagingRateLimit, stagingClientIp } from "@/lib/d1/staging-rate-limit";
-import { verifyStagingTurnstile } from "@/lib/d1/staging-turnstile-server";
-import { signInToStaging, signOutOfStaging } from "@/lib/d1/staging-session";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { ACCOUNT_COOKIE } from "@/lib/visitor-geo";
@@ -323,9 +321,11 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
       if (limit.status === 429) return { error: m.rateLimit };
       if (limit.status === 503) return { error: "Staging sign-in is temporarily unavailable. Please retry." };
     }
+    const { verifyStagingTurnstile } = await import("@/lib/d1/staging-turnstile-server");
     if (!await verifyStagingTurnstile(formData.get("cf-turnstile-response"), stagingIp)) {
       return { error: "Complete the security check and try again." };
     }
+    const { signInToStaging } = await import("@/lib/d1/staging-session");
     if (!await signInToStaging(parsed.data.email, parsed.data.password)) {
       return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
     }
@@ -410,7 +410,7 @@ export async function resendSignupLinkAction(_prev: ActionState, formData: FormD
 }
 
 export async function signOutAction(): Promise<void> {
-  if (isIsolatedD1Staging()) await signOutOfStaging();
+  if (isIsolatedD1Staging()) await (await import("@/lib/d1/staging-session")).signOutOfStaging();
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     await supabase.auth.signOut();
