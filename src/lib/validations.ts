@@ -118,6 +118,13 @@ export const interestSchema = z.object({
 });
 export type InterestInput = z.infer<typeof interestSchema>;
 
+// The two referral forms take no login, so every field has a limit.
+const TOO_LONG = "That's too long. Please shorten it.";
+const shortText = () => z.string().max(120, TOO_LONG);
+const emailField = () => z.string().email("Enter a valid email").max(254, TOO_LONG);
+const phoneField = () => z.string().max(40, TOO_LONG);
+const isHttpUrl = (v: string) => /^https?:\/\//i.test(v);
+
 /**
  * Refer-a-project intake. Fee paid when the RFP is PUBLISHED LIVE (admin-
  * approved) — the LISTING moment that creates inventory value for PMRFP.
@@ -127,18 +134,18 @@ export const projectReferralSchema = z.object({
   type: z.literal("project").default("project"),
   // The project
   projectDescription: z.string().min(30, "Tell us a bit more (30+ characters)").max(2500),
-  projectCity: z.string().min(1, "City is required"),
-  projectProvince: z.string().min(1, "Province is required"),
-  projectCategory: z.string().optional(),
-  projectPropertyType: z.string().optional(),
+  projectCity: shortText().min(1, "City is required"),
+  projectProvince: shortText().min(1, "Province is required"),
+  projectCategory: shortText().optional(),
+  projectPropertyType: shortText().optional(),
   // Owner / property contact (optional — referrer might not yet have permission to share)
-  ownerName: z.string().optional(),
-  ownerEmail: z.union([z.string().email(), z.literal("")]).optional(),
-  ownerPhone: z.string().optional(),
+  ownerName: shortText().optional(),
+  ownerEmail: z.union([emailField(), z.literal("")]).optional(),
+  ownerPhone: phoneField().optional(),
   // The referrer (required — we need to pay the finder's fee + send updates)
-  referrerName: z.string().min(1, "Your name is required"),
-  referrerEmail: z.string().email("Enter a valid email"),
-  referrerPhone: z.string().optional(),
+  referrerName: shortText().min(1, "Your name is required"),
+  referrerEmail: emailField(),
+  referrerPhone: phoneField().optional(),
   referrerAffiliation: z.string().max(200).optional(),
   // Permission / disclosure
   permission: z
@@ -162,19 +169,19 @@ export const referralSchema = projectReferralSchema;
 export const tradeReferralSchema = z.object({
   type: z.literal("trade").default("trade"),
   // The trade
-  tradeCompanyName: z.string().min(1, "Trade company name is required"),
-  tradeCategory: z.string().optional(),
-  tradeCity: z.string().min(1, "City is required"),
-  tradeProvince: z.string().min(1, "Province is required"),
-  tradeContactName: z.string().optional(),
-  tradeContactEmail: z.union([z.string().email(), z.literal("")]).optional(),
-  tradeContactPhone: z.string().optional(),
-  tradeWebsite: z.union([z.string().url(), z.literal("")]).optional(),
+  tradeCompanyName: z.string().min(1, "Trade company name is required").max(200, TOO_LONG),
+  tradeCategory: shortText().optional(),
+  tradeCity: shortText().min(1, "City is required"),
+  tradeProvince: shortText().min(1, "Province is required"),
+  tradeContactName: shortText().optional(),
+  tradeContactEmail: z.union([emailField(), z.literal("")]).optional(),
+  tradeContactPhone: phoneField().optional(),
+  tradeWebsite: z.union([z.string().url().max(300, TOO_LONG).refine(isHttpUrl, "Enter a valid website"), z.literal("")]).optional(),
   whyThemNote: z.string().max(1000).optional(),
   // The referrer
-  referrerName: z.string().min(1, "Your name is required"),
-  referrerEmail: z.string().email("Enter a valid email"),
-  referrerPhone: z.string().optional(),
+  referrerName: shortText().min(1, "Your name is required"),
+  referrerEmail: emailField(),
+  referrerPhone: phoneField().optional(),
   referrerAffiliation: z.string().max(200).optional(),
   // Permission
   permission: z

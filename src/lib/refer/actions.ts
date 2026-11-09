@@ -21,7 +21,7 @@ import {
   sendReferralConfirmation,
   sendTradeReferralConfirmation,
 } from "@/lib/email/send";
-import { checkRateLimitByIp } from "@/lib/rate-limit";
+import { checkRateLimitByIp, checkRecipientLimit } from "@/lib/rate-limit";
 import { trackEvent } from "@/lib/analytics";
 import { syncProjectReferralToGhl, syncTradeReferralToGhl } from "@/lib/ghl/sync";
 
@@ -48,7 +48,7 @@ export async function submitReferralAction(
   _prev: ReferralActionState,
   formData: FormData,
 ): Promise<ReferralActionState> {
-  if (await checkRateLimitByIp(await ip(), "contact")) {
+  if (await checkRateLimitByIp(await ip(), "referral")) {
     return { error: "Too many submissions. Please wait a minute and try again." };
   }
 
@@ -80,6 +80,7 @@ export async function submitReferralAction(
   }
 
   const d = parsed.data;
+  const confirm = !(await checkRecipientLimit(d.referrerEmail));
   await Promise.all([
     sendAdminReferral({
       projectDescription: d.projectDescription,
@@ -94,7 +95,7 @@ export async function submitReferralAction(
       referrerPhone: d.referrerPhone || undefined,
       referrerAffiliation: d.referrerAffiliation || undefined,
     }),
-    sendReferralConfirmation(d.referrerEmail, d.projectCity),
+    ...(confirm ? [sendReferralConfirmation(d.referrerEmail)] : []),
   ]);
 
   await trackEvent("project_referred" as never, {
@@ -127,7 +128,7 @@ export async function submitTradeReferralAction(
   _prev: ReferralActionState,
   formData: FormData,
 ): Promise<ReferralActionState> {
-  if (await checkRateLimitByIp(await ip(), "contact")) {
+  if (await checkRateLimitByIp(await ip(), "referral")) {
     return { error: "Too many submissions. Please wait a minute and try again." };
   }
 
@@ -160,6 +161,7 @@ export async function submitTradeReferralAction(
   }
 
   const d = parsed.data;
+  const confirm = !(await checkRecipientLimit(d.referrerEmail));
   await Promise.all([
     sendAdminTradeReferral({
       tradeCompanyName: d.tradeCompanyName,
@@ -176,7 +178,7 @@ export async function submitTradeReferralAction(
       referrerPhone: d.referrerPhone || undefined,
       referrerAffiliation: d.referrerAffiliation || undefined,
     }),
-    sendTradeReferralConfirmation(d.referrerEmail, d.tradeCompanyName),
+    ...(confirm ? [sendTradeReferralConfirmation(d.referrerEmail)] : []),
   ]);
 
   await trackEvent("trade_referred" as never, {
