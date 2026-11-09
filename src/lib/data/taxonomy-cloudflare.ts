@@ -1,6 +1,6 @@
 import type { TaxonomyRow } from "./taxonomy";
 
-const endpoint = "https://pmrfp-taxonomy-phase.pmrfp.workers.dev/v1/taxonomy";
+const origin = "https://pmrfp-taxonomy-phase.pmrfp.workers.dev";
 
 /** A Cloudflare result is usable only when its public projection matches the source. */
 export function matchingTaxonomy(
@@ -23,9 +23,19 @@ export function matchingTaxonomy(
 }
 
 export async function cloudflareTaxonomy(table: string, gateway: string): Promise<unknown> {
-  if (gateway.length < 32 || gateway.length > 512) return null;
-  const url = new URL(endpoint);
+  const url = new URL("/v1/taxonomy", origin);
   url.searchParams.set("table", table);
+  return fetchPublicProjection(url, gateway);
+}
+
+export async function cloudflareBoard(shard: number, gateway: string): Promise<unknown> {
+  const url = new URL("/v1/board", origin);
+  url.searchParams.set("shard", String(shard));
+  return fetchPublicProjection(url, gateway);
+}
+
+async function fetchPublicProjection(url: URL, gateway: string): Promise<unknown> {
+  if (gateway.length < 32 || gateway.length > 512) return null;
   const response = await fetch(url, {
     headers: { "x-pmrfp-gateway-key": gateway },
     redirect: "error",

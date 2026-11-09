@@ -23,3 +23,34 @@ test("only the fixed taxonomy projection can reach D1 with the phase key", async
   assert.deepEqual(await (await call("/v1/taxonomy?table=regions")).json(), { items: [{ id: "fixture", active: true }], next: null });
   assert.deepEqual(reads, ["SELECT id,slug,name,province,country,parent_id,active,sort_order FROM regions WHERE active=1 AND EXISTS (SELECT 1 FROM _migration_manifest WHERE id=1 AND state='validated') ORDER BY id LIMIT 251"]);
 });
+
+test("board accepts only a single shard and binds its bounds", async () => {
+  const key = "synthetic-taxonomy-phase-key-at-least-32";
+  const reads = [];
+  const row = { id: "fixture", isDemo: 0, categoryIds: '["trade"]' };
+  const env = {
+    PUBLIC_TAXONOMY_GATEWAY: key,
+    DB: { prepare(sql) {
+      assert.match(sql, /r.status='published'/);
+      assert.match(sql, /state='validated'/);
+      return { bind(...bounds) {
+        reads.push(bounds);
+        return { all: async () => ({ success: true, results: [row] }) };
+      } };
+    } },
+  };
+  const call = query => worker.fetch(new Request("https://fixture.invalid/v1/board?" + query, {
+    headers: { "x-pmrfp-gateway-key": key },
+  }), env);
+  assert.equal((await call("shard=16")).status, 400);
+  assert.equal((await call("shard=2&shard=3")).status, 400);
+  assert.equal((await call("shard=2&table=rfp_posts")).status, 400);
+  assert.deepEqual(reads, []);
+  assert.deepEqual(await (await call("shard=2")).json(), {
+    items: [{ id: "fixture", isDemo: false, categoryIds: ["trade"] }], next: null,
+  });
+  assert.deepEqual(reads, [[
+    "20000000-0000-0000-0000-000000000000",
+    "30000000-0000-0000-0000-000000000000",
+  ]]);
+});
