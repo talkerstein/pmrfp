@@ -8,6 +8,7 @@ import { listPublicBoard } from "./board";
 import { listPublicTaxonomy } from "./taxonomy";
 import { listPublicPhotos } from "./photos";
 import { handleSyntheticProjectPhoto, type SandboxBucket } from "./project-photos";
+import { provisionSyntheticProfile } from "./synthetic-profile";
 
 export interface Env extends AuthConfig {
   DB: D1Binding;
@@ -15,6 +16,7 @@ export interface Env extends AuthConfig {
   GATEWAY_SECRET: string;
   /** Writes are enabled only on an explicitly synthetic staging dataset. */
   SAVED_RFPS_MODE?: "read-only" | "sandbox-write";
+  NATIVE_PROFILE_MODE?: "sandbox-write";
 }
 const json = (value: unknown, status = 200) => Response.json(value, {
   status, headers: { "cache-control": "no-store, private", "x-content-type-options": "nosniff" },
@@ -24,6 +26,15 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
   try {
     await verifyGateway(request.headers.get("x-pmrfp-gateway-key"), env.GATEWAY_SECRET);
     const url = new URL(request.url);
+    if (url.pathname === "/v1/profile") {
+      if (env.AUTH_PROVIDER !== "native-synthetic" || env.NATIVE_PROFILE_MODE !== "sandbox-write") {
+        throw new D1ApiError(404, "not_found");
+      }
+      if (request.method !== "POST") throw new D1ApiError(405, "method_not_allowed");
+      if (url.search) throw new D1ApiError(400, "invalid_request");
+      const result = await provisionSyntheticProfile(request, env.DB, env, fetcher);
+      return json(result, result.created ? 201 : 200);
+    }
     if (url.pathname.startsWith("/v1/project-photos/")) {
       if (env.AUTH_PROVIDER !== "native-synthetic" || env.SAVED_RFPS_MODE !== "sandbox-write") throw new D1ApiError(503,"native_sandbox_required");
       const marker=await env.DB.prepare("SELECT value FROM _d1_sandbox WHERE key='dataset'").first<{value:string}>();

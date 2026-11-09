@@ -33,7 +33,7 @@ export function parseSaveInput(value: unknown): Required<Pick<SaveRfpInput, "act
 }
 
 /** Read an actual bounded stream; Content-Length is not trusted. */
-export async function readSaveInput(request: Request): Promise<SaveRfpInput> {
+export async function readD1Json(request: Request): Promise<unknown> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) throw new D1ApiError(415, "json_required");
   const reader = request.body?.getReader();
   if (!reader) throw new D1ApiError(400, "invalid_request");
@@ -47,7 +47,9 @@ export async function readSaveInput(request: Request): Promise<SaveRfpInput> {
   }
   const bytes = new Uint8Array(total); let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  let body: unknown;
-  try { body = JSON.parse(new TextDecoder().decode(bytes)); } catch { throw new D1ApiError(400, "invalid_request"); }
-  return parseSaveInput(body);
+  try { return JSON.parse(new TextDecoder().decode(bytes)); } catch { throw new D1ApiError(400, "invalid_request"); }
+}
+
+export async function readSaveInput(request: Request): Promise<SaveRfpInput> {
+  return parseSaveInput(await readD1Json(request));
 }

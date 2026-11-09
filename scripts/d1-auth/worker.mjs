@@ -4,6 +4,7 @@ import { rehearsalOptions } from './rehearsal.mjs';
 import { resetSyntheticPassword } from './atomic-reset.mjs';
 import { syntheticMailOptions, recordSyntheticMail } from './synthetic-mail.mjs';
 import { relaySyntheticMail } from './mail-relay.mjs';
+import { syntheticSignupOptions, syntheticSignupPath, syntheticSignupRequest } from './synthetic-signup.mjs';
 
 /** Only synthetic fixtures, behind a private gateway; no source Auth connection. */
 const worker = {
@@ -12,11 +13,13 @@ const worker = {
     if (!await gatewayMatches(request.headers.get('x-pmrfp-auth-preview-key'),env.GATEWAY_SECRET)) return new Response(JSON.stringify({error:'unauthorized'}),{status:401,headers});
     const url=new URL(request.url);
     if (env.MODE!=='synthetic-only' || url.origin!==env.AUTH_BASE_URL || !env.AUTH_DB || typeof env.AUTH_SECRET!=='string' || env.AUTH_SECRET.length<32) return new Response(JSON.stringify({error:'invalid_preview_configuration'}),{status:503,headers});
+    let totalAccounts;
     try {
       const marker=await env.AUTH_DB.prepare('SELECT mode FROM _auth_preview_manifest WHERE id=1').first();
       if(marker?.mode!=='synthetic-only-v1')throw Error('Unknown sandbox');
       const rows=await env.AUTH_DB.prepare("SELECT count(*) AS total,sum(CASE WHEN email NOT LIKE '%@example.invalid' OR id NOT LIKE '00000000-0000-4000-8000-0000000000%' THEN 1 ELSE 0 END) AS unsafe FROM user").first();
       if(!rows || !Number.isSafeInteger(rows.total) || rows.total<0 || rows.total>20 || !(rows.unsafe===0 || (rows.total===0 && rows.unsafe===null)))throw Error('Non-synthetic records');
+      totalAccounts = rows.total;
     } catch {
       return new Response(JSON.stringify({error:'synthetic_dataset_required'}),{status:503,headers});
     }
@@ -42,7 +45,25 @@ const worker = {
         return new Response(JSON.stringify({error:'reset_failed'}),{status:400,headers});
       }
     }
-    if(env.SYNTHETIC_RESET==='enabled')options=syntheticMailOptions(options,{origin:env.AUTH_BASE_URL,deliver:async message=>{await recordSyntheticMail(env.AUTH_DB,message);await relaySyntheticMail(message,env);}});
+    const signup = url.pathname === syntheticSignupPath;
+    if (signup) {
+      if (env.SYNTHETIC_SIGNUP !== 'capture-only') return Response.json({error:'not_found'},{status:404,headers});
+      if (totalAccounts >= 20) return Response.json({error:'synthetic_account_limit'},{status:409,headers});
+      try { request = await syntheticSignupRequest(request, env.AUTH_BASE_URL); }
+      catch { return Response.json({error:'invalid_signup_request'},{status:400,headers}); }
+      const captureOnly = syntheticMailOptions(options, {
+        origin: env.AUTH_BASE_URL, deliver: message => recordSyntheticMail(env.AUTH_DB, message),
+      });
+      options = syntheticSignupOptions(captureOnly);
+    } else if (env.SYNTHETIC_RESET === 'enabled') {
+      options = syntheticMailOptions(options, {
+        origin: env.AUTH_BASE_URL,
+        deliver: async message => {
+          await recordSyntheticMail(env.AUTH_DB,message);
+          await relaySyntheticMail(message,env);
+        },
+      });
+    }
     const auth=betterAuth({...options,baseURL:env.AUTH_BASE_URL,trustedOrigins:[env.AUTH_BASE_URL]});
     const response=await auth.handler(request);
     const secured=new Response(response.body,response);

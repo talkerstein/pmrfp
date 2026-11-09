@@ -5,6 +5,25 @@ const env={VERCEL_ENV:'preview',PMRFP_NATIVE_AUTH_PREVIEW:'synthetic-only',PMRFP
 const user={id:'00000000-0000-4000-8000-000000000011',email:'fixture@example.invalid',emailVerified:true,banned:false};
 const token='synthetic-signed-token-value-0001';
 const request=(operation:string,body?:unknown,headers:Record<string,string>={})=>new Request(origin+'/api/migration/native-auth/'+operation,{method:body?'POST':'GET',headers:{origin,'content-type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});
+it("requires a same-origin preview session and returns only the profile creation outcome", async () => {
+ const config = { ...env, PMRFP_NATIVE_APP_GATEWAY_SECRET: gateway, PMRFP_NATIVE_PROFILE_PREVIEW: "enabled" };
+ const cookie = "other=MUST_NOT_FORWARD; pmrfp-native-preview=" + token;
+ const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+  expect(url).toBe("https://pmrfp-native-auth-app-sandbox.pmrfp.workers.dev/v1/profile");
+  expect(new Headers(init?.headers).get("x-pmrfp-native-session")).toBe("__Secure-better-auth.session_token=" + token);
+  expect(JSON.stringify(init)).not.toContain("MUST_NOT_FORWARD");
+  expect(init?.body).toBe(JSON.stringify({ fullName: "Fixture", role: "trade" }));
+  return Response.json({ created: true, privateValue: "MUST_NOT_RETURN" }, { status: 201 });
+ });
+ const body = { fullName: " Fixture ", role: "trade" };
+ expect((await handleNativeAuthPreview(request("profile", body, { cookie }), "profile", env, fetcher)).status).toBe(404);
+ expect((await handleNativeAuthPreview(request("profile", body), "profile", config, fetcher)).status).toBe(401);
+ expect((await handleNativeAuthPreview(request("profile", body, { cookie, origin: "https://other.invalid" }), "profile", config, fetcher)).status).toBe(400);
+ expect(fetcher).not.toHaveBeenCalled();
+ const response = await handleNativeAuthPreview(request("profile", body, { cookie }), "profile", config, fetcher);
+ expect(response.status).toBe(201);
+ expect(await response.json()).toEqual({ created: true });
+});
 it('fails closed outside explicit Preview and before any private transport',async()=>{
  const fetcher=vi.fn();for(const config of [{...env,VERCEL_ENV:'production'},{...env,VERCEL_ENV:'production',NODE_ENV:'development'},{...env,PMRFP_NATIVE_AUTH_PREVIEW:''},{...env,PMRFP_NATIVE_AUTH_GATEWAY_SECRET:''}])expect((await handleNativeAuthPreview(request('session'),'session',config,fetcher)).status).toBe(503);
  expect(fetcher).not.toHaveBeenCalled();

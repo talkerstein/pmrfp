@@ -10,7 +10,9 @@ const record = (value: unknown): value is Record<string, unknown> => Boolean(val
 
 /** A native-session bridge for isolated synthetic application flows only.
  * The sealed real-account database is deliberately not a serving provider. */
-export async function verifyNativeSyntheticUser(request: Request, env: NativeSyntheticAuthConfig, fetcher: typeof fetch): Promise<string> {
+export async function verifyNativeSyntheticIdentity(
+  request: Request, env: NativeSyntheticAuthConfig, fetcher: typeof fetch,
+): Promise<{ id: string; email: string }> {
   if (env.NATIVE_AUTH_URL !== ORIGIN || !env.NATIVE_AUTH_GATEWAY_SECRET || env.NATIVE_AUTH_GATEWAY_SECRET.length < 32) throw new D1ApiError(503, "native_auth_configuration_unavailable");
   // Forward only the signed session cookie, never unrelated application cookies.
   const cookie = request.headers.get("x-pmrfp-native-session") ?? "";
@@ -33,5 +35,9 @@ export async function verifyNativeSyntheticUser(request: Request, env: NativeSyn
     || typeof user.email !== "string" || !user.email.endsWith("@example.invalid") || user.emailVerified !== true
     || session.userId !== user.id || typeof session.expiresAt !== "string" || !Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()
     || (user.banned !== false && !(user.banned === true && typeof user.banExpires === "string" && Number.isFinite(Date.parse(user.banExpires)) && Date.parse(user.banExpires) <= Date.now()))) throw new D1ApiError(401, "sign_in_required");
-  return user.id;
+  return { id: user.id, email: user.email };
+}
+
+export async function verifyNativeSyntheticUser(request: Request, env: NativeSyntheticAuthConfig, fetcher: typeof fetch): Promise<string> {
+  return (await verifyNativeSyntheticIdentity(request, env, fetcher)).id;
 }

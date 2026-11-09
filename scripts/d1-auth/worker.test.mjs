@@ -38,3 +38,23 @@ test('reset requires explicit mode, same origin, JSON and bounded reviewed field
   assert.equal((await send({...env(db),SYNTHETIC_RESET:'enabled'},headers,body)).status,400);
  }
 });
+test('signup is disabled by default and accepts only the reserved fixture without caller-supplied privileges', async () => {
+  const db = { prepare: sql => ({ first: async () => sql.includes('_auth_preview_manifest')
+    ? { mode: 'synthetic-only-v1' } : { total: 0, unsafe: null } }) };
+  const body = { name: 'Fixture', email: 'profile-signup-19@example.invalid', password: 'fixture-password' };
+  const send = (config, fields, requestOrigin = origin) => worker.fetch(new Request(origin + '/api/auth/sign-up/email', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: requestOrigin, 'x-pmrfp-auth-preview-key': key },
+    body: JSON.stringify(fields),
+  }), config);
+  assert.equal((await send(env(db), body)).status, 404);
+  const capture = { ...env(db), SYNTHETIC_SIGNUP: 'capture-only' };
+  for (const fields of [
+    { ...body, email: 'different@example.invalid' },
+    { ...body, role: 'super_admin' },
+    { ...body, callbackURL: 'https://unexpected.invalid' },
+    { ...body, password: 'é'.repeat(37) },
+    { ...body, name: 'x'.repeat(1024) },
+  ]) assert.equal((await send(capture, fields)).status, 400);
+  assert.equal((await send(capture, body, 'https://unexpected.invalid')).status, 400);
+});
