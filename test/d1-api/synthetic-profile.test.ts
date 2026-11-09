@@ -109,3 +109,33 @@ it("requires the isolated marker and a verified session and rejects privileged o
   expect(transport).not.toHaveBeenCalled();
   expect(sqlite.prepare("SELECT id FROM _auth_users").all()).toEqual([]);
 });
+
+it("uses the verified account's signup intent and commits profile, notice and attribution together", async () => {
+  const signedUpAt = "2026-11-09T07:00:00.000Z";
+  const signupIntent = {
+    fullName: "Original Name", role: "supplier", lang: "fr", optedOut: false, signedUpAt,
+    firstTouch: "v=1&p=%2Ffr%2Frfps&r=google.com&d=2026-11-08&l=fr",
+    noticeVersion: "2026-10-22.1",
+  };
+  const transport: typeof fetch = async (url) => {
+    expect(String(url)).toMatch(/\/__migration\/signup-intent$/);
+    const session = await (await auth()(url)).json();
+    return Response.json({ ...session, signupIntent });
+  };
+  const options = { config: { ...env, NATIVE_PROFILE_MODE: "sandbox-signup-intent" } as Env, auth: transport };
+  expect((await request({ role: "admin" }, options)).status).toBe(400);
+  sqlite.exec("CREATE TRIGGER fixture_reject BEFORE INSERT ON signup_attribution BEGIN SELECT RAISE(ABORT,'fixture failure'); END");
+  expect((await request({}, options)).status).toBe(503);
+  for (const table of ["_auth_users", "users_profile", "email_consents", "signup_attribution"]) {
+    expect(sqlite.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()?.n).toBe(0);
+  }
+  sqlite.exec("DROP TRIGGER fixture_reject");
+  expect((await request({}, options)).status).toBe(201);
+  expect((await request({}, options)).status).toBe(200);
+  expect(sqlite.prepare("SELECT id,primary_role,full_name FROM users_profile").all())
+    .toEqual([{ id: accountId, primary_role: "supplier", full_name: "Original Name" }]);
+  expect(sqlite.prepare("SELECT scope,source,wording_version,lang,created_at FROM email_consents").all())
+    .toEqual([{ scope: "service", source: "signup_form", wording_version: signupIntent.noticeVersion, lang: "fr", created_at: signedUpAt }]);
+  expect(sqlite.prepare("SELECT method,role,lang,channel,landing_path,signed_up_at FROM signup_attribution").all())
+    .toEqual([{ method: "password", role: "supplier", lang: "fr", channel: "google_organic", landing_path: "/fr/rfps", signed_up_at: signedUpAt }]);
+});

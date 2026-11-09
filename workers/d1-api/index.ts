@@ -16,7 +16,7 @@ export interface Env extends AuthConfig {
   GATEWAY_SECRET: string;
   /** Writes are enabled only on an explicitly synthetic staging dataset. */
   SAVED_RFPS_MODE?: "read-only" | "sandbox-write";
-  NATIVE_PROFILE_MODE?: "sandbox-write";
+  NATIVE_PROFILE_MODE?: "sandbox-write" | "sandbox-signup-intent";
 }
 const json = (value: unknown, status = 200) => Response.json(value, {
   status, headers: { "cache-control": "no-store, private", "x-content-type-options": "nosniff" },
@@ -27,12 +27,13 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
     await verifyGateway(request.headers.get("x-pmrfp-gateway-key"), env.GATEWAY_SECRET);
     const url = new URL(request.url);
     if (url.pathname === "/v1/profile") {
-      if (env.AUTH_PROVIDER !== "native-synthetic" || env.NATIVE_PROFILE_MODE !== "sandbox-write") {
+      const requireSignupIntent = env.NATIVE_PROFILE_MODE === "sandbox-signup-intent";
+      if (env.AUTH_PROVIDER !== "native-synthetic" || (!requireSignupIntent && env.NATIVE_PROFILE_MODE !== "sandbox-write")) {
         throw new D1ApiError(404, "not_found");
       }
       if (request.method !== "POST") throw new D1ApiError(405, "method_not_allowed");
       if (url.search) throw new D1ApiError(400, "invalid_request");
-      const result = await provisionSyntheticProfile(request, env.DB, env, fetcher);
+      const result = await provisionSyntheticProfile(request, env.DB, env, fetcher, requireSignupIntent);
       return json(result, result.created ? 201 : 200);
     }
     if (url.pathname.startsWith("/v1/project-photos/")) {

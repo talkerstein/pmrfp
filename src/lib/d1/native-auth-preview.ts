@@ -1,11 +1,16 @@
 import {parseSaveInput,UUID} from './contracts';
-import { signupProfileSchema } from '../validations';
+import { z } from 'zod';
+import { signUpSchema, signupProfileSchema } from '../validations';
+import { FT_COOKIE, parseFirstTouch, serializeFirstTouch } from '../attribution/cookie';
+import { optedOut } from '../tracking/privacy';
 const origin='https://pmrfp-auth-synthetic-preview.pmrfp.workers.dev';
 const cookieName='pmrfp-native-preview';
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const failure=(error:string,status:number)=>Response.json({error},{status,headers});
 const record=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==='object'&&!Array.isArray(value);
 export const nativePreviewTokenPattern=/^(?:[A-Za-z0-9._~-]|%[a-fA-F0-9]{2}){16,4096}$/;
+const previewSignupSchema = signUpSchema.pick({ email: true, fullName: true, password: true, role: true })
+ .extend({ lang: z.enum(['en','fr','es']) }).strict();
 export function nativePreviewCookie(request:Request){const matches=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));return matches.length===1?matches[0].slice(cookieName.length+1):'';}
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw Error('Missing body');const chunks:Uint8Array[]=[];let size=0;
@@ -17,17 +22,45 @@ async function boundedJson(request:Request){
 export async function handleNativeAuthPreview(request:Request,operation:string,env:Record<string,string|undefined>,fetcher:typeof fetch=fetch):Promise<Response>{
  if(env.PMRFP_NATIVE_AUTH_PREVIEW!=='synthetic-only'||!(env.VERCEL_ENV==='preview'||(!env.VERCEL_ENV&&env.NODE_ENV==='development')))return failure('native_preview_not_enabled',503);
  if(!env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET||env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
- if(!['sign-in','session','sign-out','saved-rfps','profile'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
- if(operation==='profile'&&env.PMRFP_NATIVE_PROFILE_PREVIEW!=='enabled')return failure('not_found',404);
+ if(!['sign-up','sign-in','session','sign-out','saved-rfps','profile'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
+ const signupIntent = env.PMRFP_NATIVE_PROFILE_PREVIEW === 'signup-intent';
+ if(operation==='sign-up'&&!signupIntent)return failure('not_found',404);
+ if(operation==='profile'&&!signupIntent&&env.PMRFP_NATIVE_PROFILE_PREVIEW!=='enabled')return failure('not_found',404);
  if(operation==='saved-rfps'?!['GET','POST'].includes(request.method):operation==='session'?request.method!=='GET':request.method!=='POST')return failure('invalid_request',400);
  let body:Record<string,unknown>|undefined;
  if(request.method==='POST'){
   if(request.headers.get('origin')!==new URL(request.url).origin||!request.headers.get('content-type')?.startsWith('application/json'))return failure('invalid_request',400);
   try{body=await boundedJson(request);
    if(operation==='saved-rfps')body={...parseSaveInput(body)};
-   else if(operation==='profile')body=signupProfileSchema.parse(body);
+   else if(operation==='sign-up'){
+    const input = previewSignupSchema.parse(body);
+    if (!/^[-a-z0-9]+@example\.invalid$/.test(input.email) || !input.fullName || !input.password || Buffer.byteLength(input.password)>72) {
+     throw Error('Invalid fixture signup');
+    }
+    body = { email: input.email, name: input.fullName, password: input.password, role: input.role, lang: input.lang };
+   }
+   else if(operation==='profile'&&!signupIntent)body=signupProfileSchema.parse(body);
    else if(operation==='sign-in'?typeof body.email!=='string'||!/^[-a-z0-9]+@example\.invalid$/.test(body.email)||typeof body.password!=='string'||Buffer.byteLength(body.password)>72||Object.keys(body).some(k=>!['email','password'].includes(k)):Object.keys(body).length!==0)throw Error('Unexpected input');
   }catch{return failure('invalid_request',400);}
+ }
+ if(operation==='sign-up'){
+  const trackingDisabled = optedOut(request.headers);
+  const firstTouchCookie = (request.headers.get('cookie') ?? '').split(';').map(value => value.trim())
+   .find(value => value.startsWith(FT_COOKIE + '='));
+  const firstTouch = trackingDisabled ? null : parseFirstTouch(firstTouchCookie?.slice(FT_COOKIE.length + 1));
+  try {
+   const response = await fetcher(origin+'/api/auth/sign-up/email', {
+    method: 'POST', redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(12000),
+    headers: {
+     origin, 'content-type': 'application/json', 'x-pmrfp-auth-preview-key': env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET,
+     ...(trackingDisabled ? { dnt: '1' } : {}),
+     ...(firstTouch ? { 'x-pmrfp-signup-first-touch': serializeFirstTouch(firstTouch) } : {}),
+    },
+    body: JSON.stringify(body),
+   });
+   if(response.status!==200)return failure('native_signup_unavailable',response.status===400?400:503);
+   return Response.json({ok:true},{headers});
+  } catch { return failure('native_signup_unavailable',503); }
  }
  const cookies=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));
  const sessionToken=cookies.length===1?cookies[0].slice(cookieName.length+1):'';

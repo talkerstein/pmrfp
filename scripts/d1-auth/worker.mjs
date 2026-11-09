@@ -4,7 +4,7 @@ import { rehearsalOptions } from './rehearsal.mjs';
 import { resetSyntheticPassword } from './atomic-reset.mjs';
 import { syntheticMailOptions, recordSyntheticMail } from './synthetic-mail.mjs';
 import { relaySyntheticMail } from './mail-relay.mjs';
-import { syntheticSignupOptions, syntheticSignupPath, syntheticSignupRequest } from './synthetic-signup.mjs';
+import { readSyntheticSignupIntent, syntheticSignupIntentPath, syntheticSignupOptions, syntheticSignupPath, syntheticSignupRequest } from './synthetic-signup.mjs';
 
 /** Only synthetic fixtures, behind a private gateway; no source Auth connection. */
 const worker = {
@@ -28,7 +28,8 @@ const worker = {
       try{if(env.MAIL_RELAY_MODE!=='synthetic-capture')throw Error('disabled');await relaySyntheticMail({kind:'reset',userId:'00000000-0000-4000-8000-000000000011',to:'fixture@example.invalid',url:env.AUTH_BASE_URL+'/api/auth/reset-password/synthetic_probe_token_0001',expiresIn:900},env);return Response.json({validated:true,emailsSent:0},{headers});}
       catch(error){return Response.json({error:'synthetic_relay_unavailable',stage:['network','http','response'].includes(error?.relayStage)?error.relayStage:'configuration',upstreamStatus:Number.isInteger(error?.relayStatus)?error.relayStatus:null},{status:503,headers});}
     }
-    if (!url.pathname.startsWith('/api/auth/')) return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
+    const signupIntent = url.pathname === syntheticSignupIntentPath;
+    if (!signupIntent && !url.pathname.startsWith('/api/auth/')) return new Response(JSON.stringify({error:'not_found'}),{status:404,headers});
     let options=rehearsalOptions(env.AUTH_DB,env.AUTH_SECRET);
     options.session={...options.session,expiresIn:900,updateAge:900};
     if (url.pathname==='/api/auth/reset-password') {
@@ -49,12 +50,14 @@ const worker = {
     if (signup) {
       if (env.SYNTHETIC_SIGNUP !== 'capture-only') return Response.json({error:'not_found'},{status:404,headers});
       if (totalAccounts >= 20) return Response.json({error:'synthetic_account_limit'},{status:409,headers});
-      try { request = await syntheticSignupRequest(request, env.AUTH_BASE_URL); }
+      let signupInput;
+      try { signupInput = await syntheticSignupRequest(request, env.AUTH_BASE_URL); }
       catch { return Response.json({error:'invalid_signup_request'},{status:400,headers}); }
       const captureOnly = syntheticMailOptions(options, {
         origin: env.AUTH_BASE_URL, deliver: message => recordSyntheticMail(env.AUTH_DB, message),
       });
-      options = syntheticSignupOptions(captureOnly);
+      request = signupInput.authRequest;
+      options = syntheticSignupOptions(captureOnly, signupInput.intent);
     } else if (env.SYNTHETIC_RESET === 'enabled') {
       options = syntheticMailOptions(options, {
         origin: env.AUTH_BASE_URL,
@@ -65,6 +68,13 @@ const worker = {
       });
     }
     const auth=betterAuth({...options,baseURL:env.AUTH_BASE_URL,trustedOrigins:[env.AUTH_BASE_URL]});
+    if (signupIntent) {
+      if (env.SYNTHETIC_SIGNUP !== 'capture-only' || request.method !== 'GET' || url.search) {
+        return Response.json({error:'not_found'},{status:404,headers});
+      }
+      try { return await readSyntheticSignupIntent(auth, request, env.AUTH_DB, headers); }
+      catch { return Response.json({error:'signup_intent_unavailable'},{status:503,headers}); }
+    }
     const response=await auth.handler(request);
     const secured=new Response(response.body,response);
     secured.headers.set('cache-control','no-store');secured.headers.set('x-content-type-options','nosniff');

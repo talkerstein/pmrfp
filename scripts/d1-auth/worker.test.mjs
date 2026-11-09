@@ -41,7 +41,7 @@ test('reset requires explicit mode, same origin, JSON and bounded reviewed field
 test('signup is disabled by default and accepts only the reserved fixture without caller-supplied privileges', async () => {
   const db = { prepare: sql => ({ first: async () => sql.includes('_auth_preview_manifest')
     ? { mode: 'synthetic-only-v1' } : { total: 0, unsafe: null } }) };
-  const body = { name: 'Fixture', email: 'profile-signup-19@example.invalid', password: 'fixture-password' };
+  const body = { name: 'Fixture', email: 'profile-signup-19@example.invalid', password: 'fixture-password', role: 'trade', lang: 'fr' };
   const send = (config, fields, requestOrigin = origin) => worker.fetch(new Request(origin + '/api/auth/sign-up/email', {
     method: 'POST',
     headers: { 'content-type': 'application/json', origin: requestOrigin, 'x-pmrfp-auth-preview-key': key },
