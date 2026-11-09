@@ -6,11 +6,17 @@ export const syntheticSignupPath = "/api/auth/sign-up/email";
 export const syntheticSignupIntentPath = "/__migration/signup-intent";
 const fixtureEmail = "profile-signup-19@example.invalid";
 const fixtureId = "00000000-0000-4000-8000-000000000019";
+export const magicSignupEmail = "profile-link-20@example.invalid";
+const signupFixtures = new Map([
+  [fixtureEmail, fixtureId],
+  [magicSignupEmail, "00000000-0000-4000-8000-000000000020"],
+]);
 const maxBodyBytes = 1024;
 const roles = ["trade", "property_manager", "visitor", "supplier", "real_estate_agent", "talent"];
 const languages = ["en", "fr", "es"];
+export const isSignupFixtureEmail = email => signupFixtures.has(email);
 
-export async function syntheticSignupRequest(request, origin) {
+export async function readSyntheticAuthBody(request, origin) {
   if (request.method !== "POST" || new URL(request.url).search || request.headers.get("origin") !== origin
       || request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
     throw Error("Invalid synthetic signup request");
@@ -33,12 +39,20 @@ export async function syntheticSignupRequest(request, origin) {
     await reader.cancel();
   }
   const input = JSON.parse(text);
-  if (!input || typeof input !== "object" || Array.isArray(input)
-      || Object.keys(input).some(key => !["name", "email", "password", "role", "lang"].includes(key))
-      || input.email !== fixtureEmail || typeof input.name !== "string" || !input.name.trim()
-      || input.name.trim().length > 120 || typeof input.password !== "string" || input.password.length < 8
-      || new TextEncoder().encode(input.password).byteLength > 72 || !roles.includes(input.role)
-      || !languages.includes(input.lang)) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw Error("Invalid synthetic auth body");
+  return input;
+}
+
+export async function syntheticSignupRequest(request, origin, method = "password") {
+  const input = await readSyntheticAuthBody(request, origin);
+  const passwordSignup = method === "password";
+  const email = passwordSignup ? fixtureEmail : magicSignupEmail;
+  if (Object.keys(input).some(key => !["name", "email", "password", "role", "lang"].includes(key))
+      || input.email !== email || typeof input.name !== "string" || !input.name.trim()
+      || input.name.trim().length > 120 || !roles.includes(input.role) || !languages.includes(input.lang)
+      || (passwordSignup && (typeof input.password !== "string" || input.password.length < 8
+        || new TextEncoder().encode(input.password).byteLength > 72))
+      || (!passwordSignup && input.password !== undefined)) {
     throw Error("Invalid synthetic signup fields");
   }
   const fullName = input.name.trim();
@@ -47,12 +61,12 @@ export async function syntheticSignupRequest(request, origin) {
   const authRequest = new Request(request.url, {
     method: "POST",
     headers: { origin, "content-type": "application/json" },
-    body: JSON.stringify({ name: fullName, email: fixtureEmail, password: input.password, callbackURL: "/" }),
+    body: JSON.stringify({ name: fullName, email, password: input.password, callbackURL: "/" }),
   });
   return {
     authRequest,
     intent: {
-      fullName, role: input.role, lang: input.lang,
+      fullName, role: input.role, lang: input.lang, method,
       optedOut: trackingDisabled, firstTouch: firstTouch ? serializeFirstTouch(firstTouch) : null,
       noticeVersion: EMAIL_NOTICE_VERSION,
     },
@@ -63,10 +77,18 @@ export function syntheticSignupOptions(options, intent) {
   if (typeof options.emailVerification?.sendVerificationEmail !== "function") {
     throw Error("Synthetic verification capture is required");
   }
-  return {
+  return withStoredSignupIntent({
     ...options,
     emailAndPassword: { ...options.emailAndPassword, disableSignUp: false, autoSignIn: false },
     emailVerification: { ...options.emailVerification, sendOnSignUp: true },
+  }, intent, fixtureEmail);
+}
+
+export function withStoredSignupIntent(options, intent, email) {
+  const id = signupFixtures.get(email);
+  if (!id) throw Error("Unexpected signup fixture");
+  return {
+    ...options,
     user: {
       additionalFields: {
         signupIntent: { type: "string", required: false, input: false, returned: false },
@@ -81,7 +103,7 @@ export function syntheticSignupOptions(options, intent) {
       ...options.advanced,
       database: {
         ...options.advanced.database,
-        generateId: input => input.model === "user" ? fixtureId : options.advanced.database.generateId(input),
+        generateId: input => input.model === "user" ? id : options.advanced.database.generateId(input),
       },
     },
   };
@@ -91,16 +113,17 @@ export function syntheticSignupOptions(options, intent) {
 export async function readSyntheticSignupIntent(auth, request, db, headers) {
   const session = await auth.api.getSession({ headers: request.headers });
   const user = session?.user;
+  const id = signupFixtures.get(user?.email);
   const expiry = new Date(session?.session?.expiresAt).getTime();
-  if (user?.id !== fixtureId || user.email !== fixtureEmail || user.emailVerified !== true || user.banned !== false
-      || session.session?.userId !== fixtureId || !Number.isFinite(expiry) || expiry <= Date.now()) {
+  if (!id || user.id !== id || user.emailVerified !== true || user.banned !== false
+      || session.session?.userId !== id || !Number.isFinite(expiry) || expiry <= Date.now()) {
     return Response.json({ error: "sign_in_required" }, { status: 401, headers });
   }
-  const row = await db.prepare("SELECT signupIntent,createdAt FROM user WHERE id=? AND email=?").bind(fixtureId, fixtureEmail).first();
+  const row = await db.prepare("SELECT signupIntent,createdAt FROM user WHERE id=? AND email=?").bind(id, user.email).first();
   if (!row?.signupIntent) return Response.json({ error: "signup_intent_missing" }, { status: 409, headers });
   return Response.json({
-    user: { id: fixtureId, email: fixtureEmail, emailVerified: true, banned: false },
-    session: { userId: fixtureId, expiresAt: session.session.expiresAt },
+    user: { id, email: user.email, emailVerified: true, banned: false },
+    session: { userId: id, expiresAt: session.session.expiresAt },
     signupIntent: { ...JSON.parse(row.signupIntent), signedUpAt: new Date(row.createdAt).toISOString() },
   }, { headers });
 }

@@ -7,6 +7,7 @@ import { verifyNativeSyntheticIdentity, type NativeSyntheticAuthConfig } from ".
 
 const storedSignupSchema = signupProfileSchema.extend({
   lang: z.enum(["en", "fr", "es"]),
+  method: z.enum(["password", "magic_link"]),
   optedOut: z.boolean(),
   signedUpAt: z.iso.datetime(),
   firstTouch: z.string().max(MAX_COOKIE_LEN).nullable(),
@@ -58,7 +59,7 @@ export async function provisionSyntheticProfile(
   if (storedSignup?.success) {
     const signup = storedSignup.data;
     const attribution = signupAttributionRow({
-      userId: identity.id, method: "password", role: signup.role, optedOut: signup.optedOut,
+      userId: identity.id, method: signup.method, role: signup.role, optedOut: signup.optedOut,
       ft: parseFirstTouch(signup.firstTouch), fallback: { lang: signup.lang }, signedUpAt: signup.signedUpAt,
       ownHosts: ["pmrfp.com", "www.pmrfp.com"],
     });

@@ -11,6 +11,8 @@ const record=(value:unknown):value is Record<string,unknown>=>!!value&&typeof va
 export const nativePreviewTokenPattern=/^(?:[A-Za-z0-9._~-]|%[a-fA-F0-9]{2}){16,4096}$/;
 const previewSignupSchema = signUpSchema.pick({ email: true, fullName: true, password: true, role: true })
  .extend({ lang: z.enum(['en','fr','es']) }).strict();
+const fixtureEmail = /^[-a-z0-9]+@example\.invalid$/;
+const magicLinkToken = /^[A-Za-z]{32}$/;
 export function nativePreviewCookie(request:Request){const matches=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(cookieName+'='));return matches.length===1?matches[0].slice(cookieName.length+1):'';}
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw Error('Missing body');const chunks:Uint8Array[]=[];let size=0;
@@ -22,9 +24,11 @@ async function boundedJson(request:Request){
 export async function handleNativeAuthPreview(request:Request,operation:string,env:Record<string,string|undefined>,fetcher:typeof fetch=fetch):Promise<Response>{
  if(env.PMRFP_NATIVE_AUTH_PREVIEW!=='synthetic-only'||!(env.VERCEL_ENV==='preview'||(!env.VERCEL_ENV&&env.NODE_ENV==='development')))return failure('native_preview_not_enabled',503);
  if(!env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET||env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET.length<32)return failure('native_preview_unavailable',503);
- if(!['sign-up','sign-in','session','sign-out','saved-rfps','profile'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
+ if(!['sign-up','sign-up-link','sign-in-link','magic-verify','sign-in','session','sign-out','saved-rfps','profile'].includes(operation)||new URL(request.url).search)return failure('not_found',404);
  const signupIntent = env.PMRFP_NATIVE_PROFILE_PREVIEW === 'signup-intent';
- if(operation==='sign-up'&&!signupIntent)return failure('not_found',404);
+ const newAccount = operation==='sign-up'||operation==='sign-up-link';
+ const linkFlow = ['sign-up-link','sign-in-link','magic-verify'].includes(operation);
+ if((newAccount&&!signupIntent)||(linkFlow&&env.PMRFP_NATIVE_MAGIC_LINK_PREVIEW!=='enabled'))return failure('not_found',404);
  if(operation==='profile'&&!signupIntent&&env.PMRFP_NATIVE_PROFILE_PREVIEW!=='enabled')return failure('not_found',404);
  if(operation==='saved-rfps'?!['GET','POST'].includes(request.method):operation==='session'?request.method!=='GET':request.method!=='POST')return failure('invalid_request',400);
  let body:Record<string,unknown>|undefined;
@@ -32,24 +36,33 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
   if(request.headers.get('origin')!==new URL(request.url).origin||!request.headers.get('content-type')?.startsWith('application/json'))return failure('invalid_request',400);
   try{body=await boundedJson(request);
    if(operation==='saved-rfps')body={...parseSaveInput(body)};
-   else if(operation==='sign-up'){
+   else if(newAccount){
     const input = previewSignupSchema.parse(body);
-    if (!/^[-a-z0-9]+@example\.invalid$/.test(input.email) || !input.fullName || !input.password || Buffer.byteLength(input.password)>72) {
+    const passwordValid = operation==='sign-up' ? Boolean(input.password && Buffer.byteLength(input.password)<=72) : input.password===undefined;
+    if (!fixtureEmail.test(input.email) || !input.fullName || !passwordValid) {
      throw Error('Invalid fixture signup');
     }
     body = { email: input.email, name: input.fullName, password: input.password, role: input.role, lang: input.lang };
+   }
+   else if(operation==='sign-in-link'){
+    if (Object.keys(body).length!==1||typeof body.email!=='string'||!fixtureEmail.test(body.email)) throw Error('Invalid fixture link');
+   }
+   else if(operation==='magic-verify'){
+    if (Object.keys(body).length!==1||typeof body.token!=='string'||!magicLinkToken.test(body.token)) throw Error('Invalid fixture token');
    }
    else if(operation==='profile'&&!signupIntent)body=signupProfileSchema.parse(body);
    else if(operation==='sign-in'?typeof body.email!=='string'||!/^[-a-z0-9]+@example\.invalid$/.test(body.email)||typeof body.password!=='string'||Buffer.byteLength(body.password)>72||Object.keys(body).some(k=>!['email','password'].includes(k)):Object.keys(body).length!==0)throw Error('Unexpected input');
   }catch{return failure('invalid_request',400);}
  }
- if(operation==='sign-up'){
-  const trackingDisabled = optedOut(request.headers);
+ if(newAccount||operation==='sign-in-link'){
+  const trackingDisabled = newAccount&&optedOut(request.headers);
   const firstTouchCookie = (request.headers.get('cookie') ?? '').split(';').map(value => value.trim())
    .find(value => value.startsWith(FT_COOKIE + '='));
-  const firstTouch = trackingDisabled ? null : parseFirstTouch(firstTouchCookie?.slice(FT_COOKIE.length + 1));
+  const firstTouch = !newAccount||trackingDisabled ? null : parseFirstTouch(firstTouchCookie?.slice(FT_COOKIE.length + 1));
+  const path = operation==='sign-up' ? '/api/auth/sign-up/email'
+   : operation==='sign-up-link' ? '/__migration/sign-up/magic-link' : '/api/auth/sign-in/magic-link';
   try {
-   const response = await fetcher(origin+'/api/auth/sign-up/email', {
+   const response = await fetcher(origin+path, {
     method: 'POST', redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(12000),
     headers: {
      origin, 'content-type': 'application/json', 'x-pmrfp-auth-preview-key': env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET,
@@ -86,16 +99,25 @@ export async function handleNativeAuthPreview(request:Request,operation:string,e
    return Response.json({items},{headers});
   }catch{return failure('native_preview_unavailable',503);}
  }
- const endpoint=operation==='sign-in'?'sign-in/email':operation==='session'?'get-session':'sign-out';
+ const magicVerify = operation==='magic-verify';
+ const endpoint=magicVerify?'magic-link/verify':operation==='sign-in'?'sign-in/email':operation==='session'?'get-session':'sign-out';
+ const authUrl = new URL(origin+'/api/auth/'+endpoint);
+ if(magicVerify)authUrl.searchParams.set('token',String(body?.token));
  try{
-  const response=await fetcher(origin+'/api/auth/'+endpoint,{method:request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-auth-preview-key':env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET,...(body?{origin,'content-type':'application/json'}:{}),...(nativePreviewTokenPattern.test(sessionToken)?{cookie:'__Secure-better-auth.session_token='+sessionToken}:{})},...(body?{body:JSON.stringify(body)}:{})});
-  if(!response.ok)return failure(response.status===401||response.status===403?'sign_in_required':'native_preview_unavailable',response.status===401||response.status===403?401:503);
+  const response=await fetcher(authUrl.href,{method:magicVerify?'GET':request.method,redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{'x-pmrfp-auth-preview-key':env.PMRFP_NATIVE_AUTH_GATEWAY_SECRET,...(body&&!magicVerify?{origin,'content-type':'application/json'}:{}),...(!magicVerify&&nativePreviewTokenPattern.test(sessionToken)?{cookie:'__Secure-better-auth.session_token='+sessionToken}:{})},...(body&&!magicVerify?{body:JSON.stringify(body)}:{})});
+  if(!response.ok){
+   const denied=response.status===401||response.status===403||(magicVerify&&response.status===302);
+   return failure(denied?'sign_in_required':'native_preview_unavailable',denied?401:503);
+  }
   const value:unknown=await response.json();
   const secure=new URL(request.url).protocol==='https:'?'; Secure':'';
   if(operation==='sign-out')return Response.json({ok:true},{headers:{...headers,'set-cookie':`${cookieName}=; Path=/api/migration/native-auth; HttpOnly; SameSite=Lax; Max-Age=0${secure}`}});
   if(!record(value)||!record(value.user)||typeof value.user.id!=='string'||!/^00000000-0000-4000-8000-0000000000[0-9]{2}$/.test(value.user.id)||typeof value.user.email!=='string'||!/^[-a-z0-9]+@example\.invalid$/.test(value.user.email)||value.user.emailVerified!==true||(value.user.banned!==false&&!(value.user.banned===true&&typeof value.user.banExpires==='string'&&Date.parse(value.user.banExpires)<=Date.now())))return failure('sign_in_required',401);
   const result=Response.json({user:{id:value.user.id,email:value.user.email}},{headers});
-  if(operation==='sign-in'){
+  if(operation==='sign-in'||magicVerify){
+   if(magicVerify&&(!record(value.session)||value.session.userId!==value.user.id
+     ||typeof value.session.expiresAt!=='string'||!Number.isFinite(Date.parse(value.session.expiresAt))
+     ||Date.parse(value.session.expiresAt)<=Date.now()))return failure('sign_in_required',401);
    const upstream=response.headers.getSetCookie().filter(x=>x.startsWith('__Secure-better-auth.session_token='));
    if(upstream.length!==1)return failure('native_preview_unavailable',503);
    const token=upstream[0].split(';')[0].slice('__Secure-better-auth.session_token='.length);if(!nativePreviewTokenPattern.test(token))return failure('native_preview_unavailable',503);

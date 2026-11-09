@@ -113,7 +113,7 @@ it("requires the isolated marker and a verified session and rejects privileged o
 it("uses the verified account's signup intent and commits profile, notice and attribution together", async () => {
   const signedUpAt = "2026-11-09T07:00:00.000Z";
   const signupIntent = {
-    fullName: "Original Name", role: "supplier", lang: "fr", optedOut: false, signedUpAt,
+    fullName: "Original Name", role: "supplier", lang: "fr", method: "password", optedOut: false, signedUpAt,
     firstTouch: "v=1&p=%2Ffr%2Frfps&r=google.com&d=2026-11-08&l=fr",
     noticeVersion: "2026-10-22.1",
   };

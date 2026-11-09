@@ -5,6 +5,25 @@ const env={VERCEL_ENV:'preview',PMRFP_NATIVE_AUTH_PREVIEW:'synthetic-only',PMRFP
 const user={id:'00000000-0000-4000-8000-000000000011',email:'fixture@example.invalid',emailVerified:true,banned:false};
 const token='synthetic-signed-token-value-0001';
 const request=(operation:string,body?:unknown,headers:Record<string,string>={})=>new Request(origin+'/api/migration/native-auth/'+operation,{method:body?'POST':'GET',headers:{origin,'content-type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});
+it("exchanges a one-time fixture link only at the pinned Auth endpoint", async () => {
+ const config = { ...env, PMRFP_NATIVE_MAGIC_LINK_PREVIEW: "enabled" };
+ const linkToken = "A".repeat(32);
+ const transport = vi.fn<typeof fetch>(async (url, init) => {
+  expect(url).toBe("https://pmrfp-auth-synthetic-preview.pmrfp.workers.dev/api/auth/magic-link/verify?token=" + linkToken);
+  expect(init?.method).toBe("GET");
+  expect(init?.redirect).toBe("manual");
+  expect(new Headers(init?.headers).get("cookie")).toBeNull();
+  return Response.json({ user, session: { userId: user.id, expiresAt: "2099-01-01T00:00:00Z" }, token: "PRIVATE" }, {
+   headers: { "set-cookie": "__Secure-better-auth.session_token=" + token },
+  });
+ });
+ expect((await handleNativeAuthPreview(request("magic-verify", { token: linkToken }), "magic-verify", env, transport)).status).toBe(404);
+ expect((await handleNativeAuthPreview(request("magic-verify", { token: linkToken, callbackURL: "https://evil.invalid" }), "magic-verify", config, transport)).status).toBe(400);
+ expect(transport).not.toHaveBeenCalled();
+ const verified = await handleNativeAuthPreview(request("magic-verify", { token: linkToken }), "magic-verify", config, transport);
+ expect(verified.headers.get("set-cookie")).toContain("HttpOnly; SameSite=Lax");
+ expect(await verified.json()).toEqual({ user: { id: user.id, email: user.email } });
+});
 it("requires a same-origin preview session and returns only the profile creation outcome", async () => {
  const config = { ...env, PMRFP_NATIVE_APP_GATEWAY_SECRET: gateway, PMRFP_NATIVE_PROFILE_PREVIEW: "enabled" };
  const cookie = "other=MUST_NOT_FORWARD; pmrfp-native-preview=" + token;
