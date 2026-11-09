@@ -17,6 +17,7 @@ import { getTaxonomyRows } from "./taxonomy";
 import { countryOf } from "@/lib/visitor-geo";
 import { getBoardIndex, getBoardRows, type BoardRow } from "./board-snapshot";
 import { buildRegionIndex, matchesRegion, type RegionIndex } from "@/lib/regions/rollup";
+import { rfpPrivateFields } from "./rfp-private";
 
 function demoToList(r: DemoRfp): RfpListItem {
   const today = new Date().toISOString().slice(0, 10);
@@ -54,7 +55,6 @@ function demoToDetail(r: DemoRfp): RfpDetail {
     contactEmail: r.contactVisibility === "public_contact" ? "rfp@example.com" : null,
     contactPhone: null,
     sourceUrl: null,
-    sourceNotes: null,
   };
 }
 
@@ -281,14 +281,15 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     return r ? demoToDetail(r) : null;
   }
   const supabase = await createClient();
-  const { data } = await supabase.from("rfp_posts").select("*").eq("slug", slug).maybeSingle();
-  const r = data as RfpFullRow | null;
+  const { data } = await supabase.from("rfp_posts").select(FULL_RFP_COLS).eq("slug", slug).maybeSingle();
+  const r = data as unknown as RfpFullRow | null;
   if (!r) return null;
-  const [regionMap, propMap, cats, photos] = await Promise.all([
+  const [regionMap, propMap, cats, photos, priv] = await Promise.all([
     idNameMap(supabase, "regions"),
     idNameMap(supabase, "property_types"),
     categoriesByRfp(supabase, [r.id]),
     publicPhotosByRfp(supabase, [r.id]),
+    rfpPrivateFields(supabase, r.id),
   ]);
   return {
     id: r.id,
@@ -305,21 +306,20 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     photoUrls: photos.get(r.id) ?? [],
     scope: r.scope,
     requirements: r.requirements,
-    budgetMin: r.budget_min,
-    budgetMax: r.budget_max,
+    budgetMin: priv?.budget_min ?? null,
+    budgetMax: priv?.budget_max ?? null,
     budgetPublic: r.budget_public,
     desiredStartDate: r.desired_start_date,
     siteVisitDate: r.site_visit_date,
     submissionInstructions: r.submission_instructions,
     contactVisibility: r.contact_visibility,
-    contactName: r.contact_name,
-    contactEmail: r.contact_email,
-    contactPhone: r.contact_phone,
+    contactName: priv?.contact_name ?? null,
+    contactEmail: priv?.contact_email ?? null,
+    contactPhone: priv?.contact_phone ?? null,
     sourceType: r.source_type ?? null,
     gcProjectName: r.gc_project_name ?? null,
     awardedRfpId: r.awarded_rfp_id ?? null,
     sourceUrl: r.source_url,
-    sourceNotes: r.source_notes,
     status:
       r.status === "awarded" || r.status === "closed" || r.status === "archived"
         ? r.status === "awarded"
@@ -342,14 +342,18 @@ interface RfpPublicRow {
 }
 interface RfpFullRow extends RfpPublicRow {
   scope: string | null; requirements: string | null;
-  budget_min: number | null; budget_max: number | null; budget_public: boolean;
+  budget_public: boolean;
   desired_start_date: string | null; site_visit_date: string | null;
   submission_instructions: string | null;
   contact_visibility: RfpDetail["contactVisibility"];
-  contact_name: string | null; contact_email: string | null; contact_phone: string | null;
-  source_url: string | null; source_notes: string | null;
+  source_url: string | null;
   status: string;
 }
+
+const FULL_RFP_COLS =
+  "id,slug,title,summary,region_id,property_type_id,city,province,deadline,is_demo,source_type,gc_project_name,awarded_rfp_id," +
+  "scope,requirements,budget_public,desired_start_date,site_visit_date,submission_instructions,contact_visibility,source_url,status";
+
 
 async function idNameMap(
   supabase: SupabaseClient,

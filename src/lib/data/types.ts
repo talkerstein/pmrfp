@@ -104,7 +104,6 @@ export interface RfpDetail extends Omit<RfpListItem, "status"> {
   contactPhone: string | null;
   /** Official notice link for public tenders (members only — full row is RLS-gated). */
   sourceUrl: string | null;
-  sourceNotes: string | null;
 }
 
 export interface ResourceItem {

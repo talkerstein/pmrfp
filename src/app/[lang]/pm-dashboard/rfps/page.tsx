@@ -1,7 +1,7 @@
 import Link from "@/i18n/link";
 import { Code2, Plus } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { StatusBadge } from "@/components/status-badge";
@@ -49,7 +49,7 @@ export default async function PmRfpsPage({
 
   let posts: PostRow[] = [];
   if (!isDemoMode()) {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const read = (cols: string) =>
       supabase.from("rfp_posts").select(cols).eq("posted_by_user_id", session.userId).order("created_at", { ascending: false });
     const first = await read("id,title,slug,status,deadline,created_at,review_note");

@@ -56,12 +56,17 @@ export async function getRfp(
   const { data: full } = await supabase
     .from("rfp_posts")
     .select(
-      "id,title,slug,summary,city,province,deadline,published_at,scope,requirements,budget_min,budget_max,budget_public,contact_name,contact_email,contact_phone,submission_instructions",
+      "id,title,slug,summary,city,province,deadline,published_at,scope,requirements,budget_public,submission_instructions",
     )
     .eq("id", id)
     .maybeSingle();
 
-  if (full) return { rfp: full as RfpFull, locked: false };
+  if (full) {
+    // Budget and contact, with the poster's visibility choices applied by the database.
+    const { data: priv } = await supabase.rpc("rfp_private_fields", { p_rfp_id: id });
+    const rfp = { ...full, ...(Array.isArray(priv) ? priv[0] : priv) } as RfpFull;
+    return { rfp, locked: false };
+  }
 
   const { data: teaser } = await supabase
     .from("rfp_public")
