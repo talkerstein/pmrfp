@@ -1,3 +1,5 @@
+import { isIsolatedD1Staging, stagingListingSlug } from "@/lib/d1/staging-config";
+import { stagingSavedRfps } from "@/lib/d1/staging-session";
 import { NextResponse } from "next/server";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
@@ -23,6 +25,16 @@ export async function POST(request: Request) {
   if (limited) return rateLimitResponse(limited);
 
   try {
+    if (isIsolatedD1Staging()) {
+      if (request.headers.get("origin") !== new URL(request.url).origin) {
+        return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
+      }
+      const input = await readSaveInput(request);
+      if (input.rfpId || input.rfpSlug !== stagingListingSlug) {
+        return NextResponse.json({ error: "staging_listing_required" }, { status: 400 });
+      }
+      return await stagingSavedRfps(JSON.stringify(input));
+    }
     if (d1SavedRfpsEnabled()) {
       const input = await readSaveInput(request);
       await d1SavedRfpsClient().change(await d1AccessToken(request), input);

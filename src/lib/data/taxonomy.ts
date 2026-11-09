@@ -67,7 +67,7 @@ export const getTaxonomyRows = cache(async (table: TaxonomyTable): Promise<Taxon
 });
 
 export async function getCategories(): Promise<CategoryOption[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1TaxonomyEnabled()) {
     return DEMO_CATEGORIES.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }));
   }
   return (await getTaxonomyRows("trade_categories")).filter((r) => r.active)
@@ -76,7 +76,7 @@ export async function getCategories(): Promise<CategoryOption[]> {
 }
 
 export async function getRegions(): Promise<RegionOption[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1TaxonomyEnabled()) {
     return DEMO_REGIONS.map((r) => ({ slug: r.slug, name: r.name, province: r.province, country: "Canada" }));
   }
   return (await getTaxonomyRows("regions")).filter((r) => r.active)
@@ -85,7 +85,7 @@ export async function getRegions(): Promise<RegionOption[]> {
 }
 
 export async function getPropertyTypes(): Promise<PropertyTypeOption[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1TaxonomyEnabled()) {
     return DEMO_PROPERTY_TYPES.map((p) => ({ slug: p.slug, name: p.name }));
   }
   return (await getTaxonomyRows("property_types")).filter((r) => r.active)

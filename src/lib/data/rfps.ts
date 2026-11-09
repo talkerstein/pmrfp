@@ -1,3 +1,4 @@
+import { isIsolatedD1Staging, stagingListingSlug } from "@/lib/d1/staging-config";
 import { cache } from "react";
 import { d1DetailEnabled } from "@/lib/d1/detail-backend";
 import { d1BoardEnabled } from "@/lib/d1/board-backend";
@@ -123,7 +124,7 @@ const boardItems = cache(async (): Promise<RfpListItem[]> => {
  * withPublicRfpPhotos().
  */
 export async function listRfps(filters: RfpFilters = {}): Promise<RfpListItem[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1BoardEnabled()) {
     let out = [...DEMO_RFPS];
     if (filters.country) out = out.filter((r) => countryOf(r) === filters.country);
     if (filters.category) out = out.filter((r) => r.category === filters.category);
@@ -204,6 +205,15 @@ async function boardRowFor(slug: string): Promise<BoardRow | null> {
 }
 
 export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
+  if (isIsolatedD1Staging()) {
+    if (slug === stagingListingSlug) return {
+      ...demoToList(DEMO_RFPS[0]), slug, title: "Synthetic native-login listing",
+      summary: "Test listing for staging saves. No buyer or real project is involved.",
+      deadline: null, status: "open",
+    };
+    const row = await boardRowFor(slug);
+    return row ? toListItem(row, await boardLookups(), todayUtc()) : null;
+  }
   if (!isSupabaseConfigured()) {
     const r = DEMO_RFPS.find((x) => x.slug === slug);
     return r ? demoToList(r) : null;

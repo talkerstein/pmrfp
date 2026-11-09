@@ -1,3 +1,4 @@
+import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { GEO_COOKIE, encodeGeo } from "@/lib/visitor-geo";
@@ -66,6 +67,9 @@ function redirectTo(request: NextRequest, pathname: string, status: 307 | 308 = 
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (isIsolatedD1Staging() && (pathname.startsWith("/api/migration/") || pathname.startsWith("/api/cron/"))) {
+    return new NextResponse(null, { status: 404 });
+  }
   // This new transport has its own preview-only gateway; it must not depend on Source Auth.
   if (/^\/api\/migration\/public-asset\/[a-f0-9]{64}$/.test(pathname) || /^\/api\/migration\/native-auth\/rfp-detail\/[a-z0-9][a-z0-9-]{0,200}$/.test(pathname) || /^\/api\/migration\/native-auth\/project-photos\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.jpg$/i.test(pathname) || pathname === "/api/migration/auth-mail" || /^\/api\/migration\/native-auth\/(sign-up|sign-up-link|sign-in-link|magic-verify|sign-in|session|sign-out|saved-rfps|profile|interest|mobile-sign-in|mobile-session|mobile-sign-out|mobile-saved-rfps|mobile-interest)$/.test(pathname)) return NextResponse.next();
   const isGet = request.method === "GET" || request.method === "HEAD";

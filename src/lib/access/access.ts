@@ -1,3 +1,4 @@
+import { isIsolatedD1Staging, stagingEmail, stagingUserId } from "@/lib/d1/staging-config";
 import { redirect } from "next/navigation";
 import { localizePath } from "@/i18n/config";
 import { getLang } from "@/i18n/server";
@@ -25,6 +26,7 @@ export interface SessionContext {
 
 /** The authenticated auth user id, or null (also null in demo mode). */
 export async function getSessionUserId(): Promise<string | null> {
+  if (isIsolatedD1Staging()) return await (await import("@/lib/d1/staging-session")).stagingSessionActive() ? stagingUserId : null;
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
@@ -33,6 +35,11 @@ export async function getSessionUserId(): Promise<string | null> {
 
 /** Full session context (profile + org + access) for the current user, or null. */
 export async function getSession(): Promise<SessionContext | null> {
+  if (isIsolatedD1Staging()) {
+    if (!await (await import("@/lib/d1/staging-session")).stagingSessionActive()) return null;
+    const fixture = demoSession("trade");
+    return { ...fixture, userId: stagingUserId, profile: { ...fixture.profile, id: stagingUserId, email: stagingEmail, full_name: "Staging Tester" } };
+  }
   if (!isSupabaseConfigured()) return null;
   return loadSessionContext(await createClient());
 }
@@ -208,7 +215,7 @@ export async function hasActiveTradeAccess(): Promise<boolean> {
 
 /** Require a logged-in user; otherwise redirect to sign-in. */
 export async function requireUser(): Promise<SessionContext> {
-  if (!isSupabaseConfigured()) return demoSession("trade");
+  if (!isSupabaseConfigured() && !isIsolatedD1Staging()) return demoSession("trade");
   const session = await getSession();
   // Keep the visitor's language on the way out (pages set it via setLangFrom).
   if (!session) redirect(localizePath("/sign-in", getLang()));
@@ -220,7 +227,7 @@ export async function requireUser(): Promise<SessionContext> {
 export async function requireRole(roles: UserRole[]): Promise<SessionContext> {
   // Demo mode: no auth backend — return a synthetic session so the
   // authenticated areas are previewable. Live mode enforces real roles.
-  if (!isSupabaseConfigured()) return demoSession(roles[0]);
+  if (!isSupabaseConfigured() && !isIsolatedD1Staging()) return demoSession(roles[0]);
   const session = await requireUser();
   const role = session.profile.primary_role;
   if (!roles.includes(role)) {

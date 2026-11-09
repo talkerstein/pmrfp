@@ -1,3 +1,4 @@
+import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
@@ -52,7 +53,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     twitter: {
       card: "summary_large_image",
     },
-    robots: { index: true, follow: true },
+    robots: { index: !isIsolatedD1Staging(), follow: !isIsolatedD1Staging() },
     // Google Search Console (URL-prefix property) verification — renders
     // <meta name="google-site-verification"> only when the token env is set.
     // (Domain-property verification via DNS TXT is the alternative and needs no code.)
@@ -83,6 +84,11 @@ export default async function RootLayout({
         <I18nProvider lang={lang} messages={clientMessages(lang)}>
           {/* Trial countdown / "your trial ended" note; draws nothing unless a signed-in company has a trial. */}
           <TrialBanner />
+          {isIsolatedD1Staging() && (
+            <div className="bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-950">
+              PMRFP staging · Test accounts and test changes only
+            </div>
+          )}
           {children}
           {/* Clear of the dashboards' bottom tab bar on phones. */}
           <Toaster mobileOffset={{ bottom: 88 }} />

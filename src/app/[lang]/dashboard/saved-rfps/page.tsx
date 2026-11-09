@@ -1,3 +1,5 @@
+import { isIsolatedD1Staging, stagingListingSlug } from "@/lib/d1/staging-config";
+import { SaveButton } from "@/components/dashboard/save-button";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { loadSavedRfpTitles } from "@/lib/d1/saved-page";
@@ -20,7 +22,8 @@ export default async function SavedRfpsPage({ params }: { params: Promise<object
   // Saving is free (lib/access/free-actions): trade and supplier accounts.
   const session = await requireRole(["trade", "supplier"]);
 
-  const saved = isDemoMode() ? [] : await loadSavedRfpTitles(session.userId);
+  const staging = isIsolatedD1Staging();
+  const saved = isDemoMode() && !staging ? [] : await loadSavedRfpTitles(session.userId);
 
   return (
     <div>
@@ -29,6 +32,13 @@ export default async function SavedRfpsPage({ params }: { params: Promise<object
         description={t.description}
       />
 
+      {staging && (
+        <div className="mb-4 rounded-lg border bg-card p-4">
+          <h2 className="mb-2 font-semibold">Synthetic native-login listing</h2>
+          <p className="mb-2 text-sm text-muted-foreground">Save or remove this test listing, then refresh to verify the result.</p>
+          <SaveButton rfpSlug={stagingListingSlug} initialSaved={saved.some(row => row.slug === stagingListingSlug)} />
+        </div>
+      )}
       {saved.length === 0 ? (
         <EmptyState
           title={t.emptyTitle}

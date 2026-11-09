@@ -1,5 +1,7 @@
 "use server";
 
+import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
+import { signInToStaging, signOutOfStaging } from "@/lib/d1/staging-session";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { ACCOUNT_COOKIE } from "@/lib/visitor-geo";
@@ -306,6 +308,12 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
     password: formData.get("password"),
   });
   if (!parsed.success) return { error: m.enterEmailPassword };
+  if (isIsolatedD1Staging()) {
+    if (!await signInToStaging(parsed.data.email, parsed.data.password)) {
+      return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
+    }
+    redirect(localizePath("/dashboard/saved-rfps", lang));
+  }
   const canary = isCloudflareCanaryEmail(parsed.data.email) && cloudflareCanaryConfig();
   if (canary) {
     const token = await cloudflareCanarySignIn(canary, parsed.data);
@@ -385,6 +393,7 @@ export async function resendSignupLinkAction(_prev: ActionState, formData: FormD
 }
 
 export async function signOutAction(): Promise<void> {
+  if (isIsolatedD1Staging()) await signOutOfStaging();
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     await supabase.auth.signOut();
