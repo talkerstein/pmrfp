@@ -151,8 +151,51 @@ export const NANAIMO: CitySourceConfig = {
   notes: "Permission granted 2026-10-20 (procurement@nanaimo.ca). Bids are hosted on bids&tenders.",
 };
 
+export const MUSKOKA: CitySourceConfig = {
+  key: "muskoka",
+  marker: "mskk",
+  buyerSlug: "district-municipality-of-muskoka",
+  buyer: "District Municipality of Muskoka",
+  issuer: "the District Municipality of Muskoka",
+  provinceCode: "ON",
+  province: "Ontario",
+  regionSlug: "ontario",
+  officialUrl: "https://www.muskoka.on.ca/en/finance-and-administration/bid-opportunities.aspx",
+  contact: { name: "District of Muskoka Procurement", email: null, phone: "705-645-2100" },
+  // Checked 2026-11-05: robots.txt allows the page, but the page lists no bids.
+  // New bids go on Biddingo until 2026-12-31 and on bids&tenders from
+  // 2027-01-01; neither platform is ever read. The District asked for the
+  // link back to its bids&tenders page.
+  list: { kind: "platform", platform: "bids-and-tenders", portalUrl: "https://muskoka.bidsandtenders.ca/Module/Tenders/en/Home/BidsHomepage" },
+  copy: {
+    en: {
+      badge: "Listed with permission · District of Muskoka",
+      issuer: "the District Municipality of Muskoka",
+      portal: "the District of Muskoka's official posting",
+      bidLabel: "View and bid on the official posting",
+      attribution: "Listed with permission from the District Municipality of Muskoka. The District's official posting is the source of record.",
+    },
+    fr: {
+      badge: "Publié avec autorisation · District de Muskoka",
+      issuer: "la municipalité de district de Muskoka",
+      portal: "l'avis officiel du District de Muskoka",
+      bidLabel: "Consulter l'avis officiel et soumissionner",
+      attribution: "Publié avec l'autorisation de la municipalité de district de Muskoka. L'avis officiel du District fait foi.",
+    },
+    es: {
+      badge: "Publicado con permiso · Distrito de Muskoka",
+      issuer: "el municipio de distrito de Muskoka",
+      portal: "la publicación oficial del Distrito de Muskoka",
+      bidLabel: "Ver la publicación oficial y presentar una oferta",
+      attribution: "Publicado con permiso del municipio de distrito de Muskoka. La publicación oficial del Distrito es la fuente oficial.",
+    },
+  },
+  checkedOn: "2026-11-05",
+  notes: "Permission granted 2026-11-05 (District procurement). Bids are hosted on Biddingo, then bids&tenders.",
+};
+
 /** Every city that said yes, in the order they run. */
-export const CITY_SOURCES: readonly CitySourceConfig[] = [NANAIMO];
+export const CITY_SOURCES: readonly CitySourceConfig[] = [NANAIMO, MUSKOKA];
 
 /** How a list is read, as a permission method (null: nothing is read). */
 export function methodFor(list: CityList): PermissionMethod | null {
