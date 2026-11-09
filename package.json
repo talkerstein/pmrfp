@@ -10,7 +10,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "d1:audit": "node scripts/d1/audit.mjs",
+    "d1:schema": "node scripts/d1/catalog.mjs && python3 scripts/d1/schema.py",
+    "d1:test": "python3 -m unittest discover -s test/d1 -v"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

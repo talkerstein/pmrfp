@@ -1,0 +1,10 @@
+{
+  "name": "pmrfp-d1-rehearsal",
+  "compatibility_date": "2026-10-21",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "pmrfp-migration-staging-v2-20261021",
+    "database_id": "80b90607-2f8d-4f9b-a646-658f2ebad0bc"
+  }]
+}

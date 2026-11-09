@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "default": "preserve-all-rows-and-columns",
+  "rebuildTables": ["org_karma"],
+  "resetTables": ["rate_limit_hits"],
+  "rebuildColumns": {
+    "forum_threads": ["reply_count", "words_total", "last_post_at", "last_post_user_id", "rating_sum", "rating_count"],
+    "forum_categories": ["thread_count", "post_count", "last_post_at", "last_thread_id"],
+    "forum_profiles": ["post_count", "reputation"]
+  },
+  "preserveExamples": ["karma_events", "forum_reputation_events", "forum_posts", "forum_thread_ratings", "stripe_events", "email_logs", "email_suppressions", "notification_preferences", "rfp_posts", "users_profile", "organizations", "subscriptions", "saved_rfps"],
+  "notes": [
+    "Views and indexes contain no authoritative rows and are rebuilt separately.",
+    "Only fields listed above may change. Unknown or new tables are preserved automatically.",
+    "Historical views, analytics, counters without a complete source ledger, audit history, consents and delivery/idempotency records are preserved.",
+    "Reference data preserves production IDs and edits; it is not blindly reseeded.",
+    "No production reset or cutover is authorized by this policy. Rebuilds create a new local candidate file."
+  ]
+}

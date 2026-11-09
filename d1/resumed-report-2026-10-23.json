@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-23",
+  "privateDetail": {
+    "workerVersion": "53a01a80-482e-425c-9abe-037ee1f2f138",
+    "authorization": "live Supabase Auth plus source RLS ID-only query",
+    "realFreeAccountDenied": true,
+    "positivePaidOwnerAdminLiveCheck": "pending",
+    "productionEnabled": false
+  },
+  "offlineJournal": {
+    "newSnapshot": {
+      "source_snapshot_sha256": "e3661a10a8f36d6e13aa467ff505dd368f6e9f239f86d4832e56aa192f09ef98",
+      "rebuilt_snapshot_sha256": "6865ed167550b73c3763eda521ff80fccaff81f4263e1cc79ae5e240e62bba1a",
+      "tables": 102,
+      "records": 11831,
+      "scored_at": "2026-10-23T09:24:38.232786+00:00",
+      "authoritative_fields": "identical",
+      "rebuilt_fields": "approved-policy-only",
+      "cutover_ready": false
+    },
+    "journalChanges": 144,
+    "changedTables": {
+      "forum_threads": {
+        "inserted": 0,
+        "updated": 5,
+        "deleted": 0
+      },
+      "karma_events": {
+        "inserted": 3,
+        "updated": 0,
+        "deleted": 0
+      },
+      "landing_counts": {
+        "inserted": 67,
+        "updated": 2,
+        "deleted": 0
+      },
+      "org_karma": {
+        "inserted": 0,
+        "updated": 60,
+        "deleted": 0
+      },
+      "site_page_views": {
+        "inserted": 1,
+        "updated": 0,
+        "deleted": 0
+      },
+      "sponsor_clicks": {
+        "inserted": 6,
+        "updated": 0,
+        "deleted": 0
+      }
+    },
+    "forward": {
+      "changes": 144,
+      "reverse": false,
+      "tables": 102,
+      "rows_sha256": "531fcb0af83a3a45d1f113968aeddc10fd3600c860e720fd18c52d1bc6c13853",
+      "remote_writes": false,
+      "cutover_ready": false
+    },
+    "reverse": {
+      "changes": 144,
+      "reverse": true,
+      "tables": 102,
+      "rows_sha256": "f812630da6b394a19fa6c605350845387cc4452317aef5bca4ea4b26f1727b47",
+      "remote_writes": false,
+      "cutover_ready": false
+    },
+    "deployedCopyUnchanged": true,
+    "remoteWrites": 0
+  },
+  "validation": {
+    "fullVitestPassed": 2480,
+    "fullVitestSkipped": 2,
+    "additionalDetailProviderPassed": 3,
+    "offlineTestsPassed": 32,
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "productionBuild": "passed, 762 static pages"
+  },
+  "cutoverReady": false
+}

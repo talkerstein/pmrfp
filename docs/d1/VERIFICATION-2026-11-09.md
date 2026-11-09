@@ -1,0 +1,39 @@
+# November 9 migration checkpoint
+
+The live Supabase catalog matched the previous audit (116 application tables and 232 capture triggers). A normal incremental cycle transferred 16,231,556 bytes of changed rows, not a full source export. The isolated D1 copy contains 157,539 records after the approved derived-data rebuild. Local apply, reversal and reapply matched exactly; the native before/after backups both restored and matched their respective snapshots.
+
+A second incremental cycle transferred 120,304 bytes and applied 359 row changes. The isolated copy now contains 157,805 verified records. Both native backups restored and matched their snapshots before all 384 captured events were acknowledged. The refreshed preview again matched all 1,792 published listings and taxonomy. The retained acknowledgement history is 132,228.
+
+After the native restore checks, Supabase acknowledged all 26,523 captured changes. The read-only health check matched the durable D1 checkpoint and 131,844 retained acknowledgements. It found 58 newer events still pending at the time of inspection. The reader expires November 12 at 15:30 India time. The read-only Worker matched all fields on 1,792 published listings and all 45 categories, 88 regions, and 21 property types against the November 9 source snapshot. The earlier app preview dataset selection and production were not changed.
+
+All 61 public images (48,561,650 bytes) matched their original public metadata and their full R2 readback checksums. The protected app preview issued a short-lived link for the largest image; the direct Worker download matched all 9,593,514 bytes and denied a tampered signature. A fresh aggregate Source inventory matched the archive fingerprint for all 64 object identities, revisions, sizes, MIME types and bucket visibility. No files were added, removed or revised at the time of the check. See [the public image rehearsal](PUBLIC-ASSET-PREVIEW.md).
+
+The preview-only listing integration rendered the hero, gallery and gallery links for three published listings in a loopback app using D1 metadata. Each linked download went through R2 and matched the backup byte for byte. The protected Vercel deployment's metadata backend remains unchanged.
+
+The refreshed snapshot contains no project rows referencing the three archived private project photos. The offline comparison emitted counts only. These files remain sealed in the private migration archive and are not bound to the public Worker. The existing synthetic photo rehearsal remains the upload and access-policy test for future projects.
+
+An isolated D1 canary verified atomic saved-list journal capture. A disposable PostgreSQL rehearsal replayed equivalent synthetic changes into the original table shape and rejected conflicts or gaps atomically. See [the saved-list rollback rehearsal](SAVED-RFP-ROLLBACK-REHEARSAL.md) for the exact scope and remaining requirements.
+
+A fresh, protected local Auth export and in-memory sealed import rehearsal verified 79 accounts. All 76 earlier accounts were retained with unchanged credentials and account state; three new accounts exist only in the local artifacts. The real Cloudflare Auth shadow remains sealed at 76 accounts and has no serving binding. The import rehearsal produced zero sessions.
+
+A separate local Workers runtime rehearsal created a synthetic password account, captured and used its verification link, signed in, and created its D1 application profile with the same account ID. A duplicate signup preserved the original credential and signup choices. A fresh session with no first-touch cookie recovered the name, role, language, notice version, and original attribution from the Auth record. Profile, consent, and attribution committed together. A second run verified that Global Privacy Control suppresses the original tracking fields. The verified account could save and remove a listing after provisioning, and logout revoked access. These paths require explicit sandbox settings and the local `signup-intent-sandbox.sql` schema step.
+
+The local Workers runtime also rehearsed passwordless signup and subsequent sign-in. The link created a session on a different device and carried the original signup choices into the same D1 transaction. The provider stored a hashed token, two concurrent redemptions produced exactly one session, and expired links or accounts banned after issuance were denied.
+
+A passwordless fixture used a recovery link to set its first password. D1 installed the credential, consumed the link and revoked the existing session in one transaction. The same fixture then signed in through the HTTPS mobile preview transport, saved and removed a listing, and lost access after logout. This verifies the server transport with mobile-style requests. The Expo app still needs the matching provider and data API integration. The live source reported Google disabled, and the 79-account export contained only email providers.
+
+For the write rehearsal, `schema.py --exact-decimal-checks` compares numeric ranges by decimal digits while keeping original values as text. A fresh local import of the 157,539-record candidate validated all 117 tables with those checks. The existing Cloudflare copy keeps its original read schema.
+
+The isolated Worker accepted ordinary expressions of interest through the browser and mobile transports, stored exact quotes, and committed the buyer's in-app notice and an outbox entry with the response. Two simultaneous submissions could not both claim the final free response. Duplicate and suspended-company requests were denied, an active trial lifted the allowance, and a simulated outbox or notice failure rolled back the response. Sealed bids, attachment sharing and external delivery still require their own paths.
+
+The buyer read rehearsal returned the ordinary bid only to the listing's authorized buyer. An unrelated buyer and the submitting trade were denied the buyer view. The exact quote was visible with contact details hidden, and explicit contact reveal made the details available through the mobile transport. Suspending the buyer revoked the next read.
+
+## Live phased rollout
+
+Production served all three public taxonomy lists and the 16 public RFP board shards through the Cloudflare D1 Worker in matched mode. The Worker matched 154 taxonomy rows and 1,792 public listings and their category links. Vercel keeps the normal Supabase reads and uses the D1 response only on a complete match. Supabase supplies the response on a difference, timeout or Worker failure. The two production changes are [PR 218](https://github.com/talkerstein/pmrfp/pull/218) and [PR 219](https://github.com/talkerstein/pmrfp/pull/219). Public smoke checks passed on the live domain.
+
+The rollback for the board phase is the verified taxonomy-only deployment `dpl_CiJtSbD1tsvETSKdYPUq3s8Rv99g`. The deployment from before both phases is `dpl_J8LaakFyvRqm6GAG6ajE9MaWcUbS`. The D1 checkpoint and Supabase receipt history were consistent after promotion, with 116 events waiting for the next refresh. The two matched read modes can fall back independently as new events arrive.
+
+All four copied listing photos still match their public Source revisions. The current R2 preview returns the original files, each 8–10 MB. Live photo delivery stays on the optimized path until a stable R2 route preserves that optimization and respects changes to Source visibility.
+
+Production still depends on Supabase for login, writes, files and other reads. The remaining gates include production account and authorization flows; application, mobile, background-job and payment writes; monitored sync; and a tested freeze, final reconciliation and rollback.

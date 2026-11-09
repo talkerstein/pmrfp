@@ -15,17 +15,9 @@ export interface CategoryOption { slug: string; name: string; icon: string | nul
 export interface RegionOption { slug: string; name: string; province: string | null; country: string }
 export interface PropertyTypeOption { slug: string; name: string }
 
-export interface TaxonomyRow {
-  id: string; slug: string; name: string; active: boolean;
-  icon?: string | null; sort_order?: number; province?: string | null;
-  country?: string; parent_id?: string | null;
-}
-type TaxonomyTable = "trade_categories" | "regions" | "property_types";
-const SELECTS: Record<TaxonomyTable, string> = {
-  trade_categories: "id,slug,name,icon,active,sort_order",
-  regions: "id,slug,name,province,country,parent_id,active,sort_order",
-  property_types: "id,slug,name,active",
-};
+import { TAXONOMY_SELECTS as SELECTS, type TaxonomyRow, type TaxonomyTable } from "@/lib/d1/taxonomy-contracts";
+import { d1TaxonomyEnabled } from "@/lib/d1/taxonomy-backend";
+export type { TaxonomyRow } from "@/lib/d1/taxonomy-contracts";
 
 // One canonical projection per table, reused by dropdowns, maps and region
 // trees. No active=true filter here: preserve every row allowed by anon RLS.
@@ -66,7 +58,8 @@ const matchedCloudflareTaxonomy = unstable_cache(
   { tags: [TAXONOMY_DATA_TAG], revalidate: 60 },
 );
 
-export const getTaxonomyRows = cache((table: TaxonomyTable): Promise<TaxonomyRow[]> => {
+export const getTaxonomyRows = cache(async (table: TaxonomyTable): Promise<TaxonomyRow[]> => {
+  if (d1TaxonomyEnabled()) return (await import("@/lib/d1/taxonomy-server")).d1TaxonomyRows(table);
   const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   return process.env.PMRFP_PUBLIC_TAXONOMY_PHASE === "matched"
     ? matchedCloudflareTaxonomy(table, projectUrl)

@@ -1,0 +1,9 @@
+{
+  "audit_date":"2026-10-21",
+  "context":"Read-only follow-up after the other chat reconciled migration history. The staged snapshot predates these source changes.",
+  "public_tables":85,
+  "public_policies":141,
+  "public_views":13,
+  "applied_latest":["20261019000001","20261021000001","20261021000010"],
+  "fresh_full_catalog_and_snapshot_required":true
+}

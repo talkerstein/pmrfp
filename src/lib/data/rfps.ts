@@ -1,4 +1,6 @@
 import { cache } from "react";
+import { d1DetailEnabled } from "@/lib/d1/detail-backend";
+import { d1BoardEnabled } from "@/lib/d1/board-backend";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
@@ -191,11 +193,12 @@ export function filterAndSort(
   return mapped;
 }
 
-/** Snapshot lookup that never throws (a failing snapshot falls back to a direct read). */
+/** Supabase can retry its source; a D1 preview must retain its checkpoint boundary. */
 async function boardRowFor(slug: string): Promise<BoardRow | null> {
   try {
     return (await getBoardIndex()).get(slug) ?? null;
-  } catch {
+  } catch (error) {
+    if (d1BoardEnabled()) throw error;
     return null;
   }
 }
@@ -212,11 +215,13 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
     const [m, photos] = await Promise.all([
       boardLookups(),
       // Imported public tenders never carry uploaded photos.
-      snap.sourceType === "public_source" ? new Map<string, string[]>() : publicPhotosByRfp(supabase, [snap.id]),
+      snap.sourceType === "public_source" ? new Map<string, string[]>() : publicPhotosByRfp(supabase, [snap.id], true),
     ]);
     return { ...toListItem(snap, m, todayUtc()), photoUrls: photos.get(snap.id) ?? [] };
   }
-  // Not in the snapshot yet (published in the last few minutes) or snapshot unavailable.
+  // A D1 preview stays pinned to its validated checkpoint, including absent slugs.
+  if (d1BoardEnabled()) return null;
+  // Supabase may fill a temporarily missing/stale shared snapshot from its own source.
   const { data } = await supabase.from("rfp_public").select("*").eq("slug", slug).maybeSingle();
   const r = data as RfpPublicRow | null;
   if (!r) return null;
@@ -281,8 +286,9 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     return r ? demoToDetail(r) : null;
   }
   const supabase = await createClient();
-  const { data } = await supabase.from("rfp_posts").select("*").eq("slug", slug).maybeSingle();
-  const r = data as RfpFullRow | null;
+  const r: RfpFullRow | null = d1DetailEnabled()
+    ? await (await import("@/lib/d1/detail-server")).d1RfpDetail(slug)
+    : (await supabase.from("rfp_posts").select("*").eq("slug", slug).maybeSingle()).data as RfpFullRow | null;
   if (!r) return null;
   const [regionMap, propMap, cats, photos] = await Promise.all([
     idNameMap(supabase, "regions"),
@@ -378,7 +384,8 @@ export async function withPublicRfpPhotos(items: RfpListItem[]): Promise<RfpList
   let index: Map<string, BoardRow> | null = null;
   try {
     index = await getBoardIndex();
-  } catch {
+  } catch (error) {
+    if (d1BoardEnabled()) throw error;
     index = null;
   }
   for (const s of slugs) {
@@ -386,12 +393,12 @@ export async function withPublicRfpPhotos(items: RfpListItem[]): Promise<RfpList
     if (id) idBySlug.set(s, id);
   }
   const missing = slugs.filter((s) => !idBySlug.has(s));
-  if (missing.length) {
+  if (missing.length && !d1BoardEnabled()) {
     const { data, error } = await client.from("rfp_public").select("id,slug").in("slug", missing).order("id");
     if (error) throw error;
     for (const row of (data ?? []) as { id: string; slug: string }[]) idBySlug.set(row.slug, row.id);
   }
-  const photos = await publicPhotosByRfp(client, [...new Set(idBySlug.values())].sort());
+  const photos = await publicPhotosByRfp(client, [...new Set(idBySlug.values())].sort(), true);
   return items.map((r) => {
     const id = idBySlug.get(r.slug);
     return { ...r, photoUrls: id ? photos.get(id) ?? [] : [] };
@@ -428,9 +435,14 @@ async function categoriesByRfp(
 async function publicPhotosByRfp(
   supabase: SupabaseClient,
   rfpIds: string[],
+  publicCards = false,
 ): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();
   if (rfpIds.length === 0) return map;
+  if (publicCards && d1BoardEnabled()) {
+    const { d1PublicPhotos } = await import("@/lib/d1/photos-server");
+    return d1PublicPhotos(rfpIds);
+  }
   for (const ids of chunks(rfpIds)) {
     const { data } = await supabase
       .from("rfp_documents")

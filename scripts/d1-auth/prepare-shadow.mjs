@@ -1,0 +1,16 @@
+import {readFileSync,writeFileSync,realpathSync} from 'node:fs';
+import {resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+import {readProtectedExport,shadowStatements} from './import-plan.mjs';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
+const [source,output]=process.argv.slice(2);
+if(!source||!output||process.argv.length!==4)throw Error('Expected protected source and output paths');
+const privateFolder=realpathSync(resolve(root,'.d1-private'));
+if(realpathSync(dirname(resolve(source)))!==privateFolder||realpathSync(dirname(resolve(output)))!==privateFolder)throw Error('Artifacts must remain in the protected private folder');
+const plan=readProtectedExport(source);
+const schema=readFileSync(resolve(root,'workers/auth-preview/schema.sql'),'utf8').split('-- Explicit sandbox marker')[0];
+const batch=shadowStatements(plan,schema);
+const payload=JSON.stringify({protocol:1,mode:'sealed-unbound-auth-shadow',sourceSha256:plan.sourceSha256,records:plan.records,batch});
+writeFileSync(output,payload,{mode:0o600,flag:'wx'});
+console.log(JSON.stringify({localPlanOnly:true,accounts:plan.records,statements:batch.length,bytes:Buffer.byteLength(payload),sourceSha256:plan.sourceSha256,planSha256:createHash('sha256').update(payload).digest('hex'),cloudflareImport:false,liveAuthSwitch:false}));
