@@ -74,6 +74,7 @@ import certs from "./messages/certs";
 import certsClient from "./messages/certsClient";
 import contracts from "./messages/contracts";
 import contractsClient from "./messages/contractsClient";
+import websites from "./messages/websites";
 
 const NAMESPACES = {
   common,
@@ -143,6 +144,7 @@ const NAMESPACES = {
   certsClient,
   contracts,
   contractsClient,
+  websites,
 };
 
 type Namespaces = typeof NAMESPACES;
