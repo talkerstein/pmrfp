@@ -38,6 +38,13 @@ export interface SignupProps {
   /** Arrived from a paid-plan button: the role (trade/supplier) and plan are decided. */
   intent: { plan: PlanId; interval: PlanInterval; name: string } | null;
   next: string | null;
+  /**
+   * What "Trade Pro" picked on this page asks checkout for: monthly when a
+   * monthly Stripe price exists, else yearly (lib/billing upgradeInterval,
+   * the same rule every other upgrade link follows). The plan card leads
+   * with the same price, so nobody meets a bigger number at checkout.
+   */
+  proInterval: PlanInterval;
   award: string | null;
   google: boolean;
   signInHref: string;
@@ -101,7 +108,8 @@ export function SignUpFlow(p: SignupProps) {
   const isLandlord = role === "landlord";
   const formRole = isGc || isLandlord ? "property_manager" : role || "trade";
   // Picked Trade Pro here (no plan in the URL): checkout comes after the account.
-  const nextPath = p.next ?? (pro && !p.intent ? checkoutPath("pro", "annual") : null);
+  const nextPath = p.next ?? (pro && !p.intent ? checkoutPath("pro", p.proInterval) : null);
+  const proMonthly = p.proInterval === "monthly";
 
   // Which step of the wizard people reach (once each per visit): where the sign-up leaks is measured, not guessed.
   const seenSteps = useRef(new Set<number>());
@@ -327,8 +335,8 @@ export function SignUpFlow(p: SignupProps) {
                   </button>
                   <button type="button" role="radio" aria-checked={pro} className="v3-su-plan pro" onClick={() => setPlan("pro")}>
                     <span className="hd"><span className="nm">{t.pro}<span className="pp">{t.popular}</span></span><span className="tk"><SmallTick stroke={pro ? "#1B1D3A" : "#282B59"} /></span></span>
-                    <span className="pr">{m.known ? m.money(PRICING.proAnnual) : <V3Skeleton w="4ch" />}</span>
-                    <span className="per">{m.known ? fmt(t.proPer, { currency: m.currency, price: m.money(PRICING.proMonthly) }) : <V3Skeleton w="12em" />}</span>
+                    <span className="pr">{m.known ? m.money(proMonthly ? PRICING.proMonthly : PRICING.proAnnual) : <V3Skeleton w="4ch" />}</span>
+                    <span className="per">{m.known ? fmt(proMonthly ? t.proPerMonthly : t.proPer, { currency: m.currency, price: m.money(proMonthly ? PRICING.proAnnual : PRICING.proMonthly) }) : <V3Skeleton w="12em" />}</span>
                     <ul>{t.proPoints.map((x) => <li key={x}><BigTick stroke="#91F2CF" />{x}</li>)}</ul>
                   </button>
                 </div>

@@ -34,6 +34,8 @@ import { recordSignupAttribution, recordSignupAttributionForEmail } from "@/lib/
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
 import { errorDetail } from "@/lib/onboarding/steps";
 import { linkDigestSubscriber } from "@/lib/digest/link";
+import { subscribeMemberToDigest } from "@/lib/digest/member";
+import { weeklyEmailTicked } from "@/lib/digest/config";
 import { magicLinkRedirect, parseSignupMethod } from "@/lib/auth/magic-link";
 import { SIGNUP_INTENT_COOKIE } from "@/lib/auth/signup-intent";
 import { marketingTicked } from "@/lib/consent/email";
@@ -723,6 +725,10 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   await recordSignupAttribution({ userId: session.userId, orgId: org.id, role, lang });
   await recordOnboardingConsent(session.userId, formData, lang);
   await linkDigestSubscriber(session.userId, session.profile.email);
+  // The weekly email is only for members who tick its box (it starts unticked). A listing held as spam is never added.
+  if (isListing && listingStatus !== "rejected" && weeklyEmailTicked(formData.get("weekly_email"))) {
+    await subscribeMemberToDigest({ userId: session.userId, provinceRaw: data.province, trades: categories, lang });
+  }
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord }, { userId: session.userId });
 
   // One welcome email per member, with the next step for their kind of account.

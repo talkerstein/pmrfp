@@ -72,6 +72,7 @@ vi.mock("@/i18n/server", () => ({
 
 import { completeOnboardingAction, resendSignupLinkAction, signUpAction } from "@/lib/auth/actions";
 import { EMAIL_NOTICE_VERSION, MARKETING_OPT_IN_VERSION } from "@/lib/consent/email";
+import { MEMBER_CONSENT_VERSION } from "@/lib/digest/config";
 import { magicLinkRedirect } from "@/lib/auth/magic-link";
 import { createTradeCheckout } from "@/lib/billing/checkout";
 import CheckoutPage from "@/app/[lang]/checkout/page";
@@ -248,6 +249,62 @@ describe("email consent is recorded with the wording they saw", () => {
       await redirectOf(completeOnboardingAction({}, form({ ...fields, email: "", website: "acmecleaning.ca" })));
       expect(h.db.tables.organizations).toHaveLength(1);
       expect(h.db.tables.organizations[0]).toMatchObject({ email: "owner@acmecleaning.ca", website: "https://acmecleaning.ca", province: "Ontario" });
+    });
+
+    // "Honest first" (2026-11-19): the weekly email is a choice that really adds the member (lib/digest/member).
+    describe("the weekly email box", () => {
+      const authUser = (confirmed: boolean) =>
+        Object.assign(async () => ({ data: { user: { email: "Owner@AcmeCleaning.ca", email_confirmed_at: confirmed ? "2026-11-19T12:00:00Z" : null } }, error: null }), { calls: [] }) as never;
+      beforeEach(() => {
+        h.db.tables.digest_subscribers = [];
+        h.db.tables.email_suppressions = [];
+        h.db.tables.trade_categories.push({ id: "c1", slug: "janitorial" });
+        h.db.auth.admin.getUserById = authUser(true);
+      });
+
+      it("left unticked: nobody is added to the weekly list", async () => {
+        expect(await redirectOf(completeOnboardingAction({}, form(fields)))).toBe("/dashboard?welcome=1");
+        expect(h.db.tables.digest_subscribers).toEqual([]);
+      });
+
+      it("ticked: the member goes on the list as active, with their place, trades and the consent record", async () => {
+        expect(await redirectOf(completeOnboardingAction({}, form({ ...fields, lang: "fr", province: "QC", weekly_email: "on" })))).toBe("/fr/dashboard?welcome=1");
+        expect(h.db.tables.digest_subscribers).toEqual([
+          expect.objectContaining({
+            email: "Owner@AcmeCleaning.ca",
+            country: "CA",
+            province: "Quebec",
+            trades: ["janitorial"],
+            lang: "fr",
+            status: "active",
+            source: "onboarding",
+            consent_text_version: MEMBER_CONSENT_VERSION,
+            user_id: "u9",
+            confirm_token_hash: null,
+          }),
+        ]);
+        expect(h.db.tables.digest_subscribers[0].confirmed_at).toBeTruthy();
+        expect(h.db.tables.digest_subscribers[0].consent_at).toBeTruthy();
+      });
+
+      it("ticked, but the account's address is not confirmed: nobody is added", async () => {
+        h.db.auth.admin.getUserById = authUser(false);
+        await redirectOf(completeOnboardingAction({}, form({ ...fields, weekly_email: "on" })));
+        expect(h.db.tables.digest_subscribers).toEqual([]);
+      });
+
+      it("ticked by someone who unsubscribed before: the same row is switched back on, not duplicated", async () => {
+        h.db.tables.digest_subscribers.push({ id: "d1", email: "owner@acmecleaning.ca", email_key: "owner@acmecleaning.ca", status: "unsubscribed", trades: ["roofing"], province: "Ontario", country: "CA", sends: 4 });
+        await redirectOf(completeOnboardingAction({}, form({ ...fields, weekly_email: "on" })));
+        expect(h.db.tables.digest_subscribers).toHaveLength(1);
+        expect(h.db.tables.digest_subscribers[0]).toMatchObject({ id: "d1", status: "active", trades: ["janitorial"], province: "Ontario", sends: 4 });
+      });
+
+      it("a suppressed address (bounce or complaint) is never added, tick or not", async () => {
+        h.db.tables.email_suppressions.push({ email_key: "owner@acmecleaning.ca", reason: "complaint" });
+        await redirectOf(completeOnboardingAction({}, form({ ...fields, weekly_email: "on" })));
+        expect(h.db.tables.digest_subscribers).toEqual([]);
+      });
     });
 
     it("records which field a refused form named, as a funnel step", async () => {

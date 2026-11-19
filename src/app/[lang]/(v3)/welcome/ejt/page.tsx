@@ -34,7 +34,7 @@ const WORK = [
   "A free company profile in the PMRFP directory, listed on your trade and city pages",
   "Show up when owners, managers and builders search for vendors",
   "A website badge that links to your profile",
-  "The weekly tender digest for your trade",
+  "A free weekly email of open bids in your trade, if you want it",
   `Want full tender details and an email the morning a match posts? Trade Pro, free for ${TRIAL_DAYS} days, no card`,
 ];
 

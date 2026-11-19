@@ -82,6 +82,7 @@ export default async function TradeDashboardHome({
   const ledgerSince = ledgerStart(session.trial?.status === "active" ? session.trial.startedAt : null);
   const ledger = !demo && session.hasTradeAccess ? await loadTrialUsage(session.userId, org?.id ?? null, ledgerSince) : null;
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
+  const activity = demo ? { saved: 0, interests: 0 } : await activityCounts(session.userId, org?.id ?? null);
   const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
   // Price benchmarks for this company's trades, in its own country and province first.
   const benches = tradeSlugs.length ? await benchmarksForTrades(tradeSlugs, country, province).catch(() => []) : [];
@@ -137,9 +138,11 @@ export default async function TradeDashboardHome({
           href="/dashboard/billing"
         />
         <StatCard label={t.matching} value={matchingRfps} hint={t.openOpps} href="/dashboard/rfps" />
-        <StatCard label={t.saved} value={0} href="/dashboard/saved-rfps" />
-        <StatCard label={t.interests} value={0} href="/dashboard/interests" />
-        <StatCard label={t.views} value={demo ? 42 : 0} hint={t.last30} />
+        {/* Real counts or no card: a number that never moves teaches people to stop looking. */}
+        {activity.saved != null && <StatCard label={t.saved} value={activity.saved} href="/dashboard/saved-rfps" />}
+        {activity.interests != null && <StatCard label={t.interests} value={activity.interests} href="/dashboard/interests" />}
+        {/* Profile views are not counted anywhere yet, so the card only exists in the demo. */}
+        {demo && <StatCard label={t.views} value={42} hint={t.last30} />}
       </div>
 
       {recentWins.n > 0 && (
@@ -284,6 +287,30 @@ async function projectNudge(
   const todo = ready ? live.find((p) => !p.progress.complete) : undefined;
   if (todo) return { kind: "build", project: { id: todo.id, title: todo.title } };
   return live.some((p) => p.status === "published") ? { kind: "sheet" } : null;
+}
+
+/**
+ * How many RFPs this person saved and how many interests their company sent:
+ * the same rows /dashboard/saved-rfps and /dashboard/interests list. A count
+ * that can't be read is null, and its card is left out rather than shown as 0.
+ */
+async function activityCounts(userId: string, orgId: string | null): Promise<{ saved: number | null; interests: number | null }> {
+  try {
+    const supabase = await createClient();
+    const [savedRows, interests] = await Promise.all([
+      supabase.from("saved_rfps").select("rfp_id").eq("user_id", userId).limit(500),
+      orgId ? supabase.from("rfp_interests").select("id", { count: "exact", head: true }).eq("trade_organization_id", orgId) : null,
+    ]);
+    // The saved page only lists RFPs still on the public board, so count those.
+    const ids = ((savedRows.data as { rfp_id: string }[] | null) ?? []).map((r) => r.rfp_id);
+    const visible = ids.length ? await supabase.from("rfp_public").select("id", { count: "exact", head: true }).in("id", ids) : null;
+    return {
+      saved: savedRows.error || visible?.error ? null : visible ? visible.count ?? 0 : 0,
+      interests: !interests || interests.error ? null : interests.count ?? 0,
+    };
+  } catch {
+    return { saved: null, interests: null };
+  }
 }
 
 /** The trades this company lists under, for picking a relevant sponsor. */
