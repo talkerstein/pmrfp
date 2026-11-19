@@ -440,12 +440,20 @@ describe("BUYER_FOLLOW_ALERTS_ENABLED gates the same-day emails", () => {
   });
 
   it("the hourly cron skips straight away while the flag is off", async () => {
-    h.db = alertDb();
-    const { GET } = await import("@/app/api/cron/buyer-follow-alerts/route");
-    const res = await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts"));
-    expect(await res.json()).toEqual({ skipped: "BUYER_FOLLOW_ALERTS_ENABLED is off", enabled: false });
-    const dry = await (await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts?dry=1"))).json();
-    expect(dry).toMatchObject({ dry: true, state: "dry", wouldEmail: 1 });
+    // The route reads the real clock, and the fixtures are fixed dates (published
+    // 2026-10-21, deadline 2026-11-15). Unpinned, this only passed within 36 hours
+    // of the publish time. Pin "now" to NOW, like the cases above; only Date is faked.
+    vi.useFakeTimers({ now: NOW, toFake: ["Date"] });
+    try {
+      h.db = alertDb();
+      const { GET } = await import("@/app/api/cron/buyer-follow-alerts/route");
+      const res = await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts"));
+      expect(await res.json()).toEqual({ skipped: "BUYER_FOLLOW_ALERTS_ENABLED is off", enabled: false });
+      const dry = await (await GET(new Request("https://pmrfp.com/api/cron/buyer-follow-alerts?dry=1"))).json();
+      expect(dry).toMatchObject({ dry: true, state: "dry", wouldEmail: 1 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("the Monday roundup reads each free follower's week", async () => {
