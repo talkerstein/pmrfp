@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "@/i18n/link";
-import { Briefcase, Building2, ClipboardList, Landmark, Lock, Radio, Users } from "lucide-react";
+import { Briefcase, Building2, ClipboardList, Landmark, Lock, Radio, Users, Wrench } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Snippet } from "@/components/public/badge-embed";
@@ -14,7 +14,9 @@ import {
   MAX_ITEMS,
   WIDGET_KINDS,
   iframeSnippet,
+  isCardWidget,
   isWidgetLang,
+  reportQuotesLink,
   scriptSnippet,
   widgetPath,
   type WidgetConfig,
@@ -22,6 +24,7 @@ import {
   type WidgetTheme,
 } from "@/lib/embed/widgets";
 import { BUYER_DASHBOARD_PATH, claimSignUpHref } from "@/lib/towns/paths";
+import { QrPanel, type QrPanelStrings } from "@/components/embed/qr-panel";
 
 /** What the signed-in member can embed; null = not available to them yet. */
 export interface WidgetAccess {
@@ -31,7 +34,19 @@ export interface WidgetAccess {
   trusted: { handle: string } | null;
   /** A public buyer page: the signed-in buyer's own, or the one a town page linked to (?town=). */
   townBids?: { province: string; slug: string } | null;
+  /** The "Get repair quotes" button: the member's company handle, for analytics only. */
+  reportQuotes?: { ref: string } | null;
   signedIn: boolean;
+}
+
+/** The report-quotes tab's copy (reportQuotes.widget, a server namespace, so passed in). */
+export interface ReportQuotesWidgetCopy {
+  tab: { label: string; for: string; blurb: string };
+  note: string;
+  lockedIn: string;
+  lockedInCta: string;
+  lockedOut: string;
+  qr: QrPanelStrings;
 }
 
 /** Tab icons; labels, audiences and blurbs are in partnersClient.widgets.tabs. */
@@ -42,6 +57,7 @@ const TAB_ICONS: Record<WidgetKind, React.ReactNode> = {
   company: <Building2 className="size-4" />,
   trusted: <Users className="size-4" />,
   "town-bids": <Landmark className="size-4" />,
+  "report-quotes": <Wrench className="size-4" />,
 };
 
 function sign(next: string) {
@@ -54,15 +70,18 @@ export function WidgetBuilder({
   categories,
   regions,
   access,
+  reportQuotes: rq,
 }: {
   base: string;
   initialKind: WidgetKind;
   categories: SearchableOption[];
   regions: SearchableOption[];
   access: WidgetAccess;
+  reportQuotes: ReportQuotesWidgetCopy;
 }) {
   const t = useT("partnersClient").widgets;
   const pageLang = useLang();
+  const tabCopy = (k: WidgetKind) => (k === "report-quotes" ? rq.tab : t.tabs[k]);
   const [kind, setKind] = useState<WidgetKind>(initialKind);
   const [trade, setTrade] = useState<string | null>(null);
   const [region, setRegion] = useState<string | null>(null);
@@ -86,12 +105,14 @@ export function WidgetBuilder({
       case "town-bids":
         // The widget speaks the language of the page it was copied from.
         return access.townBids ? { kind, ...access.townBids, lang: isWidgetLang(pageLang) ? pageLang : "en" } : null;
+      case "report-quotes":
+        return access.reportQuotes ? { kind, ref: access.reportQuotes.ref, lang: isWidgetLang(pageLang) ? pageLang : "en" } : null;
     }
   }, [kind, trade, region, access, pageLang]);
 
   const options = { theme, limit };
   // Relative src so the preview works on preview deploys too; the copied code uses the real site.
-  const previewSrc = config ? `/embed/${widgetPath(config)}#theme=${theme}${kind === "company" ? "" : `&limit=${limit}`}` : null;
+  const previewSrc = config ? `/embed/${widgetPath(config)}#theme=${theme}${isCardWidget(kind) ? "" : `&limit=${limit}`}` : null;
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
@@ -128,8 +149,8 @@ export function WidgetBuilder({
                 {TAB_ICONS[k]}
               </span>
               <span className="min-w-0">
-                <span className="block font-semibold">{t.tabs[k].label}</span>
-                <span className="block text-xs text-muted-foreground">{t.tabs[k].for}</span>
+                <span className="block font-semibold">{tabCopy(k).label}</span>
+                <span className="block text-xs text-muted-foreground">{tabCopy(k).for}</span>
               </span>
             </button>
           ))}
@@ -138,8 +159,8 @@ export function WidgetBuilder({
 
       <div className="min-w-0 space-y-6">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t.tabs[kind].label}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t.tabs[kind].blurb}</p>
+          <h2 className="text-xl font-semibold tracking-tight">{tabCopy(kind).label}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{tabCopy(kind).blurb}</p>
         </div>
 
         {config ? (
@@ -172,7 +193,7 @@ export function WidgetBuilder({
                   ))}
                 </div>
               </Field>
-              {kind !== "company" && (
+              {!isCardWidget(kind) && (
                 <Field label={fmt(t.showUpTo, { n: limit })}>
                   <input
                     type="range"
@@ -215,6 +236,12 @@ export function WidgetBuilder({
                 {t.bidsNote}
               </p>
             )}
+            {config.kind === "report-quotes" && (
+              <>
+                <p className="text-xs text-muted-foreground">{rq.note}</p>
+                <QrPanel link={reportQuotesLink(base, config.ref, config.lang, "qr")} s={rq.qr} />
+              </>
+            )}
             {kind === "company" && access.company && !access.company.ready && (
               <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
                 {t.companyPending}
@@ -222,7 +249,7 @@ export function WidgetBuilder({
             )}
           </>
         ) : (
-          <Locked kind={kind} signedIn={access.signedIn} />
+          <Locked kind={kind} signedIn={access.signedIn} rq={rq} />
         )}
       </div>
     </div>
@@ -239,7 +266,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 /** What to do to unlock a widget that needs an account, listing or published page. */
-function Locked({ kind, signedIn }: { kind: WidgetKind; signedIn: boolean }) {
+function Locked({ kind, signedIn, rq }: { kind: WidgetKind; signedIn: boolean; rq: ReportQuotesWidgetCopy }) {
   const t = useT("partnersClient").widgets;
   const l = t.locked;
   const next = `/widgets?w=${kind}`;
@@ -259,6 +286,9 @@ function Locked({ kind, signedIn }: { kind: WidgetKind; signedIn: boolean }) {
     "town-bids": signedIn
       ? { text: l["town-bids"].in, cta: l["town-bids"].inCta, href: BUYER_DASHBOARD_PATH }
       : { text: l["town-bids"].out, cta: l["town-bids"].inCta, href: claimSignUpHref(null) },
+    "report-quotes": signedIn
+      ? { text: rq.lockedIn, cta: rq.lockedInCta, href: "/onboarding" }
+      : { text: rq.lockedOut, cta: t.signIn, href: sign(next) },
   };
   if (kind === "feed") return null;
   const c = copy[kind];

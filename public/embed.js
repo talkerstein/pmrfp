@@ -23,7 +23,7 @@
   }
 
   // Keep in sync with WIDGET_PATH_RE in src/lib/embed/widgets.ts.
-  var PATH = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+|town-bids\/(en|fr|es)\/[a-z0-9-]+\/[a-z0-9-]+)$/;
+  var PATH = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+|town-bids\/(en|fr|es)\/[a-z0-9-]+\/[a-z0-9-]+|report-quotes\/(en|fr|es)\/[a-z0-9-]+)$/;
   var frames = [];
 
   function mount(el) {
@@ -42,7 +42,7 @@
     frame.setAttribute("scrolling", "no");
     frame.style.cssText =
       "display:block;width:100%;max-width:640px;border:0;overflow:hidden;background:transparent;height:" +
-      (path.indexOf("company/") === 0 ? 250 : 460) +
+      (path.indexOf("company/") === 0 ? 250 : path.indexOf("report-quotes/") === 0 ? 210 : 460) +
       "px";
 
     el.setAttribute("data-pmrfp-ready", "1");

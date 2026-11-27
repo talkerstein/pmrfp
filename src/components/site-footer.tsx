@@ -18,6 +18,7 @@ const LINK_KEY: Record<string, FooterKey> = {
   "/contract-renewal-calendar": "contracts",
   "/projects": "caseStudies", "/vs": "compare", "/badge": "badge", "/widgets": "widgets",
   "/services-for-trades": "services", "/refer-a-trade": "refer",
+  "/inspection-report-to-quotes": "reportQuotes",
   "/bid-comparison": "bidCompare",
   "/about": "about", "/contact": "contact", "/terms": "terms", "/privacy": "privacy", "/disclaimer": "disclaimer", "/corrections": "corrections",
 };

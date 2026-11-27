@@ -64,6 +64,7 @@ export default async function ForPropertyManagersPage({ params }: { params: Prom
           { t: p.directory.title, d: p.directory.description },
           { t: p.privacy.title, d: p.privacy.body },
           { t: p.noObligation, d: t.copy.pmValue },
+          { t: getT("reportQuotes").card.title, d: getT("reportQuotes").card.body, href: "/inspection-report-to-quotes" },
           { t: getT("bidCompare").links.pmCard.title, d: getT("bidCompare").links.pmCard.body, href: "/bid-comparison" },
           { t: p.writeRfp, d: p.caption, href: "/rfp-writer" },
           { t: getT("roster").pmPage.title, d: getT("roster").pmPage.body, href: "/after-hours-vendor-roster" },

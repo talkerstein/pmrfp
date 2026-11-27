@@ -54,6 +54,8 @@ export interface RfpPostDefaults {
   deadline?: string;
   /** Set when the defaults came from the RFP Writer. */
   fromWriter?: boolean;
+  /** Set when the defaults came from a Report → Quotes trade group (the new RFP is linked back to it). */
+  fromReport?: { reportId: string; tradeSlug: string };
   /** Re-tendering a service contract (lib/contracts): posting links the new RFP to it. */
   contractId?: string;
   retenderNotice?: string;
@@ -131,6 +133,12 @@ export function RfpPostForm({
     // Re-mount when the writer draft arrives so the uncontrolled inputs pick it up.
     <form key={writerDraft ? "writer" : "blank"} action={action} className="space-y-6">
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {serverDefaults?.fromReport && (
+        <>
+          <input type="hidden" name="fromReport" value={serverDefaults.fromReport.reportId} />
+          <input type="hidden" name="fromReportTrade" value={serverDefaults.fromReport.tradeSlug} />
+        </>
+      )}
 
       {defaults?.fromWriter && (
         <div className="rounded-md border border-teal-300 bg-teal-100 px-4 py-3 text-sm text-teal-ink">

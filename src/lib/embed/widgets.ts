@@ -9,7 +9,7 @@
  * reaches the server, so every widget URL stays one cacheable ISR page.
  */
 
-export const WIDGET_KINDS = ["feed", "bids", "jobs", "company", "trusted", "town-bids"] as const;
+export const WIDGET_KINDS = ["feed", "bids", "jobs", "company", "trusted", "town-bids", "report-quotes"] as const;
 export type WidgetKind = (typeof WIDGET_KINDS)[number];
 
 export const WIDGET_THEMES = ["light", "dark"] as const;
@@ -26,9 +26,11 @@ export type WidgetConfig =
   | { kind: "bids"; slug: string; key: string }
   | { kind: "trusted"; handle: string }
   /** A public buyer's current bids (a town, city, school board…): its /buyers/<province>/<slug> page, in one language. */
-  | { kind: "town-bids"; province: string; slug: string; lang: WidgetLang };
+  | { kind: "town-bids"; province: string; slug: string; lang: WidgetLang }
+  /** "Get repair quotes from local trades" for an inspector's or agent's site; `ref` is the owner's company slug (analytics only). */
+  | { kind: "report-quotes"; ref: string; lang: WidgetLang };
 
-/** Languages the town-bids widget speaks (the other widgets are English). */
+/** Languages the town-bids and report-quotes widgets speak (the other widgets are English). */
 export const WIDGET_LANGS = ["en", "fr", "es"] as const;
 export type WidgetLang = (typeof WIDGET_LANGS)[number];
 export const isWidgetLang = (v: unknown): v is WidgetLang => typeof v === "string" && (WIDGET_LANGS as readonly string[]).includes(v);
@@ -62,13 +64,15 @@ export function widgetPath(w: WidgetConfig): string {
       return `bids/${w.slug}/${w.key}`;
     case "town-bids":
       return `town-bids/${w.lang}/${w.province}/${w.slug}`;
+    case "report-quotes":
+      return `report-quotes/${w.lang}/${w.ref}`;
     default:
       return `${w.kind}/${w.slug}`;
   }
 }
 
 /** Same check the loader script runs before it frames anything. */
-export const WIDGET_PATH_RE = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+|town-bids\/(en|fr|es)\/[a-z0-9-]+\/[a-z0-9-]+)$/;
+export const WIDGET_PATH_RE = /^(feed\/[a-z0-9-]+\/[a-z0-9-]+|bids\/[a-z0-9-]+\/[a-z0-9]+|(jobs|company|trusted)\/[a-z0-9-]+|town-bids\/(en|fr|es)\/[a-z0-9-]+\/[a-z0-9-]+|report-quotes\/(en|fr|es)\/[a-z0-9-]+)$/;
 
 export function clampLimit(n: unknown, fallback = DEFAULT_LIMIT): number {
   const v = typeof n === "number" ? n : parseInt(String(n ?? ""), 10);
@@ -76,9 +80,14 @@ export function clampLimit(n: unknown, fallback = DEFAULT_LIMIT): number {
   return Math.min(MAX_ITEMS, Math.max(1, Math.round(v)));
 }
 
+/** Single cards (no list): the hash `limit` doesn't apply. */
+export function isCardWidget(kind: WidgetKind): boolean {
+  return kind === "company" || kind === "report-quotes";
+}
+
 function hashFor(w: WidgetConfig, o: WidgetOptions): string {
   const parts = [`theme=${o.theme}`];
-  if (w.kind !== "company") parts.push(`limit=${clampLimit(o.limit)}`);
+  if (!isCardWidget(w.kind)) parts.push(`limit=${clampLimit(o.limit)}`);
   return parts.join("&");
 }
 
@@ -90,6 +99,7 @@ export function iframeSrc(base: string, w: WidgetConfig, o: WidgetOptions): stri
 /** Rough starting height so an iframe-only embed isn't cropped before it's resized. */
 export function initialHeight(w: WidgetConfig, o: WidgetOptions): number {
   if (w.kind === "company") return 250;
+  if (w.kind === "report-quotes") return 210;
   return 130 + clampLimit(o.limit) * 76;
 }
 
@@ -100,11 +110,19 @@ const TOWN_LABEL: Record<WidgetLang, string> = {
   es: "Nuestras licitaciones vigentes en PMRFP",
 };
 
-const labelOf = (w: WidgetConfig) => widgetLabel(w.kind, w.kind === "town-bids" ? w.lang : "en");
+/** The report-quotes button text in its own language (reportQuotes.widget.button). */
+const REPORT_QUOTES_LABEL: Record<WidgetLang, string> = {
+  en: "Get repair quotes from local trades",
+  fr: "Obtenir des soumissions de réparation d'entrepreneurs locaux",
+  es: "Obtener cotizaciones de reparación de contratistas locales",
+};
+
+const labelOf = (w: WidgetConfig) => widgetLabel(w.kind, w.kind === "town-bids" || w.kind === "report-quotes" ? w.lang : "en");
 
 /** Plain-language title for the iframe and the fallback link. */
 export function widgetLabel(kind: WidgetKind, lang: WidgetLang = "en"): string {
   if (kind === "town-bids") return TOWN_LABEL[lang];
+  if (kind === "report-quotes") return REPORT_QUOTES_LABEL[lang];
   return {
     feed: "Open tenders on PMRFP",
     bids: "Our open bids on PMRFP",
@@ -134,13 +152,34 @@ export function fallbackHref(base: string, w: WidgetConfig): string {
       return `${base}/trusted/${w.handle}`;
     case "town-bids":
       return `${base}${w.lang === "en" ? "" : `/${w.lang}`}/buyers/${w.province}/${w.slug}`;
+    case "report-quotes":
+      return reportQuotesLink(base, w.ref, w.lang, "embed");
   }
+}
+
+/** Report → Quotes' public page: where the widget's button and QR code lead. */
+export const REPORT_QUOTES_PATH = "/inspection-report-to-quotes";
+
+/**
+ * The report-quotes button and QR code link: the public Report → Quotes page
+ * in the widget's language, with the owner's company slug as `ref` and the
+ * usual widget UTM tags. The QR code says utm_medium=qr so printed reports
+ * and website buttons count apart. Attribution is for analytics only: nobody
+ * is paid for a referral.
+ */
+export function reportQuotesLink(base: string, ref: string | null, lang: WidgetLang, medium: "embed" | "qr" = "embed"): string {
+  const url = new URL(`${lang === "en" ? "" : `/${lang}`}${REPORT_QUOTES_PATH}`, base);
+  if (isSafeSegment(ref)) url.searchParams.set("ref", ref);
+  url.searchParams.set("utm_source", "widget");
+  url.searchParams.set("utm_medium", medium);
+  url.searchParams.set("utm_campaign", "report-quotes");
+  return url.toString();
 }
 
 /** The recommended paste-in code: a div the loader script upgrades in place. */
 export function scriptSnippet(base: string, w: WidgetConfig, o: WidgetOptions): string {
   const attrs = [`data-pmrfp="${widgetPath(w)}"`, `data-theme="${o.theme}"`];
-  if (w.kind !== "company") attrs.push(`data-limit="${clampLimit(o.limit)}"`);
+  if (!isCardWidget(w.kind)) attrs.push(`data-limit="${clampLimit(o.limit)}"`);
   return [
     `<div ${attrs.join(" ")}>`,
     `  <a href="${fallbackHref(base, w)}" target="_blank" rel="noopener">${labelOf(w)}</a>`,
