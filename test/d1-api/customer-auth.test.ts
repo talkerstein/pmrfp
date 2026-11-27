@@ -456,6 +456,13 @@ it("keeps company edits, taxonomy, moderation and audit records in the same D1 t
     await expect(updateVpsCompanyProfile(session, { ...profile, name: "Failed edit", regions: ["missing"] }, null, 75, d1(db))).rejects.toThrow();
     expect(read()).toEqual(saved);
     expect(db.prepare("SELECT count(*) AS n FROM audit_logs").get()?.n).toBe(1);
+    const revision = db.prepare("SELECT updated_at FROM organizations WHERE id=?").get(org)?.updated_at as string;
+    const guided = { ...session, organization: { ...session.organization!, updated_at: revision } };
+    const phone = { ...profile, phone: "416 555 0100", name: "Ignored edit", regions: [], insurancePolicyNumber: "IGNORED" };
+    expect(await updateVpsCompanyProfile(guided, phone, null, 75, d1(db), "phone")).toEqual({ stayedLive: true, rejected: null });
+    expect(db.prepare("SELECT name,phone FROM organizations WHERE id=?").get(org)).toMatchObject({ name: "New name", phone: "416 555 0100" });
+    expect(await readVpsCompanySelections(identity, d1(db))).toMatchObject({ regions: ["toronto"], insurancePolicyNumber: "FIXTURE-PRIVATE" });
+    await expect(updateVpsCompanyProfile(guided, { ...phone, phone: "416 555 0200" }, null, 75, d1(db), "phone")).rejects.toThrow("company_profile_changed");
     const result = await updateVpsCompanyProfile(session, {
       ...profile, name: "Original", website: "https://blocked.example.net", insurancePolicyNumber: "",
     }, "", 75, d1(db));

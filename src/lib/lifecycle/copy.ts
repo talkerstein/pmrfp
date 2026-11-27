@@ -118,6 +118,7 @@ function joinList(items: string[], lang: Locale): string {
 
 export const PATHS = {
   company: "/dashboard/company",
+  finish: "/dashboard/company/finish",
   leads: "/dashboard",
   projectNew: "/dashboard/projects/new",
   badge: "/badge",
@@ -878,7 +879,7 @@ function body(step: StepId, d: CopyData, url: (path: string) => string, base: st
         subject: w.subject(d.firstName),
         blocks: done
           ? [{ p: w.intro(d.company) }, { p: w.done(trades) }, link(w.doneCta, PATHS.leads), { p: w.doneMore }, { p: w.reply }]
-          : [{ p: w.intro(d.company) }, { p: w.todo }, link(w.todoCta, PATHS.company), { p: w.reply }],
+          : [{ p: w.intro(d.company) }, { p: w.todo }, link(w.todoCta, PATHS.finish), { p: w.reply }],
       };
     }
     case "market": {

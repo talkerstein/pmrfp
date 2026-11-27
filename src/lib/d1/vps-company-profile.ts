@@ -6,6 +6,7 @@ import { isInternalEmail } from "../lifecycle/rescue";
 import { INSURED } from "../organizations/insurance";
 import { parseReviewChanges, profileStatusPatch, reviewChanges, type ReviewField } from "../organizations/profile-review";
 import type { CompanyProfileInput } from "../validations";
+import type { ListingStep } from "../organizations/listing-steps";
 import { loadListingRisk } from "../../../workers/d1-api/customer-onboarding";
 import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { D1ApiError, RFP_SLUG, type D1Binding } from "./contracts";
@@ -22,6 +23,11 @@ const taxonomies = [
 ] as const;
 
 type Identity = { userId: string; organization: { id: string } | null };
+const guidedColumns: Record<ListingStep, string> = {
+  logo: "logo_url", short: "short_description", insurance: "insurance_status",
+  website: "website", wsib: "wsib_status", phone: "phone", city: "city",
+  team: "employee_count_range", full: "full_description",
+};
 type Company = Record<ReviewField, string | null> & {
   id: string; country: string; account_email: string; updated_at: string; profile_status: string; link_trusted: number;
   review_changes: string | null; review_flagged_at: string | null; risk_flagged: number;
@@ -49,7 +55,7 @@ export async function readVpsCompanySelections(session: Identity, db: D1Binding 
 }
 
 export async function updateVpsCompanyProfile(session: Pick<SessionContext, "userId" | "organization">,
-  data: CompanyProfileInput, logo: string | null, completion: number, db: D1Binding = vpsAppDatabase()) {
+  data: CompanyProfileInput, logo: string | null, completion: number, db: D1Binding = vpsAppDatabase(), step?: ListingStep) {
   const id = session.organization?.id;
   if (!id || data.website && !/^https?:\/\//i.test(data.website)) throw new D1ApiError(400, "invalid_company_profile");
   const selections = taxonomies.map(({ field }) => [...new Set(data[field] ?? [])]);
@@ -62,20 +68,26 @@ export async function updateVpsCompanyProfile(session: Pick<SessionContext, "use
     FROM organizations o CROSS JOIN users_profile p WHERE o.id=? AND p.id=? AND ${eligible} AND ${customerAppAuthority}`)
     .bind(id, session.userId, session.userId).first<Company>();
   if (!before) throw new D1ApiError(403, "company_edit_unavailable");
+  if (step && before.updated_at !== session.organization?.updated_at) {
+    throw new D1ApiError(409, "company_profile_changed");
+  }
   const storedLogo = before.logo_url;
-  const retainsLogo = logo === null || (storedLogo !== null && (logo === storedLogo || logo === publicImageSource(storedLogo).src));
+  const retainsLogo = (step !== undefined && step !== "logo") || logo === null ||
+    (storedLogo !== null && (logo === storedLogo || logo === publicImageSource(storedLogo).src));
   const nextLogo = retainsLogo ? storedLogo : logo || null;
   const uploadedLogo = !retainsLogo && logo ? logo.split("/").at(-1) : null;
   if (uploadedLogo !== null && (!uploadedLogo || !UUID.test(uploadedLogo) || logo !== companyMediaRoute(uploadedLogo))) {
     throw new D1ApiError(400, "invalid_company_logo");
   }
-  const country = data.province ? isUsState(data.province) ? "United States" : "Canada" : before.country;
-  const patch = { name: data.name, website: data.website || null, email: data.email, logo_url: nextLogo,
-    short_description: data.shortDescription || null, full_description: data.fullDescription || null };
+  const country = !step && data.province ? isUsState(data.province) ? "United States" : "Canada" : before.country;
+  const patch = { name: step ? before.name : data.name, website: (step && step !== "website" ? before.website : data.website) || null,
+    email: step ? before.email : data.email, logo_url: nextLogo,
+    short_description: (step && step !== "short" ? before.short_description : data.shortDescription) || null,
+    full_description: (step && step !== "full" ? before.full_description : data.fullDescription) || null };
   const changes = reviewChanges(before, patch);
   const approved = before.profile_status === "approved";
   const reviewedStatus = profileStatusPatch(before.profile_status) ?? before.profile_status;
-  const site = websiteDomain(data.website);
+  const site = websiteDomain(patch.website);
   const countryChanged = country !== before.country;
   const mails = [data.email, before.account_email].filter(Boolean);
   const screen = before.link_trusted !== 1 && !mails.every(email => isInternalEmail(email)) &&
@@ -100,13 +112,21 @@ export async function updateVpsCompanyProfile(session: Pick<SessionContext, "use
   const reviewChanged = flagged !== previousReview;
   const status = risk?.reject ? "rejected" : reviewedStatus;
   const newWebsite = websiteDomain(before.website) !== site;
-  const policyNumber = data.insurancePolicyNumber;
+  const policyNumber = !step || step === "insurance" ? data.insurancePolicyNumber : undefined;
   let publicInsuranceStatus = before.insurance_status;
   if (policyNumber !== undefined) {
     if (policyNumber) publicInsuranceStatus = INSURED;
     else if (before.has_policy === 1 || data.removeInsuranceLine) publicInsuranceStatus = null;
   }
 
+  const columns = {
+    ...patch, phone: data.phone || null, address_line_1: data.addressLine1 || null, city: data.city || null,
+    province: data.province || null, country, postal_code: data.postalCode || null,
+    years_in_business: data.yearsInBusiness ?? null, employee_count_range: data.employeeCountRange || null,
+    insurance_status: publicInsuranceStatus, wsib_status: data.wsibStatus || null,
+    emergency_service: Number(data.emergencyService ?? false), public_contact_visibility: data.publicContactVisibility,
+  };
+  const changedColumns = Object.entries(columns).filter(([column]) => !step || column === guidedColumns[step]);
   const writes = [
     db.prepare(`SELECT CASE WHEN ${customerAppAuthority} AND EXISTS (SELECT 1 FROM organizations o
       WHERE o.id=? AND o.updated_at=? AND ${eligible}) THEN 1 ELSE json('company_profile_changed') END`)
@@ -114,7 +134,7 @@ export async function updateVpsCompanyProfile(session: Pick<SessionContext, "use
     ...(uploadedLogo ? [db.prepare(`SELECT CASE WHEN EXISTS(SELECT 1 FROM _company_media
       WHERE id=? AND organization_id=? AND kind='logo' AND ready=1) THEN 1 ELSE json('company_logo_not_found') END`)
       .bind(uploadedLogo, id)] : []),
-    ...taxonomies.flatMap(({ table, join, column }, index) => {
+    ...(step ? [] : taxonomies.flatMap(({ table, join, column }, index) => {
       const slugs = JSON.stringify(selections[index]);
       return [
         db.prepare(`SELECT CASE WHEN (SELECT count(*) FROM ${table} WHERE slug IN (SELECT value FROM json_each(?)))
@@ -124,16 +144,12 @@ export async function updateVpsCompanyProfile(session: Pick<SessionContext, "use
         db.prepare(`INSERT INTO ${join}(id,organization_id,${column}) SELECT lower(hex(randomblob(16))),?,id FROM ${table}
           WHERE slug IN (SELECT value FROM json_each(?)) ON CONFLICT(organization_id,${column}) DO NOTHING`).bind(id, slugs),
       ];
-    }),
-    db.prepare(`UPDATE organizations SET name=?,website=?,email=?,logo_url=?,short_description=?,full_description=?,
-      phone=?,address_line_1=?,city=?,province=?,country=?,postal_code=?,years_in_business=?,employee_count_range=?,
-      insurance_status=?,wsib_status=?,emergency_service=?,public_contact_visibility=?,profile_completion_score=?,
+    })),
+    db.prepare(`UPDATE organizations SET ${changedColumns.map(([column]) => column + "=?").join(",")},
+      profile_completion_score=?,
       profile_status=?,review_changes=?,review_flagged_at=?,risk_flagged=?,
       link_badge=CASE WHEN ? THEN 0 ELSE link_badge END,link_earned_at=CASE WHEN ? THEN NULL ELSE link_earned_at END,
-      updated_at=? WHERE id=?`).bind(patch.name, patch.website, patch.email, patch.logo_url, patch.short_description,
-      patch.full_description, data.phone || null, data.addressLine1 || null, data.city || null, data.province || null,
-      country, data.postalCode || null, data.yearsInBusiness ?? null, data.employeeCountRange || null,
-      publicInsuranceStatus, data.wsibStatus || null, Number(data.emergencyService ?? false), data.publicContactVisibility,
+      updated_at=? WHERE id=?`).bind(...changedColumns.map(([, value]) => value),
       completion, status, reviewChanged ? flagged : before.review_changes,
       before.review_flagged_at ?? (reviewChanged ? timestamp : null),
       risk ? Number(risk.hold) : before.risk_flagged, Number(newWebsite), Number(newWebsite), timestamp, id),

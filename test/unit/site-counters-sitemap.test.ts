@@ -80,6 +80,7 @@ describe("Toronto supplier lookup: a failed download is an error, never a (cache
     vi.stubEnv("PMRFP_VPS_D1_TRANSPORT_KEY", "a".repeat(64));
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response("Document Number,Award\nDOC1,400000"))
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
       .mockResolvedValueOnce(Response.json({
         success: true,
         result: [{
@@ -96,7 +97,31 @@ describe("Toronto supplier lookup: a failed download is an error, never a (cache
     expect(await getTorontoSupplier("fixture-supplier-inc")).toMatchObject({
       awards: [{ type: "Non-competitive", amount: 400000 }],
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("uses the City Bids API when the CSV lacks suppliers and keeps noncompetitive archive rows", async () => {
+    vi.resetModules();
+    vi.stubEnv("PMRFP_VPS_LIVE_AUTH", "enabled");
+    vi.stubEnv("PMRFP_VPS_D1_TRANSPORT_KEY", "a".repeat(64));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("Document Number,Award\nDOC1,400000"))
+      .mockResolvedValueOnce(Response.json({
+        "@odata.count": 1,
+        value: [{ id: "bid-1", Status: "Awarded", Solicitation_Document_Number: "DOC1",
+          Awarded_Suppliers: [{ Successful_Bidder: "Fixture Competitive Inc.", Award_Amount: "900000" }] }],
+      }))
+      .mockResolvedValueOnce(Response.json({
+        success: true,
+        result: [{ success: true, meta: {}, results: [{ source: "ca-toronto-noncompetitive", source_key: "fixture",
+          board_ref: null, winner_business_name: "Fixture Archive Inc.", value: "400000",
+          award_date: "2025-01-10", title: "Fixture contract", buyer: "City of Toronto" }] }],
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getTorontoIndex } = await import("@/lib/data/toronto-awards");
+    expect(torontoContractSlugsForSitemap(await getTorontoIndex(), 100).map(s => s.slug))
+      .toEqual(["fixture-competitive-inc", "fixture-archive-inc"]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("throws while the CSV can't be fetched, then resolves once it can", async () => {
