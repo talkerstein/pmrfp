@@ -5,6 +5,7 @@ import { wordingVersionFor } from "../../src/lib/consent/email";
 import { companyEmailDomain, nameSearchToken, phoneLikePattern, rankCompanyMatches, websiteDomain, type CompanyCandidate } from "../../src/lib/dedupe/company";
 import { escapeLike } from "../../src/lib/dedupe/email";
 import { orderedPair } from "../../src/lib/dedupe/review";
+import { decideMemberSubscribe, MEMBER_CONSENT_VERSION, MEMBER_SOURCE } from "../../src/lib/digest/config";
 import { D1ApiError, RFP_SLUG, UUID, type D1Binding, type D1Statement } from "../../src/lib/d1/contracts";
 import { isUsState } from "../../src/lib/geo";
 import { scoreOrgRisk, statusFromRisk, type OrgRiskInput } from "../../src/lib/spam/org-risk";
@@ -29,6 +30,7 @@ const company = companyProfileSchema.pick({
 const inputSchema = z.strictObject({
   lang: z.enum(["en", "fr", "es"]),
   marketing: z.boolean(),
+  weeklyEmail: z.boolean().optional(),
   browsing: z.boolean(),
   buyerKind: z.enum(["builder", "landlord"]).nullable(),
   acknowledged: z.array(z.string().regex(UUID)).max(5),
@@ -86,7 +88,7 @@ function companyCandidates(db: D1Binding, data: CompanyInput) {
     mail, `%@${escapeLike(mail)}`, `%${escapeLike(mail)}%`);
 }
 
-export async function completeCustomerOnboarding(db: D1Binding, userId: string, input: unknown) {
+export async function completeCustomerOnboarding(db: D1Binding, userId: string, input: unknown, verifiedEmail?: string) {
   const parsed = inputSchema.safeParse(input);
   if (!UUID.test(userId) || !parsed.success) throw new D1ApiError(400, "invalid_onboarding");
   const { company: data, lang, marketing, browsing, acknowledged } = parsed.data;
@@ -142,6 +144,11 @@ export async function completeCustomerOnboarding(db: D1Binding, userId: string, 
           .bind(crypto.randomUUID(), organizationId, userId),
       );
       if (listing) writes.push(...taxonomyWrites(db, organizationId, data));
+      if (listing && status !== "rejected" && parsed.data.weeklyEmail && verifiedEmail &&
+          verifiedEmail.toLowerCase() === profile.email.toLowerCase()) {
+        const consent = await weeklyEmailConsent(db, userId, verifiedEmail, data, lang);
+        if (consent) writes.push(consent);
+      }
       if (risk?.hold) writes.push(db.prepare(`INSERT INTO organization_risk(organization_id,score,reasons,held,blocked,source)
         VALUES(?,?,?,?,?,'onboarding')`).bind(organizationId, risk.score, JSON.stringify(risk.reasons),
         Number(status === "pending_review"), Number(risk.blocked)));
@@ -168,6 +175,40 @@ export async function completeCustomerOnboarding(db: D1Binding, userId: string, 
   const results = await db.batch(writes);
   if (results.length !== writes.length || results.some(row => !row.success)) throw new D1ApiError(503, "onboarding_unavailable");
   return { ok: true, alreadyComplete: false };
+}
+
+async function weeklyEmailConsent(db: D1Binding, userId: string, email: string, data: CompanyInput, lang: string) {
+  const key = email.toLowerCase();
+  const existing = await db.prepare("SELECT id,status,confirm_sent_at,trades FROM digest_subscribers WHERE email_key=?")
+    .bind(key).first<{ id: string; status: string; confirm_sent_at: string | null; trades: string | null }>();
+  const previousTrades: string[] = existing?.trades ? JSON.parse(existing.trades) : [];
+  const asked = [...new Set([...data.categories, ...previousTrades])];
+  const valid = await db.prepare("SELECT slug FROM trade_categories WHERE active=1 AND slug IN (SELECT value FROM json_each(?))")
+    .bind(JSON.stringify(asked)).all<{ slug: string }>();
+  if (!valid.success) throw new D1ApiError(503, "onboarding_unavailable");
+  const decision = decideMemberSubscribe({
+    emailConfirmed: true,
+    existing: existing ? { ...existing, trades: previousTrades } : null,
+    suppressed: false, // The INSERT checks the suppression table in the onboarding transaction.
+    provinceRaw: data.province, trades: data.categories, validTrades: new Set(valid.results.map(row => row.slug)),
+  });
+  if (decision.kind !== "write") return null;
+  const now = new Date().toISOString();
+  return db.prepare(`INSERT INTO digest_subscribers
+    (id,email,country,province,trades,lang,status,confirmed_at,source,consent_text_version,consent_at,updated_at,user_id,send_bucket)
+    SELECT ?,?,?,?,?,?,'active',?,?,?,?,?,?,abs(random() % 4)
+    WHERE NOT EXISTS (SELECT 1 FROM email_suppressions WHERE email_key=?)
+    ON CONFLICT(email_key) DO UPDATE SET country=excluded.country,province=excluded.province,
+      trades=excluded.trades,lang=excluded.lang,status='active',confirmed_at=excluded.confirmed_at,
+      confirm_sent_at=NULL,confirm_token_hash=NULL,unsubscribed_at=NULL,source=excluded.source,
+      consent_text_version=excluded.consent_text_version,consent_at=excluded.consent_at,
+      updated_at=excluded.updated_at,user_id=excluded.user_id
+    WHERE digest_subscribers.id=? AND digest_subscribers.status=? AND digest_subscribers.confirm_sent_at IS ?
+      AND (digest_subscribers.user_id IS NULL OR digest_subscribers.user_id=excluded.user_id)`).bind(
+    crypto.randomUUID(), email, decision.country, decision.province, JSON.stringify(decision.trades), lang,
+    now, MEMBER_SOURCE, MEMBER_CONSENT_VERSION, now, now, userId, key,
+    existing?.id ?? null, existing?.status ?? null, existing?.confirm_sent_at ?? null,
+  );
 }
 
 function taxonomyWrites(db: D1Binding, id: string, data: CompanyInput) {

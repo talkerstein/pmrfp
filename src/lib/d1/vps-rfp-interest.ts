@@ -26,12 +26,21 @@ const monthCount = `(SELECT count(*) FROM rfp_interests i WHERE i.trade_organiza
   AND i.used_free_allowance=1 AND julianday(i.created_at)>=julianday(?))`;
 const currentMember = `EXISTS(SELECT 1 FROM organization_members m JOIN users_profile u ON u.id=m.user_id
   WHERE m.organization_id=o.id AND m.user_id=? AND u.status='active')`;
+const ownedTradeOrganization = `o.id=? AND o.is_demo=0 AND o.organization_type IN ('trade_company','supplier')
+    AND ${currentMember} AND ${customerAppAuthority}`;
+
+export async function countVpsTradeInterests(session: SessionContext, db: D1Binding = vpsAppDatabase()) {
+  if (!session.organization) return null;
+  const row = await db.prepare(`SELECT count(i.id) AS count FROM organizations o
+    LEFT JOIN (rfp_interests i JOIN rfp_posts r ON r.id=i.rfp_id AND r.is_demo=0)
+      ON i.trade_organization_id=o.id
+    WHERE ${ownedTradeOrganization} GROUP BY o.id`).bind(session.organization.id, session.userId).first<{ count: number }>();
+  return row?.count ?? null;
+}
 
 export async function readVpsInterestHistory(session: SessionContext, db: D1Binding = vpsAppDatabase()) {
   const org = session.organization;
   if (!org) return { interests: [], used: null };
-  const authorized = `o.id=? AND o.is_demo=0 AND o.organization_type IN ('trade_company','supplier')
-    AND ${currentMember} AND ${customerAppAuthority}`;
   const [history, allowance] = await db.batch([
     db.prepare(`SELECT i.id,i.rfp_id,i.status,i.created_at,CAST(i.quote_amount AS REAL) AS quote_amount,i.decision_note,
         r.slug,r.title,r.province,shared.id AS shared_id,shared.contact_name,shared.contact_email,shared.contact_phone,
@@ -42,8 +51,8 @@ export async function readVpsInterestHistory(session: SessionContext, db: D1Bind
       LEFT JOIN rfp_posts shared ON shared.id=r.id AND (i.status='picked' OR i.pm_contact_shared=1)
       LEFT JOIN users_profile p ON p.id=shared.posted_by_user_id
       LEFT JOIN organizations company ON company.id=shared.posted_by_organization_id
-      WHERE ${authorized} ORDER BY i.created_at DESC`).bind(org.id, session.userId),
-    db.prepare(`SELECT ${monthCount} AS used FROM organizations o WHERE ${authorized}`)
+      WHERE ${ownedTradeOrganization} ORDER BY i.created_at DESC`).bind(org.id, session.userId),
+    db.prepare(`SELECT ${monthCount} AS used FROM organizations o WHERE ${ownedTradeOrganization}`)
       .bind(monthStart(), org.id, session.userId),
   ]);
   if (!history?.success || !allowance?.success) throw new D1ApiError(503, "interest_history_unavailable");

@@ -39,6 +39,8 @@ import { FRESH_SIGNUP_MS, recordSignupAttribution, recordSignupAttributionForEma
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
 import { errorDetail } from "@/lib/onboarding/steps";
 import { linkDigestSubscriber } from "@/lib/digest/link";
+import { subscribeMemberToDigest } from "@/lib/digest/member";
+import { weeklyEmailTicked } from "@/lib/digest/config";
 import { magicLinkRedirect, parseSignupMethod } from "@/lib/auth/magic-link";
 import { SIGNUP_INTENT_COOKIE } from "@/lib/auth/signup-intent";
 import { marketingTicked } from "@/lib/consent/email";
@@ -961,6 +963,10 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   await recordSignupAttribution({ userId: session.userId, orgId: org.id, role, lang });
   await recordOnboardingConsent(session.userId, formData, lang);
   await linkDigestSubscriber(session.userId, session.profile.email);
+  // The weekly email is only for members who tick its box (it starts unticked). A listing held as spam is never added.
+  if (isListing && listingStatus !== "rejected" && weeklyEmailTicked(formData.get("weekly_email"))) {
+    await subscribeMemberToDigest({ userId: session.userId, provinceRaw: data.province, trades: categories, lang });
+  }
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord }, { userId: session.userId });
 
   // One welcome email per member, with the next step for their kind of account.
@@ -1004,7 +1010,9 @@ async function submitNativeOnboarding(formData: FormData, lang: Locale, body: ob
   if (limit.status !== 204) return { error: limit.status === 429 ? m.rateLimit : m.orgFailed };
   try {
     const { completeCustomerStagingOnboarding } = await import("@/lib/d1/customer-staging-session");
-    const response = await completeCustomerStagingOnboarding({ ...body, lang, marketing: marketingTicked(formData.get("marketing")) });
+    const response = await completeCustomerStagingOnboarding({
+      ...body, lang, marketing: marketingTicked(formData.get("marketing")), weeklyEmail: weeklyEmailTicked(formData.get("weekly_email")),
+    });
     if (!response.ok) return { error: response.status === 400 ? m.completeRequired : m.orgFailed };
     const data = await response.json() as { ok?: boolean; duplicates?: DuplicateCompanyView[] };
     if (data.duplicates?.length) return { duplicates: data.duplicates, echo: formEcho(formData) };

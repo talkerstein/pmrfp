@@ -8,7 +8,7 @@ import { signupRoleFromLink, type SignupLinkRole } from "@/lib/auth/signup-link"
 import { nativeGoogleConfigured } from "@/lib/auth/vps-google";
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { parsePlanIntent } from "@/lib/billing/plan-intent";
-import { checkoutPath } from "@/lib/billing/checkout-flow";
+import { checkoutPath, upgradeInterval } from "@/lib/billing/checkout-flow";
 import { trialNextFromSignUp } from "@/lib/entitlement/gate";
 import { SIGNUP_INTENT_COOKIE, parseIntent, withRememberedIntent } from "@/lib/auth/signup-intent";
 import { parseAwardRef } from "@/lib/gc/packages";
@@ -156,6 +156,7 @@ export default async function SignUpPage({
         consent={getT("auth").emailConsent}
         intent={intent ? { plan: intent.plan, interval: intent.interval, name: ta.plans[intent.plan] } : null}
         next={next}
+        proInterval={upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY))}
         award={award}
         google={google}
         nativeSignup={nativeSignup}

@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { CA_PROVINCES, US_STATE_NAMES } from "@/lib/geo";
+import { CA_PROVINCES, US_STATES, US_STATE_NAMES } from "@/lib/geo";
 
 /**
  * The free weekly email ("major projects + open bids + recent awards in your
@@ -140,6 +140,77 @@ export function decideSubscribe(
   if (existing?.status === "pending" && existing.confirm_sent_at && now - Date.parse(existing.confirm_sent_at) < CONFIRM_RESEND_MS) return { kind: "skip" };
   const merged = existing?.status === "pending" ? [...new Set([...(existing.trades ?? []), ...trades])] : [...trades];
   return { kind: "write", trades: merged.slice(0, MAX_STORED_TRADES), sendConfirm: emailReady };
+}
+
+/* ------------------------------------------------------------------ members who ask for it at onboarding */
+
+/**
+ * The tick box on the onboarding form (auth.onboarding.weeklyEmailLabel,
+ * en/fr/es). Bump when a word of that label changes; test/unit/
+ * honest-first.test.ts pins the words to this version.
+ */
+export const MEMBER_CONSENT_VERSION = "member-v1-2026-11";
+/** digest_subscribers.source for a member who ticked the box. */
+export const MEMBER_SOURCE = "onboarding";
+
+/**
+ * The box starts UNTICKED and only an explicit tick counts (CASL): a missing
+ * field, an old form or a browser that skipped it is a "no".
+ */
+export function weeklyEmailTicked(v: unknown): boolean {
+  return typeof v === "string" && ["on", "1", "true", "yes"].includes(v.trim().toLowerCase());
+}
+
+/**
+ * The company's province/state as typed at onboarding (a free-text box:
+ * "Ontario", "QC", "texas", "TX") → the country and the exact name the
+ * weekly email stores, or null when it isn't a place we serve. Pure.
+ */
+export function memberDigestPlace(raw: string | null | undefined): { country: DigestCountry; province: string } | null {
+  const named = bidAlertPlace(raw);
+  if (named) return named;
+  const state = US_STATES[(raw ?? "").trim().toUpperCase()];
+  return state ? { country: "US", province: state } : null;
+}
+
+export type MemberSubscribeDecision =
+  | { kind: "skip"; why: "unconfirmed" | "suppressed" | "bounced" | "active" | "place" }
+  | { kind: "write"; country: DigestCountry; province: string; trades: string[] };
+
+/**
+ * What ticking the box does to the weekly list. Pure.
+ *
+ * A member's address is already proven (the emailed link, a confirmed
+ * password sign-up, or Google), so the row goes straight to active: no second
+ * confirmation email. An address that is NOT confirmed is never added here.
+ *
+ * - Suppressed or bounced: nothing, as everywhere else.
+ * - Already active: nothing. They keep the place and trades they chose.
+ * - Pending (they used a sign-up box and never clicked its link): activated,
+ *   keeping those trades and adding the company's.
+ * - Unsubscribed: a fresh tick is a fresh yes, with the company's trades.
+ * - The province/state must be one we serve, in its own country (never mixed).
+ * - More trades than the column holds (10): stored as "all trades" (an empty
+ *   list), so nothing in their province is left out.
+ */
+export function decideMemberSubscribe(input: {
+  emailConfirmed: boolean;
+  existing: ExistingSubscriber | null;
+  suppressed: boolean;
+  provinceRaw: string | null | undefined;
+  trades: readonly string[];
+  validTrades: ReadonlySet<string>;
+}): MemberSubscribeDecision {
+  if (!input.emailConfirmed) return { kind: "skip", why: "unconfirmed" };
+  if (input.suppressed) return { kind: "skip", why: "suppressed" };
+  if (input.existing?.status === "bounced") return { kind: "skip", why: "bounced" };
+  if (input.existing?.status === "active") return { kind: "skip", why: "active" };
+  const place = memberDigestPlace(input.provinceRaw);
+  if (!place) return { kind: "skip", why: "place" };
+  const own = input.trades.map((t) => String(t).trim()).filter((t) => input.validTrades.has(t));
+  const kept = input.existing?.status === "pending" ? (input.existing.trades ?? []).filter((t) => input.validTrades.has(t)) : [];
+  const merged = [...new Set([...kept, ...own])];
+  return { kind: "write", ...place, trades: merged.length > MAX_STORED_TRADES ? [] : merged };
 }
 
 /* ------------------------------------------------------------------ double opt-in */

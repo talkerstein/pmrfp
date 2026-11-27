@@ -141,7 +141,7 @@ export async function handleCustomerAuth(request: Request, env: Env): Promise<Re
         throw new D1ApiError(401, "sign_in_required");
       }
       if (projectPhoto) return await handleNativeProjectPhoto(env.APP_DB, env.PRIVATE_PROJECT_PHOTOS, request, session.user.id);
-      if (onboarding) return Response.json(await completeCustomerOnboarding(env.APP_DB, session.user.id, input), { headers });
+      if (onboarding) return Response.json(await completeCustomerOnboarding(env.APP_DB, session.user.id, input, session.user.email), { headers });
       if (signupPreferences || rolePick) {
         const metadata = await readCustomerSignupPreferences(env.AUTH_DB, session.user.id);
         if (rolePick) return Response.json(await chooseCustomerRole(env.APP_DB, session.user.id, metadata.primary_role, input), { headers });

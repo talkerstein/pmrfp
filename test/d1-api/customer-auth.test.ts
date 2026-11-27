@@ -1063,7 +1063,7 @@ it("verifies a native password signup and can finish it after an application-pro
     const company = { name:"Fixture Supply", website:"https://supplier.example.test", phone:"416 555 0100",
       email:input.email, province:"Ontario", city:"Toronto", publicContactVisibility:"request_intro",
       categories:["roofing"],regions:["toronto"] };
-    const setup = { lang:"fr",marketing:true,browsing:false,buyerKind:null,acknowledged:[],company };
+    const setup = { lang:"fr",marketing:true,weeklyEmail:true,browsing:false,buyerKind:null,acknowledged:[],company };
     expect((await submit(setup,"")).status).toBe(401);
     expect((await submit({...setup,userId:stored?.id})).status).toBe(400);
     expect((await submit(setup)).status).toBe(503);
@@ -1082,9 +1082,13 @@ it("verifies a native password signup and can finish it after an application-pro
       BEGIN SELECT RAISE(ABORT,'local consent failure'); END;`);
     expect((await submit(acknowledged)).status).toBe(503);
     expect(app.prepare("SELECT count(*) AS n FROM organizations").get()?.n).toBe(1);
+    expect(app.prepare("SELECT count(*) AS n FROM digest_subscribers").get()?.n).toBe(0);
     app.exec("DROP TRIGGER reject_consent");
     expect(await (await submit(acknowledged)).json()).toEqual({ok:true,alreadyComplete:false});
     expect(await (await submit(acknowledged)).json()).toEqual({ok:true,alreadyComplete:true});
+    expect(app.prepare("SELECT email,status,source,consent_text_version,province,trades,lang,user_id FROM digest_subscribers").all())
+      .toEqual([{email:input.email,status:"active",source:"onboarding",consent_text_version:"member-v1-2026-11",
+        province:"Ontario",trades:'["roofing"]',lang:"fr",user_id:stored?.id}]);
     expect(app.prepare("SELECT role FROM organization_members").get()?.role).toBe("owner");
     expect(app.prepare("SELECT category_id FROM organization_categories").get()?.category_id).toBe("roof");
     expect(app.prepare("SELECT region_id FROM organization_regions").get()?.region_id).toBe("tor");
