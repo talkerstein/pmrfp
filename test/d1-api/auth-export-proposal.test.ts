@@ -39,3 +39,88 @@ it('refuses changed reader or exposed private schema; hard expiry hides exported
   expect((await db.query('SELECT * FROM d1_migration.auth_export_v1')).rows).toEqual([]);
  }finally{await db.close();}
 });
+
+it('wakes the Auth mirror after commit without sending account details or granting source writes', async () => {
+ const db = await fixture();
+ try {
+  await db.exec(proposal());
+  const original = readFileSync('d1/auth-sync-notify-proposal-2026-11-09.sql', 'utf8')
+   .replace('2026-11-12T10:00:00Z', '2099-11-05T10:00:00Z');
+  await expect(db.exec(original)).rejects.toThrow('requires approval');
+  await db.exec('ROLLBACK');
+  await db.exec(original.replace('__APPROVE_AUTH_SYNC_NOTIFY__', 'approved-auth-sync-notify'));
+  const payloads: string[] = [];
+  const unlisten = await db.listen('pmrfp_auth_sync_v1', payload => payloads.push(payload));
+  try {
+   await db.exec("BEGIN; UPDATE auth.users SET encrypted_password='ROLLED_BACK'; ROLLBACK;");
+   await db.exec("UPDATE auth.users SET recovery_token='UNEXPORTED_TOKEN';");
+   expect(payloads).toEqual([]);
+   await db.exec("UPDATE auth.users SET encrypted_password='NEW_SYNTHETIC_HASH';");
+   expect(payloads).toEqual(['']);
+   await db.exec('DELETE FROM auth.users;');
+   expect(payloads).toEqual(['', '']);
+   await db.exec('SET ROLE ' + reader);
+   await expect(db.exec("UPDATE auth.users SET email='changed@example.invalid'")).rejects.toThrow('permission denied');
+   await expect(db.query('SELECT d1_migration.signal_auth_sync()')).rejects.toThrow('permission denied');
+  } finally {
+   await unlisten();
+  }
+ } finally {
+  await db.close();
+ }
+});
+
+it('isolates the hosted reader to the two approved expiring Auth views', async () => {
+ const db = await fixture();
+ const name = 'd1_customer_auth_sync_20261109';
+ try {
+  await db.exec(proposal());
+  await db.exec('CREATE VIEW public.d1_migration_auth_ids_20261022 AS SELECT id FROM auth.users');
+  const sql = readFileSync('d1/auth-sync-reader-proposal-2026-11-09.sql', 'utf8')
+   .replaceAll('2026-11-12', '2099-11-05');
+  await expect(db.exec(sql)).rejects.toThrow('requires approval');
+  await db.exec('ROLLBACK');
+  const approved = sql.replace('__APPROVE_AUTH_SYNC_READER__', 'approved-review').replace('__SYNC_PASSWORD__', 'fixture-password');
+  await db.exec('CREATE FUNCTION public.unsafe() RETURNS int LANGUAGE sql SECURITY DEFINER AS $$ SELECT 1 $$');
+  await expect(db.exec(approved)).rejects.toThrow('Unexpected Auth sync reader privilege');
+  await db.exec('ROLLBACK');
+  await db.exec('DROP FUNCTION public.unsafe()');
+  await db.exec(approved);
+  await db.exec('SET ROLE ' + name);
+  expect((await db.query('SELECT id FROM public.d1_migration_auth_ids_20261022')).rows).toHaveLength(1);
+  expect((await db.query('SELECT encrypted_password FROM d1_migration.auth_export_v1')).rows)
+   .toEqual([{ encrypted_password: 'SYNTHETIC_HASH' }]);
+  await expect(db.query('SELECT * FROM auth.sessions')).rejects.toThrow('permission denied');
+  await expect(db.query('SELECT * FROM public.items')).rejects.toThrow('permission denied');
+  await expect(db.exec('DELETE FROM d1_migration.auth_export_v1')).rejects.toThrow('permission denied');
+ } finally {
+  await db.close();
+ }
+});
+
+it('preserves the existing app role access while excluding the sync login from the four public helpers', async () => {
+ const db = await fixture();
+ try {
+  await db.exec(`
+   CREATE ROLE d1_customer_auth_sync_20261109 LOGIN NOINHERIT;
+   CREATE FUNCTION public.has_active_trade_access(uuid) RETURNS boolean STABLE SECURITY DEFINER LANGUAGE sql AS $$ SELECT true $$;
+   CREATE FUNCTION public.has_intel_access(uuid) RETURNS boolean STABLE SECURITY DEFINER LANGUAGE sql AS $$ SELECT true $$;
+   CREATE FUNCTION public.is_admin(uuid) RETURNS boolean STABLE SECURITY DEFINER LANGUAGE sql AS $$ SELECT true $$;
+   CREATE FUNCTION public.is_org_member(uuid,uuid) RETURNS boolean STABLE SECURITY DEFINER LANGUAGE sql AS $$ SELECT true $$;
+  `);
+  const sql = readFileSync('d1/auth-sync-helper-acl-proposal-2026-11-09.sql', 'utf8');
+  await expect(db.exec(sql)).rejects.toThrow('require separate approval');
+  await db.exec(sql.replace('__APPROVE_AUTH_SYNC_HELPER_ACL__', 'approved-review'));
+  const { rows } = await db.query<{rolname:string;executable:number}>(`
+   SELECT r.rolname, count(*) FILTER (WHERE has_function_privilege(r.oid,p.oid,'EXECUTE'))::int AS executable
+   FROM pg_roles r CROSS JOIN pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE r.rolname IN ('anon','authenticated','service_role','d1_migration_reader_20261022','d1_customer_auth_sync_20261109')
+     AND n.nspname='public' AND p.proname IN ('has_active_trade_access','has_intel_access','is_admin','is_org_member')
+   GROUP BY r.rolname
+  `);
+  expect(rows).toHaveLength(5);
+  for (const row of rows) expect(row.executable).toBe(row.rolname === 'd1_customer_auth_sync_20261109' ? 0 : 4);
+ } finally {
+  await db.close();
+ }
+});

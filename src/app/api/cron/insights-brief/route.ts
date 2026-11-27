@@ -14,12 +14,14 @@ export const maxDuration = 60;
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if ((native && !secret) || (secret && request.headers.get("authorization") !== `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const dry = new URL(request.url).searchParams.get("dry") === "1";
   const run = await runInsightsBrief({ dry });
-  if (run.skipped && !run.sends.length) return NextResponse.json({ skipped: run.skipped, dry, enabled: run.enabled });
+  if (run.skipped && !run.sends.length) return NextResponse.json({ skipped: run.skipped, dry, enabled: run.enabled },
+    { status: native && (run.skipped === "unsubscribe unavailable" || run.skipped === "no service client") ? 503 : 200 });
   return NextResponse.json(
     dry
       ? { dry: true, enabled: run.enabled, llm: run.llm, week: run.week, considered: run.considered, members: run.sends, skips: run.skips, rejections: run.rejections.length }

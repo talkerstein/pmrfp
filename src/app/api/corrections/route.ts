@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { recordCorrectionRequest } from "@/lib/d1/customer-requests";
 import { NextResponse } from "next/server";
 import { correctionSchema, toCorrectionRow } from "@/lib/corrections/rules";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -11,8 +13,9 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
  * role; admins work the queue at /admin/corrections. Same-origin only.
  */
 export async function POST(request: Request) {
+  const native = isVpsLiveCustomerAuth();
   const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== new URL(request.url).host) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (native ? !matchesCustomerOrigin(request) : origin && new URL(origin).host !== new URL(request.url).host) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const limited = await checkRateLimit(request, "correction");
   if (limited) return rateLimitResponse(limited);
 
@@ -27,6 +30,13 @@ export async function POST(request: Request) {
   // Honeypot: accept silently, store nothing.
   if (parsed.data.company_website) return NextResponse.json({ ok: true });
 
+  if (native) {
+    const session = await getSession().catch(() => null);
+    try {
+      await recordCorrectionRequest(toCorrectionRow(parsed.data,session?.userId ?? null));
+      return NextResponse.json({ ok:true });
+    } catch { return NextResponse.json({ error: "Could not save your request" }, { status: 503 }); }
+  }
   if (!isServiceConfigured()) return NextResponse.json({ error: "Not available" }, { status: 503 });
   const session = isSupabaseConfigured() ? await getSession().catch(() => null) : null;
   const { error } = await createServiceClient().from("correction_requests").insert(toCorrectionRow(parsed.data, session?.userId ?? null));

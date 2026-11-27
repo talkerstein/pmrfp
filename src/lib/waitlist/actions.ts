@@ -13,6 +13,9 @@ import { headers } from "next/headers";
 import { regionalWaitlistSchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { syncRegionalWaitlistToGhl } from "@/lib/ghl/sync";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { trackEvent } from "@/lib/analytics";
@@ -67,12 +70,13 @@ export async function joinRegionalWaitlistAction(
 
   const d = parsed.data;
 
-  // No Supabase (local/demo) → accept gracefully without persisting.
-  if (!isServiceConfigured()) {
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) {
     return { success: OK_MESSAGE };
   }
 
-  const svc = createServiceClient();
+  const db = native ? vpsAppDatabase() : null;
+  const svc = native ? null : createServiceClient();
 
   // Resolve region details from the slug if one was provided.
   let regionId: string | null = null;
@@ -80,11 +84,13 @@ export async function joinRegionalWaitlistAction(
   let province = d.province ?? null;
   let country = d.country ?? "Canada";
   if (d.regionSlug) {
-    const { data: region } = await svc
+    type Region = { id: string; name: string; province: string | null; country: string };
+    const region = db ? await db.prepare("SELECT id,name,province,country FROM regions WHERE slug=?").bind(d.regionSlug).first<Region>()
+      : (await svc!
       .from("regions")
       .select("id,name,province,country")
       .eq("slug", d.regionSlug)
-      .maybeSingle<{ id: string; name: string; province: string | null; country: string }>();
+      .maybeSingle<Region>()).data;
     if (region) {
       regionId = region.id;
       regionName = region.name;
@@ -93,7 +99,12 @@ export async function joinRegionalWaitlistAction(
     }
   }
 
-  const { error } = await svc.from("regional_waitlist").insert({
+  const { error } = db ? await db.prepare(`INSERT INTO regional_waitlist
+    (id,email,full_name,role,region_id,requested_region_text,province,country,category_slug,reason)
+    SELECT ?,?,?,?,?,?,?,?,?,? WHERE ${customerAppAuthority}`).bind(crypto.randomUUID(), d.email, d.fullName || null, d.role ?? null,
+    regionId, d.requestedRegionText ?? null, province, country, d.categorySlug ?? null, d.reason).run()
+    .then((result) => ({ error: result.meta.changes === 1 ? null : "Database unavailable" }))
+    .catch(() => ({ error: "Database unavailable" })) : await svc!.from("regional_waitlist").insert({
     email: d.email,
     full_name: d.fullName || null,
     role: d.role ?? null,

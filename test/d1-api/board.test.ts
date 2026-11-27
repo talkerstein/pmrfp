@@ -5,6 +5,7 @@ import { handleRequest, type Env } from '../../workers/d1-api';
 import { D1BoardClient } from '../../src/lib/d1/board-client';
 import { d1BoardEnabled } from '../../src/lib/d1/board-backend';
 import { publicBoardRow, shardRange } from '../../src/lib/d1/board-contracts';
+import { listPublicBoard, readNativeBoardRevision } from '../../workers/d1-api/board';
 import type { D1Binding, D1Statement } from '../../src/lib/d1/contracts';
 const secret='synthetic-gateway-secret-at-least-32-characters',dataset='a'.repeat(64);
 const id=(n:number,prefix='0')=>`${prefix}0000000-0000-4000-8000-${n.toString(16).padStart(12,'0')}`;
@@ -18,7 +19,7 @@ const client=()=>new D1BoardClient({url:'https://worker.test',secret,dataset},as
 beforeEach(()=>{
  db=new DatabaseSync(':memory:');db.exec(readFileSync('d1/0001-staging-copy.sql','utf8'));
  db.exec('CREATE TABLE _migration_manifest(id INTEGER PRIMARY KEY,source_sha256 TEXT,state TEXT)');db.prepare("INSERT INTO _migration_manifest VALUES(1,?,'validated')").run(dataset);
- env={DB:{prepare:statement} as D1Binding,GATEWAY_SECRET:secret,SUPABASE_URL:'',SUPABASE_ANON_KEY:''};auth.mockClear();
+ env={DB:{prepare:statement, batch: async (items: D1Statement[]) => Promise.all(items.map(item => item.all()))} as D1Binding,GATEWAY_SECRET:secret,SUPABASE_URL:'',SUPABASE_ANON_KEY:''};auth.mockClear();
 });
 afterEach(()=>{db.close();vi.unstubAllEnvs();});
 it('pages published rows, keeps shard bounds and excludes all paid/contact fields',async()=>{
@@ -42,6 +43,25 @@ it('requires a validated dataset and never substitutes a different checkpoint',a
  db.prepare("UPDATE _migration_manifest SET state='validated',source_sha256=?").run('b'.repeat(64));
  await expect(client().shard(0)).rejects.toMatchObject({status:503});
 });
+it('uses the authoritative board revision when posts and category links change', async () => {
+ const schema = readFileSync('deploy/vps/customer-board-revision.sql', 'utf8');
+ db.exec(schema);
+ db.exec("UPDATE _migration_manifest SET state='loading'");
+ const url = new URL('https://worker.test/v1/board?shard=0');
+ expect(await readNativeBoardRevision(env.DB)).toBe('native:0');
+ db.prepare("INSERT INTO rfp_posts(id,title,slug,status,scope,keep_alive_token) VALUES(?,'Roof','roof','draft','private','token')").run(id(1));
+ expect(await listPublicBoard(env.DB, url, true)).toMatchObject({ dataset: 'native:0', items: [] });
+ db.prepare("UPDATE rfp_posts SET status='published' WHERE id=?").run(id(1));
+ const published = await listPublicBoard(env.DB, url, true);
+ expect(published).toMatchObject({ dataset: 'native:1', items: [{ slug: 'roof', categoryIds: [] }] });
+ expect(published.items[0]).not.toHaveProperty('scope');
+ db.prepare("INSERT INTO trade_categories(id,name,slug) VALUES(?,'Roofing','roofing')").run(id(2));
+ db.prepare("INSERT INTO rfp_categories(id,rfp_id,category_id) VALUES(?,?,?)").run(id(3), id(1), id(2));
+ expect(await listPublicBoard(env.DB, url, true)).toMatchObject({ dataset: 'native:2', items: [{ categoryIds: [id(2)] }] });
+ db.prepare("UPDATE rfp_posts SET status='closed' WHERE id=?").run(id(1));
+ db.exec(schema);
+ expect(await listPublicBoard(env.DB, url, true)).toMatchObject({ dataset: 'native:3', items: [] });
+});
 it('requires the gateway, rejects writes and arbitrary client shard arguments',async()=>{
  expect((await request('shard=0','GET','wrong')).status).toBe(401);expect((await request('shard=0','POST')).status).toBe(405);
  for(const n of [-1,16,0.5])expect(()=>shardRange(n)).toThrow('invalid_request');
@@ -58,5 +78,6 @@ it('defaults to Supabase and blocks production D1 selection',()=>{
  vi.stubEnv('PMRFP_BOARD_BACKEND','');expect(d1BoardEnabled()).toBe(false);
  vi.stubEnv('PMRFP_BOARD_BACKEND','d1');vi.stubEnv('VERCEL_ENV','preview');expect(d1BoardEnabled()).toBe(true);
  vi.stubEnv('VERCEL_ENV','production');expect(()=>d1BoardEnabled()).toThrow('production_cutover_not_enabled');
+  vi.stubEnv('PMRFP_VPS_D1_PUBLIC_READS','enabled');expect(d1BoardEnabled()).toBe(true);
  vi.stubEnv('PMRFP_BOARD_BACKEND','other');expect(()=>d1BoardEnabled()).toThrow('invalid_backend_configuration');
 });

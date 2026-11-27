@@ -16,7 +16,7 @@ const client=()=>new D1PhotosClient({url:'https://worker.test',secret,dataset},a
 beforeEach(()=>{
  db=new DatabaseSync(':memory:');db.exec(readFileSync('d1/0001-staging-copy.sql','utf8'));
  db.exec('CREATE TABLE _migration_manifest(id INTEGER PRIMARY KEY,source_sha256 TEXT,state TEXT)');db.prepare("INSERT INTO _migration_manifest VALUES(1,?,'validated')").run(dataset);
- env={DB:{prepare:statement} as D1Binding,GATEWAY_SECRET:secret,SUPABASE_URL:'',SUPABASE_ANON_KEY:''};auth.mockClear();
+ env={DB:{prepare:statement, batch: async (items: D1Statement[]) => Promise.all(items.map(item => item.all()))} as D1Binding,GATEWAY_SECRET:secret,SUPABASE_URL:'',SUPABASE_ANON_KEY:''};auth.mockClear();
 });
 afterEach(()=>{db.close();vi.unstubAllEnvs();});
 function rfp(n:number,status='published') { db.prepare("INSERT INTO rfp_posts(id,title,slug,status,keep_alive_token) VALUES(?,'Listing',?,?,?)").run(id(n),'listing-'+n,status,'synthetic-token-'+n); }

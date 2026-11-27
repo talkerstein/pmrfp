@@ -4,6 +4,8 @@ Reconstruct a full local source snapshot; preserve deletes, PK changes, TRUNCATE
 late sequence IDs and exact scalar types. Auth ID-only shim is refreshed in full.
 No source writes or acknowledgements. Requires a verified, acknowledged baseline.
 """
+from capture_limits import MAX_CAPTURE_RECEIPTS
+
 import argparse,hashlib,json,os,re,subprocess,tempfile
 from pathlib import Path
 import migrate as m
@@ -22,7 +24,7 @@ def source_sql(catalog,checkpoint,verify_full=False,guards_only=False):
     sql=['BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;',"SET LOCAL timezone='UTC';","SET LOCAL search_path=pg_catalog,public;","SET LOCAL statement_timeout='5min';"]
     sql.append(guard(role_guard()))
     sql.append(guard("(SELECT obj_description(oid,'pg_namespace') FROM pg_namespace WHERE nspname='d1_migration')='pmrfp-d1-change-capture-v1; reviewed 2026-10-31'"))
-    sql.append(guard("(SELECT count(*) FROM d1_migration.outbox WHERE "+pending+")<=75000"))
+    sql.append(guard(f"(SELECT count(*) FROM d1_migration.outbox WHERE {pending})<={MAX_CAPTURE_RECEIPTS}"))
     sql.append(guard("(SELECT "+state.DIGEST_EXPRESSION+" FROM d1_migration.outbox WHERE acknowledged_at IS NOT NULL)="+literal(checkpoint['receipt_digest'])))
     sql.append(guard("(SELECT jsonb_agg(tablename ORDER BY tablename) FROM pg_tables WHERE schemaname='public')="+literal(m.canonical(tables))+"::jsonb"))
     sql.append(guard("(SELECT jsonb_agg(jsonb_build_object('table',table_name,'pk',pk_columns) ORDER BY table_name) FROM d1_migration.registered_tables)="+literal(m.canonical(registry))+"::jsonb"))
@@ -81,7 +83,7 @@ def reconstruct(base_snapshot,delta_path,output,verify_full=False):
                 header=record
                 if header.get('kind')!='capture-meta' or header.get('catalog_sha256')!=m.digest(m.CATALOG.read_bytes()) or header.get('base_source_sha256')!=base_sha or header.get('tables')!=sorted(specs):raise ValueError('Incremental baseline/catalog mismatch')
                 ids=header.get('ids');replaced=header.get('replaced_tables')
-                if not isinstance(ids,list) or len(ids)>75000 or any(not isinstance(i,str) or not re.fullmatch(r'[1-9][0-9]{0,18}',i) or int(i)>2**63-1 for i in ids) or [int(i) for i in ids]!=sorted({int(i) for i in ids}):raise ValueError('Invalid incremental receipts')
+                if not isinstance(ids,list) or len(ids)>MAX_CAPTURE_RECEIPTS or any(not isinstance(i,str) or not re.fullmatch(r'[1-9][0-9]{0,18}',i) or int(i)>2**63-1 for i in ids) or [int(i) for i in ids]!=sorted({int(i) for i in ids}):raise ValueError('Invalid incremental receipts')
                 if not isinstance(replaced,list) or '_auth_users' not in replaced or replaced!=sorted(set(replaced)) or any(t not in specs for t in replaced):raise ValueError('Invalid replacement-table inventory')
                 if any(not isinstance(header.get(k),str) or not re.fullmatch(r'[a-f0-9]{64}',header[k]) for k in ['base_candidate_sha256','base_receipt_digest']):raise ValueError('Invalid durable baseline identity')
                 for t in replaced:rows[t]={}

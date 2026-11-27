@@ -1,14 +1,19 @@
+import { D1ApiError } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { deliverD1Billing } from "@/lib/stripe/d1-rehearsal";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe, syncSubscriptionFromStripe } from "@/lib/stripe/server";
+import { sendSubscriptionCheckoutUpdates, syncSubscriptionContact } from "@/lib/stripe/subscription-delivery";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
-import { sendSubscriptionActivatedEmail, sendAdminNewSale, sendSpotlightPaid } from "@/lib/email/send";
+import { sendAdminNewSale } from "@/lib/email/send";
 import { SPOTLIGHT_PRODUCT } from "@/lib/spotlight/config";
+import { sendSpotlightCheckoutEmails } from "@/lib/spotlight/delivery";
 import { FEATURED_PRODUCT, nextFeaturedUntil } from "@/lib/marketplace/rules";
-import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { verifyStripeEvent } from "@/lib/stripe/verify-event";
-import { sendAdminFoundingAlert, sendFoundingLifetimeEmail } from "@/lib/email/send";
+import { sendFoundingCheckoutUpdates } from "@/lib/founding/delivery";
+import { sendAdminFoundingAlert } from "@/lib/email/send";
 import { FOUNDING_PRODUCT } from "@/lib/founding/config";
 import { grantLifetime, isOrgLifetime } from "@/lib/founding/server";
 import { SPONSOR_PRODUCT } from "@/lib/sponsors/pricing";
@@ -16,6 +21,44 @@ import { handleSponsorCheckout, syncSponsorSubscription } from "@/lib/sponsors/s
 import { INTEL_PRODUCT } from "@/lib/intel/pricing";
 import { handleIntelCheckout, syncIntelSubscription } from "@/lib/intel/stripe";
 import { EVENT, trackEvent } from "@/lib/analytics";
+
+function hasLiveStripeCredentials() {
+  return /^whsec_[A-Za-z0-9_-]{16,160}$/.test(process.env.STRIPE_WEBHOOK_SECRET ?? "") &&
+    /^(rk|sk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "");
+}
+
+export async function GET() {
+  if (process.env.PMRFP_VPS_BILLING_RECEIVER !== "enabled") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const smtp = process.env.PMRFP_SMTP_ENABLED === "enabled" && !!process.env.PMRFP_SMTP_PASSWORD &&
+    process.env.PMRFP_SMTP_USER === "info@pmrfp.com" && !process.env.PMRFP_SMTP_ALLOWED_RECIPIENT;
+  const invoicesOnly = process.env.PMRFP_VPS_BILLING_PHASE === "invoices";
+  const notifications = (smtp || !!process.env.RESEND_API_KEY) &&
+    !!process.env.GHL_API_KEY && !!process.env.GHL_LOCATION_ID;
+  let ready = false;
+  if (hasLiveStripeCredentials()) {
+    if (process.env.PMRFP_BILLING_BACKEND === "d1-live-recurring") {
+      if (notifications && process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1" &&
+          process.env.PMRFP_ISOLATED_D1_STAGING !== "enabled" &&
+          (process.env.PMRFP_STRIPE_BILLING_GATEWAY_SECRET?.length ?? 0) >= 32 &&
+          process.env.PMRFP_CUSTOMER_AUTH_ORIGIN === "https://pmrfp.com" &&
+          (process.env.PMRFP_CUSTOMER_AUTH_GATEWAY_SECRET?.length ?? 0) >= 32 &&
+          (process.env.PMRFP_CUSTOMER_AUTH_SESSION_SECRET?.length ?? 0) >= 32 &&
+          !process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+          !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        try {
+          ready = !!(await vpsAppDatabase().prepare(
+            "SELECT 1 FROM _billing_authority WHERE id=1 AND mode='d1-authoritative-v1'",
+          ).first());
+        } catch { /* Remain unavailable until the VPS can reach the billing database. */ }
+      }
+    } else {
+      ready = isServiceConfigured() && (invoicesOnly || notifications);
+    }
+  }
+  return NextResponse.json({ ready }, { status: ready ? 200 : 503, headers: { "cache-control": "no-store" } });
+}
 
 /**
  * Founding 500 purchase. Never refuses: the cap was checked at checkout, and
@@ -44,56 +87,63 @@ async function handleFoundingCheckout(cs: Stripe.Checkout.Session, stripe: Strip
     await sendAdminFoundingAlert({ reason: `grant failed (${result.error ?? "unknown"}); Stripe will retry`, organizationId: orgId, email, sessionId: cs.id });
     throw new Error(`founding grant failed: ${result.error}`);
   }
-  if (result.duplicate) {
-    await sendAdminFoundingAlert({ reason: "org already had lifetime: second payment, refund it", organizationId: orgId, email, sessionId: cs.id });
-    return;
-  }
-
-  // An existing annual/monthly Trade Pro sub would otherwise keep renewing.
-  if (result.previousStripeSubscriptionId) {
-    try {
-      await stripe.subscriptions.update(result.previousStripeSubscriptionId, { cancel_at_period_end: true });
-    } catch (err) {
-      console.error("[founding] could not stop old subscription renewal", err);
-    }
-    await sendAdminFoundingAlert({
-      reason: `buyer had recurring sub ${result.previousStripeSubscriptionId}; set to not renew, consider refunding unused time`,
-      organizationId: orgId,
-      email,
-      sessionId: cs.id,
-    });
-  }
-  if (result.oversold) {
-    await sendAdminFoundingAlert({ reason: `oversold: ${result.sold} lifetime orgs (cap 500)`, organizationId: orgId, email, sessionId: cs.id });
-  }
-
-  await sendAdminNewSale({
-    company: cs.customer_details?.name ?? null,
-    email,
-    plan: "Founding 500 Lifetime",
-    interval: "one-time",
-    amountFormatted: typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—",
-  });
-  if (cs.customer_details?.email) {
-    await sendFoundingLifetimeEmail(cs.customer_details.email);
-    await syncPmrfpUserToGhl(
-      { email: cs.customer_details.email, fullName: cs.customer_details.name ?? null, role: "trade", subscriptionStatus: "active", profileCompletionPct: 100 },
-      { extraTags: ["pmrfp-pro-active", "pmrfp-founding-lifetime"] },
-    );
-  }
+  await sendFoundingCheckoutUpdates(stripe, cs, orgId, result);
 }
 
 export async function POST(request: Request) {
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
   if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  const billingMode = process.env.PMRFP_BILLING_BACKEND;
+  if (billingMode === "d1-rehearsal" || billingMode === "d1-live-recurring") {
+    const live = billingMode === "d1-live-recurring";
+    const origin = new URL(request.url).origin;
+    const host = request.headers.get("host");
+    const privateHost = host === "pmrfp-stripe-d1-writer:4322" || host === "pmrfp-stripe-writer:4322" ||
+      origin === "http://pmrfp-stripe-d1-writer:4322" || origin === "http://pmrfp-stripe-writer:4322";
+    const privateVpsWriter = privateHost &&
+      process.env.PMRFP_VPS_BILLING_RECEIVER === "enabled" &&
+      process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+    if (live && (process.env.PMRFP_ISOLATED_D1_STAGING === "enabled" ||
+        (origin !== "https://pmrfp.com" && !privateVpsWriter))) {
+      return NextResponse.json({ error: "Live D1 billing is unavailable" }, { status: 503 });
+    }
+    try {
+      return NextResponse.json(await deliverD1Billing(getStripe(), body, sig, { live }));
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof D1ApiError ? error.code : "d1_billing_failed" },
+        { status: error instanceof D1ApiError ? error.status : 503 });
+    }
+  }
+  if (!process.env.STRIPE_SECRET_KEY || !isServiceConfigured()) {
+    // Keep Stripe's retry path active if this deployment cannot persist an
+    // event or its deduplication record. A 2xx here would lose billing updates.
+    return NextResponse.json({ error: "Billing webhook unavailable" }, { status: 503 });
+  }
 
-  // Signature first; if the env secret doesn't match this endpoint, fall back
-  // to fetching the event from Stripe by id (see verifyStripeEvent).
+  const vpsReceiver = process.env.PMRFP_VPS_BILLING_RECEIVER === "enabled";
   const stripe = getStripe();
-  const verified = await verifyStripeEvent(stripe, body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  let verified: Awaited<ReturnType<typeof verifyStripeEvent>>;
+  if (vpsReceiver) {
+    if (!hasLiveStripeCredentials()) {
+      return NextResponse.json({ error: "Billing webhook unavailable" }, { status: 503 });
+    }
+    try {
+      const event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+      verified = event.livemode === true ? { event, via: "signature" } : null;
+    } catch {
+      verified = null;
+    }
+  } else {
+    // The existing receiver can recover an event with its Stripe API key.
+    verified = await verifyStripeEvent(stripe, body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  }
   if (!verified) return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   const event: Stripe.Event = verified.event;
+  if (vpsReceiver && process.env.PMRFP_VPS_BILLING_PHASE === "invoices" &&
+      event.type !== "invoice.payment_failed" && event.type !== "checkout.session.expired") {
+    return NextResponse.json({ error: "Event is outside the active billing phase" }, { status: 503 });
+  }
   if (verified.via === "api") {
     console.warn("[stripe webhook] signature mismatch; verified via API. Update STRIPE_WEBHOOK_SECRET.");
   }
@@ -113,6 +163,9 @@ export async function POST(request: Request) {
       if (dupErr.code === "23505") {
         // Already processed this exact event — ack without redoing work.
         return NextResponse.json({ received: true, duplicate: true });
+      }
+      if (vpsReceiver) {
+        return NextResponse.json({ error: "Billing receipt unavailable" }, { status: 503 });
       }
       // Any other error (e.g. table doesn't exist pre-migration) — log and
       // fall through to processing; better to risk a duplicate email than
@@ -151,16 +204,7 @@ export async function POST(request: Request) {
         // One-time Project Spotlight purchase: tell the owner, and tell the
         // buyer where to send their article.
         if (cs.mode === "payment" && cs.metadata?.product === SPOTLIGHT_PRODUCT) {
-          const cents = cs.amount_total;
-          const currency = (cs.currency || "cad").toUpperCase();
-          await sendAdminNewSale({
-            company: cs.custom_fields?.find((f) => f.key === "company")?.text?.value ?? cs.customer_details?.name ?? null,
-            email: cs.customer_details?.email ?? "(no email on file)",
-            plan: "Project Spotlight",
-            interval: "one-time",
-            amountFormatted: typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—",
-          });
-          if (cs.customer_details?.email) await sendSpotlightPaid(cs.customer_details.email, cs.id);
+          await sendSpotlightCheckoutEmails(cs);
           break;
         }
         // Founding 500: one-time payment for lifetime Trade Pro.
@@ -223,58 +267,7 @@ export async function POST(request: Request) {
               .in("profile_status", ["pending_review", "draft"]);
           }
 
-          // Notify the admin (you) the instant a sale lands — fires even if
-          // the customer-facing email is missing an address.
-          {
-            const planLabel = sub.metadata?.plan === "featured" ? "Featured" : "Trade Pro";
-            const intervalLabel =
-              sub.items.data[0]?.price.recurring?.interval === "year" ? "annual" : "monthly";
-            const cents = cs.amount_total;
-            const currency = (cs.currency || "cad").toUpperCase();
-            const amountFormatted =
-              typeof cents === "number" ? `$${(cents / 100).toFixed(2)} ${currency}` : "—";
-            const discount = cs.total_details?.amount_discount ?? 0;
-            const couponNote = discount > 0 ? "promo/coupon applied" : undefined;
-            await sendAdminNewSale({
-              company: cs.customer_details?.name ?? null,
-              email: cs.customer_details?.email ?? "(no email on file)",
-              plan: planLabel,
-              interval: intervalLabel,
-              amountFormatted,
-              couponNote,
-            });
-          }
-
-          if (cs.customer_details?.email) {
-            await sendSubscriptionActivatedEmail(cs.customer_details.email);
-            // Referral fee gating — 90-day retention gate (audit rank-9).
-            // The $75 cash fee stays cash (best referrer conversion), but we
-            // NEVER pay it the day a trade activates — a refund or month-1
-            // cancel would make the payout a pure loss. Instead BOTH intervals
-            // start a 90-day hold; the GHL workflow releases the fee only if the
-            // referred trade is still active at day 90 (annual: still subscribed;
-            // monthly: ~3 paid months = revenue clears the $75). The interval is
-            // tagged so the GHL workflow can pick the right check.
-            const interval = sub.items.data[0]?.price.recurring?.interval;
-            const intervalTag =
-              interval === "year" ? "plan-annual" : "plan-monthly";
-            await syncPmrfpUserToGhl(
-              {
-                email: cs.customer_details.email,
-                fullName: cs.customer_details.name ?? null,
-                role: "trade",
-                subscriptionStatus: "active",
-                profileCompletionPct: 100,
-              },
-              {
-                extraTags: [
-                  "pmrfp-pro-active",
-                  "fee-hold-90day-retention",
-                  intervalTag,
-                ],
-              },
-            );
-          }
+          await sendSubscriptionCheckoutUpdates(cs, sub);
         }
         break;
       }
@@ -332,23 +325,7 @@ export async function POST(request: Request) {
             .select("email,name")
             .eq("id", sub.metadata.organization_id)
             .maybeSingle<{ email: string | null; name: string | null }>();
-          if (org?.email) {
-            const statusMap: Record<string, "active" | "past_due" | "canceled" | "trial"> = {
-              active: "active",
-              past_due: "past_due",
-              canceled: "canceled",
-              trialing: "trial",
-            };
-            const mappedStatus = statusMap[sub.status] ?? "canceled";
-            await syncPmrfpUserToGhl({
-              email: org.email,
-              fullName: org.name,
-              role: "trade",
-              orgId: sub.metadata.organization_id,
-              orgName: org.name,
-              subscriptionStatus: mappedStatus,
-            });
-          }
+          await syncSubscriptionContact(sub.metadata.organization_id, sub.status, org);
         }
         break;
       }

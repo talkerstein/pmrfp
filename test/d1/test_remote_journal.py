@@ -151,4 +151,43 @@ class RemoteJournalTests(FixtureMixin, unittest.TestCase):
         with self.assertRaises(ValueError):q.apply(fake,first,second,journal,self.root/'bad.sqlite')
         self.assertEqual(r.manifest(fake)[0]['state'],'loading')
 
+    def test_atomic_publication_never_exposes_loading_and_recovers_a_lost_response(self):
+        first, second, journal, fake = self.prepare()
+        original = fake.batch
+        def observe(items):
+            result = original(items)
+            if items[0]["sql"].startswith("PRAGMA"):
+                self.assertEqual(r.manifest(fake), [{
+                    "source_sha256": journal["after_snapshot_sha256"], "state": "validated",
+                }])
+                raise RuntimeError("response lost")
+            return result
+
+        fake.batch = observe
+        with self.assertRaisesRegex(RuntimeError, "response lost"):
+            q.apply(fake, first, second, journal, self.root / "before.sqlite", atomic_publish=True)
+        fake.batch = original
+        recovered = q.apply(fake, first, second, journal, None, atomic_publish=True)
+        self.assertTrue(recovered["recovered"])
+        r.verify(fake, second)
+
+    def test_atomic_publication_rolls_back_on_unexpected_after_image(self):
+        first, second, journal, fake = self.prepare()
+        original = fake.batch
+        def corrupt(items):
+            if items[0]["sql"].startswith("PRAGMA"):
+                first_after_guard = next(i for i, item in enumerate(items)
+                    if "journal_after_image_mismatch" in item["sql"])
+                items = items[:first_after_guard] + [{
+                    "sql": "UPDATE users_profile SET full_name='wrong'",
+                    "params": [],
+                }] + items[first_after_guard:]
+            return original(items)
+
+        fake.batch = corrupt
+        with self.assertRaises(sqlite3.OperationalError):
+            q.apply(fake, first, second, journal, self.root / "before.sqlite", atomic_publish=True)
+        r.verify(fake, first)
+
+
 if __name__=='__main__':unittest.main()

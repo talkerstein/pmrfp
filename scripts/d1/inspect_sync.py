@@ -1,4 +1,6 @@
 """Read aggregate Source backlog and pinned D1 checkpoint health, without writes."""
+from capture_limits import MAX_CAPTURE_RECEIPTS
+
 import argparse,datetime,json,re,subprocess
 import acknowledge_capture as ack
 import capture_state
@@ -6,7 +8,7 @@ from change_capture import role_guard
 from consume_incremental import GENERATION,TARGET
 import remote as r
 
-PENDING_LIMIT=75000
+PENDING_LIMIT=MAX_CAPTURE_RECEIPTS
 
 def source_time(value):
     if not isinstance(value,str):raise ValueError('Invalid Source time')

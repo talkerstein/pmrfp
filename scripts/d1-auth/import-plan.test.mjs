@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {hash} from 'bcryptjs';
-import {mapMigrationAccount,shadowStatements} from './import-plan.mjs';
+import {mapMigrationAccount,refreshShadowStatements,shadowStatements} from './import-plan.mjs';
 import {readFileSync} from 'node:fs';
 const password=await hash('Synthetic-test-only-password',4);
 const fixture=(n=1,extra={})=>({id:`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`,email:`test-${n}@example.invalid`,encrypted_password:password,email_confirmed_at:'2026-11-01T00:00:00Z',phone:null,phone_confirmed_at:null,created_at:'2026-10-01T00:00:00Z',updated_at:'2026-11-01T00:00:00Z',banned_until:null,deleted_at:null,is_anonymous:false,is_sso_user:false,raw_user_meta_data:{role:'admin'},raw_app_meta_data:{role:'super_admin'},...extra});
@@ -31,4 +31,51 @@ test('protected export requires checksum, owner-only permissions, current expiry
  chmodSync(path,0o644);assert.throws(()=>readProtectedExport(path,now));
  for(const changes of [{reader:'another'},{expiry:'2026-11-01T00:00:00Z'},{captured_at:'2026-11-01T00:00:00Z'},{auth_ids:2},{records:2}]){make(changes);assert.throws(()=>readProtectedExport(path,now));}
  make();writeFileSync(path,readFileSync(path,'utf8').replace('test-1@example.invalid','tampered@example.invalid'));assert.throws(()=>readProtectedExport(path,now));
+});
+
+test('sealed refresh applies account additions, deletions and email moves atomically', t => {
+ const db = new DatabaseSync(':memory:');
+ t.after(() => db.close());
+ const plan = (mark, fixtures) => ({
+  sourceSha256: mark.repeat(64), records: fixtures.length,
+  accounts: fixtures.map(row => mapMigrationAccount(row)),
+ });
+ const previous = plan('a', [fixture(1), fixture(2)]);
+ const next = plan('b', [
+  fixture(1, {email: fixture(2).email, email_confirmed_at: null}),
+  fixture(3, {banned_until: '2099-01-01T00:00:00Z'}),
+ ]);
+ const apply = statements => {
+  db.exec('BEGIN');
+  try {
+   for (const {sql, params} of statements) db.prepare(sql).run(...params);
+   db.exec('COMMIT');
+  } catch (error) {
+   db.exec('ROLLBACK');
+   throw error;
+  }
+ };
+ apply(shadowStatements(previous, schema));
+ const refresh = refreshShadowStatements(previous, next);
+ assert.throws(() => apply([...refresh, {sql: "SELECT json('invalid')", params: []}]));
+ assert.equal(db.prepare('SELECT source_sha256 FROM _auth_shadow_manifest').get().source_sha256, previous.sourceSha256);
+ assert.equal(db.prepare('SELECT email FROM user WHERE id=?').get(fixture(1).id).email, fixture(1).email);
+ apply(refresh);
+ assert.equal(db.prepare('SELECT source_sha256 FROM _auth_shadow_manifest').get().source_sha256, next.sourceSha256);
+ assert.deepEqual(db.prepare('SELECT email FROM user ORDER BY id').all().map(x => x.email), [fixture(2).email, fixture(3).email]);
+ assert.equal(db.prepare('SELECT emailVerified FROM user WHERE id=?').get(fixture(1).id).emailVerified, 0);
+ assert.equal(db.prepare('SELECT banned FROM user WHERE id=?').get(fixture(3).id).banned, 1);
+ assert.throws(() => apply(refresh));
+ assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
+});
+
+test('customer mirroring retains passwordless email identities without inventing a credential', () => {
+  for (const absent of [null, '']) {
+    const row = fixture(1, { encrypted_password: absent });
+    assert.throws(() => mapMigrationAccount(row));
+    const mapped = mapMigrationAccount(row, Date.now(), { allowPasswordless: true });
+    assert.equal(mapped.user.id, row.id);
+    assert.equal(mapped.account.password, null);
+  }
+  assert.throws(() => mapMigrationAccount(fixture(1, {encrypted_password:'unrecognized'}), Date.now(), {allowPasswordless:true}));
 });

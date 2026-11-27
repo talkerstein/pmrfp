@@ -16,6 +16,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { isMissingTableError } from "@/lib/entitlement/trial";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 
 export const CHANGE_FIELDS = ["closing_date", "title", "status"] as const;
 export type ChangeField = (typeof CHANGE_FIELDS)[number];
@@ -138,18 +139,23 @@ const READ_TIMEOUT_MS = 3_000;
 
 /** The newest changes for one listing (a one-row-per-change, indexed read; never a table scan). */
 export async function loadRfpChanges(slug: string): Promise<RfpChange[]> {
-  if (!isServiceConfigured()) return [];
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if (!native && !isServiceConfigured()) return [];
   try {
-    const { data, error } = await createServiceClient()
+    type StoredChange = { field: string; old_value: string; new_value: string; changed_at: string };
+    const data = native
+      ? (await vpsAppDatabase().prepare(`SELECT c.field,c.old_value,c.new_value,c.changed_at FROM rfp_changes c
+          JOIN rfp_posts p ON p.id=c.rfp_id WHERE c.slug=? AND p.source_type='public_source' AND p.is_demo=0
+          ORDER BY c.changed_at DESC LIMIT ?`).bind(slug, SHOWN).all<StoredChange>()).results
+      : (await createServiceClient()
       .from("rfp_changes")
       .select("field,old_value,new_value,changed_at")
       .eq("slug", slug)
       .order("changed_at", { ascending: false })
       .limit(SHOWN)
       // A slow read must never hold the page: no log is better than a late page.
-      .abortSignal(AbortSignal.timeout(READ_TIMEOUT_MS));
-    if (error || !data) return [];
-    return (data as { field: string; old_value: string; new_value: string; changed_at: string }[])
+      .abortSignal(AbortSignal.timeout(READ_TIMEOUT_MS))).data as StoredChange[] | null;
+    return (data ?? [])
       .filter((r): r is typeof r & { field: ChangeField } => (CHANGE_FIELDS as readonly string[]).includes(r.field))
       .map((r) => ({ field: r.field, oldValue: r.old_value, newValue: r.new_value, at: r.changed_at }));
   } catch {

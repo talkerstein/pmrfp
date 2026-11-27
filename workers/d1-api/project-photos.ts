@@ -1,9 +1,10 @@
 import { D1ApiError, UUID, type D1Binding } from "../../src/lib/d1/contracts";
-import { sanitizePhotos } from "../../src/lib/projects/photos";
+import { nativeProjectHero, nativeStoredProjectPhotos, sanitizePhotos } from "../../src/lib/projects/photos";
 import { canViewProjectPhotos, type PhotoViewer } from "../../src/lib/projects/photo-access";
 
 export interface SandboxObjectMetadata {
   size: number;
+  etag?: string;
   httpMetadata?: { contentType?: string };
   customMetadata?: Record<string, string>;
 }
@@ -18,20 +19,52 @@ const LEGACY_ORIGIN = "https://tumexryzbzmtijvbloch.supabase.co";
 /** Synthetic photo operations: Source references are parsed, never fetched. Real R2
  * migration files have no synthetic marker and cannot pass this rehearsal. */
 export async function handleSyntheticProjectPhoto(db: D1Binding, bucket: SandboxBucket | undefined, request: Request, userId: string): Promise<Response> {
+  return handleProjectPhoto(db, bucket, request, userId, "synthetic");
+}
+
+/** Read verified private files after the application database has taken authority. */
+export async function handleNativeProjectPhoto(db: D1Binding, bucket: SandboxBucket | undefined,
+  request: Request, userId: string | null, shareToken?: string, reviewTokenHash?: string): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    throw new D1ApiError(405, "method_not_allowed");
+  }
+  const authority = await db.prepare("SELECT id FROM _customer_app_authority WHERE id=1 AND mode='native-v1'")
+    .first<{ id: number }>();
+  if (authority?.id !== 1) throw new D1ApiError(503, "storage_unavailable");
+  return handleProjectPhoto(db, bucket, request, userId, "native", shareToken, reviewTokenHash);
+}
+
+async function handleProjectPhoto(db: D1Binding, bucket: SandboxBucket | undefined, request: Request,
+  userId: string | null, mode: "synthetic" | "native", shareToken?: string, reviewTokenHash?: string): Promise<Response> {
   const url = new URL(request.url);
   const match = /^\/v1\/project-photos\/([^/]+)\/([^/]+)\.jpg$/.exec(url.pathname);
   if (!match || !UUID.test(match[1]) || !UUID.test(match[2]) || url.search) throw new D1ApiError(400, "invalid_photo_request");
   if (!["GET","HEAD","PUT","DELETE"].includes(request.method)) throw new D1ApiError(405, "method_not_allowed");
   if (request.headers.has("range")) throw new D1ApiError(400, "range_not_enabled");
   if (!bucket) throw new D1ApiError(503, "storage_unavailable");
-  const profile = await db.prepare("SELECT status,primary_role FROM users_profile WHERE id=?").bind(userId).first<{status:string;primary_role:string}>();
-  if (!profile || profile.status !== "active") throw new D1ApiError(403, "account_inactive");
-  const project = await db.prepare(`SELECT c.id,c.organization_id,c.status,c.visibility,c.photos,o.status AS organization_status
-    FROM case_studies c JOIN organizations o ON o.id=c.organization_id WHERE c.id=?`).bind(match[1].toLowerCase()).first<{id:string;organization_id:string;status:string;visibility:string|null;photos:string;organization_status:string}>();
+  const profile = userId ? await db.prepare("SELECT status,primary_role FROM users_profile WHERE id=?")
+    .bind(userId).first<{status:string;primary_role:string}>() : null;
+  if (userId && profile?.status !== "active") throw new D1ApiError(403, "account_inactive");
+  const project = await db.prepare(`SELECT c.id,c.organization_id,c.status,c.visibility,c.photos,c.hero_url,o.status AS organization_status
+    FROM case_studies c JOIN organizations o ON o.id=c.organization_id WHERE c.id=?`).bind(match[1].toLowerCase())
+    .first<{ id: string; organization_id: string; status: string; visibility: string | null; photos: string; hero_url: string | null; organization_status: string }>();
   if (!project || project.organization_status === "suspended" || !UUID.test(project.organization_id)) throw new D1ApiError(404, "not_found");
   let viewer: PhotoViewer = {kind:"anonymous"};
-  if (["admin","super_admin"].includes(profile.primary_role)) viewer = {kind:"admin"};
-  else {
+  if (reviewTokenHash) {
+    const open = project.status === "published" && project.organization_status === "active" && /^[a-f0-9]{64}$/.test(reviewTokenHash)
+      && await db.prepare(`SELECT 1 AS allowed FROM review_invites
+        WHERE token_hash=? AND case_study_id=? AND organization_id=? AND used_at IS NULL`)
+        .bind(reviewTokenHash, project.id, project.organization_id).first();
+    if (!open) throw new D1ApiError(404, "not_found");
+    viewer = { kind: "reviewer", caseStudyId: project.id };
+  } else if (shareToken) {
+    const link = /^[A-Za-z0-9_-]{32}$/.test(shareToken) && await db.prepare(`SELECT 1 AS allowed FROM case_study_share_links
+      WHERE token=? AND case_study_id=? AND organization_id=? AND revoked_at IS NULL`)
+      .bind(shareToken, project.id, project.organization_id).first();
+    if (!link) throw new D1ApiError(404, "not_found");
+    viewer = { kind: "share", caseStudyId: project.id };
+  } else if (profile && ["admin","super_admin"].includes(profile.primary_role)) viewer = {kind:"admin"};
+  else if (userId) {
     const member = await db.prepare("SELECT 1 AS member FROM organization_members WHERE user_id=? AND organization_id=? LIMIT 1").bind(userId,project.organization_id).first();
     if (member) viewer = {kind:"member",organizationId:project.organization_id};
   }
@@ -39,10 +72,22 @@ export async function handleSyntheticProjectPhoto(db: D1Binding, bucket: Sandbox
   let photos: unknown;
   try { photos = JSON.parse(project.photos); } catch { throw new D1ApiError(503,"photo_metadata_invalid"); }
   const path = project.organization_id.toLowerCase()+"/"+match[2].toLowerCase()+".jpg";
-  const photo = sanitizePhotos(photos,LEGACY_ORIGIN,project.organization_id,{includePrivate:true}).find(item=>item.path.toLowerCase()===path);
+  const nativePhotos = mode === "native" ? nativeStoredProjectPhotos(photos, project.id, project.organization_id) : [];
+  if (viewer.kind === "reviewer" && nativeProjectHero(nativePhotos, project.hero_url)?.path !== path) {
+    throw new D1ApiError(404, "not_found");
+  }
+  const photo = nativePhotos.some(item => item.path === path) ||
+    sanitizePhotos(photos,LEGACY_ORIGIN,project.organization_id,{includePrivate:true}).some(item=>item.path.toLowerCase()===path);
   if (!photo) throw new D1ApiError(404,"not_found");
   // Read the private namespace even for a public/unlisted project's legacy reference.
-  const key = "project-photos-private/"+path;
+  const stored = mode === "native"
+    ? await db.prepare("SELECT sha256, etag, bytes FROM _private_project_files WHERE source_path=?")
+      .bind(path).first<{ sha256: string; etag: string; bytes: number }>()
+    : null;
+  if (mode === "native" && (!stored || !/^[0-9a-f]{64}$/.test(stored.sha256))) {
+    throw new D1ApiError(404, "not_found");
+  }
+  const key = stored ? `private-project-photo/${stored.sha256}` : `project-photos-private/${path}`;
   if (request.method === "PUT" || request.method === "DELETE") {
     if (viewer.kind !== "member" && viewer.kind !== "admin") throw new D1ApiError(404,"not_found");
     const previous=await bucket.head(key);
@@ -64,7 +109,10 @@ export async function handleSyntheticProjectPhoto(db: D1Binding, bucket: Sandbox
   }
   const object = request.method === "HEAD" ? await bucket.head(key) : await bucket.get(key);
   if (!object) throw new D1ApiError(404,"not_found");
-  if (object.customMetadata?.migrationSandbox !== "synthetic-only-v1" || object.httpMetadata?.contentType !== "image/jpeg" || !Number.isSafeInteger(object.size) || object.size <= 0 || object.size > 10*1024*1024) throw new D1ApiError(503,"storage_object_invalid");
+  const verified = stored
+    ? object.etag === stored.etag && object.size === stored.bytes
+    : object.customMetadata?.migrationSandbox === "synthetic-only-v1";
+  if (!verified || object.httpMetadata?.contentType !== "image/jpeg" || !Number.isSafeInteger(object.size) || object.size <= 0 || object.size > 10*1024*1024) throw new D1ApiError(503,"storage_object_invalid");
   return new Response(request.method === "HEAD" ? null : (object as SandboxObject).body, {headers:{
     "content-type":"image/jpeg","content-length":String(object.size),"cache-control":"private, no-store",
     "x-content-type-options":"nosniff","content-security-policy":"default-src 'none'; sandbox","referrer-policy":"no-referrer",

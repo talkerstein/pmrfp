@@ -54,5 +54,6 @@ it('defaults to Supabase and refuses invalid settings or production D1 cutover',
   vi.stubEnv('PMRFP_TAXONOMY_BACKEND','');expect(d1TaxonomyEnabled()).toBe(false);
   vi.stubEnv('PMRFP_TAXONOMY_BACKEND','d1');vi.stubEnv('VERCEL_ENV','preview');expect(d1TaxonomyEnabled()).toBe(true);
   vi.stubEnv('VERCEL_ENV','production');expect(()=>d1TaxonomyEnabled()).toThrow('production_cutover_not_enabled');
+  vi.stubEnv('PMRFP_VPS_D1_PUBLIC_READS','enabled');expect(d1TaxonomyEnabled()).toBe(true);
   vi.stubEnv('PMRFP_TAXONOMY_BACKEND','other');expect(()=>d1TaxonomyEnabled()).toThrow('invalid_backend_configuration');
 });

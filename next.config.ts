@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
-import { isIsolatedD1Staging } from "./src/lib/d1/staging-config";
+import { isHostingerCloudflareStaging, isIsolatedD1Staging } from "./src/lib/d1/staging-config";
+
+const vpsStaging = isHostingerCloudflareStaging();
+const vpsStandalone = vpsStaging || process.env.PMRFP_VPS_STANDALONE === "enabled";
+if (vpsStaging && !isIsolatedD1Staging()) {
+  throw new Error("The VPS build requires isolated Cloudflare data settings");
+}
 
 const securityHeaders = [
+  ...(vpsStaging ? [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] : []),
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-DNS-Prefetch-Control", value: "on" },
@@ -72,6 +79,13 @@ const retiredListingRedirects: { source: string; destination: string }[] = [
 ].map(([slug, destination]) => ({ source: `/directory/${slug}`, destination }));
 
 const nextConfig: NextConfig = {
+  ...(vpsStandalone ? {
+    output: "standalone",
+    outputFileTracingRoot: process.cwd(),
+    cacheMaxMemorySize: 0,
+    experimental: { cpus: 2, serverActions: { bodySizeLimit: "2mb" } },
+    env: { NEXT_PUBLIC_PMRFP_NO_DEMO_ROWS: "enabled" },
+  } : {}),
   async redirects() {
     return [
       ...legacyWordPressRedirects,
@@ -91,7 +105,7 @@ const nextConfig: NextConfig = {
     // future trade portfolio images). Vercel's image optimizer fronts these
     // with long-cache WebP variants — solves Supabase's `Cache-Control: no-cache`
     // default at the edge.
-    remotePatterns: SUPABASE_HOSTNAME
+    remotePatterns: vpsStandalone ? [] : SUPABASE_HOSTNAME
       ? [{ protocol: "https", hostname: SUPABASE_HOSTNAME, pathname: "/storage/v1/object/public/**" }]
       : [{ protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" }],
     // Optimized output cached for 1 year at Vercel's edge.

@@ -24,7 +24,7 @@ class CaptureTests(FixtureMixin,unittest.TestCase):
         no_capture=self.remeta(source,'no-capture.jsonl',change_capture={})
         with self.assertRaises(ValueError):a.plan(no_capture,candidate)
     def test_unsafe_duplicate_out_of_order_and_oversized_ids_rejected(self):
-        for n,ids in enumerate([['1','1'],['3','1'],['0'],['1);DELETE FROM public.items'],[str(2**63)],list(map(str,range(1,75002)))]):
+        for n,ids in enumerate([['1','1'],['3','1'],['0'],['1);DELETE FROM public.items'],[str(2**63)],list(map(str,range(1,a.MAX_CAPTURE_RECEIPTS+2)))]):
             source,candidate=self.snapshots(ids)
             with self.assertRaises(ValueError):a.plan(source,candidate)
     def test_native_mismatch_prevents_any_source_acknowledgement(self):

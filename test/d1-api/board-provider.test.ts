@@ -19,3 +19,26 @@ it('fails closed on D1 failure and on production selection, without source fallb
  await expect(fetchBoardShard(0)).rejects.toThrow('gateway_unavailable');expect(h.read).not.toHaveBeenCalled();
  vi.stubEnv('VERCEL_ENV','production');await expect(getBoardRows()).rejects.toThrow('production_cutover_not_enabled');expect(h.read).not.toHaveBeenCalled();
 });
+
+it('restarts the entire board read when publication advances its checkpoint', async () => {
+  enable();
+  vi.stubEnv('PMRFP_D1_FOLLOW_CHECKPOINT', 'enabled');
+  const before = 'a'.repeat(64);
+  const after = 'b'.repeat(64);
+  let checkpointReads = 0;
+  h.fetch.mockImplementation(async (input: URL) => {
+    if (input.pathname === '/v1/checkpoint') {
+      return Response.json({ dataset: ++checkpointReads === 1 ? before : after });
+    }
+    return Response.json({ items: [], next: null, dataset: after });
+  });
+
+  expect(await getBoardRows()).toEqual([]);
+  expect(checkpointReads).toBe(2);
+  expect(h.keys).toHaveLength(0);
+  const calls = h.fetch.mock.calls.map(([url]) => url as URL);
+  for (let shard = 0; shard < 16; shard++) {
+    expect(calls.filter(url => url.searchParams.get('shard') === String(shard))).toHaveLength(2);
+  }
+  expect(h.read).not.toHaveBeenCalled();
+});

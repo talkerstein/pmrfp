@@ -40,10 +40,9 @@ const SITEMAP_SPLIT_AT = 45_000;
 import { localizePath } from "@/i18n/config";
 import { translationsOf } from "@/i18n/translated";
 
-// The RFP board now refreshes daily from the public-tender feed; without
-// this the page was frozen at build time and showed stale open counts
-// (and the sitemap missed every new tender) until the next deploy.
-export const revalidate = 21600;
+// The standalone release is built without access to the live D1 dataset.
+// Generate the sitemap after the runtime has its database configuration.
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
@@ -103,7 +102,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const [rfps, vendors, noindexSlugs, resources, categories, regions, tradeCityCombos, caseStudies, toronto] = await Promise.all([
     listRfps().catch(() => []),
-    listVendors().catch(() => []),
+    Promise.all([listVendors().catch(() => []), listVendors({ orgType: "supplier" }).catch(() => [])]).then(([trades, suppliers]) => [...trades, ...suppliers]),
     getNoindexSlugs(),
     listResources().catch(() => []),
     getCategories().catch(() => []),

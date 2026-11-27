@@ -1,17 +1,13 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STEPS } from "@/lib/lifecycle/config";
 import { renderStep, sampleCopyData } from "@/lib/lifecycle/copy";
 import { lifecycleUnsubscribeUrl } from "@/lib/email/unsubscribe";
 
-/**
- * The lifecycle sequence sends through Resend (never the Hostinger mailbox),
- * and every send carries the CASL / CAN-SPAM footer, a signed one-click
- * unsubscribe link and the List-Unsubscribe + List-Unsubscribe-Post headers.
- */
-
-const resendSend = vi.hoisted(() => vi.fn());
+const { resendSend, smtpSend } = vi.hoisted(() => ({ resendSend: vi.fn(), smtpSend: vi.fn() }));
+vi.mock("@/lib/email/smtp", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/email/smtp")>(),
+  sendHostingerMail: smtpSend,
+}));
 vi.mock("resend", () => ({
   Resend: class {
     emails = { send: resendSend };
@@ -21,11 +17,15 @@ vi.mock("resend", () => ({
 beforeEach(() => {
   resendSend.mockReset();
   resendSend.mockResolvedValue({ data: { id: "re_123" }, error: null });
-  process.env.RESEND_API_KEY = "re_test_key";
-  process.env.UNSUBSCRIBE_SECRET = "test-secret";
+  smtpSend.mockReset().mockResolvedValue({ accepted: true });
+  vi.stubEnv("PMRFP_SMTP_ENABLED", undefined);
+  vi.stubEnv("RESEND_API_KEY", "re_test_key");
+  vi.stubEnv("UNSUBSCRIBE_SECRET", "test-secret");
 });
 
-describe("lifecycle email goes out through Resend with one-click unsubscribe", () => {
+afterEach(() => vi.unstubAllEnvs());
+
+describe("lifecycle email transports", () => {
   it("every step: Resend, from R. Talkar <info@pmrfp.com>, reply-to info@, List-Unsubscribe (+ one-click post), a tag per step", async () => {
     const { sendLifecycleEmail } = await import("@/lib/email/send");
     const base = "https://pmrfp.com";
@@ -72,19 +72,26 @@ describe("lifecycle email goes out through Resend with one-click unsubscribe", (
     expect(resendSend).not.toHaveBeenCalled();
   });
 
-  it("the lifecycle code has no other way to send: no Hostinger / SMTP / IMAP mailbox", () => {
-    const dir = join(process.cwd(), "src/lib/lifecycle");
-    for (const file of readdirSync(dir).filter((f) => f.endsWith(".ts"))) {
-      const src = readFileSync(join(dir, file), "utf8");
-      expect(src, file).not.toMatch(/nodemailer|imapflow|smtp|hostinger/i);
-    }
-    const cron = readFileSync(join(process.cwd(), "src/app/api/cron/lifecycle/route.ts"), "utf8");
-    expect(cron).not.toMatch(/nodemailer|imapflow|smtp|hostinger/i);
-    // ...and the one send function builds its client from the Resend SDK.
-    const send = readFileSync(join(process.cwd(), "src/lib/email/send.ts"), "utf8");
-    expect(send).toMatch(/import \{ Resend \} from "resend"/);
-    const fn = send.slice(send.indexOf("export async function sendLifecycleEmail"));
-    expect(fn).toContain("resend.emails.send");
-    expect(fn).not.toMatch(/nodemailer|createTransport/);
+  it("uses Hostinger with both body formats and one-click unsubscribe even with no Resend key", async () => {
+    vi.stubEnv("RESEND_API_KEY", undefined);
+    vi.stubEnv("PMRFP_SMTP_ENABLED", "enabled");
+    vi.stubEnv("PMRFP_SMTP_USER", "info@pmrfp.com");
+    vi.stubEnv("PMRFP_SMTP_PASSWORD", "smtp-test");
+    const { lifecycleEmailConfigured, sendLifecycleEmail } = await import("@/lib/email/send");
+    const unsubscribeUrl = lifecycleUnsubscribeUrl("https://pmrfp.com", "user-1");
+    expect(lifecycleEmailConfigured()).toBe(true);
+    const result = await sendLifecycleEmail({
+      to: "sam@northline.ca", from: "legacy", replyTo: "info@pmrfp.com",
+      subject: "Welcome", text: "plain", html: "<p>html</p>", unsubscribeUrl, step: "badge",
+    });
+    expect(result).toEqual({ ok: true, id: null });
+    expect(smtpSend).toHaveBeenCalledWith(expect.objectContaining({
+      senderName: "R. Talkar · PMRFP", replyTo: "info@pmrfp.com", text: "plain", html: "<p>html</p>",
+      headers: {
+        "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:info@pmrfp.com?subject=unsubscribe>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
+    }));
+    expect(resendSend).not.toHaveBeenCalled();
   });
 });

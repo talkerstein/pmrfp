@@ -1,9 +1,16 @@
+import { isHostingerCloudflareStaging } from "./staging-config";
 import {createHash} from 'node:crypto';
+import { UUID } from './contracts';
 const sourceOrigin='https://tumexryzbzmtijvbloch.supabase.co';
 const assetOrigin='https://pmrfp-verified-public-assets-preview.pmrfp.workers.dev';
 const hex64=/^[a-f0-9]{64}$/;
 const headers={'cache-control':'private, no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff'};
 const deny=(status:number)=>new Response(null,{status,headers});
+
+function publicAssetsEnabled(env: Record<string, string | undefined>) {
+ return (env.VERCEL_ENV === 'production' && env.PMRFP_VPS_R2_PUBLIC_ASSETS === 'enabled') ||
+   ((env.VERCEL_ENV === 'preview' || isHostingerCloudflareStaging(env)) && env.PMRFP_PUBLIC_ASSET_PREVIEW === 'enabled');
+}
 
 /** Map only the two approved public Source image namespaces to opaque IDs. */
 export function publicAssetId(source:string):string|null{
@@ -16,11 +23,13 @@ export function publicAssetId(source:string):string|null{
  }catch{return null;}
 }
 
-/** Existing listing pages opt in only for the images copied to this preview. */
-export function publicRfpPhotoSource(
+/** Pages use R2 URLs only for public images present in the verified inventory. */
+export function publicImageSource(
  source:string,env:Record<string,string|undefined>=process.env,
 ):{src:string;unoptimized?:true}{
- if(env.VERCEL_ENV!=='preview'||env.PMRFP_PUBLIC_ASSET_PREVIEW!=='enabled')return {src:source};
+ const companyMedia = /^\/api\/company-media\/([^/]+)$/.exec(source);
+ if(companyMedia && UUID.test(companyMedia[1])) return {src:source,unoptimized:true};
+ if(!publicAssetsEnabled(env))return {src:source};
  const allowlist=env.PMRFP_PUBLIC_RFP_ASSET_IDS;
  if(!allowlist||allowlist.length>6500)return {src:source};
  const ids=allowlist.split(',');
@@ -28,10 +37,11 @@ export function publicRfpPhotoSource(
  const id=publicAssetId(source);
  return id&&ids.includes(id)?{src:`/api/migration/public-asset/${id}`,unoptimized:true}:{src:source};
 }
+export { publicImageSource as publicRfpPhotoSource };
 
-/** Private Vercel Preview can mint a browser link; binary bytes bypass Vercel. */
+/** Issue a short-lived link so the browser reads the verified bytes from R2 directly. */
 export async function publicAssetPreviewRedirect(request:Request,id:string,env:Record<string,string|undefined>,fetcher:typeof fetch=fetch):Promise<Response>{
- if(env.VERCEL_ENV!=='preview'||env.PMRFP_PUBLIC_ASSET_PREVIEW!=='enabled')return deny(404);
+ if(!publicAssetsEnabled(env))return deny(404);
  if(request.method!=='GET'||!hex64.test(id)||new URL(request.url).search)return deny(400);
  const key=env.PMRFP_PUBLIC_ASSET_GATEWAY_SECRET;if(!key||key.length<32||key.length>512)return deny(503);
  try{

@@ -5,6 +5,9 @@ import { pmJobAlertsEnabled } from "@/lib/pm-jobs/alerts";
 import { PM_JOB_SOURCES } from "@/lib/pm-jobs/rules";
 import { runPmJobAlerts, type AlertRunResult } from "@/lib/pm-jobs/server";
 
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { inList, readD1, requireD1LifecycleAuthority } from "@/lib/lifecycle/d1";
+
 export const maxDuration = 60;
 
 /**
@@ -22,18 +25,25 @@ const BUDGET_MS = 50_000;
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if ((native && !secret) || (secret && request.headers.get("authorization") !== `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  if (!native && !isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
   const dry = new URL(request.url).searchParams.get("dry") === "1";
   const enabled = pmJobAlertsEnabled();
   if (!dry && !enabled) return NextResponse.json({ skipped: "PM_JOB_ALERTS_ENABLED is off", enabled });
 
-  const db = createServiceClient();
+  const db = native ? vpsAppDatabase() : createServiceClient();
+  if ("prepare" in db) await requireD1LifecycleAuthority(db);
   const since = new Date(Date.now() - WINDOW_HOURS * 3_600_000).toISOString();
   const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await db
+  const { data, error } = "prepare" in db ? {
+    data: await readD1<{ id: string; title: string }>(db, `SELECT id,title FROM rfp_posts WHERE status='published'
+      AND is_demo=0 AND source_type ${inList} AND posted_by_user_id IS NOT NULL AND julianday(published_at)>=julianday(?)
+      AND (deadline IS NULL OR date(deadline)>=date(?)) ORDER BY julianday(published_at),id LIMIT 50`,
+    JSON.stringify(PM_JOB_SOURCES), since, today), error: null,
+  } : await db
     .from("rfp_posts")
     .select("id,title")
     .eq("status", "published")
@@ -59,5 +69,6 @@ export async function GET(request: Request) {
     enabled,
     jobs: jobs.map((j) => ({ id: j.id, title: j.title, state: j.result.state, reason: j.result.reason, wouldEmail: j.result.wouldEmail, sent: j.result.sent, ...(dry ? { companies: j.result.orgs } : {}) })),
     sent: jobs.reduce((s, j) => s + j.result.sent, 0),
-  });
+  }, { status: native && jobs.some(job => job.result.state === "blocked" &&
+    ["mailing_address", "unsubscribe", "log_missing"].includes(job.result.reason ?? "")) ? 503 : 200 });
 }

@@ -1,5 +1,9 @@
 "use server";
 
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { requestD1Certificate } from "./d1-requests";
+import { saveD1Tool, deleteD1Tool, insertD1Tools } from "@/lib/d1/pm-tools";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSession, type SessionContext } from "@/lib/access/access";
@@ -33,7 +37,7 @@ export interface SaveState {
 type Pm = { session: SessionContext; orgId: string; country: CertCountry };
 
 async function pm(): Promise<Pm | { error: CertErrorKey }> {
-  if (!isSupabaseConfigured()) return { error: "unavailable" };
+  if (!isSupabaseConfigured() && !isVpsLiveCustomerAuth()) return { error: "unavailable" };
   const session = await getSession();
   if (!session || !ROLES.includes(session.profile.primary_role)) return { error: "signIn" };
   if (!session.organization) return { error: "noOrg" };
@@ -57,8 +61,15 @@ export async function saveCertificateAction(_prev: SaveState, formData: FormData
   const raw = Object.fromEntries(formData.entries());
   const res = cleanVendorInput({ ...raw, remind_vendor: formData.get("remind_vendor") === "on" }, who.country);
   if (!res.ok) return { error: res.field };
-  const db = await createClient();
   const id = typeof raw.id === "string" && z.uuid().safeParse(raw.id).success ? raw.id : null;
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      if (!await saveD1Tool("vendor_certificates", who.session, id, { ...res.value })) return { error: "notFound" };
+      revalidatePath(DASHBOARD);
+      return { ok:true, savedAt:Date.now() };
+    } catch { return { error: "unavailable" }; }
+  }
+  const db = await createClient();
   if (id) {
     const { data: before } = await db.from("vendor_certificates").select("contact_email").eq("id", id).maybeSingle<{ contact_email: string | null }>();
     const { data, error } = await db.from("vendor_certificates").update(res.value).eq("id", id).select("id").maybeSingle();
@@ -85,6 +96,11 @@ export async function deleteCertificateAction(id: string): Promise<{ ok?: boolea
   if (!z.uuid().safeParse(id).success) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    if (!await deleteD1Tool("vendor_certificates", who.session, id).catch(() => null)) return { error: "notFound" };
+    revalidatePath(DASHBOARD);
+    return { ok:true };
+  }
   const db = await createClient();
   const { data, error } = await db.from("vendor_certificates").delete().eq("id", id).select("file_path").maybeSingle<{ file_path: string | null }>();
   if (error || !data) return { error: "notFound" };
@@ -98,7 +114,9 @@ export async function requestCertificateAction(id: string, lang: string): Promis
   if (!z.uuid().safeParse(id).success) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
-  const result = await requestCertificate(id, {
+  const result = isVpsLiveCustomerAuth()
+    ? await requestD1Certificate(id, who.session, who.country, emailLang(lang)).catch(() => "unavailable" as const)
+    : await requestCertificate(id, {
     orgId: who.orgId,
     company: who.session.organization?.name ?? "PMRFP",
     country: who.country,
@@ -125,6 +143,13 @@ export async function importCertificatesAction(_prev: ImportState, formData: For
   if (file instanceof File && file.size > 0 && file.size <= 1024 * 1024) csv = await file.text();
   const parsed = importVendors(csv.slice(0, 1024 * 1024), who.country);
   if (!parsed.rows.length) return { error: "empty", skipped: parsed.skipped };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const added = await insertD1Tools("vendor_certificates",who.session,parsed.rows.map(row => ({...row})));
+      revalidatePath(DASHBOARD);
+      return {ok:true,added,skipped:parsed.skipped,truncated:parsed.truncated};
+    } catch { return {error:"unavailable"}; }
+  }
   const db = await createClient();
   const { data, error } = await db
     .from("vendor_certificates")

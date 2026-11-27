@@ -24,3 +24,12 @@ class SyncHealthTests(unittest.TestCase):
         self.assertEqual(self.check([self.manifest,loading])['reason'],'checkpoint_changed_during_check')
         self.assertEqual(self.check([loading,loading])['reason'],'native_replay_or_checkpoint_incomplete')
         self.raw['receiptDigest']='d'*64;self.assertEqual(self.check()['reason'],'source_receipt_history_differs')
+
+    def test_large_catchup_is_allowed_but_limit_and_expiry_still_block(self):
+        self.raw['pendingReceipts']=97064
+        self.assertTrue(self.check()['readyForCapture'])
+        self.raw['pendingReceipts']=health.PENDING_LIMIT+1
+        self.assertEqual(self.check()['reason'],'pending_limit_exceeded')
+        self.raw['pendingReceipts']=0
+        self.raw['readerExpires']='2000-01-01T00:00:00Z'
+        self.assertEqual(self.check()['reason'],'source_reader_expired')

@@ -2,6 +2,9 @@ import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DEMO_SUPPLIERS, DEMO_VENDORS } from "@/lib/demo-data";
 import { isLevel, levelSlug, type LevelNumber } from "@/lib/karma/rules";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 
 /**
  * Member credibility badge — tier derived from profile status.
@@ -38,6 +41,14 @@ const NOT_FOUND = (slug: string): BadgeInfo => ({ found: false, slug, name: "PMR
 
 export async function getBadgeInfo(slug: string): Promise<BadgeInfo> {
   if (!slug || slug.length > 120) return NOT_FOUND(slug);
+  if (isVpsLiveCustomerAuth()) {
+    const data = await vpsAppDatabase().prepare(`SELECT id,name,verified,insurance_status FROM organizations
+      WHERE slug=? AND status='active' AND profile_status='approved' AND is_demo=0
+        AND organization_type IN ('trade_company','supplier') AND ${customerAppAuthority}`)
+      .bind(slug).first<{ id: string; name: string; verified: number; insurance_status: string | null }>();
+    return data ? { found: true, slug, name: data.name, orgId: data.id,
+      tier: badgeTier({ verified: data.verified === 1, insured: Boolean(data.insurance_status) }) } : NOT_FOUND(slug);
+  }
   if (!isSupabaseConfigured()) {
     const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);
     if (!v) return NOT_FOUND(slug);
@@ -79,6 +90,12 @@ export interface KarmaBadgeInfo {
 export async function getKarmaBadgeInfo(slug: string): Promise<KarmaBadgeInfo> {
   const org = await getBadgeInfo(slug);
   if (!org.found || !org.orgId) return { found: org.found, slug, name: org.name, level: null, levelSlug: null };
+  if (isVpsLiveCustomerAuth()) {
+    const row = await vpsAppDatabase().prepare(`SELECT level FROM org_karma WHERE org_id=? AND ${customerAppAuthority}`)
+      .bind(org.orgId).first<{ level: number }>();
+    const level = isLevel(row?.level) ? row!.level as LevelNumber : null;
+    return { found: true, slug, name: org.name, level, levelSlug: level ? levelSlug(level) : null };
+  }
   const { data } = await createReadClient()
     .from("org_karma_public")
     .select("level")

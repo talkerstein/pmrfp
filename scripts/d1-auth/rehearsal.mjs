@@ -4,6 +4,11 @@ import { admin } from 'better-auth/plugins';
 import { getMigrations } from 'better-auth/db/migration';
 import { compare, hash } from 'bcryptjs';
 
+export async function hashCustomerPassword(password) {
+  if (Buffer.byteLength(password, 'utf8') > 72) throw new Error('Password exceeds bcrypt byte bound');
+  return hash(password, 12);
+}
+
 /** Isolated rehearsal only: no production URL, source connection or mail sender. */
 export function rehearsalOptions(database, secret) {
   if (typeof secret !== 'string' || secret.length < 32) throw new Error('A private rehearsal secret is required');
@@ -14,10 +19,7 @@ export function rehearsalOptions(database, secret) {
     emailAndPassword: {
       enabled: true, disableSignUp: true, requireEmailVerification: true,
       password: {
-        hash: async password => {
-          if (Buffer.byteLength(password, 'utf8') > 72) throw new Error('Password exceeds bcrypt byte bound');
-          return hash(password, 12);
-        },
+        hash: hashCustomerPassword,
         verify: async ({ hash: stored, password }) => compare(password, stored),
       },
     },

@@ -32,6 +32,9 @@ const worker = {
     if (url.pathname !== "/v1/consume" || url.search || request.method !== "POST") {
       return new Response(null, { status: 404, headers: noStore });
     }
+    if (env.VPS_EGRESS_IP && request.headers.get("cf-connecting-ip") !== env.VPS_EGRESS_IP) {
+      return new Response(null, { status: 403, headers: noStore });
+    }
     if (!await gatewayMatches(request.headers.get("x-pmrfp-rate-limit-key"), env.GATEWAY_SECRET)) {
       return new Response(null, { status: 401, headers: noStore });
     }

@@ -1,3 +1,5 @@
+import { listD1Certificates } from "@/lib/d1/pm-tools";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { ArrowRight, FileText } from "lucide-react";
@@ -53,7 +55,8 @@ export default async function VendorInsurancePage({ params }: { params: Promise<
     );
   }
 
-  const { ready, rows, linked } = await loadCertificates(await createClient(), session.organization.id);
+  const { ready, rows, linked } = isVpsLiveCustomerAuth()
+    ? await listD1Certificates(session) : await loadCertificates(await createClient(), session.organization.id);
   if (!ready) {
     return (
       <div>

@@ -38,6 +38,50 @@ export async function listSavedRfps(db: D1Binding, userId: string, now: string):
   return results;
 }
 
+export async function listStagingSavedRfps(app: D1Binding, auth: D1Binding, userId: string, now: string) {
+  await requireSaveAccess(app, userId, now);
+  const overlay = await auth.prepare(
+    "SELECT rfp_id,saved,changed_at FROM _staging_saved_rfps WHERE user_id=? LIMIT 1001",
+  ).bind(userId).all();
+  if (!overlay.success || overlay.results.length > 1000) throw new D1ApiError(503, "saved_list_unavailable");
+  const { success, results } = await app.prepare(`
+    WITH changes AS (
+      SELECT json_extract(value,'$.rfp_id') AS rfp_id, json_extract(value,'$.saved') AS saved,
+        json_extract(value,'$.changed_at') AS changed_at FROM json_each(?)
+    ), bookmarks AS (
+      SELECT s.rfp_id,s.created_at FROM saved_rfps s
+      WHERE s.user_id=? AND NOT EXISTS (SELECT 1 FROM changes c WHERE c.rfp_id=s.rfp_id)
+      UNION ALL SELECT rfp_id,changed_at FROM changes WHERE saved=1
+    )
+    SELECT r.id AS rfpId,r.title,r.slug,b.created_at AS savedAt
+    FROM bookmarks b JOIN rfp_posts r ON r.id=b.rfp_id
+    WHERE r.status='published' AND ${ELIGIBLE}
+    ORDER BY julianday(b.created_at) DESC,r.id DESC LIMIT 500
+  `).bind(JSON.stringify(overlay.results), userId, userId, now).all<SavedRfpItem>();
+  if (!success) throw new D1ApiError(503, "saved_list_unavailable");
+  return results;
+}
+
+export async function changeStagingSavedRfp(
+  app: D1Binding, auth: D1Binding, userId: string, input: SaveRfpInput, now: string,
+) {
+  await requireSaveAccess(app, userId, now);
+  const byId = input.rfpId !== undefined;
+  const saved = input.action === "unsave" ? 0 : 1;
+  const value = (byId ? input.rfpId : input.rfpSlug)!;
+  const listing = await app.prepare(`SELECT id FROM rfp_posts WHERE ${byId ? "id=?" : "slug=?"} AND status='published'`)
+    .bind(value).first<{ id: string }>();
+  const id = listing?.id ?? (!saved && byId ? value : null);
+  if (!id) throw new D1ApiError(404, "not_found");
+  const result = await auth.prepare(`
+    INSERT INTO _staging_saved_rfps(user_id,rfp_id,saved,changed_at)
+    SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM _staging_saved_rfps WHERE user_id=? AND rfp_id=?)
+      OR (SELECT count(*) FROM _staging_saved_rfps WHERE user_id=?) < 1000
+    ON CONFLICT(user_id,rfp_id) DO UPDATE SET saved=excluded.saved,changed_at=excluded.changed_at
+  `).bind(userId, id, saved, now, userId, id, userId).run();
+  if (!result.success || !result.meta.changes) throw new D1ApiError(409, "staging_saved_list_limit");
+}
+
 export async function changeSavedRfp(db: D1Binding, userId: string, input: SaveRfpInput, now: string): Promise<void> {
   await requireSaveAccess(db, userId, now);
   const byId = input.rfpId !== undefined;

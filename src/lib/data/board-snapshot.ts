@@ -9,6 +9,7 @@ import { matchingBoard } from "./board-cloudflare";
 import { createReadClient } from "@/lib/supabase/read";
 import { RFPS_TAG } from "@/lib/supabase/public-cache";
 import { createLimiter, createSingleFlight } from "@/lib/concurrency";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 
 /**
  * ONE shared, server-cached copy of the public board (every published RFP and
@@ -133,10 +134,10 @@ async function fetchSupabaseBoardShard(shard: number): Promise<BoardRow[]> {
 }
 
 /** Fixed provider for a shard; D1 errors never fall back to source reads. */
-export async function fetchBoardShard(shard: number): Promise<BoardRow[]> {
+export async function fetchBoardShard(shard: number, dataset?: string): Promise<BoardRow[]> {
   shardRange(shard);
   const out = d1BoardEnabled()
-    ? await (await import("@/lib/d1/board-server")).d1BoardShard(shard)
+    ? await (await import("@/lib/d1/board-server")).d1BoardShard(shard, dataset)
     : await fetchSupabaseBoardShard(shard);
   const bytes = JSON.stringify(out).length;
   if (bytes > SHARD_WARN_BYTES) {
@@ -147,6 +148,9 @@ export async function fetchBoardShard(shard: number): Promise<BoardRow[]> {
 
 const limit = createLimiter(4);
 const singleFlight = createSingleFlight();
+// A moving checkpoint key per refresh would accumulate Next cache files on
+// the VPS tmpfs. Keep only the most recent complete public board in memory.
+let latestVpsBoard: { key: string; rows: BoardRow[] } | undefined;
 
 async function readBoardShard(shard: number, matchedMode: boolean): Promise<BoardRow[]> {
   if (!matchedMode) return fetchBoardShard(shard);
@@ -178,6 +182,33 @@ export const getBoardRows = cache(async (): Promise<BoardRow[]> => {
   const projectUrl = previewD1
     ? `d1:${process.env.PMRFP_D1_API_URL ?? ""}:${process.env.PMRFP_D1_DATASET_SHA256 ?? ""}`
     : `supabase:${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`;
+  const native = isVpsLiveCustomerAuth();
+  if (previewD1 && (native || process.env.PMRFP_D1_FOLLOW_CHECKPOINT === "enabled")) {
+    const { activeD1Dataset, readD1Dataset } = await import("@/lib/d1/dataset-server");
+    const { nativeBoardRevision, nativeBoardShard } = await import("@/lib/d1/board-server");
+    const read = async (digest: string) => {
+      const key = `${projectUrl}:${digest}`;
+      if (latestVpsBoard?.key === key) return latestVpsBoard.rows;
+      return singleFlight(`vps-board:${key}`, async () => {
+        const shards = await Promise.all(Array.from({ length: SNAPSHOT_SHARDS },
+          (_, shard) => limit(() => native ? nativeBoardShard(shard, digest) : fetchBoardShard(shard, digest))));
+        const rows = shards.flat();
+        if (rows.length <= 12_000) latestVpsBoard = { key, rows };
+        return rows;
+      });
+    };
+    const digest = await (native ? nativeBoardRevision() : activeD1Dataset());
+    try {
+      return await read(digest);
+    } catch (error) {
+      unstable_rethrow(error);
+      const latest = await (native ? nativeBoardRevision() : readD1Dataset());
+      if (latest === digest) throw error;
+      // Discard every shard from the interrupted read. Retrying only the
+      // failed shard could join results from two different checkpoints.
+      return read(latest);
+    }
+  }
   const matchedMode = !previewD1 && process.env.PMRFP_PUBLIC_BOARD_PHASE === "matched";
   const shards = await Promise.all(Array.from({ length: SNAPSHOT_SHARDS }, (_, i) => cachedShard(i, projectUrl, matchedMode)));
   return shards.flat();

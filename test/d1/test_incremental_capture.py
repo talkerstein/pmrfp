@@ -53,7 +53,7 @@ class IncrementalTests(FixtureMixin,unittest.TestCase):
     def test_source_sql_is_consistent_keyed_read_only_and_rewind_guarded(self):
         checkpoint={'id':1,'protocol':1,'source_sha256':'a'*64,'candidate_sha256':'b'*64,'catalog_sha256':m.digest(m.CATALOG.read_bytes()),'receipt_digest':'c'*64}
         sql=inc.source_sql(self.cat,checkpoint)
-        for fragment in ['REPEATABLE READ READ ONLY','acknowledged_at IS NULL','id::text ORDER BY id','jsonb_populate_record',"'enabled',g.tgenabled",'75000',"'c"+'c'*63+"'",'d1_migration_auth_ids_20261022']:self.assertIn(fragment,sql)
+        for fragment in ['REPEATABLE READ READ ONLY','acknowledged_at IS NULL','id::text ORDER BY id','jsonb_populate_record',"'enabled',g.tgenabled",str(inc.MAX_CAPTURE_RECEIPTS),"'c"+'c'*63+"'",'d1_migration_auth_ids_20261022']:self.assertIn(fragment,sql)
         for fragment in ['MAX(id)','id>','UPDATE public.','DELETE FROM']:self.assertNotIn(fragment,sql)
         self.assertNotRegex(sql,r'(?m)^\s*(?:INSERT\s+INTO|UPDATE\s|DELETE\s+FROM|CREATE\s|TRUNCATE\s)')
     def test_receipt_digest_partial_ack_recovery_excludes_only_exact_new_receipts(self):
@@ -62,3 +62,14 @@ class IncrementalTests(FixtureMixin,unittest.TestCase):
         def runner(*args,**kwargs):calls.append(kwargs['input'].decode());return SimpleNamespace(returncode=0,stdout=json.dumps({'receiptDigest':'c'*64,'acknowledgedReceipts':11}).encode())
         state.source_digest(runner,['2','9'],'b'*64);self.assertIn('ARRAY[2,9]',calls[0]);self.assertIn("destination_sha256='"+'b'*64+"'",calls[0]);self.assertIn('NOT(id=ANY',calls[0])
         with self.assertRaises(ValueError):state.source_digest(runner,['1);DELETE'],'b'*64)
+
+    def test_large_catchup_is_bounded_and_keeps_every_receipt(self):
+        records=self.setup_delta(ids=[str(i) for i in range(1,97065)])
+        report=inc.reconstruct(self.base,self.delta(records),self.root/'catchup.jsonl')
+        self.assertEqual(report['capturedReceipts'],97064)
+        _,meta,_=m.read_snapshot(self.root/'catchup.jsonl',self.cat)
+        self.assertEqual(len(meta['change_capture']['ids']),97064)
+        self.header['ids']=[str(i) for i in range(1,inc.MAX_CAPTURE_RECEIPTS+2)]
+        with self.assertRaisesRegex(ValueError,'receipts'):
+            inc.reconstruct(self.base,self.delta(records,'oversized.delta'),self.root/'oversized.jsonl')
+        self.assertFalse((self.root/'oversized.jsonl').exists())

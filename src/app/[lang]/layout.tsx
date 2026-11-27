@@ -1,4 +1,4 @@
-import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
+import { isCustomerD1Staging, isIsolatedD1Staging } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
@@ -84,7 +84,7 @@ export default async function RootLayout({
         <I18nProvider lang={lang} messages={clientMessages(lang)}>
           {/* Trial countdown / "your trial ended" note; draws nothing unless a signed-in company has a trial. */}
           <TrialBanner />
-          {isIsolatedD1Staging() && (
+          {isIsolatedD1Staging() && !isCustomerD1Staging() && (
             <div className="bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-950">
               PMRFP staging · Test accounts and test changes only
             </div>

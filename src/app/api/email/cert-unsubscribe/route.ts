@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { unsubscribeD1Certificate } from "@/lib/vendor-certs/d1-reminders";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -15,7 +17,9 @@ async function unsubscribe(request: Request): Promise<"vendor" | "digest" | null
   const url = new URL(request.url);
   const kind = url.searchParams.get("k");
   const id = url.searchParams.get("i");
-  if (!verifyCertUnsubscribe(kind, id, url.searchParams.get("t")) || !id || !isServiceConfigured()) return null;
+  if (!verifyCertUnsubscribe(kind, id, url.searchParams.get("t")) || !id) return null;
+  if (isVpsLiveCustomerAuth()) return await unsubscribeD1Certificate(kind, id).catch(() => false) ? kind : null;
+  if (!isServiceConfigured()) return null;
   const db = createServiceClient();
   if (kind === "digest") {
     const { error } = await db.from("notification_preferences").upsert({ user_id: id, cert_reminders: false }, { onConflict: "user_id" });

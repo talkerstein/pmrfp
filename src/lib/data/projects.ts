@@ -1,10 +1,13 @@
 import { cache } from "react";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { isOwnPhotoUrl, pickHero, sanitizePhotos, type ProjectPhoto } from "@/lib/projects/photos";
+import { isOwnPhotoUrl, nativeProjectHero, nativeStoredProjectPhotos, pickHero, sanitizePhotos, type ProjectPhoto } from "@/lib/projects/photos";
 import { proxiedPhotos } from "@/lib/projects/photo-storage";
-import { reviewStats, type PublicReview } from "@/lib/projects/reviews";
+import { reviewerDisplayName, reviewStats, type PublicReview } from "@/lib/projects/reviews";
 import { isSchemaMissing } from "@/lib/projects/compat";
+import { UUID } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
 
 /**
  * Review count + average per case-study slug, for list cards. Only slugs with
@@ -12,6 +15,14 @@ import { isSchemaMissing } from "@/lib/projects/compat";
  */
 export async function ratingsBySlug(slugs: string[]): Promise<Map<string, { count: number; average: number }>> {
   const out = new Map<string, { count: number; average: number }>();
+  if (vpsProjectUploadsEnabled() && slugs.length) {
+    const { results } = await vpsAppDatabase().prepare(`SELECT c.slug,count(*) AS count,round(avg(r.rating),1) AS average
+      FROM case_studies c JOIN vendor_reviews r ON r.case_study_id=c.id AND r.organization_id=c.organization_id
+      JOIN organizations o ON o.id=c.organization_id WHERE c.slug IN (SELECT value FROM json_each(?))
+      AND ${publicProject} AND r.status='published' AND r.rating BETWEEN 1 AND 5 GROUP BY c.slug`)
+      .bind(JSON.stringify(slugs)).all<{ slug: string; count: number; average: number }>();
+    return new Map(results.map(({ slug, count, average }) => [slug, { count, average }]));
+  }
   if (!isSupabaseConfigured() || slugs.length === 0) return out;
   try {
     const supabase = createReadClient();
@@ -54,6 +65,14 @@ export async function ratingsBySlug(slugs: string[]): Promise<Map<string, { coun
  */
 
 const supabaseUrl = () => process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+export const publicProject = `c.status='published' AND c.visibility='public' AND o.status<>'suspended'
+  AND o.is_demo=0 AND ${vpsProjectAuthority}`;
+
+type NativeHero = { id: string; organization_id: string; photos: string; hero_url: string | null };
+const heroSelect = "c.id,c.organization_id,c.photos,c.hero_url";
+export function heroFromNativeProject(row: NativeHero) {
+  return nativeProjectHero(nativeStoredProjectPhotos(JSON.parse(row.photos), row.id, row.organization_id), row.hero_url)?.url ?? null;
+}
 
 export interface ProjectExtras {
   photos: ProjectPhoto[];
@@ -77,6 +96,18 @@ function safeHero(heroUrl: unknown, photos: ProjectPhoto[]): string | null {
  * every request (the page itself is cached, so no signed URL goes in it).
  */
 export const getProjectExtras = cache(async function getProjectExtras(caseStudyId: string): Promise<ProjectExtras> {
+  if (vpsProjectUploadsEnabled()) {
+    if (!UUID.test(caseStudyId)) return NO_EXTRAS;
+    const row = await vpsAppDatabase().prepare(`SELECT c.organization_id,c.photos,c.hero_url,c.source,c.summary
+      FROM case_studies c JOIN organizations o ON o.id=c.organization_id
+      WHERE c.id=? AND c.status='published' AND c.visibility IN ('public','unlisted')
+        AND o.status<>'suspended' AND o.is_demo=0 AND ${vpsProjectAuthority}`)
+      .bind(caseStudyId).first<ExtrasRow & { organization_id: string; photos: string }>();
+    if (!row) return NO_EXTRAS;
+    const photos = nativeStoredProjectPhotos(JSON.parse(row.photos), caseStudyId, row.organization_id);
+    return { photos, heroUrl: nativeProjectHero(photos, row.hero_url)?.url ?? null,
+      source: row.source === "capture" ? "capture" : "form", summary: row.summary?.trim() || null };
+  }
   if (!isSupabaseConfigured()) return NO_EXTRAS;
   try {
     const { data, error } = await createReadClient()
@@ -143,6 +174,17 @@ interface CardRow {
  * 20260924000001) so the profile keeps working before either is applied.
  */
 export async function listOrgProjects(organizationId: string, limit = 12): Promise<ProjectCard[]> {
+  if (vpsProjectUploadsEnabled()) {
+    if (!UUID.test(organizationId)) return [];
+    const { results } = await vpsAppDatabase().prepare(`SELECT ${heroSelect},c.slug,c.title,c.city,c.province,c.published_at,c.client_type,c.scope
+      FROM case_studies c JOIN organizations o ON o.id=c.organization_id
+      WHERE c.organization_id=? AND ${publicProject} ORDER BY c.published_at DESC,c.id LIMIT ?`)
+      .bind(organizationId, limit).all<NativeHero & CardRow>();
+    return results.map((row) => ({
+      slug: row.slug, title: row.title, city: row.city, province: row.province, publishedAt: row.published_at,
+      heroUrl: heroFromNativeProject(row), isCaseStudy: Boolean(row.client_type && row.scope?.trim()),
+    }));
+  }
   if (!isSupabaseConfigured()) return [];
   const supabase = createReadClient();
   const base = "slug,title,city,province,published_at";
@@ -174,6 +216,17 @@ export async function listOrgProjects(organizationId: string, limit = 12): Promi
 /** Hero photo per slug, for list pages. Empty map before the migration. */
 export async function heroUrlsBySlug(slugs: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
+  if (vpsProjectUploadsEnabled() && slugs.length) {
+    const { results } = await vpsAppDatabase().prepare(`SELECT ${heroSelect},c.slug
+      FROM case_studies c JOIN organizations o ON o.id=c.organization_id
+      WHERE c.slug IN (SELECT value FROM json_each(?)) AND ${publicProject}`)
+      .bind(JSON.stringify(slugs)).all<NativeHero & { slug: string }>();
+    for (const row of results) {
+      const url = heroFromNativeProject(row);
+      if (url) out.set(row.slug, url);
+    }
+    return out;
+  }
   if (!isSupabaseConfigured() || slugs.length === 0) return out;
   try {
     const { data, error } = await createReadClient()
@@ -212,6 +265,22 @@ export async function listPublishedReviews(
   filter: { organizationId?: string; caseStudyId?: string },
   limit = 50,
 ): Promise<PublicReview[]> {
+  if (vpsProjectUploadsEnabled()) {
+    const org = filter.organizationId ?? null;
+    const project = filter.caseStudyId ?? null;
+    if ((!org && !project) || (org && !UUID.test(org)) || (project && !UUID.test(project))) return [];
+    const { results } = await vpsAppDatabase().prepare(`SELECT r.id,r.organization_id,r.case_study_id,r.reviewer_name,
+      CASE WHEN r.show_building=1 THEN r.reviewer_company END AS reviewer_company,r.show_building,
+      r.rating,r.body,r.verified_via,r.reply,r.created_at
+      FROM vendor_reviews r JOIN organizations o ON o.id=r.organization_id
+      LEFT JOIN case_studies c ON c.id=r.case_study_id AND c.organization_id=r.organization_id
+      WHERE r.status='published' AND o.status<>'suspended' AND o.is_demo=0 AND ${vpsProjectAuthority}
+        AND (r.case_study_id IS NULL OR (c.status='published' AND c.visibility IN ('public','unlisted')))
+        AND (? IS NULL OR r.organization_id=?) AND (? IS NULL OR r.case_study_id=?)
+      ORDER BY r.created_at DESC,r.id LIMIT ?`).bind(org, org, project, project, limit)
+      .all<Omit<ReviewRow, "reviewer_display_name"> & { reviewer_name: string; show_building: number }>();
+    return results.map((r) => publicReview({ ...r, reviewer_display_name: reviewerDisplayName(r.reviewer_name, r.show_building === 1) }));
+  }
   if (!isSupabaseConfigured() || (!filter.organizationId && !filter.caseStudyId)) return [];
   try {
     let q = createReadClient()
@@ -223,19 +292,14 @@ export async function listPublishedReviews(
     if (filter.caseStudyId) q = q.eq("case_study_id", filter.caseStudyId);
     const { data, error } = await q;
     if (error || !data) return [];
-    return (data as ReviewRow[]).map((r) => ({
-      id: r.id,
-      organizationId: r.organization_id,
-      caseStudyId: r.case_study_id,
-      name: r.reviewer_display_name,
-      company: r.reviewer_company,
-      rating: r.rating,
-      body: r.body,
-      verifiedVia: r.verified_via,
-      reply: r.reply,
-      createdAt: r.created_at,
-    }));
+    return (data as ReviewRow[]).map(publicReview);
   } catch {
     return [];
   }
+}
+
+function publicReview(r: ReviewRow): PublicReview {
+  return { id: r.id, organizationId: r.organization_id, caseStudyId: r.case_study_id,
+    name: r.reviewer_display_name, company: r.reviewer_company, rating: r.rating, body: r.body,
+    verifiedVia: r.verified_via, reply: r.reply, createdAt: r.created_at };
 }

@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
-import { syncPublicSources } from "@/lib/tenders/sync";
+import { syncPublicSources, tenderSyncDatabase } from "@/lib/tenders/sync";
 import { uncSystemSource } from "@/lib/tenders/unc-system";
 
 export const maxDuration = 60;
@@ -18,9 +16,10 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const db = tenderSyncDatabase();
+  if (!db) return NextResponse.json({ skipped: "no service client" });
 
-  const { status, body } = await syncPublicSources(createServiceClient(), [uncSystemSource()], {
+  const { status, body } = await syncPublicSources(db, [uncSystemSource()], {
     today: new Date().toISOString().slice(0, 10),
     dry: new URL(request.url).searchParams.get("dry") === "1",
   });

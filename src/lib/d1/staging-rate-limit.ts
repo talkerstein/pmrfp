@@ -1,21 +1,25 @@
+import { isHostingerCloudflareStaging, isVpsLiveCustomerAuth } from "./staging-config";
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
 
 type Bucket = "auth-ip" | "auth-account" | "api-read" | "api-write";
 type Decision = { status: 204 } | { status: 429; retry: number } | { status: 503 };
 
-export function stagingClientIp(headers: Headers): string | null {
-  const value = headers.get("x-vercel-forwarded-for") ?? headers.get("x-forwarded-for");
+export function stagingClientIp(headers: Headers, production = isVpsLiveCustomerAuth()): string | null {
+  const value = isHostingerCloudflareStaging() || production
+    ? headers.get("x-forwarded-for")?.split(",").at(-1)
+    : headers.get("x-vercel-forwarded-for") ?? headers.get("x-forwarded-for");
   const ip = value?.trim() ?? "";
   return isIP(ip) ? ip : null;
 }
 
-export async function checkStagingRateLimit(bucket: Bucket, identity: string | null): Promise<Decision> {
-  const secret = process.env.PMRFP_STAGING_LIMITER_SECRET;
+export async function checkStagingRateLimit(bucket: Bucket, identity: string | null, live = isVpsLiveCustomerAuth()): Promise<Decision> {
+  const secret = live ? process.env.PMRFP_AUTH_LIMITER_SECRET : process.env.PMRFP_STAGING_LIMITER_SECRET;
   if (!identity || !secret || !/^[a-f0-9]{64}$/.test(secret)) return { status: 503 };
   const key = createHmac("sha256", secret).update(bucket + ":" + identity).digest("hex");
   try {
-    const response = await fetch("https://pmrfp-staging-rate-limit.pmrfp.workers.dev/v1/consume", {
+    const host = live ? "pmrfp-production-rate-limit.pmrfp.workers.dev" : "pmrfp-staging-rate-limit.pmrfp.workers.dev";
+    const response = await fetch(`https://${host}/v1/consume`, {
       method: "POST",
       headers: { "x-pmrfp-rate-limit-key": secret, "content-type": "application/json" },
       body: JSON.stringify({ bucket, key }),

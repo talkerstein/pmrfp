@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { FEATURED_DAYS, FEATURED_PRICE } from "./feature";
 import { isOwnPhotoUrl } from "@/lib/projects/photos";
 import { projectSlug, slugify } from "@/lib/projects/slug";
+
+export { FEATURED_DAYS, FEATURED_PRICE, FEATURED_PRODUCT } from "./feature";
 
 /**
  * PMRFP Marketplace: used / surplus construction gear. No payments between
@@ -44,9 +47,6 @@ export type Country = (typeof COUNTRIES)[number];
 export const FREE_LISTING_LIMIT = 3;
 export const MAX_PHOTOS = 10;
 export const LISTING_DAYS = 60;
-export const FEATURED_DAYS = 14;
-export const FEATURED_PRODUCT = "marketplace_featured";
-export const FEATURED_PRICE = { CAD: 19, USD: 15 } as const;
 /** Category landing pages are indexed only once they have real inventory. */
 export const LANDING_MIN_LISTINGS = 3;
 

@@ -1,3 +1,7 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { readD1 } from "@/lib/lifecycle/d1";
 import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -39,12 +43,18 @@ const OPEN: CorrectionStatus[] = ["new", "in_review"];
  */
 export default async function AdminCorrectionsPage({ params, searchParams }: { params: Promise<object>; searchParams: Promise<{ all?: string }> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
   const showAll = (await searchParams).all === "1";
-  const demo = isDemoMode() || !isServiceConfigured();
+  const demo = !native && (isDemoMode() || !isServiceConfigured());
   let rows: Row[] = [];
   let missing = false;
-  if (!demo) {
+  if (native) {
+    rows = await readD1<Row>(vpsAppDatabase(), `SELECT id,page_kind,page_path,page_ref,reason,details,
+      contact_email,contact_name,lang,status,resolution,resolved_at,created_at FROM correction_requests
+      WHERE (?=1 OR status IN ('new','in_review')) AND ${activeRequestAdmin}
+      ORDER BY created_at DESC,id LIMIT 300`, Number(showAll), session.userId);
+  } else if (!demo) {
     let q = createServiceClient()
       .from("correction_requests")
       .select("id,page_kind,page_path,page_ref,reason,details,contact_email,contact_name,lang,status,resolution,resolved_at,created_at")

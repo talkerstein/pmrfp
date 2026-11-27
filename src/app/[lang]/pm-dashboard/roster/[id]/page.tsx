@@ -3,13 +3,12 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import Link from "@/i18n/link";
 import { ArrowLeft, Download, Link2, Printer, Siren } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { buttonVariants } from "@/components/ui/button";
 import { RosterEditor, type RowView, type SlotView } from "@/components/roster/editor";
 import { rosterBlocked, rosterPm } from "@/components/roster/gate";
 import { getCategories } from "@/lib/data/taxonomy";
-import { invitedEmails, linkedOrgs, loadInsuranceCerts, loadRoster } from "@/lib/roster/server";
+import { invitedEmails, linkedOrgs, loadInsuranceCerts, loadRoster, rosterDatabase } from "@/lib/roster/server";
 import { buildingGaps, insuranceFor, linkIsLive, provincesFor, rosterRows, telHref, type CertLite, type VendorSlot } from "@/lib/roster/rules";
 import { findWhoFor, placeOf, rfpTradeFor, rowLabel } from "@/lib/roster/view";
 import { cleanEmail } from "@/lib/vendor-certs/rules";
@@ -36,7 +35,7 @@ export default async function RosterEditPage({ params }: { params: Promise<{ id:
   if (blocked || !session.organization) return blocked;
   if (!z.uuid().safeParse(id).success) notFound();
 
-  const db = await createClient();
+  const db = await rosterDatabase(session);
   const { ready, roster, entries, links } = await loadRoster(db, id);
   const notReady = rosterBlocked({ session, header: <PageHeader title={R.dash.title} />, t: R.dash, ready });
   if (notReady) return notReady;

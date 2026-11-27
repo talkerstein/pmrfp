@@ -4,6 +4,8 @@ import { FileText, ArrowRight, Users } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
 import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { buttonVariants } from "@/components/ui/button";
 import { gcFormPath } from "@/lib/gc/packages";
@@ -45,7 +47,18 @@ export default async function PmDashboardHome({
   let pendingReview = 0;
   let interestedVendors = 0;
 
-  if (!isDemoMode()) {
+  if (isVpsLiveCustomerAuth()) {
+    const counts = await vpsAppDatabase().prepare(`
+      SELECT
+        (SELECT count(*) FROM rfp_posts WHERE posted_by_user_id=?1 AND status='published') AS active,
+        (SELECT count(*) FROM rfp_posts WHERE posted_by_user_id=?1 AND status='pending_review') AS pending,
+        (SELECT count(*) FROM rfp_interests i INNER JOIN rfp_posts p ON p.id=i.rfp_id
+          WHERE p.posted_by_user_id=?1) AS interested
+    `).bind(session.userId).first<{ active: number; pending: number; interested: number }>();
+    activeRfps = counts?.active ?? 0;
+    pendingReview = counts?.pending ?? 0;
+    interestedVendors = counts?.interested ?? 0;
+  } else if (!demo) {
     const supabase = await createClient();
     const { data: posts } = await supabase
       .from("rfp_posts")

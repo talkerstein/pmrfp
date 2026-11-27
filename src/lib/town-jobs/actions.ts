@@ -2,7 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { PUBLIC_DATA_TAG } from "@/lib/supabase/public-cache";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { answerNativeTownQuestion, askNativeTownQuestion, issueNativeTownAddendum, loadNativeManagedTownJob,
+  loadNativePublicTownJob, sendNativeEmailInvite, sendNativeTradeInvites, setNativeTownQuestionDeadline, unpublishNativeTownJob } from "./native-management";
+import { PUBLIC_DATA_TAG, RFPS_TAG } from "@/lib/supabase/public-cache";
 import { getSession, requireRole } from "@/lib/access/access";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -35,12 +38,15 @@ type Ctx = { job: TownJob; userId: string; organizationId: string | null; role: 
 
 /** The signed-in person and the town's job, or an error code. `manage`: only its town or an admin. */
 async function context(fd: FormData, manage: boolean): Promise<Ctx | { error: string }> {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return { error: "demo" };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && (!isSupabaseConfigured() || !isServiceConfigured())) return { error: "demo" };
   const session = await getSession();
   if (!session) return { error: "signin" };
   const rfpId = String(fd.get("rfpId") ?? "");
   if (!rfpId) return { error: "not_found" };
-  const job = await loadTownJob(createServiceClient(), rfpId);
+  const job = native
+    ? await (manage ? loadNativeManagedTownJob(session.userId,rfpId) : loadNativePublicTownJob(rfpId)).catch(() => null)
+    : await loadTownJob(createServiceClient(), rfpId);
   if (!job) return { error: "not_found" };
   const actor = { userId: session.userId, organizationId: session.organization?.id ?? null, role: session.profile.primary_role };
   if (manage && !canManageTownJob(job, actor)) return { error: "not_owner" };
@@ -53,7 +59,10 @@ function refresh(job: TownJob, publicChange = false) {
   revalidatePath("/buyer-dashboard");
   if (job.slug) revalidatePath(`/rfps/${job.slug}`);
   // A published answer or addendum: the listing's public reads (cached) show it now. Rare, so a purge is fine.
-  if (publicChange) revalidateTag(PUBLIC_DATA_TAG, { expire: 0 });
+  if (publicChange) {
+    revalidateTag(PUBLIC_DATA_TAG, { expire: 0 });
+    revalidateTag(RFPS_TAG, { expire: 0 });
+  }
 }
 
 const langOfForm = (fd: FormData) => emailLang(isEnabledLocale(fd.get("lang")) ? fd.get("lang") : "en");
@@ -62,7 +71,9 @@ const langOfForm = (fd: FormData) => emailLang(isEnabledLocale(fd.get("lang")) ?
 export async function askQuestionAction(_prev: TownActionState, fd: FormData): Promise<TownActionState> {
   const ctx = await context(fd, false);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await askQuestion(createServiceClient(), { job: ctx.job, userId: ctx.userId, organizationId: ctx.organizationId, question: fd.get("question"), lang: langOfForm(fd) });
+  const res = isVpsLiveCustomerAuth()
+    ? await askNativeTownQuestion(ctx.job,ctx.userId,ctx.organizationId,fd.get("question"),langOfForm(fd)).catch(() => ({ok:false,error:"failed"} as const))
+    : await askQuestion(createServiceClient(), { job: ctx.job, userId: ctx.userId, organizationId: ctx.organizationId, question: fd.get("question"), lang: langOfForm(fd) });
   if (!res.ok) return { error: res.error };
   revalidatePath(`/buyer-dashboard/jobs/${ctx.job.id}`);
   return { done: "asked" };
@@ -72,7 +83,10 @@ export async function askQuestionAction(_prev: TownActionState, fd: FormData): P
 export async function answerQuestionAction(_prev: TownActionState, fd: FormData): Promise<TownActionState> {
   const ctx = await context(fd, true);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await answerQuestion(createServiceClient(), {
+  const res = isVpsLiveCustomerAuth()
+    ? await answerNativeTownQuestion(ctx.job,ctx.userId,String(fd.get("questionId") ?? ""),fd.get("answer"),fd.get("publicQuestion"))
+      .catch(() => ({ok:false,error:"failed"} as const))
+    : await answerQuestion(createServiceClient(), {
     job: ctx.job,
     questionId: String(fd.get("questionId") ?? ""),
     answer: fd.get("answer"),
@@ -88,7 +102,10 @@ export async function answerQuestionAction(_prev: TownActionState, fd: FormData)
 export async function issueAddendumAction(_prev: TownActionState, fd: FormData): Promise<TownActionState> {
   const ctx = await context(fd, true);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await issueAddendum(createServiceClient(), {
+  const res = isVpsLiveCustomerAuth()
+    ? await issueNativeTownAddendum(ctx.job,ctx.userId,{body:fd.get("body"),officialUrl:fd.get("officialUrl"),newDeadline:fd.get("newDeadline")})
+      .catch(() => ({ok:false,error:"failed"} as const))
+    : await issueAddendum(createServiceClient(), {
     job: ctx.job,
     body: fd.get("body"),
     officialUrl: fd.get("officialUrl"),
@@ -104,7 +121,9 @@ export async function issueAddendumAction(_prev: TownActionState, fd: FormData):
 export async function setQuestionDeadlineAction(_prev: TownActionState, fd: FormData): Promise<TownActionState> {
   const ctx = await context(fd, true);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await setQuestionDeadline(createServiceClient(), { job: ctx.job, value: String(fd.get("questionDeadline") ?? "").trim(), actorUserId: ctx.userId });
+  const res = isVpsLiveCustomerAuth()
+    ? await setNativeTownQuestionDeadline(ctx.job,ctx.userId,String(fd.get("questionDeadline") ?? "").trim()).catch(() => ({ok:false,error:"failed"} as const))
+    : await setQuestionDeadline(createServiceClient(), { job: ctx.job, value: String(fd.get("questionDeadline") ?? "").trim(), actorUserId: ctx.userId });
   if (!res.ok) return { error: res.error };
   refresh(ctx.job);
   return { done: "saved" };
@@ -114,7 +133,9 @@ export async function setQuestionDeadlineAction(_prev: TownActionState, fd: Form
 export async function sendTradeInvitesAction(_prev: TownActionState, fd: FormData): Promise<TownActionState> {
   const ctx = await context(fd, true);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await sendTradeInvites(createServiceClient(), ctx.job, ctx.userId);
+  const res = isVpsLiveCustomerAuth() ? await sendNativeTradeInvites(ctx.job,ctx.userId)
+    .catch(() => ({state:"blocked",reason:"no_town",wouldSend:0,sent:0,overLimit:0} as const))
+    : await sendTradeInvites(createServiceClient(), ctx.job, ctx.userId);
   refresh(ctx.job);
   if (res.state === "off") return { done: "off", wouldSend: res.wouldSend, overLimit: res.overLimit };
   if (res.state === "blocked") return { error: res.reason ?? "blocked", wouldSend: res.wouldSend };
@@ -125,7 +146,9 @@ export async function sendTradeInvitesAction(_prev: TownActionState, fd: FormDat
 export async function inviteByEmailAction(_prev: TownActionState, fd: FormData): Promise<TownActionState> {
   const ctx = await context(fd, true);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await inviteByEmail(createServiceClient(), ctx.job, ctx.userId, fd.get("email"), langOfForm(fd));
+  const res = isVpsLiveCustomerAuth() ? await sendNativeEmailInvite(ctx.job,ctx.userId,fd.get("email"),langOfForm(fd))
+    .catch(() => ({state:"refused",reason:"blocked"} as const))
+    : await inviteByEmail(createServiceClient(), ctx.job, ctx.userId, fd.get("email"), langOfForm(fd));
   refresh(ctx.job);
   if (res.state === "off") return { done: "off", wouldSend: 1 };
   if (res.state === "refused") return { error: res.reason };
@@ -138,7 +161,10 @@ export async function unpublishTownJobAction(fd: FormData): Promise<void> {
   if (!canUnpublish({ role: session.profile.primary_role })) redirect("/admin/rfps");
   const id = String(fd.get("id") ?? "");
   const reason = String(fd.get("reason") ?? "").trim().slice(0, 500) || null;
-  const res = id && isServiceConfigured() ? await unpublishTownJob(createServiceClient(), id, session.userId, reason) : { ok: false };
+  const res = isVpsLiveCustomerAuth()
+    ? await unpublishNativeTownJob(id,session.userId,reason).catch(() => ({ok:false}))
+    : id && isServiceConfigured() ? await unpublishTownJob(createServiceClient(), id, session.userId, reason) : { ok: false };
+  if (res.ok) revalidateTag(RFPS_TAG,{expire:0});
   revalidatePath("/rfps");
   revalidatePath("/admin/rfps");
   redirect(`/admin/rfps?${res.ok ? `unpublished=${encodeURIComponent(id)}` : "unpublish=failed"}`);

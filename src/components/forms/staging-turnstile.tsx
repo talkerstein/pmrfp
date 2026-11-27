@@ -12,10 +12,11 @@ type Turnstile = {
   remove: (id: string) => void;
 };
 
-export function StagingTurnstile({ siteKey, attempt, onToken }: {
+export function StagingTurnstile({ siteKey, attempt, onToken, action = stagingTurnstileAction }: {
   siteKey: string;
   attempt: object;
   onToken: (token: string) => void;
+  action?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -26,7 +27,7 @@ export function StagingTurnstile({ siteKey, attempt, onToken }: {
     if (!ready || !turnstile || !container.current) return;
     const widget = turnstile.render(container.current, {
       sitekey: siteKey,
-      action: stagingTurnstileAction,
+      action,
       size: container.current.clientWidth < 300 ? "compact" : "normal",
       callback: onToken,
       "expired-callback": () => onToken(""),
@@ -34,7 +35,7 @@ export function StagingTurnstile({ siteKey, attempt, onToken }: {
       "response-field": false,
     });
     return () => turnstile.remove(widget);
-  }, [ready, siteKey, attempt, onToken]);
+  }, [ready, siteKey, attempt, onToken, action]);
 
   return (
     <>

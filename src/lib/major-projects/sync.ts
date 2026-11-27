@@ -1,3 +1,5 @@
+import type { D1Binding } from "@/lib/d1/contracts";
+import { upsertD1Import } from "@/lib/d1/import-rows";
 /**
  * Import bookkeeping for major_projects: what to insert, update, touch and
  * mark stale for one source. planSync() is pure (unit tested);
@@ -187,10 +189,18 @@ function chunks<T>(items: readonly T[], size = BATCH): T[][] {
 }
 
 /** Every row we hold for one source (keyset-paged, bookkeeping columns only). */
-export async function loadExisting(supabase: SupabaseClient, source: string): Promise<ExistingProject[]> {
+export async function loadExisting(supabase: SupabaseClient | D1Binding, source: string): Promise<ExistingProject[]> {
   const out: ExistingProject[] = [];
   let after: string | null = null;
   for (;;) {
+    if ("prepare" in supabase) {
+      const page: ExistingProject[] = (await supabase.prepare(`SELECT id,slug,source_key,status,stale,approved,review_status,last_seen,import_fingerprint
+        FROM major_projects WHERE source=? AND id>? ORDER BY id LIMIT ?`).bind(source, after ?? "", PAGE).all<ExistingProject>()).results;
+      out.push(...page.map(row => ({ ...row, stale:Boolean(row.stale), approved:Boolean(row.approved) })));
+      if (page.length < PAGE) return out;
+      after = page[page.length - 1].id;
+      continue;
+    }
     let q = supabase
       .from("major_projects")
       .select("id,slug,source_key,status,stale,approved,review_status,last_seen,import_fingerprint")
@@ -208,8 +218,10 @@ export async function loadExisting(supabase: SupabaseClient, source: string): Pr
 }
 
 /** regions slug → id, and province name → that province's region id (one small read). */
-export async function loadRegionLookup(supabase: SupabaseClient): Promise<{ bySlug: Map<string, string>; provinceRegionId: (p: string | null) => string | null }> {
-  const { data } = await supabase.from("regions").select("id,slug,name,country");
+export async function loadRegionLookup(supabase: SupabaseClient | D1Binding): Promise<{ bySlug: Map<string, string>; provinceRegionId: (p: string | null) => string | null }> {
+  const data = "prepare" in supabase
+    ? (await supabase.prepare("SELECT id,slug,name,country FROM regions").all()).results
+    : (await supabase.from("regions").select("id,slug,name,country")).data;
   const rows = ((data ?? []) as { id: string; slug: string; name: string; country: string | null }[]).filter(
     (r) => (r.country ?? "Canada").toLowerCase() === "canada",
   );
@@ -219,7 +231,20 @@ export async function loadRegionLookup(supabase: SupabaseClient): Promise<{ bySl
 }
 
 /** Writes a plan: sequential batches of 200, one statement each. */
-export async function applySync(supabase: SupabaseClient, plan: SyncPlan, today: string): Promise<void> {
+export async function applySync(supabase: SupabaseClient | D1Binding, plan: SyncPlan, today: string): Promise<void> {
+  if ("prepare" in supabase) {
+    await upsertD1Import(supabase, "major_projects", plan.inserts, { keepExisting:true });
+    await upsertD1Import(supabase, "major_projects", plan.updates);
+    for (const batch of chunks(plan.touch, IN_BATCH)) {
+      await supabase.prepare(`UPDATE major_projects SET last_seen=?,stale=0,stale_since=NULL
+        WHERE source=? AND source_key IN (SELECT value FROM json_each(?))`).bind(today,plan.source,JSON.stringify(batch)).run();
+    }
+    for (const batch of chunks(plan.stale, IN_BATCH)) {
+      await supabase.prepare(`UPDATE major_projects SET stale=1,stale_since=? WHERE source=? AND stale=0
+        AND source_key IN (SELECT value FROM json_each(?))`).bind(today,plan.source,JSON.stringify(batch)).run();
+    }
+    return;
+  }
   for (const batch of chunks(plan.inserts)) {
     const { error } = await supabase.from("major_projects").upsert(batch, { onConflict: "source_key", ignoreDuplicates: true });
     if (error) throw new Error(`major_projects insert: ${error.message}`);

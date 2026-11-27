@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
+import { getSession } from "@/lib/access/access";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import type { EmploymentType, PayUnit } from "./rules";
 
 export interface Job {
@@ -97,6 +101,29 @@ function toJob(r: Row, proOrgs: Set<string>): Job {
   };
 }
 
+const nativeColumns = `j.*, CASE WHEN c.id IS NOT NULL THEN json_object('name',c.name,'slug',c.slug) END AS trade,
+  CASE WHEN r.id IS NOT NULL THEN json_object('name',r.name,'slug',r.slug,'province',r.province,'country',r.country) END AS area,
+  json_object('id',o.id,'name',o.name,'slug',o.slug,'logo_url',o.logo_url,'website',o.website,
+    'organization_type',o.organization_type,'profile_status',o.profile_status,'status',o.status) AS company,
+  EXISTS(SELECT 1 FROM subscriptions s WHERE s.organization_id=o.id AND s.status IN ('active','comped')
+    AND coalesce(s.tier,'pro') NOT IN ('realtor','seo')) AS pro`;
+const nativeFrom = `FROM job_posts j JOIN organizations o ON o.id=j.organization_id
+  LEFT JOIN trade_categories c ON c.id=j.category_id LEFT JOIN regions r ON r.id=j.region_id`;
+const publicEmployer = "o.profile_status='approved' AND o.status='active' AND o.is_demo=0";
+type NativeRow = Omit<Row, "organizations" | "trade_categories" | "regions"> & {
+  trade: string | null; area: string | null; company: string; pro: number;
+};
+
+function nativeJob(row: NativeRow): Job {
+  const company: Row["organizations"] = JSON.parse(row.company);
+  return toJob({
+    ...row,
+    organizations: company,
+    trade_categories: row.trade ? JSON.parse(row.trade) : null,
+    regions: row.area ? JSON.parse(row.area) : null,
+  }, new Set(row.pro ? [company.id] : []));
+}
+
 /** Organizations on an active Trade Pro/Featured plan (service client: visitors can't read subscriptions). */
 async function proOrgIds(orgIds: string[]): Promise<Set<string>> {
   if (!orgIds.length || !isServiceConfigured()) return new Set();
@@ -119,6 +146,19 @@ export interface JobFilters {
 
 /** Open jobs, Pro companies first, then newest. `ready: false` = migration not applied yet. */
 export async function listOpenJobs(filters: JobFilters = {}): Promise<{ ready: boolean; jobs: Job[] }> {
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const result = await vpsAppDatabase().prepare(`SELECT ${nativeColumns} ${nativeFrom}
+        WHERE ${customerAppAuthority} AND ${publicEmployer} AND j.status='open' AND j.expires_at>=?
+        AND (? IS NULL OR c.slug=?) AND (? IS NULL OR r.slug=?) AND (? IS NULL OR j.employment_type=?)
+        ORDER BY pro DESC,j.created_at DESC LIMIT 300`).bind(new Date().toISOString().slice(0, 10),
+        filters.trade || null, filters.trade || null, filters.region || null, filters.region || null,
+        filters.type || null, filters.type || null).all<NativeRow>();
+      return { ready: result.success, jobs: result.results.map(nativeJob) };
+    } catch {
+      return { ready: false, jobs: [] };
+    }
+  }
   if (!isSupabaseConfigured()) return { ready: false, jobs: [] };
   const supabase = createReadClient();
   const today = new Date().toISOString().slice(0, 10);
@@ -141,6 +181,11 @@ export async function listOpenJobs(filters: JobFilters = {}): Promise<{ ready: b
 
 /** One job by slug (open or not; the page decides what to show). */
 export async function getJob(slug: string): Promise<Job | null> {
+  if (isVpsLiveCustomerAuth()) {
+    const row = await vpsAppDatabase().prepare(`SELECT ${nativeColumns} ${nativeFrom}
+      WHERE ${customerAppAuthority} AND ${publicEmployer} AND j.slug=?`).bind(slug).first<NativeRow>();
+    return row ? nativeJob(row) : null;
+  }
   if (!isSupabaseConfigured()) return null;
   // Service client so a closed job still resolves to a "no longer open" page
   // instead of a 404 for people following an old link.
@@ -173,6 +218,28 @@ export interface Application {
 export async function getEmployerJobs(
   organizationId: string,
 ): Promise<{ ready: boolean; jobs: EmployerJob[]; applications: Application[] }> {
+  if (isVpsLiveCustomerAuth()) {
+    const session = await getSession();
+    if (!session || session.organization?.id !== organizationId || session.profile.status !== "active") {
+      return { ready: false, jobs: [], applications: [] };
+    }
+    const db = vpsAppDatabase();
+    const scope = `${customerAppAuthority} AND j.organization_id=? AND EXISTS (
+      SELECT 1 FROM organization_members m JOIN users_profile u ON u.id=m.user_id
+      WHERE m.organization_id=j.organization_id AND m.user_id=? AND u.status='active')`;
+    const jobs = await db.prepare(`SELECT ${nativeColumns},
+      (SELECT count(*) FROM job_applications a WHERE a.job_id=j.id) AS applications ${nativeFrom}
+      WHERE ${scope} ORDER BY j.created_at DESC LIMIT 100`).bind(organizationId, session.userId)
+      .all<NativeRow & { applications: number }>();
+    const applications = await db.prepare(`SELECT a.id,a.job_id AS jobId,a.name,a.email,a.phone,
+      a.experience_years AS experienceYears,a.certifications,a.message,a.created_at AS createdAt
+      FROM job_applications a JOIN job_posts j ON j.id=a.job_id WHERE ${scope}
+      AND j.id IN (SELECT value FROM json_each(?)) ORDER BY a.created_at DESC LIMIT 500`)
+      .bind(organizationId, session.userId, JSON.stringify(jobs.results.map((r) => r.id))).all<Application>();
+    return { ready: jobs.success && applications.success,
+      jobs: jobs.results.map((row) => ({ ...nativeJob(row), applications: row.applications })),
+      applications: applications.results };
+  }
   if (!isSupabaseConfigured()) return { ready: false, jobs: [], applications: [] };
   const supabase = await createClient();
   const { data, error } = await supabase

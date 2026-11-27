@@ -1,0 +1,83 @@
+name: pmrfp-native-auth
+services:
+  candidate:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    working_dir: /app
+    entrypoint: ["node", "server.js"]
+    env_file:
+      - /opt/pmrfp/canonical/public-d1.env
+      - /opt/pmrfp/canonical/public-r2.env
+      - /opt/pmrfp/canonical/secrets/d1-transport.env
+      - /opt/pmrfp/canonical/secrets/project-r2.env
+      - /opt/pmrfp/canonical/secrets/production-auth-turnstile.env
+      - /opt/pmrfp/canonical/secrets/production-auth-limiter.env
+      - /opt/pmrfp/canonical/secrets/production-auth-session.env
+      - /opt/pmrfp/canonical/secrets/production-google-oauth.env
+      - path: /opt/pmrfp/canonical/secrets/production-gemini.env
+        required: false
+      - /opt/pmrfp/canonical/secrets/production-cron.env
+      - path: /opt/pmrfp/canonical/notification-mail.env
+        required: false
+      - path: /opt/pmrfp/canonical/lifecycle-mail.env
+        required: false
+      - /opt/pmrfp/canonical/secrets/opportunity-unsubscribe.env
+      - /opt/pmrfp/canonical/secrets/embed-signing.env
+      - /opt/pmrfp/stripe-api.pending.env
+      - /opt/pmrfp/stripe-production-writer/catalog.env
+      - /opt/pmrfp/stripe-production-writer/ghl.env
+      - /opt/pmrfp/smtp.env
+    environment:
+      NODE_ENV: production
+      VERCEL_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: "0.0.0.0"
+      PORT: "4323"
+      NODE_OPTIONS: "--max-old-space-size=1152"
+      NEXT_PUBLIC_SITE_URL: https://pmrfp.com
+      NEXT_PUBLIC_SUPABASE_URL: ""
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      PMRFP_VPS_LIVE_AUTH: enabled
+      PMRFP_GOOGLE_OAUTH_REHEARSAL_EMAIL: ${PMRFP_GOOGLE_OAUTH_REHEARSAL_EMAIL:-}
+      PMRFP_VPS_CUSTOMER_ENGINE: d1
+      PMRFP_CUSTOMER_AUTH_ORIGIN: https://pmrfp.com
+      PMRFP_SMTP_ENABLED: enabled
+      PMRFP_VPS_NATIVE_ACCOUNT_RECOVERY: enabled
+      PMRFP_VPS_NATIVE_ACCOUNT_SIGNUP: enabled
+      PMRFP_VPS_PROJECT_UPLOADS: enabled
+      PMRFP_VPS_D1_PUBLIC_READS: enabled
+      PMRFP_D1_FOLLOW_CHECKPOINT: enabled
+      PMRFP_BOARD_BACKEND: d1
+      PMRFP_TAXONOMY_BACKEND: d1
+      PMRFP_VPS_R2_PUBLIC_ASSETS: enabled
+    volumes:
+      - ${PMRFP_NATIVE_RELEASE:?Set the validated release directory}:/app:ro
+    tmpfs:
+      - /tmp:size=64m,uid=1000,gid=1000,mode=1770
+      - /app/.next/cache:size=128m,uid=1000,gid=1000,mode=0700
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4323/sign-in',{headers:{host:'pmrfp.com','x-forwarded-proto':'https','x-forwarded-host':'pmrfp.com','x-forwarded-port':'443'}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 8s
+      start_period: 15s
+      retries: 4
+    labels:
+      traefik.enable: "false"
+    networks:
+      pmrfp:
+        aliases: [pmrfp-native-auth-candidate]
+    read_only: true
+    init: true
+    mem_limit: 1664m
+    pids_limit: 160
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: local
+      options: {max-size: 2m, max-file: "2"}
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

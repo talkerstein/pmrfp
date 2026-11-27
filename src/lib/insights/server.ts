@@ -1,9 +1,13 @@
 import "server-only";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { inList, readD1, readD1ByIds, requireD1LifecycleAuthority } from "@/lib/lifecycle/d1";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { getTaxonomyRows } from "@/lib/data/taxonomy";
-import { getMajorProjects, type MajorProject } from "@/lib/major-projects/data";
+import { getMajorProjects, projectIsPublic, type MajorProject } from "@/lib/major-projects/data";
 import { hubWins, type HubWin } from "@/lib/gc/hub";
 import { activeTrialOrgIds } from "@/lib/entitlement/server";
 import { isMissingTableError } from "@/lib/entitlement/trial";
@@ -38,6 +42,10 @@ import { BRIEF_MAX_INSIGHTS, BRIEF_MAX_LEADS, BRIEF_MAX_RECIPIENTS, briefSkipRea
  */
 
 type Db = SupabaseClient;
+type BriefDb = Db | D1Binding;
+const isD1 = (db: BriefDb): db is D1Binding => "prepare" in db;
+const allowedMailbox = `NOT EXISTS (SELECT 1 FROM email_suppressions e WHERE e.email_key=lower(trim(u.email)))
+  AND NOT EXISTS (SELECT 1 FROM digest_subscribers d WHERE d.email_key=lower(trim(u.email)) AND d.status IN ('unsubscribed','bounced'))`;
 type Pair = Record<string, string>;
 const base = () => (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/$/, "");
 
@@ -105,12 +113,12 @@ interface Shared {
   wins: HubWin[];
 }
 
-async function loadShared(): Promise<Shared> {
+async function loadShared(native = false): Promise<Shared> {
   const [data, projects, regions, trades] = await Promise.all([
     loadInsightData(),
-    getMajorProjects().catch(() => []),
-    getTaxonomyRows("regions").catch(() => []),
-    getTaxonomyRows("trade_categories").catch(() => []),
+    getMajorProjects(native),
+    native ? getTaxonomyRows("regions") : getTaxonomyRows("regions").catch(() => []),
+    native ? getTaxonomyRows("trade_categories") : getTaxonomyRows("trade_categories").catch(() => []),
   ]);
   return {
     data,
@@ -180,48 +188,70 @@ export interface BriefRun {
 export async function runInsightsBrief(opts: { dry: boolean; now?: Date; max?: number }): Promise<BriefRun> {
   const enabled = insightsEmailEnabled();
   const empty = (skipped: string | null, week = ""): BriefRun => ({ enabled, llm: insightsLlmEnabled(), dry: opts.dry, week, considered: 0, sends: [], skips: {}, rejections: [], sent: 0, skipped });
-  if (!isServiceConfigured()) return empty("no service client");
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if (!native && !isServiceConfigured()) return empty("no service client");
   if (!opts.dry && !enabled) return empty("INSIGHTS_EMAIL_ENABLED is off");
 
-  const db = createServiceClient();
+  const db = native ? vpsAppDatabase() : createServiceClient();
+  if (isD1(db)) await requireD1LifecycleAuthority(db);
+  if (native && !opts.dry && !unsubscribeUrl(base(), "check")) return empty("unsubscribe unavailable");
   const now = opts.now ?? new Date();
-  const shared = await loadShared();
+  const shared = await loadShared(native);
+  function select<T>(ids: string[], sql: string, legacy: (db: Db) => PromiseLike<{data: unknown; error: {code?:string;message:string} | null}>, ...params: string[]) {
+    return isD1(db) ? readD1ByIds<T>(db, ids, sql, ...params).then(data => ({data,error:null}))
+      : legacy(db);
+  }
   const week = isoWeekKey(shared.data.today);
   const report = empty(null, week);
 
-  const [subs, trials, intelIds] = await Promise.all([proOrgIds(db), activeTrialOrgIds(db, now), intelOrgIds(db, now)]);
+  const [subs, trials, intelIds] = await Promise.all([
+    proOrgIds(db), isD1(db) ? readD1<Pair>(db, `SELECT organization_id FROM trade_trials
+      WHERE julianday(started_at)<=julianday(?) AND julianday(ends_at)>julianday(?)`, now.toISOString(), now.toISOString())
+      .then(rows => new Set(rows.map(row => row.organization_id))) : activeTrialOrgIds(db, now), intelOrgIds(db, now),
+  ]);
   const proIds = [...new Set([...subs, ...trials])];
   if (!proIds.length) return { ...report, skipped: "no Trade Pro or trial companies" };
 
   const [{ data: orgRows }, { data: orgCats }, { data: orgRegs }, { data: members }] = await Promise.all([
-    db.from("organizations").select("id,name,city,province,country,organization_type,status,is_demo").in("id", proIds),
-    db.from("organization_categories").select("organization_id, trade_categories(slug)").in("organization_id", proIds),
-    db.from("organization_regions").select("organization_id,region_id").in("organization_id", proIds),
-    db.from("organization_members").select("organization_id,user_id").in("organization_id", proIds),
+    select(proIds, `SELECT id,name,city,province,country,organization_type,status,is_demo FROM organizations
+      WHERE id ${inList} AND organization_type='trade_company' AND status='active' AND is_demo=0 ORDER BY id`,
+      db => db.from("organizations").select("id,name,city,province,country,organization_type,status,is_demo").in("id", proIds)),
+    select(proIds, `SELECT c.organization_id,t.slug FROM organization_categories c JOIN trade_categories t ON t.id=c.category_id
+      WHERE organization_id ${inList}`, db => db.from("organization_categories").select("organization_id, trade_categories(slug)").in("organization_id", proIds)),
+    select(proIds, `SELECT organization_id,region_id FROM organization_regions WHERE organization_id ${inList}`,
+      db => db.from("organization_regions").select("organization_id,region_id").in("organization_id", proIds)),
+    select(proIds, `SELECT organization_id,user_id FROM organization_members WHERE organization_id ${inList}`,
+      db => db.from("organization_members").select("organization_id,user_id").in("organization_id", proIds)),
   ]);
   const orgs = ((orgRows ?? []) as { id: string; name: string; city: string | null; province: string | null; country: string | null; organization_type: string; status: string; is_demo: boolean }[]).filter(
     (o) => o.organization_type === "trade_company" && o.status !== "suspended" && !o.is_demo,
   );
   const slugsByOrg = new Map<string, string[]>();
-  for (const r of (orgCats ?? []) as unknown as { organization_id: string; trade_categories: { slug: string } | null }[]) {
-    if (r.trade_categories?.slug) slugsByOrg.set(r.organization_id, [...(slugsByOrg.get(r.organization_id) ?? []), r.trade_categories.slug]);
+  for (const r of (orgCats ?? []) as unknown as { organization_id: string; slug?: string; trade_categories?: { slug: string } | null }[]) {
+    const slug = r.slug ?? r.trade_categories?.slug;
+    if (slug) slugsByOrg.set(r.organization_id, [...(slugsByOrg.get(r.organization_id) ?? []), slug]);
   }
   const regionsByOrg = group((orgRegs ?? []) as Pair[], "organization_id", "region_id");
   const usersByOrg = group((members ?? []) as Pair[], "organization_id", "user_id");
   const userIds = [...new Set(((members ?? []) as Pair[]).map((m) => m.user_id))];
   const ids = userIds.length ? userIds : ["00000000-0000-0000-0000-000000000000"];
   const [{ data: profiles }, { data: prefs }, attrib, logged] = await Promise.all([
-    db.from("users_profile").select("id,email,status").in("id", ids),
-    db.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", ids),
-    db.from("signup_attribution").select("user_id,lang").in("user_id", ids),
-    db.from("insight_brief_log").select("user_id").eq("week", week).in("user_id", ids),
+    select(ids, `SELECT id,email,status FROM users_profile u WHERE id ${inList} AND status='active' AND ${allowedMailbox}`,
+      db => db.from("users_profile").select("id,email,status").in("id", ids)),
+    select(ids, `SELECT user_id,new_rfps,channel_email FROM notification_preferences WHERE user_id ${inList}`,
+      db => db.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", ids)),
+    select(ids, `SELECT user_id,lang FROM signup_attribution WHERE user_id ${inList}`,
+      db => db.from("signup_attribution").select("user_id,lang").in("user_id", ids)),
+    select(ids, `SELECT user_id FROM insight_brief_log WHERE user_id ${inList} AND week=?`,
+      db => db.from("insight_brief_log").select("user_id").eq("week", week).in("user_id", ids), week),
   ]);
   if (logged.error) {
     if (!opts.dry) return { ...report, skipped: isMissingTableError(logged.error) ? "insight_brief_log table missing (run migration 20261017000030)" : `log read failed: ${logged.error.message}` };
   }
   const sentThisWeek = new Set(((logged.data ?? []) as { user_id: string }[]).map((r) => r.user_id));
   const emailById = new Map(((profiles ?? []) as { id: string; email: string; status: string }[]).filter((p) => p.email && p.status !== "suspended").map((p) => [p.id, p.email]));
-  const prefById = new Map(((prefs ?? []) as { user_id: string; new_rfps: string; channel_email: boolean }[]).map((p) => [p.user_id, p]));
+  const prefById = new Map(((prefs ?? []) as { user_id: string; new_rfps: string; channel_email: boolean | 0 | 1 }[])
+    .map(p => [p.user_id, { ...p, channel_email: p.channel_email === true || p.channel_email === 1 }]));
   const langById = new Map(((attrib.data ?? []) as { user_id: string; lang: string | null }[]).map((a) => [a.user_id, a.lang]));
   const countryByRegion = regionCountryMap(shared.regions);
   const max = opts.max ?? BRIEF_MAX_RECIPIENTS;
@@ -268,7 +298,7 @@ export async function runInsightsBrief(opts: { dry: boolean; now?: Date; max?: n
         area: areaLabel(org, province ?? null, country, lang),
         trial,
         userId,
-        polish: insightsLlmEnabled(),
+        polish: insightsLlmEnabled() && (!native || !opts.dry),
       });
       report.rejections.push(...composed.rejections);
       const row: BriefRow = {
@@ -288,37 +318,75 @@ export async function runInsightsBrief(opts: { dry: boolean; now?: Date; max?: n
         continue;
       }
       // Record first: a slow or failed send never causes a second brief this week.
-      const { data: claimed, error } = await db
-        .from("insight_brief_log")
-        .upsert(
-          {
-            user_id: userId,
-            week,
-            organization_id: org.id,
-            status: "sending",
-            fact_ids: composed.views.map((v) => (v.locked ? v.stub.id : v.fact.id)).slice(0, 20),
-            lead_keys: leads.map((l) => l.key),
-            polished: composed.polished,
-            lang,
-          },
-          { onConflict: "user_id,week", ignoreDuplicates: true },
-        )
-        .select("user_id");
-      if (error) {
-        report.skipped = isMissingTableError(error) ? "insight_brief_log table missing (run migration 20261017000030)" : `log write failed: ${error.message}`;
-        break;
+      if (isD1(db)) {
+        const factIds = composed.views.map(v => v.locked ? v.stub.id : v.fact.id).slice(0,20);
+        const leadKeys = leads.map(l => l.key);
+        const inserted = await db.prepare(`INSERT INTO insight_brief_log
+          (user_id,week,organization_id,status,fact_ids,lead_keys,polished,lang)
+          SELECT u.id,?,?,'sending',?,?,?,? FROM users_profile u
+          LEFT JOIN notification_preferences p ON p.user_id=u.id
+          WHERE u.id=? AND u.email=? AND u.status='active' AND ${customerAppAuthority} AND ${allowedMailbox}
+            AND coalesce(p.channel_email,1)=1 AND coalesce(p.new_rfps,'daily')<>'off'
+            AND EXISTS (SELECT 1 FROM organization_members m JOIN organizations o ON o.id=m.organization_id
+              WHERE m.user_id=u.id AND o.id=? AND o.status='active' AND o.is_demo=0 AND o.organization_type='trade_company'
+                AND (EXISTS (SELECT 1 FROM subscriptions s WHERE s.organization_id=o.id AND s.tier IN ('pro','featured') AND s.status IN ('active','comped'))
+                  OR EXISTS (SELECT 1 FROM trade_trials t WHERE t.organization_id=o.id AND julianday(t.started_at)<=julianday('now') AND julianday(t.ends_at)>julianday('now'))))
+            AND NOT EXISTS (SELECT 1 FROM lead_alert_log l WHERE l.user_id=u.id AND l.lead_key ${inList})
+          ON CONFLICT(user_id,week) DO NOTHING RETURNING user_id`)
+          .bind(week,org.id,JSON.stringify(factIds),JSON.stringify(leadKeys),composed.polished,lang,userId,email,org.id,JSON.stringify(leadKeys)).first();
+        if (!inserted) {
+          skip("already-sent");
+          continue;
+        }
+        try {
+          if (leadKeys.length) await db.prepare(`INSERT INTO lead_alert_log(user_id,lead_key)
+            SELECT ?,value FROM json_each(?) WHERE 1 ON CONFLICT(user_id,lead_key) DO NOTHING`)
+            .bind(userId,JSON.stringify(leadKeys)).run();
+          await sendInsightsBrief(email!, composed.brief, lang, unsubscribeUrl(base(), userId), true);
+        } catch {
+          await db.prepare("UPDATE insight_brief_log SET status='failed',detail='Delivery failed' WHERE user_id=? AND week=?")
+            .bind(userId,week).run();
+          throw new Error("Insights delivery failed");
+        }
+        await db.batch([
+          db.prepare("UPDATE insight_brief_log SET status='sent',sent_at=? WHERE user_id=? AND week=?").bind(new Date().toISOString(),userId,week),
+          db.prepare("INSERT INTO notifications(id,user_id,type,title,message,link_url) VALUES (?,?,'insights_brief',?,?,'/dashboard')")
+            .bind(crypto.randomUUID(),userId,composed.brief.subject,composed.insights.slice(0,2).map(i => i.title).join(" · ")),
+        ]);
+        if (composed.rejections.length) await logRejections(db, composed.rejections, userId, "brief");
+      } else {
+        const { data: claimed, error } = await db
+          .from("insight_brief_log")
+          .upsert(
+            {
+              user_id: userId,
+              week,
+              organization_id: org.id,
+              status: "sending",
+              fact_ids: composed.views.map((v) => (v.locked ? v.stub.id : v.fact.id)).slice(0, 20),
+              lead_keys: leads.map((l) => l.key),
+              polished: composed.polished,
+              lang,
+            },
+            { onConflict: "user_id,week", ignoreDuplicates: true },
+          )
+          .select("user_id");
+        if (error) {
+          report.skipped = isMissingTableError(error) ? "insight_brief_log table missing (run migration 20261017000030)" : `log write failed: ${error.message}`;
+          break;
+        }
+        if (!claimed?.length) {
+          skip("already-sent");
+          continue;
+        }
+        if (leads.length) {
+          await db.from("lead_alert_log").upsert(leads.map((l) => ({ user_id: userId, lead_key: l.key })), { onConflict: "user_id,lead_key", ignoreDuplicates: true });
+        }
+        await sendInsightsBrief(email!, composed.brief, lang, unsubscribeUrl(base(), userId));
+        await db.from("insight_brief_log").update({ status: "sent", sent_at: new Date().toISOString() }).eq("user_id", userId).eq("week", week);
+        await db.from("notifications").insert({ user_id: userId, type: "insights_brief", title: composed.brief.subject, message: composed.insights.slice(0, 2).map((i) => i.title).join(" · "), link_url: "/dashboard" });
+        if (composed.rejections.length) await logRejections(db, composed.rejections, userId, "brief");
       }
-      if (!claimed?.length) {
-        skip("already-sent");
-        continue;
-      }
-      if (leads.length) {
-        await db.from("lead_alert_log").upsert(leads.map((l) => ({ user_id: userId, lead_key: l.key })), { onConflict: "user_id,lead_key", ignoreDuplicates: true });
-      }
-      await sendInsightsBrief(email!, composed.brief, lang, unsubscribeUrl(base(), userId));
-      await db.from("insight_brief_log").update({ status: "sent", sent_at: new Date().toISOString() }).eq("user_id", userId).eq("week", week);
-      await db.from("notifications").insert({ user_id: userId, type: "insights_brief", title: composed.brief.subject, message: composed.insights.slice(0, 2).map((i) => i.title).join(" · "), link_url: "/dashboard" });
-      if (composed.rejections.length) await logRejections(db, composed.rejections, userId, "brief");
       report.sends.push(row);
       report.sent++;
     }
@@ -350,13 +418,29 @@ export interface Preview {
 }
 
 export async function previewInsights(p: PreviewInput): Promise<Preview | { error: string }> {
-  const shared = await loadShared();
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  const shared = await loadShared(native);
   let orgName: string | null = null;
   let country: CountryCode = p.sample?.country ?? "CA";
   let org: { city?: string | null; province?: string | null } = { province: p.sample?.province ?? null };
   let tradeSlugs = p.sample?.tradeSlugs ?? [];
   let regionIds = shared.regions.filter((r) => r.name === p.sample?.province).map((r) => r.id);
-  if (p.orgId) {
+  if (p.orgId && native) {
+    const db = vpsAppDatabase();
+    const [o, cats, regs] = await Promise.all([
+      db.prepare(`SELECT id,name,city,province,country FROM organizations WHERE id=? AND is_demo=0 AND ${customerAppAuthority}`)
+        .bind(p.orgId).first<{ id: string; name: string; city: string | null; province: string | null; country: string | null }>(),
+      readD1<{ slug: string }>(db, `SELECT c.slug FROM organization_categories m JOIN trade_categories c ON c.id=m.category_id
+        WHERE m.organization_id=? ORDER BY c.slug LIMIT 100`, p.orgId),
+      readD1<{ region_id: string }>(db, "SELECT region_id FROM organization_regions WHERE organization_id=? LIMIT 100", p.orgId),
+    ]);
+    if (!o) return { error: "No organization with that id." };
+    orgName = o.name;
+    org = o;
+    tradeSlugs = cats.map((r) => r.slug);
+    regionIds = regs.map((r) => r.region_id);
+    country = primaryCountry(o, regionIds, regionCountryMap(shared.regions));
+  } else if (p.orgId) {
     if (!isServiceConfigured()) return { error: "No service client: use a sample profile." };
     const db = createServiceClient();
     const [{ data: o }, { data: cats }, { data: regs }] = await Promise.all([
@@ -386,14 +470,22 @@ export async function previewInsights(p: PreviewInput): Promise<Preview | { erro
     userId: null,
     polish: p.polish,
   });
-  if (composed.rejections.length && isServiceConfigured()) await logRejections(createServiceClient(), composed.rejections, null, "preview").catch(() => undefined);
+  if (composed.rejections.length && (native || isServiceConfigured())) {
+    await logRejections(native ? vpsAppDatabase() : createServiceClient(), composed.rejections, null, "preview").catch(() => undefined);
+  }
   const card = viewFacts(m.run.ranked, p.ent).slice(0, 8).map((v) => renderView(v, p.lang));
   return { orgName, run: m.run, composed, html: insightsBriefHtml(composed.brief, p.lang), card, error: null };
 }
 
 /* ------------------------------------------------------------------ helpers */
 
-async function logRejections(db: Db, rows: Rejection[], userId: string | null, source: "brief" | "preview") {
+async function logRejections(db: Db | D1Binding, rows: Rejection[], userId: string | null, source: "brief" | "preview") {
+  if ("prepare" in db) {
+    await db.batch(rows.map((r) => db.prepare(`INSERT INTO insight_rejections(source,user_id,fact_id,kind,lang,reason,template,output,model)
+      SELECT ?,?,?,?,?,?,?,?,? WHERE ${customerAppAuthority}`)
+      .bind(source,userId,r.factId.slice(0,300),r.kind,r.lang,r.reason.slice(0,1000),r.template,r.output.slice(0,4000),r.model)));
+    return;
+  }
   const { error } = await db.from("insight_rejections").insert(
     rows.map((r) => ({ source, user_id: userId, fact_id: r.factId.slice(0, 300), kind: r.kind, lang: r.lang, reason: r.reason.slice(0, 1000), template: r.template, output: r.output.slice(0, 4000), model: r.model })),
   );
@@ -401,15 +493,19 @@ async function logRejections(db: Db, rows: Rejection[], userId: string | null, s
 }
 
 /** Active / comped Pro or Featured subscriptions. */
-async function proOrgIds(db: Db): Promise<Set<string>> {
+async function proOrgIds(db: BriefDb): Promise<Set<string>> {
+  if (isD1(db)) return new Set((await readD1<Pair>(db, `SELECT DISTINCT organization_id FROM subscriptions
+    WHERE status IN ('active','comped') AND tier IN ('pro','featured')`)).map(row => row.organization_id));
   const { data, error } = await db.from("subscriptions").select("organization_id,status,tier").in("status", ["active", "comped"]);
   if (error) return new Set();
   return new Set(((data ?? []) as { organization_id: string; tier: string | null }[]).filter((s) => s.tier === "pro" || s.tier === "featured").map((s) => s.organization_id));
 }
 
 /** Organizations with Award Intelligence right now (same rule as lib/entitlement/intel). */
-async function intelOrgIds(db: Db, now: Date): Promise<Set<string>> {
-  const { data, error } = await db.from("intel_access").select("organization_id,status,expires_at");
+async function intelOrgIds(db: BriefDb, now: Date): Promise<Set<string>> {
+  type IntelRow = { organization_id: string; status: string; expires_at: string | null };
+  const { data, error } = isD1(db) ? { data: await readD1<IntelRow>(db, "SELECT organization_id,status,expires_at FROM intel_access"), error: null }
+    : await db.from("intel_access").select("organization_id,status,expires_at");
   if (error || !data) return new Set();
   return new Set(((data as { organization_id: string; status: string; expires_at: string | null }[]).filter((r) => isIntelRowActive(r, now))).map((r) => r.organization_id));
 }
@@ -421,17 +517,21 @@ function primaryCountry(org: { province: string | null; country: string | null }
 }
 
 /** Keys already sent as lead alerts. Null = unknown (table missing or error): treat all as sent. */
-async function sentLeadKeys(db: Db, userId: string, keys: string[]): Promise<Set<string> | null> {
+async function sentLeadKeys(db: BriefDb, userId: string, keys: string[]): Promise<Set<string> | null> {
+  if (isD1(db)) return new Set((await readD1<Pair>(db, `SELECT lead_key FROM lead_alert_log
+    WHERE lead_key ${inList} AND user_id=?`, JSON.stringify(keys),userId)).map(row => row.lead_key));
   const { data, error } = await db.from("lead_alert_log").select("lead_key").eq("user_id", userId).in("lead_key", keys);
   if (error) return null;
   return new Set(((data ?? []) as { lead_key: string }[]).map((r) => r.lead_key));
 }
 
-async function projectPro(db: Db, leads: Lead[]) {
+async function projectPro(db: BriefDb, leads: Lead[]) {
   const ids = leads.filter((l) => l.key.startsWith("mp:") && (l.hasContractor || l.hasBidRoute)).map((l) => l.key.slice(3));
   const out = new Map<string, { generalContractor: string | null; bidListUrl: string | null; bidRoute: string | null }>();
   if (!ids.length) return out;
-  const { data } = await db.from("major_projects").select("id,general_contractor,bid_list_url,bid_route").in("id", ids);
+  const data = isD1(db) ? await readD1ByIds(db,ids,
+    `SELECT id,general_contractor,bid_list_url,bid_route FROM major_projects WHERE id ${inList} AND ${projectIsPublic}`)
+    : (await db.from("major_projects").select("id,general_contractor,bid_list_url,bid_route").in("id", ids)).data;
   for (const r of (data ?? []) as { id: string; general_contractor: string | null; bid_list_url: string | null; bid_route: string | null }[]) {
     out.set(r.id, { generalContractor: r.general_contractor, bidListUrl: r.bid_list_url, bidRoute: r.bid_route });
   }

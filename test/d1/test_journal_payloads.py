@@ -83,3 +83,21 @@ class PayloadTests(FixtureMixin,unittest.TestCase):
         fake=FakeRemote();fake.name=q.CANARY_NAME;self.addCleanup(fake.db.close);r.load(fake,first)
         result=q.apply(fake,first,second,journal,self.root/'wide-transport.sqlite')
         self.assertEqual(result['transport']['transport'],'staged-private-payloads');r.verify(fake,second);self.absent(fake)
+
+    def test_more_than_500_vectors_still_commit_in_one_bounded_transaction(self):
+        import json
+        fake=FakeRemote();fake.name=q.CANARY_NAME;self.addCleanup(fake.db.close)
+        fake.query('CREATE TABLE entries(id INTEGER PRIMARY KEY,value TEXT)')
+        fake.query('CREATE TABLE marker(value TEXT)')
+        fake.query("INSERT INTO marker VALUES('before')")
+        sql="INSERT INTO entries SELECT json_extract(image.value,'$[0]'),json_extract(image.value,'$[1]') FROM json_each(?) AS image"
+        items=[{'sql':sql,'params':[json.dumps([[i,'value-'+str(i)]])]} for i in range(601)]
+        items.append({'sql':"UPDATE marker SET value='after'",'params':[]})
+        self.assertTrue(p.needed(items))
+        _,rewritten,_=p.prepare(items,p.operation_id({'test':'large'}))
+        self.assertLess(len(rewritten),100)
+        result=p.execute(fake,items,{'test':'large'})
+        self.assertLess(result['atomicStatements'],100)
+        self.assertEqual(fake.query('SELECT count(*) AS n FROM entries')[0]['results'][0]['n'],601)
+        self.assertEqual(fake.query('SELECT value FROM marker')[0]['results'][0]['value'],'after')
+        self.absent(fake)

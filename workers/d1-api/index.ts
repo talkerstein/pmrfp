@@ -1,3 +1,5 @@
+import { readValidatedCheckpoint } from "./checkpoint";
+import { listPublicDirectory } from './directory';
 import {requireSyntheticDetailDatabase,readSyntheticRfpDetail} from './synthetic-detail';
 import { D1ApiError, readSaveInput, type D1Binding } from "../../src/lib/d1/contracts";
 import { verifyGateway, verifyUser, type AuthConfig } from "./auth";
@@ -63,9 +65,18 @@ export async function handleRequest(request: Request, env: Env, fetcher: typeof 
       if(marker?.value!=="synthetic-only")throw new D1ApiError(503,"native_sandbox_required");
       return await handleSyntheticProjectPhoto(env.DB,env.STORAGE_SANDBOX,request,await verifyUser(request,env,fetcher));
     }
+    if (url.pathname === "/v1/checkpoint") {
+      if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
+      if (url.search) throw new D1ApiError(400, "invalid_request");
+      return json({ dataset: await readValidatedCheckpoint(env.DB) });
+    }
     if (url.pathname === "/v1/rfp-photos") {
       if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
       return json(await listPublicPhotos(env.DB, url));
+    }
+    if (url.pathname === "/v1/directory") {
+      if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");
+      return json(await listPublicDirectory(env.DB, url));
     }
     if (url.pathname === "/v1/board") {
       if (request.method !== "GET") throw new D1ApiError(405, "method_not_allowed");

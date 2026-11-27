@@ -5,6 +5,8 @@ finds deletes and updates even on tables without updated_at. This is incremental
 application, not low-egress CDC. Each import validates all records and FKs before
 committing, and backs up an existing target before touching it.
 """
+from capture_limits import MAX_CAPTURE_RECEIPTS
+
 import argparse, contextlib, hashlib, json, os, re, sqlite3, subprocess, tempfile
 from decimal import Decimal
 from pathlib import Path
@@ -178,7 +180,7 @@ def export_snapshot(output,capture_outbox=False):
     table_guard="(SELECT jsonb_agg(tablename ORDER BY tablename) FROM pg_tables WHERE schemaname='public')"
     sql.append("SELECT 1 / CASE WHEN "+table_guard+" = '"+canonical(public_tables).replace("'","''")+"'::jsonb THEN 1 ELSE 0 END AS table_guard \\g /dev/null")
     if capture_outbox:
-        sql.append("SELECT 1 / CASE WHEN (SELECT obj_description(oid,'pg_namespace') FROM pg_namespace WHERE nspname='d1_migration')='pmrfp-d1-change-capture-v1; reviewed 2026-10-31' AND (SELECT count(*) FROM d1_migration.outbox WHERE acknowledged_at IS NULL)<=75000 THEN 1 ELSE 0 END AS capture_guard \\g /dev/null")
+        sql.append(f"SELECT 1 / CASE WHEN (SELECT obj_description(oid,'pg_namespace') FROM pg_namespace WHERE nspname='d1_migration')='pmrfp-d1-change-capture-v1; reviewed 2026-10-31' AND (SELECT count(*) FROM d1_migration.outbox WHERE acknowledged_at IS NULL)<={MAX_CAPTURE_RECEIPTS} THEN 1 ELSE 0 END AS capture_guard \\g /dev/null")
         sql.append('SELECT '+capture_metadata_sql(meta)+';')
     else:sql.append('SELECT '+"'"+canonical(meta).replace("'","''")+"'::text;")
     # Abort on column/type/generated-column drift before exporting any rows.

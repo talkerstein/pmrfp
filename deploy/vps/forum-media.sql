@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS _forum_media (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+  bytes INTEGER NOT NULL CHECK(bytes BETWEEN 4 AND 5242880),
+  sha256 TEXT NOT NULL CHECK(length(sha256)=64),
+  width INTEGER NOT NULL CHECK(width BETWEEN 1 AND 1920),
+  height INTEGER NOT NULL CHECK(height BETWEEN 1 AND 1920),
+  created_at INTEGER NOT NULL,
+  ready INTEGER NOT NULL DEFAULT 0 CHECK(ready IN (0,1))
+);
+CREATE INDEX IF NOT EXISTS _forum_media_owner ON _forum_media(user_id);

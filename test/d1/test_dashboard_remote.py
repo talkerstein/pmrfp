@@ -25,6 +25,25 @@ class FakeRemote:
         return results
 
 class DashboardAndRemoteTests(FixtureMixin, unittest.TestCase):
+    def test_d1_service_auth_failure_retries_with_new_wrangler_token(self):
+        target=remote.Remote.__new__(remote.Remote)
+        target.url='https://api.cloudflare.com/test'
+        target.wrangler_auth=True
+        target.token='expired-fixture'
+        attempts=[]
+
+        def respond(request, timeout):
+            attempts.append(request.get_header('Authorization'))
+            if len(attempts)==1:
+                body=io.BytesIO(b'{"errors":[{"code":7403}]}')
+                raise urllib.error.HTTPError(request.full_url,403,'Forbidden',{},body)
+            return io.BytesIO(b'{"success":true,"result":[]}')
+
+        with patch.object(target,'read_wrangler_token',return_value='refreshed-fixture'), \
+                patch.object(remote.urllib.request,'urlopen',side_effect=respond):
+            self.assertEqual(target.query('SELECT 1'),[])
+        self.assertEqual(attempts,['Bearer expired-fixture','Bearer refreshed-fixture'])
+
     def test_dashboard_source_checksums_and_counts(self):
         rows=self.seed();source=self.root/'export.csv'
         with source.open('w') as f:

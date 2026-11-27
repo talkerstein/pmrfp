@@ -1,4 +1,6 @@
-import { isIsolatedD1Staging, stagingListingSlug } from "@/lib/d1/staging-config";
+import { publicRfpPhotoSource } from "@/lib/d1/public-asset-preview";
+import { isCustomerD1Staging, isHostingerCloudflareStaging, isIsolatedD1Staging, isVpsLiveCustomerAuth, stagingListingSlug } from "@/lib/d1/staging-config";
+import { getSession } from "@/lib/access/access";
 import { cache } from "react";
 import { d1DetailEnabled } from "@/lib/d1/detail-backend";
 import { d1BoardEnabled } from "@/lib/d1/board-backend";
@@ -205,14 +207,20 @@ async function boardRowFor(slug: string): Promise<BoardRow | null> {
 }
 
 export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
-  if (isIsolatedD1Staging()) {
-    if (slug === stagingListingSlug) return {
+  const liveAuth = isVpsLiveCustomerAuth();
+  if (liveAuth || isIsolatedD1Staging()) {
+    if (!liveAuth && !isCustomerD1Staging() && slug === stagingListingSlug) return {
       ...demoToList(DEMO_RFPS[0]), slug, title: "Synthetic native-login listing",
       summary: "Test listing for staging saves. No buyer or real project is involved.",
       deadline: null, status: "open",
     };
     const row = await boardRowFor(slug);
-    return row ? toListItem(row, await boardLookups(), todayUtc()) : null;
+    if (!row) return null;
+    const teaser = toListItem(row, await boardLookups(), todayUtc());
+    if ((!isHostingerCloudflareStaging() && !liveAuth) || row.sourceType === "public_source") return teaser;
+    const { d1PublicPhotos } = await import("@/lib/d1/photos-server");
+    const photos = await d1PublicPhotos([row.id]);
+    return { ...teaser, photoUrls: (photos.get(row.id) ?? []).filter(url => publicRfpPhotoSource(url).unoptimized) };
   }
   if (!isSupabaseConfigured()) {
     const r = DEMO_RFPS.find((x) => x.slug === slug);
@@ -270,6 +278,7 @@ export async function getRfpTeaser(slug: string): Promise<RfpListItem | null> {
  * private RFPs, unknown slugs, non-http links or without a service key.
  */
 export async function getPublicTenderNoticeUrl(slug: string): Promise<string | null> {
+  if (isVpsLiveCustomerAuth()) return (await import("@/lib/d1/vps-rfp-detail")).readVpsPublicTenderUrl(slug);
   if (!isSupabaseConfigured() || !isServiceConfigured()) return null;
   try {
     const { data } = await createServiceClient()
@@ -291,6 +300,12 @@ export async function getPublicTenderNoticeUrl(slug: string): Promise<string | n
  * guarantees only paid trades / owner PM / admin receive a row.
  */
 export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
+  if (isVpsLiveCustomerAuth()) {
+    const session = await getSession();
+    if (!session) return null;
+    const result = await (await import("@/lib/d1/vps-rfp-detail")).readVpsRfpDetail(slug, session.userId);
+    return result ? fullRfpView(result.item, result.categories, result.regionName, result.propertyTypeName, result.photos) : null;
+  }
   if (!isSupabaseConfigured()) {
     const r = DEMO_RFPS.find((x) => x.slug === slug);
     return r ? demoToDetail(r) : null;
@@ -306,19 +321,25 @@ export async function getFullRfp(slug: string): Promise<RfpDetail | null> {
     categoriesByRfp(supabase, [r.id]),
     publicPhotosByRfp(supabase, [r.id]),
   ]);
+  return fullRfpView(r, cats.get(r.id) ?? [], r.region_id ? regionMap.get(r.region_id) ?? null : null,
+    r.property_type_id ? propMap.get(r.property_type_id) ?? null : null, photos.get(r.id) ?? []);
+}
+
+function fullRfpView(r: RfpFullRow, categories: string[], regionName: string | null,
+  propertyTypeName: string | null, photoUrls: string[]): RfpDetail {
   return {
     id: r.id,
     slug: r.slug,
     ...displayTitle(r.title, r.source_type),
     summary: r.summary,
-    categories: cats.get(r.id) ?? [],
-    regionName: r.region_id ? regionMap.get(r.region_id) ?? null : null,
-    propertyTypeName: r.property_type_id ? propMap.get(r.property_type_id) ?? null : null,
+    categories,
+    regionName,
+    propertyTypeName,
     city: r.city,
     province: r.province,
     deadline: r.deadline,
     isDemo: r.is_demo,
-    photoUrls: photos.get(r.id) ?? [],
+    photoUrls,
     scope: r.scope,
     requirements: r.requirements,
     budgetMin: r.budget_min,
@@ -383,8 +404,8 @@ async function publicIdNameMap(table: "regions" | "property_types"): Promise<Map
 
 /** Attach gallery URLs only to cards that will actually render on the page (one query). */
 export async function withPublicRfpPhotos(items: RfpListItem[]): Promise<RfpListItem[]> {
-  if (!items.length || !isSupabaseConfigured()) return items;
-  const client = createReadClient();
+  if (!items.length || (!isSupabaseConfigured() && !isVpsLiveCustomerAuth())) return items;
+  const client = isVpsLiveCustomerAuth() ? null : createReadClient();
   // Only listings posted on PMRFP carry uploaded photos (lib/dashboard/actions
   // is the sole writer of rfp_documents); imported public tenders never do.
   const slugs = [...new Set(items.filter((r) => r.sourceType !== "public_source").map((r) => r.slug))].sort();
@@ -403,7 +424,7 @@ export async function withPublicRfpPhotos(items: RfpListItem[]): Promise<RfpList
     if (id) idBySlug.set(s, id);
   }
   const missing = slugs.filter((s) => !idBySlug.has(s));
-  if (missing.length && !d1BoardEnabled()) {
+  if (missing.length && !d1BoardEnabled() && client) {
     const { data, error } = await client.from("rfp_public").select("id,slug").in("slug", missing).order("id");
     if (error) throw error;
     for (const row of (data ?? []) as { id: string; slug: string }[]) idBySlug.set(row.slug, row.id);
@@ -443,7 +464,7 @@ async function categoriesByRfp(
 
 /** Maps each rfp_id → list of public photo URLs (from rfp_documents), for rendered cards only. */
 async function publicPhotosByRfp(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient | null,
   rfpIds: string[],
   publicCards = false,
 ): Promise<Map<string, string[]>> {
@@ -453,6 +474,7 @@ async function publicPhotosByRfp(
     const { d1PublicPhotos } = await import("@/lib/d1/photos-server");
     return d1PublicPhotos(rfpIds);
   }
+  if (!supabase) return map;
   for (const ids of chunks(rfpIds)) {
     const { data } = await supabase
       .from("rfp_documents")

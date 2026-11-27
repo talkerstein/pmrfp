@@ -1,5 +1,8 @@
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { publicTenderSource } from "@/lib/tenders/sources";
 import { awardNoticeUrl } from "@/lib/tenders/awards";
 import { TORONTO_PORTAL_URL } from "@/lib/tenders/toronto";
@@ -61,7 +64,8 @@ export function isOfficialUrl(url: string, slug: string): boolean {
   try {
     const u = new URL(url);
     const host = new URL(portal).hostname.replace(/^www\./, "");
-    return (u.protocol === "https:" || u.protocol === "http:") && (u.hostname === host || u.hostname.endsWith(`.${host}`));
+    return (u.protocol === "https:" || u.protocol === "http:") && !u.username && !u.password
+      && (u.hostname === host || u.hostname.endsWith(`.${host}`));
   } catch {
     return false;
   }
@@ -76,6 +80,18 @@ export async function officialNotices(slugs: string[]): Promise<Map<string, Offi
     if (!n) continue;
     out.set(slug, n);
     if (!n.exact && PER_NOTICE_FEEDS.has(publicTenderSource(slug).key)) lookup.push(slug);
+  }
+  if (lookup.length && isVpsLiveCustomerAuth()) {
+    for (let i=0;i<lookup.length;i+=100) {
+      const rows = await vpsAppDatabase().prepare(`SELECT slug,source_url FROM rfp_posts
+        WHERE status='published' AND source_type='public_source' AND is_demo=0 AND source_url IS NOT NULL
+          AND summary LIKE 'Awarded %' AND deadline<=date('now') AND ${customerAppAuthority}
+          AND slug IN (SELECT value FROM json_each(?))`).bind(JSON.stringify(lookup.slice(i,i+100)))
+        .all<{slug:string;source_url:string}>().catch(() => null);
+      if (!rows) break;
+      for (const row of rows.results) if (isOfficialUrl(row.source_url,row.slug)) out.set(row.slug,{url:row.source_url,exact:true});
+    }
+    return out;
   }
   if (!lookup.length || !isSupabaseConfigured()) return out;
   const supabase = createReadClient();

@@ -3,6 +3,8 @@
 Source receipt-set comparison detects a restored/rewound consumer checkpoint.
 This is migration metadata only; it never authorizes application reads/writes.
 """
+from capture_limits import MAX_CAPTURE_RECEIPTS
+
 import json,re,subprocess
 import migrate as m
 
@@ -39,7 +41,7 @@ def read(remote):
 def source_digest(runner=subprocess.run,exclude_ids=None,dataset=None):
     sql=DIGEST_SQL
     if exclude_ids:
-        if len(exclude_ids)>75000 or not isinstance(dataset,str) or not re.fullmatch(r'[a-f0-9]{64}',dataset) or any(not isinstance(i,str) or not re.fullmatch(r'[1-9][0-9]{0,18}',i) or int(i)>2**63-1 for i in exclude_ids):raise ValueError('Invalid receipt exclusion')
+        if len(exclude_ids)>MAX_CAPTURE_RECEIPTS or not isinstance(dataset,str) or not re.fullmatch(r'[a-f0-9]{64}',dataset) or any(not isinstance(i,str) or not re.fullmatch(r'[1-9][0-9]{0,18}',i) or int(i)>2**63-1 for i in exclude_ids):raise ValueError('Invalid receipt exclusion')
         sql=sql.replace('acknowledged_at IS NOT NULL;',"acknowledged_at IS NOT NULL AND NOT(id=ANY(ARRAY["+','.join(exclude_ids)+"]::bigint[]) AND destination_sha256='"+dataset+"');")
     result=runner(['psql','-X','-q','-t','-A','-v','ON_ERROR_STOP=1'],input=sql.encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=30)
     if result.returncode:raise RuntimeError('Source receipt digest read failed; diagnostics suppressed')

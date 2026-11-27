@@ -6,6 +6,8 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { MAX_UPLOAD_BYTES, processPhoto, UnreadableImageError } from "@/lib/projects/image";
 import { PROJECT_PHOTO_BUCKET, photoPath } from "@/lib/projects/photos";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { uploadVpsListingPhoto } from "@/lib/marketplace/native-media";
 
 export const maxDuration = 30;
 
@@ -16,11 +18,13 @@ export const maxDuration = 30;
  * project-photos/{userId}/{uuid}.jpg. Listings only keep URLs in that folder.
  */
 export async function POST(request: Request) {
+  const native = isVpsLiveCustomerAuth();
+  if (native && !matchesCustomerOrigin(request)) return NextResponse.json({ error: "upload" }, { status: 403 });
   const limited = await checkRateLimit(request, "photo-upload");
   if (limited) return rateLimitResponse(limited);
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "signIn" }, { status: 401 });
-  if (!isServiceConfigured()) return NextResponse.json({ error: "unavailable" }, { status: 503 });
+  if (!native && !isServiceConfigured()) return NextResponse.json({ error: "unavailable" }, { status: 503 });
 
   let file: FormDataEntryValue | null;
   try {
@@ -40,6 +44,13 @@ export async function POST(request: Request) {
     throw err;
   }
 
+  if (native) {
+    try {
+      return NextResponse.json(await uploadVpsListingPhoto(session.userId, processed));
+    } catch {
+      return NextResponse.json({ error: "upload" }, { status: 502 });
+    }
+  }
   const path = photoPath(session.userId, randomUUID());
   const storage = createServiceClient().storage.from(PROJECT_PHOTO_BUCKET);
   const { error } = await storage.upload(path, processed.data, { contentType: "image/jpeg", cacheControl: "31536000", upsert: false });

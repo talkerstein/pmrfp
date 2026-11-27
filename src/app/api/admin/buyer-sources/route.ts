@@ -6,6 +6,10 @@ import { isMissingTableError } from "@/lib/entitlement/trial";
 import { logAudit } from "@/lib/audit";
 import { approvalPermissionRow, decisionSchema } from "@/lib/buyers/source-requests";
 import { seedRefused } from "@/lib/buyers/permissions";
+import { decideVpsBuyerSource } from "@/lib/d1/buyer-sources";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { revalidateTag } from "next/cache";
+import { BUYER_PERMISSIONS_TAG } from "@/lib/supabase/public-cache";
 
 interface RequestRow {
   id: string;
@@ -28,17 +32,33 @@ interface RequestRow {
  * city source config exists for the buyer (lib/tenders/city-sources).
  */
 export async function POST(request: Request) {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return NextResponse.json({ error: "Not available" }, { status: 503 });
+  const native = isVpsLiveCustomerAuth();
+  if (!native && (!isSupabaseConfigured() || !isServiceConfigured())) return NextResponse.json({ error: "Not available" }, { status: 503 });
   const session = await getSession().catch(() => null);
   if (!session || !isAdminRole(session.profile.primary_role) || session.profile.status === "suspended") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== new URL(request.url).host) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (native ? !matchesCustomerOrigin(request) : origin && new URL(origin).host !== new URL(request.url).host) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const parsed = decisionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 422 });
   const d = parsed.data;
+  if (native) {
+    try {
+      const result = await decideVpsBuyerSource(d, session.userId);
+      if (result === "not_found") return NextResponse.json({ error: "Request not found" }, { status: 404 });
+      if (result === "already_decided") return NextResponse.json({ error: "This request was already decided" }, { status: 409 });
+      if (result === "refused") return NextResponse.json({ error: "This buyer declined to be listed. Update the permission seed only after written authorization." }, { status: 409 });
+      if (result === "missing_feed") return NextResponse.json({ error: "This request does not include a feed URL" }, { status: 422 });
+      if (result === "approved") revalidateTag(BUYER_PERMISSIONS_TAG, { expire: 0 });
+      return NextResponse.json(result === "saved" ? { ok: true } : { ok: true, status: result });
+    } catch {
+      return NextResponse.json({ error: "Could not save the decision" }, { status: 503 });
+    }
+  }
   const db = createServiceClient();
 
   const { data: req, error: readErr } = await db

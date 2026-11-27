@@ -53,6 +53,7 @@ import { PriceLine } from "@/components/v3-pages/price";
 import { winnerKey, winnersFromRfps } from "@/lib/data/winners";
 import { getFullRfp, getPublicTenderNoticeUrl, getRfpTeaser } from "@/lib/data/rfps";
 import { publicRfpPhotoSource } from "@/lib/d1/public-asset-preview";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { listAllRfpsCached } from "@/lib/data/trade-city";
 import { loadBuyers } from "@/lib/buyers/load";
 import { buyerPageForRfp, findBuyerPage } from "@/lib/buyers/model";
@@ -68,7 +69,9 @@ import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config
 import { createServiceClient } from "@/lib/supabase/service";
 import { isPmJobSource } from "@/lib/pm-jobs/rules";
 import { respondStateFor } from "@/lib/pm-jobs/server";
+import { readVpsRfpRespondState } from "@/lib/d1/vps-rfp-interest";
 import { isTownSource } from "@/lib/town-jobs/rules";
+import { loadNativeManagedTownJob } from "@/lib/town-jobs/native-management";
 import { getTownListing } from "@/lib/town-jobs/public-data";
 import { TownAsideCtas, TownHeroCtas, TownListingBody, townTag } from "@/components/towns/jobs/listing";
 import { publicTenderSource } from "@/lib/tenders/sources";
@@ -188,21 +191,20 @@ export default async function RfpDetailPage({
   const teaser = await getRfpTeaser(slug);
   if (!teaser) notFound();
 
-  const configured = isSupabaseConfigured();
+  const configured = isVpsLiveCustomerAuth() || isSupabaseConfigured();
   const session = await getSession();
   const access = await hasActiveTradeAccess();
   // A public buyer's job (PMRFP for Towns): free and never behind the paywall, with its Q&A and addenda.
   const town = isTownSource(teaser.sourceType) ? await getTownListing(slug) : null;
   // The posting town sees "Manage this post" instead of the respond button.
-  const townManageHref =
-    town && session?.organization?.organization_type === "public_buyer" && isServiceConfigured()
-      ? await createServiceClient()
-          .from("rfp_posts")
-          .select("posted_by_organization_id")
-          .eq("id", town.post.id)
-          .maybeSingle<{ posted_by_organization_id: string | null }>()
-          .then(({ data }) => (data?.posted_by_organization_id && data.posted_by_organization_id === session.organization?.id ? `/buyer-dashboard/jobs/${town.post.id}` : null))
-      : null;
+  let townManageHref: string | null = null;
+  if (town && session?.organization?.organization_type === "public_buyer") {
+    const owner = isVpsLiveCustomerAuth()
+      ? await loadNativeManagedTownJob(session.userId,town.post.id).catch(() => null)
+      : isServiceConfigured() ? (await createServiceClient().from("rfp_posts").select("posted_by_organization_id")
+          .eq("id",town.post.id).maybeSingle<{posted_by_organization_id:string|null}>()).data : null;
+    if (owner?.posted_by_organization_id === session.organization.id) townManageHref = `/buyer-dashboard/jobs/${town.post.id}`;
+  }
   const townViewer = { signedIn: Boolean(session), userId: session?.userId ?? null, organizationId: session?.organization?.id ?? null };
   const forceLocked = sp.view === "locked";
   const showFull = configured ? access : !forceLocked;
@@ -531,12 +533,13 @@ export default async function RfpDetailPage({
   const freeSignupHref = `/sign-up?role=trade&next=${encodeURIComponent(`/rfps/${teaser.slug}`)}`;
   // PM jobs (lib/pm-jobs): any approved company responds, free accounts 3 a month. Public tenders never.
   const respond =
-    configured && session?.organization && !isPublicTender && !isAward && !isClosed && isServiceConfigured() && (isPmJobSource(teaser.sourceType) || session.hasTradeAccess)
-      ? await respondStateFor(createServiceClient(), teaser.slug, {
+    configured && session?.organization && !isPublicTender && !isAward && !isClosed && (isPmJobSource(teaser.sourceType) || session.hasTradeAccess)
+      ? isVpsLiveCustomerAuth() ? await readVpsRfpRespondState(teaser.slug, session).catch(() => null)
+        : isServiceConfigured() ? await respondStateFor(createServiceClient(), teaser.slug, {
           userId: session.userId,
           pro: session.hasTradeAccess,
           org: session.organization,
-        }).catch(() => null)
+        }).catch(() => null) : null
       : null;
   const tr = getT("pmJobs").respond;
   const respondNote = respond

@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../../workers/d1-api/customer-signup";
 import { getSponsorSnapshot } from "@/lib/sponsors/data";
-import { isPlacement, tradeSlug, type Placement } from "@/lib/sponsors/model";
+import { isPlacement, torontoDay, tradeSlug, type Placement } from "@/lib/sponsors/model";
 import { sponsorById, sponsorDestination } from "@/lib/sponsors/registry";
 
 /**
@@ -24,7 +27,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ spon
   const trade = tradeSlug(url.searchParams.get("t") ?? "").slice(0, 60);
   const region = tradeSlug(url.searchParams.get("r") ?? "").slice(0, 60);
 
-  if (isServiceConfigured()) {
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      await vpsAppDatabase().prepare(`INSERT INTO sponsor_clicks(day,sponsor,placement,trade,region,clicks)
+        SELECT ?,?,?,?,?,1 WHERE ${customerAppAuthority}
+        ON CONFLICT(day,sponsor,placement,trade,region) DO UPDATE SET clicks=clicks+1`)
+        .bind(torontoDay(), (house ? house.id : id).slice(0, 40), placement, trade, region).run();
+    } catch {
+      // Counting is best-effort.
+    }
+  } else if (isServiceConfigured()) {
     try {
       await createServiceClient().rpc("record_sponsor_click", {
         p_sponsor: house ? house.id : id,

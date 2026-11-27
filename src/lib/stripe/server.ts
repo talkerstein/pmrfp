@@ -73,14 +73,15 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription): Prom
       .from("subscriptions")
       .upsert(legacyRow, { onConflict: "organization_id" }));
   }
-  if (upsertErr) console.error("[stripe] subscription sync failed:", upsertErr.message);
+  if (upsertErr) throw new Error("Stripe subscription update could not be saved");
 
   // Featured plan controls the org's `featured` placement. We only touch the
   // flag for the Featured price, so admin-set editorial featuring on Pro/Free
   // orgs is never clobbered: active Featured → true, canceled Featured → false.
   if (isFeaturedPriceId(priceId)) {
     const active = status === "active" || status === "trialing";
-    await supabase.from("organizations").update({ featured: active }).eq("id", orgId);
+    const { error } = await supabase.from("organizations").update({ featured: active }).eq("id", orgId);
+    if (error) throw new Error("Stripe featured placement update could not be saved");
   }
 }
 

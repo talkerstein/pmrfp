@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getSession, isAdminRole } from "@/lib/access/access";
@@ -31,10 +33,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ grou
   }
   const q = new URL(request.url).searchParams;
   const dry = q.get("dry") === "1";
-  if (!isServiceConfigured() && !dry) return NextResponse.json({ skipped: "no service client" });
+  const d1 = isVpsLiveCustomerAuth();
+  if (!isServiceConfigured() && !d1 && !dry) return NextResponse.json({ skipped: "no service client" });
 
   const today = new Date().toISOString().slice(0, 10);
-  const db = dry ? null : createServiceClient();
+  const db = dry ? null : d1 ? vpsAppDatabase() : createServiceClient();
   const { reports, failed } = await runJobs(jobsFor(group, q.get("source")), {
     today,
     db,

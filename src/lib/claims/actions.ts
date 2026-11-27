@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getSession, requireRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { reviewNativeWinnerClaim, submitNativeWinnerClaim } from "./native";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/audit";
@@ -31,7 +33,10 @@ function claimPath(slug: string, lang: Locale, q?: Record<string, string>): stri
 }
 
 function revalidateWinner(slug: string) {
-  for (const l of LANGS) revalidatePath(`/${l}/contract-winners/${slug}`);
+  for (const l of LANGS) {
+    revalidatePath(`/${l}/contract-winners/${slug}`);
+    revalidatePath(`/${l}/contract-winners/${slug}/claim`);
+  }
 }
 
 async function clientIp(): Promise<string> {
@@ -49,7 +54,8 @@ export async function submitWinnerClaimAction(formData: FormData): Promise<void>
   if (!session) redirect(`${localizePath("/sign-in", lang)}?next=${encodeURIComponent(claimPath(slug, lang))}`);
   const org = session.organization;
   if (!org || !canClaim(org.organization_type)) redirect(claimPath(slug, lang));
-  if (!isServiceConfigured()) redirect(claimPath(slug, lang, { error: "failed" }));
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) redirect(claimPath(slug, lang, { error: "failed" }));
   if (await checkRateLimitByIp(await clientIp(), "contact")) redirect(claimPath(slug, lang, { error: "rate" }));
 
   const winner = await winnerFacts(slug);
@@ -59,6 +65,21 @@ export async function submitWinnerClaimAction(formData: FormData): Promise<void>
   const host = hostOf(websiteRaw);
   if (!host) redirect(claimPath(slug, lang, { error: "website" }));
   const note = String(formData.get("note") ?? "").trim().slice(0, 1000) || null;
+
+  if (native) {
+    const result = await submitNativeWinnerClaim({actor:session.userId,org:org.id,slug,name:winner.name,website:host,note})
+      .catch(() => ({result:"failed"} as const));
+    if (result.result === "approved") redirect(claimPath(slug,lang,{status:"approved"}));
+    if (result.result !== "saved") redirect(claimPath(slug,lang,{error:result.result}));
+    const who = { userId:session.userId,role:session.profile.primary_role };
+    await trackEvent(EVENT.CLAIM_STARTED,{kind:"winner",method:result.method},who);
+    if (result.status === "approved") {
+      await trackEvent(EVENT.CLAIM_VERIFIED,{kind:"winner",method:result.method},who);
+      revalidateWinner(slug);
+    }
+    revalidatePath(BACK);
+    redirect(claimPath(slug,lang,{status:result.status}));
+  }
 
   const db = createServiceClient();
   const { data: live } = await db
@@ -130,6 +151,15 @@ async function review(formData: FormData, status: "approved" | "rejected" | "rev
   const id = String(formData.get("id") ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) back({ error: "Missing claim." });
   const adminNote = String(formData.get("adminNote") ?? "").trim().slice(0, 1000) || null;
+  if (isVpsLiveCustomerAuth()) {
+    const saved = await reviewNativeWinnerClaim(session.userId,id,status,adminNote).catch(() => ({result:"failed"} as const));
+    if (saved.result !== "saved") back({error:saved.result==="conflict"
+      ? "Another claim for this page is already approved. Revoke it first."
+      : saved.result==="missing" ? "Claim not found." : "Could not save the claim."});
+    revalidateWinner(saved.slug);
+    revalidatePath(BACK);
+    back({ok:`Claim ${status}.`});
+  }
   const db = createServiceClient();
   const { data: claim } = await db
     .from("winner_claims")

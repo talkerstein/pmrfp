@@ -13,7 +13,11 @@ import {
   savedAlertSubject,
   type SavedRfp,
   type SavedRow,
+  type SavedAlertDigest,
 } from "@/lib/alerts/saved";
+import { cronAuthFailure } from "@/lib/cron-auth";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { claimD1SavedAlerts, readD1SavedAlerts } from "@/lib/d1/saved-alerts";
 
 export const maxDuration = 60;
 
@@ -26,12 +30,32 @@ export const maxDuration = 60;
  * `?dry=1` returns counts without sending. Protect with CRON_SECRET if set.
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const rejected = cronAuthFailure(request.headers.get("authorization"));
+  if (rejected) return NextResponse.json({ error: rejected === 401 ? "Unauthorized" : "Cron unavailable" }, { status: rejected });
+  const dry = new URL(request.url).searchParams.get("dry") === "1";
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1") {
+    if (!dry && (!process.env.UNSUBSCRIBE_SECRET ||
+        !(process.env.PMRFP_SMTP_ENABLED === "enabled" && process.env.PMRFP_SMTP_PASSWORD || process.env.RESEND_API_KEY))) {
+      return NextResponse.json({ error: "Saved-tender email unavailable" }, { status: 503 });
+    }
+    try {
+      const db = vpsAppDatabase();
+      const now = new Date();
+      const { candidates, digests } = await readD1SavedAlerts(db, now);
+      if (dry) return dryResult(candidates, digests);
+      let sent = 0;
+      for (const digest of digests) {
+        const claimed = await claimD1SavedAlerts(db, digest, now);
+        if (!claimed.items.length) continue;
+        await sendDigest(claimed);
+        sent++;
+      }
+      return NextResponse.json({ sent, candidates });
+    } catch {
+      return NextResponse.json({ error: "Saved-tender alerts unavailable" }, { status: 503 });
+    }
   }
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
-  const dry = new URL(request.url).searchParams.get("dry") === "1";
 
   const supabase = createServiceClient();
   const now = Date.now();
@@ -113,15 +137,8 @@ export async function GET(request: Request) {
     ),
   });
 
-  if (dry) {
-    return NextResponse.json({
-      dry: true,
-      candidates: rfps.size,
-      members: digests.map((d) => ({ items: d.items.length, subject: savedAlertSubject(d) })),
-    });
-  }
+  if (dry) return dryResult(rfps.size, digests);
 
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
   let sent = 0;
   for (const d of digests) {
     // Log first (idempotency) so a slow or failed send can't cause a repeat.
@@ -135,19 +152,25 @@ export async function GET(request: Request) {
       })),
     );
     if (error) continue;
-    await sendSavedRfpAlerts(d.email, {
-      subject: savedAlertSubject(d),
-      items: d.items.map((i) => ({
-        kind: i.kind,
-        title: i.rfp.title,
-        slug: i.rfp.slug,
-        status: i.rfp.status,
-        deadline: i.rfp.deadline,
-      })),
-      unsubscribeUrl: unsubscribeUrl(base, d.userId),
-    });
+    await sendDigest(d);
     sent++;
   }
 
   return NextResponse.json({ sent, candidates: rfps.size });
+}
+
+function dryResult(candidates: number, digests: SavedAlertDigest[]) {
+  return NextResponse.json({
+    dry: true, candidates,
+    members: digests.map(d => ({ items: d.items.length, subject: savedAlertSubject(d) })),
+  });
+}
+
+function sendDigest(digest: SavedAlertDigest) {
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
+  return sendSavedRfpAlerts(digest.email, {
+    subject: savedAlertSubject(digest),
+    items: digest.items.map(item => ({ kind: item.kind, ...item.rfp })),
+    unsubscribeUrl: unsubscribeUrl(base, digest.userId),
+  });
 }

@@ -12,6 +12,8 @@ it('uses the native preview image only when the exact file is staged and preview
  const photo=source+'rfp-photos/a.jpg',asset=publicAssetId(photo)!;
  const preview={...env,PMRFP_PUBLIC_RFP_ASSET_IDS:asset};
  expect(publicRfpPhotoSource(photo,preview)).toEqual({src:'/api/migration/public-asset/'+asset,unoptimized:true});
+ const production={...preview,VERCEL_ENV:'production',PMRFP_PUBLIC_ASSET_PREVIEW:'disabled',PMRFP_VPS_R2_PUBLIC_ASSETS:'enabled'};
+ expect(publicRfpPhotoSource(photo,production)).toEqual({src:'/api/migration/public-asset/'+asset,unoptimized:true});
  for(const mode of [{...preview,VERCEL_ENV:'production'},{...preview,PMRFP_PUBLIC_ASSET_PREVIEW:'disabled'},{...preview,PMRFP_PUBLIC_RFP_ASSET_IDS:asset+',oops'},{...preview,PMRFP_PUBLIC_RFP_ASSET_IDS:id}]) {
   expect(publicRfpPhotoSource(photo,mode)).toEqual({src:photo});
  }

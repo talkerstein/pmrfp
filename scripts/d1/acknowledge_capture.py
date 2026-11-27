@@ -3,6 +3,8 @@
 Default is a local plan. No application-table writes, credentials in argv, or
 ID watermark. A reversed D1 checkpoint requires a new source bootstrap.
 """
+from capture_limits import MAX_CAPTURE_RECEIPTS
+
 import argparse,json,os,re,subprocess
 import migrate as m
 import remote as r
@@ -21,7 +23,7 @@ def plan(source_snapshot,candidate_snapshot):
     ids=capture.get('ids')
     bootstrap=meta.get('source')=='postgres-repeatable-read' and capture.get('bootstrap') is True
     incremental=meta.get('source')=='postgres-repeatable-read-incremental' and capture.get('bootstrap') is False and all(isinstance(capture.get(k),str) and re.fullmatch(r'[a-f0-9]{64}',capture[k]) for k in ['base_source_sha256','base_candidate_sha256','base_receipt_digest'])
-    if not (bootstrap or incremental) or capture.get('protocol')!=1 or not isinstance(ids,list) or len(ids)>75000:
+    if not (bootstrap or incremental) or capture.get('protocol')!=1 or not isinstance(ids,list) or len(ids)>MAX_CAPTURE_RECEIPTS:
         raise ValueError('A consistent post-install source bootstrap with captured receipt IDs is required')
     if any(not isinstance(i,str) or not re.fullmatch(r'[1-9][0-9]{0,18}',i) or int(i)>2**63-1 for i in ids) or [int(i) for i in ids]!=sorted({int(i) for i in ids}):
         raise ValueError('Invalid, duplicate or unordered receipt IDs')

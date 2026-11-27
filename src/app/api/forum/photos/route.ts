@@ -2,10 +2,11 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getSession } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
-import { sessionCanPost } from "@/lib/forum/eligibility";
+import { sessionCanPostInCurrentBackend } from "@/lib/forum/eligibility";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { uploadVpsForumImage } from "@/lib/forum/vps-media";
 import { MAX_FORUM_STORED_BYTES, checkUpload, forumPhotoPath } from "@/lib/forum/photos";
 import { signPreview, storePrivatePhoto } from "@/lib/forum/photos-server";
 import { processPhoto, UnreadableImageError } from "@/lib/projects/image";
@@ -36,14 +37,15 @@ const err = (code: keyof typeof MSG, status: number) => NextResponse.json({ erro
  * path, size and a 1-hour signed preview URL.
  */
 export async function POST(request: Request) {
+  const native = isVpsLiveCustomerAuth();
+  if (native && !matchesCustomerOrigin(request)) return err("verified", 403);
   const limited = await checkRateLimit(request, "photo-upload");
   if (limited) return rateLimitResponse(limited);
-  if (!isServiceConfigured()) return err("setup", 503);
+  if (!native && !isServiceConfigured()) return err("setup", 503);
 
   const session = await getSession();
   if (!session) return err("signin", 401);
-  const { data } = await (await createClient()).auth.getUser();
-  if (!(await sessionCanPost(session, data.user))) return err("verified", 403);
+  if (!(await sessionCanPostInCurrentBackend(session))) return err("verified", 403);
 
   let form: FormData;
   try {
@@ -65,6 +67,10 @@ export async function POST(request: Request) {
     throw e;
   }
   if (processed.data.length > MAX_FORUM_STORED_BYTES) return err("too-big", 413);
+  if (native) {
+    const uploaded = await uploadVpsForumImage(session.userId, processed).catch(() => null);
+    return uploaded ? NextResponse.json(uploaded) : err("failed", 502);
+  }
 
   const db = createServiceClient();
   const path = forumPhotoPath(session.userId, randomUUID());

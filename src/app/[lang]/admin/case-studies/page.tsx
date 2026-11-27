@@ -7,6 +7,10 @@ import { EmptyState } from "@/components/public/empty-state";
 import { reviewCaseStudyAction } from "@/lib/case-studies/actions";
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { setLangFrom } from "@/i18n/server";
+import { vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { sanitizeResults } from "@/lib/projects/case-study";
 
 export const metadata: Metadata = { title: "Case Studies · Admin · PMRFP" };
 
@@ -29,10 +33,18 @@ interface Row {
 
 export default async function AdminCaseStudiesPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
 
   let rows: Row[] = [];
-  if (!isDemoMode()) {
+  if (vpsProjectUploadsEnabled()) {
+    const result = await vpsAppDatabase().prepare(`SELECT c.id,c.title,c.slug,c.status,c.challenge,c.approach,c.outcome,c.city,c.province,
+      c.created_at,c.visibility,c.scope,c.results,o.name AS orgName,o.slug AS orgSlug
+      FROM case_studies c LEFT JOIN organizations o ON o.id=c.organization_id
+      WHERE ${vpsProjectAuthority} AND ${activeRequestAdmin} ORDER BY c.created_at DESC,c.id LIMIT 100`)
+      .bind(session.userId).all<Omit<Row, "organizations" | "results"> & { orgName: string | null; orgSlug: string | null; results: string }>();
+    rows = result.results.map((row) => ({ ...row, results: sanitizeResults(JSON.parse(row.results)),
+      organizations: row.orgName && row.orgSlug ? { name: row.orgName, slug: row.orgSlug } : null }));
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     const base = "id,title,slug,status,challenge,approach,outcome,city,province,created_at,organizations(name,slug)";
     const run = (cols: string) => supabase.from("case_studies").select(cols).order("created_at", { ascending: false }).limit(100);

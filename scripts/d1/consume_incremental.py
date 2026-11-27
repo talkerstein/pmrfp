@@ -55,7 +55,7 @@ def capture_binding(source,base,candidate):
         raise ValueError('Capture is not based on the supplied acknowledged candidate')
     return {'source':source_sha,'base':base_sha,'candidate':dataset,'receipts':len(ids),'capture':capture}
 
-def prepare(source,base,baseline_backup,run_dir):
+def prepare(source,base,baseline_backup,run_dir,*,atomic_publish=False):
     source,base,baseline_backup=[private_file(p).resolve() for p in (source,base,baseline_backup)]
     work=Path(run_dir);work.mkdir(mode=0o700);private_dir(work)
     m.validate(base,baseline_backup)
@@ -70,7 +70,7 @@ def prepare(source,base,baseline_backup,run_dir):
         target=LocalTarget(db)
         capture_state.write(target,capture['base_source_sha256'],binding['base'],capture['base_receipt_digest'])
         for label,reverse in [('forward',False),('reverse',True),('reapply',False)]:
-            replay.apply(target,base,candidate,plan,work/f'local-before-{label}.sqlite',reverse=reverse,allow_copied_preview=True)
+            replay.apply(target,base,candidate,plan,work/f'local-before-{label}.sqlite',reverse=reverse,allow_copied_preview=True,atomic_publish=atomic_publish)
     report={**binding,'sourcePath':str(source),'basePath':str(base),'changes':len(plan['changes']),'localForwardReverseReapply':True}
     write_report(work/'prepared.json',report);return report
 
@@ -83,7 +83,7 @@ def verify_restore(snapshot,backup,restored):
     if not restored.exists():m.restore(backup,restored)
     m.validate(snapshot,private_file(restored))
 
-def commit(remote,run_dir):
+def commit(remote,run_dir,*,atomic_publish=False):
     if remote.name!=TARGET:raise ValueError('Only the current copied preview is allowed')
     work=private_dir(run_dir);report=json.loads(private_file(work/'prepared.json').read_text())
     source=private_file(report['sourcePath']);base=private_file(report['basePath']);candidate=private_file(work/'candidate.jsonl')
@@ -104,7 +104,7 @@ def commit(remote,run_dir):
     manifest=r.manifest(remote)
     if manifest and manifest[0]['source_sha256']==binding['candidate'] and not before.exists():
         raise ValueError('Cannot recover without a validated before backup')
-    result=replay.apply(remote,base,candidate,plan,before_output,allow_copied_preview=True,final_backup_path=after_output)
+    result=replay.apply(remote,base,candidate,plan,before_output,allow_copied_preview=True,final_backup_path=after_output,atomic_publish=atomic_publish)
     emit('native-verified',records=result['records'],changes=len(plan['changes']))
     verify_restore(base,before,work/'restored-before.sqlite');verify_restore(candidate,after,work/'restored-after.sqlite')
     emit('backups-restored')

@@ -14,6 +14,7 @@ export interface D1Binding {
   prepare(sql: string): D1Statement;
   batch<T = Record<string, unknown>>(statements: D1Statement[]): Promise<D1Result<T>[]>;
 }
+export const customerAppAuthority = "EXISTS (SELECT 1 FROM _customer_app_authority WHERE id=1 AND mode='native-v1')";
 export interface SavedRfpItem { rfpId: string; title: string; slug: string; savedAt: string }
 export interface SaveRfpInput { rfpId?: string; rfpSlug?: string; action?: "save" | "unsave" }
 export class D1ApiError extends Error {

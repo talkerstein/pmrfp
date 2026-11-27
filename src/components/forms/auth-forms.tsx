@@ -4,9 +4,11 @@ import Link from "@/i18n/link";
 import { useActionState, useEffect, useState } from "react";
 import { localizePath } from "@/i18n/config";
 import { StagingTurnstile } from "@/components/forms/staging-turnstile";
+import { accountRecoveryTurnstileAction, customerLoginLinkTurnstileAction } from "@/lib/d1/staging-turnstile";
 import { Building2, Hammer, HardHat, KeyRound, Package, Search, Home, UserRound } from "lucide-react";
 import {
   forgotPasswordAction,
+  finishNativeSignInLink,
   resetPasswordAction,
   signInAction,
   signInLinkAction,
@@ -37,19 +39,22 @@ function LangField() {
   return <input type="hidden" name="lang" value={lang} />;
 }
 
-export function SignInForm({ next, startWithLink = false, passwordOnly = false, turnstileSiteKey }: {
+export function SignInForm({ next, startWithLink = false, passwordOnly = false, turnstileSiteKey, turnstileAction, nativeRecovery = false }: {
   next?: string | null;
   startWithLink?: boolean;
   passwordOnly?: boolean;
   turnstileSiteKey?: string;
+  turnstileAction?: string;
+  nativeRecovery?: boolean;
 }) {
   const t = useT("auth").forms;
   const [useLink, setUseLink] = useState(startWithLink);
-  if (passwordOnly) return <SignInPasswordForm passwordOnly turnstileSiteKey={turnstileSiteKey} />;
+  if (passwordOnly) return <SignInPasswordForm next={nativeRecovery || turnstileAction ? next : undefined}
+    passwordOnly turnstileSiteKey={turnstileSiteKey} turnstileAction={turnstileAction} nativeRecovery={nativeRecovery} />;
   if (useLink) {
     return (
       <div className="space-y-3">
-        <SignInLinkForm next={next} />
+        <SignInLinkForm next={next} requireTurnstile={Boolean(turnstileAction)} turnstileSiteKey={turnstileSiteKey} />
         <button type="button" className="w-full text-center text-sm font-medium text-teal-700 hover:underline" onClick={() => setUseLink(false)}>
           {t.passwordInstead}
         </button>
@@ -58,7 +63,7 @@ export function SignInForm({ next, startWithLink = false, passwordOnly = false, 
   }
   return (
     <div className="space-y-3">
-      <SignInPasswordForm next={next} />
+      <SignInPasswordForm next={next} turnstileSiteKey={turnstileSiteKey} turnstileAction={turnstileAction} nativeRecovery={nativeRecovery} />
       <button type="button" className="w-full text-center text-sm font-medium text-teal-700 hover:underline" onClick={() => setUseLink(true)}>
         {t.linkInstead}
       </button>
@@ -66,10 +71,12 @@ export function SignInForm({ next, startWithLink = false, passwordOnly = false, 
   );
 }
 
-/** Passwordless sign-in: Supabase emails a one-time link (lib/auth/magic-link). */
-function SignInLinkForm({ next }: { next?: string | null }) {
+function SignInLinkForm({ next, requireTurnstile, turnstileSiteKey }: {
+  next?: string | null; requireTurnstile: boolean; turnstileSiteKey?: string;
+}) {
   const t = useT("auth").forms;
   const [state, action, pending] = useActionState(signInLinkAction, initial);
+  const [token, setToken] = useState("");
   return (
     <form action={action} className="space-y-4" data-form="sign-in-link">
       <Alert state={state} />
@@ -79,27 +86,65 @@ function SignInLinkForm({ next }: { next?: string | null }) {
         <Label htmlFor="link-email">{t.email}</Label>
         <Input id="link-email" name="email" type="email" required autoComplete="email" />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
+      {requireTurnstile && turnstileSiteKey && (
+        <>
+          <StagingTurnstile siteKey={turnstileSiteKey} action={customerLoginLinkTurnstileAction} attempt={state} onToken={setToken} />
+          <input type="hidden" name="cf-turnstile-response" value={token} />
+        </>
+      )}
+      <Button type="submit" className="w-full" disabled={pending || (requireTurnstile && !token)}>
         {pending ? t.sendingLink : t.sendLink}
       </Button>
     </form>
   );
 }
 
-function SignInPasswordForm({ next, passwordOnly = false, turnstileSiteKey }: {
+export function FinishSignInLinkForm({ next }: { next?: string | null }) {
+  const auth = useT("auth");
+  const [state, action, pending] = useActionState(finishNativeSignInLink, initial);
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const value = url.hash.slice(1);
+    setToken(current => current ?? (/^[a-f0-9]{64}$/.test(value) ? value : ""));
+    if (url.hash) {
+      url.hash = "";
+      window.history.replaceState(window.history.state, "", url);
+    }
+  }, []);
+  return (
+    <form action={action} className="space-y-4">
+      <Alert state={state} />
+      <LangField />
+      {next && <input type="hidden" name="next" value={next} />}
+      <input type="hidden" name="token" value={token ?? ""} />
+      {token === "" && <p role="alert">{auth.signIn.linkError}</p>}
+      <Button type="submit" className="w-full" disabled={pending || !token}>
+        {pending ? auth.forms.signingIn : auth.forms.signIn}
+      </Button>
+      {(token === "" || state.error) && <Link href="/sign-in?error=link" className="text-sm underline">{auth.forms.sendLink}</Link>}
+    </form>
+  );
+}
+
+function SignInPasswordForm({ next, passwordOnly = false, turnstileSiteKey, turnstileAction, nativeRecovery = false }: {
   next?: string | null;
   passwordOnly?: boolean;
   turnstileSiteKey?: string;
+  turnstileAction?: string;
+  nativeRecovery?: boolean;
 }) {
   const t = useT("auth").forms;
   const [state, action, pending] = useActionState(signInAction, initial);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const requireTurnstile = passwordOnly || Boolean(turnstileAction);
   const lang = useLang();
-  const stagingDashboard = localizePath("/dashboard/saved-rfps", lang);
+  const stagingPath = state.customerStagingPath ?? "/dashboard/saved-rfps";
+  const stagingDashboard = localizePath(stagingPath, lang);
   useEffect(() => {
     if (state.stagingSignedIn) window.location.assign(stagingDashboard);
   }, [state.stagingSignedIn, stagingDashboard]);
-  if (state.stagingSignedIn) return <Link href="/dashboard/saved-rfps">Continue to the staging dashboard</Link>;
+  if (state.stagingSignedIn) return <Link href={stagingPath}>Continue to the staging dashboard</Link>;
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
@@ -112,20 +157,20 @@ function SignInPasswordForm({ next, passwordOnly = false, turnstileSiteKey }: {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">{t.password}</Label>
-          {!passwordOnly && <Link href="/forgot-password" className="text-xs text-teal-700 hover:underline">
+          {(!passwordOnly || nativeRecovery) && <Link href="/forgot-password" className="text-xs text-teal-700 hover:underline">
             {t.forgot}
           </Link>}
         </div>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
       </div>
-      {passwordOnly && turnstileSiteKey && (
+      {requireTurnstile && turnstileSiteKey && (
         <>
-          <StagingTurnstile siteKey={turnstileSiteKey} attempt={state} onToken={setTurnstileToken} />
+          <StagingTurnstile siteKey={turnstileSiteKey} action={turnstileAction} attempt={state} onToken={setTurnstileToken} />
           <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
         </>
       )}
-      {passwordOnly && !turnstileSiteKey && <p role="alert">Staging sign-in is temporarily unavailable.</p>}
-      <Button type="submit" className="w-full" disabled={pending || (passwordOnly && !turnstileToken)}>
+      {requireTurnstile && !turnstileSiteKey && <p role="alert">Sign-in is temporarily unavailable.</p>}
+      <Button type="submit" className="w-full" disabled={pending || (requireTurnstile && !turnstileToken)}>
         {pending ? t.signingIn : t.signIn}
       </Button>
     </form>
@@ -232,9 +277,12 @@ export function SignUpForm({
   );
 }
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ native = false, turnstileSiteKey }: {
+  native?: boolean; turnstileSiteKey?: string;
+}) {
   const t = useT("auth").forms;
   const [state, action, pending] = useActionState(forgotPasswordAction, initial);
+  const [turnstileToken, setTurnstileToken] = useState("");
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
@@ -243,20 +291,40 @@ export function ForgotPasswordForm() {
         <Label htmlFor="email">{t.email}</Label>
         <Input id="email" name="email" type="email" required autoComplete="email" />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
+      {native && turnstileSiteKey && (
+        <>
+          <StagingTurnstile siteKey={turnstileSiteKey} attempt={state} onToken={setTurnstileToken}
+            action={accountRecoveryTurnstileAction} />
+          <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
+        </>
+      )}
+      <Button type="submit" className="w-full" disabled={pending || (native && !turnstileToken)}>
         {pending ? t.sending : t.sendReset}
       </Button>
     </form>
   );
 }
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ native = false, signup = false, next }: {
+  native?: boolean; signup?: boolean; next?: string | null;
+}) {
   const t = useT("auth").forms;
   const [state, action, pending] = useActionState(resetPasswordAction, initial);
+  const [token, setToken] = useState("");
+  useEffect(() => {
+    if (!native) return;
+    const fragment = window.location.hash.slice(1);
+    if (!/^[a-f0-9]{64}$/.test(fragment)) return;
+    setToken(fragment);
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  }, [native]);
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
       <LangField />
+      {native && <input type="hidden" name="resetToken" value={token} />}
+      {signup && <input type="hidden" name="flow" value="signup" />}
+      {signup && next && <input type="hidden" name="next" value={next} />}
       <div className="space-y-1.5">
         <Label htmlFor="password">{t.newPassword}</Label>
         <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
@@ -265,8 +333,8 @@ export function ResetPasswordForm() {
         <Label htmlFor="confirm">{t.confirmPassword}</Label>
         <Input id="confirm" name="confirm" type="password" required minLength={8} autoComplete="new-password" />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? t.updating : t.updatePassword}
+      <Button type="submit" className="w-full" disabled={pending || (native && !token)}>
+        {signup ? pending ? t.creating : t.createAccount : pending ? t.updating : t.updatePassword}
       </Button>
     </form>
   );

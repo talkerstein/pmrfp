@@ -1,4 +1,5 @@
-import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
+import { cronAuthFailure } from "@/lib/cron-auth";
+import { isHostingerCloudflareStaging, isIsolatedD1Staging, isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { checkStagingRateLimit, stagingClientIp } from "@/lib/d1/staging-rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
@@ -68,8 +69,23 @@ function redirectTo(request: NextRequest, pathname: string, status: 307 | 308 = 
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (isIsolatedD1Staging() && pathname.startsWith("/api/")) {
-    if (pathname.startsWith("/api/migration/") || pathname.startsWith("/api/cron/")) {
+  const cronRoute = pathname.startsWith("/api/cron/");
+  const staging = isIsolatedD1Staging();
+  if (cronRoute && !staging) {
+    const status = cronAuthFailure(request.headers.get("authorization"));
+    if (status !== null) {
+      return NextResponse.json(
+        { error: status === 401 ? "Unauthorized" : "Cron is unavailable" },
+        { status, headers: { "cache-control": "no-store" } },
+      );
+    }
+  }
+  const nativeCustomerApi = isVpsLiveCustomerAuth() &&
+    (pathname === "/api/save-rfp" || pathname === "/api/rfp-interest" || /^\/api\/(?:projects|company-media)(?:\/|$)/.test(pathname));
+  if ((staging && pathname.startsWith("/api/")) || nativeCustomerApi) {
+    const publicR2Read = isHostingerCloudflareStaging() && request.method === "GET" &&
+      /^\/api\/migration\/public-asset\/[a-f0-9]{64}$/.test(pathname);
+    if ((pathname.startsWith("/api/migration/") && !publicR2Read) || cronRoute) {
       return new NextResponse(null, { status: 404 });
     }
     const bucket = request.method === "GET" || request.method === "HEAD" ? "api-read" : "api-write";

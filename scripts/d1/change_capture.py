@@ -4,7 +4,7 @@ from pathlib import Path
 import migrate as m
 
 READER='d1_migration_reader_20261022'
-EXPIRY='2026-11-12 10:00:00+00'
+EXPIRY='2026-12-03 10:00:00+00'
 def literal(value):return "'"+value.replace("'","''")+"'"
 
 def role_guard(expires=None):

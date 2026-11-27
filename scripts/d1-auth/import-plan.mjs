@@ -1,20 +1,24 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, lstatSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 
 const fields=['id','email','encrypted_password','email_confirmed_at','phone','phone_confirmed_at','created_at','updated_at','banned_until','deleted_at','is_anonymous','is_sso_user','raw_user_meta_data','raw_app_meta_data'].sort();
 const parse=text=>{try{return JSON.parse(text);}catch{throw Error('Invalid protected export JSON');}};
 const date=value=>{if(typeof value!=='string'||!Number.isFinite(Date.parse(value)))throw Error('Invalid source date');return Date.parse(value);};
 /** Pure mapper. Application privileges come from the application profile, never metadata. */
-export function mapMigrationAccount(row,now=Date.now()) {
+export function mapMigrationAccount(row,now=Date.now(), { allowPasswordless = false } = {}) {
+ const password = row?.encrypted_password;
+ const passwordless = allowPasswordless && (password === null || password === '');
+ const validHash = typeof password === 'string' && /^\$2[aby]\$(0[4-9]|1[0-6])\$[./A-Za-z0-9]{53}$/.test(password);
  if(!row || Object.keys(row).sort().join()!==fields.join()
    || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(row.id)
    || typeof row.email!=='string' || row.email.length>320 || row.email!==row.email.toLowerCase() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email)
-   || typeof row.encrypted_password!=='string' || !/^\$2[aby]\$(0[4-9]|1[0-6])\$[./A-Za-z0-9]{53}$/.test(row.encrypted_password)
+   || (!validHash && !passwordless)
    || row.phone || row.phone_confirmed_at || row.deleted_at || row.is_anonymous!==false || row.is_sso_user!==false
    || !Number.isSafeInteger(now))throw Error('Unsupported source account');
  const ban=row.banned_until===null?null:date(row.banned_until);
  return {user:{id:row.id,email:row.email,name:'',emailVerified:row.email_confirmed_at===null?0:(date(row.email_confirmed_at),1),createdAt:new Date(date(row.created_at)).toISOString(),updatedAt:new Date(date(row.updated_at)).toISOString(),role:'user',banned:ban!==null&&ban>now?1:0,banExpires:ban===null?null:new Date(ban).toISOString()},
- account:{id:'credential:'+row.id,accountId:row.id,providerId:'credential',userId:row.id,password:row.encrypted_password},
+ account:{id:'credential:'+row.id,accountId:row.id,providerId:'credential',userId:row.id,password:passwordless?null:password},
  // Preserve approved source metadata without trusting it as a role or duplicating the hash.
  metadata:JSON.stringify({raw_user_meta_data:row.raw_user_meta_data,raw_app_meta_data:row.raw_app_meta_data})};
 }
@@ -41,13 +45,117 @@ export function shadowStatements(plan,schema) {
  const statements=[...schema.split('\n').filter(line=>!line.trimStart().startsWith('--')).join('\n').split(';').map(sql=>sql.trim()).filter(Boolean).map(sql=>({sql,params:[]})),
  {sql:'CREATE TABLE _auth_source_metadata(user_id TEXT PRIMARY KEY REFERENCES user(id),metadata TEXT NOT NULL)',params:[]},
  {sql:"CREATE TABLE _auth_shadow_manifest(id INTEGER PRIMARY KEY CHECK(id=1),state TEXT NOT NULL CHECK(state='sealed'),source_sha256 TEXT NOT NULL,records INTEGER NOT NULL)",params:[]}];
- for(const row of plan.accounts){
+ statements.push(...shadowAccountInserts(plan.accounts));
+ statements.push({sql:"INSERT INTO _auth_shadow_manifest VALUES(1,'sealed',?,?)",params:[plan.sourceSha256,plan.records]});
+ return boundShadowBatch(statements);
+}
+
+function shadowAccountInserts(accounts) {
+ const statements=[];
+ for(const row of accounts){
   const u=row.user,a=row.account;
   statements.push({sql:'INSERT INTO user(id,name,email,emailVerified,createdAt,updatedAt,role,banned,banExpires) VALUES(?,?,?,?,?,?,?,?,?)',params:[u.id,u.name,u.email,u.emailVerified,u.createdAt,u.updatedAt,u.role,u.banned,u.banExpires]},
    {sql:'INSERT INTO account(id,accountId,providerId,userId,password,createdAt,updatedAt) VALUES(?,?,?,?,?,?,?)',params:[a.id,a.accountId,a.providerId,a.userId,a.password,u.createdAt,u.updatedAt]},
    {sql:'INSERT INTO _auth_source_metadata VALUES(?,?)',params:[u.id,row.metadata]});
  }
- statements.push({sql:"INSERT INTO _auth_shadow_manifest VALUES(1,'sealed',?,?)",params:[plan.sourceSha256,plan.records]});
+ return statements;
+}
+
+function boundShadowBatch(statements) {
  if(Buffer.byteLength(JSON.stringify({batch:statements}))>3_500_000||statements.length>500)throw Error('Atomic shadow import exceeds transport bound');
  return statements;
+}
+
+/** Replace a fully validated sealed snapshot using a compare-and-swap checkpoint. */
+export function refreshShadowStatements(previous, next) {
+ if (![previous, next].every(plan =>
+  /^[a-f0-9]{64}$/.test(plan?.sourceSha256) && Number.isSafeInteger(plan.records) &&
+  plan.records > 0 && plan.accounts?.length === plan.records)) throw Error('Invalid shadow refresh plan');
+
+ const before = new Map(previous.accounts.map(row => [row.user.id, row]));
+ const after = new Map(next.accounts.map(row => [row.user.id, row]));
+ const changed = (row, other) => !isDeepStrictEqual(row, other.get(row.user.id));
+ const removedOrChanged = previous.accounts.filter(row => changed(row, after));
+ const addedOrChanged = next.accounts.filter(row => changed(row, before));
+ return boundShadowBatch([
+  {sql: `SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM _auth_shadow_manifest WHERE id=1 AND state='sealed' AND source_sha256=? AND records=?
+   ) AND NOT EXISTS (SELECT 1 FROM session) AND NOT EXISTS (SELECT 1 FROM verification)
+   AND NOT EXISTS (SELECT 1 FROM sqlite_master WHERE name='_auth_preview_manifest')
+   AND (SELECT count(*) FROM user)=? AND (SELECT count(*) FROM account)=?
+   AND (SELECT count(*) FROM _auth_source_metadata)=?
+   THEN 1 ELSE json('shadow_checkpoint_mismatch') END`,
+   params: [previous.sourceSha256, previous.records, previous.records, previous.records, previous.records]},
+  // Remove all affected identities first so a source email can move between accounts.
+  ...removedOrChanged.flatMap(({ user }) => [
+   {sql: 'DELETE FROM _auth_source_metadata WHERE user_id=?', params: [user.id]},
+   {sql: 'DELETE FROM account WHERE userId=?', params: [user.id]},
+   {sql: 'DELETE FROM user WHERE id=?', params: [user.id]},
+  ]),
+  ...shadowAccountInserts(addedOrChanged),
+  {sql: 'UPDATE _auth_shadow_manifest SET source_sha256=?, records=? WHERE id=1',
+   params: [next.sourceSha256, next.records]},
+ ]);
+}
+
+/** Prepare a separate serving database. Never change the sealed mirror's mode. */
+export function customerAuthBootstrap(plan, schema) {
+ const statements = shadowStatements(plan, schema).filter(({ sql }) => !sql.includes('_auth_shadow_manifest'));
+ statements.push(
+  {sql: `CREATE TABLE _auth_customer_staging(
+    id INTEGER PRIMARY KEY CHECK(id=1), mode TEXT NOT NULL CHECK(mode='customer-staging-v1'),
+    source_sha256 TEXT NOT NULL, records INTEGER NOT NULL, verified_at TEXT
+   )`, params: []},
+  {sql: `CREATE TABLE _staging_saved_rfps(
+    user_id TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE, rfp_id TEXT NOT NULL,
+    saved INTEGER NOT NULL CHECK(saved IN (0,1)), changed_at TEXT NOT NULL,
+    PRIMARY KEY(user_id, rfp_id)
+   )`, params: []},
+  {sql: "INSERT INTO _auth_customer_staging VALUES(1,'customer-staging-v1',?,?,NULL)",
+   params: [plan.sourceSha256, plan.records]},
+ );
+ return boundShadowBatch(statements);
+}
+
+/** Reconcile Source credentials without deleting retained customers or their staging changes. */
+export function refreshCustomerAuthStatements(previous, next) {
+ const before = new Map(previous.accounts.map(row => [row.user.id, row]));
+ const after = new Map(next.accounts.map(row => [row.user.id, row]));
+ const existing = next.accounts.filter(row => before.has(row.user.id) && !isDeepStrictEqual(before.get(row.user.id), row));
+ const removed = previous.accounts.filter(row => !after.has(row.user.id));
+ const added = next.accounts.filter(row => !before.has(row.user.id));
+ const checkpoint = {sql: `SELECT CASE WHEN EXISTS (
+   SELECT 1 FROM _auth_customer_staging WHERE id=1 AND mode='customer-staging-v1' AND source_sha256=? AND records=?
+  ) AND NOT EXISTS (SELECT 1 FROM verification)
+  THEN 1 ELSE json('customer_auth_checkpoint_mismatch') END`,
+  params: [previous.sourceSha256, previous.records]};
+ const statements = [checkpoint];
+ for (const { user } of removed) {
+  statements.push({sql: 'DELETE FROM _auth_source_metadata WHERE user_id=?', params: [user.id]},
+   {sql: 'DELETE FROM user WHERE id=?', params: [user.id]});
+ }
+ // Vacate addresses in one transaction so a source email can move to another account.
+ for (const { user } of existing) {
+  if (before.get(user.id).user.email !== user.email) statements.push({
+   sql: 'UPDATE user SET email=? WHERE id=?', params: [user.id + '@auth-sync.invalid', user.id],
+  });
+ }
+ for (const { user, account, metadata } of existing) {
+  const old = before.get(user.id);
+  const revoked = old.account.password !== account.password || old.user.email !== user.email ||
+   old.user.emailVerified !== user.emailVerified || old.user.banned !== user.banned || old.user.banExpires !== user.banExpires;
+  if (revoked) statements.push({sql: 'DELETE FROM session WHERE userId=?', params: [user.id]});
+  statements.push(
+   {sql: 'UPDATE user SET email=?,emailVerified=?,updatedAt=?,banned=?,banExpires=? WHERE id=?',
+    params: [user.email, user.emailVerified, user.updatedAt, user.banned, user.banExpires, user.id]},
+   {sql: 'UPDATE account SET password=?,updatedAt=? WHERE userId=? AND providerId=\'credential\'',
+    params: [account.password, user.updatedAt, user.id]},
+   {sql: 'UPDATE _auth_source_metadata SET metadata=? WHERE user_id=?', params: [metadata, user.id]},
+  );
+ }
+ statements.push(...shadowAccountInserts(added), {
+  sql: 'UPDATE _auth_customer_staging SET source_sha256=?,records=?,verified_at=NULL WHERE id=1',
+  params: [next.sourceSha256, next.records],
+ });
+ return boundShadowBatch(statements);
 }

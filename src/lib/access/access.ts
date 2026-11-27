@@ -1,5 +1,6 @@
-import { isIsolatedD1Staging, stagingEmail, stagingUserId } from "@/lib/d1/staging-config";
+import { usesD1CustomerAuth, isIsolatedD1Staging, stagingEmail, stagingUserId } from "@/lib/d1/staging-config";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { localizePath } from "@/i18n/config";
 import { getLang } from "@/i18n/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -26,6 +27,7 @@ export interface SessionContext {
 
 /** The authenticated auth user id, or null (also null in demo mode). */
 export async function getSessionUserId(): Promise<string | null> {
+  if (usesD1CustomerAuth() || process.env.PMRFP_VPS_STANDALONE === "enabled") return (await getSession())?.userId ?? null;
   if (isIsolatedD1Staging()) return await (await import("@/lib/d1/staging-session")).stagingSessionActive() ? stagingUserId : null;
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
@@ -35,6 +37,10 @@ export async function getSessionUserId(): Promise<string | null> {
 
 /** Full session context (profile + org + access) for the current user, or null. */
 export async function getSession(): Promise<SessionContext | null> {
+  // The production environment is supplied when the standalone server starts.
+  // During builds, never prerender a signed-out URL or a demo account.
+  if (process.env.PMRFP_VPS_STANDALONE === "enabled") await connection();
+  if (usesD1CustomerAuth()) return (await import("@/lib/d1/customer-staging-session")).getCustomerStagingSession();
   if (isIsolatedD1Staging()) {
     if (!await (await import("@/lib/d1/staging-session")).stagingSessionActive()) return null;
     const fixture = demoSession("trade");
@@ -215,7 +221,7 @@ export async function hasActiveTradeAccess(): Promise<boolean> {
 
 /** Require a logged-in user; otherwise redirect to sign-in. */
 export async function requireUser(): Promise<SessionContext> {
-  if (!isSupabaseConfigured() && !isIsolatedD1Staging()) return demoSession("trade");
+  if (isDemoMode() && !isIsolatedD1Staging()) return demoSession("trade");
   const session = await getSession();
   // Keep the visitor's language on the way out (pages set it via setLangFrom).
   if (!session) redirect(localizePath("/sign-in", getLang()));
@@ -227,7 +233,7 @@ export async function requireUser(): Promise<SessionContext> {
 export async function requireRole(roles: UserRole[]): Promise<SessionContext> {
   // Demo mode: no auth backend — return a synthetic session so the
   // authenticated areas are previewable. Live mode enforces real roles.
-  if (!isSupabaseConfigured() && !isIsolatedD1Staging()) return demoSession(roles[0]);
+  if (isDemoMode() && !isIsolatedD1Staging()) return demoSession(roles[0]);
   const session = await requireUser();
   const role = session.profile.primary_role;
   if (!roles.includes(role)) {
@@ -241,7 +247,7 @@ export async function requireRole(roles: UserRole[]): Promise<SessionContext> {
 
 /** Are we running without a Supabase backend (demo preview)? */
 export function isDemoMode(): boolean {
-  return !isSupabaseConfigured();
+  return process.env.PMRFP_VPS_STANDALONE !== "enabled" && !usesD1CustomerAuth() && !isSupabaseConfigured();
 }
 
 /** Synthetic session for demo-mode previews of the authenticated areas. */

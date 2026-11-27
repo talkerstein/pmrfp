@@ -7,5 +7,13 @@
   "preview_urls": false,
   "observability": { "enabled": false },
   "durable_objects": { "bindings": [{ "name": "LIMITS", "class_name": "StagingRateLimit" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StagingRateLimit"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StagingRateLimit"] }],
+  "env": {
+    "production": {
+      "name": "pmrfp-production-rate-limit",
+      "vars": { "VPS_EGRESS_IP": "76.13.26.88" },
+      "durable_objects": { "bindings": [{ "name": "LIMITS", "class_name": "StagingRateLimit" }] },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StagingRateLimit"] }]
+    }
+  }
 }

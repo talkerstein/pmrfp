@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useAuth } from "../src/lib/auth";
@@ -8,15 +8,13 @@ import { colors, radius, spacing, type } from "../src/lib/theme";
 export default function SignInScreen() {
   const { signIn } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit() {
     setBusy(true);
     setError(null);
-    const { error: err } = await signIn(email.trim(), password);
+    const { error: err } = await signIn();
     setBusy(false);
     if (err) setError(err);
     else router.replace("/");
@@ -27,26 +25,6 @@ export default function SignInScreen() {
       <Text style={styles.eyebrow}>PMRFP</Text>
       <Text style={styles.h1}>Sign in</Text>
       <Text style={styles.body}>Same login as pmrfp.com.</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="you@company.com"
-        placeholderTextColor={colors.ink3}
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor={colors.ink3}
-        autoCapitalize="none"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 

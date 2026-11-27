@@ -27,17 +27,26 @@ def cleanup(remote,operation):
 
 def prepare(items,operation):
     if not isinstance(operation,str) or not re.fullmatch(r'[a-f0-9]{64}',operation):raise ValueError('Invalid journal operation identity')
-    payloads={};rewritten=[]
-    for item in items:
-        sql=item['sql'];params=item.get('params',[])
-        if 'json_each(?)' in sql:
-            if len(params)!=1 or not isinstance(params[0],str):raise ValueError('Unexpected packed journal parameters')
-            value=params[0]
+    payloads={};rewritten=[];position=0
+    while position<len(items):
+        item=items[position];sql=item['sql'];params=item.get('params',[])
+        if 'json_each(?)' not in sql:
+            rewritten.append(item);position+=1;continue
+        # Coalesce up to ten adjacent vectors for the SAME operation. Keep
+        # each stored payload at 90 KB and execute all operations in one batch.
+        keys=[]
+        while position<len(items) and items[position]['sql']==sql and len(keys)<10:
+            values=items[position].get('params',[])
+            if len(values)!=1 or not isinstance(values[0],str):raise ValueError('Unexpected packed journal parameters')
+            value=values[0]
             if len(value.encode())>90000:raise ValueError('Journal payload exceeds staging bound')
             key=m.digest(value.encode());payloads[key]=value
-            sql=sql.replace('json_each(?)','json_each(COALESCE((SELECT payload FROM "'+TABLE+'" WHERE id=? AND operation=\''+operation+'\'),json(\'journal_payload_missing\')))')
-            params=[key]
-        rewritten.append({'sql':sql,'params':params})
+            if key not in keys:keys.append(key)
+            position+=1
+        selection=("(SELECT CASE WHEN count(*)=? THEN json_group_array(json(payload)) "
+          "ELSE json('journal_payload_missing') END FROM \""+TABLE+"\" WHERE operation='"+operation+"' AND id IN ("+','.join('?' for _ in keys)+"))")
+        sql=sql.replace('json_each(?)', 'json_each('+selection+') AS payload_vector CROSS JOIN json_each(payload_vector.value)')
+        rewritten.append({'sql':sql,'params':[len(keys),*keys]})
     if not payloads:raise ValueError('No packed payloads to stage')
     # A metadata row makes even an interrupted initial staging transaction owned.
     rows=[{'sql':DDL,'params':[]},{'sql':'INSERT INTO "'+TABLE+'" VALUES (?,?,?)','params':['metadata',operation,'']}]
@@ -80,4 +89,4 @@ def execute(remote,items,journal):
     return {'payloads':len(expected),'transport':'staged-private-payloads','atomicStatements':len(rewritten)}
 
 def needed(items):
-    return len(json.dumps({'batch':items}).encode())>LIMIT
+    return len(items)>499 or len(json.dumps({'batch':items}).encode())>LIMIT

@@ -20,29 +20,41 @@ class Remote:
         self.wrangler_auth=wrangler_auth and not os.environ.get('CLOUDFLARE_API_TOKEN')
         self.token=os.environ.get('CLOUDFLARE_API_TOKEN')
         if not self.token and wrangler_auth:
-            auth=Path.home()/'Library/Preferences/.wrangler/config/default.toml'
-            match=re.search(r'^oauth_token\s*=\s*"([^"]+)"',auth.read_text(),re.M)
-            self.token=match[1] if match else None
+            self.token=self.read_wrangler_token()
         if not self.token:raise ValueError('Cloudflare authentication required')
         self.url=f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/d1/database/{database}'
         info=self.request('GET','')
         if info['result']['name']!=self.name:raise ValueError('Staging target mismatch')
+
+    @staticmethod
+    def read_wrangler_token():
+        auth=Path.home()/'Library/Preferences/.wrangler/config/default.toml'
+        match=re.search(r'^oauth_token\s*=\s*"([^"]+)"',auth.read_text(),re.M)
+        return match[1] if match else None
+
+    def refresh_wrangler_token(self):
+        # The scheduler or an interactive Wrangler command may have refreshed
+        # the same local session since this process started.
+        current=self.read_wrangler_token()
+        if current and current!=self.token:
+            self.token=current
+            return True
+        refreshed=subprocess.run(['npx','--yes','wrangler@4','whoami'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=45)
+        if refreshed.returncode:raise RuntimeError('Wrangler session refresh failed') from None
+        current=self.read_wrangler_token()
+        if not current:raise RuntimeError('Wrangler session unavailable') from None
+        if current==self.token:return False
+        self.token=current
+        return True
+
     def request(self,method,path,body=None):
         data=None if body is None else json.dumps(body).encode()
+        refreshed_wrangler=False
         for attempt in range(3):
             req=urllib.request.Request(self.url+path,data=data,method=method,headers={'Authorization':'Bearer '+self.token,'Content-Type':'application/json'})
             try:
                 with urllib.request.urlopen(req,timeout=40) as r:response=json.load(r)
             except urllib.error.HTTPError as e:
-                if e.code==401 and self.wrangler_auth and attempt==0:
-                    # Refresh the existing approved session, without printing tokens
-                    # or opening a new authorization flow.
-                    refreshed=subprocess.run(['npx','--yes','wrangler@4','whoami'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=45)
-                    if refreshed.returncode:raise RuntimeError('Wrangler session refresh failed') from None
-                    auth=Path.home()/'Library/Preferences/.wrangler/config/default.toml'
-                    match=re.search(r'^oauth_token\s*=\s*"([^"]+)"',auth.read_text(),re.M)
-                    if not match:raise RuntimeError('Wrangler session unavailable') from None
-                    self.token=match[1];continue
                 if e.code in [429,500,502,503,504] and attempt<2:time.sleep(2**attempt);continue
                 # Classify only fixed error categories; bodies can contain private SQL/values.
                 category='details-suppressed';codes=[]
@@ -63,6 +75,12 @@ class Remote:
                     elif 'statement' in message or 'queries' in message:category='batch-statement-limit'
                     elif 'too many' in message or 'maximum' in message:category='query-limit'
                 except (ValueError,KeyError,TypeError):pass
+                # A D1 service authorization failure can be an expired OAuth
+                # token. Retry only once, and only with a different credential.
+                if (self.wrangler_auth and not refreshed_wrangler and attempt<2
+                        and (e.code==401 or (e.code==403 and 7403 in codes))):
+                    refreshed_wrangler=True
+                    if self.refresh_wrangler_token():continue
                 raise RuntimeError(f'Cloudflare HTTP {e.code}: {category}; codes={codes}') from None
             if not response.get('success'):raise RuntimeError('Cloudflare request failed (details suppressed to protect row data)')
             return response

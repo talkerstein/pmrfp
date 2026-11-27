@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/status-badge";
@@ -30,10 +32,11 @@ const DEMO_RFPS: RfpRow[] = [
   { id: "4", title: "Retail Property Parking Lot Asphalt Repair", status: "draft", deadline: "2026-07-31", source_type: "admin_seeded", created_at: "2026-05-24" },
 ];
 
-type Search = { published?: string; alerts?: string; n?: string; rejected?: string; preview?: string; unpublished?: string; unpublish?: string };
+type Search = { review?: string; published?: string; alerts?: string; n?: string; rejected?: string; preview?: string; unpublished?: string; unpublish?: string };
 
 /** What the admin sees after a publish or reject (lib/admin/rfp-actions puts it in the URL). */
 function reviewBanner(sp: Search): { tone: "ok" | "warn"; text: string } | null {
+  if (sp.review === "unavailable") return { tone: "warn", text: "Publication is unavailable while same-day alerts are enabled." };
   if (sp.rejected) return { tone: "ok", text: "Rejected. The poster was emailed your reason." };
   if (sp.unpublished) return { tone: "ok", text: "Unpublished. The town's job is off the board and back in the review queue; the town was told in-app." };
   if (sp.unpublish === "failed") return { tone: "warn", text: "Couldn't unpublish that job (it may already be off the board)." };
@@ -63,7 +66,20 @@ export default async function AdminRfpsPage({ params, searchParams }: { params: 
   let rows = DEMO_RFPS;
   let waiting: RfpRow[] = DEMO_RFPS.filter((r) => r.status === "pending_review");
   let townLive: RfpRow[] = [];
-  if (!isDemoMode()) {
+  if (isVpsLiveCustomerAuth()) {
+    const db = vpsAppDatabase();
+    const columns = "id,title,status,deadline,source_type,created_at";
+    const [all, queue, towns] = await db.batch<RfpRow>([
+      db.prepare(`SELECT ${columns} FROM rfp_posts ORDER BY created_at DESC,id LIMIT 1000`),
+      db.prepare(`SELECT ${columns} FROM rfp_posts WHERE status='pending_review' ORDER BY created_at DESC,id LIMIT 1000`),
+      db.prepare(`SELECT ${columns} FROM rfp_posts WHERE source_type='public_buyer_direct' AND status='published'
+        ORDER BY created_at DESC,id LIMIT 100`),
+    ]);
+    if (!all?.success || !queue?.success || !towns?.success) throw new Error("Tender moderation is unavailable");
+    rows = all.results;
+    waiting = queue.results;
+    townLive = towns.results;
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     // Towns' live jobs (verified towns publish without review): an admin can take one off the board.
     const towns = await supabase
@@ -96,8 +112,9 @@ export default async function AdminRfpsPage({ params, searchParams }: { params: 
   // Dry run: who a waiting (or published) job would email right now. Sends nothing.
   const previewRow = sp.preview ? [...waiting, ...rows].find((r) => r.id === sp.preview) ?? null : null;
   let preview: AlertRunResult | null = null;
-  if (previewRow && isPmJobSource(previewRow.source_type) && !isDemoMode() && isServiceConfigured()) {
-    preview = await runPmJobAlerts(createServiceClient(), previewRow.id, { dry: true }).catch(() => null);
+  if (previewRow && isPmJobSource(previewRow.source_type) && !isDemoMode()) {
+    const db = isVpsLiveCustomerAuth() ? vpsAppDatabase() : isServiceConfigured() ? createServiceClient() : null;
+    if (db) preview = await runPmJobAlerts(db, previewRow.id, { dry: true }).catch(() => null);
   }
 
   return (

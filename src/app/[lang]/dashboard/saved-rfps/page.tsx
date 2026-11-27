@@ -1,4 +1,4 @@
-import { isIsolatedD1Staging, stagingListingSlug } from "@/lib/d1/staging-config";
+import { isCustomerD1Staging, isIsolatedD1Staging, stagingListingSlug } from "@/lib/d1/staging-config";
 import { SaveButton } from "@/components/dashboard/save-button";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
@@ -32,7 +32,7 @@ export default async function SavedRfpsPage({ params }: { params: Promise<object
         description={t.description}
       />
 
-      {staging && (
+      {staging && !isCustomerD1Staging() && (
         <div className="mb-4 rounded-lg border bg-card p-4">
           <h2 className="mb-2 font-semibold">Synthetic native-login listing</h2>
           <p className="mb-2 text-sm text-muted-foreground">Save or remove this test listing, then refresh to verify the result.</p>

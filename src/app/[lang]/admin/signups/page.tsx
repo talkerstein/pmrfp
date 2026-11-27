@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -10,6 +11,9 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { CHANNEL_LABEL, isChannel, type Channel } from "@/lib/attribution/channel";
 import { byWeek, joinSignups, top, type AttributionLite, type SignupUser } from "@/lib/attribution/report";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { readD1 } from "@/lib/lifecycle/d1";
 
 export const metadata: Metadata = { title: "Sign-ups by source · Admin · PMRFP" };
 
@@ -29,6 +33,7 @@ const ROLE: Record<string, string> = {
   real_estate_agent: "Real estate agent",
   visitor: "Visitor",
   talent: "Tradesperson",
+  public_buyer: "Public buyer",
   admin: "Admin",
   super_admin: "Admin",
 };
@@ -49,8 +54,10 @@ interface LandingRow {
  */
 export default async function SignupsPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
-  const demo = isDemoMode() || !isServiceConfigured();
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && session.profile.status !== "active") notFound();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
   const since = daysAgo(DAYS);
 
   let users: SignupUser[] = [];
@@ -58,7 +65,21 @@ export default async function SignupsPage({ params }: { params: Promise<object> 
   let landings: LandingRow[] = [];
   let missing = false;
   const orgNames = new Map<string, string>();
-  if (!demo) {
+  if (native) {
+    try {
+      const db = vpsAppDatabase();
+      [users, rows, landings] = await Promise.all([
+        readD1<SignupUser>(db, "SELECT id,created_at,primary_role FROM users_profile WHERE created_at>=? ORDER BY created_at DESC LIMIT 5000", since),
+        readD1<AttributionLite>(db, `SELECT user_id,org_id,channel,landing_path,referrer_host,utm_source,utm_medium,utm_campaign,
+          last_utm_source,last_utm_campaign,country,lang,method FROM signup_attribution WHERE signed_up_at>=?
+          ORDER BY signed_up_at DESC LIMIT 5000`, daysAgo(DAYS + 2)),
+        readD1<LandingRow>(db, `SELECT max(day) AS day,channel,landing_path,sum(visits) AS visits FROM landing_counts
+          WHERE day>=? GROUP BY channel,landing_path ORDER BY visits DESC LIMIT 10000`, daysAgo(30).slice(0, 10)),
+      ]);
+    } catch {
+      missing = true;
+    }
+  } else if (!demo) {
     const db = createServiceClient();
     const [u, a, l] = await Promise.all([
       db
@@ -92,7 +113,10 @@ export default async function SignupsPage({ params }: { params: Promise<object> 
   const recent = lines.slice(0, RECENT);
   const orgIds = [...new Set(recent.map((l) => l.a?.org_id).filter((id): id is string => !!id))];
   if (orgIds.length) {
-    const { data } = await createServiceClient().from("organizations").select("id,name").in("id", orgIds).returns<{ id: string; name: string }[]>();
+    const data = native
+      ? await readD1<{ id: string; name: string }>(vpsAppDatabase(),
+          "SELECT id,name FROM organizations WHERE id IN (SELECT value FROM json_each(?))", JSON.stringify(orgIds)).catch(() => [])
+      : (await createServiceClient().from("organizations").select("id,name").in("id", orgIds).returns<{ id: string; name: string }[]>()).data;
     for (const o of data ?? []) orgNames.set(o.id, o.name);
   }
   const attributed = lines.filter((l) => l.channel !== "unknown");
@@ -126,7 +150,7 @@ export default async function SignupsPage({ params }: { params: Promise<object> 
       {demo && <DemoBanner />}
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The signup_attribution table is missing. Run supabase/migrations/20261015000001_signup_attribution.sql.
+          {native ? "Sign-up data could not be loaded. Refresh to try again." : "The signup_attribution table is missing. Run supabase/migrations/20261015000001_signup_attribution.sql."}
         </p>
       )}
       <p className="mb-6 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">

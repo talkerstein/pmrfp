@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { recordContactRequest } from "@/lib/d1/customer-requests";
 import { sendAdminContactEmail } from "@/lib/email/send";
 import { upsertGhlContact } from "@/lib/ghl/client";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
@@ -117,7 +119,10 @@ function summary(d: Parsed, extra?: string): string {
 }
 
 async function notify(d: Parsed, message: string, tags: string[]) {
-  if (isServiceConfigured()) {
+  if (isVpsLiveCustomerAuth()) {
+    await recordContactRequest({ requestType: "general_contact", name: d.name, email: d.email, phone: d.phone,
+      organization: d.company, message });
+  } else if (isServiceConfigured()) {
     const { error } = await createServiceClient().from("contact_requests").insert({
       request_type: "general_contact",
       requester_name: d.name,
@@ -151,7 +156,11 @@ export async function submitSponsorEnquiry(_prev: SponsorEnquiryState, formData:
   const p = await parse(formData);
   if (!p.ok) return "honeypot" in p ? { success: "honeypot" } : { error: p.error };
   const d = p.d;
-  await notify(d, summary(d), ["pmrfp-sponsor-lead", `pmrfp-sponsor-${d.tierValue}`, `pmrfp-sponsor-${d.country.toLowerCase()}`]);
+  try {
+    await notify(d, summary(d), ["pmrfp-sponsor-lead", `pmrfp-sponsor-${d.tierValue}`, `pmrfp-sponsor-${d.country.toLowerCase()}`]);
+  } catch {
+    return { error: "other" };
+  }
   return { success: "sent" };
 }
 

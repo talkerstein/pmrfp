@@ -40,18 +40,19 @@ def json_chunks(rows):
     if chunk:yield m.canonical(chunk)
 
 
-def packed_guards(journal,specs):
+def packed_guards(journal,specs,image_field="before"):
     groups={}
     for change in journal['changes']:
-        table,row=change['table'],change['before']
+        table,row=change['table'],change[image_field]
         columns=tuple(row) if row is not None else tuple(specs[table]['pk'])
         groups.setdefault((table,columns,row is None),[]).append([row[c] for c in columns] if row is not None else m.parse_json(change['key']))
     result=[]
+    failure = 'journal_before_image_mismatch' if image_field == 'before' else 'journal_after_image_mismatch'
     for (table,columns,absent),rows in groups.items():
         predicate=all_of('target.'+m.ident(c)+" IS json_extract(image.value,'$["+str(i)+"]')" for i,c in enumerate(columns))
         exists='EXISTS (SELECT 1 FROM '+m.ident(table)+' AS target WHERE '+predicate+')'
         mismatch=exists if absent else 'NOT '+exists
-        sql="SELECT CASE WHEN NOT EXISTS (SELECT 1 FROM json_each(?) AS image WHERE "+mismatch+") THEN 1 ELSE json('journal_before_image_mismatch') END"
+        sql="SELECT CASE WHEN NOT EXISTS (SELECT 1 FROM json_each(?) AS image WHERE "+mismatch+") THEN 1 ELSE json('"+failure+"') END"
         result.extend({'sql':sql,'params':[payload]} for payload in json_chunks(rows))
     return result
 
@@ -74,7 +75,7 @@ def packed_mutations(actions):
     return result
 
 
-def statements(journal, before, after, specs):
+def statements(journal, before, after, specs, *, atomic_publish=False):
     """Simulate cascades locally, then emit only necessary bound mutations."""
     batch = [{'sql': 'PRAGMA defer_foreign_keys=ON', 'params': []}]
     guard = "SELECT CASE WHEN (SELECT source_sha256=? AND state='validated' FROM _migration_manifest WHERE id=1) THEN 1 ELSE json('journal_checkpoint_mismatch') END"
@@ -120,17 +121,46 @@ def statements(journal, before, after, specs):
                     params = [row[k] for k in columns];db.execute(sql, params);batch.append({'sql': sql, 'params': params})
                     actions.append(('upsert',table,tuple(columns),sql,params))
         m.check(db, after, specs)
-    batch.append({'sql': "UPDATE _migration_manifest SET source_sha256=?,state='loading' WHERE id=1", 'params': [journal['after_snapshot_sha256']]})
+    publication_guards = []
+    if atomic_publish:
+        # Guard every difference against the locally verified snapshot before
+        # publishing it, including deletes and changes caused by cascades.
+        publication_guards.extend(packed_guards(journal, specs, "after"))
+        for table in sorted({change["table"] for change in journal["changes"]}):
+            publication_guards.append({
+                "sql": "SELECT CASE WHEN (SELECT count(*) FROM " + m.ident(table)
+                       + ")=? THEN 1 ELSE json('journal_after_count_mismatch') END",
+                "params": [len(after[table])],
+            })
+    state = "validated" if atomic_publish else "loading"
+    publish = {"sql": "UPDATE _migration_manifest SET source_sha256=?,state=? WHERE id=1",
+               "params": [journal["after_snapshot_sha256"], state]}
+    batch.extend([*publication_guards, publish])
     if any(len(item['params']) > 100 or len(item['sql'].encode()) > 100000 for item in batch):raise ValueError('Journal exceeds bounded D1 statement limits')
     if any(isinstance(v, int) and abs(v) > 2**53 - 1 for item in batch for v in item['params']):raise ValueError('Unsafe integer for remote JSON API')
     if len(batch)>500 or payloads.needed(batch):
-        batch=batch[:2]+packed_guards(journal,specs)+packed_mutations(actions)+batch[-1:]
-    if len(batch)>500:raise ValueError('Canary journal exceeds atomic batch bound')
+        batch=batch[:2]+packed_guards(journal,specs)+packed_mutations(actions)+publication_guards+[publish]
+    if len(batch)>500:
+        # Validate the coalesced staging plan before any remote write; the
+        # actual final transaction still cannot exceed 500 statements.
+        payloads.prepare(batch,payloads.operation_id(journal))
     if any(len(item['sql'].encode())>100000 for item in batch):raise ValueError('Journal exceeds bounded D1 statement limits')
     return batch
 
 
-def apply(remote, before_path, after_path, journal, backup_path, reverse=False,allow_copied_preview=False,final_backup_path=None):
+def verify_publication(remote, snapshot, digest, backup_path, atomic_publish):
+    try:
+        return r.finalize(remote, snapshot, backup_path=backup_path)
+    except ValueError:
+        # A readback mismatch invalidates this checkpoint. The compare-and-set
+        # protects a newer checkpoint, and transport failures can simply retry.
+        if atomic_publish:
+            remote.query("UPDATE _migration_manifest SET state='loading' "
+                         "WHERE id=1 AND source_sha256=? AND state='validated'", [digest])
+        raise
+
+
+def apply(remote, before_path, after_path, journal, backup_path, reverse=False,allow_copied_preview=False,final_backup_path=None,*,atomic_publish=False):
     # Physical copied-data rehearsal is explicit and pinned; production is never accepted.
     copied=allow_copied_preview and remote.name in COPY_CONFIGS
     if remote.name!=CANARY_NAME and not copied:raise ValueError('Remote journal is restricted to the synthetic canary or explicit copied preview')
@@ -163,14 +193,14 @@ def apply(remote, before_path, after_path, journal, backup_path, reverse=False,a
     payloads.cleanup(remote,payloads.operation_id(journal))
     if manifest and manifest[0]['source_sha256'] == after_sha and manifest[0]['state'] in ('loading', 'validated') and before_sha != after_sha:
         # An earlier response may have been lost after atomic commit, or after verification.
-        result = r.finalize(remote, after_path, backup_path=final_backup_path)
+        result = verify_publication(remote, after_path, after_sha, final_backup_path, atomic_publish)
         return {**result, 'recovered': True, 'reverse': reverse, 'changed_records': len(journal['changes'])}
     if manifest != [{'source_sha256': before_sha, 'state': 'validated'}]:raise ValueError('Unexpected canary baseline checkpoint')
-    batch = statements(journal, before, after, specs)
+    batch = statements(journal, before, after, specs, atomic_publish=atomic_publish)
     r.verify(remote, before_path, backup_path=backup_path)
     # The entire list is one D1 transaction. A failure rolls back every mutation;
     # an uncertain response is settled from the destination manifest on retry.
     transport=payloads.execute(remote,batch,journal) if payloads.needed(batch) else None
     if transport is None:remote.batch(batch)
-    result = r.finalize(remote, after_path, backup_path=final_backup_path)
+    result = verify_publication(remote, after_path, after_sha, final_backup_path, atomic_publish)
     return {**result, 'recovered': False, 'reverse': reverse, 'changed_records': len(journal['changes']), 'batch_statements': len(batch), 'transport':transport}

@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { MAJOR_PROJECTS_TAG } from "@/lib/supabase/public-cache";
 import { createLimiter, createSingleFlight } from "@/lib/concurrency";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { getSession } from "@/lib/access/access";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
+import { readD1 } from "@/lib/lifecycle/d1";
 import type { MajorProjectCategory, MajorProjectStatus, ProjectSourceLink } from "./model";
 
 /**
@@ -169,12 +175,37 @@ async function readShard(shard: number, columns: string): Promise<MajorProject[]
   }
 }
 
+export const projectIsPublic = "coalesce(review_status,'pending')<>'rejected' AND (source<>'manual' OR coalesce(approved,0)=1)";
+
+async function readNativeShard(shard: number): Promise<MajorProject[]> {
+  type D1Row = Omit<ViewRow, "trades_needed" | "sources" | "stale" | "has_gc" | "has_bid_route"> & {
+    trades_needed: string | null; sources: string | null; stale: 0 | 1; has_gc: 0 | 1; has_bid_route: 0 | 1;
+  };
+  const db = vpsAppDatabase();
+  const { lo, hi } = mpShardRange(shard);
+  const result: MajorProject[] = [];
+  let after = "";
+  for (;;) {
+    const page = await readD1<D1Row>(db, `SELECT ${COLUMNS.replace("has_gc,has_bid_route",
+      "(general_contractor IS NOT NULL) AS has_gc,(bid_list_url IS NOT NULL OR bid_route IS NOT NULL) AS has_bid_route")}
+      FROM major_projects WHERE ${projectIsPublic} AND id>? AND id>=? AND id<? ORDER BY id LIMIT ?`,
+    after, lo ?? "", hi ?? "z", PAGE);
+    result.push(...page.map(row => fromViewRow({ ...row,
+      trades_needed: row.trades_needed ? JSON.parse(row.trades_needed) : [],
+      sources: row.sources ? JSON.parse(row.sources) : [],
+      stale: row.stale === 1, has_gc: row.has_gc === 1, has_bid_route: row.has_bid_route === 1,
+    })));
+    if (page.length < PAGE) return result;
+    after = page[page.length - 1].id;
+  }
+}
+
 const limit = createLimiter(2);
 const singleFlight = createSingleFlight();
 
 const cachedShard = unstable_cache(
   async (shard: number, _projectUrl: string): Promise<MajorProject[]> =>
-    singleFlight(`major-projects-shard:${shard}`, () => limit(() => fetchProjectShard(shard))),
+    singleFlight(`major-projects-shard:${_projectUrl}:${shard}`, () => limit(() => _projectUrl === "d1" ? readNativeShard(shard) : fetchProjectShard(shard))),
   ["major-projects-shard-v2"],
   { tags: [MAJOR_PROJECTS_TAG], revalidate: MP_REVALIDATE },
 );
@@ -184,13 +215,15 @@ const cachedShard = unstable_cache(
  * data cache across requests. Empty without Supabase (demo / build without
  * env) or before the migration runs.
  */
-export const getMajorProjects = cache(async (): Promise<MajorProject[]> => {
-  if (!isSupabaseConfigured()) return [];
-  const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+export const getMajorProjects = cache(async (strict = false): Promise<MajorProject[]> => {
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if (!native && !isSupabaseConfigured()) return [];
+  const projectUrl = native ? "d1" : process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   try {
     const shards = await Promise.all(Array.from({ length: MP_SHARDS }, (_, i) => cachedShard(i, projectUrl)));
     return shards.flat();
   } catch (e) {
+    if (strict) throw e;
     console.warn("[major-projects] snapshot unavailable", e instanceof Error ? e.message : e);
     return [];
   }
@@ -206,11 +239,34 @@ export interface ProjectProFields {
   bidRoute: string | null;
 }
 
+export async function readNativeProjectProFields(actor: string, ids: string[], db: D1Binding = vpsAppDatabase()): Promise<Map<string,ProjectProFields>> {
+  if (!ids.length) return new Map();
+  const paid = `EXISTS(SELECT 1 FROM subscriptions s WHERE s.organization_id=o.id
+    AND s.status IN ('active','comped') AND s.tier IN ('pro','featured'))`;
+  const trial = `o.organization_type='trade_company' AND EXISTS(SELECT 1 FROM trade_trials t
+    WHERE t.organization_id=o.id AND julianday(t.started_at)<=julianday('now') AND julianday(t.ends_at)>julianday('now'))`;
+  const member = `EXISTS(SELECT 1 FROM organization_members m JOIN organizations o ON o.id=m.organization_id
+    WHERE m.user_id=u.id AND o.status='active' AND o.is_demo=0 AND o.organization_type IN ('trade_company','supplier')
+      AND (${paid} OR (${trial})))`;
+  const rows = await db.prepare(`SELECT id,general_contractor AS generalContractor,bid_list_url AS bidListUrl,bid_route AS bidRoute
+    FROM major_projects WHERE ${projectIsPublic} AND ${customerAppAuthority}
+      AND id IN (SELECT value FROM json_each(?)) AND EXISTS(SELECT 1 FROM users_profile u WHERE u.id=? AND u.status='active'
+        AND (u.primary_role IN ('admin','super_admin') OR ${member}))
+  `).bind(JSON.stringify([...new Set(ids)].slice(0,25)),actor).all<ProjectProFields & {id:string}>();
+  return new Map(rows.results.map(({id,...fields}) => [id,fields]));
+}
+
 /**
  * The Trade Pro fields for one project, read with the visitor's session:
  * RLS returns the row only to Trade Pro members and admins. Null otherwise.
  */
 export async function getProjectProFields(id: string): Promise<ProjectProFields | null> {
+  if (isVpsLiveCustomerAuth()) {
+    const session = await getSession();
+    if (!session?.hasTradeAccess) return null;
+    const rows = await readNativeProjectProFields(session.userId,[id]).catch(() => null);
+    return rows?.get(id) ?? null;
+  }
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const { data, error } = await supabase
