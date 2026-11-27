@@ -1,0 +1,28 @@
+name: pmrfp-canonical-d1
+services:
+  pmrfp-canonical-app-d1:
+    extends:
+      file: canonical.compose.yaml
+      service: pmrfp-canonical-app
+    env_file:
+      - /opt/pmrfp/canonical/public-d1.env
+    environment:
+      PMRFP_VPS_D1_PUBLIC_READS: enabled
+      PMRFP_D1_FOLLOW_CHECKPOINT: enabled
+      PMRFP_BOARD_BACKEND: d1
+      PMRFP_TAXONOMY_BACKEND: d1
+    volumes:
+      - /opt/pmrfp/canonical/releases/20261126-public-d1:/app:ro
+  pmrfp-canonical-app-r2:
+    extends:
+      service: pmrfp-canonical-app-d1
+    env_file:
+      - /opt/pmrfp/canonical/public-r2.env
+    environment:
+      PMRFP_VPS_R2_PUBLIC_ASSETS: enabled
+    volumes:
+      - /opt/pmrfp/canonical/releases/20261126-public-r2:/app:ro
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

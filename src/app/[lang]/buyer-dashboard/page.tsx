@@ -21,6 +21,9 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { createServiceClient } from "@/lib/supabase/service";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { listNativeTownJobs } from "@/lib/town-jobs/native-management";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { buyerKey } from "@/lib/towns/managed";
 import { followersOf } from "@/lib/follows/server";
@@ -62,11 +65,14 @@ export default async function BuyerDashboardHome({ params, searchParams }: { par
   const permission = extras?.permission ?? null;
   // "N contractors follow this town": counts only, never who (PMRFP for Towns, Part B1).
   const tf = getT("follows").buyerDashboard;
-  const followers = page && !demo && isServiceConfigured() ? await followersOf(createServiceClient(), buyerKey(page.provinceSlug, page.buyer.slug)) : null;
+  const townDb = isVpsLiveCustomerAuth() ? vpsAppDatabase() : isServiceConfigured() ? createServiceClient() : null;
+  const followers = page && !demo && townDb ? await followersOf(townDb,buyerKey(page.provinceSlug,page.buyer.slug)).catch(() => null) : null;
   const day = (d: string) => formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang);
-  const jobs = !demo && session.organization && isServiceConfigured() ? await townJobsFor(createServiceClient(), session.organization.id).catch(() => []) : [];
+  const jobs = !demo && session.organization && (isVpsLiveCustomerAuth() || isServiceConfigured())
+    ? await (isVpsLiveCustomerAuth() ? listNativeTownJobs(session.userId,session.organization.id)
+      : townJobsFor(createServiceClient(), session.organization.id)).catch(() => []) : [];
   // Part C: this month's reach against the same month last year (counts only).
-  const monthly = !demo && isServiceConfigured() ? await monthlyReach(createServiceClient(), jobs).catch(() => null) : null;
+  const monthly = !demo && townDb ? await monthlyReach(townDb,jobs).catch(() => null) : null;
 
   return (
     <div>

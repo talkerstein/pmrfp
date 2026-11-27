@@ -1,18 +1,25 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { RFPS_TAG } from "@/lib/supabase/public-cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { after } from "next/server";
+import { nativeTownPageFor, postNativeTown } from "@/lib/town-jobs/native-post";
 import { finishTownPost, townPageFor, type TownPage } from "@/lib/town-jobs/server";
 import { parseTownPostFields, townPostColumns, type TownPostFields } from "@/lib/town-jobs/post";
 import { TOWN_SOURCE } from "@/lib/town-jobs/rules";
 import { createClient } from "@/lib/supabase/server";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { postVpsRfp } from "@/lib/d1/vps-rfp-post";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { closeVpsRfp } from "@/lib/d1/vps-rfp-close";
+import { readVpsCompanySelections, updateVpsCompanyProfile } from "@/lib/d1/vps-company-profile";
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { pendingReviewCount } from "@/lib/pm-jobs/server";
-import { getSession } from "@/lib/access/access";
+import { getSession, type SessionContext } from "@/lib/access/access";
 import { isUsState } from "@/lib/geo";
 import { companyProfileSchema, rfpPostSchema } from "@/lib/validations";
 import { sendAdminListingRejected, sendAdminNewRfp } from "@/lib/email/send";
@@ -33,6 +40,8 @@ import { profileStatusPatch, reviewChanges } from "@/lib/organizations/profile-r
 import { screenOrganization, recordOrgRisk } from "@/lib/spam/server";
 import { purgeOutCache } from "@/lib/links/data";
 import { websiteDomain } from "@/lib/badge/install";
+import { FINISH_PATH, isListingStep, patchChanges, stepPatch, stepsFor } from "@/lib/organizations/listing-steps";
+import { INSURED } from "@/lib/organizations/insurance";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, splitLocale, type Locale } from "@/i18n/config";
 
 /**
@@ -84,10 +93,106 @@ function completion(fields: Record<string, unknown>, cats: number, regs: number)
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
+/**
+ * Our own Supabase logos bucket, or null (including empty/cleared). Prevents
+ * URL injection from a malicious client.
+ */
+function ownLogoUrl(raw: string): string | null {
+  const url = raw.trim();
+  if (!url) return null;
+  try {
+    const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
+    const parsed = new URL(url);
+    if (
+      parsed.protocol === "https:" &&
+      parsed.host === supabaseHost &&
+      parsed.pathname.includes("/storage/v1/object/public/logos/")
+    ) {
+      return url;
+    }
+  } catch {
+    // Not a URL; treated as no logo.
+  }
+  return null;
+}
+
+type OrganizationRow = NonNullable<SessionContext["organization"]>;
+
+/**
+ * Everything a company's own edit sets off, for the full form and the
+ * one-question flow alike. Earn the link + spam check (lib/links, lib/spam). A
+ * new website domain starts the badge check over (the old install was on
+ * another site), and the click-out cache forgets the old address. A changed
+ * name, website or email on a directory listing is screened again: a blocked
+ * domain or a very high score takes the listing page down (rejected); a score
+ * of 3 to 5 flags it for the admin queue and, if it was live, keeps it live but
+ * nofollow/noindex.
+ */
+async function afterProfileEdit(
+  session: SessionContext,
+  before: OrganizationRow,
+  patch: Partial<OrganizationRow>,
+  nextStatus: ReturnType<typeof profileStatusPatch>,
+): Promise<void> {
+  const orgId = before.id;
+  const merged = { ...before, ...patch };
+  if (isServiceConfigured()) {
+    const service = createServiceClient();
+    if (websiteDomain(before.website) !== websiteDomain(merged.website)) {
+      await service.from("organizations").update({ link_badge: false, link_earned_at: null }).eq("id", orgId);
+    }
+    purgeOutCache();
+    const listing = before.organization_type === "trade_company" || before.organization_type === "supplier";
+    const trustChanged = reviewChanges(before, patch).some((c) => c.field === "name" || c.field === "website" || c.field === "email");
+    if (listing && (trustChanged || before.profile_status !== "approved")) {
+      const risk = await screenOrganization(service, {
+        organizationId: orgId,
+        name: merged.name,
+        website: merged.website,
+        email: merged.email,
+        accountEmail: session.profile.email,
+        phone: merged.phone,
+        shortDescription: merged.short_description,
+        fullDescription: merged.full_description,
+        city: merged.city,
+        province: merged.province,
+        country: before.country,
+        userId: session.userId,
+      }).catch(() => null);
+      if (risk && !risk.skipped) {
+        const goesPending = (nextStatus ?? before.profile_status) !== "approved";
+        await recordOrgRisk(service, orgId, risk, "profile_edit", risk.hold && goesPending);
+        if (risk.reject) {
+          await service.from("organizations").update({ profile_status: "rejected" }).eq("id", orgId);
+          await logAudit({ actorUserId: session.userId, action: "organization.spam_rejected", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
+          await sendAdminListingRejected({ name: merged.name, website: merged.website, email: merged.email, score: risk.score, reasons: risk.reasons.map((r) => r.detail) }).catch(() => undefined);
+        } else if (risk.hold) {
+          await logAudit({ actorUserId: session.userId, action: "organization.spam_held", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
+        }
+      }
+    }
+  }
+
+  if (before.profile_status === "approved") {
+    // One audit entry per flagged edit (the trigger keeps the running diff).
+    const changes = reviewChanges(before, patch);
+    if (changes.length) {
+      await logAudit({
+        actorUserId: session.userId,
+        action: "organization.profile_edited",
+        entityType: "organization",
+        entityId: orgId,
+        metadata: { changes },
+      });
+    }
+  }
+}
+
 export async function updateCompanyProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = await actionLang(formData);
   const t = messagesFor(lang);
-  if (!isSupabaseConfigured()) return { error: t.demo };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: t.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
   if (!session.organization) return { error: t.noOrg };
@@ -110,6 +215,8 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
     yearsInBusiness: formData.get("yearsInBusiness") || undefined,
     employeeCountRange: formData.get("employeeCountRange") ?? "",
     insuranceStatus: formData.get("insuranceStatus") ?? "",
+    insurancePolicyNumber: native ? formData.get("insurancePolicyNumber") ?? undefined : undefined,
+    removeInsuranceLine: native && formData.get("removeInsuranceLine") === "on",
     wsibStatus: formData.get("wsibStatus") ?? "",
     emergencyService: formData.get("emergencyService") === "on",
     publicContactVisibility: (formData.get("publicContactVisibility") as string) ?? "request_intro",
@@ -120,30 +227,28 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   if (!parsed.success) return { error: validationMessage(lang, parsed.error.issues[0]?.message, t.checkForm) };
   const d = parsed.data;
 
-  const supabase = await createClient();
   const orgId = session.organization.id;
   const score = completion(d, categories.length, regions.length);
-
-  // Validate the logoUrl points at our own Supabase storage logos bucket. If it
-  // doesn't (including empty/cleared), set logo_url to null. Prevents URL
-  // injection from a malicious client.
-  const rawLogoUrl = formData.get("logoUrl")?.toString().trim() ?? "";
-  let logoUrl: string | null = null;
-  if (rawLogoUrl) {
+  if (native) {
     try {
-      const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
-      const parsed = new URL(rawLogoUrl);
-      if (
-        parsed.protocol === "https:" &&
-        parsed.host === supabaseHost &&
-        parsed.pathname.includes("/storage/v1/object/public/logos/")
-      ) {
-        logoUrl = rawLogoUrl;
+      const result = await updateVpsCompanyProfile(session, d, formData.get("logoUrl")?.toString().trim() ?? null, score);
+      purgeOutCache();
+      revalidatePath("/dashboard/company");
+      if (result.rejected) {
+        const { score, reasons } = result.rejected;
+        after(async () => {
+          await sendAdminListingRejected({ name: d.name, website: d.website ?? null, email: d.email,
+            score, reasons: reasons.map(reason => reason.detail) }).catch(() => undefined);
+        });
       }
+      return { success: result.stayedLive ? t.savedLive : t.saved };
     } catch {
-      logoUrl = null;
+      return { error: t.saveFailed };
     }
   }
+  const supabase = await createClient();
+
+  const logoUrl = ownLogoUrl(formData.get("logoUrl")?.toString() ?? "");
 
   // Approved stays approved: an edit no longer takes a company out of the
   // directory, PM job alerts or free responses. Trust-field edits are flagged
@@ -178,63 +283,9 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   const { error } = await supabase.from("organizations").update(patch).eq("id", orgId);
   if (error) return { error: t.saveFailed };
 
-  // Earn the link + spam check (lib/links, lib/spam). A new website domain
-  // starts the badge check over (the old install was on another site), and the
-  // click-out cache forgets the old address. A changed name, website or email
-  // on a directory listing is screened again: a blocked domain or a very high
-  // score takes the listing page down (rejected); a score of 3 to 5 flags it
-  // for the admin queue and, if it was live, keeps it live but nofollow/noindex.
-  if (isServiceConfigured()) {
-    const service = createServiceClient();
-    if (websiteDomain(before.website) !== websiteDomain(patch.website)) {
-      await service.from("organizations").update({ link_badge: false, link_earned_at: null }).eq("id", orgId);
-    }
-    purgeOutCache();
-    const listing = before.organization_type === "trade_company" || before.organization_type === "supplier";
-    const trustChanged = reviewChanges(before, patch).some((c) => c.field === "name" || c.field === "website" || c.field === "email");
-    if (listing && (trustChanged || before.profile_status !== "approved")) {
-      const risk = await screenOrganization(service, {
-        organizationId: orgId,
-        name: d.name,
-        website: patch.website,
-        email: d.email,
-        accountEmail: session.profile.email,
-        phone: patch.phone,
-        shortDescription: patch.short_description,
-        fullDescription: patch.full_description,
-        city: patch.city,
-        province: patch.province,
-        country: before.country,
-        userId: session.userId,
-      }).catch(() => null);
-      if (risk && !risk.skipped) {
-        const goesPending = (nextStatus ?? before.profile_status) !== "approved";
-        await recordOrgRisk(service, orgId, risk, "profile_edit", risk.hold && goesPending);
-        if (risk.reject) {
-          await service.from("organizations").update({ profile_status: "rejected" }).eq("id", orgId);
-          await logAudit({ actorUserId: session.userId, action: "organization.spam_rejected", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
-          await sendAdminListingRejected({ name: d.name, website: patch.website, email: d.email, score: risk.score, reasons: risk.reasons.map((r) => r.detail) }).catch(() => undefined);
-        } else if (risk.hold) {
-          await logAudit({ actorUserId: session.userId, action: "organization.spam_held", entityType: "organization", entityId: orgId, metadata: { score: risk.score, reasons: risk.reasons.map((r) => r.detail) } });
-        }
-      }
-    }
-  }
+  await afterProfileEdit(session, before, patch, nextStatus);
 
   const stayedLive = before.profile_status === "approved";
-  if (stayedLive) {
-    // One audit entry per flagged edit (the trigger keeps the running diff).
-    const changes = reviewChanges(before, patch);
-    if (changes.length) {
-      await logAudit({
-        actorUserId: session.userId,
-        action: "organization.profile_edited",
-        entityType: "organization",
-        entityId: orgId,
-        metadata: { changes },
-      });
-    }
-  }
 
   // Replace taxonomy links.
   const [{ data: catRows }, { data: regRows }, { data: ptRows }] = await Promise.all([
@@ -259,6 +310,98 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
 }
 
 /**
+ * One answer from "Finish your listing" (/dashboard/company/finish): writes only
+ * that column, runs the same after-edit checks as the full form, and moves on to
+ * the next thing missing. Categories and regions aren't touched. An answer that
+ * changes nothing writes nothing, so it can't send a listing back for review.
+ */
+export async function saveListingStepAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const lang = await actionLang(formData);
+  const t = messagesFor(lang);
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: t.demo };
+  const session = await getSession();
+  if (!session) redirect(localizePath("/sign-in", lang));
+  if (!session.organization) return { error: t.noOrg };
+  const step = formData.get("step");
+  if (!isListingStep(step) || !stepsFor(session.organization).includes(step)) return { error: t.checkForm };
+
+  const logo = formData.get("logoUrl")?.toString().trim() ?? null;
+  const value = formData.get("value")?.toString().trim() ?? "";
+  const raw = step !== "logo" ? value : native ? logo ?? "" : ownLogoUrl(logo ?? "") ?? "";
+  const answer = stepPatch(step, raw);
+  if (answer.error) return { error: getDictionary(lang).dashClient.finish.errors[answer.error] };
+
+  const before = session.organization;
+  if (native) {
+    const onward = localizePath(`${FINISH_PATH}?after=${step}`, lang);
+    if (!answer.patch || (step === "logo" && logo === null)) redirect(onward);
+    const policy = companyProfileSchema.shape.insurancePolicyNumber.safeParse(step === "insurance" ? value : undefined);
+    if (!policy.success) return { error: getDictionary(lang).dashClient.finish.errors.tooLong };
+    try {
+      const { categories, regions, insurancePolicyNumber } = await readVpsCompanySelections(session);
+      if (step === "insurance" ? policy.data !== insurancePolicyNumber : patchChanges(before, answer.patch)) {
+        const merged = { ...before, ...answer.patch };
+        const data = {
+          name: before.name, website: merged.website ?? undefined, email: before.email ?? session.profile.email,
+          phone: merged.phone ?? undefined, city: merged.city ?? undefined, province: before.province ?? undefined,
+          shortDescription: merged.short_description ?? undefined, fullDescription: merged.full_description ?? undefined,
+          employeeCountRange: merged.employee_count_range ?? undefined, wsibStatus: merged.wsib_status ?? undefined,
+          insuranceStatus: policy.data ? INSURED : before.insurance_status ?? undefined, insurancePolicyNumber: policy.data,
+          publicContactVisibility: before.public_contact_visibility, categories, regions,
+        };
+        const result = await updateVpsCompanyProfile(session, data, logo, completion(data, categories.length, regions.length), undefined, step);
+        purgeOutCache();
+        revalidatePath("/dashboard");
+        revalidatePath("/dashboard/company");
+        if (result.rejected) {
+          const { score, reasons } = result.rejected;
+          after(async () => {
+            await sendAdminListingRejected({ name: data.name, website: data.website ?? null, email: data.email,
+              score, reasons: reasons.map(reason => reason.detail) }).catch(() => undefined);
+          });
+        }
+      }
+    } catch {
+      return { error: t.saveFailed };
+    }
+    redirect(onward);
+  }
+  if (answer.patch && patchChanges(before, answer.patch)) {
+    const supabase = await createClient();
+    const merged = { ...before, ...answer.patch };
+    const [cats, regs] = await Promise.all([
+      supabase.from("organization_categories").select("category_id", { count: "exact", head: true }).eq("organization_id", before.id),
+      supabase.from("organization_regions").select("region_id", { count: "exact", head: true }).eq("organization_id", before.id),
+    ]);
+    const nextStatus = profileStatusPatch(before.profile_status);
+    const patch = {
+      ...answer.patch,
+      profile_completion_score: completion(
+        {
+          shortDescription: merged.short_description,
+          fullDescription: merged.full_description,
+          website: merged.website,
+          phone: merged.phone,
+          city: merged.city,
+          insuranceStatus: merged.insurance_status,
+        },
+        cats.count ?? 0,
+        regs.count ?? 0,
+      ),
+      ...(nextStatus ? { profile_status: nextStatus } : {}),
+    };
+    const { error } = await supabase.from("organizations").update(patch).eq("id", before.id);
+    if (error) return { error: t.saveFailed };
+    await afterProfileEdit(session, before, patch as Partial<OrganizationRow>, nextStatus);
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/company");
+  }
+
+  redirect(localizePath(`${FINISH_PATH}?after=${step}`, lang));
+}
+
+/**
  * Close an RFP — either as "awarded" (the PM picked a winner, finder's-fee
  * eligible if the project was referred via /refer-a-project) or as "closed"
  * (cancelled / no award). Public detail page shows the appropriate badge.
@@ -269,7 +412,8 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
 export async function closeRfpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = await actionLang(formData);
   const t = messagesFor(lang);
-  if (!isSupabaseConfigured()) return { error: t.demo };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: t.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
 
@@ -279,38 +423,45 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
     return { error: t.invalidOutcome };
   }
 
-  const supabase = await createClient();
-  // RLS enforces that only the posting PM (or admin) can update — but we also
-  // double-check ownership to fail fast with a friendly error.
-  const { data: rfp } = await supabase
-    .from("rfp_posts")
-    .select("id,posted_by_user_id,status")
-    .eq("id", rfpId)
-    .maybeSingle<{ id: string; posted_by_user_id: string | null; status: string }>();
-  if (!rfp) return { error: t.rfpNotFound };
-  if (rfp.posted_by_user_id !== session.userId && session.profile.primary_role !== "admin" && session.profile.primary_role !== "super_admin") {
-    return { error: t.notOwner };
-  }
-  if (
-    rfp.status === "awarded" ||
-    rfp.status === "closed" ||
-    rfp.status === "expired" ||
-    rfp.status === "archived"
-  ) {
-    return { error: t.notActive };
-  }
+  if (native) {
+    const closed = await closeVpsRfp(session.userId, rfpId, outcome).catch(() => "failed");
+    if (closed === "not_found") return { error: t.rfpNotFound };
+    if (closed === "not_owner") return { error: t.notOwner };
+    if (closed === "closed") return { error: t.notActive };
+    if (closed !== "ok") return { error: t.closeFailed };
+  } else {
+    const supabase = await createClient();
+    // RLS enforces that only the posting PM (or admin) can update — but we also
+    // double-check ownership to fail fast with a friendly error.
+    const { data: rfp } = await supabase
+      .from("rfp_posts")
+      .select("id,posted_by_user_id,status")
+      .eq("id", rfpId)
+      .maybeSingle<{ id: string; posted_by_user_id: string | null; status: string }>();
+    if (!rfp) return { error: t.rfpNotFound };
+    if (rfp.posted_by_user_id !== session.userId && session.profile.primary_role !== "admin" && session.profile.primary_role !== "super_admin") {
+      return { error: t.notOwner };
+    }
+    if (
+      rfp.status === "awarded" ||
+      rfp.status === "closed" ||
+      rfp.status === "expired" ||
+      rfp.status === "archived"
+    ) {
+      return { error: t.notActive };
+    }
 
-  const { error } = await supabase
-    .from("rfp_posts")
-    .update({
-      status: outcome,
-      closed_at: new Date().toISOString(),
-    })
-    .eq("id", rfpId);
-  if (error) return { error: t.closeFailed };
+    const { error } = await supabase
+      .from("rfp_posts")
+      .update({
+        status: outcome,
+        closed_at: new Date().toISOString(),
+      })
+      .eq("id", rfpId);
+    if (error) return { error: t.closeFailed };
+  }
 
   revalidatePath("/rfps");
-  revalidatePath(`/rfps`);
   revalidatePath("/pm-dashboard/rfps");
   return {
     success:
@@ -328,7 +479,7 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
  * a regular RFP.
  */
 async function gcPackageFields(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof createClient>> | null,
   formData: FormData,
   categories: string[],
   t: ReturnType<typeof messagesFor>,
@@ -338,8 +489,9 @@ async function gcPackageFields(
   if (!project) return { error: t.gcProject };
   if (!categories.length) return { error: t.gcTrade };
   const relatedInput = formData.get("relatedContract")?.toString().trim() ?? "";
-  const [{ data: cat }, award] = await Promise.all([
-    supabase.from("trade_categories").select("name").eq("slug", categories[0]).maybeSingle<{ name: string }>(),
+  const [cat, award] = await Promise.all([
+    supabase ? supabase.from("trade_categories").select("name").eq("slug", categories[0]).maybeSingle<{ name: string }>().then((r) => r.data)
+      : vpsAppDatabase().prepare("SELECT name FROM trade_categories WHERE slug=?").bind(categories[0]).first<{ name:string }>(),
     getLinkableAward(parseAwardRef(relatedInput)),
   ]);
   if (!cat) return { error: t.gcTrade };
@@ -352,13 +504,18 @@ async function gcPackageFields(
 export async function createRfpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = await actionLang(formData);
   const t = messagesFor(lang);
-  if (!isSupabaseConfigured()) return { error: t.demo };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: t.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
 
   const categories = formData.getAll("categories").map(String);
-  const supabase = await createClient();
-  const gc = await gcPackageFields(supabase, formData, categories, t);
+  if (native && (formData.get("contractId") ||
+      formData.getAll("photoUrls").some(Boolean))) {
+    return { error: t.createFailed };
+  }
+  const supabase = native ? null : await createClient();
+  const gc = await gcPackageFields(supabase,formData,categories,t).catch(() => ({ error:t.createFailed }));
   if (gc && "error" in gc) return { error: gc.error };
   // A public buyer (a town) posts as its page (lib/town-jobs). A mirror of a
   // formal tender has no scope of its own: its summary stands in for it.
@@ -388,6 +545,48 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   if (!parsed.success) return { error: validationMessage(lang, parsed.error.issues[0]?.message, t.requiredFields) };
   const d = parsed.data;
 
+  const slug = `${slugify(d.title)}-${Math.random().toString(36).slice(2, 6)}`;
+  if (native && isTown) {
+    const te = getDictionary(lang).townJobs.post.errors;
+    const org = session.organization;
+    if (!org || org.organization_type !== "public_buyer") return { error: te.noPage };
+    const page = await nativeTownPageFor(org.id,session.userId).catch(() => null);
+    if (!page) return { error: te.noPage };
+    const fields = parseTownPostFields(formData,d.deadline.toISOString().slice(0,10));
+    if (!fields.ok) return { error: te[fields.error] };
+    const done = await postNativeTown(session.userId,org.id,lang,slug,d,page,fields.fields,
+      { postedBy:org.name,schedule:task => after(() => task().catch(() => undefined)) }).catch(() => null);
+    if (!done) return { error:te.unavailable };
+    const actor = { userId:session.userId,role:session.profile.primary_role };
+    await trackEvent(EVENT.RFP_POSTED,{kind:"town",post_kind:fields.fields.postKind},actor);
+    if (fields.fields.postKind==="quote_request") {
+      await trackEvent(EVENT.QUOTE_REQUEST_POSTED,{kind:"town",sealed:fields.fields.sealed},actor);
+    }
+    revalidatePath("/buyer-dashboard");
+    revalidatePath("/buyer-dashboard/jobs");
+    revalidatePath(`/buyers/${page.buyerKey}`);
+    revalidatePath("/rfps");
+    revalidateTag(RFPS_TAG,{expire:0});
+    redirect(localizePath(`/buyer-dashboard/jobs/${done.id}?posted=${done.status === "published" ? "live" : "review"}&alerts=${done.alerts}&n=${done.wouldEmail}`,lang));
+  }
+  if (native) {
+    const db = vpsAppDatabase();
+    try {
+      await postVpsRfp(session.userId,session.organization?.id ?? null,slug,lang,d,db,gc ?? undefined);
+    } catch {
+      return { error: t.createFailed };
+    }
+    await trackEvent(EVENT.RFP_POSTED,{kind:gc ? "gc_package" : "pm",post_kind:null},
+      {userId:session.userId,role:session.profile.primary_role});
+    const pending = await db.prepare("SELECT count(*) AS count FROM rfp_posts WHERE status='pending_review'")
+      .first<{ count: number }>().catch(() => null);
+    await sendAdminNewRfp({ title: d.title, postedBy: session.organization?.name, region: d.regionSlug,
+      category: categories.join(", ") || null, kind: gc ? GC_PACKAGE : "property_manager_direct", pending: pending?.count ?? null });
+    revalidatePath("/pm-dashboard/rfps");
+    redirect(localizePath("/pm-dashboard/rfps?posted=1", lang));
+  }
+  if (!supabase) return { error: t.createFailed };
+
   // The town's page (verified: it goes live at once; claimed: PMRFP reviews it) and its extra fields.
   let town: { page: TownPage; fields: TownPostFields; organizationId: string } | null = null;
   if (isTown) {
@@ -407,7 +606,6 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
       : Promise.resolve({ data: null }),
   ]);
 
-  const slug = `${slugify(d.title)}-${Math.random().toString(36).slice(2, 6)}`;
   const insertRow = {
       title: d.title,
       slug,

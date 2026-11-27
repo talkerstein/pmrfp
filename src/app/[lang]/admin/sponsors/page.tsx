@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { SPONSORS } from "@/lib/sponsors/registry";
-import { loadAdminSponsors, loadCounters, type AdminSponsorRow } from "@/lib/sponsors/admin";
+import { sponsorAdminDatabase, loadAdminSponsors, loadCounters, type AdminSponsorRow } from "@/lib/sponsors/admin";
 import { torontoDay } from "@/lib/sponsors/model";
 import { setLangFrom } from "@/i18n/server";
 
@@ -51,7 +50,7 @@ export default async function AdminSponsorsPage({ params, searchParams }: { para
   let clk = new Map<string, number>();
   const housePlacements = new Map<string, Map<string, number>>();
   if (!isDemoMode()) {
-    const supabase = await createClient();
+    const supabase = await sponsorAdminDatabase();
     const loaded = await loadAdminSponsors(supabase);
     rows = loaded.rows;
     ready = loaded.ready;

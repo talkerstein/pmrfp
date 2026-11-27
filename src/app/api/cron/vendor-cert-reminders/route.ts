@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { runD1CertReminders } from "@/lib/vendor-certs/d1-reminders";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -18,6 +20,16 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const dry = new URL(request.url).searchParams.get("dry") === "1";
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const report = await runD1CertReminders(dry);
+      return NextResponse.json(report, { status: report.failed ? 503 : 200 });
+    } catch {
+      return NextResponse.json({ error: "Certificate reminders unavailable" }, { status: 503 });
+    }
+  }
+  if (dry) return NextResponse.json({ ready: false, dry }, { status: 503 });
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
   return NextResponse.json(await runCertReminders(createServiceClient()));
 }

@@ -1,3 +1,4 @@
+import { readVpsMobileSession } from "@/lib/d1/vps-mobile-session";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSession, type SessionContext } from "@/lib/access/access";
 import { getSessionFromRequest } from "@/lib/access/request-session";
@@ -6,11 +7,13 @@ import { createReadClient } from "@/lib/supabase/read";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Organization } from "@/types/db";
-import { sanitizePhotos } from "./photos";
+import { nativeProjectHero, nativeStoredProjectPhotos, sanitizePhotos, type ProjectPhoto } from "./photos";
 import { resolvePhotoUrls } from "./photo-storage";
 import { isSchemaMissing } from "./compat";
 import { normalizeVisibility, type Visibility } from "./visibility";
 import { caseStudyProgress, sanitizeResults, type Progress } from "./case-study";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { countVpsActiveProjects, vpsProjectActiveMember, vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
 
 /**
  * Server-side plumbing shared by the Projects route handlers and actions.
@@ -23,7 +26,8 @@ export type ProjectSession = SessionContext & { organization: Organization };
  * session.organization comes from organization_members, so having one IS
  * proof of membership.
  */
-export async function getProjectSession(): Promise<ProjectSession | null> {
+export async function getProjectSession(request?: Request): Promise<ProjectSession | null> {
+  if (request?.headers.has("authorization")) return toProjectSession(await readVpsMobileSession(request).catch(()=>null));
   return toProjectSession(await getSession());
 }
 
@@ -56,6 +60,13 @@ function toProjectSession(session: SessionContext | null): ProjectSession | null
  * rather than failing halfway through an upload.
  */
 export async function projectsReady(): Promise<boolean> {
+  if (vpsProjectUploadsEnabled()) {
+    try {
+      const ready = await vpsAppDatabase().prepare(`SELECT 1 AS ready WHERE ${vpsProjectAuthority}
+        AND EXISTS (SELECT 1 FROM sqlite_schema WHERE type='table' AND name='_project_publication_receipts')`).first();
+      return ready !== null;
+    } catch { return false; }
+  }
   if (!isSupabaseConfigured()) return false;
   try {
     const { error } = await createReadClient().from("case_studies").select("photos").limit(1);
@@ -103,6 +114,25 @@ interface MyProjectRow {
 
 /** Every case study this company submitted (members can read all statuses). */
 export async function listMyProjects(organizationId: string, db?: SupabaseClient): Promise<MyProject[]> {
+  if (vpsProjectUploadsEnabled()) {
+    const session = await getProjectSession();
+    if (session?.organization.id !== organizationId) return [];
+    const { results } = await vpsAppDatabase().prepare(`SELECT c.id,c.slug,c.title,c.status,c.city,c.province,
+      c.created_at,c.category_id,c.region_id,c.challenge,c.approach,c.outcome,c.hero_url,c.photos,
+      c.visibility,c.client_type,c.scope,c.results,c.completed_on,
+      (SELECT count(*) FROM vendor_reviews r WHERE r.case_study_id=c.id AND r.status='published'
+        AND c.visibility<>'private') AS reviews
+      FROM case_studies c WHERE c.organization_id=? AND ${vpsProjectAuthority} AND ${vpsProjectActiveMember}
+      ORDER BY c.created_at DESC LIMIT 100`).bind(organizationId, organizationId, session.userId)
+      .all<MyProjectRow & { photos: string; results: string; reviews: number }>();
+    return results.map(row => {
+      const photos = nativeStoredProjectPhotos(JSON.parse(row.photos), row.id, organizationId);
+      const hero = photos.find(photo => photo.url === row.hero_url || row.hero_url?.endsWith("/" + photo.path));
+      const file = hero?.path.split("/")[1]?.slice(0, -4);
+      return projectListItem({ ...row, results: JSON.parse(row.results) }, photos,
+        file ? `/api/projects/${row.id}/private-photo/${file}` : null, row.reviews);
+    });
+  }
   const supabase = db ?? (await createClient());
   const base = "id,slug,title,status,city,province,created_at,category_id,region_id,challenge,approach,outcome";
   const run = (cols: string) =>
@@ -127,7 +157,13 @@ export async function listMyProjects(organizationId: string, db?: SupabaseClient
     })),
     { kind: "member", organizationId },
   );
-  return rows.map((r, i) => ({
+  return rows.map((r, i) => projectListItem(r,
+    sanitizePhotos(r.photos, supabaseUrl, organizationId, { includePrivate: true }),
+    heroes[i], reviewCounts.get(r.id) ?? 0));
+}
+
+function projectListItem(r: MyProjectRow, photos: ProjectPhoto[], heroUrl: string | null, reviewCount: number): MyProject {
+  return {
     id: r.id,
     slug: r.slug,
     title: r.title,
@@ -135,7 +171,7 @@ export async function listMyProjects(organizationId: string, db?: SupabaseClient
     city: r.city,
     province: r.province,
     createdAt: r.created_at,
-    heroUrl: heroes[i],
+    heroUrl,
     visibility: normalizeVisibility(r.visibility),
     progress: caseStudyProgress({
       clientType: r.client_type ?? null,
@@ -148,10 +184,10 @@ export async function listMyProjects(organizationId: string, db?: SupabaseClient
       approach: r.approach,
       outcome: r.outcome,
       results: sanitizeResults(r.results),
-      photos: sanitizePhotos(r.photos, supabaseUrl, organizationId, { includePrivate: true }),
-      reviewCount: reviewCounts.get(r.id) ?? 0,
+      photos,
+      reviewCount,
     }),
-  }));
+  };
 }
 
 /** Published reviews per project (public view; private projects' reviews aren't in it). */
@@ -180,6 +216,17 @@ export interface MyInvite {
 
 /** Review requests this company has sent. Empty before the migration. */
 export async function listMyInvites(organizationId: string): Promise<MyInvite[]> {
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE==="d1") {
+    const session=await getProjectSession();
+    if (session?.organization.id!==organizationId) return [];
+    const rows=await vpsAppDatabase().prepare(`SELECT id,case_study_id AS caseStudyId,client_name AS clientName,client_email AS clientEmail,
+      created_at AS createdAt,used_at AS usedAt FROM review_invites WHERE organization_id=?
+      AND EXISTS(SELECT 1 FROM organization_members m JOIN users_profile u ON u.id=m.user_id
+        WHERE m.organization_id=review_invites.organization_id AND u.id=? AND u.status='active')
+      ORDER BY created_at DESC,id LIMIT 300`).bind(organizationId,session.userId).all<MyInvite>();
+    return rows.results;
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("review_invites")
@@ -231,6 +278,40 @@ export interface ReferenceEntry {
 /** Most projects one capability sheet prints (two pages, give or take). */
 export const SHEET_MAX = 8;
 
+type SheetRow = {
+  id: string; slug: string; title: string; city: string | null; province: string | null; published_at: string | null;
+  challenge: string; budget_band: string | null; trade_categories: { name: string } | null;
+  summary?: string | null; hero_url?: string | null; visibility?: string | null; client_type?: string | null;
+  scope?: string | null; results?: unknown; completed_on?: string | null;
+};
+type ReferenceRow = { case_study_id: string | null; reviewer_name: string; reviewer_company: string | null;
+  reviewer_email: string | null; rating: number; body: string };
+
+function referencesByProject(rows: ReferenceRow[]) {
+  const byProject = new Map<string, ReferenceEntry["references"]>();
+  for (const row of rows) {
+    if (!row.case_study_id) continue;
+    const list = byProject.get(row.case_study_id) ?? [];
+    list.push({ name: row.reviewer_name, company: row.reviewer_company, email: row.reviewer_email, rating: row.rating,
+      quote: row.body.length > 240 ? `${row.body.slice(0, 237).trimEnd()}…` : row.body });
+    byProject.set(row.case_study_id, list);
+  }
+  return byProject;
+}
+
+function referenceEntry(row: SheetRow, heroUrl: string | null, shareToken: string | null, references: ReferenceEntry["references"]): ReferenceEntry {
+  const text = (row.summary?.trim() || row.challenge).trim();
+  const scope = row.scope?.trim() || null;
+  return {
+    id: row.id, slug: row.slug, title: row.title, place: [row.city, row.province].filter(Boolean).join(", "),
+    publishedAt: row.published_at, summary: text.length > 280 ? `${text.slice(0, 277).trimEnd()}…` : text,
+    heroUrl, visibility: normalizeVisibility(row.visibility), clientType: row.client_type ?? null,
+    tradeName: row.trade_categories?.name ?? null, scope: scope && scope.length > 220 ? `${scope.slice(0, 217).trimEnd()}…` : scope,
+    results: sanitizeResults(row.results), completedOn: row.completed_on ?? null, valueBand: row.budget_band?.trim() || null,
+    shareToken, references,
+  };
+}
+
 /**
  * Data for the printable capability sheet: the company's published
  * projects (any visibility, it's their own document), and for each the
@@ -240,6 +321,41 @@ export const SHEET_MAX = 8;
  * empty = the newest SHEET_MAX.
  */
 export async function listReferenceSheet(organizationId: string, select: string[] = []): Promise<ReferenceEntry[]> {
+  if (vpsProjectUploadsEnabled()) {
+    const session = await getProjectSession();
+    if (session?.organization.id !== organizationId) return [];
+    const db = vpsAppDatabase();
+    const scope = `c.organization_id=? AND c.status='published' AND ${vpsProjectAuthority} AND ${vpsProjectActiveMember}`;
+    const access = [organizationId, organizationId, session.userId];
+    const { results } = await db.prepare(`SELECT c.id,c.slug,c.title,c.city,c.province,c.published_at,c.challenge,c.budget_band,
+      c.summary,c.hero_url,c.photos,c.visibility,c.client_type,c.scope,c.results,c.completed_on,t.name AS tradeName
+      FROM case_studies c LEFT JOIN trade_categories t ON t.id=c.category_id
+      WHERE ${scope} ORDER BY c.published_at DESC,c.id LIMIT 50`).bind(...access)
+      .all<Omit<SheetRow, "trade_categories" | "results"> & { tradeName: string | null; photos: string; results: string }>();
+    const wanted = new Set(select);
+    const projects = (wanted.size ? results.filter(p => wanted.has(p.id)) : results).slice(0, SHEET_MAX);
+    if (!projects.length) return [];
+    const ids = JSON.stringify(projects.map(p => p.id));
+    const [links, refs] = await Promise.all([
+      db.prepare(`SELECT c.id,(SELECT l.token FROM case_study_share_links l
+        WHERE l.case_study_id=c.id AND l.organization_id=c.organization_id AND l.revoked_at IS NULL
+        ORDER BY l.created_at,l.id LIMIT 1) AS token FROM case_studies c
+        WHERE ${scope} AND c.visibility='private' AND c.id IN (SELECT value FROM json_each(?))`)
+        .bind(...access, ids).all<{ id: string; token: string | null }>(),
+      db.prepare(`SELECT r.case_study_id,r.reviewer_name,r.reviewer_company,r.reviewer_email,r.rating,r.body
+        FROM vendor_reviews r JOIN case_studies c ON c.id=r.case_study_id AND c.organization_id=r.organization_id
+        WHERE ${scope} AND r.status='published' AND r.reference_ok=1 AND c.id IN (SELECT value FROM json_each(?))
+        ORDER BY r.created_at DESC,r.id`).bind(...access, ids).all<ReferenceRow>(),
+    ]);
+    const tokens = new Map(links.results.map(({ id, token }) => [id, token]));
+    const references = referencesByProject(refs.results);
+    return projects.map((p) => {
+      const photo = nativeProjectHero(nativeStoredProjectPhotos(JSON.parse(p.photos), p.id, organizationId), p.hero_url);
+      const file = photo?.path.split("/")[1]?.slice(0, -4);
+      return referenceEntry({ ...p, trade_categories: p.tradeName ? { name: p.tradeName } : null, results: JSON.parse(p.results) },
+        file ? `/api/projects/${p.id}/private-photo/${file}` : null, tokens.get(p.id) ?? null, references.get(p.id) ?? []);
+    });
+  }
   if (!isServiceConfigured()) return [];
   const db = createServiceClient();
   const base = "id,slug,title,city,province,published_at,challenge,budget_band,trade_categories(name)";
@@ -255,24 +371,7 @@ export async function listReferenceSheet(organizationId: string, select: string[
   if (isSchemaMissing(error)) ({ data, error } = await run(`${base},summary,hero_url`));
   if (isSchemaMissing(error)) ({ data, error } = await run(base));
   if (error || !data) return [];
-  const all = data as unknown as {
-    id: string;
-    slug: string;
-    title: string;
-    city: string | null;
-    province: string | null;
-    published_at: string | null;
-    challenge: string;
-    budget_band: string | null;
-    trade_categories: { name: string } | null;
-    summary?: string | null;
-    hero_url?: string | null;
-    visibility?: string | null;
-    client_type?: string | null;
-    scope?: string | null;
-    results?: unknown;
-    completed_on?: string | null;
-  }[];
+  const all = data as unknown as SheetRow[];
   const wanted = new Set(select);
   const projects = (wanted.size ? all.filter((p) => wanted.has(p.id)) : all).slice(0, SHEET_MAX);
 
@@ -297,26 +396,7 @@ export async function listReferenceSheet(organizationId: string, select: string[
     .eq("organization_id", organizationId)
     .eq("status", "published")
     .eq("reference_ok", true);
-  const byProject = new Map<string, ReferenceEntry["references"]>();
-  for (const r of (refs ?? []) as {
-    case_study_id: string | null;
-    reviewer_name: string;
-    reviewer_company: string | null;
-    reviewer_email: string | null;
-    rating: number;
-    body: string;
-  }[]) {
-    if (!r.case_study_id) continue;
-    const list = byProject.get(r.case_study_id) ?? [];
-    list.push({
-      name: r.reviewer_name,
-      company: r.reviewer_company,
-      email: r.reviewer_email,
-      rating: r.rating,
-      quote: r.body.length > 240 ? `${r.body.slice(0, 237).trimEnd()}…` : r.body,
-    });
-    byProject.set(r.case_study_id, list);
-  }
+  const byProject = referencesByProject((refs ?? []) as ReferenceRow[]);
 
   // The company's own document: unlisted/private heroes are signed for its member.
   const heroes = await resolvePhotoUrls(
@@ -326,32 +406,20 @@ export async function listReferenceSheet(organizationId: string, select: string[
     })),
     { kind: "member", organizationId },
   );
-  return projects.map((p, i) => {
-    const text = (p.summary?.trim() || p.challenge).trim();
-    const scope = p.scope?.trim() || null;
-    return {
-      id: p.id,
-      slug: p.slug,
-      title: p.title,
-      place: [p.city, p.province].filter(Boolean).join(", "),
-      publishedAt: p.published_at,
-      summary: text.length > 280 ? `${text.slice(0, 277).trimEnd()}…` : text,
-      heroUrl: heroes[i],
-      visibility: normalizeVisibility(p.visibility),
-      clientType: p.client_type ?? null,
-      tradeName: p.trade_categories?.name ?? null,
-      scope: scope && scope.length > 220 ? `${scope.slice(0, 217).trimEnd()}…` : scope,
-      results: sanitizeResults(p.results),
-      completedOn: p.completed_on ?? null,
-      valueBand: p.budget_band?.trim() || null,
-      shareToken: tokens.get(p.id) ?? null,
-      references: byProject.get(p.id) ?? [],
-    };
-  });
+  return projects.map((p, i) => referenceEntry(p, heroes[i], tokens.get(p.id) ?? null, byProject.get(p.id) ?? []));
 }
 
 /** Published projects to pick from on the capability sheet (id, title, visibility). */
 export async function listSheetChoices(organizationId: string): Promise<{ id: string; title: string; visibility: Visibility }[]> {
+  if (vpsProjectUploadsEnabled()) {
+    const session = await getProjectSession();
+    if (session?.organization.id !== organizationId) return [];
+    const { results } = await vpsAppDatabase().prepare(`SELECT id,title,visibility FROM case_studies
+      WHERE organization_id=? AND status='published' AND ${vpsProjectAuthority} AND ${vpsProjectActiveMember}
+      ORDER BY published_at DESC,id LIMIT 50`).bind(organizationId, organizationId, session.userId)
+      .all<{ id: string; title: string; visibility: string }>();
+    return results.map((row) => ({ ...row, visibility: normalizeVisibility(row.visibility) }));
+  }
   if (!isServiceConfigured()) return [];
   const db = createServiceClient();
   const run = (cols: string) =>
@@ -378,6 +446,10 @@ export async function listSheetChoices(organizationId: string): Promise<{ id: st
  * too, they're projects on the profile all the same.
  */
 export async function countActiveProjects(organizationId: string, db?: SupabaseClient): Promise<number> {
+  if (vpsProjectUploadsEnabled()) {
+    const session = await getProjectSession();
+    return session?.organization.id === organizationId ? countVpsActiveProjects(organizationId) : 0;
+  }
   const supabase = db ?? (await createClient());
   const { count, error } = await supabase
     .from("case_studies")

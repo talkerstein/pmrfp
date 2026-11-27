@@ -1,5 +1,6 @@
 import Link from "@/i18n/link";
 import Image from "next/image";
+import { publicImageSource } from "@/lib/d1/public-asset-preview";
 import { BadgeCheck, MapPin, Globe2, ShieldCheck, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ function coverageLabel(
 }
 
 export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
+  const logo = vendor.logoUrl ? publicImageSource(vendor.logoUrl) : null;
   const t = getT("directory");
   const lang = getLang();
   const initials = vendor.name
@@ -83,14 +85,14 @@ export function DirectoryCard({ vendor }: { vendor: VendorListItem }) {
             vendor.logoUrl ? "border border-border bg-white" : "bg-indigo text-white",
           )}
         >
-          {vendor.logoUrl ? (
+          {logo ? (
             <Image
-              src={vendor.logoUrl}
+              src={logo.src}
               alt={vendor.name}
               fill
               sizes="44px"
               className="object-contain p-1"
-              unoptimized={vendor.logoUrl.endsWith(".svg")}
+              unoptimized={logo.unoptimized || logo.src.endsWith(".svg")}
             />
           ) : (
             initials

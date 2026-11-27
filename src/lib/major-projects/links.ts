@@ -1,3 +1,4 @@
+import type { D1Binding } from "@/lib/d1/contracts";
 /**
  * The same project listed by more than one source: a Québec PQI row and an
  * Infrastructure Canada funding row, a Toronto development application and
@@ -145,10 +146,18 @@ interface DbLinkRow {
  * (sequential, 100 ids per statement). Returns how many groups exist and
  * how many rows changed.
  */
-export async function refreshLinkGroups(supabase: SupabaseClient): Promise<{ groups: number; linked: number; changed: number }> {
+export async function refreshLinkGroups(supabase: SupabaseClient | D1Binding): Promise<{ groups: number; linked: number; changed: number }> {
   const all: DbLinkRow[] = [];
   let after: string | null = null;
   for (;;) {
+    if ("prepare" in supabase) {
+      const page: DbLinkRow[] = (await supabase.prepare(`SELECT id,source,name,city,province,est_value_cad,link_group,stale,approved,review_status
+        FROM major_projects WHERE id>? ORDER BY id LIMIT ?`).bind(after ?? "",PAGE).all<DbLinkRow>()).results;
+      all.push(...page);
+      if (page.length < PAGE) break;
+      after = page[page.length - 1].id;
+      continue;
+    }
     let q = supabase.from("major_projects").select("id,source,name,city,province,est_value_cad,link_group,stale,approved,review_status").order("id").limit(PAGE);
     if (after) q = q.gt("id", after);
     const { data, error } = await q;
@@ -171,8 +180,13 @@ export async function refreshLinkGroups(supabase: SupabaseClient): Promise<{ gro
   for (const [group, ids] of changes) {
     for (let i = 0; i < ids.length; i += IN_BATCH) {
       const chunk = ids.slice(i, i + IN_BATCH);
-      const { error } = await supabase.from("major_projects").update({ link_group: group }).in("id", chunk);
-      if (error) throw new Error(`major_projects links write: ${error.message}`);
+      if ("prepare" in supabase) {
+        await supabase.prepare("UPDATE major_projects SET link_group=? WHERE id IN (SELECT value FROM json_each(?))")
+          .bind(group,JSON.stringify(chunk)).run();
+      } else {
+        const { error } = await supabase.from("major_projects").update({ link_group: group }).in("id", chunk);
+        if (error) throw new Error(`major_projects links write: ${error.message}`);
+      }
       changed += chunk.length;
     }
   }

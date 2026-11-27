@@ -16,6 +16,10 @@ import { ProfileCompletionCard } from "@/components/dashboard/profile-completion
 import { ReputationCard } from "@/components/karma/reputation-card";
 import { RecentUpdates, TRADE_NOTICE_TYPES } from "@/components/pm-jobs/recent-updates";
 import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { loadSavedRfpTitles } from "@/lib/d1/saved-page";
+import { countVpsTradeInterests } from "@/lib/d1/vps-rfp-interest";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -82,7 +86,10 @@ export default async function TradeDashboardHome({
   const ledgerSince = ledgerStart(session.trial?.status === "active" ? session.trial.startedAt : null);
   const ledger = !demo && session.hasTradeAccess ? await loadTrialUsage(session.userId, org?.id ?? null, ledgerSince) : null;
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
-  const activity = demo ? { saved: 0, interests: 0 } : await activityCounts(session.userId, org?.id ?? null);
+  const activity = demo ? { saved: 0, interests: 0 } : isVpsLiveCustomerAuth() ? await Promise.all([
+    loadSavedRfpTitles(session.userId).then(rows => rows.length).catch(() => null),
+    countVpsTradeInterests(session).catch(() => null),
+  ]).then(([saved, interests]) => ({ saved, interests })) : await activityCounts(session.userId, org?.id ?? null);
   const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
   // Price benchmarks for this company's trades, in its own country and province first.
   const benches = tradeSlugs.length ? await benchmarksForTrades(tradeSlugs, country, province).catch(() => []) : [];
@@ -316,6 +323,13 @@ async function activityCounts(userId: string, orgId: string | null): Promise<{ s
 /** The trades this company lists under, for picking a relevant sponsor. */
 async function orgTradeSlugs(orgId: string | null, demo: boolean): Promise<string[]> {
   if (!orgId || demo) return [];
+  if (isVpsLiveCustomerAuth()) {
+    const { results } = await vpsAppDatabase().prepare(`
+      SELECT t.slug FROM organization_categories c
+      JOIN trade_categories t ON t.id=c.category_id WHERE c.organization_id=?
+    `).bind(orgId).all<{ slug: string }>();
+    return results.map(({ slug }) => slug).filter(Boolean);
+  }
   const supabase = await createClient();
   const { data } = await supabase
     .from("organization_categories")

@@ -1,13 +1,19 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { logAudit } from "@/lib/audit";
-import { asPaid, loadAdminSponsors } from "./admin";
+import { asPaid, loadAdminSponsor, loadAdminSponsors, type SponsorAdminDb } from "./admin";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { SPONSORS_TAG } from "@/lib/supabase/public-cache";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import {
   COPY_PROBLEM_TEXT,
   HOLDING_STATUSES,
@@ -33,8 +39,47 @@ const ADMIN = "/admin/sponsors";
 
 async function admin() {
   const session = await requireRole(["admin", "super_admin"]);
+  if (session.profile.status !== "active") redirect(ADMIN);
+  if (isVpsLiveCustomerAuth()) return { session, supabase: vpsAppDatabase() };
   if (!isServiceConfigured()) redirect(`${ADMIN}?error=${encodeURIComponent("Supabase service key isn't configured.")}`);
   return { session, supabase: createServiceClient() };
+}
+
+const staffScope = `${customerAppAuthority} AND EXISTS(SELECT 1 FROM users_profile u
+  WHERE u.id=? AND u.status='active' AND u.primary_role IN ('admin','super_admin'))`;
+
+function slotGuard(r: CheckRow, nextStatus: SponsorStatus) {
+  return {
+    query: `(? NOT IN ('pending','approved','paused') OR NOT EXISTS(
+      SELECT 1 FROM sponsors s WHERE s.id<>? AND s.status IN ('pending','approved','paused') AND s.country=?
+      AND coalesce(s.start_date,'0000-01-01')<=coalesce(?,'9999-12-31')
+      AND coalesce(?,'0000-01-01')<=coalesce(s.end_date,'9999-12-31')
+      AND EXISTS(SELECT 1 FROM json_each(s.trades) old JOIN json_each(?) new ON old.value=new.value)
+      AND ((s.tier='national' AND ?='national') OR (s.tier<>'national' AND ?<>'national'
+        AND EXISTS(SELECT 1 FROM json_each(s.regions) old JOIN json_each(?) new ON old.value=new.value)))))`,
+    args: [nextStatus, r.id, r.country, r.end_date, r.start_date, JSON.stringify(r.trades),
+      r.tier, r.tier, JSON.stringify(r.regions)],
+  };
+}
+
+async function writeSponsor(db: D1Binding, id: string | null, staff: string, row: Record<string, string | number | null>,
+  slot: CheckRow, currentStatus: SponsorStatus, nextStatus: SponsorStatus) {
+  const keys = Object.keys(row);
+  const values = Object.values(row);
+  const key = id ?? randomUUID();
+  const guard = slotGuard(slot, nextStatus);
+  try {
+    const saved = id
+      ? await db.prepare(`UPDATE sponsors SET ${keys.map((field) => field + "=?").join(",")},updated_at=?
+        WHERE id=? AND status=? AND ${staffScope} AND ${guard.query} RETURNING id`)
+        .bind(...values, new Date().toISOString(), key, currentStatus, staff, ...guard.args).first<{ id: string }>()
+      : await db.prepare(`INSERT INTO sponsors(id,${keys.join(",")}) SELECT ?,${keys.map(() => "?").join(",")}
+        WHERE ${staffScope} AND ${guard.query} RETURNING id`)
+        .bind(key, ...values, staff, ...guard.args).first<{ id: string }>();
+    return saved ? { data: saved, error: null } : { data: null, error: { message: "The record or slot changed. Reload and try again.", code: "" } };
+  } catch {
+    return { data: null, error: { message: "The change could not be saved. Check the link name and values.", code: "" } };
+  }
 }
 
 const back = (id: string | null, msg: { error?: string; saved?: boolean }) =>
@@ -121,7 +166,7 @@ export async function saveSponsorAction(formData: FormData): Promise<void> {
   // Rows that hold or show a slot must stay valid.
   let status: SponsorStatus = "draft";
   if (id) {
-    const { data } = await supabase.from("sponsors").select("status").eq("id", id).maybeSingle<{ status: SponsorStatus }>();
+    const data = await loadAdminSponsor(supabase, id);
     if (!data) redirect(ADMIN);
     status = data.status;
   }
@@ -133,11 +178,15 @@ export async function saveSponsorAction(formData: FormData): Promise<void> {
     if (conflict) redirect(back(id, { error: conflict }));
   }
 
-  const res = id
+  const res = "prepare" in supabase
+    ? await writeSponsor(supabase, id, session.userId, { ...row, trades: JSON.stringify(trades), regions: JSON.stringify(cleanRegions) },
+      { id: id ?? "", ...row }, status, status)
+    : id
     ? await supabase.from("sponsors").update(row).eq("id", id).select("id").maybeSingle<{ id: string }>()
     : await supabase.from("sponsors").insert({ ...row, status: "draft" }).select("id").maybeSingle<{ id: string }>();
   const savedId = res.data?.id ?? id;
   await logAudit({ actorUserId: session.userId, action: id ? "sponsor.edit" : "sponsor.create", entityType: "sponsor", entityId: savedId, metadata: res.error ? { error: res.error.message } : { slug } });
+  if ("prepare" in supabase && !res.error) updateTag(SPONSORS_TAG);
   revalidatePath(ADMIN);
   if (res.error) {
     const msg = res.error.code === "23505" ? `The link name "${slug}" is taken: pick another slug.` : `Not saved: ${res.error.message}`;
@@ -164,7 +213,7 @@ type CheckRow = {
   end_date: string | null;
 };
 
-async function conflictProblem(supabase: ReturnType<typeof createServiceClient>, r: CheckRow): Promise<string | null> {
+async function conflictProblem(supabase: SponsorAdminDb, r: CheckRow): Promise<string | null> {
   const { rows } = await loadAdminSponsors(supabase);
   const conflicts = findConflicts(
     { id: r.id, tier: r.tier, country: r.country, trades: r.trades, regions: r.regions, startDate: r.start_date, endDate: r.end_date },
@@ -176,7 +225,7 @@ async function conflictProblem(supabase: ReturnType<typeof createServiceClient>,
   return `Slot taken: ${c.sponsor.name || c.sponsor.slug} already holds ${c.slot.trade} ${where} (${c.slot.channel}) for overlapping dates. One sponsor per slot.`;
 }
 
-async function goLiveProblem(supabase: ReturnType<typeof createServiceClient>, r: CheckRow & { status: SponsorStatus }): Promise<string | null> {
+async function goLiveProblem(supabase: SponsorAdminDb, r: CheckRow & { status: SponsorStatus }): Promise<string | null> {
   const problems = checkSponsorCopy({
     name: r.name,
     url: r.url,
@@ -203,15 +252,12 @@ export async function setSponsorStatusAction(formData: FormData): Promise<void> 
   const parsed = statusSchema.safeParse({ id: String(formData.get("id") ?? ""), to: String(formData.get("to") ?? "") });
   if (!parsed.success) redirect(ADMIN);
   const { id, to } = parsed.data;
-  const { data: r } = await supabase
-    .from("sponsors")
-    .select("id,name,url,headline,message,cta,headline_fr,message_fr,cta_fr,tier,country,trades,regions,start_date,end_date,status")
-    .eq("id", id)
-    .maybeSingle<CheckRow & { status: SponsorStatus }>();
-  if (!r) redirect(ADMIN);
+  const existing = await loadAdminSponsor(supabase, id);
+  if (!existing) redirect(ADMIN);
+  const r = { ...existing, trades: existing.trades ?? [], regions: existing.regions ?? [] };
 
   const today = torontoDay();
-  const patch: Record<string, unknown> = { status: to };
+  const patch: Record<string, string | null> = { status: to };
   if (to === "approved") {
     const startDate = r.start_date ?? today;
     const problem = await goLiveProblem(supabase, { ...r, start_date: startDate, status: to });
@@ -229,7 +275,12 @@ export async function setSponsorStatusAction(formData: FormData): Promise<void> 
     patch.reviewed_at = new Date().toISOString();
   }
 
-  const { error } = await supabase.from("sponsors").update(patch).eq("id", id);
+  const { error } = "prepare" in supabase
+    ? await writeSponsor(supabase, id, session.userId, patch,
+      { ...r, start_date: "start_date" in patch ? patch.start_date : r.start_date,
+        end_date: "end_date" in patch ? patch.end_date : r.end_date }, r.status, to)
+    : await supabase.from("sponsors").update(patch).eq("id", id);
+  if ("prepare" in supabase && !error) updateTag(SPONSORS_TAG);
   await logAudit({ actorUserId: session.userId, action: `sponsor.${to}`, entityType: "sponsor", entityId: id, metadata: error ? { error: error.message } : undefined });
   revalidatePath(ADMIN);
   redirect(back(id, error ? { error: `Not saved: ${error.message}` } : { saved: true }));

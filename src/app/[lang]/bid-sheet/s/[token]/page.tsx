@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { BoardBroken, BoardSheet } from "@/components/bid-compare/board";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsBidShare } from "@/lib/d1/vps-bid-comparisons";
 import { lookupShared } from "@/lib/bid-compare/server";
 import { buildSheet } from "@/lib/bid-compare/view";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -28,7 +30,7 @@ export default async function SharedBoardPage({ params }: { params: Promise<{ to
   const m = getT("bidCompare");
   const lang = getLang();
   const { token } = await params;
-  const shared = await lookupShared(token);
+  const shared = isVpsLiveCustomerAuth() ? await readVpsBidShare(token).catch(() => ({state:"invalid"} as const)) : await lookupShared(token);
   if (shared.state !== "open") return <BoardBroken m={m} />;
   const view = buildSheet({ scopeItems: shared.comparison.scope_items, bids: shared.bids, certs: shared.certs, orgs: shared.orgs, shared: true });
   return <BoardSheet company={shared.company.name} comparison={shared.comparison} view={view} country={shared.comparison.country} lang={lang} m={m} />;

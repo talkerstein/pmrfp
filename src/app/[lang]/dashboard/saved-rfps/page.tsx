@@ -1,6 +1,8 @@
+import { isCustomerD1Staging, isIsolatedD1Staging, stagingListingSlug } from "@/lib/d1/staging-config";
+import { SaveButton } from "@/components/dashboard/save-button";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
+import { loadSavedRfpTitles } from "@/lib/d1/saved-page";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { buttonVariants } from "@/components/ui/button";
@@ -20,21 +22,8 @@ export default async function SavedRfpsPage({ params }: { params: Promise<object
   // Saving is free (lib/access/free-actions): trade and supplier accounts.
   const session = await requireRole(["trade", "supplier"]);
 
-  const saved: { title: string; slug: string }[] = [];
-  if (!isDemoMode()) {
-    const supabase = await createClient();
-    const { data } = await supabase.from("saved_rfps").select("rfp_id,created_at").eq("user_id", session.userId).order("created_at", { ascending: false }).limit(500);
-    const ids = ((data as { rfp_id: string }[] | null) ?? []).map((r) => r.rfp_id);
-    if (ids.length) {
-      // Titles from the public teaser view: free members can't read full rows.
-      const { data: rows } = await supabase.from("rfp_public").select("id,title,slug").in("id", ids);
-      const byId = new Map(((rows as { id: string; title: string; slug: string }[] | null) ?? []).map((r) => [r.id, r]));
-      for (const id of ids) {
-        const r = byId.get(id);
-        if (r) saved.push({ title: r.title, slug: r.slug });
-      }
-    }
-  }
+  const staging = isIsolatedD1Staging();
+  const saved = isDemoMode() && !staging ? [] : await loadSavedRfpTitles(session.userId);
 
   return (
     <div>
@@ -43,6 +32,13 @@ export default async function SavedRfpsPage({ params }: { params: Promise<object
         description={t.description}
       />
 
+      {staging && !isCustomerD1Staging() && (
+        <div className="mb-4 rounded-lg border bg-card p-4">
+          <h2 className="mb-2 font-semibold">Synthetic native-login listing</h2>
+          <p className="mb-2 text-sm text-muted-foreground">Save or remove this test listing, then refresh to verify the result.</p>
+          <SaveButton rfpSlug={stagingListingSlug} initialSaved={saved.some(row => row.slug === stagingListingSlug)} />
+        </div>
+      )}
       {saved.length === 0 ? (
         <EmptyState
           title={t.emptyTitle}

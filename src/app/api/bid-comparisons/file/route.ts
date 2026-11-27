@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { downloadPrivateAttachment } from "@/lib/d1/private-attachment-routes";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/access/access";
@@ -13,6 +15,7 @@ import { signQuoteFile } from "@/lib/bid-compare/server";
  * link.
  */
 export async function GET(request: Request) {
+  if (isVpsLiveCustomerAuth()) return downloadPrivateAttachment(request, "quote");
   const id = new URL(request.url).searchParams.get("id") ?? "";
   if (!z.uuid().safeParse(id).success) return NextResponse.json({ error: "notFound" }, { status: 404 });
   const session = await getSession();

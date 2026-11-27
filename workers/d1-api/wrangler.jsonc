@@ -1,0 +1,16 @@
+{
+  "name": "pmrfp-d1-saved-rfps-preview",
+  "main": "index.ts",
+  "compatibility_date": "2026-10-22",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "workers_dev": true,
+  "vars": {
+    "SAVED_RFPS_MODE": "sandbox-write"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "pmrfp-api-sandbox-20261022",
+    "database_id": "89721b4c-4fd7-46a2-809e-6a2299d915a3"
+  }],
+  "observability": { "enabled": false }
+}

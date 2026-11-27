@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { interestSchema } from "@/lib/validations";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { getSession } from "@/lib/access/access";
+import { readVpsMobileSession } from "@/lib/d1/vps-mobile-session";
+import { loadNativeSealedPost } from "@/lib/town-jobs/native-sealed";
 import { getSessionFromRequest } from "@/lib/access/request-session";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { loadTownJob } from "@/lib/town-jobs/server";
@@ -16,6 +20,12 @@ import { respondSealed, withdrawSealed } from "@/lib/town-jobs/sealed-respond";
 async function setup(request: Request) {
   const limited = await checkRateLimit(request, "rfp-interest");
   if (limited) return { error: rateLimitResponse(limited) };
+  if (isVpsLiveCustomerAuth()) {
+    if (!matchesCustomerOrigin(request)) return { error: NextResponse.json({ ok:false,error:"Invalid origin" }, { status:403 }) };
+    const session = request.headers.has("authorization") ? await readVpsMobileSession(request).catch(() => null) : await getSession();
+    if (!session) return { error: NextResponse.json({ ok:false,error:"Sign in required",reason:"signin" }, { status:401 }) };
+    return { session, db:null };
+  }
   if (!isSupabaseConfigured() || !isServiceConfigured()) return { error: NextResponse.json({ ok: false, error: "Not available right now", reason: "demo" }, { status: 503 }) };
   const session = (await getSessionFromRequest(request))?.session ?? null;
   if (!session) return { error: NextResponse.json({ ok: false, error: "Sign in required", reason: "signin" }, { status: 401 }) };
@@ -33,7 +43,7 @@ export async function POST(request: Request) {
   }
   const parsed = interestSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ ok: false, error: "Validation failed", reason: "invalid", issues: parsed.error.flatten() }, { status: 422 });
-  const job = await loadTownJob(s.db, parsed.data.rfpId);
+  const job = (s.db ? await loadTownJob(s.db, parsed.data.rfpId) : await loadNativeSealedPost(parsed.data.rfpId).catch(() => null));
   if (!job?.sealed) return NextResponse.json({ ok: false, error: "Not a sealed quote request", reason: "not_sealed" }, { status: 404 });
   const reply = await respondSealed(s.db, s.session, job, parsed.data);
   return NextResponse.json(reply.body, { status: reply.status });
@@ -45,7 +55,7 @@ export async function DELETE(request: Request) {
   const url = new URL(request.url);
   const rfpId = url.searchParams.get("rfpId") ?? "";
   if (!/^[0-9a-f-]{36}$/i.test(rfpId)) return NextResponse.json({ ok: false, error: "Invalid request", reason: "invalid" }, { status: 400 });
-  const job = await loadTownJob(s.db, rfpId);
+  const job = (s.db ? await loadTownJob(s.db, rfpId) : await loadNativeSealedPost(rfpId).catch(() => null));
   if (!job?.sealed) return NextResponse.json({ ok: false, error: "Not a sealed quote request", reason: "not_sealed" }, { status: 404 });
   const reply = await withdrawSealed(s.db, s.session, job, url.searchParams.get("lang"));
   return NextResponse.json(reply.body, { status: reply.status });

@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-23",
+  "syntheticCanary": {
+    "generation": "journal-canary",
+    "name": "pmrfp-journal-canary-20261023",
+    "id": "e41a9e60-2022-4511-94b9-12866f921671",
+    "created": true,
+    "dataLoaded": false
+  },
+  "nativeJournalVerification": "blocked before first schema write",
+  "blocker": {
+    "provider": "Cloudflare D1",
+    "code": 7500,
+    "reason": "Account daily free-tier row-write limit exceeded",
+    "resetUtc": "2026-10-24T00:00:00Z",
+    "resetIndia": "2026-10-24T05:30:00+05:30"
+  },
+  "localOfflineTestsPassed": 40,
+  "nativeAtomicReplayVerified": false,
+  "businessDatasetWrites": 0,
+  "productionCutover": false,
+  "billingUpgrade": false,
+  "nativeBatchedReadback": {
+    "tables": 102,
+    "records": 11754,
+    "schema": "identical",
+    "allFields": "identical",
+    "foreignKeys": "valid",
+    "writes": 0
+  }
+}

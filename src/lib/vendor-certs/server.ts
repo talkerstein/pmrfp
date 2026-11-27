@@ -9,6 +9,8 @@ import { certUnsubscribeUrl } from "@/lib/email/unsubscribe";
 import { emailLang, type EmailLang } from "@/lib/pm-jobs/email-copy";
 import { recipientLangs } from "@/lib/pm-jobs/server";
 import { localizePath } from "@/i18n/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { certDigestEmail, certReminderEmail, certRequestEmail, type DigestItem } from "./email-copy";
 import {
   CERT_BUCKET,
@@ -318,7 +320,27 @@ export type RequestLookup =
 
 /** Resolve /vendor-certificate/<token>. Any failure (bad token, missing table) reads as "not valid". */
 export async function lookupRequest(token: string, now: Date = new Date()): Promise<RequestLookup> {
-  if (!isWellFormedToken(token) || !isServiceConfigured()) return { state: "invalid" };
+  if (!isWellFormedToken(token)) return { state: "invalid" };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const row = await vpsAppDatabase().prepare(`SELECT c.id AS certId,c.organization_id AS organizationId,
+        c.file_path AS filePath,c.vendor_name AS vendorName,c.cert_type AS type,c.insurer,c.policy_number AS policyNumber,
+        c.coverage_amount AS coverage,c.expires_on AS expiresOn,c.vendor_organization_id IS NOT NULL AS onPmrfp,
+        c.request_expires_at AS expiry,o.name AS company,o.province,o.country
+        FROM vendor_certificates c JOIN organizations o ON o.id=c.organization_id
+        WHERE c.request_token_hash=? AND o.status<>'suspended'`).bind(hashReviewToken(token))
+        .first<Omit<Extract<RequestLookup,{state:"open"}>, "state" | "country" | "onPmrfp"> & {
+          expiry: string | null; province: string | null; country: string | null; onPmrfp: number;
+        }>();
+      if (!row) return { state: "invalid" };
+      const { expiry, province, country, onPmrfp, ...data } = row;
+      if (!expiry || !(Date.parse(expiry) > now.getTime())) return { state: "expired", company: row.company };
+      return { state: "open", ...data, country: orgCertCountry({ province, country }), onPmrfp: Boolean(onPmrfp) };
+    } catch {
+      return { state: "invalid" };
+    }
+  }
+  if (!isServiceConfigured()) return { state: "invalid" };
   try {
     const admin = createServiceClient();
     const { data, error } = await admin

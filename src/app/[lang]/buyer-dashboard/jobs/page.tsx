@@ -7,6 +7,8 @@ import { EmptyState } from "@/components/public/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { listNativeTownJobs } from "@/lib/town-jobs/native-management";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { townJobsFor, type TownJobSummary } from "@/lib/town-jobs/server";
@@ -32,7 +34,9 @@ export default async function TownJobsPage({ params }: { params: Promise<object>
   const session = await requireRole(["public_buyer"]);
   const demo = isDemoMode();
   if (!demo && !session.organization) redirect(localizePath("/onboarding", lang));
-  const jobs: TownJobSummary[] = !demo && session.organization && isServiceConfigured() ? await townJobsFor(createServiceClient(), session.organization.id) : [];
+  const jobs: TownJobSummary[] = !demo && session.organization && (isVpsLiveCustomerAuth() || isServiceConfigured())
+    ? await (isVpsLiveCustomerAuth() ? listNativeTownJobs(session.userId,session.organization.id)
+      : townJobsFor(createServiceClient(), session.organization.id)) : [];
   const day = (d: string | null) => (d ? formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang) : "—");
 
   const ctas = (

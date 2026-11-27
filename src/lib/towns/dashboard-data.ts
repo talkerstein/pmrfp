@@ -6,6 +6,8 @@ import { findBuyerPage, type BuyerPage } from "@/lib/buyers/model";
 import type { SessionContext } from "@/lib/access/access";
 import { buyerPageExtras, type PageExtras } from "./page-data";
 import { cleanUpcoming, parseBuyerKey, type UpcomingPurchase } from "./managed";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsBuyerDashboard } from "@/lib/d1/vps-buyer-pages";
 
 /** The managing organization's own row (everything it edits, contact included). */
 export interface OwnPageRow {
@@ -41,6 +43,13 @@ export interface BuyerDashboard {
  */
 export async function loadBuyerDashboard(session: SessionContext): Promise<BuyerDashboard> {
   const empty: BuyerDashboard = { own: null, claim: null, page: null, extras: null, missingTable: false };
+  if (isVpsLiveCustomerAuth()) {
+    const result = await readVpsBuyerDashboard(session).catch(() => null);
+    if (!result) return { ...empty, missingTable: true };
+    const key = parseBuyerKey(result.own?.buyer_key ?? result.claim?.buyer_key);
+    const page = key ? findBuyerPage((await loadBuyers()).pages, key.provinceSlug, key.slug) : null;
+    return { ...result, page, extras: page ? await buyerPageExtras(page) : null, missingTable: false };
+  }
   if (!isServiceConfigured()) return empty;
   const db = createServiceClient();
   const orgId = session.organization?.id ?? null;

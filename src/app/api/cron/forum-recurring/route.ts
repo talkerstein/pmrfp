@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -30,10 +32,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!recurringEnabled()) return NextResponse.json({ ok: true, skipped: "FORUM_RECURRING is off" });
-  if (!isServiceConfigured()) return NextResponse.json({ error: "Supabase service role isn't configured." }, { status: 503 });
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) return NextResponse.json({ error: "Supabase service role isn't configured." }, { status: 503 });
   const url = new URL(request.url);
   const dry = ["1", "true"].includes(url.searchParams.get("dry") ?? "");
   const kinds = (url.searchParams.get("kind") ?? "").split(",").map((k) => k.trim()).filter(isRecurringKind) as RecurringKind[];
-  const result = await runRecurringThreads(createServiceClient(), { dry, kinds: kinds.length ? kinds : undefined });
+  const result = await runRecurringThreads(native ? vpsAppDatabase() : createServiceClient(), { dry, kinds: kinds.length ? kinds : undefined });
   return NextResponse.json(result, { status: result.ready ? 200 : 503 });
 }

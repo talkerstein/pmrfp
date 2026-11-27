@@ -6,17 +6,13 @@ import { Container, Eyebrow } from "@/components/container";
 import { buttonVariants } from "@/components/ui/button";
 import { TorontoAttribution } from "@/components/public/toronto-attribution";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
-import { getTorontoSupplier, isTorontoSupplierIndexable, TORONTO_DATASET_URL } from "@/lib/data/toronto-awards";
+import { getTorontoSupplier, isTorontoSupplierIndexable } from "@/lib/data/toronto-awards";
 import { compactDollars } from "@/lib/data/fomo";
 import { signUpHrefForPlan } from "@/lib/billing/plan-intent";
 import { PRICING } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return []; // rendered on first visit, then cached for a day (ISR)
-}
+export const dynamic = "force-dynamic";
 
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 const day = (d: string | null) =>
@@ -41,8 +37,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function TorontoSupplierPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  // null = the data loaded and there is no such supplier. A failed download
-  // throws instead, so ISR keeps the last good page rather than caching a 404.
   const s = await getTorontoSupplier(slug);
   if (!s) notFound();
   const disclosed = s.awards.filter((a) => a.amount);
@@ -94,7 +88,7 @@ export default async function TorontoSupplierPage({ params }: { params: Promise<
         <div className="min-w-0">
           <Eyebrow>Award history</Eyebrow>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-            {s.awards.length < s.count ? `The ${s.awards.length} most recent of ${s.count} awards` : `Every award to ${s.name}`}
+            {s.awards.length < s.count ? `The ${s.awards.length} most recent of ${s.count} records` : `Published awards to ${s.name}`}
           </h2>
           <ol className="mt-6 space-y-3">
             {s.awards.map((a, i) => (
@@ -116,7 +110,7 @@ export default async function TorontoSupplierPage({ params }: { params: Promise<
             ))}
           </ol>
           <a
-            href={TORONTO_DATASET_URL}
+            href="https://www.toronto.ca/business-economy/doing-business-with-the-city/searching-bidding-on-city-contracts/toronto-bids-portal/"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-teal-700 hover:underline"

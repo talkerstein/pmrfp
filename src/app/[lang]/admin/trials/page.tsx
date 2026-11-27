@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -8,6 +9,9 @@ import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { isMissingTableError, trialState } from "@/lib/entitlement/trial";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { readD1 } from "@/lib/lifecycle/d1";
 
 export const metadata: Metadata = { title: "Trade Pro trials · Admin · PMRFP" };
 
@@ -25,14 +29,32 @@ interface TrialRow {
  */
 export default async function TrialsPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
-  const demo = isDemoMode() || !isServiceConfigured();
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && session.profile.status !== "active") notFound();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
 
   let trials: TrialRow[] = [];
   let missing = false;
   const orgs = new Map<string, { name: string; slug: string | null; city: string | null; province: string | null }>();
   const paid = new Set<string>();
-  if (!demo) {
+  if (native) {
+    type WithCompany = TrialRow & { name: string; slug: string | null; city: string | null; province: string | null; paying: number };
+    try {
+      const rows = await readD1<WithCompany>(vpsAppDatabase(), `
+        SELECT t.organization_id,t.started_by,t.started_at,t.ends_at,t.source,o.name,o.slug,o.city,o.province,
+          EXISTS(SELECT 1 FROM subscriptions s WHERE s.organization_id=t.organization_id
+            AND s.status IN ('active','comped')) AS paying
+        FROM trade_trials t LEFT JOIN organizations o ON o.id=t.organization_id ORDER BY t.started_at DESC LIMIT 1000`);
+      trials = rows;
+      for (const row of rows) {
+        if (row.name) orgs.set(row.organization_id, row);
+        if (row.paying) paid.add(row.organization_id);
+      }
+    } catch {
+      missing = true;
+    }
+  } else if (!demo) {
     const db = createServiceClient();
     const { data, error } = await db
       .from("trade_trials")
@@ -68,7 +90,7 @@ export default async function TrialsPage({ params }: { params: Promise<object> }
       {demo && <DemoBanner />}
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The trade_trials table is missing, so trials are off. Run supabase/migrations/20261016000001_trade_trials.sql.
+          {native ? "Trial data could not be loaded. Refresh to try again." : "The trade_trials table is missing, so trials are off. Run supabase/migrations/20261016000001_trade_trials.sql."}
         </p>
       )}
       <div className="mb-8 grid gap-4 sm:grid-cols-4">

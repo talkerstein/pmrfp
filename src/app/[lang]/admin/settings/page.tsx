@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { dash } from "@/lib/admin/queries";
 import type { PlatformSettings } from "@/types/db";
@@ -25,7 +27,10 @@ export default async function AdminSettingsPage({ params }: { params: Promise<ob
   await requireRole(["admin", "super_admin"]);
 
   let settings = DEFAULTS;
-  if (!isDemoMode()) {
+  if (isVpsLiveCustomerAuth()) {
+    settings = await vpsAppDatabase().prepare(`SELECT site_name,CAST(pricing_amount AS REAL) AS pricing_amount,support_email,
+      admin_notification_email FROM platform_settings LIMIT 1`).first<SettingsView>() ?? DEFAULTS;
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     const { data } = await supabase
       .from("platform_settings")

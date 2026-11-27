@@ -21,6 +21,7 @@ import { z } from "zod";
 
 export const PROJECT_PHOTO_BUCKET = "project-photos";
 export const PRIVATE_PHOTO_BUCKET = "project-photos-private";
+const legacyProjectPhotoOrigin = "https://tumexryzbzmtijvbloch.supabase.co";
 
 export type PhotoBucket = "public" | "private";
 
@@ -82,6 +83,28 @@ export function storedPhotoUrl(supabaseUrl: string, b: PhotoBucket, path: string
 /** Storage path for a new photo. */
 export function photoPath(orgId: string, id: string): string {
   return `${orgId}/${id}.jpg`;
+}
+
+export function vpsProjectPhotoUrl(projectId: string, fileId: string) {
+  return `/api/projects/${projectId}/photo/${fileId}`;
+}
+
+export function nativeStoredProjectPhotos(raw: unknown, projectId: string, organizationId: string): ProjectPhoto[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap(entry => {
+    const photo = projectPhotoSchema.safeParse(entry);
+    if (!photo.success || !PATH_RE.test(photo.data.path)) return [];
+    const [org, file] = photo.data.path.split("/");
+    if (org !== organizationId) return [];
+    const url = vpsProjectPhotoUrl(projectId, file.slice(0, -4));
+    const migrated = photo.data.url === url ||
+      sanitizePhotos([entry], legacyProjectPhotoOrigin, organizationId, { includePrivate: true }).length === 1;
+    return migrated ? [{ ...photo.data, url }] : [];
+  });
+}
+
+export function nativeProjectHero(photos: ProjectPhoto[], storedHero: string | null | undefined): ProjectPhoto | null {
+  return photos.find(photo => photo.url === storedHero || storedHero?.endsWith("/" + photo.path)) ?? pickHero(photos);
 }
 
 /**

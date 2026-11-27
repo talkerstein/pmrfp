@@ -4,6 +4,8 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { geminiAvailable } from "@/lib/ai/gemini";
 import { extractBidCheck } from "@/lib/bid-check/ai";
 import { publicTenderSource } from "@/lib/tenders/sources";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../../../workers/d1-api/customer-signup";
 
 export const maxDuration = 60;
 
@@ -38,17 +40,27 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
-  if (!geminiAvailable()) return NextResponse.json({ skipped: "no GEMINI_API_KEY" });
-
-  const supabase = createServiceClient();
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  const dry = new URL(request.url).searchParams.get("dry") === "1";
+  if (!native && !isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  if (!dry && !geminiAvailable()) return NextResponse.json({ skipped: "no GEMINI_API_KEY" }, { status: native ? 503 : 200 });
+  const db = native ? vpsAppDatabase() : null;
+  const supabase = native ? null : createServiceClient();
   const started = Date.now();
   const today = new Date().toISOString().slice(0, 10);
 
   // Runs every 15 minutes, so keep it light: ids only for the candidate list
   // (it used to pull scope + requirements text for up to 1,000 listings each
   // run), done-checks only for those candidates, full text only for the batch.
-  const { data: open, error } = await supabase
+  type CandidateKey = Pick<Candidate, "id" | "slug" | "source_type">;
+  const { data: open, error } = db
+    ? { data: (await db.prepare(`SELECT p.id,p.slug,p.source_type FROM (
+        SELECT id,slug,source_type FROM rfp_posts WHERE status='published' AND is_demo=0
+        AND (deadline IS NULL OR date(deadline)>=?) AND ${customerAppAuthority}
+        ORDER BY published_at DESC,id LIMIT 1000
+      ) p WHERE NOT EXISTS (SELECT 1 FROM rfp_bid_checks c WHERE c.rfp_id=p.id)`)
+        .bind(today).all<CandidateKey>()).results, error: null }
+    : await supabase!
     .from("rfp_posts")
     .select("id,slug,source_type")
     .eq("status", "published")
@@ -56,26 +68,29 @@ export async function GET(request: Request) {
     .order("published_at", { ascending: false })
     .limit(1000);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const candidates = ((open ?? []) as Pick<Candidate, "id" | "slug" | "source_type">[]).filter(
+  const candidates = ((open ?? []) as CandidateKey[]).filter(
     (r) => !(r.source_type === "public_source" && publicTenderSource(r.slug).past),
   );
   // PostgREST returns at most 1,000 rows per request, so the old
   // `rfp_bid_checks … limit(10000)` silently missed rows past 1,000 and
   // re-extracted listings that already had a checklist. Ask per candidate chunk.
   const have = new Set<string>();
-  for (let i = 0; i < candidates.length; i += 150) {
+  for (let i = 0; supabase && i < candidates.length; i += 150) {
     const ids = candidates.slice(i, i + 150).map((r) => r.id);
     const { data: done, error: doneErr } = await supabase.from("rfp_bid_checks").select("rfp_id").in("rfp_id", ids);
     if (doneErr) return NextResponse.json({ error: doneErr.message }, { status: 500 });
     for (const d of (done ?? []) as { rfp_id: string }[]) have.add(d.rfp_id);
   }
   const backlog = candidates.filter((r) => !have.has(r.id));
-  if (new URL(request.url).searchParams.get("dry") === "1") {
+  if (dry) {
     return NextResponse.json({ dry: true, backlog: backlog.length, next: backlog.slice(0, BATCH).map((r) => r.slug) });
   }
   const batchIds = backlog.slice(0, BATCH).map((r) => r.id);
-  const { data: full, error: fullErr } = batchIds.length
-    ? await supabase
+  const { data: full, error: fullErr } = batchIds.length && db
+    ? { data: (await db.prepare(`SELECT id,slug,title,summary,scope,requirements,province,deadline,source_type FROM rfp_posts
+        WHERE id IN (SELECT value FROM json_each(?)) AND ${customerAppAuthority}`)
+        .bind(JSON.stringify(batchIds)).all<Candidate>()).results, error: null }
+    : batchIds.length && supabase ? await supabase
         .from("rfp_posts")
         .select("id,slug,title,summary,scope,requirements,province,deadline,source_type")
         .in("id", batchIds)
@@ -108,7 +123,16 @@ export async function GET(request: Request) {
     const row: { rfp_id: string; result: unknown; model: string | null; error: string | null } = res.ok
       ? { rfp_id: r.id, result: res.check, model: res.model, error: null }
       : { rfp_id: r.id, result: null, model: null, error: res.error.slice(0, 500) };
-    const { error: upErr } = await supabase.from("rfp_bid_checks").upsert(row);
+    if (db) {
+      const stored = await db.prepare(`INSERT INTO rfp_bid_checks(rfp_id,result,model,error)
+        SELECT ?,?,?,? WHERE ${customerAppAuthority}
+        AND EXISTS (SELECT 1 FROM rfp_posts WHERE id=? AND status='published' AND is_demo=0)
+        ON CONFLICT(rfp_id) DO NOTHING`)
+        .bind(r.id, row.result === null ? null : JSON.stringify(row.result), row.model, row.error, r.id).run();
+      if (!stored.success) return NextResponse.json({ error: "Bid checklist write unavailable" }, { status: 503 });
+      if (stored.meta.changes === 0) continue;
+    }
+    const { error: upErr } = supabase ? await supabase.from("rfp_bid_checks").upsert(row) : { error: null };
     if (upErr) {
       console.error("[bid-checks] write failed:", upErr.message);
       break;

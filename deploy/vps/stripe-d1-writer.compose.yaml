@@ -1,0 +1,55 @@
+name: pmrfp-stripe-d1-writer
+services:
+  writer:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    working_dir: /app
+    entrypoint: ["node", "server.js"]
+    env_file:
+      - /opt/pmrfp/stripe-api.pending.env
+      - /opt/pmrfp/stripe-production-writer/catalog.env
+      - /opt/pmrfp/stripe-production-relay/verify.env
+      - /opt/pmrfp/stripe-production-writer/ghl.env
+      - /opt/pmrfp/canonical/secrets/d1-transport.env
+      - /opt/pmrfp/canonical/secrets/production-auth-session.env
+      - /opt/pmrfp/canonical/secrets/production-stripe-d1.env
+      - /opt/pmrfp/smtp.env
+    environment:
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+      PORT: "4322"
+      PMRFP_VPS_BILLING_RECEIVER: enabled
+      PMRFP_BILLING_BACKEND: d1-live-recurring
+      PMRFP_VPS_CUSTOMER_ENGINE: d1
+      PMRFP_CUSTOMER_AUTH_ORIGIN: https://pmrfp.com
+      PMRFP_SMTP_ENABLED: enabled
+      NEXT_PUBLIC_SITE_URL: https://pmrfp.com
+      NEXT_TELEMETRY_DISABLED: "1"
+      NODE_OPTIONS: "--max-old-space-size=384"
+      NEXT_PUBLIC_SUPABASE_URL: ""
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+    volumes:
+      - ${PMRFP_NATIVE_RELEASE:?Set the validated VPS release}:/app:ro
+    tmpfs:
+      - /tmp:size=16m,uid=1000,gid=1000,mode=1770
+      - /app/.next/cache:size=32m,uid=1000,gid=1000,mode=0700
+    labels:
+      traefik.enable: "false"
+    read_only: true
+    init: true
+    mem_limit: 512m
+    pids_limit: 64
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: local
+      options: {max-size: "1m", max-file: "2"}
+    networks:
+      pmrfp:
+        aliases: [pmrfp-stripe-d1-writer]
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

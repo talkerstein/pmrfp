@@ -11,14 +11,21 @@
  * test/unit/towns-part-c.test.ts; the reads take the service-role client.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { D1Binding } from "@/lib/d1/contracts";
 
-type Db = Pick<SupabaseClient, "from" | "rpc">;
+type Db = Pick<SupabaseClient, "from" | "rpc"> | D1Binding;
 
 /** Listing views per post (0 when there are none, or on any error). One small count query a post. */
 export async function viewsFor(db: Db, rfpIds: readonly string[]): Promise<Map<string, number>> {
   const out = new Map<string, number>();
   const ids = [...new Set(rfpIds)].slice(0, 200);
   for (const id of ids) out.set(id, 0);
+  if ("prepare" in db) {
+    const rows = await db.prepare(`SELECT rfp_id,count(*) AS n FROM rfp_views
+      WHERE rfp_id IN (SELECT value FROM json_each(?)) GROUP BY rfp_id`).bind(JSON.stringify(ids)).all<{ rfp_id:string; n:number }>();
+    for (const row of rows.results) out.set(row.rfp_id,row.n);
+    return out;
+  }
   for (let i = 0; i < ids.length; i += 20) {
     const chunk = ids.slice(i, i + 20);
     const counts = await Promise.all(
@@ -122,6 +129,11 @@ export interface PostReach {
 /** Matching trades alerted about each post (lead_alert_log, key "pmjob:<id>"). Counts only. */
 export async function alertedFor(db: Db, rfpIds: readonly string[]): Promise<Map<string, number>> {
   const out = new Map<string, number>();
+  if ("prepare" in db) {
+    const rows = await db.prepare(`SELECT substr(lead_key,7) AS id,count(*) AS n FROM lead_alert_log
+      WHERE lead_key IN (SELECT 'pmjob:'||value FROM json_each(?)) GROUP BY lead_key`).bind(JSON.stringify(rfpIds)).all<{ id:string; n:number }>();
+    return new Map(rows.results.map((r) => [r.id,r.n]));
+  }
   for (const id of new Set(rfpIds)) {
     try {
       const { count, error } = await db.from("lead_alert_log").select("user_id", { count: "exact", head: true }).eq("lead_key", `pmjob:${id}`);
@@ -135,6 +147,15 @@ export async function alertedFor(db: Db, rfpIds: readonly string[]): Promise<Map
 
 /** Followers of the town when this post went live. */
 export async function followersWhenPosted(db: Db, rfpId: string, buyerKey: string | null, publishedAt: string | null): Promise<number> {
+  if ("prepare" in db) {
+    const row = await db.prepare(`SELECT
+      (SELECT json_extract(detail,'$.followers') FROM town_job_log WHERE rfp_id=? AND event='published'
+        ORDER BY created_at,id LIMIT 1) AS snapshot,
+      (SELECT count(*) FROM buyer_follows WHERE buyer_slug=? AND julianday(created_at)<=julianday(?)) AS current`)
+      .bind(rfpId,buyerKey,publishedAt).first<{ snapshot:number|null; current:number }>();
+    return typeof row?.snapshot === "number"
+      ? followersAtPosting({loggedSnapshot:row.snapshot,followsCreatedAt:[],publishedAt}) : row?.current ?? 0;
+  }
   const { data: logged } = await db.from("town_job_log").select("detail").eq("rfp_id", rfpId).eq("event", "published").order("created_at", { ascending: true }).limit(1).maybeSingle();
   const snapshot = (logged as { detail: Record<string, unknown> | null } | null)?.detail?.followers;
   if (typeof snapshot === "number") return followersAtPosting({ loggedSnapshot: snapshot, followsCreatedAt: [], publishedAt });

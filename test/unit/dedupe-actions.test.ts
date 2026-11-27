@@ -210,7 +210,7 @@ describe("onboarding: company duplicate guard", () => {
 
   it("\"It's a different company\" creates the listing and flags the pair for admin review", async () => {
     const to = await redirectOf(completeOnboardingAction({}, form({ ...fields, dup_ack: existingOrg.id })));
-    expect(to).toBe("/dashboard?welcome=1");
+    expect(to).toBe("/dashboard/company/finish?welcome=1");
     expect(state.db.tables.organizations).toHaveLength(2);
     const created = state.db.tables.organizations.find((o) => o.id !== existingOrg.id)!;
     expect(state.db.tables.duplicate_reviews).toEqual([

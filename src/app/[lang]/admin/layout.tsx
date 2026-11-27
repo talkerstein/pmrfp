@@ -8,6 +8,11 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { pendingReviewCount } from "@/lib/pm-jobs/server";
 import { organizationReviewCounts } from "@/lib/organizations/review-server";
 import { buyerReviewCounts } from "@/lib/buyers/admin-notify";
+import { vpsBuyerReviewCounts } from "@/lib/d1/buyer-sources";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { nativeOrganizationReviewCounts } from "@/lib/d1/vps-admin-organizations";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
 
 // Utility pages: keep them out of the index (links still followed).
 export const metadata: Metadata = { robots: { index: false, follow: true } };
@@ -20,9 +25,10 @@ export default async function AdminLayout({
   // Posts waiting at /admin/rfps: a count badge on "RFPs" so nothing sits unseen.
   // Same on "Organizations": new companies waiting for approval plus approved
   // companies whose profile edits are waiting for a look.
-  const session = isServiceConfigured() ? await getSession().catch(() => null) : null;
+  const native = isVpsLiveCustomerAuth();
+  const session = (native || isServiceConfigured()) ? await getSession().catch(() => null) : null;
   const isAdmin = Boolean(session && isAdminRole(session.profile.primary_role));
-  const db = isAdmin ? createServiceClient() : null;
+  const db = isAdmin && !native ? createServiceClient() : null;
   // And on "Buyer Sources": public-buyer page claims to check plus new "list your tenders" requests.
   const [pending, orgs, buyers] = db
     ? await Promise.all([
@@ -30,7 +36,14 @@ export default async function AdminLayout({
         organizationReviewCounts(db).catch(() => ({ waiting: 0, edited: 0, held: 0 })),
         buyerReviewCounts(db).catch(() => ({ claims: 0, requests: 0 })),
       ])
-    : [0, { waiting: 0, edited: 0, held: 0 }, { claims: 0, requests: 0 }];
+    : native && isAdmin && session?.profile.status === "active"
+      ? await Promise.all([
+        Promise.resolve().then(async () => (await vpsAppDatabase().prepare(`SELECT count(*) AS total FROM rfp_posts
+          WHERE status='pending_review' AND ${activeRequestAdmin}`).bind(session.userId).first<{ total: number }>())?.total ?? 0).catch(() => 0),
+        Promise.resolve().then(() => nativeOrganizationReviewCounts(session.userId)).catch(() => ({ waiting: 0, edited: 0, held: 0 })),
+        Promise.resolve().then(() => vpsBuyerReviewCounts()).catch(() => ({ claims: 0, requests: 0 })),
+      ])
+      : [0, { waiting: 0, edited: 0, held: 0 }, { claims: 0, requests: 0 }];
   const orgBadge = orgs.waiting + orgs.edited + orgs.held;
   const buyerBadge = buyers.claims + buyers.requests;
   const nav = ADMIN_NAV.map((item) => {

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { createClient } from "@/lib/supabase/server";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { PRICING } from "@/lib/site";
@@ -41,73 +43,63 @@ export default async function AdminOverviewPage({ params }: { params: Promise<ob
     };
     arrCad = 75 * PRICING.proAnnual + 12 * PRICING.proMonthly * 12;
   } else {
-    const supabase = await createClient();
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const monthlyPriceId = process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY ?? null;
 
-    const [
-      users,
-      activeSubRows,
-      pendingProfiles,
-      pendingRfps,
-      publishedRfps,
-      interests,
-      newSignups,
-    ] = await Promise.all([
-      supabase.from("users_profile").select("*", { count: "exact", head: true }),
-      // Pull rows (not just count) so we can compute ARR + interval breakdown.
-      supabase
-        .from("subscriptions")
-        .select("status,amount,stripe_price_id")
-        .in("status", ["active", "comped"]),
-      supabase
-        .from("organizations")
-        .select("*", { count: "exact", head: true })
-        .eq("profile_status", "pending_review"),
-      supabase
-        .from("rfp_posts")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pending_review"),
-      supabase
-        .from("rfp_posts")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "published"),
-      supabase.from("rfp_interests").select("*", { count: "exact", head: true }),
-      supabase
-        .from("users_profile")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", since),
-    ]);
+    type Subscription = { status: string; amount: number | string | null; stripe_price_id: string | null };
+    let rows: Subscription[];
+    if (isVpsLiveCustomerAuth()) {
+      const db = vpsAppDatabase();
+      const [totals, subscriptions] = await db.batch([
+        db.prepare(`SELECT
+          (SELECT count(*) FROM users_profile) AS users,
+          (SELECT count(*) FROM organizations WHERE profile_status='pending_review') AS pendingProfiles,
+          (SELECT count(*) FROM rfp_posts WHERE status='pending_review') AS pendingRfps,
+          (SELECT count(*) FROM rfp_posts WHERE status='published') AS publishedRfps,
+          (SELECT count(*) FROM rfp_interests) AS interests,
+          (SELECT count(*) FROM users_profile WHERE julianday(created_at)>=julianday(?)) AS newSignups`).bind(since),
+        db.prepare("SELECT status,amount,stripe_price_id FROM subscriptions WHERE status IN ('active','comped')"),
+      ]);
+      if (!totals?.success || !subscriptions?.success || !totals.results[0]) throw new Error("Admin overview is unavailable");
+      stats = { ...stats, ...(totals.results[0] as Partial<typeof stats>) };
+      rows = subscriptions.results as Subscription[];
+    } else {
+      const supabase = await createClient();
+      const [users, activeSubRows, pendingProfiles, pendingRfps, publishedRfps, interests, newSignups] = await Promise.all([
+        supabase.from("users_profile").select("*", { count: "exact", head: true }),
+        supabase.from("subscriptions").select("status,amount,stripe_price_id").in("status", ["active", "comped"]),
+        supabase.from("organizations").select("*", { count: "exact", head: true }).eq("profile_status", "pending_review"),
+        supabase.from("rfp_posts").select("*", { count: "exact", head: true }).eq("status", "pending_review"),
+        supabase.from("rfp_posts").select("*", { count: "exact", head: true }).eq("status", "published"),
+        supabase.from("rfp_interests").select("*", { count: "exact", head: true }),
+        supabase.from("users_profile").select("*", { count: "exact", head: true }).gte("created_at", since),
+      ]);
+      stats = {
+        ...stats,
+        users: users.count ?? 0,
+        pendingProfiles: pendingProfiles.count ?? 0,
+        pendingRfps: pendingRfps.count ?? 0,
+        publishedRfps: publishedRfps.count ?? 0,
+        interests: interests.count ?? 0,
+        newSignups: newSignups.count ?? 0,
+      };
+      rows = (activeSubRows.data ?? []) as Subscription[];
+    }
 
-    const rows = (activeSubRows.data ?? []) as Array<{
-      status: string;
-      amount: number | null;
-      stripe_price_id: string | null;
-    }>;
     let monthlyCount = 0;
     let annualCount = 0;
     for (const r of rows) {
       if (r.status === "comped") continue; // comped → $0 ARR
       const isMonthly = !!monthlyPriceId && r.stripe_price_id === monthlyPriceId;
-      const monthlyAmount = isMonthly ? (r.amount ?? PRICING.proMonthly) : 0;
-      const annualAmount = !isMonthly ? (r.amount ?? PRICING.proAnnual) : 0;
+      const monthlyAmount = isMonthly ? Number(r.amount ?? PRICING.proMonthly) : 0;
+      const annualAmount = !isMonthly ? Number(r.amount ?? PRICING.proAnnual) : 0;
       arrCad += monthlyAmount * 12 + annualAmount;
       if (isMonthly) monthlyCount += 1;
       else annualCount += 1;
     }
 
-    stats = {
-      users: users.count ?? 0,
-      activeSubs: rows.length,
-      monthlySubs: monthlyCount,
-      annualSubs: annualCount,
-      pendingProfiles: pendingProfiles.count ?? 0,
-      pendingRfps: pendingRfps.count ?? 0,
-      publishedRfps: publishedRfps.count ?? 0,
-      interests: interests.count ?? 0,
-      newSignups: newSignups.count ?? 0,
-    };
+    stats = { ...stats, activeSubs: rows.length, monthlySubs: monthlyCount, annualSubs: annualCount };
   }
 
   const arr = `$${Math.round(arrCad).toLocaleString("en-CA")} CAD`;

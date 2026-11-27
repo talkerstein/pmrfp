@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
@@ -10,6 +11,10 @@ import { fmtDate, dash } from "@/lib/admin/queries";
 import { DEMO_RESOURCES } from "@/lib/demo-data";
 import type { ResourceArticle } from "@/types/db";
 import { setLangFrom } from "@/i18n/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { readD1 } from "@/lib/lifecycle/d1";
 
 export const metadata: Metadata = { title: "Resources · Admin · PMRFP" };
 
@@ -17,10 +22,21 @@ type ResourceRow = Pick<ResourceArticle, "id" | "title" | "slug" | "status" | "p
 
 export default async function AdminResourcesPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && admin.profile.status !== "active") notFound();
 
   let rows: ResourceRow[];
-  if (isDemoMode()) {
+  let unavailable = false;
+  if (native) {
+    try {
+      rows = await readD1<ResourceRow>(vpsAppDatabase(), `SELECT id,title,slug,status,published_at FROM resources
+        WHERE is_demo=0 AND ${activeRequestAdmin} ORDER BY published_at DESC NULLS LAST,slug LIMIT 1000`, admin.userId);
+    } catch {
+      rows = [];
+      unavailable = true;
+    }
+  } else if (isDemoMode()) {
     rows = DEMO_RESOURCES.map((r) => ({
       id: r.slug,
       title: r.title,
@@ -47,7 +63,7 @@ export default async function AdminResourcesPage({ params }: { params: Promise<o
         Articles are authored and edited in the CMS; this view tracks publication status.
       </p>
 
-      {rows.length === 0 ? (
+      {unavailable ? <EmptyState title="Publication status could not be loaded" description="Refresh to try again." /> : rows.length === 0 ? (
         <EmptyState title="No resources yet" description="Published articles will appear here." />
       ) : (
         <AdminTable columns={["Title", "Slug", "Status", "Published"]}>

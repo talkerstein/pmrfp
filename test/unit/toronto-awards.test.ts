@@ -8,9 +8,31 @@ import {
   parseAmount,
   parseCsv,
   rowsFromCsv,
+  rowsFromPublicSolicitations,
   supplierKey,
   tidySupplierName,
 } from "@/lib/data/toronto-awards";
+
+it("reads winning businesses and split awards from the City API", () => {
+  const winning = {
+    id: "city-record-1",
+    Status: "Awarded",
+    Solicitation_Document_Number: "3685082826",
+    Posting_Title: "Citywide IT services",
+    Client_Division: ["Technology Services"],
+    Awarded_Suppliers: [
+      { Successful_Bidder: "Compugen Inc.", Award_Amount: "$308,602.00 CAD", Date_Awarded: "2023-02-03" },
+      { Successful_Bidder: "Another Systems Ltd", Award_Amount: 100_000, Date_Awarded: "", AwardedDate: "2023-02-04T13:00:00" },
+      { Successful_Bidder: "Mr. John Smith", Award_Amount: 300 },
+    ],
+  };
+  const rows = rowsFromPublicSolicitations([winning, { ...winning, id: "city-record-2", Status: "Cancelled" }]);
+  expect(rows).toMatchObject([
+    { doc: "3685082826", supplier: "Compugen Inc.", amount: 308_602, date: "2023-02-03", division: "Technology Services" },
+    { doc: "3685082826", supplier: "Another Systems Ltd", amount: 100_000, date: "2023-02-04" },
+  ]);
+  expect(aggregateSuppliers(rows).find(supplier => supplier.slug === "compugen-inc")?.indexable).toBe(true);
+});
 
 const HEADER =
   "_id,Document Number,RFx (Solicitation) Type,High Level Category,Successful Supplier,Award,Award Authority Obtained Date,Division,Buyer Name,Buyer Email,Buyer Phone Number,Solicitation Document Description,Supplier Address,Wards";

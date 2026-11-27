@@ -9,8 +9,45 @@ import { threadPath } from "./data";
 import { forumUnsubscribeUrl, shouldNotify } from "./notify-rules";
 import { SYSTEM_HANDLE } from "./auto-threads";
 import { TEAM_HANDLE } from "./staff-guides";
+import { THROTTLE_HOURS } from "./notify-rules";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
+
+export async function notifyVpsThreadAuthor(p: { threadId: string; replierId: string; replyBody: string }): Promise<void> {
+  try {
+    const db = vpsAppDatabase();
+    const row = await db.prepare(`SELECT t.author_id,t.title,t.slug,t.short_id,c.slug AS room,u.email,
+      r.display_name,author.is_system,author.handle
+      FROM forum_threads t JOIN forum_categories c ON c.id=t.category_id
+      JOIN forum_profiles author ON author.user_id=t.author_id JOIN users_profile u ON u.id=t.author_id
+      LEFT JOIN forum_profiles r ON r.user_id=?
+      WHERE t.id=? AND t.status='approved' AND c.is_public=1 AND u.status='active' AND ${customerAppAuthority}`)
+      .bind(p.replierId, p.threadId).first<{ author_id: string; title: string; slug: string; short_id: string; room: string;
+        email: string; display_name: string | null; is_system: number; handle: string }>();
+    if (!row?.email || row.author_id === p.replierId || row.is_system || [SYSTEM_HANDLE, TEAM_HANDLE].includes(row.handle)) return;
+    const room = canonicalRoom(row.room);
+    if (!room) return;
+    const now = new Date();
+    const claimed = await db.prepare(`INSERT INTO forum_reply_notifications(user_id,thread_id,last_sent_at,sent_count)
+      SELECT t.author_id,t.id,?,1 FROM forum_threads t JOIN users_profile u ON u.id=t.author_id
+      JOIN forum_categories c ON c.id=t.category_id LEFT JOIN notification_preferences n ON n.user_id=t.author_id
+      WHERE t.id=? AND t.author_id=? AND t.status='approved' AND u.status='active' AND c.is_public=1
+      AND coalesce(n.forum_replies,'instant')='instant' AND coalesce(n.channel_email,1)=1 AND ${customerAppAuthority}
+      ON CONFLICT(user_id,thread_id) DO UPDATE SET last_sent_at=excluded.last_sent_at,sent_count=sent_count+1
+      WHERE julianday(forum_reply_notifications.last_sent_at)<=julianday(?) RETURNING thread_id`)
+      .bind(now.toISOString(), p.threadId, row.author_id, new Date(now.getTime()-THROTTLE_HOURS*3_600_000).toISOString()).first();
+    if (!claimed) return;
+    const base = "https://pmrfp.com";
+    const lang = isFrenchForum(room) ? "fr" : "en";
+    await sendForumReplyEmail(row.email, { threadTitle: row.title, replierName: row.display_name ?? (lang === "fr" ? "Un membre" : "A member"),
+      excerpt: excerpt(p.replyBody, 280), url: `${base}${localizePath(threadPath(room, row.slug, row.short_id), lang)}#reply`,
+      unsubscribeUrl: forumUnsubscribeUrl(base, row.author_id), lang });
+  } catch (error) {
+    console.error("[forum/notify-vps]", error instanceof Error ? error.message : "delivery unavailable");
+  }
+}
 
 /**
  * Email the thread's author about a new approved reply, when their

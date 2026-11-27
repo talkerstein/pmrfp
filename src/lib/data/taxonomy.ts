@@ -1,3 +1,4 @@
+import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cache } from "react";
@@ -15,17 +16,9 @@ export interface CategoryOption { slug: string; name: string; icon: string | nul
 export interface RegionOption { slug: string; name: string; province: string | null; country: string }
 export interface PropertyTypeOption { slug: string; name: string }
 
-export interface TaxonomyRow {
-  id: string; slug: string; name: string; active: boolean;
-  icon?: string | null; sort_order?: number; province?: string | null;
-  country?: string; parent_id?: string | null;
-}
-type TaxonomyTable = "trade_categories" | "regions" | "property_types";
-const SELECTS: Record<TaxonomyTable, string> = {
-  trade_categories: "id,slug,name,icon,active,sort_order",
-  regions: "id,slug,name,province,country,parent_id,active,sort_order",
-  property_types: "id,slug,name,active",
-};
+import { TAXONOMY_SELECTS as SELECTS, type TaxonomyRow, type TaxonomyTable } from "@/lib/d1/taxonomy-contracts";
+import { d1TaxonomyEnabled } from "@/lib/d1/taxonomy-backend";
+export type { TaxonomyRow } from "@/lib/d1/taxonomy-contracts";
 
 // One canonical projection per table, reused by dropdowns, maps and region
 // trees. No active=true filter here: preserve every row allowed by anon RLS.
@@ -66,7 +59,23 @@ const matchedCloudflareTaxonomy = unstable_cache(
   { tags: [TAXONOMY_DATA_TAG], revalidate: 60 },
 );
 
-export const getTaxonomyRows = cache((table: TaxonomyTable): Promise<TaxonomyRow[]> => {
+const cachedStagingTaxonomy = unstable_cache(
+  async (table: TaxonomyTable, _provider: string, _dataset: string): Promise<TaxonomyRow[]> => {
+    void _provider;
+    void _dataset;
+    return (await import("@/lib/d1/taxonomy-server")).d1TaxonomyRows(table);
+  },
+  ["staging-public-taxonomy-v1"],
+  { tags: [TAXONOMY_DATA_TAG], revalidate: 300 },
+);
+
+export const getTaxonomyRows = cache(async (table: TaxonomyTable): Promise<TaxonomyRow[]> => {
+  if (d1TaxonomyEnabled()) {
+    if (isIsolatedD1Staging()) return cachedStagingTaxonomy(
+      table, process.env.PMRFP_D1_API_URL ?? "", process.env.PMRFP_D1_DATASET_SHA256 ?? "",
+    );
+    return (await import("@/lib/d1/taxonomy-server")).d1TaxonomyRows(table);
+  }
   const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   return process.env.PMRFP_PUBLIC_TAXONOMY_PHASE === "matched"
     ? matchedCloudflareTaxonomy(table, projectUrl)
@@ -74,7 +83,7 @@ export const getTaxonomyRows = cache((table: TaxonomyTable): Promise<TaxonomyRow
 });
 
 export async function getCategories(): Promise<CategoryOption[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1TaxonomyEnabled()) {
     return DEMO_CATEGORIES.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }));
   }
   return (await getTaxonomyRows("trade_categories")).filter((r) => r.active)
@@ -83,7 +92,7 @@ export async function getCategories(): Promise<CategoryOption[]> {
 }
 
 export async function getRegions(): Promise<RegionOption[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1TaxonomyEnabled()) {
     return DEMO_REGIONS.map((r) => ({ slug: r.slug, name: r.name, province: r.province, country: "Canada" }));
   }
   return (await getTaxonomyRows("regions")).filter((r) => r.active)
@@ -92,7 +101,7 @@ export async function getRegions(): Promise<RegionOption[]> {
 }
 
 export async function getPropertyTypes(): Promise<PropertyTypeOption[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1TaxonomyEnabled()) {
     return DEMO_PROPERTY_TYPES.map((p) => ({ slug: p.slug, name: p.name }));
   }
   return (await getTaxonomyRows("property_types")).filter((r) => r.active)

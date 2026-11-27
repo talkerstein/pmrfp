@@ -1,8 +1,11 @@
+import { redirectSourceAccountFlow } from "@/lib/d1/source-account-flow";
+import { authTurnstileSiteKey, isVpsNativeAccountSignup } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { SignUpFlow, type SignupRole } from "@/components/home-v3/signup-flow";
 import { safeNextPath } from "@/lib/auth/next";
 import { signupRoleFromLink, type SignupLinkRole } from "@/lib/auth/signup-link";
+import { nativeGoogleConfigured } from "@/lib/auth/vps-google";
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { parsePlanIntent } from "@/lib/billing/plan-intent";
 import { checkoutPath, upgradeInterval } from "@/lib/billing/checkout-flow";
@@ -77,6 +80,8 @@ export default async function SignUpPage({
   const t = getT("v3Pages").signup;
   const ta = getT("auth").signUp;
   const query = await searchParams;
+  redirectSourceAccountFlow("/sign-up", lang, query);
+  const nativeSignup = isVpsNativeAccountSignup();
   const { claim: rawClaim, sent, error } = query;
   // The URL wins; a page opened with no plan or return path takes the intent
   // remembered from the last visit (lib/auth/signup-intent), so going back,
@@ -118,7 +123,7 @@ export default async function SignUpPage({
 
   const { country, province } = await getVisitorCountry();
   const [google, categories, regions, counts, open] = await Promise.all([
-    isGoogleAuthEnabled(),
+    nativeSignup ? nativeGoogleConfigured() : isGoogleAuthEnabled(),
     getCategories(),
     getRegions(),
     getVisitorListCounts(country),
@@ -154,6 +159,8 @@ export default async function SignUpPage({
         proInterval={upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY))}
         award={award}
         google={google}
+        nativeSignup={nativeSignup}
+        turnstileSiteKey={nativeSignup ? authTurnstileSiteKey() : undefined}
         signInHref={signInHref}
         stats={{ open: counts.open, closing7: counts.closing7, trades: categories.length, regions: regions.length }}
         trades={trades}

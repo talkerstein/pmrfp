@@ -1,3 +1,4 @@
+import { readVpsReviewInvite } from "@/lib/d1/vps-project-reviews";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { hashReviewToken, isWellFormedToken } from "@/lib/projects/tokens";
@@ -21,7 +22,9 @@ export type InviteLookup =
     };
 
 export async function lookupInvite(token: string): Promise<InviteLookup> {
-  if (!isWellFormedToken(token) || !isServiceConfigured()) return { state: "invalid" };
+  if (!isWellFormedToken(token)) return {state:"invalid"};
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1") return readVpsReviewInvite(token).catch(() => ({state:"invalid"}));
+  if (!isServiceConfigured()) return { state: "invalid" };
   try {
     const db = createServiceClient();
     const { data, error } = await db

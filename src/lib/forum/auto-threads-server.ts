@@ -1,5 +1,8 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { shortId } from "./text";
 import { countryOf } from "@/lib/visitor-geo";
 import { forumV2Ready } from "./schema-v2";
@@ -188,8 +191,9 @@ export function threadRow(d: AutoThreadDraft, categoryId: string, authorId: stri
 }
 
 /** Plan (dry) or create auto-threads for records published in the last `days`. */
-export async function runAutoThreads(db: SupabaseClient, opts: { days: number; cap: number; dry: boolean; now?: Date }): Promise<AutoRunResult> {
+export async function runAutoThreads(db: SupabaseClient | D1Binding, opts: { days: number; cap: number; dry: boolean; now?: Date }): Promise<AutoRunResult> {
   const base: AutoRunResult = { ready: false, dry: opts.dry, considered: 0, alreadyThreaded: 0, planned: 0, created: 0, failed: 0, sample: [] };
+  if ("prepare" in db) return runD1AutoThreads(db, opts, base);
   if (!(await autoThreadsReady(db))) return { ...base, reason: "Apply supabase/migrations/20261008000001_forum_auto_threads.sql first." };
 
   const since = new Date((opts.now ?? new Date()).getTime() - opts.days * 86_400_000).toISOString();
@@ -233,6 +237,70 @@ export async function runAutoThreads(db: SupabaseClient, opts: { days: number; c
         done = true;
       }
     }
+  }
+  return result;
+}
+
+export async function loadD1SourceRecords(db: D1Binding, since: string, limit = 3000) {
+  type NativeRecord = Omit<AutoSourceRecord, "isDemo" | "tradeSlugs" | "tradeNames"> &
+    { tradeSlugs: string; tradeNames: string; threaded: number };
+  const records: AutoSourceRecord[] = [];
+  const existing = new Set<string>();
+  for (let offset = 0; offset < limit; offset += 250) {
+    const { results, success } = await db.prepare(`SELECT r.id,r.slug,r.title,r.summary,r.city,r.province,r.deadline,
+      r.published_at AS publishedAt,r.created_at AS createdAt,r.source_type AS sourceType,r.status,
+      EXISTS (SELECT 1 FROM forum_threads f WHERE f.auto_source_key='rfp:'||r.id) AS threaded,
+      (SELECT json_group_array(c.slug) FROM rfp_categories rc JOIN trade_categories c ON c.id=rc.category_id
+        WHERE rc.rfp_id=r.id) AS tradeSlugs,
+      (SELECT json_group_array(c.name) FROM rfp_categories rc JOIN trade_categories c ON c.id=rc.category_id
+        WHERE rc.rfp_id=r.id) AS tradeNames
+      FROM rfp_posts r WHERE r.status='published' AND r.is_demo=0 AND julianday(r.published_at)>=julianday(?)
+      AND ${customerAppAuthority} ORDER BY r.published_at DESC,r.id LIMIT ? OFFSET ?`)
+      .bind(since, Math.min(250, limit - offset), offset).all<NativeRecord>();
+    if (!success) throw new Error("Forum tender records unavailable");
+    for (const { threaded, ...row } of results) {
+      if (threaded) existing.add("rfp:" + row.id);
+      records.push({ ...row, isDemo: false, tradeSlugs: JSON.parse(row.tradeSlugs), tradeNames: JSON.parse(row.tradeNames) });
+    }
+    if (results.length < 250) break;
+  }
+  return { records, existing };
+}
+
+async function runD1AutoThreads(db: D1Binding, opts: { days: number; cap: number; dry: boolean; now?: Date }, base: AutoRunResult) {
+  const since = new Date((opts.now ?? new Date()).getTime() - opts.days * 86_400_000).toISOString();
+  const [author, categories] = await Promise.all([
+    db.prepare(`SELECT user_id FROM forum_profiles WHERE handle=? AND is_system=1 AND is_staff=1 AND ${customerAppAuthority}`)
+      .bind(SYSTEM_HANDLE).first<{ user_id: string }>(),
+    db.prepare("SELECT id,slug FROM forum_categories").all<{ id: string; slug: string }>(),
+  ]);
+  if (!categories.success) throw new Error("Forum categories unavailable");
+  const { records, existing } = await loadD1SourceRecords(db, since);
+  const catId = new Map(categories.results.map(c => [c.slug, c.id]));
+  const drafts = planAutoThreads(records, existing, opts.cap).filter(d => catId.has(d.category));
+  const result: AutoRunResult = { ...base, ready: !!author, considered: records.length,
+    alreadyThreaded: existing.size, planned: drafts.length,
+    sample: drafts.slice(0, 12).map(d => ({ title: d.title, category: d.category, createdAt: d.createdAt, kind: d.kind })),
+  };
+  if (!author) return { ...result, reason: "Imported PMRFP Board system profile unavailable." };
+  if (opts.dry) return result;
+  for (let start = 0; start < drafts.length; start += 20) {
+    const batch = drafts.slice(start, start + 20).map(d => {
+      const row = threadRow(d, catId.get(d.category)!, author.user_id, shortId(8));
+      return db.prepare(`INSERT INTO forum_threads
+        (id,short_id,category_id,author_id,type,title,slug,body,body_words,status,is_staff,region,
+          auto_source,auto_source_key,created_at,updated_at,last_post_at,country)
+        SELECT ?,?,?,?,'discussion',?,?,?,?,'approved',1,?,?,?,?,?,?,?
+        WHERE ${customerAppAuthority}
+        AND EXISTS (SELECT 1 FROM forum_profiles WHERE user_id=? AND is_system=1 AND is_staff=1)
+        ON CONFLICT(auto_source_key) WHERE auto_source_key IS NOT NULL DO NOTHING`)
+        .bind(randomUUID(), row.short_id, row.category_id, row.author_id, row.title, row.slug, row.body, row.body_words,
+          row.region, row.auto_source, row.auto_source_key, row.created_at, row.updated_at, row.last_post_at,
+          countryOf({ province: d.region }), row.author_id);
+    });
+    const written = await db.batch(batch);
+    if (written.length !== batch.length || written.some(r => !r.success)) throw new Error("Forum thread write failed");
+    result.created += written.reduce((total, r) => total + (r.meta.changes ?? 0), 0);
   }
   return result;
 }

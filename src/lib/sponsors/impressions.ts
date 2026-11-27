@@ -1,6 +1,8 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { torontoDay } from "./model";
 
 /**
@@ -55,9 +57,19 @@ export async function flushImpressions(force = false): Promise<void> {
   const rows = bufferedImpressions();
   buffer.clear();
   since = 0;
-  if (!isServiceConfigured()) return;
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if (!native && !isServiceConfigured()) return;
   flushing = (async () => {
     try {
+      if (native) {
+        await vpsAppDatabase().prepare(`INSERT INTO sponsor_impressions(day,sponsor,placement,trade,region,impressions)
+          SELECT json_extract(value,'$.day'),json_extract(value,'$.sponsor'),json_extract(value,'$.placement'),
+            json_extract(value,'$.trade'),json_extract(value,'$.region'),min(100000,json_extract(value,'$.n'))
+          FROM json_each(?) WHERE ${customerAppAuthority}
+          ON CONFLICT(day,sponsor,placement,trade,region) DO UPDATE SET impressions=impressions+excluded.impressions`)
+          .bind(JSON.stringify(rows)).run();
+        return;
+      }
       const { error } = await createServiceClient().rpc("record_sponsor_impressions", { p_rows: rows });
       if (error) console.warn("[sponsors] impressions flush failed:", error.message);
     } catch (e) {

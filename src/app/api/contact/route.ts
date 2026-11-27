@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { recordContactRequest } from "@/lib/d1/customer-requests";
 import { NextResponse } from "next/server";
 import { contactRequestSchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -27,7 +29,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (isServiceConfigured()) {
+  if (isVpsLiveCustomerAuth()) {
+    try { await recordContactRequest(data); }
+    catch { return NextResponse.json({ error: "Could not save your request" }, { status: 503 }); }
+  } else if (isServiceConfigured()) {
     const supabase = createServiceClient();
     let targetOrgId: string | null = null;
     if (data.targetOrganizationId) {

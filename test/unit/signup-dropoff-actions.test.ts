@@ -233,7 +233,7 @@ describe("email consent is recorded with the wording they saw", () => {
     });
 
     it("an unticked box records the notice only; the marketing row exists only if they tick it", async () => {
-      expect(await redirectOf(completeOnboardingAction({}, form(fields)))).toBe("/dashboard?welcome=1");
+      expect(await redirectOf(completeOnboardingAction({}, form(fields)))).toBe("/dashboard/company/finish?welcome=1");
       expect(h.db.tables.email_consents).toEqual([expect.objectContaining({ user_id: "u9", scope: "service", source: "onboarding", wording_version: EMAIL_NOTICE_VERSION, lang: "en" })]);
 
       h.db.tables.email_consents.length = 0;
@@ -263,12 +263,12 @@ describe("email consent is recorded with the wording they saw", () => {
       });
 
       it("left unticked: nobody is added to the weekly list", async () => {
-        expect(await redirectOf(completeOnboardingAction({}, form(fields)))).toBe("/dashboard?welcome=1");
+        expect(await redirectOf(completeOnboardingAction({}, form(fields)))).toBe("/dashboard/company/finish?welcome=1");
         expect(h.db.tables.digest_subscribers).toEqual([]);
       });
 
       it("ticked: the member goes on the list as active, with their place, trades and the consent record", async () => {
-        expect(await redirectOf(completeOnboardingAction({}, form({ ...fields, lang: "fr", province: "QC", weekly_email: "on" })))).toBe("/fr/dashboard?welcome=1");
+        expect(await redirectOf(completeOnboardingAction({}, form({ ...fields, lang: "fr", province: "QC", weekly_email: "on" })))).toBe("/fr/dashboard/company/finish?welcome=1");
         expect(h.db.tables.digest_subscribers).toEqual([
           expect.objectContaining({
             email: "Owner@AcmeCleaning.ca",

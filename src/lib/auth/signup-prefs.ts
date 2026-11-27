@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isVpsNativeAccountSignup } from "@/lib/d1/staging-config";
 
 /** Most trade / region picks kept from the sign-up page. */
 export const MAX_PREF_SLUGS = 40;
@@ -25,11 +26,12 @@ export function parsePrefSlugs(values: unknown): string[] {
 
 /** The sign-up picks saved in the signed-in user's auth metadata. */
 export async function getSignupPrefs(): Promise<{ categories: string[]; regions: string[]; company: string | null }> {
-  if (!isSupabaseConfigured()) return { categories: [], regions: [], company: null };
+  const native = isVpsNativeAccountSignup();
+  if (!native && !isSupabaseConfigured()) return { categories: [], regions: [], company: null };
   try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    const meta = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
+    const meta = native
+      ? await (await import("@/lib/d1/customer-staging-session")).customerStagingSignupPreferences()
+      : (await (await createClient()).auth.getUser()).data.user?.user_metadata ?? {};
     const company = typeof meta.pref_company === "string" ? meta.pref_company.trim().slice(0, 120) || null : null;
     return { categories: parsePrefSlugs(meta.pref_categories), regions: parsePrefSlugs(meta.pref_regions), company };
   } catch {

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { prebuildSlice } from "@/lib/build/prebuild";
 import Link from "@/i18n/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -19,7 +18,6 @@ import {
   getQualifyingCombo,
   listAllRfpsCached,
   listCitiesForTrade,
-  listQualifyingCombos,
   listTradesForRegion,
   type TradeCityCombo,
 } from "@/lib/data/trade-city";
@@ -46,24 +44,8 @@ import { regionName, tradeName } from "@/i18n/terms";
 import { frIn, frPortal, frTradeOf } from "@/lib/seo/phrases.fr";
 import { esIn, esPortal, esTradeOf } from "@/lib/seo/phrases.es";
 
-export const revalidate = 3600;
-
-/**
- * Content-gated programmatic page: exists ONLY for trade × place combos with
- * real content — enough approved vendors, or enough tenders (open or past).
- * See lib/data/trade-city. Everything else 404s: never rendered, never in the
- * sitemap, never linked. New combos turn on via ISR as vendors are approved
- * and tenders import. The busiest 40 prerender at build; the rest render on
- * first visit.
- */
-export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // A few pages are prebuilt (lib/build/prebuild); the rest render
-  // on first visit, then cache (ISR), so deploys do not stampede the database.
-  // (An empty list for any language switches prebuilding off for the whole route.)
-  const combos = await listQualifyingCombos();
-  const all = combos.map((c) => ({ category: c.category.slug, city: c.region.slug }));
-  return prebuildSlice(all, params.lang);
-}
+// Evaluate the content gate against the live company directory and taxonomy.
+export const dynamic = "force-dynamic";
 
 const hasListings = (c: TradeCityCombo) => c.open.length + c.past.length > 0;
 

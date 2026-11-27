@@ -1,5 +1,6 @@
 import Link from "@/i18n/link";
 import Image from "next/image";
+import { publicImageSource } from "@/lib/d1/public-asset-preview";
 import { BadgeCheck, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { monoColor, monogram } from "@/components/public/featured-vendor-card";
@@ -32,6 +33,7 @@ export function VendorRowHeader() {
 }
 
 export function VendorRow({ vendor }: { vendor: VendorListItem }) {
+  const logo = vendor.logoUrl ? publicImageSource(vendor.logoUrl) : null;
   const t = getT("directory");
   const lang = getLang();
   return (
@@ -39,15 +41,15 @@ export function VendorRow({ vendor }: { vendor: VendorListItem }) {
       href={`/directory/${vendor.slug}`}
       className={cn(GRID, "group border-b border-border py-3.5 transition-colors last:border-b-0 hover:bg-secondary/50")}
     >
-      {vendor.logoUrl ? (
+      {logo ? (
         <span className="relative flex size-[38px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border bg-white">
           <Image
-            src={vendor.logoUrl}
+            src={logo.src}
             alt={vendor.name}
             fill
             sizes="38px"
             className="object-contain p-0.5"
-            unoptimized={vendor.logoUrl.endsWith(".svg")}
+            unoptimized={logo.unoptimized || logo.src.endsWith(".svg")}
           />
         </span>
       ) : (

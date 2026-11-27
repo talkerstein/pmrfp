@@ -1,6 +1,11 @@
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { deadlineHistory, publicQa, type AddendumRow, type DeadlineChange, type PublicQa } from "./rules";
+import { townClosesAt, townTimeZone } from "./sealed";
 
 /**
  * What a public buyer's listing shows to every visitor (anon reads of the
@@ -49,9 +54,55 @@ export interface TownListing {
   award: { winner: string; amount: number | null; date: string | null; publishedAt: string } | null;
 }
 
+const publicTown = `SELECT id FROM rfp_posts WHERE slug=? AND source_type='public_buyer_direct' AND is_demo=0
+  AND status IN ('published','closed','awarded') AND ${customerAppAuthority}`;
+
+export async function getNativeTownListing(slug: string, db: D1Binding = vpsAppDatabase()): Promise<TownListing | null> {
+  const [posts, questions, addenda, awards] = await db.batch([
+    db.prepare(`SELECT r.id,r.slug,r.title,r.summary,r.scope,r.requirements,r.submission_instructions,
+        CASE WHEN r.budget_public=1 THEN r.budget_min END AS budget_min,
+        CASE WHEN r.budget_public=1 THEN r.budget_max END AS budget_max,
+        r.deadline,r.question_deadline,r.city,r.province,r.status,r.published_at,r.buyer_key,
+        coalesce(p.buyer_name,r.buyer_name) AS buyer_name,r.post_kind,r.official_url,r.official_portal,
+        (p.organization_id IS NOT NULL AND p.organization_id=r.posted_by_organization_id) AS verified,
+        CASE WHEN r.contact_visibility='public_contact' THEN r.contact_name END AS contact_name,
+        CASE WHEN r.contact_visibility='public_contact' THEN r.contact_email END AS contact_email,
+        CASE WHEN r.contact_visibility='public_contact' THEN r.contact_phone END AS contact_phone,
+        r.sealed,(SELECT max(created_at) FROM town_job_log WHERE rfp_id=r.id AND event='quotes_opened') AS opened_at
+      FROM rfp_posts r LEFT JOIN buyer_pages p ON p.buyer_key=r.buyer_key WHERE r.id IN (${publicTown})`).bind(slug),
+    db.prepare(`SELECT id,coalesce(public_question,question) AS question,answer,answered_at
+      FROM town_job_questions WHERE status='answered' AND rfp_id IN (${publicTown})
+      ORDER BY answered_at,id`).bind(slug),
+    db.prepare(`SELECT number,body,official_url,old_deadline,new_deadline,created_at FROM town_job_addenda
+      WHERE rfp_id IN (${publicTown}) ORDER BY number`).bind(slug),
+    db.prepare(`SELECT award_winner_name AS winner,CASE WHEN award_amount_public=1 THEN award_amount END AS amount,
+        award_date AS date,award_published_at AS publishedAt FROM town_job_results
+      WHERE award_published_at IS NOT NULL AND rfp_id IN (${publicTown})`).bind(slug),
+  ]);
+  const row = posts.results[0] as unknown as (Omit<TownPostPublic, "verified" | "budget_min" | "budget_max"> & {
+    verified: number; sealed: number; opened_at: string | null; budget_min: string | number | null; budget_max: string | number | null;
+  }) | undefined;
+  if (!row) return null;
+  const { sealed, opened_at, verified, budget_min, budget_max, ...fields } = row;
+  const post: TownPostPublic = { ...fields, verified: Boolean(verified),
+    budget_min: budget_min == null ? null : Number(budget_min), budget_max: budget_max == null ? null : Number(budget_max) };
+  const rows = addenda.results as unknown as AddendumRow[];
+  const award = awards.results[0] as unknown as (Omit<NonNullable<TownListing["award"]>, "amount"> & { amount: string | number | null }) | undefined;
+  return {
+    post,
+    qa: publicQa((questions.results as unknown as { id: string; question: string; answer: string; answered_at: string }[])
+      .map((q) => ({ ...q, status: "answered" }))),
+    addenda: rows,
+    history: deadlineHistory(rows),
+    sealed: sealed ? { closesAt: townClosesAt(post.deadline, post.buyer_key), timeZone: townTimeZone(post.buyer_key), openedAt: opened_at } : null,
+    award: award?.winner ? { ...award, amount: award.amount == null ? null : Number(award.amount) } : null,
+  };
+}
+
 export async function getTownListing(slug: string): Promise<TownListing | null> {
-  if (!isSupabaseConfigured()) return null;
   try {
+    if (isVpsLiveCustomerAuth()) return await getNativeTownListing(slug);
+    if (!isSupabaseConfigured()) return null;
     const db = createReadClient();
     const { data, error } = await db.from("town_posts_public").select("*").eq("slug", slug).maybeSingle();
     if (error || !data) return null;

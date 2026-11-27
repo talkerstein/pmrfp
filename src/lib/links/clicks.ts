@@ -1,5 +1,9 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { getSession } from "@/lib/access/access";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { torontoDay } from "@/lib/sponsors/model";
 
 /**
@@ -52,9 +56,19 @@ export async function flushOutClicks(force = false): Promise<void> {
   const rows = bufferedOutClicks();
   buffer.clear();
   since = 0;
-  if (!isServiceConfigured()) return;
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) return;
   flushing = (async () => {
     try {
+      if (native) {
+        await vpsAppDatabase().prepare(`INSERT INTO org_link_clicks(org_id,day,clicks)
+          SELECT o.id,json_extract(j.value,'$.day'),min(100000,json_extract(j.value,'$.n'))
+          FROM json_each(?) j JOIN organizations o ON o.slug=json_extract(j.value,'$.slug')
+          WHERE o.status='active' AND o.profile_status='approved' AND o.is_demo=0 AND ${customerAppAuthority}
+          ON CONFLICT(org_id,day) DO UPDATE SET clicks=org_link_clicks.clicks+excluded.clicks`)
+          .bind(JSON.stringify(rows)).run();
+        return;
+      }
       const { error } = await createServiceClient().rpc("record_org_link_clicks", { p_rows: rows });
       if (error) console.warn("[links] click flush failed:", error.message);
     } catch (e) {
@@ -73,8 +87,19 @@ export interface OrgClickStats {
 
 /** "N visits to your website from PMRFP" for the company's own dashboard (service role; the caller checked the session). Null when unavailable. */
 export async function getOrgClickStats(orgId: string): Promise<OrgClickStats | null> {
-  if (!isServiceConfigured()) return null;
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) return null;
   try {
+    if (native) {
+      const session = await getSession();
+      if (!session || session.organization?.id !== orgId || session.profile.status !== "active") return null;
+      return await vpsAppDatabase().prepare(`SELECT coalesce(sum(clicks),0) AS total,
+        coalesce(sum(CASE WHEN day>=? THEN clicks ELSE 0 END),0) AS last30 FROM org_link_clicks c
+        WHERE c.org_id=? AND ${customerAppAuthority}
+        AND EXISTS(SELECT 1 FROM organization_members m JOIN users_profile u ON u.id=m.user_id
+          WHERE m.organization_id=c.org_id AND u.id=? AND u.status='active')`)
+        .bind(new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0,10),orgId,session.userId).first<OrgClickStats>();
+    }
     const { data, error } = await createServiceClient().from("org_link_clicks").select("day,clicks").eq("org_id", orgId).limit(2000);
     if (error) return null;
     const cutoff = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);

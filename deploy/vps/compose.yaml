@@ -1,0 +1,56 @@
+name: pmrfp-vps
+services:
+  app:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    working_dir: /app
+    entrypoint: ["node", "server.js"]
+    env_file:
+      - /opt/pmrfp/runtime.env
+      - /opt/pmrfp/smtp.env
+    environment:
+      NODE_ENV: production
+      PORT: "4320"
+      HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+      PMRFP_D1_FOLLOW_CHECKPOINT: enabled
+      PMRFP_VPS_SOURCE_ACCOUNT_FLOWS: enabled
+      NODE_OPTIONS: "--max-old-space-size=768"
+    volumes:
+      - /opt/pmrfp/current:/app:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,uid=1000,gid=1000,mode=1770
+      - /app/.next/cache:size=64m,uid=1000,gid=1000,mode=0700
+    mem_limit: 1200m
+    cpus: "1.0"
+    pids_limit: 128
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    stop_grace_period: 20s
+    logging:
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4320/sign-in').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    networks: [pmrfp]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: pmrfp-vps
+      traefik.http.routers.pmrfp-vps.rule: "Host(`pmrfp-vps.talkerstein.ca`)"
+      traefik.http.routers.pmrfp-vps.entrypoints: websecure
+      traefik.http.routers.pmrfp-vps.tls.certresolver: letsencrypt
+      traefik.http.routers.pmrfp-vps.middlewares: pmrfp-vps-forwarding
+      traefik.http.middlewares.pmrfp-vps-forwarding.headers.customrequestheaders.X-Vercel-Forwarded-For: ""
+      traefik.http.middlewares.pmrfp-vps-forwarding.headers.customrequestheaders.CF-Connecting-IP: ""
+      traefik.http.services.pmrfp-vps.loadbalancer.server.port: "4320"
+networks:
+  pmrfp:
+    name: pmrfp-vps

@@ -6,6 +6,11 @@ import { isPrivatePhotoRef, sanitizePhotos } from "@/lib/projects/photos";
 import { canViewProjectPhotos } from "@/lib/projects/photo-access";
 import { REDIRECT_URL_TTL, supabasePhotoStore } from "@/lib/projects/photo-storage";
 import { isSchemaMissing } from "@/lib/projects/compat";
+import { D1ApiError } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { createPrivateR2Binding } from "@/lib/d1/private-r2-binding";
+import { vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { handleNativeProjectPhoto } from "../../../../../../../workers/d1-api/project-photos";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -24,7 +29,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (limited) return rateLimitResponse(limited);
 
   const { id, file } = await params;
-  if (!UUID.test(id) || !UUID.test(file) || !isServiceConfigured()) return notFound();
+  if (!UUID.test(id) || !UUID.test(file)) return notFound();
+  if (vpsProjectUploadsEnabled()) {
+    if (new URL(request.url).search || request.headers.has("range")) return notFound();
+    try {
+      const mediaRequest = new Request(`https://pmrfp.com/v1/project-photos/${id}/${file}.jpg`, { method: request.method });
+      return await handleNativeProjectPhoto(vpsAppDatabase(),
+        createPrivateR2Binding(process.env.PMRFP_PRIVATE_R2_GATEWAY_KEY ?? ""), mediaRequest, null);
+    } catch (error) {
+      if (error instanceof D1ApiError && error.status < 500) return notFound();
+      return new Response(null, { status: 503, headers: { "Cache-Control": "private, no-store" } });
+    }
+  }
+  if (!isServiceConfigured()) return notFound();
 
   const db = createServiceClient();
   const { data, error } = await db

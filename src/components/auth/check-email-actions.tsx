@@ -5,6 +5,8 @@ import { resendSignupLinkAction, type ActionState } from "@/lib/auth/actions";
 import { afterResend, countdownLabel, resendStatus, type ResendState } from "@/lib/auth/resend";
 import { fmt } from "@/i18n/format";
 import type { Locale } from "@/i18n/config";
+import { StagingTurnstile } from "@/components/forms/staging-turnstile";
+import { accountSignupResendTurnstileAction } from "@/lib/d1/staging-turnstile";
 
 export interface CheckEmailLabels {
   openMail: string;
@@ -57,6 +59,7 @@ export function CheckEmailActions({
   lang,
   provider,
   startOverHref,
+  turnstileSiteKey,
   t,
 }: {
   email: string;
@@ -65,11 +68,13 @@ export function CheckEmailActions({
   lang: Locale;
   provider: { name: string; href: string } | null;
   startOverHref: string;
+  turnstileSiteKey?: string;
   t: CheckEmailLabels;
 }) {
   const [state, action, pending] = useActionState(resendSignupLinkAction, {} as ActionState);
   const [rs, setRs] = useState<ResendState | null>(null);
   const [now, setNow] = useState(0);
+  const [token, setToken] = useState("");
   const counted = useRef<ActionState | null>(null);
 
   // Read the cooldown on the client only (no hydration mismatch), then tick once a second.
@@ -99,7 +104,7 @@ export function CheckEmailActions({
   const status = rs ? resendStatus(rs, now) : null;
   const waiting = status && !status.can && status.reason === "wait" ? status.secondsLeft : 0;
   const limited = status && !status.can && status.reason === "limit";
-  const disabled = !status || !status.can || pending;
+  const disabled = !status || !status.can || pending || (!!turnstileSiteKey && !token);
 
   return (
     <div className="v3-su-mail" data-testid="check-email-actions">
@@ -113,6 +118,13 @@ export function CheckEmailActions({
         <input type="hidden" name="lang" value={lang} />
         {role && <input type="hidden" name="role" value={role} />}
         {next && <input type="hidden" name="next" value={next} />}
+        {turnstileSiteKey && status?.can && (
+          <>
+            <input type="hidden" name="cf-turnstile-response" value={token} />
+            <StagingTurnstile siteKey={turnstileSiteKey} attempt={state} onToken={setToken}
+              action={accountSignupResendTurnstileAction} />
+          </>
+        )}
         {!limited && (
           <button type="submit" className="v3-su-back" disabled={disabled} aria-live="polite">
             {pending ? t.resending : waiting > 0 ? fmt(t.resendIn, { time: countdownLabel(waiting) }) : t.resend}

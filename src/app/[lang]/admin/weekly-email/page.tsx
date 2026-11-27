@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -9,6 +10,8 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { fmtDate } from "@/lib/admin/queries";
 import { weeklyDigestEnabled } from "@/lib/digest/config";
 import { setLangFrom } from "@/i18n/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { useD1Lifecycle } from "@/lib/lifecycle/d1";
 
 export const metadata: Metadata = { title: "Weekly email · Admin · PMRFP" };
 
@@ -33,13 +36,32 @@ interface Row {
  */
 export default async function WeeklyEmailAdminPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
-  const demo = isDemoMode() || !isServiceConfigured();
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = useD1Lifecycle();
+  if (native && session.profile.status !== "active") notFound();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
   const enabled = weeklyDigestEnabled();
 
   let rows: Row[] = [];
+  const nativeCounts = new Map<string, number>();
   let missing = false;
-  if (!demo) {
+  if (native) {
+    try {
+      const db = vpsAppDatabase();
+      const [subscribers, counts] = await db.batch([
+        db.prepare(`SELECT email,country,province,trades,lang,status,source,created_at,confirmed_at,last_sent_at,sends
+          FROM digest_subscribers ORDER BY created_at DESC,id LIMIT 100`),
+        db.prepare("SELECT country,status,count(*) AS total FROM digest_subscribers GROUP BY country,status"),
+      ]);
+      if (!subscribers?.success || !counts?.success) throw new Error("Digest subscriber data unavailable");
+      rows = (subscribers.results as unknown as (Omit<Row, "trades"> & { trades: string | null })[]).map(row => ({
+        ...row, trades: row.trades ? JSON.parse(row.trades) : null,
+      }));
+      for (const row of counts.results) nativeCounts.set(`${row.country}:${row.status}`, Number(row.total));
+    } catch {
+      missing = true;
+    }
+  } else if (!demo) {
     const { data, error } = await createServiceClient()
       .from("digest_subscribers")
       .select("email,country,province,trades,lang,status,source,created_at,confirmed_at,last_sent_at,sends")
@@ -49,7 +71,9 @@ export default async function WeeklyEmailAdminPage({ params }: { params: Promise
     missing = Boolean(error);
     rows = data ?? [];
   }
-  const count = (status: string, country: string) => rows.filter((r) => r.status === status && r.country === country).length;
+  const count = (status: string, country: string) => native
+    ? nativeCounts.get(`${country}:${status}`) ?? 0
+    : rows.filter((r) => r.status === status && r.country === country).length;
 
   return (
     <>
@@ -61,11 +85,12 @@ export default async function WeeklyEmailAdminPage({ params }: { params: Promise
       <p className={`mb-4 rounded-md px-3 py-2 text-sm ${enabled ? "bg-teal-50 text-teal-900" : "bg-amber-50 text-amber-900"}`}>
         {enabled
           ? "WEEKLY_DIGEST_ENABLED is on: the Tuesday cron sends. Sign-up forms are always live."
-          : "WEEKLY_DIGEST_ENABLED is off: sign-ups are collected (pending, double opt-in; confirmation emails go out when Resend is configured) but no weekly email sends. Set it to 1 in Vercel (and redeploy) to start sending. /api/cron/weekly-digest?dry=1 previews a run."}
+          : native ? "Weekly sends are paused. Sign-ups and confirmation emails continue on the VPS. Use the weekly digest dry run before enabling sends."
+            : "WEEKLY_DIGEST_ENABLED is off: sign-ups are collected (pending, double opt-in; confirmation emails go out when Resend is configured) but no weekly email sends. Set it to 1 in Vercel (and redeploy) to start sending. /api/cron/weekly-digest?dry=1 previews a run."}
       </p>
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The digest_subscribers table is missing. Run supabase/migrations/20261013000010_growth_pack.sql.
+          {native ? "Subscriber data could not be loaded. Refresh to try again." : "The digest_subscribers table is missing. Run supabase/migrations/20261013000010_growth_pack.sql."}
         </p>
       )}
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
@@ -73,7 +98,7 @@ export default async function WeeklyEmailAdminPage({ params }: { params: Promise
           (["active", "pending"] as const).map((s) => (
             <div key={`${c}${s}`} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs uppercase text-muted-foreground">{c === "CA" ? "Canada" : "U.S."} · {s === "active" ? "confirmed" : "pending"}</div>
-              <div className="mt-1 text-2xl font-semibold">{count(s, c)}</div>
+              <div className="mt-1 text-2xl font-semibold">{missing ? "—" : count(s, c)}</div>
             </div>
           )),
         )}

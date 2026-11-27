@@ -11,6 +11,7 @@ import { sendAdminBuyerClaim, sendAdminBuyerSourceRequest } from "@/lib/email/se
  */
 
 type Db = Pick<SupabaseClient, "from">;
+type CountSource = Db | (() => Promise<{ claims: number; requests: number }>);
 
 /** Why a claim waits for review (lib/towns/domains PendingReason), in plain English. */
 export const CLAIM_REASON_LABEL: Record<string, string> = {
@@ -47,7 +48,7 @@ export async function buyerReviewCounts(db: Db): Promise<{ claims: number; reque
 
 /** After a claim is recorded (verified, waiting or a join request): email the admin inbox. */
 export async function notifyAdminOfClaim(
-  db: Db,
+  db: CountSource,
   x: {
     status: "verified" | "pending" | "join_requested" | "error";
     reason?: string | null;
@@ -57,7 +58,7 @@ export async function notifyAdminOfClaim(
 ): Promise<void> {
   if (x.status === "error") return;
   try {
-    const { claims, requests } = await buyerReviewCounts(db);
+    const { claims, requests } = await (typeof db === "function" ? db() : buyerReviewCounts(db));
     await sendAdminBuyerClaim({
       status: x.status,
       buyerName: x.buyer.name,
@@ -76,11 +77,11 @@ export async function notifyAdminOfClaim(
 
 /** After a /for-public-buyers request is stored: email the admin inbox. */
 export async function notifyAdminOfSourceRequest(
-  db: Db,
+  db: CountSource,
   r: { organization: string; contactName: string; workEmail: string; tendersUrl: string; method: string; provinceCode: string; buyerSlug?: string | null },
 ): Promise<void> {
   try {
-    const { claims, requests } = await buyerReviewCounts(db);
+    const { claims, requests } = await (typeof db === "function" ? db() : buyerReviewCounts(db));
     await sendAdminBuyerSourceRequest({
       organization: r.organization,
       contactName: r.contactName,

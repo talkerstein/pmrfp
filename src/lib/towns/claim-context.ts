@@ -3,6 +3,8 @@ import { loadBuyers } from "@/lib/buyers/load";
 import type { BuyerPage } from "@/lib/buyers/model";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { holdersOf, trustedByKey } from "./claimable";
 import { domainOwners } from "./domains";
 
@@ -22,7 +24,11 @@ export interface ClaimContext {
 export const claimContext = cache(async (): Promise<ClaimContext> => {
   const { pages } = await loadBuyers();
   let rows: { buyer_key: string; domain: string }[] = [];
-  if (isServiceConfigured()) {
+  if (isVpsLiveCustomerAuth()) {
+    const domains = await vpsAppDatabase().prepare("SELECT buyer_key,domain FROM buyer_domains ORDER BY buyer_key,domain LIMIT 5000")
+      .all<{ buyer_key: string; domain: string }>();
+    rows = domains.results;
+  } else if (isServiceConfigured()) {
     const { data, error } = await createServiceClient().from("buyer_domains").select("buyer_key,domain").limit(5000);
     if (!error) rows = (data ?? []) as { buyer_key: string; domain: string }[];
   }
