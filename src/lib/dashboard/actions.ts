@@ -118,6 +118,8 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
     yearsInBusiness: formData.get("yearsInBusiness") || undefined,
     employeeCountRange: formData.get("employeeCountRange") ?? "",
     insuranceStatus: formData.get("insuranceStatus") ?? "",
+    insurancePolicyNumber: native ? formData.get("insurancePolicyNumber") ?? undefined : undefined,
+    removeInsuranceLine: native && formData.get("removeInsuranceLine") === "on",
     wsibStatus: formData.get("wsibStatus") ?? "",
     emergencyService: formData.get("emergencyService") === "on",
     publicContactVisibility: (formData.get("publicContactVisibility") as string) ?? "request_intro",

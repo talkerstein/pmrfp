@@ -21,6 +21,7 @@ import { SITE } from "@/lib/site";
 import { websiteLink, structuredDataUrl } from "@/lib/links/policy";
 import { WebsiteAnchor } from "@/components/links/website-anchor";
 import { descriptionLength, profileIndexable } from "@/lib/links/indexing";
+import { insuranceText } from "@/lib/organizations/insurance";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
@@ -311,7 +312,7 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
                   )}
                   {(
                     [
-                      [t.insurance, v.insuranceStatus],
+                      [t.insurance, insuranceText(v.insuranceStatus, lang)],
                       [t.wsib, v.wsibStatus],
                     ] as const
                   ).map(([k, val]) =>

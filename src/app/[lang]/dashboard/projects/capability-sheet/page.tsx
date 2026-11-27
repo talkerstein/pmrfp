@@ -8,6 +8,7 @@ import { clientTypeKey, valueBandKey } from "@/lib/projects/case-study";
 import { PrintButton } from "@/components/projects/print-button";
 import { SITE } from "@/lib/site";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
+import { insuranceText } from "@/lib/organizations/insurance";
 import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
@@ -92,7 +93,7 @@ export default async function CapabilitySheetPage({
   const creds = [
     org.years_in_business ? fmt(t.years, { n: formatNumber(org.years_in_business, lang) }) : null,
     org.emergency_service ? t.emergency : null,
-    org.insurance_status ? `${t.insurance}: ${org.insurance_status}` : null,
+    org.insurance_status ? `${t.insurance}: ${insuranceText(org.insurance_status, lang)}` : null,
     org.wsib_status ? `${t.wsib}: ${org.wsib_status}` : null,
   ].filter((x): x is string => Boolean(x));
 

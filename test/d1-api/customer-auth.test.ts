@@ -411,6 +411,7 @@ it("keeps company edits, taxonomy, moderation and audit records in the same D1 t
     db.exec(readFileSync("d1/production-staging-copy-2026-11-05.sql", "utf8"));
     db.exec(readFileSync("deploy/vps/customer-app-authority.sql", "utf8"));
     db.exec(readFileSync("deploy/vps/company-media.sql", "utf8"));
+    db.exec(readFileSync("deploy/vps/company-insurance-policies.sql", "utf8"));
     const org = "org-local";
     const user = "b91b7c26-3f35-4328-b2bb-397eff208ca7";
     db.prepare("INSERT INTO _auth_users VALUES(?)").run(user);
@@ -428,6 +429,7 @@ it("keeps company edits, taxonomy, moderation and audit records in the same D1 t
     const session = identity as Parameters<typeof updateVpsCompanyProfile>[0];
     const profile = companyProfileSchema.parse({
       name: "New name", email: "owner@fixture-roofing.ca", website: "https://legitimate.example.test", province: "ON",
+      insurancePolicyNumber: " FIXTURE-PRIVATE ",
       publicContactVisibility: "request_intro", categories: ["roofing"], regions: ["toronto"], propertyTypes: ["commercial"],
     });
     await expect(updateVpsCompanyProfile(session, profile, null, 75, d1(db))).rejects.toThrow();
@@ -438,9 +440,14 @@ it("keeps company edits, taxonomy, moderation and audit records in the same D1 t
     expect(await updateVpsCompanyProfile(session, profile, null, 75, d1(db))).toEqual({ stayedLive: true, rejected: null });
     expect(await readVpsCompanySelections(identity, d1(db))).toEqual({
       categories: ["roofing"], regions: ["toronto"], propertyTypes: ["commercial"], paid: true,
+      insurancePolicyNumber: "FIXTURE-PRIVATE",
     });
+    await expect(readVpsCompanySelections({ ...identity, organization: { id: "other" } }, d1(db))).rejects.toThrow();
     const publicCompanies = await listPublicDirectory(d1(db), new URL("https://pmrfp.com/v1/directory"), true);
-    expect(publicCompanies.items).toEqual([expect.objectContaining({ name: "New name", email: null, link_badge: false })]);
+    expect(publicCompanies.items).toEqual([expect.objectContaining({
+      name: "New name", email: null, link_badge: false, insurance_status: "Insured",
+    })]);
+    expect(JSON.stringify(publicCompanies)).not.toContain("FIXTURE-PRIVATE");
     const read = () => db.prepare(`SELECT name,profile_status,logo_url,link_badge,review_changes,risk_flagged
       FROM organizations WHERE id=?`).get(org);
     const saved = read()!;
@@ -450,9 +457,10 @@ it("keeps company edits, taxonomy, moderation and audit records in the same D1 t
     expect(read()).toEqual(saved);
     expect(db.prepare("SELECT count(*) AS n FROM audit_logs").get()?.n).toBe(1);
     const result = await updateVpsCompanyProfile(session, {
-      ...profile, name: "Original", website: "https://blocked.example.net",
+      ...profile, name: "Original", website: "https://blocked.example.net", insurancePolicyNumber: "",
     }, "", 75, d1(db));
     expect(result.rejected?.blocked).toBe(true);
+    expect(db.prepare("SELECT count(*) AS n FROM _organization_insurance_policies").get()?.n).toBe(0);
     expect(read()).toMatchObject({ name: "Original", profile_status: "rejected", logo_url: null, risk_flagged: 1 });
     expect(JSON.parse(String(read()?.review_changes))).not.toHaveProperty("name");
     expect(db.prepare("SELECT blocked,source FROM organization_risk WHERE organization_id=?").get(org))

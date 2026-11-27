@@ -11,6 +11,7 @@ import { CloseRfpButton } from "@/components/dashboard/close-rfp-button";
 import { BidButtons } from "@/components/pm-jobs/bid-buttons";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
+import { insuranceText } from "@/lib/organizations/insurance";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { fmt, formatDate, plural } from "@/i18n/format";
@@ -219,7 +220,7 @@ export default async function RfpInterestsPage({
                   <aside className="space-y-2 rounded-md bg-secondary/40 p-3 text-xs">
                     {org?.short_description && <p className="text-muted-foreground">{org.short_description}</p>}
                     {org?.years_in_business ? <p>{fmt(r.years, { n: org.years_in_business })}</p> : null}
-                    {org?.insurance_status && <p><b>{r.insurance}:</b> {org.insurance_status}</p>}
+                    {org?.insurance_status && <p><b>{r.insurance}:</b> {insuranceText(org.insurance_status, lang)}</p>}
                     {org?.wsib_status && <p><b>{r.wsib}:</b> {org.wsib_status}</p>}
                     <div className="border-t border-border pt-2">
                       <div className="font-semibold">{r.contact}</div>

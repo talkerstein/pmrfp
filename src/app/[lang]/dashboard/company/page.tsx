@@ -62,6 +62,7 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
     selectedRegions = selections.regions;
     selectedPropertyTypes = selections.propertyTypes;
     nativePaid = selections.paid;
+    defaults.insurancePolicyNumber = selections.insurancePolicyNumber;
   } else if (!isDemoMode() && org) {
     const supabase = await createClient();
     const [cats, regs, props] = await Promise.all([
