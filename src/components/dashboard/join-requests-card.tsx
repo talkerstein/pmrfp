@@ -4,6 +4,8 @@ import { decideJoinRequestAction } from "@/lib/dedupe/actions";
 import { getLang, getT } from "@/i18n/server";
 import { fmt, formatDate } from "@/i18n/format";
 import type { SessionContext } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { listVpsJoinRequests } from "@/lib/d1/vps-join-requests";
 
 interface PendingRow {
   id: string;
@@ -18,10 +20,15 @@ interface PendingRow {
  */
 export async function JoinRequestsCard({ session, back, flash }: { session: SessionContext; back: "/dashboard" | "/pm-dashboard" | "/buyer-dashboard"; flash?: string }) {
   const org = session.organization;
-  if (!org || !isServiceConfigured()) return null;
+  const native = isVpsLiveCustomerAuth();
+  if (!org || (!native && !isServiceConfigured())) return null;
   const t = getT("dedupeClient").card;
   const lang = getLang();
-  const db = createServiceClient();
+  let rows: PendingRow[] | null = null;
+  if (native) {
+    rows = await listVpsJoinRequests(org.id, session.userId);
+  } else {
+    const db = createServiceClient();
   const { data: me } = await db
     .from("organization_members")
     .select("role")
@@ -37,7 +44,9 @@ export async function JoinRequestsCard({ session, back, flash }: { session: Sess
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .limit(20);
-  const rows = error ? [] : ((data ?? []) as unknown as PendingRow[]);
+    rows = error ? [] : ((data ?? []) as unknown as PendingRow[]);
+  }
+  if (!rows) return null;
   const message = flash === "approved" ? t.approved : flash === "declined" ? t.declined : flash === "error" ? t.error : null;
   if (!rows.length && !message) return null;
 

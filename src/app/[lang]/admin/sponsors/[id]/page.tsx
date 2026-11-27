@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { SponsorForm } from "@/components/admin/sponsor-form";
 import { SponsorCard } from "@/components/sponsors/sponsor-card";
 import { setSponsorStatusAction } from "@/lib/sponsors/actions";
-import { loadAdminSponsor } from "@/lib/sponsors/admin";
+import { sponsorAdminDatabase, loadAdminSponsor } from "@/lib/sponsors/admin";
 import { COPY_PROBLEM_TEXT, checkSponsorCopy } from "@/lib/sponsors/model";
 import { sponsorHref } from "@/lib/sponsors/registry";
 import { setLangFrom } from "@/i18n/server";
@@ -31,7 +30,7 @@ export default async function AdminSponsorPage({ params, searchParams }: { param
   const sp = await searchParams;
   const isNew = id === "new";
   if (!isNew && (isDemoMode() || !/^[0-9a-f-]{36}$/i.test(id))) notFound();
-  const row = isNew ? null : await loadAdminSponsor(await createClient(), id);
+  const row = isNew ? null : await loadAdminSponsor(await sponsorAdminDatabase(), id);
   if (!isNew && !row) notFound();
 
   const problems = row

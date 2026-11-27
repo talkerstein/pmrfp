@@ -4,7 +4,7 @@ import "./home-v3.css";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { useUsdPerCad, useVisitorMarket } from "@/components/geo/use-visitor-market";
-import { audienceFromCookie, rememberAudience, type Audience } from "@/lib/audience/pm";
+import { audienceFromCookie, rememberAudience } from "@/lib/audience/pm";
 import { PROMPT_COOKIE, QUIET_AFTER_INPUT_MS, TOAST_COOKIE, VIEWS_COOKIE, mayInterrupt, mayToast, quietEnough, readCookie } from "@/lib/growth/interruptions";
 import { V3Footer, V3Header, foundingLabel } from "./chrome";
 import { joinRegionalWaitlistAction } from "@/lib/waitlist/actions";
@@ -90,15 +90,8 @@ const H = {
   featured: signUpHrefForPlan("featured", "annual"),
 };
 
-/** Where each hero choice goes without JavaScript. With it, the click tailors this page instead. */
-const SIDE_HREF: Record<Audience, string> = { pm: "/for-property-managers", trade: "/for-trades" };
-/** One link per t.sides.pm.tools. */
+/** One link per t.doors.tools. */
 const PM_TOOL_HREF = ["/vendor-insurance-tracker", "/contract-renewal-calendar", "/bid-comparison", "/after-hours-vendor-roster"];
-/** One link per t.sides.pm.also and t.sides.trade.also. */
-const SIDE_ALSO_HREF: Record<Audience, string[]> = {
-  pm: [H.landlord, "/for/condo-boards", H.gcPackage, H.forRealEstate],
-  trade: [H.supplier, H.jobs],
-};
 /** One link per t.also.items. */
 const ALSO_HREF = [H.forum, H.jobs, H.talent, H.joinTrade, H.advertise];
 const SMALL_BG = ["#4A4E85", "#444879", "#3D416F", "#363A66", "#30335D"];
@@ -163,21 +156,7 @@ export function HomeV3({
   /** A click on a property-manager CTA: no trade popup or toast for this visitor from now on. */
   const pickPm = () => rememberAudience("pm");
 
-  /** The side picked in the hero: tailors the hero and the sections below it. Null until someone picks. */
-  const [side, setSide] = useState<Audience | null>(null);
-  const pm = side === "pm";
-  const panelRef = useRef<HTMLDivElement>(null);
-  const pickSide = (next: Audience, e: { preventDefault(): void }) => {
-    e.preventDefault();
-    rememberAudience(next);
-    setSide(next);
-    requestAnimationFrame(() => panelRef.current?.focus());
-  };
-  // A returning visitor starts on their side. Read after hydration, because the server page is the same for everyone.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSide(audienceFromCookie(document.cookie));
-  }, []);
+  const pickTrade = () => rememberAudience("trade");
 
   /* One currency per visitor: CAD in Canada, USD in the U.S.; nothing until we know which. */
   const known = market != null;
@@ -430,72 +409,43 @@ export function HomeV3({
         <div className="v3-top" ref={heroRef}>
           <section>
             <div className="v3-hero">
-              <h1 className="v3-h1">{t.hero.title}</h1>
-              <p className="v3-hero-sub">{t.hero.sub}</p>
+              <h1 className="v3-h1">{t.hero.title} <span>{t.hero.titleEnd}</span></h1>
             </div>
-            <div className="v3-pick-wrap">
-              {side == null ? (
-                <div role="group" aria-labelledby="v3-pick-q">
-                  <p className="v3-pick-q" id="v3-pick-q">{t.hero.audience}</p>
-                  <div className="v3-pick">
-                    {(["pm", "trade"] as const).map((s) => (
-                      <a key={s} href={L(SIDE_HREF[s])} onClick={(e) => pickSide(s, e)}>
-                        <span><b>{t.sides[s].pick}</b><span className="w">{t.sides[s].who}</span></span>
-                        <Arrow />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="v3-panel" ref={panelRef} tabIndex={-1}>
-                  <div className="lead">
-                    <h2 className="hd">{t.sides[side].title}</h2>
-                    <p className="sb">{t.sides[side].body}</p>
-                    {pm ? (
-                      <div className="cta"><a href={L(H.postRfp)} className="v3-pill navy">{t.sides.pm.cta}</a></div>
-                    ) : (
-                      <div className="cta">
-                        <a href={L(H.rfps)} className="v3-pill navy">{t.sides.trade.cta}</a>
-                        <a href={L(H.joinTrade)} className="v3-pill line">{t.sides.trade.join}</a>
-                      </div>
-                    )}
-                    <a className="switch" href={L(SIDE_HREF[pm ? "trade" : "pm"])} onClick={(e) => pickSide(pm ? "trade" : "pm", e)}>{t.sides[side].switch}</a>
-                  </div>
-                  <div className="more">
-                    {pm && (
-                      <>
-                        <h3 className="mh">{t.sides.pm.toolsHead}</h3>
-                        <div className="rows">
-                          {t.sides.pm.tools.map((name, i) => (
-                            <a key={name} href={L(PM_TOOL_HREF[i])}><b>{name}</b><Arrow /></a>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    {!pm && !!pub && (
-                      <a className="live" href={L(H.rfps)}>
-                        <span className="v3-dot" />
-                        <span><b>{fmt(t.hero.openNow, { n: num(pub), where: here })}</b>{!!data.closing7 && <span className="c">{fmt(t.hero.closing, { n: num(data.closing7) })}</span>}</span>
-                      </a>
-                    )}
-                    <h3 className="mh">{t.sides[side].alsoHead}</h3>
-                    <div className="also">
-                      {t.sides[side].also.map((name, i) => (
-                        <a key={name} href={L(SIDE_ALSO_HREF[side][i])}>{name}</a>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="v3-doors-wrap">
+              <div className="v3-doors">
+                <a className="v3-door hire" href={L(H.postRfp)} onClick={pickPm}>
+                  <span className="hd">{t.doors.pm.head}</span>
+                  <span className="num"><b>{money(0)}</b><span className="lb">{t.doors.pm.label}</span></span>
+                  <span className="ln">{t.doors.pm.line}</span>
+                  <span className="go-wrap"><span className="go">{t.doors.pm.cta}<Arrow /></span></span>
+                </a>
+                <a className="v3-door work" href={L(H.rfps)} onClick={pickTrade}>
+                  <span className="hd">{t.doors.trade.head}</span>
+                  {pub ? (
+                    <span className="num"><b>{num(pub)}</b><span className="lb">{fmt(t.doors.trade.label, { where: here })}</span></span>
+                  ) : (
+                    <span className="ln">{t.doors.trade.empty}</span>
+                  )}
+                  {!!pub && !!data.closing7 && (
+                    <span className="ln urgent"><span className="v3-dot" />{fmt(t.doors.trade.closing, { n: num(data.closing7) })}</span>
+                  )}
+                  <span className="go-wrap"><span className="go">{t.doors.trade.cta}<Arrow /></span></span>
+                </a>
+              </div>
+              <div className="v3-door-tools">
+                <b>{t.doors.toolsHead}</b>
+                {t.doors.tools.map((name, i) => (
+                  <a key={name} href={L(PM_TOOL_HREF[i])} onClick={pickPm}>{name}</a>
+                ))}
+              </div>
             </div>
           </section>
         </div>
 
         <section className="v3-wrap v3-how">
           <h2 className="v3-h2">{t.how.title}</h2>
-          <div className={`v3-how-grid${side ? " one" : ""}`}>
-            {/* columns[0] is the trade side, columns[1] the side that hires. */}
-            {t.how.columns.filter((_, i) => !side || i === (pm ? 1 : 0)).map((c) => (
+          <div className="v3-how-grid">
+            {t.how.columns.map((c) => (
               <div key={c.head}>
                 <h3 className="v3-h3">{c.head}</h3>
                 <ol>
@@ -508,9 +458,6 @@ export function HomeV3({
           </div>
         </section>
 
-        {/* Trade-side sections: a visitor who hires contractors doesn't need them. */}
-        {!pm && (
-        <>
         <section className="v3-wrap v3-trades">
           <div className="v3-trades-head">
             <div>
@@ -628,11 +575,9 @@ export function HomeV3({
           </div>
         </section>
 
-        </>
-        )}
 
         {/* Contract winners come from public award notices (Canadian today): hidden when the visitor's country has none. */}
-        {!pm && top.length > 0 && (
+        {top.length > 0 && (
         <section className="v3-win">
           <div className="v3-wrap v3-win-in">
             <div className="v3-win-head">
@@ -684,14 +629,12 @@ export function HomeV3({
         <section className="v3-wrap v3-also">
           <h2 className="v3-h3">{t.also.title}</h2>
           <div className="v3-also-grid">
-            {/* The last two items are for trade companies. */}
-            {t.also.items.slice(0, pm ? 3 : undefined).map((x, i) => (
+            {t.also.items.map((x, i) => (
               <a key={x.name} href={L(ALSO_HREF[i])}><b>{x.name}</b><span>{x.what}</span></a>
             ))}
           </div>
         </section>
 
-        {!pm && (
         <section>
           <div className="v3-wrap v3-plans-in">
             <div className="v3-plans-head">
@@ -717,21 +660,6 @@ export function HomeV3({
           </div>
         </section>
 
-        )}
-
-        {pm ? (
-        <section className="v3-final">
-          <div className="v3-wrap v3-final-in two">
-            <div>
-              <h2>{t.sides.pm.finalTitle}</h2>
-              <div className="note">{t.sides.pm.finalNote}</div>
-            </div>
-            <div className="btns">
-              <a href={L(H.postRfp)} className="v3-pill ink">{t.sides.pm.cta}</a>
-            </div>
-          </div>
-        </section>
-        ) : (
         <section className="v3-final">
           <div className="v3-wrap v3-final-in">
             {pub != null && <div className="big" aria-hidden>{num(pub)}</div>}
@@ -748,7 +676,6 @@ export function HomeV3({
             </div>
           </div>
         </section>
-        )}
 
         {digest && <div className="v3-wrap">{digest}</div>}
 
@@ -784,7 +711,7 @@ export function HomeV3({
 
       <V3Footer t={t} lang={lang} />
 
-      {pastHero && !pm && (
+      {pastHero && (
       <div className="v3-sticky">
         <div className="v3-sticky-in">
           <span className="v3-dot d" style={{ width: 10, height: 10 }} />

@@ -9,6 +9,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AddendumForm, AnswerForm, InviteByEmailForm, InviteTradesButton, QuestionDeadlineForm } from "@/components/towns/jobs/manage-forms";
 import { ReachCard, RecordsCard, ResultsCard, SealedBoxCard } from "@/components/towns/jobs/part-c-cards";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { listNativeTownJobs, loadNativeManagedTownJob, loadNativeTownDetail, loadNativeTownResults, previewNativeTradeInvites } from "@/lib/town-jobs/native-management";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { INVITE_DAILY_MAX, todayToronto } from "@/lib/town-jobs/rules";
@@ -46,8 +49,9 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
   const m = t.manage;
   const session = await requireRole(["public_buyer"]);
   const demo = isDemoMode();
+  const native = isVpsLiveCustomerAuth();
   if (!demo && !session.organization) redirect(localizePath("/onboarding", lang));
-  if (demo || !isServiceConfigured()) {
+  if (demo || (!native && !isServiceConfigured())) {
     return (
       <div>
         <DemoBanner />
@@ -57,8 +61,8 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
   }
   const { id } = await params;
   const sp = (await searchParams) ?? {};
-  const db = createServiceClient();
-  const job = await loadTownJob(db, id);
+  const db = native ? null : createServiceClient();
+  const job = db ? await loadTownJob(db, id) : await loadNativeManagedTownJob(session.userId,id);
   // Only the posting organization manages its post here.
   if (!job || !session.organization || job.posted_by_organization_id !== session.organization.id) notFound();
   const mirror = job.post_kind === "tender_mirror";
@@ -68,14 +72,14 @@ export default async function TownJobPage({ params, searchParams }: { params: Pr
   const sealedState = job.sealed ? await sealedStateFor(db, job.id, session.userId) : null;
   const sealedShut = Boolean(job.sealed) && !isOpened(sealedState);
   const [detail, preview, results, allJobs] = await Promise.all([
-    townJobDetail(db, job),
-    live ? previewTradeInvites(db, job).catch(() => null) : Promise.resolve<InvitePreview | null>(null),
-    mirror ? Promise.resolve(null) : loadResults(db, job, session.userId, sealedState).catch(() => null),
-    townJobsFor(db, session.organization.id).catch(() => []),
+    db ? townJobDetail(db, job) : loadNativeTownDetail(session.userId,job),
+    live ? (db ? previewTradeInvites(db,job) : previewNativeTradeInvites(job,session.userId)).catch(() => null) : Promise.resolve<InvitePreview | null>(null),
+    mirror ? Promise.resolve(null) : (db ? loadResults(db, job, session.userId, sealedState) : loadNativeTownResults(session.userId,job)).catch(() => null),
+    (db ? townJobsFor(db, session.organization.id) : listNativeTownJobs(session.userId,session.organization.id)).catch(() => []),
   ]);
   const responseCount = sealedShut ? (sealedState?.received ?? 0) : detail.responses;
   const reachJob = allJobs.find((j) => j.id === job.id) ?? { ...job, responses: responseCount, questions: detail.questions.length, invites: detail.invites.length };
-  const reach = await reachForPost(db, reachJob, allJobs).catch(() => null);
+  const reach = await reachForPost(db ?? vpsAppDatabase(), reachJob, allJobs).catch(() => null);
   const today = todayToronto();
   const n = Number(sp.n) || 0;
   const alerts = sp.alerts as keyof typeof m.flash.alerts | undefined;

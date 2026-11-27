@@ -3,6 +3,10 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
 import { attachCertFile, lookupRequest, readCertFile } from "@/lib/vendor-certs/server";
 import { cleanVendorInput } from "@/lib/vendor-certs/rules";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { nativeAttachmentLimit } from "@/lib/d1/private-attachment-routes";
+import { attachVendorFile, attachmentError } from "@/lib/d1/private-attachments";
+import { hashReviewToken } from "@/lib/projects/tokens";
 
 export const maxDuration = 30;
 
@@ -14,15 +18,23 @@ export const maxDuration = 30;
  * replayed. The PM's digest starts over for the new expiry date.
  */
 export async function POST(request: Request) {
-  const limited = await checkRateLimit(request, "cert-upload");
-  if (limited) return rateLimitResponse(limited);
+  const native = isVpsLiveCustomerAuth();
+  if (native && !matchesCustomerOrigin(request)) return NextResponse.json({ error: "upload" }, { status: 403 });
+  if (native) {
+    const limited = await nativeAttachmentLimit(request);
+    if (limited) return limited;
+  } else {
+    const limited = await checkRateLimit(request, "cert-upload");
+    if (limited) return rateLimitResponse(limited);
+  }
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
     return NextResponse.json({ error: "upload" }, { status: 400 });
   }
-  const req = await lookupRequest(String(form.get("token") ?? ""));
+  const token = String(form.get("token") ?? "");
+  const req = await lookupRequest(token);
   if (req.state !== "open") return NextResponse.json({ error: req.state }, { status: 410 });
 
   const fields = cleanVendorInput(
@@ -40,6 +52,14 @@ export async function POST(request: Request) {
   if (!fields.value.expires_on) return NextResponse.json({ error: "date" }, { status: 422 });
   const file = await readCertFile(form.get("file"));
   if (!file.ok) return NextResponse.json({ error: file.error }, { status: file.error === "tooBig" ? 413 : 415 });
+  if (native) {
+    try {
+      await attachVendorFile(req.certId, hashReviewToken(token), file, { ...fields.value, expires_on: fields.value.expires_on });
+      return NextResponse.json({ ok: true, onPmrfp: req.onPmrfp }, { headers: { "cache-control": "private, no-store" } });
+    } catch (error) {
+      return attachmentError(error, "upload");
+    }
+  }
 
   const ok = await attachCertFile(createServiceClient(), { id: req.certId, organization_id: req.organizationId, file_path: req.filePath }, file, "vendor", {
     insurer: fields.value.insurer,

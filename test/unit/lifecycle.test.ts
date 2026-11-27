@@ -359,7 +359,7 @@ vi.mock("@/lib/data/price-benchmarks-load", () => ({
 }));
 vi.mock("@/lib/founding/server", () => ({ cachedLifetimeCount: async () => 10 }));
 const sendSpy = vi.fn(async () => ({ ok: true, id: "re_test" }));
-vi.mock("@/lib/email/send", () => ({ emailConfigured: () => true, sendLifecycleEmail: (...a: unknown[]) => sendSpy(...(a as [])) }));
+vi.mock("@/lib/email/send", () => ({ lifecycleEmailConfigured: () => true, sendLifecycleEmail: (...a: unknown[]) => sendSpy(...(a as [])) }));
 
 describe("lifecycle engine", () => {
   beforeEach(() => {

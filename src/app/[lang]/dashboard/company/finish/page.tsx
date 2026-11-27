@@ -11,6 +11,7 @@ import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { plural } from "@/i18n/format";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { finishHref, missingSteps, pickStep, stepsFor, type ListingStep } from "@/lib/organizations/listing-steps";
 import type { Organization } from "@/types/db";
 
@@ -54,6 +55,7 @@ export default async function FinishListingPage({
 
   const t = getT("dashClient").finish;
   const items = getT("dash").profile.items;
+  const nativeMedia = isVpsLiveCustomerAuth();
   const sp = await searchParams;
   const step = pickStep(org, sp.step, sp.after);
   const steps = stepsFor(org);
@@ -68,10 +70,11 @@ export default async function FinishListingPage({
         <ListingFinishStep
           key={step}
           step={step}
-          initial={initialValue(step, org)}
+          initial={nativeMedia && step === "insurance" ? "" : initialValue(step, org)}
           done={steps.length - missing.length}
           total={steps.length}
           organizationId={org.id}
+          nativeMedia={nativeMedia}
           preview={{
             name: org.name,
             logoUrl: org.logo_url ?? null,

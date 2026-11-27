@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { BigTick, ROLE_PHOTO, SignupAside, SignupFrame, SignupSticky, SignupTop, Stepper } from "@/components/home-v3/signup-ui";
 import { getVisitorListCounts } from "@/lib/data/list-counts";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
-import { checkoutPath } from "@/lib/billing/checkout-flow";
+import { checkoutPath, upgradeInterval } from "@/lib/billing/checkout-flow";
 import { CheckEmailActions } from "@/components/auth/check-email-actions";
+import { authTurnstileSiteKey, isVpsNativeAccountSignup } from "@/lib/d1/staging-config";
 import { mailProviderFor } from "@/lib/auth/mail-provider";
 import { safeNextPath } from "@/lib/auth/next";
 import { getT, setLangFrom } from "@/i18n/server";
@@ -43,7 +44,8 @@ export default async function CheckEmailPage({
   const [counts, categories, regions] = await Promise.all([getVisitorListCounts(), getCategories(), getRegions()]);
   const L = (p: string) => localizePath(p, lang);
   const num = (n: number) => formatNumber(n, lang);
-  const checkout = `/sign-in?next=${encodeURIComponent(next ?? checkoutPath("pro", "annual"))}`;
+  // No return path in the link: the same price the sign-up plan card led with (monthly when a monthly price exists).
+  const checkout = `/sign-in?next=${encodeURIComponent(next ?? checkoutPath("pro", upgradeInterval(Boolean(process.env.STRIPE_PRICE_TRADE_PRO_MONTHLY))))}`;
   // Wrong address? Back to the form with the same role and plan.
   const startOver = `/sign-up${role || next ? "?" : ""}${new URLSearchParams({ ...(role ? { role: role === "general_contractor" ? "property_manager" : role } : {}), ...(role === "general_contractor" ? { kind: "gc" } : {}), ...(next ? { next } : {}) }).toString()}`;
   const provider = mailProviderFor(email);
@@ -103,6 +105,7 @@ export default async function CheckEmailPage({
               lang={lang}
               provider={provider ? { name: provider.name, href: provider.href } : null}
               startOverHref={L(startOver)}
+              turnstileSiteKey={isVpsNativeAccountSignup() ? authTurnstileSiteKey() : undefined}
               t={{ openMail: t.openMail, resend: t.resend, resendIn: t.resendIn, resending: t.resending, resent: t.resent, resendLimit: t.resendLimit, wrongEmail: t.wrongEmail, startOver: t.startOver, sameBrowser: t.sameBrowser }}
             />
           )}

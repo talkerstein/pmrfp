@@ -35,7 +35,7 @@ export type ClaimResult =
   | { status: "join_requested"; organizationId: string; claimId: string | null }
   | { status: "error"; reason: "missing_table" | "other_org" | "already_managing" | "failed" };
 
-const PROVINCE_NAME: Record<string, string> = {
+export const PROVINCE_NAME: Record<string, string> = {
   ON: "Ontario", BC: "British Columbia", AB: "Alberta", NS: "Nova Scotia", MB: "Manitoba", SK: "Saskatchewan", QC: "Quebec",
   NB: "New Brunswick", PE: "Prince Edward Island", NL: "Newfoundland and Labrador", YT: "Yukon", NT: "Northwest Territories", NU: "Nunavut",
 };

@@ -1,0 +1,36 @@
+{
+  "name": "pmrfp-native-auth-app-sandbox",
+  "main": "index.ts",
+  "compatibility_date": "2026-11-06",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "workers_dev": true,
+  "vars": {
+    "AUTH_PROVIDER": "native-synthetic",
+    "SAVED_RFPS_MODE": "sandbox-write",
+    "NATIVE_AUTH_URL": "https://pmrfp-auth-synthetic-preview.pmrfp.workers.dev",
+    "SUPABASE_URL": "",
+    "SUPABASE_ANON_KEY": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pmrfp-native-auth-app-sandbox-20261106",
+      "database_id": "49932482-ee62-4917-b760-d8abda0cfcc9"
+    }
+  ],
+  "observability": {
+    "enabled": false
+  },
+  "services": [
+    {
+      "binding": "NATIVE_AUTH_SERVICE",
+      "service": "pmrfp-auth-synthetic-preview"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE_SANDBOX",
+      "bucket_name": "pmrfp-native-storage-sandbox-20261106"
+    }
+  ]
+}

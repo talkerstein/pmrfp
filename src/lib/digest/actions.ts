@@ -1,5 +1,9 @@
 "use server";
 
+import { randomInt, randomUUID } from "node:crypto";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { hostingerMailConfigured } from "@/lib/email/smtp";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { headers } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -40,8 +44,56 @@ async function clientIp(): Promise<string> {
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
 }
 
+async function saveNativeSubscriber(v: DigestSignupInput): Promise<DigestSignupState> {
+  const db = vpsAppDatabase();
+  const key = v.email.toLowerCase();
+  const emailReady = hostingerMailConfigured();
+  const done = { ok: true, email: v.email, ...(emailReady ? {} : { held: true }) };
+  const [raw, suppressed] = await Promise.all([
+    db.prepare("SELECT id,status,confirm_sent_at,trades FROM digest_subscribers WHERE email_key=?").bind(key)
+      .first<{id:string;status:string;confirm_sent_at:string|null;trades:string|null}>(),
+    db.prepare("SELECT 1 FROM email_suppressions WHERE email_key=?").bind(key).first(),
+  ]);
+  const decision = decideSubscribe(raw ? { ...raw, trades: raw.trades ? JSON.parse(raw.trades) : [] } : null,
+    Boolean(suppressed), v.trades, emailReady);
+  if (decision.kind === "skip") return done;
+  const { token, hash } = newConfirmToken();
+  const now = new Date().toISOString();
+  const result = await db.prepare(`INSERT INTO digest_subscribers
+    (id,email,country,province,trades,lang,status,confirm_token_hash,confirm_sent_at,source,consent_text_version,consent_at,updated_at,send_bucket)
+    SELECT ?,?,?,?,?,?,'pending',?,?,?,?,?,?,? WHERE ${customerAppAuthority}
+      AND NOT EXISTS (SELECT 1 FROM email_suppressions WHERE email_key=?)
+    ON CONFLICT(email_key) DO UPDATE SET country=excluded.country,province=excluded.province,
+      trades=excluded.trades,lang=excluded.lang,status='pending',confirm_token_hash=excluded.confirm_token_hash,
+      confirm_sent_at=excluded.confirm_sent_at,source=excluded.source,consent_text_version=excluded.consent_text_version,
+      consent_at=excluded.consent_at,updated_at=excluded.updated_at
+    WHERE digest_subscribers.id=? AND digest_subscribers.status=? AND digest_subscribers.confirm_sent_at IS ?
+    RETURNING id`).bind(
+      randomUUID(),v.email,v.country,v.province,JSON.stringify(decision.trades),v.lang,hash,
+      decision.sendConfirm ? now : null,v.source,CONSENT_VERSION,now,now,randomInt(4),key,
+      raw?.id ?? null, raw?.status ?? null,raw?.confirm_sent_at ?? null,
+    ).first<{ id:string }>();
+  if (!result || !decision.sendConfirm) return done;
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
+  const confirmUrl = `${base}/api/digest/confirm?s=${encodeURIComponent(result.id)}&t=${encodeURIComponent(token)}`;
+  try {
+    await sendDigestEmail(v.email, renderConfirmEmail(v.lang, {
+      confirmUrl, placeName: regionName(v.province, v.lang), contactEmail: SITE.email,
+    }), v.lang, undefined, true);
+    return done;
+  } catch {
+    await db.prepare("UPDATE digest_subscribers SET confirm_sent_at=NULL WHERE id=? AND status='pending' AND confirm_token_hash=?")
+      .bind(result.id, hash).run();
+    return { ...done, held: true };
+  }
+}
+
 /** Store (or refresh) one pending sign-up and send its confirmation when email can send. */
 async function savePendingSubscriber(v: DigestSignupInput): Promise<DigestSignupState> {
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1") {
+    try { return await saveNativeSubscriber(v); }
+    catch { return { error: "failed" }; }
+  }
   const emailReady = emailConfigured();
   const done: DigestSignupState = { ok: true, email: v.email, ...(emailReady ? {} : { held: true }) };
   if (!isServiceConfigured()) return { error: "failed" };

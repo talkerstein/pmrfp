@@ -20,6 +20,8 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { fmt, formatDate } from "@/i18n/format";
 import { isSchemaMissing } from "@/lib/projects/compat";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -48,7 +50,13 @@ export default async function PmRfpsPage({
   const sp = await searchParams;
 
   let posts: PostRow[] = [];
-  if (!isDemoMode()) {
+  if (isVpsLiveCustomerAuth()) {
+    const result = await vpsAppDatabase().prepare(`
+      SELECT id,title,slug,status,deadline,created_at,review_note FROM rfp_posts
+      WHERE posted_by_user_id=? ORDER BY created_at DESC
+    `).bind(session.userId).all<PostRow>();
+    posts = result.results;
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     const read = (cols: string) =>
       supabase.from("rfp_posts").select(cols).eq("posted_by_user_id", session.userId).order("created_at", { ascending: false });

@@ -4,6 +4,8 @@ import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { LogoUploader } from "@/components/forms/logo-uploader";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { publicImageSource } from "@/lib/d1/public-asset-preview";
 import { TownWidgetCode } from "@/components/towns/blocks";
 import { updateBuyerPageAction } from "@/lib/towns/actions";
 import { loadBuyerDashboard } from "@/lib/towns/dashboard-data";
@@ -54,7 +56,9 @@ export default async function BuyerPageEdit({ params, searchParams }: { params: 
         <form action={updateBuyerPageAction} className="grid gap-5 rounded-xl border border-border bg-card p-5">
           <input type="hidden" name="lang" value={lang} />
           <p className="text-sm text-muted-foreground">{t.intro}</p>
-          <LogoUploader organizationId={session.organization?.id ?? null} initialLogoUrl={own.logo_url} label={t.logo} />
+          <LogoUploader organizationId={session.organization?.id ?? null}
+            initialLogoUrl={isVpsLiveCustomerAuth() && own.logo_url ? publicImageSource(own.logo_url).src : own.logo_url}
+            nativeMedia={isVpsLiveCustomerAuth()} label={t.logo} />
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium">
               {t.contactEmail}

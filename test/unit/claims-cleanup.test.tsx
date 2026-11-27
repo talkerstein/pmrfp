@@ -215,7 +215,7 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
     });
   }
 
-  it("keeps the live strip out of the hero until a side is picked, and hides tile counts and a zero closing line", async () => {
+  it("shows the hero's tender count only when it's real, and hides tile counts and a zero closing line", async () => {
     const { getDictionary, clientMessages } = await import("@/i18n/dictionaries");
     const { I18nProvider } = await import("@/i18n/provider");
     const d = getDictionary("en");
@@ -231,12 +231,16 @@ describe("homepage shows no made-up numbers when live data can't load", () => {
           />
         </I18nProvider>,
       );
+    const doors = (html: string) => html.slice(html.indexOf('class="v3-doors"'), html.indexOf('class="v3-door-tools"'));
     const none = render(0, 0);
     expect(none).not.toContain('class="live"');
     expect(none).not.toContain('<span class="n">0</span>');
+    expect(doors(none)).toContain(d.homeV3.doors.trade.empty);
+    expect(doors(none)).not.toContain("<b>0</b>");
     const some = render(12, 0);
-    expect(some).not.toContain('class="live"');
-    expect(some).toContain("Which one are you?");
-    expect(some).not.toContain("0 close in the next 7 days. See them");
+    expect(doors(some)).toContain("<b>12</b>");
+    expect(doors(some)).not.toContain(d.homeV3.doors.trade.empty);
+    expect(doors(some)).not.toContain("close in the next 7 days");
+    expect(doors(render(12, 5))).toContain("5 close in the next 7 days.");
   });
 });

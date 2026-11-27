@@ -1,3 +1,4 @@
+import { hostingerMailConfigured, HostingerDeliveryError, sendHostingerMail } from "@/lib/email/smtp";
 import { Resend } from "resend";
 import { COPY, SITE } from "@/lib/site";
 import { ROLE_LABEL, withDelta, type WeeklyReport } from "@/lib/admin/weekly-report";
@@ -5,6 +6,7 @@ import { fmtByCurrency } from "@/lib/admin/stripe-revenue";
 import { recentAwardsHtml } from "@/lib/alerts/awards";
 import { majorProjectsHtml } from "@/lib/major-projects/alerts";
 import { tagEmailLinks } from "@/lib/email/utm";
+import { escHtml, removeLinks } from "@/lib/email/parts";
 import { adminNotificationEmail } from "@/lib/pm-jobs/rules";
 import {
   confirmationEmail,
@@ -48,17 +50,26 @@ async function send(
     replyTo?: string;
     cc?: string[];
     attachments?: { filename: string; content: Buffer }[];
+    smtpOnly?: boolean;
     /** utm_campaign for our pmrfp.com links (lib/email/utm). Member- and public-facing emails only. */
     utm?: string;
   },
 ): Promise<void> {
   if (opts?.utm) html = tagEmailLinks(html, opts.utm, BASE);
-  const resend = client();
-  if (!resend) {
-    console.info(`[email:noop] to=${to} subject="${subject}"`);
+  if (opts?.smtpOnly) {
+    await sendHostingerMail({ to, subject, html, headers, replyTo: opts.replyTo, cc: opts.cc, attachments: opts.attachments });
     return;
   }
   try {
+    if (process.env.PMRFP_SMTP_ENABLED === "enabled") {
+      await sendHostingerMail({ to, subject, html, headers, replyTo: opts?.replyTo, cc: opts?.cc, attachments: opts?.attachments });
+      return;
+    }
+    const resend = client();
+    if (!resend) {
+      console.info(`[email:noop] to=${to} subject="${subject}"`);
+      return;
+    }
     await resend.emails.send({
       from: FROM,
       to,
@@ -190,7 +201,7 @@ export async function sendSubscriptionActivatedEmail(to: string): Promise<void> 
 }
 
 /** The owner's inbox(es): the admin mailbox and the sign-up alert address, once each. */
-async function sendToOwners(subject: string, html: string, opts?: { replyTo?: string; attachments?: { filename: string; content: Buffer }[] }): Promise<void> {
+async function sendToOwners(subject: string, html: string, opts?: { replyTo?: string; attachments?: { filename: string; content: Buffer }[]; smtpOnly?: boolean }): Promise<void> {
   const addrs = [...new Set([adminInbox(), SIGNUP_ALERT].map((e) => e.trim().toLowerCase()).filter(Boolean))];
   await Promise.all(addrs.map((addr) => send(addr, subject, html, undefined, opts)));
 }
@@ -232,6 +243,7 @@ export async function sendDailyMatches(
   to: string,
   params: {
     subject: string;
+    smtpOnly?: boolean;
     items: { title: string; slug: string; trade: string | null; region: string | null; deadline: string | null; summary: string | null }[];
     unsubscribeUrl: string | null;
     mailingAddress: string | null;
@@ -290,7 +302,7 @@ export async function sendDailyMatches(
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         }
       : undefined,
-    { utm: "daily-matches" },
+    { utm: "daily-matches", smtpOnly: params.smtpOnly },
   );
 }
 
@@ -308,6 +320,7 @@ export async function sendLeadAlert(
     trial: boolean;
     unsubscribeUrl: string | null;
     mailingAddress: string | null;
+    smtpOnly?: boolean;
     sponsorHtml?: string;
   },
 ): Promise<void> {
@@ -337,7 +350,7 @@ export async function sendLeadAlert(
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         }
       : undefined,
-    { utm: "lead-alerts" },
+    { utm: "lead-alerts", smtpOnly: params.smtpOnly },
   );
 }
 
@@ -597,6 +610,7 @@ export async function sendPmJobAlert(
   to: string,
   params: {
     lang: EmailLang;
+    smtpOnly?: boolean;
     title: string;
     slug: string;
     trade: string | null;
@@ -611,7 +625,11 @@ export async function sendPmJobAlert(
     town?: { buyer: string | null; mirror: boolean; portal: string | null };
   },
 ): Promise<void> {
-  const { lang, ...rest } = params;
+  const { lang, smtpOnly, ...rest } = params;
+  if (smtpOnly) {
+    await sendTownJobEmail(to, jobAlertEmail(lang, { base: BASE, ...rest }), lang, "pm-job-alert", params.unsubscribeUrl, { smtpOnly: true });
+    return;
+  }
   await sendBuilt(to, jobAlertEmail(lang, { base: BASE, ...rest }), lang, "pm-job-alert", {
     "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -642,11 +660,18 @@ type PosterKind = "pm" | "gc" | "town";
  * carries the one-click List-Unsubscribe headers (RFC 8058). The callers
  * gate sending (TOWN_INVITES_ENABLED, TOWN_QA_EMAILS_ENABLED).
  */
-export async function sendTownJobEmail(to: string, e: BuiltEmail, lang: EmailLang, utm: string, unsubscribeUrl?: string | null): Promise<void> {
+export async function sendTownJobEmail(
+  to: string, e: BuiltEmail, lang: EmailLang, utm: string, unsubscribeUrl?: string | null, opts?: { smtpOnly: boolean },
+): Promise<void> {
   const headers = unsubscribeUrl
     ? { "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
     : undefined;
-  await send(to, e.subject, layout(e.title, e.bodyHtml, e.footnote || undefined, { lang, referralPs: false }), headers, { utm });
+  const html = layout(e.title, e.bodyHtml, e.footnote || undefined, { lang, referralPs: false });
+  if (opts?.smtpOnly) {
+    await sendHostingerMail({ to, subject: e.subject, html: tagEmailLinks(html, utm, BASE), headers });
+    return;
+  }
+  await send(to, e.subject, html, headers, { utm });
 }
 /**
  * A Vendor Insurance Tracker email (lib/vendor-certs/email-copy: the
@@ -735,7 +760,7 @@ export async function sendAdminReferral(params: {
 }): Promise<void> {
   const ownerLine =
     params.ownerName || params.ownerEmail || params.ownerPhone
-      ? `<li><strong>Owner / contact:</strong> ${[params.ownerName, params.ownerEmail, params.ownerPhone].filter(Boolean).join(" · ")}</li>`
+      ? `<li><strong>Owner / contact:</strong> ${escHtml([params.ownerName, params.ownerEmail, params.ownerPhone].filter(Boolean).join(" · "))}</li>`
       : `<li><em>Owner contact not provided — referrer will introduce.</em></li>`;
   await send(
     adminInbox(),
@@ -743,13 +768,13 @@ export async function sendAdminReferral(params: {
     layout(
       "New project referral",
       `<ul>
-        <li><strong>Referrer:</strong> ${params.referrerName} (${params.referrerEmail}${params.referrerPhone ? ` · ${params.referrerPhone}` : ""})</li>
-        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${params.referrerAffiliation}</li>` : ""}
-        <li><strong>Location:</strong> ${params.projectCity}, ${params.projectProvince}</li>
-        ${params.projectCategory ? `<li><strong>Category:</strong> ${params.projectCategory}</li>` : ""}
+        <li><strong>Referrer:</strong> ${escHtml(params.referrerName)} (${escHtml(params.referrerEmail)}${params.referrerPhone ? ` · ${escHtml(params.referrerPhone)}` : ""})</li>
+        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${escHtml(params.referrerAffiliation)}</li>` : ""}
+        <li><strong>Location:</strong> ${escHtml(params.projectCity)}, ${escHtml(params.projectProvince)}</li>
+        ${params.projectCategory ? `<li><strong>Category:</strong> ${escHtml(params.projectCategory)}</li>` : ""}
         ${ownerLine}
        </ul>
-       <p><strong>Project:</strong><br/>${params.projectDescription.replace(/\n/g, "<br/>")}</p>
+       <p><strong>Project:</strong><br/>${escHtml(params.projectDescription).replace(/\n/g, "<br/>")}</p>
        <p>${btn(`${BASE}/admin/contact-requests`, "View in admin")}</p>`,
     ),
   );
@@ -758,14 +783,17 @@ export async function sendAdminReferral(params: {
 /**
  * Confirmation to a PROJECT referrer. No cash payout — recognition lane.
  * Public credit on the RFP + top-connectors leaderboard placement.
+ *
+ * Nothing from the form goes in: the address is whatever was typed, with no
+ * login, so form text here would let a stranger write to anyone as PMRFP.
  */
-export async function sendReferralConfirmation(to: string, projectCity: string): Promise<void> {
+export async function sendReferralConfirmation(to: string): Promise<void> {
   await send(
     to,
     "Thanks for the project referral",
     layout(
       "We received your referral",
-      `<p>Thanks for introducing this project in <strong>${projectCity}</strong> to ${SITE.name}.</p>
+      `<p>Thanks for introducing a project to ${SITE.name}.</p>
        <p><strong>What happens next:</strong></p>
        <ol>
          <li>Our team reviews the referral (usually within 1 business day).</li>
@@ -805,7 +833,7 @@ export async function sendAdminTradeReferral(params: {
 }): Promise<void> {
   const contactLine =
     params.tradeContactName || params.tradeContactEmail || params.tradeContactPhone
-      ? `<li><strong>Trade contact:</strong> ${[params.tradeContactName, params.tradeContactEmail, params.tradeContactPhone].filter(Boolean).join(" · ")}</li>`
+      ? `<li><strong>Trade contact:</strong> ${escHtml([params.tradeContactName, params.tradeContactEmail, params.tradeContactPhone].filter(Boolean).join(" · "))}</li>`
       : `<li><em>Trade contact not provided — referrer will introduce.</em></li>`;
   await send(
     adminInbox(),
@@ -813,15 +841,15 @@ export async function sendAdminTradeReferral(params: {
     layout(
       "New trade referral (direct-revenue lane)",
       `<ul>
-        <li><strong>Referrer:</strong> ${params.referrerName} (${params.referrerEmail}${params.referrerPhone ? ` · ${params.referrerPhone}` : ""})</li>
-        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${params.referrerAffiliation}</li>` : ""}
-        <li><strong>Trade company:</strong> ${params.tradeCompanyName}</li>
-        ${params.tradeCategory ? `<li><strong>Category:</strong> ${params.tradeCategory}</li>` : ""}
-        <li><strong>Location:</strong> ${params.tradeCity}, ${params.tradeProvince}</li>
-        ${params.tradeWebsite ? `<li><strong>Website:</strong> <a href="${params.tradeWebsite}">${params.tradeWebsite}</a></li>` : ""}
+        <li><strong>Referrer:</strong> ${escHtml(params.referrerName)} (${escHtml(params.referrerEmail)}${params.referrerPhone ? ` · ${escHtml(params.referrerPhone)}` : ""})</li>
+        ${params.referrerAffiliation ? `<li><strong>Affiliation:</strong> ${escHtml(params.referrerAffiliation)}</li>` : ""}
+        <li><strong>Trade company:</strong> ${escHtml(params.tradeCompanyName)}</li>
+        ${params.tradeCategory ? `<li><strong>Category:</strong> ${escHtml(params.tradeCategory)}</li>` : ""}
+        <li><strong>Location:</strong> ${escHtml(params.tradeCity)}, ${escHtml(params.tradeProvince)}</li>
+        ${params.tradeWebsite ? `<li><strong>Website:</strong> <a href="${escHtml(params.tradeWebsite)}">${escHtml(params.tradeWebsite)}</a></li>` : ""}
         ${contactLine}
        </ul>
-       ${params.whyThemNote ? `<p><strong>Why this trade:</strong><br/>${params.whyThemNote.replace(/\n/g, "<br/>")}</p>` : ""}
+       ${params.whyThemNote ? `<p><strong>Why this trade:</strong><br/>${escHtml(params.whyThemNote).replace(/\n/g, "<br/>")}</p>` : ""}
        <p><strong>Fee:</strong> $75 CAD payable to referrer when this trade activates Trade Pro.</p>`,
     ),
   );
@@ -829,14 +857,15 @@ export async function sendAdminTradeReferral(params: {
 
 /**
  * Confirmation to a TRADE referrer. Fee triggers on Trade-Pro-activated.
+ * Nothing from the form goes in, for the same reason as sendReferralConfirmation.
  */
-export async function sendTradeReferralConfirmation(to: string, tradeName: string): Promise<void> {
+export async function sendTradeReferralConfirmation(to: string): Promise<void> {
   await send(
     to,
     "Thanks for the trade referral",
     layout(
       "We received your referral",
-      `<p>Thanks for introducing <strong>${tradeName}</strong> to ${SITE.name}.</p>
+      `<p>Thanks for introducing a trade company to ${SITE.name}.</p>
        <p><strong>What happens next:</strong></p>
        <ol>
          <li>Our team reviews the referral (usually within 1 business day).</li>
@@ -860,9 +889,6 @@ const SIGNUP_ROLE: Record<string, string> = {
   talent: "Tradesperson (jobs)",
   visitor: "Browsing only",
 };
-const escHtml = (s: string) =>
-  s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" })[c]!);
-
 /** One email per new account (email or Google) so no sign-up goes unnoticed. */
 export async function sendAdminNewSignup(p: {
   email: string;
@@ -943,6 +969,7 @@ export async function sendTenderDigest(
   to: string,
   params: {
     count: number;
+    smtpOnly?: boolean;
     tradeLabel: string;
     items: { title: string; slug: string; deadline: string | null }[];
     /** How many of this week's matches close within 7 days. */
@@ -1016,14 +1043,14 @@ export async function sendTenderDigest(
       "List-Unsubscribe": `<${params.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
-    { utm: "tender-digest" },
+    { utm: "tender-digest", smtpOnly: params.smtpOnly },
   );
 }
 
 /** "Email me this RFP" from the RFP Writer — the draft, plus a one-click path to post it. */
 const RFP_DRAFT = {
   en: {
-    subject: "Your RFP: {title}",
+    subject: "Your RFP draft",
     scope: "Scope",
     requirements: "Requirements",
     submission: "Submission instructions",
@@ -1035,7 +1062,7 @@ const RFP_DRAFT = {
     footnote: "You're getting this because you asked the PMRFP RFP Writer to email you a copy. Review it before sending to bidders — it's a starting draft, not legal advice.",
   },
   fr: {
-    subject: "Votre appel d'offres : {title}",
+    subject: "Votre ébauche d'appel d'offres",
     scope: "Portée des travaux",
     requirements: "Exigences",
     submission: "Instructions de soumission",
@@ -1047,7 +1074,7 @@ const RFP_DRAFT = {
     footnote: "Vous recevez ce courriel parce que vous avez demandé au rédacteur d'appels d'offres de PMRFP de vous en envoyer une copie. Relisez-le avant de l'envoyer aux soumissionnaires : c'est une première version, pas un avis juridique.",
   },
   es: {
-    subject: "Su RFP: {title}",
+    subject: "Su borrador de RFP",
     scope: "Alcance del trabajo",
     requirements: "Requisitos",
     submission: "Instrucciones para presentar ofertas",
@@ -1074,15 +1101,16 @@ export async function sendRfpDraftEmail(
   lang: "en" | "fr" | "es" = "en",
 ): Promise<void> {
   const t = RFP_DRAFT[lang];
-  const esc = (s: string) =>
-    s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  // Anyone can post this to any address with any text, so the subject is fixed
+  // and web addresses don't go out under our name. The draft stays on their screen.
+  const esc = (s: string) => escHtml(removeLinks(s));
   const para = (s: string) => `<p style="white-space:pre-wrap;margin:0 0 16px;line-height:1.5">${esc(s)}</p>`;
   const list = (items: string[]) =>
     `<ul style="margin:0 0 16px;padding-left:20px;line-height:1.5">${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
   const h = (s: string) => `<h2 style="font-size:15px;margin:20px 0 8px;color:#282B59">${s}</h2>`;
   await send(
     to,
-    t.subject.replace("{title}", rfp.title),
+    t.subject,
     layout(
       esc(rfp.title),
       `${para(rfp.summary)}
@@ -1104,7 +1132,7 @@ export async function sendRfpDraftEmail(
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** Monday numbers email to the admin inbox (cron: /api/cron/admin-weekly). */
-export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
+export async function sendAdminWeeklyReport(r: WeeklyReport, { smtpOnly = false } = {}): Promise<void> {
   const row = (label: string, value: string) =>
     `<tr><td style="padding:6px 12px 6px 0;color:#64748b">${label}</td><td style="padding:6px 0;font-weight:600">${value}</td></tr>`;
   const list = (items: string[]) => (items.length ? `<ul style="margin:6px 0 16px;padding-left:18px">${items.join("")}</ul>` : `<p style="margin:6px 0 16px;color:#64748b">None this week.</p>`);
@@ -1152,11 +1180,11 @@ export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
 
     <p>${btn(`${BASE}/admin`, "Open admin")}</p>`;
 
-  await send(
-    adminInbox(),
-    `PMRFP weekly: ${r.signups.count} signups, ${s ? `${fmtByCurrency(s.moneyIn7d)} in` : "revenue: check Stripe"}`,
-    layout(`Your week: ${r.period.from} → ${r.period.to}`, body),
-  );
+  const to = adminInbox();
+  const subject = `PMRFP weekly: ${r.signups.count} signups, ${s ? `${fmtByCurrency(s.moneyIn7d)} in` : "revenue: check Stripe"}`;
+  const html = layout(`Your week: ${r.period.from} → ${r.period.to}`, body);
+  if (smtpOnly) await sendHostingerMail({ to, subject, html });
+  else await send(to, subject, html);
 }
 
 /**
@@ -1167,6 +1195,7 @@ export async function sendAdminWeeklyReport(r: WeeklyReport): Promise<void> {
 export async function sendReviewRequest(
   to: string,
   params: { clientName: string; tradeName: string; projectTitle: string; url: string },
+  smtpOnly = false,
 ): Promise<void> {
   const first = params.clientName.trim().split(/\s+/)[0] ?? "";
   await send(
@@ -1184,7 +1213,7 @@ export async function sendReviewRequest(
       { referralPs: false },
     ),
     undefined,
-    { utm: "review-request" },
+    { utm: "review-request", smtpOnly },
   );
 }
 
@@ -1218,6 +1247,7 @@ export async function sendTrustedQuoteRequest(params: {
   requester: { name: string; email: string; phone: string | null };
   message: string;
   cc: string[];
+  smtpOnly?: boolean;
 }): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const to = params.to ?? adminInbox();
@@ -1238,7 +1268,7 @@ export async function sendTrustedQuoteRequest(params: {
       { referralPs: false },
     ),
     undefined,
-    { replyTo: params.requester.email, cc: params.cc },
+    { replyTo: params.requester.email, cc: params.cc, smtpOnly: params.smtpOnly },
   );
 }
 
@@ -1296,6 +1326,7 @@ export async function sendTalentContact(params: {
   company: string;
   sender: { name: string; email: string };
   message: string;
+  smtpOnly?: boolean;
 }): Promise<void> {
   const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   await send(
@@ -1310,7 +1341,7 @@ export async function sendTalentContact(params: {
       { referralPs: false },
     ),
     undefined,
-    { replyTo: params.sender.email },
+    { replyTo: params.sender.email, smtpOnly: params.smtpOnly },
   );
 }
 
@@ -1409,6 +1440,7 @@ export async function sendMarketplaceContact(params: {
   listingUrl: string;
   buyer: { name: string; email: string };
   message: string;
+  smtpOnly?: boolean;
 }): Promise<void> {
   await send(
     params.to,
@@ -1423,7 +1455,7 @@ export async function sendMarketplaceContact(params: {
       { referralPs: false },
     ),
     undefined,
-    { replyTo: params.buyer.email },
+    { replyTo: params.buyer.email, smtpOnly: params.smtpOnly },
   );
 }
 
@@ -1433,6 +1465,7 @@ export async function sendAdminMarketplaceReport(params: {
   listingUrl: string;
   reason: string;
   reporterEmail?: string | null;
+  smtpOnly?: boolean;
 }): Promise<void> {
   await sendToOwners(
     `⚠️ Marketplace listing reported: ${params.listingTitle}`,
@@ -1445,7 +1478,7 @@ export async function sendAdminMarketplaceReport(params: {
        <p style="margin:0 0 16px;padding:12px 14px;background:#F6F7FB;border-radius:10px;color:#1B1E45">${escHtml(params.reason).replace(/\n/g, "<br>")}</p>
        <p>${btn(`${BASE}/admin/marketplace`, "Review in admin")}</p>`,
     ),
-    params.reporterEmail ? { replyTo: params.reporterEmail } : undefined,
+    { replyTo: params.reporterEmail ?? undefined, smtpOnly: params.smtpOnly },
   );
 }
 
@@ -1550,6 +1583,7 @@ export async function sendDigestEmail(
   email: { subject: string; title: string; bodyHtml: string; footnoteHtml: string },
   lang: "en" | "fr" | "es",
   unsubscribeUrl?: string,
+  smtpOnly = false,
 ): Promise<void> {
   await send(
     to,
@@ -1558,7 +1592,7 @@ export async function sendDigestEmail(
     unsubscribeUrl
       ? { "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
       : undefined,
-    { utm: unsubscribeUrl ? "weekly-digest" : "digest-confirm" },
+    { utm: unsubscribeUrl ? "weekly-digest" : "digest-confirm", smtpOnly },
   );
 }
 
@@ -1576,6 +1610,7 @@ export async function sendInsightsBrief(
   email: { subject: string; title: string; bodyHtml: string; footnoteHtml: string },
   lang: "en" | "fr" | "es",
   unsubscribeUrl: string | null,
+  smtpOnly = false,
 ): Promise<void> {
   await send(
     to,
@@ -1584,13 +1619,17 @@ export async function sendInsightsBrief(
     unsubscribeUrl
       ? { "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
       : undefined,
-    { utm: "insights-brief" },
+    { utm: "insights-brief", smtpOnly },
   );
 }
 
 /** Is Resend configured (an email can actually go out)? */
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
+}
+
+export function lifecycleEmailConfigured(): boolean {
+  return process.env.PMRFP_SMTP_ENABLED === "enabled" ? hostingerMailConfigured() : emailConfigured();
 }
 
 /**
@@ -1610,7 +1649,23 @@ export async function sendLifecycleEmail(p: {
   html: string;
   unsubscribeUrl: string | null;
   step: string;
-}): Promise<{ ok: boolean; id: string | null; error?: string }> {
+}): Promise<{ ok: boolean; id: string | null; error?: string; invalidRecipient?: boolean }> {
+  const headers = p.unsubscribeUrl ? {
+    "List-Unsubscribe": `<${p.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  } : undefined;
+  if (process.env.PMRFP_SMTP_ENABLED === "enabled") {
+    // Preserve the display name while authenticating as the existing PMRFP mailbox.
+    const senderName = /^"?([^"<>\r\n]+?)"?\s*<info@pmrfp\.com>$/i.exec(p.from)?.[1] ?? "R. Talkar · PMRFP";
+    try {
+      await sendHostingerMail({ to: p.to, senderName, replyTo: p.replyTo,
+        subject: p.subject, text: p.text, html: p.html, headers });
+      return { ok: true, id: null };
+    } catch (error) {
+      return { ok: false, id: null, error: "Hostinger SMTP delivery failed",
+        invalidRecipient: error instanceof HostingerDeliveryError && error.invalidRecipient };
+    }
+  }
   const resend = client();
   if (!resend) {
     console.info(`[email:noop] lifecycle to=${p.to} subject="${p.subject}"`);
@@ -1624,14 +1679,7 @@ export async function sendLifecycleEmail(p: {
       subject: p.subject,
       text: p.text,
       html: p.html,
-      ...(p.unsubscribeUrl
-        ? {
-            headers: {
-              "List-Unsubscribe": `<${p.unsubscribeUrl}>, <mailto:${SITE.email}?subject=unsubscribe>`,
-              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-            },
-          }
-        : {}),
+      ...(headers ? { headers } : {}),
       tags: [
         { name: "category", value: "lifecycle" },
         { name: "step", value: p.step.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60) },

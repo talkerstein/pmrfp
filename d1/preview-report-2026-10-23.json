@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-23",
+  "repository_master": "a70342dd1ec94adfc92a535f9f5e6dda77d2df59",
+  "daily_write_limit_reset_verified": true,
+  "pending_oct22_copy": {
+    "database": "pmrfp-rebuilt-reader-staging-20261022",
+    "source_sha256": "b7061ad3a1779e3e76b2f7fb44bc9e01e28efe4a8c7d3b7629c5a97e84fdae60",
+    "tables": 99,
+    "records": 10776,
+    "schema_sha256": "5ba1e06bd350b1f96be42bce313b2d0e2cfa255d08d3abadd134725985f7d795",
+    "schema_comparison": "identical",
+    "record_comparison": "all fields identical",
+    "foreign_keys": "valid",
+    "cutover_ready": false,
+    "readback_restored_and_validated": true
+  },
+  "reader_extension": {
+    "authorized": true,
+    "applied": true,
+    "new_tables": [
+      "badge_rewards",
+      "email_consents",
+      "rfp_changes"
+    ],
+    "expires_utc": "2026-10-29T10:00:00Z",
+    "readable_public_tables": 101,
+    "writable_public_tables": 0,
+    "auth_password_access": false
+  },
+  "fresh_source": {
+    "catalog": "production-catalog-2026-10-23.json",
+    "public_tables": 101,
+    "public_records": 11819,
+    "auth_id_references": 54,
+    "records": 11873,
+    "snapshot_sha256": "0c859bf590a13ea8b60d97d36809e215a5773f6a2f18ab67939b1235bc1553ee",
+    "columns_match_repository": true,
+    "policies": 165,
+    "functions": 63,
+    "triggers": 37,
+    "views": 21,
+    "new_tables_present_and_empty_at_snapshot": true
+  },
+  "rebuilt_copy": {
+    "database": "pmrfp-rebuilt-staging-20261023",
+    "source_sha256": "ebda76eb9c50facc3abac845d8d08cf6b7c145bb9a18294f0097b4a9b93d7dc8",
+    "tables": 102,
+    "records": 11754,
+    "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+    "schema_comparison": "identical",
+    "record_comparison": "all fields identical",
+    "foreign_keys": "valid",
+    "cutover_ready": false,
+    "readback_restored_and_validated": true
+  },
+  "rebuild": {
+    "source_snapshot_sha256": "0c859bf590a13ea8b60d97d36809e215a5773f6a2f18ab67939b1235bc1553ee",
+    "rebuilt_snapshot_sha256": "ebda76eb9c50facc3abac845d8d08cf6b7c145bb9a18294f0097b4a9b93d7dc8",
+    "tables": 102,
+    "records": 11754,
+    "scored_at": "2026-10-23T07:57:50.507975+00:00",
+    "authoritative_fields": "identical",
+    "rebuilt_fields": "approved-policy-only",
+    "cutover_ready": false
+  },
+  "copied_read_worker": {
+    "url": "https://pmrfp-d1-copied-read-preview.pmrfp.workers.dev",
+    "version_id": "2eec38ef-7455-4263-b17c-3f7643c2292a",
+    "database": "pmrfp-rebuilt-staging-20261023",
+    "mode": "read-only"
+  },
+  "taxonomy": {
+    "public_anon_projection_matches_source": {
+      "trade_categories": {
+        "rows": 45,
+        "allFieldsIdentical": true
+      },
+      "regions": {
+        "rows": 88,
+        "allFieldsIdentical": true
+      },
+      "property_types": {
+        "rows": 21,
+        "allFieldsIdentical": true
+      }
+    },
+    "browser_english_and_french_verified": true,
+    "roofing_filter_results": 15,
+    "production_cutover_blocked": true,
+    "default_backend": "supabase"
+  },
+  "tests": {
+    "full_vitest_passed": 2458,
+    "full_vitest_skipped": 2,
+    "offline_migration_passed": 21,
+    "targeted_preview_karma_existing_reads_passed": 86,
+    "typecheck": "passed",
+    "production_build": "passed",
+    "explicit_db_grants_check": "passed",
+    "targeted_lint": "passed"
+  },
+  "production_cutover": false,
+  "continuous_cdc_running": false,
+  "board": {
+    "live_public_comparison": {
+      "sourceRows": 1792,
+      "d1Rows": 1792,
+      "allFieldsIdentical": true,
+      "differingRows": 0,
+      "dataset": "ebda76eb9c50facc3abac845d8d08cf6b7c145bb9a18294f0097b4a9b93d7dc8"
+    },
+    "browser_filtered_english_verified": true,
+    "default_backend": "supabase",
+    "production_cutover_blocked": true,
+    "requires_validated_manifest": true,
+    "cache_identity_includes_provider_url_and_dataset": true,
+    "maximum_parallel_shards": 4,
+    "source_fallback_on_d1_error": false,
+    "query_plan_note": "Current staging query uses status index and temporary ordering; production index/scan-cost tuning remains a cutover gate."
+  }
+}

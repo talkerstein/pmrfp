@@ -9,6 +9,9 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { setLangFrom } from "@/i18n/server";
 import { loadDuplicates, type DuplicatesData } from "@/lib/dedupe/admin-data";
 import { disableAccountAction, dismissDuplicateAction, enableAccountAction, mergeCompaniesAction } from "@/lib/dedupe/admin-actions";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { notFound } from "next/navigation";
 import { decideJoinRequestAction } from "@/lib/dedupe/actions";
 import type { AccountReason } from "@/lib/dedupe/people";
 import type { MatchReason } from "@/lib/dedupe/company";
@@ -50,12 +53,15 @@ export default async function DuplicatesPage({
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && admin.profile.status !== "active") notFound();
   const { ok, error } = await searchParams;
-  const demo = isDemoMode() || !isServiceConfigured();
-  const data: DuplicatesData = demo
-    ? { accounts: [], companies: [], joinRequests: [], ready: { reviews: false, joins: false }, resolved: 0 }
-    : await loadDuplicates(createServiceClient());
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
+  const empty: DuplicatesData = { accounts: [], companies: [], joinRequests: [], ready: { reviews: false, joins: false }, resolved: 0 };
+  const data = demo ? empty : await Promise.resolve()
+    .then(() => native ? loadDuplicates(vpsAppDatabase(), admin.userId) : loadDuplicates(createServiceClient()))
+    .catch(() => empty);
 
   return (
     <>
@@ -68,8 +74,8 @@ export default async function DuplicatesPage({
       {error && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {!demo && (!data.ready.reviews || !data.ready.joins) && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Migration <code>20261019000001_dedupe_signups.sql</code> isn&apos;t applied yet: suspected pairs still show, but Dismiss, join requests and the
-          email unique index need it.
+          {native ? "Duplicate review could not be loaded. Refresh to try again."
+            : <>Migration <code>20261019000001_dedupe_signups.sql</code> isn&apos;t applied yet: suspected pairs still show, but Dismiss, join requests and the email unique index need it.</>}
         </p>
       )}
 

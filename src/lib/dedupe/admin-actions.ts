@@ -9,6 +9,11 @@ import { logAudit } from "@/lib/audit";
 import { mergeOrganizations, pickPrimary } from "./merge";
 import { isMissingRelation, orderedPair, type ReviewStatus } from "./review";
 import type { UserRole } from "@/types/db";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { recordVpsDuplicateReview, setVpsDuplicateAccountStatus } from "@/lib/d1/vps-duplicate-review";
+import { mergeVpsOrganizationPair } from "@/lib/d1/vps-organization-merge";
+import { purgeOutCache } from "@/lib/links/data";
+import { karmaSyncAfter } from "@/lib/karma/sync";
 
 /**
  * /admin/duplicates actions. Admins only (requireRole), every one audited.
@@ -29,7 +34,7 @@ function back(params: Record<string, string>): never {
 
 async function requireAdmin() {
   const session = await requireRole(["admin", "super_admin"]);
-  if (!isServiceConfigured()) back({ error: "The Supabase service role isn't configured." });
+  if (isVpsLiveCustomerAuth() ? session.profile.status !== "active" : !isServiceConfigured()) back({ error: "Duplicate review is unavailable." });
   return session;
 }
 
@@ -56,6 +61,17 @@ export async function mergeCompaniesAction(formData: FormData): Promise<void> {
   const [x, y] = ids(formData, "aId", "bId");
   if (!UUID.test(x) || !UUID.test(y) || x === y) back({ error: "Pick two different companies." });
   if (formData.get("confirm") !== "merge") back({ error: "Tick the box to confirm the merge." });
+  if (isVpsLiveCustomerAuth()) {
+    const merged = await mergeVpsOrganizationPair(session.userId, x, y).catch(() => ({ state: "unavailable" } as const));
+    if (merged.state === "protected") back({ error: `Transfer these records before merging: ${merged.records.join(", ")}.` });
+    if (merged.state !== "merged") back({ error: "The companies could not be merged. Check that both listings are active." });
+    purgeOutCache();
+    await karmaSyncAfter({ orgIds: [x, y] });
+    revalidatePath(BACK);
+    revalidatePath("/admin/organizations");
+    revalidatePath("/directory");
+    back({ ok: `Merged "${merged.duplicate}" into "${merged.primary}". ${merged.moved} records moved and ${merged.retained} equivalent records retained on the archived listing.` });
+  }
 
   const db = createServiceClient();
   const { data: orgs, error } = await db.from("organizations").select("id,name,created_at,status").in("id", [x, y]);
@@ -86,6 +102,14 @@ export async function disableAccountAction(formData: FormData): Promise<void> {
   const [userId, otherId] = ids(formData, "userId", "otherId");
   if (!UUID.test(userId)) back({ error: "Missing account." });
   if (userId === session.userId) back({ error: "You can't disable your own account." });
+  if (isVpsLiveCustomerAuth()) {
+    const result = await setVpsDuplicateAccountStatus(session.userId, userId, otherId, false)
+      .catch(() => ({ state: "unavailable" } as const));
+    revalidatePath(BACK);
+    if (result.state === "auth_incomplete") back({ error: "The account is suspended. Retry to finish revoking its sign-in sessions." });
+    if (result.state !== "updated") back({ error: "Could not suspend the account." });
+    back({ ok: `Disabled ${result.email}.` });
+  }
 
   const db = createServiceClient();
   const { data: profile } = await db.from("users_profile").select("id,email,primary_role,status").eq("id", userId).maybeSingle<{ id: string; email: string; primary_role: UserRole; status: string }>();
@@ -113,6 +137,19 @@ export async function enableAccountAction(formData: FormData): Promise<void> {
   const session = await requireAdmin();
   const [userId] = ids(formData, "userId");
   if (!UUID.test(userId)) back({ error: "Missing account." });
+  if (isVpsLiveCustomerAuth()) {
+    const result = await setVpsDuplicateAccountStatus(session.userId, userId, null, true)
+      .catch(() => ({ state: "unavailable" } as const));
+    revalidatePath(BACK);
+    const users = formData.get("back") === "users";
+    if (users) {
+      revalidatePath("/admin/users");
+      redirect(`/admin/users?${result.state === "updated" ? "enabled=1" : "error=enable"}`);
+    }
+    if (result.state === "other_ban") back({ error: "This account has a separate sign-in restriction. Review it before enabling the account." });
+    if (result.state !== "updated") back({ error: "Could not re-enable the account." });
+    back({ ok: "Account re-enabled." });
+  }
   const db = createServiceClient();
   const { error } = await db.from("users_profile").update({ status: "active" }).eq("id", userId);
   if (error) back({ error: `Could not re-enable: ${error.message}` });
@@ -129,6 +166,13 @@ export async function dismissDuplicateAction(formData: FormData): Promise<void> 
   const kind = formData.get("kind") === "company" ? "company" : "account";
   const [x, y] = ids(formData, "aId", "bId");
   if (!UUID.test(x) || !UUID.test(y) || x === y) back({ error: "Missing pair." });
+  if (isVpsLiveCustomerAuth()) {
+    const saved = await recordVpsDuplicateReview(session.userId, kind, x, y, "dismissed",
+      String(formData.get("note") ?? "").slice(0, 500) || null).catch(() => false);
+    if (!saved) back({ error: "Could not dismiss the pair." });
+    revalidatePath(BACK);
+    back({ ok: "Dismissed." });
+  }
   const saved = await recordReview(kind, x, y, "dismissed", session.userId, String(formData.get("note") ?? "").slice(0, 500) || undefined);
   if (!saved) back({ error: "Dismissing needs migration 20261019000001_dedupe_signups.sql. Run it in Supabase first." });
   await logAudit({ actorUserId: session.userId, action: "duplicate.dismiss", entityType: kind === "company" ? "organization" : "user", entityId: x, metadata: { kind, a: x, b: y } });

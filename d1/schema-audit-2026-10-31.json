@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-31",
+  "publicTables": 108,
+  "comparisonWithOctober29": {
+    "columns": true,
+    "constraints": true,
+    "indexes": true,
+    "policies": true,
+    "functions": true,
+    "triggers": true,
+    "event_triggers": false,
+    "views": true,
+    "publications": true
+  },
+  "storageBucketRowsQueried": false,
+  "sourceWrites": 0,
+  "eventTriggerComparison": {
+    "equalAfterRemovingExtensionsQualification": true,
+    "rawDifference": "Six extension function names are schema-qualified under the reader search path; names, events and enabled states match."
+  }
+}

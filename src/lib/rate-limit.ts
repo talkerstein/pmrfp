@@ -24,15 +24,22 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { checkStagingRateLimit, stagingClientIp } from "@/lib/d1/staging-rate-limit";
 
 type BucketName =
-  | "default" | "contact" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
+  | "default" | "contact" | "referral" | "rfp-email" | "form-recipient" | "rfp-interest" | "checkout" | "save-rfp" | "auth" | "ai"
   | "photo-upload" | "project-draft" | "project-publish" | "review" | "public-read"
   | "forum-post" | "forum-vote" | "forum-search" | "correction" | "buyer-source" | "beacon" | "out-click" | "cert-upload";
 
 const BUCKETS: Record<BucketName, { tokens: number; window: `${number} s` | `${number} m` }> = {
   default: { tokens: 30, window: "60 s" },
   contact: { tokens: 5, window: "60 s" },
+  // Referral forms and "Email me this RFP": no login, and they email whatever address is typed.
+  referral: { tokens: 3, window: "10 m" },
+  "rfp-email": { tokens: 3, window: "10 m" },
+  // How many of those emails one address can get in a day, whoever asks.
+  "form-recipient": { tokens: 3, window: "1440 m" },
   "rfp-interest": { tokens: 10, window: "60 s" },
   checkout: { tokens: 10, window: "60 s" },
   "save-rfp": { tokens: 30, window: "60 s" },
@@ -108,6 +115,7 @@ export interface RateLimitInfo {
   limit: number;
   remaining: number;
   reset: number; // ms epoch
+  unavailable?: boolean;
 }
 
 /**
@@ -118,7 +126,8 @@ export async function checkRateLimit(
   request: Request,
   bucket: BucketName = "default",
 ): Promise<RateLimitInfo | null> {
-  return checkRateLimitByIp(clientIp(request), bucket);
+  const ip = isVpsLiveCustomerAuth() && bucket === "rfp-email" ? stagingClientIp(request.headers) : clientIp(request);
+  return checkRateLimitByIp(ip ?? "unknown", bucket);
 }
 
 /** Public browsing must never add a Supabase counter query to every page. */
@@ -147,6 +156,13 @@ export async function checkRateLimitByIp(
   ip: string,
   bucket: BucketName = "default",
 ): Promise<RateLimitInfo | null> {
+  if (isVpsLiveCustomerAuth() && (bucket === "referral" || bucket === "rfp-email" || bucket === "form-recipient")) {
+    const decision = await checkStagingRateLimit(bucket, ip === "unknown" ? null : ip, true);
+    if (decision.status === 204) return null;
+    return { limit: BUCKETS[bucket].tokens, remaining: 0,
+      reset: Date.now() + 1000 * (decision.status === 429 ? decision.retry : 60),
+      unavailable: decision.status === 503 };
+  }
   const limiter = getLimiter(bucket);
   if (limiter) {
     const result = await limiter.limit(`${bucket}:${ip || "unknown"}`);
@@ -154,6 +170,12 @@ export async function checkRateLimitByIp(
     return { limit: result.limit, remaining: result.remaining, reset: result.reset };
   }
   return checkWithPostgres(ip, bucket);
+}
+
+/** The "form-recipient" limit for one address. The key is a hash, so no address is stored. */
+export async function checkRecipientLimit(email: string): Promise<RateLimitInfo | null> {
+  const key = createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+  return checkRateLimitByIp(key, "form-recipient");
 }
 
 function windowSeconds(window: string): number {
@@ -240,9 +262,9 @@ export function requestIp(request: Request): string {
 export function rateLimitResponse(info: RateLimitInfo): NextResponse {
   const retryAfterSec = Math.max(1, Math.ceil((info.reset - Date.now()) / 1000));
   return NextResponse.json(
-    { error: "Too many requests. Please slow down." },
+    { error: info.unavailable ? "Email protection is temporarily unavailable. Please try again." : "Too many requests. Please slow down." },
     {
-      status: 429,
+      status: info.unavailable ? 503 : 429,
       headers: {
         "Retry-After": String(retryAfterSec),
         "X-RateLimit-Limit": String(info.limit),

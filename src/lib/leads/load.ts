@@ -1,10 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { listRfps } from "@/lib/data/rfps";
 import { getTaxonomyRows } from "@/lib/data/taxonomy";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
-import { getMajorProjects } from "@/lib/major-projects/data";
+import { getMajorProjects, readNativeProjectProFields } from "@/lib/major-projects/data";
 import type { SessionContext } from "@/lib/access/access";
 import type { CountryCode } from "@/lib/visitor-geo";
 import { buildLeadProfile, marketCounts, matchLeads, type Lead, type LeadProfile, type MarketCounts } from "./match";
@@ -31,10 +35,12 @@ export interface MemberMarket {
 
 export async function getMemberMarket(session: SessionContext, country: CountryCode): Promise<MemberMarket | null> {
   const org = session.organization;
-  if (!org || !isSupabaseConfigured()) return null;
-  const supabase = await createClient();
+  const native = isVpsLiveCustomerAuth();
+  if (!org || (!native && !isSupabaseConfigured())) return null;
+  const supabase = native ? null : await createClient();
+  const db = native ? vpsAppDatabase() : null;
   const [own, regions, trades, rfps, projects] = await Promise.all([
-    orgTradesAndRegions(supabase, org.id),
+    supabase ? orgTradesAndRegions(supabase,org.id) : nativeLeadSettings(session.userId,org.id,db!),
     getTaxonomyRows("regions").catch(() => []),
     getTaxonomyRows("trade_categories").catch(() => []),
     listRfps({ country }).catch(() => []),
@@ -59,7 +65,8 @@ export async function getMemberMarket(session: SessionContext, country: CountryC
   const counts = marketCounts(leads, today);
   if (session.hasTradeAccess) {
     const ids = projectIdsNeedingPro(leads);
-    if (ids.length) leads = attachProjectPro(leads, await projectProFields(supabase, ids));
+    if (ids.length) leads = attachProjectPro(leads,supabase ? await projectProFields(supabase,ids)
+      : await readNativeProjectProFields(session.userId,ids,db!).catch(() => new Map()));
   }
   return {
     profile,
@@ -69,6 +76,19 @@ export async function getMemberMarket(session: SessionContext, country: CountryC
     areaLabel: org.city || [...profile.provinces][0] || null,
     missing: { trades: own.tradeSlugs.length === 0, areas: profile.provinces.size === 0 && profile.cities.size === 0 },
   };
+}
+
+export async function nativeLeadSettings(actor: string, org: string, db: D1Binding = vpsAppDatabase()) {
+  const allowed = `SELECT m.organization_id FROM organization_members m JOIN users_profile u ON u.id=m.user_id
+    JOIN organizations o ON o.id=m.organization_id WHERE m.user_id=? AND m.organization_id=? AND u.status='active'
+      AND o.status='active' AND o.is_demo=0 AND ${customerAppAuthority}`;
+  const [trades, regions] = await db.batch([
+    db.prepare(`SELECT DISTINCT t.slug FROM organization_categories c JOIN trade_categories t ON t.id=c.category_id
+      WHERE c.organization_id IN (${allowed}) ORDER BY t.slug`).bind(actor,org),
+    db.prepare(`SELECT DISTINCT region_id FROM organization_regions WHERE organization_id IN (${allowed})
+      ORDER BY region_id`).bind(actor,org),
+  ]);
+  return { tradeSlugs:trades.results.map(r=>String(r.slug)),regionIds:regions.results.map(r=>String(r.region_id)) };
 }
 
 async function orgTradesAndRegions(supabase: SupabaseClient, orgId: string): Promise<{ tradeSlugs: string[]; regionIds: string[] }> {

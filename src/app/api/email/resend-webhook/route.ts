@@ -3,6 +3,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { suppressionFromEvent, verifySvixSignature } from "@/lib/digest/webhook";
 import { engagementFromEvent } from "@/lib/lifecycle/engagement";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { useD1Lifecycle } from "@/lib/lifecycle/d1";
+import { customerAppAuthority } from "@/lib/d1/contracts";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +18,8 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
-  if (!secret || !isServiceConfigured()) return NextResponse.json({ skipped: "not configured" }, { status: 503 });
+  const native = useD1Lifecycle();
+  if (!secret || (!native && !isServiceConfigured())) return NextResponse.json({ skipped: "not configured" }, { status: 503 });
   const body = await request.text();
   const ok = verifySvixSignature(
     secret,
@@ -37,6 +41,17 @@ export async function POST(request: Request) {
   // Opens / clicks on lifecycle emails (only sent by Resend when tracking is on).
   const eng = engagementFromEvent(event);
   if (eng) {
+    if (native) {
+      try {
+        const write = await vpsAppDatabase().prepare(`UPDATE lifecycle_sends SET ${eng.field}=?
+          WHERE resend_id=? AND ${eng.field} IS NULL AND ${customerAppAuthority}`)
+          .bind(new Date().toISOString(), eng.emailId).run();
+        if (!write.success) throw new Error("Email event unavailable");
+        return NextResponse.json({ engagement: eng.field });
+      } catch {
+        return NextResponse.json({ error: "Email event unavailable" }, { status: 503 });
+      }
+    }
     const { error } = await createServiceClient()
       .from("lifecycle_sends")
       .update({ [eng.field]: new Date().toISOString() })
@@ -48,6 +63,22 @@ export async function POST(request: Request) {
 
   const s = suppressionFromEvent(event);
   if (!s) return NextResponse.json({ ignored: true });
+  if (native) {
+    try {
+      const db = vpsAppDatabase();
+      const emails = JSON.stringify(s.emails);
+      const result = await db.batch([
+        db.prepare(`INSERT INTO email_suppressions(email_key,reason,detail) SELECT value,?,? FROM json_each(?)
+          WHERE ${customerAppAuthority} ON CONFLICT(email_key) DO NOTHING`).bind(s.reason, s.detail, emails),
+        db.prepare(`UPDATE digest_subscribers SET status='bounced',updated_at=? WHERE email_key IN (SELECT value FROM json_each(?))
+          AND status<>'bounced' AND ${customerAppAuthority}`).bind(new Date().toISOString(), emails),
+      ]);
+      if (result.length !== 2 || result.some(row => !row.success)) throw new Error("Email event unavailable");
+      return NextResponse.json({ suppressed: s.emails.length });
+    } catch {
+      return NextResponse.json({ error: "Email event unavailable" }, { status: 503 });
+    }
+  }
 
   const db = createServiceClient();
   const rows = s.emails.map((email_key) => ({ email_key, reason: s.reason, detail: s.detail }));

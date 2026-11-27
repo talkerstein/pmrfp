@@ -1,0 +1,6 @@
+{
+  "tables": 101,
+  "reader_select_tables": 101,
+  "reader_write_tables": 0,
+  "auth_password_column": false
+}

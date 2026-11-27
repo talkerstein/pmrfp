@@ -12,10 +12,9 @@
  * After a write the cached pages that show this data are revalidated by
  * tag ("open-data"), so they keep a 24 h cache and still update on a refresh.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { ARCGIS_CITIES, arcgisCity, collectArcgisCity } from "./arcgis-permits";
 import { collectCalgary } from "./calgary";
-import { recordRun, writeContractorActivity, writePermitLeads, writePlannedProcurements } from "./store";
+import { recordRun, writeContractorActivity, writePermitLeads, writePlannedProcurements, type ImportDb } from "./store";
 import { assertRunWithinEstimate } from "./size-budget";
 import { collectTorontoPipeline, TORONTO_PIPELINE_SOURCE } from "./toronto";
 import { CALGARY_SOURCE } from "./calgary";
@@ -24,7 +23,7 @@ import { sourceByKey } from "./sources";
 export interface JobCtx {
   today: string;
   /** null = dry run: fetch, parse, report, write nothing. */
-  db: SupabaseClient | null;
+  db: ImportDb | null;
   only?: string | null;
   limit?: number;
 }

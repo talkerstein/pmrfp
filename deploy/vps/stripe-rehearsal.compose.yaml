@@ -1,0 +1,31 @@
+name: pmrfp-stripe-rehearsal
+services:
+  webhook:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    entrypoint: ["node", "/app/webhook.cjs"]
+    env_file: /opt/pmrfp/rehearsal/sandbox.env
+    volumes:
+      - /opt/pmrfp/rehearsal/webhook.cjs:/app/webhook.cjs:ro
+    read_only: true
+    mem_limit: 128m
+    pids_limit: 64
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "2"
+    networks: [pmrfp]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: pmrfp-vps
+      traefik.http.routers.pmrfp-stripe-rehearsal.rule: "Host(`pmrfp-vps.talkerstein.ca`) && (Path(`/api/stripe/rehearsal/webhook`) || Path(`/api/stripe/rehearsal/health`))"
+      traefik.http.routers.pmrfp-stripe-rehearsal.entrypoints: websecure
+      traefik.http.routers.pmrfp-stripe-rehearsal.tls.certresolver: letsencrypt
+      traefik.http.services.pmrfp-stripe-rehearsal.loadbalancer.server.port: "4319"
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

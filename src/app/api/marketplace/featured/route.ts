@@ -5,6 +5,9 @@ import { getSession } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { FEATURED_DAYS, FEATURED_PRODUCT, featuredPrice, type Currency } from "@/lib/marketplace/rules";
 import { EVENT, trackEvent } from "@/lib/analytics";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { vpsFeatureListing } from "@/lib/marketplace/native";
+import { readD1Json } from "@/lib/d1/contracts";
 
 /**
  * Starts a one-time Stripe Checkout to feature one marketplace listing for
@@ -12,22 +15,27 @@ import { EVENT, trackEvent } from "@/lib/analytics";
  * reads metadata.product + listing_id and sets featured_until.
  */
 export async function POST(request: Request) {
+  const native = isVpsLiveCustomerAuth();
+  if (native && !matchesCustomerOrigin(request)) return NextResponse.json({ error: "checkout" }, { status: 403 });
   const limited = await checkRateLimit(request, "checkout");
   if (limited) return rateLimitResponse(limited);
   if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: "unavailable" }, { status: 503 });
 
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "signIn" }, { status: 401 });
-  const body = await request.json().catch(() => ({}));
+  const body = await (native ? readD1Json(request) : request.json()).catch(() => ({})) as { listingId?: unknown };
   const listingId = typeof body?.listingId === "string" ? body.listingId : "";
   if (!listingId) return NextResponse.json({ error: "notFound" }, { status: 400 });
 
-  const supabase = await createClient();
-  const { data: listing } = await supabase
-    .from("marketplace_listings")
-    .select("id,slug,title,user_id,status,currency")
-    .eq("id", listingId)
-    .maybeSingle<{ id: string; slug: string; title: string; user_id: string; status: string; currency: Currency }>();
+  let listing;
+  try {
+    listing = native ? await vpsFeatureListing(listingId, session.userId)
+      : (await (await createClient()).from("marketplace_listings").select("id,slug,title,user_id,status,currency")
+        .eq("id", listingId)
+        .maybeSingle<{ id: string; slug: string; title: string; user_id: string; status: string; currency: Currency }>()).data;
+  } catch {
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+  }
   if (!listing || listing.user_id !== session.userId || listing.status !== "active") {
     return NextResponse.json({ error: "notFound" }, { status: 404 });
   }

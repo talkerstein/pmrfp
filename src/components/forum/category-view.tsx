@@ -7,7 +7,6 @@ import { ForumHero, MemberName, OpeningSoon, Pager, RatingBar } from "@/componen
 import { forumReworkReady, getCategoryRow, listCategoryThreads, viewerFollows, type ThreadSummary } from "@/lib/forum/data";
 import { isForumCategory, redirectRoom, roomCountry, tradesForForum } from "@/lib/forum/categories";
 import { getSession } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
 import { FollowButton } from "@/components/forum/rework-client";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
@@ -113,7 +112,7 @@ export async function CategoryView({ category, page, sort = "latest", hideAuto =
   const base = `/forum/${category}`;
   const forumTrades = tradesForForum(category);
   const rework = await forumReworkReady();
-  const following = rework && session ? (await viewerFollows(await createClient(), session.userId)).has(res.category.id) : false;
+  const following = rework && session ? (await viewerFollows(session.userId)).has(res.category.id) : false;
   const about = (t.hub.roomAbout as Partial<Record<string, string>>)[category];
 
   return (

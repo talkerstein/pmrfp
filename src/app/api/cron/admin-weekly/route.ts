@@ -1,3 +1,6 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { buildD1WeeklyReport } from "@/lib/admin/d1-weekly-report";
+import { hostingerMailConfigured } from "@/lib/email/smtp";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -23,6 +26,19 @@ export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const dry = new URL(request.url).searchParams.get("dry") === "1";
+      if (!dry && !hostingerMailConfigured()) return NextResponse.json({ error: "Report mail unavailable" }, { status: 503 });
+      const report = await buildD1WeeklyReport();
+      if (dry) return NextResponse.json({ dry: true, signups: report.signups.count, tenders: report.activity.tendersImported,
+        stripe: Boolean(report.stripe), traffic: Boolean(report.traffic) });
+      await sendAdminWeeklyReport(report, { smtpOnly: true });
+      return NextResponse.json({ sent: true, signups: report.signups.count, stripe: Boolean(report.stripe) });
+    } catch {
+      return NextResponse.json({ error: "Weekly report unavailable" }, { status: 503 });
+    }
   }
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 

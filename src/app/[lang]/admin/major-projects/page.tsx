@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
@@ -10,6 +11,11 @@ import { UPLOAD_SOURCES } from "@/lib/major-projects/sources-wave2";
 import { MajorProjectSourceUpload } from "@/components/admin/major-project-source-upload";
 import { compactDollars } from "@/lib/data/fomo";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { readD1 } from "@/lib/lifecycle/d1";
+import { projectIsPublic } from "@/lib/major-projects/data";
 
 export const metadata: Metadata = { title: "Major projects · Admin · PMRFP" };
 
@@ -66,16 +72,40 @@ const ERRORS: Record<string, string> = {
  */
 export default async function AdminMajorProjectsPage({ params, searchParams }: { params: Promise<object>; searchParams: Promise<Record<string, string | undefined>> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && session.profile.status !== "active") notFound();
   const sp = await searchParams;
 
   let pending: QueueRow[] = [];
   let rejected: QueueRow[] = [];
   let counts: SourceCount[] = [];
   let missing = false;
-  if (!isDemoMode()) {
+  const cols = "id,slug,name,owner,city,province,category,status,status_raw,est_value_cad,general_contractor,bid_list_url,bid_route,evidence,caveats,description,sources,review_status,updated_at";
+  if (native) {
+    try {
+      type NativeRow = Omit<QueueRow, "sources" | "est_value_cad"> & { sources: string | null; est_value_cad: number | string | null };
+      const db = vpsAppDatabase();
+      const [p, r, c] = await Promise.all([
+        readD1<NativeRow>(db, `SELECT ${cols} FROM major_projects WHERE review_status='pending' AND ${activeRequestAdmin}
+          ORDER BY CAST(est_value_cad AS REAL) DESC NULLS LAST,id LIMIT 200`, session.userId),
+        readD1<NativeRow>(db, `SELECT ${cols} FROM major_projects WHERE review_status='rejected' AND ${activeRequestAdmin}
+          ORDER BY updated_at DESC,id LIMIT 50`, session.userId),
+        readD1<SourceCount>(db, `SELECT source,count(*) FILTER(WHERE stale=0 AND ${projectIsPublic}) AS live,
+          count(*) FILTER(WHERE stale=1) AS stale,count(*) FILTER(WHERE review_status='pending') AS pending,
+          count(*) FILTER(WHERE review_status='rejected') AS hidden,max(last_seen) AS last_seen
+          FROM major_projects WHERE ${activeRequestAdmin} GROUP BY source ORDER BY source`, session.userId),
+      ]);
+      const decode = (row: NativeRow): QueueRow => ({ ...row, sources: row.sources ? JSON.parse(row.sources) : null,
+        est_value_cad: row.est_value_cad == null ? null : Number(row.est_value_cad) });
+      pending = p.map(decode);
+      rejected = r.map(decode);
+      counts = c;
+    } catch {
+      missing = true;
+    }
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
-    const cols = "id,slug,name,owner,city,province,category,status,status_raw,est_value_cad,general_contractor,bid_list_url,bid_route,evidence,caveats,description,sources,review_status,updated_at";
     const [p, r, c] = await Promise.all([
       supabase.from("major_projects").select(cols).eq("review_status", "pending").order("est_value_cad", { ascending: false, nullsFirst: false }).limit(200),
       supabase.from("major_projects").select(cols).eq("review_status", "rejected").order("updated_at", { ascending: false }).limit(50),
@@ -101,7 +131,9 @@ export default async function AdminMajorProjectsPage({ params, searchParams }: {
           Upload done: {sp.uploaded} new, {sp.updated} changed (back in the queue), {sp.unchanged} unchanged, {sp.skipped} skipped.
         </p>
       )}
-      {missing && <p className="mb-4 text-sm text-muted-foreground">The major_projects table isn&apos;t there yet. Run migrations 20261012000001_major_projects.sql and 20261012000003_major_projects_wave2.sql.</p>}
+      {missing && <p className="mb-4 text-sm text-muted-foreground">
+        {native ? "Project data could not be loaded. Refresh to try again." : "The major_projects table isn't there yet. Run migrations 20261012000001_major_projects.sql and 20261012000003_major_projects_wave2.sql."}
+      </p>}
 
       <section className="mb-8">
         <h2 className="mb-3 text-lg font-semibold">Sources</h2>

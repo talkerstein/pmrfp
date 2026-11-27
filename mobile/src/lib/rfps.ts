@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { SITE_URL, storedToken } from "./session";
 import { ApiError, apiFetch } from "./api";
 
 /** Teaser columns — what `rfp_public` exposes to anyone, subscribed or not. */
@@ -27,49 +27,18 @@ export type RfpFull = RfpTeaser & {
 };
 
 export async function listRfps(limit = 50): Promise<RfpTeaser[]> {
-  // Hide anything already past its closing date. `rfp_public` only filters on
-  // status='published', and a post keeps that status until the expiry job flips
-  // it — so without this the board shows work nobody can still bid on.
-  // Undated posts are kept: no deadline is not the same as a passed one.
-  const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await supabase
-    .from("rfp_public")
-    .select("id,title,slug,summary,city,province,deadline,published_at")
-    .or(`deadline.gte.${today},deadline.is.null`)
-    .order("deadline", { ascending: true, nullsFirst: false })
-    .limit(limit);
-  if (error) throw new Error(error.message);
-  return (data ?? []) as RfpTeaser[];
+  const response=await fetch(SITE_URL+"/api/mobile/rfps?"+new URLSearchParams({limit:String(limit)}));
+  if (!response.ok) throw Error("Could not load opportunities.");
+  return response.json();
 }
 
-/**
- * Fetch one RFP, returning whatever this user is actually entitled to.
- *
- * We ask `rfp_posts` for the full row first. If the caller lacks access, RLS
- * returns no row — not an error — so we fall back to the public teaser. That
- * means the paywall is enforced by the database rather than by this code, and
- * the app cannot leak a scope it wasn't granted even if this logic is wrong.
- */
-export async function getRfp(
-  id: string,
-): Promise<{ rfp: RfpTeaser | RfpFull; locked: boolean } | null> {
-  const { data: full } = await supabase
-    .from("rfp_posts")
-    .select(
-      "id,title,slug,summary,city,province,deadline,published_at,scope,requirements,budget_min,budget_max,budget_public,contact_name,contact_email,contact_phone,submission_instructions",
-    )
-    .eq("id", id)
-    .maybeSingle();
-
-  if (full) return { rfp: full as RfpFull, locked: false };
-
-  const { data: teaser } = await supabase
-    .from("rfp_public")
-    .select("id,title,slug,summary,city,province,deadline,published_at")
-    .eq("id", id)
-    .maybeSingle();
-
-  return teaser ? { rfp: teaser as RfpTeaser, locked: true } : null;
+export async function getRfp(id:string):Promise<{rfp:RfpTeaser|RfpFull;locked:boolean}|null> {
+  const token=await storedToken();
+  const response=await fetch(SITE_URL+"/api/mobile/rfps?"+new URLSearchParams({id}),{
+    headers:token?{authorization:"Bearer "+token}:undefined,
+  });
+  if (!response.ok) throw Error("Could not load this opportunity.");
+  return response.json();
 }
 
 /**

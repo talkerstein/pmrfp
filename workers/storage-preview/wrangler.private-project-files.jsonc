@@ -1,0 +1,16 @@
+{
+  "name": "pmrfp-private-project-files",
+  "main": "private-project-files.ts",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "compatibility_date": "2026-11-09",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": { "VPS_IP": "76.13.26.88", "MODE": "readiness" },
+  "d1_databases": [{
+    "binding": "APP_DB",
+    "database_name": "pmrfp-app-production-candidate-20261126",
+    "database_id": "03467304-6007-40f8-b5ff-e11e29553195"
+  }],
+  "r2_buckets": [{"binding": "PRIVATE_FILES", "bucket_name": "pmrfp-private-project-files-candidate-20261126"}],
+  "observability": {"enabled": false}
+}

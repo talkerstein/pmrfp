@@ -15,6 +15,10 @@ import { torontoDay } from "@/lib/sponsors/model";
 import { SITE } from "@/lib/site";
 import { regionName, tradeName } from "@/i18n/terms";
 
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { inList, readD1, readD1ByIds, requireD1LifecycleAuthority } from "@/lib/lifecycle/d1";
+import { customerAppAuthority } from "../../../../../workers/d1-api/customer-signup";
+
 export const maxDuration = 60;
 
 /**
@@ -53,21 +57,29 @@ interface SubRow {
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if ((native && !secret) || (secret && request.headers.get("authorization") !== `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const url = new URL(request.url);
   const dry = url.searchParams.get("dry") === "1";
   if (!dry && !weeklyDigestEnabled()) return NextResponse.json({ skipped: "WEEKLY_DIGEST_ENABLED is off" });
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  if (!native && !isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 
   const param = url.searchParams.get("bucket");
   const bucket = param !== null && /^[0-3]$/.test(param) ? Number(param) : bucketForMinute(new Date().getUTCMinutes());
-  const db = createServiceClient();
+  const d1 = native ? vpsAppDatabase() : null;
+  const db = d1 ? null : createServiceClient();
+  if (d1) await requireD1LifecycleAuthority(d1);
   const now = Date.now();
   const sixDaysAgo = new Date(now - 6 * 86_400_000).toISOString();
 
-  const { data: rows, error } = await db
+  type RawSub = Omit<SubRow, "trades"> & { trades: string | string[] | null };
+  const { data: rows, error } = d1 ? { data: await readD1<RawSub>(d1,
+    `SELECT id,email,email_key,country,province,trades,lang,status,consent_at,user_id,last_sent_at,sends
+     FROM digest_subscribers WHERE status='active' AND send_bucket=?
+     AND (last_sent_at IS NULL OR julianday(last_sent_at)<julianday(?)) ORDER BY last_sent_at,id LIMIT ?`,
+    bucket, sixDaysAgo, MAX_PER_RUN), error: null } : await db!
     .from("digest_subscribers")
     .select("id,email,email_key,country,province,trades,lang,status,consent_at,user_id,last_sent_at,sends")
     .eq("status", "active")
@@ -76,32 +88,39 @@ export async function GET(request: Request) {
     .order("last_sent_at", { ascending: true, nullsFirst: true })
     .limit(MAX_PER_RUN);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const subs = (rows ?? []) as SubRow[];
-  if (!subs.length) return NextResponse.json({ bucket, sent: 0, reason: "nobody due" });
+  const subs: SubRow[] = ((rows ?? []) as RawSub[]).map(row => ({ ...row,
+    trades: typeof row.trades === "string" ? JSON.parse(row.trades) : row.trades,
+  }));
+  if (!subs.length) return NextResponse.json({ dry, bucket, sent: 0, reason: "nobody due" });
 
   const keys = subs.map((s) => s.email_key);
-  const [{ data: supp }, { data: profiles }] = await Promise.all([
-    db.from("email_suppressions").select("email_key").in("email_key", keys),
-    db.from("users_profile").select("id,email").in("email", keys),
+  const [{ data: supp }, { data: profiles }] = d1 ? await Promise.all([
+    readD1ByIds<{ email_key: string }>(d1, keys, `SELECT email_key FROM email_suppressions WHERE email_key ${inList}`).then(data => ({ data })),
+    readD1ByIds<{ id: string; email: string }>(d1, keys, `SELECT id,email FROM users_profile WHERE lower(trim(email)) ${inList}`).then(data => ({ data })),
+  ]) : await Promise.all([
+    db!.from("email_suppressions").select("email_key").in("email_key", keys),
+    db!.from("users_profile").select("id,email").in("email", keys),
   ]);
   const suppressed = new Set(((supp ?? []) as { email_key: string }[]).map((r) => r.email_key));
   // Lazy account link: the same address signed up for an account.
   const userByEmail = new Map(((profiles ?? []) as { id: string; email: string }[]).map((p) => [p.email.toLowerCase(), p.id]));
   const userIds = [...new Set(subs.map((s) => s.user_id ?? userByEmail.get(s.email_key)).filter((x): x is string => Boolean(x)))];
   const { data: prefs } = userIds.length
-    ? await db.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", userIds)
+    ? d1 ? { data: await readD1ByIds<{ user_id: string; new_rfps: string; channel_email: 0 | 1 }>(d1, userIds,
+       `SELECT user_id,new_rfps,channel_email FROM notification_preferences WHERE user_id ${inList}`) }
+      : await db!.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", userIds)
     : { data: [] };
   const optedOut = new Set(
-    ((prefs ?? []) as { user_id: string; new_rfps: string; channel_email: boolean }[])
-      .filter((p) => p.new_rfps === "off" || p.channel_email === false)
+    ((prefs ?? []) as { user_id: string; new_rfps: string; channel_email: boolean | 0 | 1 }[])
+      .filter((p) => p.new_rfps === "off" || p.channel_email === false || p.channel_email === 0)
       .map((p) => p.user_id),
   );
 
   // Shared cached snapshots, once per run.
   const [rfps, projects, categories, paidSponsors] = await Promise.all([
-    listRfps().catch(() => []),
-    getMajorProjects().catch(() => []),
-    getCategories().catch(() => []),
+    native ? listRfps() : listRfps().catch(() => []),
+    getMajorProjects(native),
+    native ? getCategories() : getCategories().catch(() => []),
     getSponsorSnapshot().catch(() => []),
   ]);
   const tradeSlugByName = new Map(categories.map((c) => [c.name, c.slug]));
@@ -135,7 +154,16 @@ export async function GET(request: Request) {
       sent++;
       continue;
     }
-    const { error: markError } = await db
+    const sentAt = new Date().toISOString();
+    const { error: markError } = d1 ? { error: !await d1.prepare(`UPDATE digest_subscribers
+      SET last_sent_at=?,sends=coalesce(sends,0)+1,user_id=coalesce(user_id,?),updated_at=?
+      WHERE id=? AND email_key=? AND status='active' AND send_bucket=? AND ${customerAppAuthority}
+        AND (last_sent_at IS NULL OR julianday(last_sent_at)<julianday(?))
+        AND NOT EXISTS (SELECT 1 FROM email_suppressions e WHERE e.email_key=digest_subscribers.email_key)
+        AND NOT EXISTS (SELECT 1 FROM users_profile u LEFT JOIN notification_preferences p ON p.user_id=u.id
+          WHERE (u.id=digest_subscribers.user_id OR lower(trim(u.email))=digest_subscribers.email_key)
+            AND (u.status<>'active' OR p.new_rfps='off' OR p.channel_email=0))
+      RETURNING id`).bind(sentAt,userId,sentAt,s.id,s.email_key,bucket,sixDaysAgo).first() } : await db!
       .from("digest_subscribers")
       .update({ last_sent_at: new Date().toISOString(), sends: (s.sends ?? 0) + 1, ...(userId && !s.user_id ? { user_id: userId } : {}) })
       .eq("id", s.id);
@@ -157,7 +185,7 @@ export async function GET(request: Request) {
       contactEmail: SITE.email,
       sponsorHtml,
     });
-    await sendDigestEmail(s.email, email, sub.lang, unsub);
+    await sendDigestEmail(s.email, email, sub.lang, unsub, native);
     sent++;
   }
 

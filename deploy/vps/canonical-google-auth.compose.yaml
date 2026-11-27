@@ -1,0 +1,21 @@
+name: pmrfp-google-auth
+services:
+  google:
+    extends:
+      file: canonical.compose.yaml
+      service: pmrfp-canonical-app
+    env_file:
+      - /opt/pmrfp/canonical/secrets/production-google-oauth.env
+      - /opt/pmrfp/canonical/secrets/production-auth-limiter.env
+    environment:
+      PMRFP_VPS_GOOGLE_DASHBOARD_BRIDGE: enabled
+      PMRFP_GOOGLE_OAUTH_REHEARSAL_EMAIL: ""
+    volumes:
+      - ${PMRFP_GOOGLE_AUTH_RELEASE:?Set the validated Google sign-in release}:/app:ro
+    networks:
+      pmrfp:
+        aliases: [pmrfp-google-auth-app]
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

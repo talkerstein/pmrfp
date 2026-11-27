@@ -2,6 +2,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { torontoDay } from "./cookie";
 import type { Channel } from "./channel";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "@/lib/d1/contracts";
 
 /**
  * Daily counts of NEW visitors by landing page and channel, aggregate only
@@ -49,9 +52,21 @@ export async function flushLandings(force = false): Promise<void> {
   const rows = bufferedLandings();
   buffer.clear();
   since = 0;
-  if (!isServiceConfigured()) return;
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) return;
   flushing = (async () => {
     try {
+      if (native) {
+        const db = vpsAppDatabase();
+        for (let offset = 0; offset < rows.length; offset += LANDING_FLUSH_AT_KEYS) {
+          await db.prepare(`INSERT INTO landing_counts(day,channel,landing_path,visits)
+            SELECT json_extract(value,'$.day'),json_extract(value,'$.channel'),json_extract(value,'$.path'),json_extract(value,'$.n')
+            FROM json_each(?) WHERE ${customerAppAuthority}
+            ON CONFLICT(day,channel,landing_path) DO UPDATE SET visits=landing_counts.visits+excluded.visits`)
+            .bind(JSON.stringify(rows.slice(offset, offset + LANDING_FLUSH_AT_KEYS))).run();
+        }
+        return;
+      }
       const { error } = await createServiceClient().rpc("record_landings", { p_rows: rows });
       if (error) console.warn("[attribution] landings flush failed:", error.message);
     } catch (e) {

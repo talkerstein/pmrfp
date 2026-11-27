@@ -1,3 +1,7 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { revalidateTag } from "next/cache";
+import { MAJOR_PROJECTS_TAG } from "@/lib/supabase/public-cache";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -31,13 +35,14 @@ export async function runMajorProjectImport(request: Request, group: SourceGroup
   const dry = params.get("dry") === "1";
   const only = params.get("source");
   const service = isServiceConfigured();
-  if (!service && !dry) return NextResponse.json({ skipped: "no service client" });
+  const d1 = isVpsLiveCustomerAuth();
+  if (!service && !d1 && !dry) return NextResponse.json({ skipped: "no service client" });
 
   const today = new Date().toISOString().slice(0, 10);
   const minValue = permitMinValue();
   const fundingMin = fundingMinValue();
-  const supabase = service ? createServiceClient() : null;
-  const regions = supabase ? await loadRegionLookup(supabase) : null;
+  const db = d1 ? vpsAppDatabase() : service ? createServiceClient() : null;
+  const regions = db ? await loadRegionLookup(db) : null;
   const sources = sourcesFor(group, only);
   const report: Record<string, unknown>[] = [];
   let failed = 0;
@@ -60,9 +65,9 @@ export async function runMajorProjectImport(request: Request, group: SourceGroup
       withValue: rows.filter((r) => r.estValueCad != null).length,
       ms: Date.now() - started,
     };
-    if (supabase && regions) {
+    if (db && regions) {
       try {
-        const existing = await loadExisting(supabase, source.key);
+        const existing = await loadExisting(db, source.key);
         const plan = planSync({
           source: source.key,
           incoming: rows,
@@ -73,7 +78,7 @@ export async function runMajorProjectImport(request: Request, group: SourceGroup
           provinceRegionId: regions.provinceRegionId,
         });
         Object.assign(entry, planSummary(plan));
-        if (!dry) await applySync(supabase, plan, today);
+        if (!dry) await applySync(db, plan, today);
       } catch (e) {
         failed++;
         entry.error = e instanceof Error ? e.message : String(e);
@@ -84,13 +89,15 @@ export async function runMajorProjectImport(request: Request, group: SourceGroup
   }
 
   let links: Record<string, unknown> | null = null;
-  if (supabase && !dry && failed < sources.length) {
+  if (db && !dry && failed < sources.length) {
     try {
-      links = await refreshLinkGroups(supabase);
+      links = await refreshLinkGroups(db);
     } catch (e) {
       links = { error: e instanceof Error ? e.message : String(e) };
     }
   }
+
+  if (d1 && !dry && failed < sources.length) revalidateTag(MAJOR_PROJECTS_TAG, "max");
 
   return NextResponse.json({ dry, group: only ? null : group, today, minValue, fundingMin, sources: report, links }, { status: failed && failed === sources.length ? 500 : 200 });
 }

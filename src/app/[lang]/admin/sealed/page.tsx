@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { listNativeAdminSealed } from "@/lib/town-jobs/native-sealed";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { BreakGlassForm } from "@/components/towns/jobs/sealed-forms";
@@ -29,10 +31,12 @@ interface Row {
  */
 export default async function AdminSealedPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
-  const demo = isDemoMode() || !isServiceConfigured();
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
   let rows: (Row & { received: number; opened: boolean })[] = [];
-  if (!demo) {
+  if (native) rows = await listNativeAdminSealed(session.userId);
+  else if (!demo) {
     const db = createServiceClient();
     const { data } = await db
       .from("rfp_posts")

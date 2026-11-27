@@ -1,7 +1,11 @@
 "use server";
 
+import { usesD1CustomerAuth, isIsolatedD1Staging, isVpsLiveCustomerAuth, isVpsNativeAccountRecovery, isVpsNativeAccountSignup, stagingEmail } from "@/lib/d1/staging-config";
+import { checkStagingRateLimit, stagingClientIp } from "@/lib/d1/staging-rate-limit";
+import { accountRecoveryTurnstileAction, accountSignupResendTurnstileAction, accountSignupTurnstileAction, customerLoginLinkTurnstileAction, customerTurnstileAction } from "@/lib/d1/staging-turnstile";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
+import { after } from "next/server";
 import { ACCOUNT_COOKIE } from "@/lib/visitor-geo";
 import { isUsState } from "@/lib/geo";
 import { createClient } from "@/lib/supabase/server";
@@ -10,6 +14,9 @@ import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config
 import { getSession, roleHome } from "@/lib/access/access";
 import { buyerTags, isCheckViolation, parseBuyerKind } from "@/lib/auth/org-kind";
 import { safeNextPath } from "@/lib/auth/next";
+import {
+  canaryCookie, canaryCookieOptions, canaryPath, cloudflareCanaryConfig, cloudflareCanarySignIn, isCloudflareCanaryEmail,
+} from "@/lib/auth/cloudflare-canary";
 import { DEFAULT_SIGNUP_ROLE, onboardingPath, resolveRolePick } from "@/lib/auth/oauth";
 import {
   companyProfileSchema,
@@ -17,6 +24,7 @@ import {
   resetPasswordSchema,
   signInSchema,
   signUpSchema,
+  nativeSignUpSchema,
 } from "@/lib/validations";
 import { sendAdminListingRejected, sendAdminNewSignup, sendWelcomeEmail } from "@/lib/email/send";
 import { screenOrganization, recordOrgRisk } from "@/lib/spam/server";
@@ -27,10 +35,12 @@ import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { syncPmrfpUserToGhl } from "@/lib/ghl/sync";
 import { gcFormPath, parseAwardRef } from "@/lib/gc/packages";
 import { parsePrefSlugs } from "@/lib/auth/signup-prefs";
-import { recordSignupAttribution, recordSignupAttributionForEmail } from "@/lib/attribution/record";
+import { FRESH_SIGNUP_MS, recordSignupAttribution, recordSignupAttributionForEmail } from "@/lib/attribution/record";
 import { recordOnboardingStep } from "@/lib/onboarding/progress";
 import { errorDetail } from "@/lib/onboarding/steps";
 import { linkDigestSubscriber } from "@/lib/digest/link";
+import { subscribeMemberToDigest } from "@/lib/digest/member";
+import { weeklyEmailTicked } from "@/lib/digest/config";
 import { magicLinkRedirect, parseSignupMethod } from "@/lib/auth/magic-link";
 import { SIGNUP_INTENT_COOKIE } from "@/lib/auth/signup-intent";
 import { marketingTicked } from "@/lib/consent/email";
@@ -70,6 +80,8 @@ export interface DuplicateCompanyView {
 export interface ActionState {
   error?: string;
   success?: string;
+  stagingSignedIn?: true;
+  customerStagingPath?: string;
   /** Onboarding: "This company may already be on PMRFP". */
   duplicates?: DuplicateCompanyView[];
   /** Onboarding: the submitted fields, replayed by "It's a different company". */
@@ -145,6 +157,32 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "company";
 }
 
+async function sendNativeAccountLink(
+  kind: "signup" | "reset" | "signin", email: string, token: string, lang: Locale, next?: string | null,
+) {
+  const { sendHostingerMail } = await import("@/lib/email/smtp");
+  const origin = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "");
+  if (origin.protocol !== "https:" || origin.username || origin.password ||
+      origin.pathname !== "/" || origin.search || origin.hash) throw new Error("Invalid account origin");
+  const url = new URL(localizePath(kind === "signin" ? "/sign-in" : "/reset-password", lang), origin);
+  if (kind === "signup") {
+    url.searchParams.set("flow", "signup");
+    if (next) url.searchParams.set("next", next);
+  }
+  if (kind === "signin") {
+    url.searchParams.set("link", "complete");
+    if (next) url.searchParams.set("next", next);
+  }
+  url.hash = token;
+  const auth = getDictionary(lang).auth;
+  const label = kind === "signin" ? auth.meta.signIn : kind === "signup" ? auth.meta.signUp : auth.meta.resetPassword;
+  await sendHostingerMail({
+    to: email,
+    subject: "PMRFP · " + label,
+    html: `<p><a href="${url.href.replace(/&/g, "&amp;")}">${label}</a></p>`,
+  });
+}
+
 export async function signUpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = formLang(formData);
   const m = messages(lang);
@@ -153,7 +191,8 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
   }
   // "link": passwordless (Supabase emails a sign-in link). Older forms send no method: password.
   const method = parseSignupMethod(formData.get("method"));
-  const parsed = signUpSchema.safeParse({
+  const nativeSignup = isVpsNativeAccountSignup();
+  const parsed = (nativeSignup ? nativeSignUpSchema : signUpSchema).safeParse({
     fullName: formData.get("fullName") ?? "",
     email: cleanEmail(String(formData.get("email") ?? "")),
     password: method === "link" ? undefined : (formData.get("password") ?? undefined),
@@ -167,6 +206,39 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
     return { error: translated("validation", "Password must be at least 8 characters", lang, m.checkDetails) };
   }
   if (parsed.data.company_website) return { success: m.thanks }; // honeypot
+  if (nativeSignup) {
+    const ip = stagingClientIp(await headers());
+    const limit = await checkStagingRateLimit("auth-ip", ip);
+    if (limit.status !== 204) return { error: limit.status === 429 ? m.rateLimit : m.signUpFailed };
+    const { verifyStagingTurnstile } = await import("@/lib/d1/staging-turnstile-server");
+    if (!await verifyStagingTurnstile(formData.get("cf-turnstile-response"), ip, accountSignupTurnstileAction)) {
+      return { error: m.checkDetails };
+    }
+    const { email, fullName, role } = parsed.data;
+    const next = safeNextPath(formData.get("next")?.toString());
+    const accountLimit = await checkStagingRateLimit("auth-account", email);
+    if (accountLimit.status === 503) return { error: m.signUpFailed };
+    if (accountLimit.status === 204) {
+      try {
+        const { requestCustomerStagingSignup } = await import("@/lib/d1/customer-staging-session");
+        const orgKind = role === "property_manager" ? parseBuyerKind(formData.get("orgKind")) : null;
+        const token = await requestCustomerStagingSignup({ email, fullName, role, lang, preferences: {
+          org_kind: orgKind,
+          gc_award: orgKind === "builder" ? parseAwardRef(formData.get("award")?.toString()) : null,
+          pref_company: String(formData.get("pref_company") ?? "").trim().slice(0, 120),
+          pref_categories: parsePrefSlugs(formData.getAll("pref_categories")),
+          pref_regions: parsePrefSlugs(formData.getAll("pref_regions")),
+        } });
+        if (token) await sendNativeAccountLink("signup", email, token, lang, next);
+      } catch {
+        console.error("[account signup] Request or delivery unavailable");
+      }
+    }
+    const done = new URLSearchParams({ email, role, method: "link" });
+    if (next) done.set("next", next);
+    if (formData.get("plan") === "pro") done.set("plan", "pro");
+    redirect(localizePath(`/check-email?${done}`, lang));
+  }
   // The form was submitted and passed validation (signup_viewed is the page opening; lib/tracking/events).
   await trackEvent(EVENT.SIGNUP_STARTED, { role: parsed.data.role, method, plan: formData.get("plan") === "pro" ? "pro" : null, hasNext: !!safeNextPath(formData.get("next")?.toString()) });
   if (!isSupabaseConfigured()) return { error: m.demo };
@@ -295,7 +367,14 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
 export async function signInAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = formLang(formData);
   const m = messages(lang);
-  if (await checkRateLimitByIp(await authIp(), "auth")) {
+  const live = isVpsLiveCustomerAuth();
+  const protectedLogin = live || isIsolatedD1Staging();
+  const stagingIp = protectedLogin ? stagingClientIp(await headers()) : null;
+  if (protectedLogin) {
+    const limit = await checkStagingRateLimit("auth-ip", stagingIp);
+    if (limit.status === 429) return { error: m.rateLimit };
+    if (limit.status === 503) return { error: "Sign-in is temporarily unavailable. Please retry." };
+  } else if (await checkRateLimitByIp(await authIp(), "auth")) {
     return { error: m.rateLimit };
   }
   const parsed = signInSchema.safeParse({
@@ -303,6 +382,50 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
     password: formData.get("password"),
   });
   if (!parsed.success) return { error: m.enterEmailPassword };
+  if (protectedLogin) {
+    const { verifyStagingTurnstile } = await import("@/lib/d1/staging-turnstile-server");
+    if (!await verifyStagingTurnstile(formData.get("cf-turnstile-response"), stagingIp, live ? customerTurnstileAction : undefined)) {
+      return { error: "Complete the security check and try again." };
+    }
+    const customerMode = usesD1CustomerAuth();
+    if (customerMode || parsed.data.email === stagingEmail) {
+      const limit = await checkStagingRateLimit("auth-account", parsed.data.email);
+      if (limit.status === 429) return { error: m.rateLimit };
+      if (limit.status === 503) return { error: "Sign-in is temporarily unavailable. Please retry." };
+    }
+    if (customerMode) {
+      const { signInCustomerStaging } = await import("@/lib/d1/customer-staging-session");
+      const session = await signInCustomerStaging(parsed.data.email, parsed.data.password);
+      if (!session) return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
+      const next = safeNextPath(formData.get("next")?.toString());
+      const path = session.profile.onboarding_completed ? next ?? roleHome(session.profile.primary_role)
+        : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
+      if (live) {
+        const age = Date.now() - Date.parse(session.profile.created_at);
+        if (age >= 0 && age <= FRESH_SIGNUP_MS) after(() => recordSignupAttribution({
+          userId: session.userId, orgId: session.organization?.id, role: session.profile.primary_role,
+          method: "password", lang, signedUpAt: session.profile.created_at,
+        }));
+        redirect(localizePath(path, lang));
+      }
+      return { stagingSignedIn: true, customerStagingPath: path };
+    }
+    const { signInToStaging } = await import("@/lib/d1/staging-session");
+    if (!await signInToStaging(parsed.data.email, parsed.data.password)) {
+      return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
+    }
+    return { stagingSignedIn: true };
+  }
+  const canary = isCloudflareCanaryEmail(parsed.data.email) && cloudflareCanaryConfig();
+  if (canary) {
+    const token = await cloudflareCanarySignIn(canary, parsed.data);
+    if (!token) return { error: translated("upstream", "Invalid login credentials", lang, m.enterEmailPassword) };
+    (await cookies()).set(canaryCookie, token, {
+      ...canaryCookieOptions,
+      maxAge: Math.min(900, Math.max(0, Math.floor((canary.until - Date.now()) / 1000))),
+    });
+    redirect(canaryPath);
+  }
   if (!isSupabaseConfigured()) return { error: m.demo };
 
   const supabase = await createClient();
@@ -326,6 +449,29 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
 export async function signInLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = formLang(formData);
   const m = messages(lang);
+  if (isVpsLiveCustomerAuth()) {
+    const ip = stagingClientIp(await headers());
+    if ((await checkStagingRateLimit("auth-ip", ip)).status !== 204) return { error: m.rateLimit };
+    const parsed = forgotPasswordSchema.safeParse({ email: cleanEmail(String(formData.get("email") ?? "")) });
+    if (!parsed.success) return { error: m.enterValidEmail };
+    const { verifyStagingTurnstile } = await import("@/lib/d1/staging-turnstile-server");
+    if (!await verifyStagingTurnstile(formData.get("cf-turnstile-response"), ip, customerLoginLinkTurnstileAction)) {
+      return { error: "Complete the security check and try again." };
+    }
+    if ((await checkStagingRateLimit("auth-account", parsed.data.email)).status !== 204) return { success: m.linkSent };
+    const { bindVpsCustomerLoginLink, requestVpsCustomerLoginLink } = await import("@/lib/d1/customer-staging-session");
+    const proof = await bindVpsCustomerLoginLink();
+    const next = safeNextPath(formData.get("next")?.toString());
+    after(async () => {
+      try {
+        const token = await requestVpsCustomerLoginLink(parsed.data.email, proof);
+        if (token) await sendNativeAccountLink("signin", parsed.data.email, token, lang, next);
+      } catch {
+        console.warn("[auth] Native sign-in link unavailable");
+      }
+    });
+    return { success: m.linkSent };
+  }
   if (await checkRateLimitByIp(await authIp(), "auth")) {
     return { error: m.rateLimit };
   }
@@ -343,6 +489,22 @@ export async function signInLinkAction(_prev: ActionState, formData: FormData): 
   return { success: m.linkSent };
 }
 
+export async function finishNativeSignInLink(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const lang = formLang(formData);
+  const m = messages(lang);
+  const token = formData.get("token");
+  const invalid = { error: getDictionary(lang).auth.signIn.linkError };
+  if (!isVpsLiveCustomerAuth() || typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return invalid;
+  if ((await checkStagingRateLimit("auth-ip", stagingClientIp(await headers()))).status !== 204) return { error: m.rateLimit };
+  const { finishVpsCustomerLoginLink } = await import("@/lib/d1/customer-staging-session");
+  const session = await finishVpsCustomerLoginLink(token);
+  if (!session) return invalid;
+  const next = safeNextPath(formData.get("next")?.toString());
+  const path = session.profile.onboarding_completed ? next ?? roleHome(session.profile.primary_role)
+    : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
+  redirect(localizePath(path, lang));
+}
+
 /**
  * "Send the link again" on the check-your-email screen. The same answer
  * whether or not the address has an account, so it can't be used to find
@@ -358,8 +520,29 @@ export async function resendSignupLinkAction(_prev: ActionState, formData: FormD
   }
   const parsed = forgotPasswordSchema.safeParse({ email: cleanEmail(String(formData.get("email") ?? "")) });
   if (!parsed.success) return { error: m.enterValidEmail };
-  if (!isSupabaseConfigured()) return { error: m.demo };
   const next = safeNextPath(formData.get("next")?.toString());
+  if (isVpsNativeAccountSignup()) {
+    const ip = stagingClientIp(await headers());
+    const limit = await checkStagingRateLimit("auth-ip", ip);
+    if (limit.status !== 204) return { error: limit.status === 429 ? m.rateLimit : m.signUpFailed };
+    const { verifyStagingTurnstile } = await import("@/lib/d1/staging-turnstile-server");
+    if (!await verifyStagingTurnstile(formData.get("cf-turnstile-response"), ip, accountSignupResendTurnstileAction)) {
+      return { error: m.checkDetails };
+    }
+    const accountLimit = await checkStagingRateLimit("auth-account", parsed.data.email);
+    if (accountLimit.status === 503) return { error: m.signUpFailed };
+    if (accountLimit.status === 204) {
+      try {
+        const { resendCustomerStagingSignup } = await import("@/lib/d1/customer-staging-session");
+        const token = await resendCustomerStagingSignup(parsed.data.email);
+        if (token) await sendNativeAccountLink("signup", parsed.data.email, token, lang, next);
+      } catch {
+        console.error("[account signup resend] Request or delivery unavailable");
+      }
+    }
+    return { success: m.linkSent };
+  }
+  if (!isSupabaseConfigured()) return { error: m.demo };
   const linkNext = formData.get("role") === "talent" ? "/talent/edit" : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
   const supabase = await createClient();
   // signInWithOtp, not auth.resend(): only it carries the PKCE challenge the callback needs.
@@ -372,7 +555,9 @@ export async function resendSignupLinkAction(_prev: ActionState, formData: FormD
 }
 
 export async function signOutAction(): Promise<void> {
-  if (isSupabaseConfigured()) {
+  if (usesD1CustomerAuth()) await (await import("@/lib/d1/customer-staging-session")).signOutCustomerStaging();
+  else if (isIsolatedD1Staging()) await (await import("@/lib/d1/staging-session")).signOutOfStaging();
+  else if (isSupabaseConfigured()) {
     const supabase = await createClient();
     await supabase.auth.signOut();
   }
@@ -389,6 +574,24 @@ export async function forgotPasswordAction(_prev: ActionState, formData: FormDat
   }
   const parsed = forgotPasswordSchema.safeParse({ email: cleanEmail(String(formData.get("email") ?? "")) });
   if (!parsed.success) return { error: m.enterValidEmail };
+  if (isVpsNativeAccountRecovery()) {
+    const ip = stagingClientIp(await headers());
+    const limit = await checkStagingRateLimit("auth-ip", ip);
+    if (limit.status !== 204) return { error: limit.status === 429 ? m.rateLimit : m.demo };
+    const { verifyStagingTurnstile } = await import("@/lib/d1/staging-turnstile-server");
+    if (!await verifyStagingTurnstile(formData.get("cf-turnstile-response"), ip, accountRecoveryTurnstileAction)) return { error: m.checkDetails };
+    const accountLimit = await checkStagingRateLimit("auth-account", parsed.data.email);
+    if (accountLimit.status === 503) return { error: m.demo };
+    if (accountLimit.status === 429) return { success: m.resetSent };
+    try {
+      const { requestCustomerStagingReset } = await import("@/lib/d1/customer-staging-session");
+      const token = await requestCustomerStagingReset(parsed.data.email);
+      if (token) await sendNativeAccountLink("reset", parsed.data.email, token, lang);
+    } catch {
+      console.error("[account recovery] Request or delivery unavailable");
+    }
+    return { success: m.resetSent };
+  }
   if (!isSupabaseConfigured()) return { error: m.demo };
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
@@ -405,6 +608,23 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
     confirm: formData.get("confirm"),
   });
   if (!parsed.success) return { error: translated("validation", parsed.error.issues[0]?.message, lang, m.checkPassword) };
+  if (isVpsNativeAccountRecovery()) {
+    const limit = await checkStagingRateLimit("auth-ip", stagingClientIp(await headers()));
+    if (limit.status !== 204) return { error: limit.status === 429 ? m.rateLimit : m.demo };
+    const token = formData.get("resetToken");
+    if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return { error: m.checkDetails };
+    const signup = formData.get("flow") === "signup";
+    if (signup && !isVpsNativeAccountSignup()) return { error: m.signUpFailed };
+    const { finishCustomerStagingReset, finishCustomerStagingSignup } = await import("@/lib/d1/customer-staging-session");
+    const complete = signup ? finishCustomerStagingSignup : finishCustomerStagingReset;
+    try {
+      if (!await complete(token, parsed.data.password)) return { error: m.checkDetails };
+    } catch {
+      return { error: m.checkDetails };
+    }
+    const next = signup ? safeNextPath(formData.get("next")?.toString()) : null;
+    redirect(localizePath(next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in", lang));
+  }
   if (!isSupabaseConfigured()) return { error: m.demo };
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
@@ -423,6 +643,18 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
 export async function chooseRoleAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = formLang(formData);
   const m = messages(lang);
+  if (isVpsNativeAccountSignup()) {
+    const limit = await checkStagingRateLimit("api-write", stagingClientIp(await headers()));
+    if (limit.status !== 204) return { error: limit.status === 429 ? m.rateLimit : m.saveFailed };
+    const { chooseCustomerStagingRole } = await import("@/lib/d1/customer-staging-session");
+    const result = await chooseCustomerStagingRole({
+      role: String(formData.get("role") ?? ""),
+      award: parseAwardRef(formData.get("award")?.toString()),
+    });
+    if (result.status === 401) redirect(localizePath("/sign-in", lang));
+    if (!result.ok) return { error: result.status === 400 ? m.pickRole : m.saveFailed };
+    redirect(localizePath(onboardingPath({ next: safeNextPath(formData.get("next")?.toString()) }), lang));
+  }
   if (!isSupabaseConfigured()) return { error: m.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
@@ -504,7 +736,8 @@ export async function chooseRoleAction(_prev: ActionState, formData: FormData): 
 export async function completeOnboardingAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = formLang(formData);
   const m = messages(lang);
-  if (!isSupabaseConfigured()) return { error: m.demo };
+  const native = isVpsNativeAccountSignup();
+  if (!native && !isSupabaseConfigured()) return { error: m.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
 
@@ -516,7 +749,13 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   const next = safeNextPath(formData.get("next")?.toString());
 
   // "Just browsing" users skip org creation.
-  if (intent === "browsing" || role === "visitor" || role === "talent") {
+  const browsing = intent === "browsing" || role === "visitor" || role === "talent";
+  if (native && browsing) {
+    const result = await submitNativeOnboarding(formData, lang, { browsing, company: null, buyerKind: null, acknowledged: [] });
+    if (result) return result;
+    redirect(localizePath(next ?? "/directory", lang));
+  }
+  if (browsing) {
     const supabase = await createClient();
     await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
     await recordSignupAttribution({ userId: session.userId, role, lang });
@@ -564,6 +803,20 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   // domain). They choose "Request to join this company" or "It's a
   // different company" (dup_ack, flagged for admin review). Never merged here.
   const acknowledged = formData.getAll("dup_ack").map(String).filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 5);
+  if (native) {
+    const result = await submitNativeOnboarding(formData, lang, {
+      browsing, buyerKind, acknowledged,
+      company: {
+        name: data.name, website: data.website, phone: data.phone, email: data.email,
+        city: data.city, province: data.province, shortDescription: data.shortDescription,
+        publicContactVisibility: data.publicContactVisibility, categories, regions,
+      },
+    });
+    if (result) return result;
+    const onward = next ?? (isBuilder ? gcFormPath(parseAwardRef(formData.get("award")?.toString())) :
+      isListing ? "/dashboard/company/finish?welcome=1" : "/pm-dashboard?welcome=1");
+    redirect(localizePath(onward, lang));
+  }
   if (!acknowledged.length && !(isLandlord && !rawName) && isServiceConfigured()) {
     const matches = await findCompanyMatches(createServiceClient(), {
       name: data.name,
@@ -710,6 +963,10 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   await recordSignupAttribution({ userId: session.userId, orgId: org.id, role, lang });
   await recordOnboardingConsent(session.userId, formData, lang);
   await linkDigestSubscriber(session.userId, session.profile.email);
+  // The weekly email is only for members who tick its box (it starts unticked). A listing held as spam is never added.
+  if (isListing && listingStatus !== "rejected" && weeklyEmailTicked(formData.get("weekly_email"))) {
+    await subscribeMemberToDigest({ userId: session.userId, provinceRaw: data.province, trades: categories, lang });
+  }
   await trackEvent(EVENT.ONBOARDING_COMPLETED, { role, gc: isBuilder, landlord: isLandlord }, { userId: session.userId });
 
   // One welcome email per member, with the next step for their kind of account.
@@ -745,4 +1002,22 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   // A GC lands straight on the package form (award prefilled if they came from one).
   if (isBuilder) redirect(localizePath(gcFormPath(parseAwardRef(formData.get("award")?.toString())), lang));
   redirect(localizePath(isListing ? "/dashboard/company/finish?welcome=1" : "/pm-dashboard?welcome=1", lang));
+}
+
+async function submitNativeOnboarding(formData: FormData, lang: Locale, body: object): Promise<ActionState | null> {
+  const m = messages(lang);
+  const limit = await checkStagingRateLimit("api-write", stagingClientIp(await headers()));
+  if (limit.status !== 204) return { error: limit.status === 429 ? m.rateLimit : m.orgFailed };
+  try {
+    const { completeCustomerStagingOnboarding } = await import("@/lib/d1/customer-staging-session");
+    const response = await completeCustomerStagingOnboarding({
+      ...body, lang, marketing: marketingTicked(formData.get("marketing")), weeklyEmail: weeklyEmailTicked(formData.get("weekly_email")),
+    });
+    if (!response.ok) return { error: response.status === 400 ? m.completeRequired : m.orgFailed };
+    const data = await response.json() as { ok?: boolean; duplicates?: DuplicateCompanyView[] };
+    if (data.duplicates?.length) return { duplicates: data.duplicates, echo: formEcho(formData) };
+    return data.ok === true ? null : { error: m.orgFailed };
+  } catch {
+    return { error: m.orgFailed };
+  }
 }

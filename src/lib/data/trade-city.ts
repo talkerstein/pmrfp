@@ -1,6 +1,9 @@
 import { cache } from "react";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { readD1Directory } from "@/lib/d1/directory-server";
+import { usesD1CustomerAuth } from "@/lib/d1/staging-config";
+import { d1TaxonomyEnabled } from "@/lib/d1/taxonomy-backend";
 import { DEMO_VENDORS } from "@/lib/demo-data";
 import { getCategories, getRegions, getTaxonomyRows, type CategoryOption, type RegionOption } from "@/lib/data/taxonomy";
 import { listRfps } from "@/lib/data/rfps";
@@ -65,21 +68,23 @@ async function vendorComboCounts(): Promise<Map<string, number>> {
     counts.set(k, (counts.get(k) ?? 0) + 1);
   };
 
-  if (!isSupabaseConfigured()) {
+  const d1Directory = usesD1CustomerAuth();
+  if (!d1Directory && !isSupabaseConfigured()) {
     for (const v of DEMO_VENDORS)
       for (const c of v.categories) for (const r of v.regions) bump(c, r);
     return counts;
   }
 
-  const supabase = createReadClient();
-  const { data } = await supabase
-    .from("organizations")
-    .select("organization_categories(trade_categories(slug)),organization_regions(regions(slug))")
-    .eq("organization_type", "trade_company")
-    .eq("profile_status", "approved")
-    .eq("status", "active")
-    .eq("is_demo", false)
-    .limit(1000);
+  const data = d1Directory
+    ? await readD1Directory({ type: "trade_company" })
+    : (await createReadClient()
+      .from("organizations")
+      .select("organization_categories(trade_categories(slug)),organization_regions(regions(slug))")
+      .eq("organization_type", "trade_company")
+      .eq("profile_status", "approved")
+      .eq("status", "active")
+      .eq("is_demo", false)
+      .limit(1000)).data;
 
   for (const row of (data as unknown as ComboRow[]) ?? []) {
     const cats = row.organization_categories.map((c) => c.trade_categories?.slug).filter(Boolean) as string[];
@@ -90,7 +95,7 @@ async function vendorComboCounts(): Promise<Map<string, number>> {
 }
 
 export async function regionTree(): Promise<RegionNodeLite[]> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !d1TaxonomyEnabled()) {
     return (await getRegions()).map((r) => ({ slug: r.slug, name: r.name, parentSlug: null }));
   }
   const rows = await getTaxonomyRows("regions");

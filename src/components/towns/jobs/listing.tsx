@@ -1,6 +1,7 @@
 import { ExpressInterestDialog } from "@/components/forms/express-interest-dialog";
 import { AskQuestionForm } from "@/components/towns/jobs/manage-forms";
 import { SealedQuoteBox } from "@/components/towns/jobs/sealed-forms";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isClosed } from "@/lib/town-jobs/sealed";
@@ -285,7 +286,9 @@ async function SealedQuoteSection({ listing, viewer, slug, canRespond }: { listi
   const sealed = listing.sealed!;
   const closes = closingLabel(sealed.closesAt, sealed.timeZone, lang);
   const closed = isClosed(sealed.closesAt) || listing.post.status !== "published";
-  const own = viewer.signedIn && viewer.userId && viewer.organizationId && isServiceConfigured() ? await ownSealedQuote(createServiceClient(), listing.post.id, viewer.userId, viewer.organizationId).catch(() => null) : null;
+  const native = isVpsLiveCustomerAuth();
+  const own = viewer.signedIn && viewer.userId && viewer.organizationId && (native || isServiceConfigured())
+    ? await ownSealedQuote(native ? null : createServiceClient(), listing.post.id, viewer.userId, viewer.organizationId).catch(() => null) : null;
   return (
     <section className="vp-block" id="sealed-quote" data-sealed={closed ? "closed" : "open"}>
       <h2>{t.sealed}</h2>

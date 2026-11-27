@@ -2,6 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
+import { getSessionUserId } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
+import { publicVpsListing, vpsMarketAdmin, vpsMarketMember } from "./native";
+import { parseVpsListingPhotos } from "./native-media";
 import {
   isLive,
   sanitizeListingPhotos,
@@ -75,7 +81,7 @@ interface Row {
 
 const SUPABASE_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
-function toListing(r: Row): Listing {
+function toListing(r: Row, native = false): Listing {
   const o = r.organizations;
   return {
     id: r.id,
@@ -92,7 +98,7 @@ function toListing(r: Row): Listing {
     city: r.city,
     regionSlug: r.region_slug,
     country: r.country,
-    photos: sanitizeListingPhotos(r.photos, SUPABASE_URL(), r.user_id),
+    photos: native ? parseVpsListingPhotos(r.photos) : sanitizeListingPhotos(r.photos, SUPABASE_URL(), r.user_id),
     status: r.status,
     featuredUntil: r.featured_until,
     views: r.views,
@@ -110,8 +116,31 @@ function toListing(r: Row): Listing {
   };
 }
 
+type NativeListing = Omit<Row, "price_on_request" | "organizations" | "photos"> & {
+  price_on_request: number; organizations: string | null; photos: string;
+};
+const nativeSelect = `SELECT l.*,CASE WHEN o.id IS NOT NULL THEN json_object('name',o.name,'slug',o.slug,
+  'organization_type',o.organization_type,'profile_status',o.profile_status) END AS organizations
+  FROM marketplace_listings l LEFT JOIN organizations o ON o.id=l.organization_id`;
+
+function nativeListing(row: NativeListing) {
+  return toListing({ ...row, price_on_request: Boolean(row.price_on_request), photos: JSON.parse(row.photos),
+    organizations: row.organizations ? JSON.parse(row.organizations) : null,
+  }, true);
+}
+
 /** Active, unexpired listings: featured first, then newest. */
 export async function listActiveListings(limit = 500): Promise<{ ready: boolean; listings: Listing[] }> {
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const rows = await vpsAppDatabase().prepare(`${nativeSelect}
+        WHERE ${publicVpsListing} AND ${customerAppAuthority} ORDER BY l.created_at DESC LIMIT ?`)
+        .bind(new Date().toISOString(), limit).all<NativeListing>();
+      return { ready: rows.success, listings: sortListings(rows.results.map(nativeListing).filter((row) => isLive(row))) };
+    } catch {
+      return { ready: false, listings: [] };
+    }
+  }
   if (!isSupabaseConfigured()) return { ready: false, listings: [] };
   try {
     const { data, error } = await createReadClient()
@@ -124,7 +153,7 @@ export async function listActiveListings(limit = 500): Promise<{ ready: boolean;
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) return { ready: false, listings: [] };
-    return { ready: true, listings: sortListings(((data as unknown as Row[]) ?? []).map(toListing).filter((l) => isLive(l))) };
+    return { ready: true, listings: sortListings(((data as unknown as Row[]) ?? []).map((row) => toListing(row)).filter((l) => isLive(l))) };
   } catch {
     return { ready: false, listings: [] };
   }
@@ -141,6 +170,13 @@ export async function latestListings(n = 4): Promise<Listing[]> {
  * own (RLS), so owners can preview drafts and sold items; admins see all.
  */
 export async function getListing(slug: string): Promise<Listing | null> {
+  if (isVpsLiveCustomerAuth()) {
+    const userId = await getSessionUserId();
+    const row = await vpsAppDatabase().prepare(`${nativeSelect} WHERE l.slug=? AND ${customerAppAuthority}
+      AND ((${publicVpsListing}) OR (l.user_id=? AND ${vpsMarketMember}) OR ${vpsMarketAdmin})`)
+      .bind(slug, new Date().toISOString(), userId, userId, userId).first<NativeListing>();
+    return row ? nativeListing(row) : null;
+  }
   if (!isSupabaseConfigured()) return null;
   try {
     const supabase = await createClient();
@@ -154,6 +190,12 @@ export async function getListing(slug: string): Promise<Listing | null> {
 
 /** The signed-in user's listings, any status. */
 export async function listMyListings(userId: string): Promise<{ ready: boolean; listings: Listing[] }> {
+  if (isVpsLiveCustomerAuth()) {
+    if (await getSessionUserId() !== userId) return { ready: false, listings: [] };
+    const rows = await vpsAppDatabase().prepare(`${nativeSelect} WHERE l.user_id=? AND ${vpsMarketMember}
+      AND ${customerAppAuthority} ORDER BY l.created_at DESC LIMIT 200`).bind(userId, userId).all<NativeListing>();
+    return { ready: rows.success, listings: rows.results.map(nativeListing) };
+  }
   if (!isSupabaseConfigured()) return { ready: false, listings: [] };
   try {
     const supabase = await createClient();
@@ -164,7 +206,7 @@ export async function listMyListings(userId: string): Promise<{ ready: boolean; 
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) return { ready: false, listings: [] };
-    return { ready: true, listings: ((data as unknown as Row[]) ?? []).map(toListing) };
+    return { ready: true, listings: ((data as unknown as Row[]) ?? []).map((row) => toListing(row)) };
   } catch {
     return { ready: false, listings: [] };
   }
@@ -172,12 +214,18 @@ export async function listMyListings(userId: string): Promise<{ ready: boolean; 
 
 /** Admin: everything, newest first. */
 export async function listAllListingsForAdmin(): Promise<{ ready: boolean; listings: Listing[] }> {
+  if (isVpsLiveCustomerAuth()) {
+    const userId = await getSessionUserId();
+    const rows = await vpsAppDatabase().prepare(`${nativeSelect} WHERE ${vpsMarketAdmin}
+      AND ${customerAppAuthority} ORDER BY l.created_at DESC LIMIT 500`).bind(userId).all<NativeListing>();
+    return { ready: rows.success, listings: rows.results.map(nativeListing) };
+  }
   if (!isSupabaseConfigured()) return { ready: false, listings: [] };
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from("marketplace_listings").select(COLS).order("created_at", { ascending: false }).limit(500);
     if (error) return { ready: false, listings: [] };
-    return { ready: true, listings: ((data as unknown as Row[]) ?? []).map(toListing) };
+    return { ready: true, listings: ((data as unknown as Row[]) ?? []).map((row) => toListing(row)) };
   } catch {
     return { ready: false, listings: [] };
   }
@@ -185,6 +233,13 @@ export async function listAllListingsForAdmin(): Promise<{ ready: boolean; listi
 
 /** Count of this user's listings that use a free slot right now (active and unexpired). */
 export async function countActiveListings(userId: string, excludeId?: string): Promise<number> {
+  if (isVpsLiveCustomerAuth()) {
+    if (await getSessionUserId() !== userId) return 0;
+    const row = await vpsAppDatabase().prepare(`SELECT count(*) AS n FROM marketplace_listings l WHERE l.user_id=?
+      AND l.status='active' AND l.expires_at>? AND l.id<>? AND ${customerAppAuthority}`)
+      .bind(userId, new Date().toISOString(), excludeId ?? "").first<{ n: number }>();
+    return row?.n ?? 0;
+  }
   if (!isSupabaseConfigured()) return 0;
   const supabase = await createClient();
   let q = supabase
@@ -207,6 +262,11 @@ export async function sellerEmail(userId: string): Promise<string | null> {
 
 /** Best-effort view counter (no-op before the migration). */
 export async function bumpViews(slug: string): Promise<void> {
+  if (isVpsLiveCustomerAuth()) {
+    await vpsAppDatabase().prepare(`UPDATE marketplace_listings AS l SET views=views+1 WHERE slug=?
+      AND ${publicVpsListing} AND ${customerAppAuthority}`).bind(slug, new Date().toISOString()).run().catch(() => null);
+    return;
+  }
   if (!isSupabaseConfigured()) return;
   try {
     await createReadClient().rpc("marketplace_increment_views", { p_slug: slug });

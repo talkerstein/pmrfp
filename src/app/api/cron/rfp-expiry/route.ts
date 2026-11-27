@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { sendRfpExpiryNotice } from "@/lib/email/send";
+import { cronAuthFailure } from "@/lib/cron-auth";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { previewD1RfpExpiry, sweepD1RfpExpiry } from "@/lib/d1/rfp-expiry";
 
 /**
  * Daily RFP auto-expiry with a PM grace period (Vercel cron).
@@ -19,10 +22,33 @@ import { sendRfpExpiryNotice } from "@/lib/email/send";
  * Protect with CRON_SECRET if set.
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const status = cronAuthFailure(request.headers.get("authorization"));
+  if (status) {
+    return NextResponse.json({ error: status === 401 ? "Unauthorized" : "Cron unavailable" }, { status });
   }
+  const dry = new URL(request.url).searchParams.get("dry") === "1";
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1") {
+    const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
+    if (!dry && !(process.env.PMRFP_SMTP_ENABLED === "enabled" || process.env.RESEND_API_KEY)) {
+      return NextResponse.json({ error: "Expiry email unavailable" }, { status: 503 });
+    }
+    try {
+      if (dry) return NextResponse.json(await previewD1RfpExpiry(vpsAppDatabase()));
+      const { expired, claimed } = await sweepD1RfpExpiry(vpsAppDatabase());
+      let notified = 0;
+      for (const row of claimed) {
+        if (!row.email) continue;
+        const keepUrl = new URL("/api/rfp/keep-alive", base);
+        keepUrl.searchParams.set("token", row.keep_alive_token);
+        await sendRfpExpiryNotice(row.email, { title: row.title, slug: row.slug, keepUrl: keepUrl.href });
+        notified++;
+      }
+      return NextResponse.json({ expired, notified });
+    } catch {
+      return NextResponse.json({ error: "Expiry sweep unavailable" }, { status: 503 });
+    }
+  }
+  if (dry) return NextResponse.json({ dry: true, skipped: "Preview requires D1" }, { status: 503 });
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 
   const supabase = createServiceClient();

@@ -2,9 +2,14 @@
 
 import { after } from "next/server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { RFPS_TAG } from "@/lib/supabase/public-cache";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { requireRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { reviewVpsRfp } from "@/lib/d1/vps-rfp-review";
+import { isEnabledLocale } from "@/i18n/config";
 import { sendPmRfpPublished, sendPmRfpRejected } from "@/lib/email/send";
 import { karmaSyncAfter } from "@/lib/karma/sync";
 import { isSchemaMissing } from "@/lib/projects/compat";
@@ -32,6 +37,38 @@ export async function reviewRfpAction(formData: FormData): Promise<void> {
   const decision = String(formData.get("decision") ?? "");
   if (!id || !["published", "rejected"].includes(decision)) redirect("/admin/rfps");
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 1000) || null;
+
+  if (isVpsLiveCustomerAuth()) {
+    if (decision !== "published" && decision !== "rejected") redirect("/admin/rfps");
+    const db = vpsAppDatabase();
+    const rfp = await reviewVpsRfp(admin.userId, id, decision, reason, db);
+    if (!rfp) redirect("/admin/rfps");
+    const lang = isEnabledLocale(rfp.poster_lang) ? rfp.poster_lang : "en";
+    const posterKind = posterKindOf(rfp.source_type);
+    let alerts = "off";
+    let wouldEmail = 0;
+    if (decision === "published" && isPmJob(rfp) && pmJobAlertsEnabled()) {
+      if (!process.env.BUSINESS_MAILING_ADDRESS?.trim()) alerts = "no_address";
+      else {
+        const preview = await runPmJobAlerts(db,rfp.id,{dry:true}).catch(() => null);
+        wouldEmail = preview?.wouldEmail ?? 0;
+        alerts = wouldEmail ? "on" : "none";
+        if (wouldEmail) after(() => runPmJobAlerts(db,rfp.id).then(() => undefined).catch(() => undefined));
+      }
+    }
+    if (rfp.email && decision === "published") {
+      await sendPmRfpPublished(rfp.email, { title: rfp.title, slug: rfp.slug, id: rfp.id, lang, alertsOn: alerts === "on", posterKind });
+    } else if (rfp.email) {
+      await sendPmRfpRejected(rfp.email, { lang, title: rfp.title, reason, posterKind });
+    }
+    revalidatePath("/rfps");
+    revalidateTag(RFPS_TAG,{expire:0});
+    if (posterKind === "town") revalidatePath("/buyer-dashboard/jobs");
+    revalidatePath("/admin/rfps");
+    redirect(decision === "published"
+      ? `/admin/rfps?published=${encodeURIComponent(rfp.id)}&alerts=${alerts}&n=${wouldEmail}`
+      : `/admin/rfps?rejected=${encodeURIComponent(rfp.id)}`);
+  }
 
   const svc = createServiceClient();
   const patch: Record<string, unknown> = { status: decision, ...(decision === "published" ? { published_at: new Date().toISOString() } : {}) };

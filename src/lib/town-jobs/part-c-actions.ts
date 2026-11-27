@@ -3,6 +3,9 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { PUBLIC_DATA_TAG } from "@/lib/supabase/public-cache";
 import { getSession, isAdminRole } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { loadNativeManagedTownJob, publishNativeTownAward, saveNativeTownRecommendation } from "./native-management";
+import { loadNativeSealedPost } from "./native-sealed";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isEnabledLocale } from "@/i18n/config";
@@ -33,12 +36,14 @@ export interface PartCState {
 type Ctx = { job: TownJob; userId: string; name: string; organizationId: string | null; role: string };
 
 async function context(fd: FormData): Promise<Ctx | { error: string }> {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return { error: "demo" };
+  if (!isVpsLiveCustomerAuth() && (!isSupabaseConfigured() || !isServiceConfigured())) return { error: "demo" };
   const session = await getSession();
   if (!session) return { error: "signin" };
   const rfpId = String(fd.get("rfpId") ?? "");
   if (!rfpId) return { error: "not_found" };
-  const job = await loadTownJob(createServiceClient(), rfpId);
+  const job = isVpsLiveCustomerAuth()
+    ? await loadNativeManagedTownJob(session.userId, rfpId).catch(() => null)
+    : await loadTownJob(createServiceClient(), rfpId);
   if (!job) return { error: "not_found" };
   const actor = { userId: session.userId, organizationId: session.organization?.id ?? null, role: session.profile.primary_role };
   if (!canManageTownJob(job, actor)) return { error: "not_owner" };
@@ -60,7 +65,7 @@ const langOfForm = (fd: FormData) => emailLang(isEnabledLocale(fd.get("lang")) ?
 export async function requestOpeningAction(_prev: PartCState, fd: FormData): Promise<PartCState> {
   const ctx = await context(fd);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await requestOpening(createServiceClient(), { job: ctx.job, actorId: ctx.userId, actorName: ctx.name, witnessName: fd.get("witnessName"), witnessEmail: fd.get("witnessEmail"), lang: langOfForm(fd) });
+  const res = await requestOpening(isVpsLiveCustomerAuth() ? null : createServiceClient(), { job: ctx.job, actorId: ctx.userId, actorName: ctx.name, witnessName: fd.get("witnessName"), witnessEmail: fd.get("witnessEmail"), lang: langOfForm(fd) });
   if (!res.ok) return { error: res.error };
   refresh(ctx.job);
   return { done: "requested", mode: res.mode, emailsOn: res.emailsOn, n: res.notified };
@@ -70,7 +75,7 @@ export async function requestOpeningAction(_prev: PartCState, fd: FormData): Pro
 export async function confirmOpeningAction(_prev: PartCState, fd: FormData): Promise<PartCState> {
   const ctx = await context(fd);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await confirmOpening(createServiceClient(), { job: ctx.job, actorId: ctx.userId });
+  const res = await confirmOpening(isVpsLiveCustomerAuth() ? null : createServiceClient(), { job: ctx.job, actorId: ctx.userId });
   if (!res.ok) return { error: res.error };
   refresh(ctx.job, true);
   // First-party funnel (lib/analytics → site_events): counts only, never prices.
@@ -81,7 +86,7 @@ export async function confirmOpeningAction(_prev: PartCState, fd: FormData): Pro
 export async function cancelOpeningAction(_prev: PartCState, fd: FormData): Promise<PartCState> {
   const ctx = await context(fd);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await cancelOpening(createServiceClient(), { job: ctx.job, actorId: ctx.userId });
+  const res = await cancelOpening(isVpsLiveCustomerAuth() ? null : createServiceClient(), { job: ctx.job, actorId: ctx.userId });
   if (!res.ok) return { error: res.error };
   refresh(ctx.job);
   return { done: "cancelled" };
@@ -90,7 +95,7 @@ export async function cancelOpeningAction(_prev: PartCState, fd: FormData): Prom
 export async function resendWitnessAction(_prev: PartCState, fd: FormData): Promise<PartCState> {
   const ctx = await context(fd);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await resendWitnessLink(createServiceClient(), { job: ctx.job, actorId: ctx.userId, actorName: ctx.name, lang: langOfForm(fd) });
+  const res = await resendWitnessLink(isVpsLiveCustomerAuth() ? null : createServiceClient(), { job: ctx.job, actorId: ctx.userId, actorName: ctx.name, lang: langOfForm(fd) });
   if (!res.ok) return { error: res.error };
   refresh(ctx.job);
   return { done: "resent", emailsOn: res.emailsOn };
@@ -98,14 +103,14 @@ export async function resendWitnessAction(_prev: PartCState, fd: FormData): Prom
 
 /** The witness's one-time link: no account needed (the link is the credential, checked by its hash). */
 export async function witnessConfirmAction(_prev: PartCState, fd: FormData): Promise<PartCState> {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return { error: "demo" };
+  if (!isVpsLiveCustomerAuth() && (!isSupabaseConfigured() || !isServiceConfigured())) return { error: "demo" };
   const rfpId = String(fd.get("rfpId") ?? "");
   const token = String(fd.get("token") ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(rfpId) || !/^[A-Za-z0-9_-]{16,100}$/.test(token)) return { error: "bad_link" };
-  const db = createServiceClient();
+  const db = isVpsLiveCustomerAuth() ? null : createServiceClient();
   const res = await witnessConfirm(db, rfpId, token, fd.get("name"), loadTownJob);
   if (!res.ok) return { error: res.error };
-  const job = await loadTownJob(db, rfpId);
+  const job = db ? await loadTownJob(db, rfpId) : await loadNativeSealedPost(rfpId).catch(() => null);
   if (job) refresh(job, true);
   // The witness has no account: the event carries no user.
   await trackEvent(EVENT.SEALED_OPENED, { via: "witness", quotes: res.opened }, { role: "public_buyer" });
@@ -116,7 +121,9 @@ export async function witnessConfirmAction(_prev: PartCState, fd: FormData): Pro
 export async function saveRecommendationAction(_prev: PartCState, fd: FormData): Promise<PartCState> {
   const ctx = await context(fd);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await saveRecommendation(createServiceClient(), { job: ctx.job, actorId: ctx.userId, interestId: fd.get("interestId"), rationale: fd.get("rationale") });
+  const res = isVpsLiveCustomerAuth() ? await saveNativeTownRecommendation(ctx.job,ctx.userId,fd.get("interestId"),fd.get("rationale"))
+    .catch(() => ({ok:false,error:"failed"} as const))
+    : await saveRecommendation(createServiceClient(), { job: ctx.job, actorId: ctx.userId, interestId: fd.get("interestId"), rationale: fd.get("rationale") });
   if (!res.ok) return { error: res.error };
   refresh(ctx.job);
   return { done: "saved" };
@@ -126,11 +133,9 @@ export async function saveRecommendationAction(_prev: PartCState, fd: FormData):
 export async function publishAwardAction(_prev: PartCState, fd: FormData): Promise<PartCState> {
   const ctx = await context(fd);
   if ("error" in ctx) return { error: ctx.error };
-  const res = await publishAward(createServiceClient(), {
-    job: ctx.job,
-    actorId: ctx.userId,
-    input: { winnerName: fd.get("winnerName"), amount: fd.get("amount"), amountPublic: fd.get("amountPublic"), awardDate: fd.get("awardDate") },
-  });
+  const input = { winnerName: fd.get("winnerName"), amount: fd.get("amount"), amountPublic: fd.get("amountPublic"), awardDate: fd.get("awardDate") };
+  const res = isVpsLiveCustomerAuth() ? await publishNativeTownAward(ctx.job,ctx.userId,input).catch(() => ({ok:false,error:"failed"} as const))
+    : await publishAward(createServiceClient(), {job:ctx.job,actorId:ctx.userId,input});
   if (!res.ok) return { error: res.error };
   refresh(ctx.job, true);
   revalidatePath("/rfps");
@@ -147,11 +152,11 @@ export interface BreakGlassState {
 
 /** Admin break-glass: see a sealed box's quotes early, with a reason (logged in the town's record; the town is told). */
 export async function breakGlassAction(_prev: BreakGlassState, fd: FormData): Promise<BreakGlassState> {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return { error: "demo" };
+  if (!isVpsLiveCustomerAuth() && (!isSupabaseConfigured() || !isServiceConfigured())) return { error: "demo" };
   const session = await getSession();
   if (!session || !isAdminRole(session.profile.primary_role) || !isAdminActor({ role: session.profile.primary_role })) return { error: "not_admin" };
   const rfpId = String(fd.get("rfpId") ?? "");
-  const res = await breakGlass(createServiceClient(), rfpId, session.userId, fd.get("reason"));
+  const res = await breakGlass(isVpsLiveCustomerAuth() ? null : createServiceClient(), rfpId, session.userId, fd.get("reason"));
   if (!res.ok) return { error: res.error };
   revalidatePath(`/buyer-dashboard/jobs/${rfpId}`);
   return { quotes: res.quotes };

@@ -3,6 +3,8 @@ import { publicBuyerSignUpAction } from "@/lib/towns/actions";
 import { getT } from "@/i18n/server";
 import { localizePath, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
+import { authTurnstileSiteKey, isVpsNativeAccountSignup } from "@/lib/d1/staging-config";
+import { PublicBuyerSignupSubmit } from "./public-buyer-signup-submit";
 
 /**
  * /sign-up?role=public_buyer: the public-buyer sign-up ("Public buyer
@@ -32,6 +34,7 @@ export function PublicBuyerSignUp({
   const L = (p: string) => localizePath(p, lang);
   const errorText = error && error in t.errors ? t.errors[error as keyof typeof t.errors] : null;
   const next = claim ? `/onboarding?claim=${encodeURIComponent(claim)}` : "/onboarding";
+  const siteKey = isVpsNativeAccountSignup() ? authTurnstileSiteKey() : null;
   return (
     <div className="v3-su-main">
       <div className="v3-wrap" style={{ paddingTop: 28, paddingBottom: 96 }}>
@@ -58,7 +61,8 @@ export function PublicBuyerSignUp({
                 <input name="email" type="email" required autoComplete="email" maxLength={254} placeholder="clerk@yourtown.ca" />
               </label>
               <p className="v3-su-note">{t.emailHint}</p>
-              <button type="submit" className="v3-su-go" style={{ marginTop: 14 }}>{t.submit}</button>
+              {siteKey ? <PublicBuyerSignupSubmit label={t.submit} siteKey={siteKey} />
+                : <button type="submit" className="v3-su-go" style={{ marginTop: 14 }}>{t.submit}</button>}
             </form>
           )}
           <div className="v3-su-pane">

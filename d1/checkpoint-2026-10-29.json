@@ -1,0 +1,310 @@
+{
+  "date": "2026-10-29",
+  "repositoryBase": "ff0958c",
+  "publicTables": 108,
+  "sharedColumnDefinitions": "identical",
+  "sourceFunctions": 66,
+  "sourcePolicies": 168,
+  "sourceTriggers": 38,
+  "nativeCanary": {
+    "database": "pmrfp-journal-canary-20261023",
+    "databaseId": "e41a9e60-2022-4511-94b9-12866f921671",
+    "nativeFailureRollbackVerified": true,
+    "nativeCommittedResponseLossRecoveryVerified": true,
+    "reverseVerified": true,
+    "readbackRestoreVerified": true,
+    "syntheticOnly": true,
+    "forward": {
+      "database": "pmrfp-journal-canary-20261023",
+      "source_sha256": "d19db34f488226b6d200d87b91329f18ef9b20f58d77fd7eddc4b849b3e185e7",
+      "tables": 102,
+      "records": 3,
+      "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": true,
+      "reverse": false,
+      "changed_records": 3
+    },
+    "reverse": {
+      "database": "pmrfp-journal-canary-20261023",
+      "source_sha256": "a9b7e61b7fe5c3e320d4ad52a0803d7202fc04ab62b7bdae62d7fd0c69f0f8e5",
+      "tables": 102,
+      "records": 3,
+      "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": true,
+      "changed_records": 3,
+      "batch_statements": 9
+    },
+    "restored": {
+      "database": "pmrfp-journal-canary-20261023",
+      "source_sha256": "a9b7e61b7fe5c3e320d4ad52a0803d7202fc04ab62b7bdae62d7fd0c69f0f8e5",
+      "tables": 102,
+      "records": 3,
+      "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false
+    },
+    "businessDatasetWrites": 0,
+    "cutoverReady": false
+  },
+  "readerExpiryUtc": "2026-11-05T10:00:00Z",
+  "readerRenewalApplied": true,
+  "readerVerification": {
+    "readableTables": 108,
+    "writableTables": 0,
+    "authPasswordRead": false,
+    "guardExecute": false,
+    "authIdViewRead": true
+  },
+  "validation": {
+    "applicationTestsPassed": 2777,
+    "applicationTestsSkipped": 3,
+    "offlineTestsPassed": 49,
+    "typecheck": "passed",
+    "lint": "passed",
+    "grantCheck": "passed",
+    "productionBuild": "passed",
+    "staticPages": 775
+  },
+  "sourceSnapshot": {
+    "tables": 109,
+    "records": 55471,
+    "sha256": "fa99649dfb7717149b2624b78aaae83c770c0253d23e0433378a15ce24a3b829"
+  },
+  "rebuiltSnapshot": {
+    "source_snapshot_sha256": "fa99649dfb7717149b2624b78aaae83c770c0253d23e0433378a15ce24a3b829",
+    "rebuilt_snapshot_sha256": "3182d4a3eff4ac51183e44db06a02ee4b8c09a486bbf1ff9fa86a16984e1098c",
+    "tables": 109,
+    "records": 55322,
+    "scored_at": "2026-10-29T12:38:48.875053+00:00",
+    "authoritative_fields": "identical",
+    "rebuilt_fields": "approved-policy-only",
+    "cutover_ready": false
+  },
+  "stagingTarget": {
+    "generation": "rebuilt-20261029",
+    "database": "pmrfp-rebuilt-staging-20261029",
+    "id": "c78304a9-1baa-4b62-a9e6-b7ad0d408be6",
+    "state": "validated",
+    "previewSwitched": true,
+    "workerVersion": "ad1773e5-3391-4d1c-957c-797224e74772"
+  },
+  "nativeResume": {
+    "nativeResumeVerified": true,
+    "insertStatements": 1,
+    "records": 3,
+    "schemaComparison": "identical",
+    "recordComparison": "all fields identical",
+    "businessWrites": 0
+  },
+  "remoteValidation": {
+    "database": "pmrfp-rebuilt-staging-20261029",
+    "source_sha256": "3182d4a3eff4ac51183e44db06a02ee4b8c09a486bbf1ff9fa86a16984e1098c",
+    "tables": 109,
+    "records": 55322,
+    "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+    "schema_comparison": "identical",
+    "record_comparison": "all fields identical",
+    "foreign_keys": "valid",
+    "cutover_ready": false,
+    "actualReadbackBackupRestored": true,
+    "boardIndexPlan": [
+      {
+        "id": 5,
+        "parent": 0,
+        "notused": 49,
+        "detail": "SEARCH rfp_posts USING INDEX d1_rfp_posts_status_id_idx (status=? AND id>? AND id<?)"
+      }
+    ],
+    "productionTrafficChanged": false
+  },
+  "publicParity": {
+    "dataset": "3182d4a3eff4ac51183e44db06a02ee4b8c09a486bbf1ff9fa86a16984e1098c",
+    "comparisonBaseline": "captured consistent source snapshot 2026-10-29",
+    "publishedRows": 1794,
+    "boardAllFieldsIdentical": true,
+    "taxonomy": {
+      "trade_categories": {
+        "rows": 45,
+        "allFieldsIdentical": true
+      },
+      "regions": {
+        "rows": 88,
+        "allFieldsIdentical": true
+      },
+      "property_types": {
+        "rows": 21,
+        "allFieldsIdentical": true
+      }
+    },
+    "sourceWrites": 0
+  },
+  "privateTrialApproval": "approved-and-revoked",
+  "privateDetailVerification": {
+    "api": {
+      "realAuthVerified": true,
+      "temporaryTrialPrivateReadVerified": true,
+      "allProjectedFieldsMatch": true,
+      "anonymousTestCompanyRows": 0,
+      "productionTrafficChanged": false,
+      "customerRowsChanged": false
+    },
+    "browser": {
+      "paidScopeVisible": true,
+      "detailBackend": "d1",
+      "authenticatedThroughBrowser": true
+    },
+    "revokedBrowser": {
+      "privateScopeVisibleAfterRevocation": false,
+      "authenticatedSessionRetained": true
+    },
+    "revokedApi": {
+      "sameTestAccount": true,
+      "privateDetailDeniedAfterRevocation": true,
+      "credentialsUnchanged": true
+    },
+    "trialRevoked": true
+  },
+  "retainedCheckpointValidation": {
+    "database": "pmrfp-rebuilt-staging-20261029",
+    "source_sha256": "3182d4a3eff4ac51183e44db06a02ee4b8c09a486bbf1ff9fa86a16984e1098c",
+    "tables": 109,
+    "records": 55322,
+    "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+    "schema_comparison": "identical",
+    "record_comparison": "all fields identical",
+    "foreign_keys": "valid",
+    "cutover_ready": false,
+    "nativeDataRowsRead": 55444,
+    "pagination": "primary-key keyset",
+    "failedDeltaLeftOriginalCheckpointIntact": true
+  },
+  "pendingDelta": {
+    "sourceSnapshot": {
+      "source_snapshot_sha256": "8642c9fd0a34f60d1c9010d3f15f93c6110ca7c5fe6f66ef35c18b9c687b8330",
+      "rebuilt_snapshot_sha256": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+      "tables": 109,
+      "records": 55529,
+      "scored_at": "2026-10-29T13:30:18.072317+00:00",
+      "authoritative_fields": "identical",
+      "rebuilt_fields": "approved-policy-only",
+      "cutover_ready": false
+    },
+    "plan": {
+      "changes": 311,
+      "statements": 341,
+      "changedTables": {
+        "badge_hits": {
+          "inserted": 2,
+          "updated": 0,
+          "deleted": 0
+        },
+        "forum_threads": {
+          "inserted": 0,
+          "updated": 2,
+          "deleted": 0
+        },
+        "landing_counts": {
+          "inserted": 46,
+          "updated": 3,
+          "deleted": 0
+        },
+        "org_karma": {
+          "inserted": 1,
+          "updated": 68,
+          "deleted": 0
+        },
+        "organization_members": {
+          "inserted": 1,
+          "updated": 0,
+          "deleted": 0
+        },
+        "organizations": {
+          "inserted": 1,
+          "updated": 0,
+          "deleted": 0
+        },
+        "rfp_bid_checks": {
+          "inserted": 24,
+          "updated": 0,
+          "deleted": 0
+        },
+        "rfp_categories": {
+          "inserted": 37,
+          "updated": 0,
+          "deleted": 0
+        },
+        "rfp_changes": {
+          "inserted": 24,
+          "updated": 0,
+          "deleted": 0
+        },
+        "rfp_posts": {
+          "inserted": 37,
+          "updated": 24,
+          "deleted": 0
+        },
+        "rfp_views": {
+          "inserted": 5,
+          "updated": 0,
+          "deleted": 0
+        },
+        "site_events": {
+          "inserted": 10,
+          "updated": 0,
+          "deleted": 0
+        },
+        "site_page_views": {
+          "inserted": 7,
+          "updated": 7,
+          "deleted": 0
+        },
+        "site_referrers": {
+          "inserted": 1,
+          "updated": 0,
+          "deleted": 0
+        },
+        "site_visitors": {
+          "inserted": 10,
+          "updated": 0,
+          "deleted": 0
+        },
+        "trade_trials": {
+          "inserted": 1,
+          "updated": 0,
+          "deleted": 0
+        }
+      },
+      "beforeSnapshot": "3182d4a3eff4ac51183e44db06a02ee4b8c09a486bbf1ff9fa86a16984e1098c",
+      "afterSnapshot": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+      "maxParams": 100,
+      "guardLayout": "balanced predicates, at most 20 predicates and 100 parameters per guard"
+    },
+    "localRehearsal": {
+      "baseline": "actual native D1 readback",
+      "changes": 311,
+      "forwardRows": 55529,
+      "reverseRows": 55322,
+      "finalRows": 55529,
+      "expressionDepthLimit": 64,
+      "allFieldsAndFksVerified": true,
+      "nativeDataMutation": false,
+      "sourceCustomerWrites": 0
+    },
+    "nativeReadGuards": "all passed after balancing expressions",
+    "nativeCommit": "blocked by daily D1 quota; original checkpoint reverified intact",
+    "resetUtc": "2026-10-30T00:00:00Z",
+    "resetIndia": "2026-10-30T05:30:00+05:30"
+  },
+  "cutoverReady": false
+}

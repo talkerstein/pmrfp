@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { keepD1RfpAlive, RFP_EXTENSION_DAYS } from "@/lib/d1/rfp-expiry";
 
 /**
  * One-click "keep my RFP live" link from the deadline-expiry email.
@@ -12,12 +14,21 @@ import { isServiceConfigured } from "@/lib/supabase/config";
  * toward keeping a live job on the board — there is no destructive path behind
  * this link (expiry is cron-driven, never link-driven).
  */
-const KEEP_DAYS = 30;
-
 export async function GET(request: Request) {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com";
   const token = new URL(request.url).searchParams.get("token");
   if (!token) return NextResponse.redirect(`${base}/rfp/kept?status=invalid`);
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1") {
+    const destination = new URL("/rfp/kept", base);
+    try {
+      const status = await keepD1RfpAlive(vpsAppDatabase(), token);
+      destination.searchParams.set("status", status);
+      if (status === "ok") destination.searchParams.set("days", String(RFP_EXTENSION_DAYS));
+    } catch {
+      destination.searchParams.set("status", "error");
+    }
+    return NextResponse.redirect(destination, { headers: { "cache-control": "no-store", "referrer-policy": "no-referrer" } });
+  }
   if (!isServiceConfigured()) return NextResponse.redirect(`${base}/rfp/kept?status=error`);
 
   const supabase = createServiceClient();
@@ -38,12 +49,12 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${base}/rfp/kept?status=notlive`);
   }
 
-  const newDeadline = new Date(Date.now() + KEEP_DAYS * 86400000).toISOString().slice(0, 10);
+  const newDeadline = new Date(Date.now() + RFP_EXTENSION_DAYS * 86400000).toISOString().slice(0, 10);
   const { error } = await supabase
     .from("rfp_posts")
     .update({ deadline: newDeadline, expiry_notice_sent_at: null, status: "published" })
     .eq("id", rfp.id);
   if (error) return NextResponse.redirect(`${base}/rfp/kept?status=error`);
 
-  return NextResponse.redirect(`${base}/rfp/kept?status=ok&days=${KEEP_DAYS}`);
+  return NextResponse.redirect(`${base}/rfp/kept?status=ok&days=${RFP_EXTENSION_DAYS}`);
 }

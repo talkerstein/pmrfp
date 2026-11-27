@@ -13,6 +13,7 @@ import { LogoUploader } from "@/components/forms/logo-uploader";
 import { useLang, useT } from "@/i18n/provider";
 import { fmt } from "@/i18n/format";
 import { FINISH_PATH, FULL_MAX, SHORT_MAX, TEAM_SIZES, type ListingStep } from "@/lib/organizations/listing-steps";
+import { insuranceText, INSURED, POLICY_NUMBER_MAX } from "@/lib/organizations/insurance";
 
 export interface ListingPreview {
   name: string;
@@ -32,6 +33,7 @@ export function ListingFinishStep({
   done,
   total,
   organizationId,
+  nativeMedia = false,
   preview,
 }: {
   step: ListingStep;
@@ -39,6 +41,7 @@ export function ListingFinishStep({
   done: number;
   total: number;
   organizationId: string;
+  nativeMedia?: boolean;
   preview: ListingPreview;
 }) {
   const [state, action, pending] = useActionState(saveListingStepAction, {} as ActionState);
@@ -46,7 +49,10 @@ export function ListingFinishStep({
   const c = useT("dashClient").company;
   const lang = useLang();
   const [value, setValue] = useState(initial);
-  const q = t.steps[step];
+  const privatePolicy = nativeMedia && step === "insurance";
+  const q = privatePolicy
+    ? { title: c.insurancePolicy, why: c.insurancePolicyHint, placeholder: "" }
+    : t.steps[step];
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   // What's being typed shows in the listing straight away.
@@ -54,7 +60,7 @@ export function ListingFinishStep({
     ...preview,
     shortDescription: step === "short" ? value : preview.shortDescription,
     city: step === "city" ? value : preview.city,
-    insurance: step === "insurance" ? value : preview.insurance,
+    insurance: privatePolicy ? insuranceText(value.trim() ? INSURED : preview.insurance, lang) ?? null : step === "insurance" ? value : preview.insurance,
     wsib: step === "wsib" ? value : preview.wsib,
     team: step === "team" ? value : preview.team,
   };
@@ -74,7 +80,7 @@ export function ListingFinishStep({
 
         <div className="mt-4">
           {step === "logo" && (
-            <LogoUploader organizationId={organizationId} initialLogoUrl={initial || null} />
+            <LogoUploader organizationId={organizationId} initialLogoUrl={initial || null} nativeMedia={nativeMedia} />
           )}
           {step === "short" && (
             <Textarea name="value" aria-label={q.title} rows={3} maxLength={SHORT_MAX} value={value} onChange={(e) => setValue(e.target.value)} placeholder={q.placeholder} />
@@ -102,6 +108,7 @@ export function ListingFinishStep({
               name="value"
               aria-label={q.title}
               type={step === "phone" ? "tel" : "text"}
+              maxLength={privatePolicy ? POLICY_NUMBER_MAX : undefined}
               inputMode={step === "website" ? "url" : undefined}
               value={value}
               onChange={(e) => setValue(e.target.value)}

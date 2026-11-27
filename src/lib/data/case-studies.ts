@@ -3,6 +3,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { sanitizeResults, type CaseStudyResult } from "@/lib/projects/case-study";
 import { normalizeVisibility, type Visibility } from "@/lib/projects/visibility";
 import { isSchemaMissing } from "@/lib/projects/compat";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { RFP_SLUG, type D1Binding } from "@/lib/d1/contracts";
 
 /**
  * Vendor case studies — the UGC content engine. Each published study is a
@@ -81,6 +84,29 @@ interface Row {
 const SELECT =
   "id,organization_id,slug,title,city,province,property_type,challenge,approach,outcome,timeline,budget_band,published_at,updated_at," +
   "organizations(name,slug,verified),trade_categories(name,slug),regions(slug,name)";
+const nativeSelect = `SELECT c.id,c.organization_id,c.slug,c.title,c.city,c.province,c.property_type,
+  c.challenge,c.approach,c.outcome,c.timeline,c.budget_band,c.published_at,c.updated_at,
+  c.visibility,c.client_type,c.scope,c.results,c.started_on,c.completed_on,c.ai_assisted,
+  o.name AS org_name, o.slug AS org_slug, o.verified AS org_verified, o.profile_status AS org_profile_status,
+  t.name AS category_name, t.slug AS category_slug, r.name AS region_name, r.slug AS region_slug
+  FROM case_studies c JOIN organizations o ON o.id=c.organization_id
+  LEFT JOIN trade_categories t ON t.id=c.category_id LEFT JOIN regions r ON r.id=c.region_id
+  WHERE c.status='published' AND o.status<>'suspended' AND o.is_demo=0 AND ${vpsProjectAuthority}`;
+
+type NativeRow = Omit<Row, "ai_assisted" | "results"> & {
+  org_name: string; org_slug: string; org_verified: number; org_profile_status: string;
+  category_name: string|null; category_slug: string|null; region_name: string|null; region_slug: string|null;
+  ai_assisted: number; results: string;
+};
+
+function nativeRow(row: NativeRow): Row {
+  return {
+    ...row, results: JSON.parse(row.results), ai_assisted: row.ai_assisted === 1,
+    organizations: { name: row.org_name, slug: row.org_slug, verified: row.org_verified === 1 },
+    trade_categories: row.category_name && row.category_slug ? { name: row.category_name, slug: row.category_slug } : null,
+    regions: row.region_slug ? { slug: row.region_slug, name: row.region_name ?? undefined } : null,
+  };
+}
 /** Builder columns from migration 20261009000002. */
 export const BUILDER_COLS = "visibility,client_type,scope,results,started_on,completed_on,ai_assisted";
 
@@ -128,6 +154,14 @@ export async function listCaseStudies(filters?: {
   regionSlug?: string;
   limit?: number;
 }): Promise<CaseStudyListItem[]> {
+  if (vpsProjectUploadsEnabled()) {
+    const category = filters?.categorySlug ?? null;
+    const region = filters?.regionSlug ?? null;
+    const { results } = await vpsAppDatabase().prepare(`${nativeSelect} AND c.visibility='public'
+      AND (? IS NULL OR t.slug=?) AND (? IS NULL OR r.slug=?) ORDER BY c.published_at DESC LIMIT ?`)
+      .bind(category, category, region, region, filters?.limit ?? 60).all<NativeRow>();
+    return results.map(row => toList(nativeRow(row)));
+  }
   if (!isSupabaseConfigured()) return [];
   const supabase = createReadClient();
   const filtered = Boolean(filters?.categorySlug || filters?.regionSlug);
@@ -159,6 +193,12 @@ export async function listCaseStudies(filters?: {
  * studies from this anon client); the page noindexes unlisted ones.
  */
 export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null> {
+  if (vpsProjectUploadsEnabled()) {
+    if (!RFP_SLUG.test(slug)) return null;
+    const row = await vpsAppDatabase().prepare(`${nativeSelect} AND c.visibility IN ('public','unlisted') AND c.slug=?`)
+      .bind(slug).first<NativeRow>();
+    return row ? toDetail(nativeRow(row)) : null;
+  }
   if (!isSupabaseConfigured()) return null;
   const supabase = createReadClient();
   const run = (cols: string) =>
@@ -170,4 +210,11 @@ export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null
   // Belt and braces: never render a private row from the public route.
   if (normalizeVisibility(r.visibility) === "private") return null;
   return toDetail(r);
+}
+
+export async function readVpsSharedCaseStudy(db: D1Binding, token: string) {
+  const row = await db.prepare(`${nativeSelect} AND EXISTS (SELECT 1 FROM case_study_share_links l
+    WHERE l.token=? AND l.case_study_id=c.id AND l.organization_id=c.organization_id AND l.revoked_at IS NULL)`)
+    .bind(token).first<NativeRow>();
+  return row ? { project: toDetail(nativeRow(row)), orgListed: row.org_profile_status === "approved" } : null;
 }

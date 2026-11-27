@@ -1,3 +1,5 @@
+import { redirectSourceAccountFlow } from "@/lib/d1/source-account-flow";
+import { authTurnstileSiteKey, isVpsNativeAccountRecovery } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { ForgotPasswordForm } from "@/components/forms/auth-forms";
@@ -13,7 +15,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 export default async function ForgotPasswordPage({ params }: { params: Promise<object> }) {
-  await setLangFrom(params);
+  const lang = await setLangFrom(params);
+  redirectSourceAccountFlow("/forgot-password", lang);
   const t = getT("auth").forgotPassword;
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
@@ -22,7 +25,8 @@ export default async function ForgotPasswordPage({ params }: { params: Promise<o
         {t.intro}
       </p>
       <div className="mt-6">
-        <ForgotPasswordForm />
+        <ForgotPasswordForm native={isVpsNativeAccountRecovery()}
+          turnstileSiteKey={isVpsNativeAccountRecovery() ? authTurnstileSiteKey() : undefined} />
       </div>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         <Link href="/sign-in" className="font-medium text-teal-700 hover:underline">

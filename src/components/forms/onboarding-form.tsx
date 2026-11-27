@@ -150,6 +150,11 @@ export function OnboardingForm({
             required
             preselected={echo.length ? echoedAll("regions") : preselectedRegions}
           />
+          {/* The free weekly email, only for people who ask. Never pre-ticked (CASL): the tick is the consent, recorded with its wording version (lib/digest/member). It comes back ticked only when they ticked it themselves before "Edit my details". */}
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-sm" data-testid="weekly-email-opt-in">
+            <input type="checkbox" name="weekly_email" value="on" defaultChecked={echoed("weekly_email") === "on"} className="mt-0.5 size-4 rounded border-input" />
+            <span>{t.weeklyEmailLabel}</span>
+          </label>
         </>
       )}
 

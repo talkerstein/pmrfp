@@ -188,6 +188,8 @@ const en = {
     moreDetails: "Add more details (optional)",
     websiteHint: "Your public listing links to this site. Optional, but it is how customers find you.",
     moreDetailsHint: "Phone, email, city, a short description and how buyers contact you. You can add all of this later.",
+    /** The weekly email tick box. Changing a word: bump MEMBER_CONSENT_VERSION in lib/digest/config.ts. */
+    weeklyEmailLabel: "Yes, send me the free weekly PMRFP email: open bids, major projects and recent awards for my trades in my province or state. I can unsubscribe at any time.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -229,7 +231,7 @@ const en = {
     freeItems: [
       "A company profile in the trade directory",
       "A website badge that links to your profile",
-      "The weekly tender digest for your trade",
+      "A free weekly email of open bids in your trade, if you want it",
     ],
     upgrade:
       "Upgrade to Trade Pro any time for the full scope, documents and buyer contact, and an email the morning every match posts.",
@@ -465,6 +467,7 @@ const fr: typeof en = {
     moreDetails: "Ajouter plus de détails (facultatif)",
     websiteHint: "Votre fiche publique renvoie vers ce site. Facultatif, mais c'est ainsi que les clients vous trouvent.",
     moreDetailsHint: "Téléphone, courriel, ville, courte description et façon dont les acheteurs vous joignent. Vous pourrez tout ajouter plus tard.",
+    weeklyEmailLabel: "Oui, envoyez-moi le courriel hebdomadaire gratuit de PMRFP : appels d'offres ouverts, grands projets et contrats octroyés récemment pour mes métiers dans ma province ou mon État. Je peux me désabonner en tout temps.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -504,7 +507,7 @@ const fr: typeof en = {
     freeItems: [
       "Un profil d'entreprise dans le répertoire des entrepreneurs",
       "Un badge pour votre site web qui renvoie à votre profil",
-      "Le résumé hebdomadaire des appels d'offres de votre corps de métier",
+      "Un courriel hebdomadaire gratuit des appels d'offres ouverts de votre corps de métier, si vous le voulez",
     ],
     upgrade:
       "Passez à Trade Pro en tout temps pour obtenir la portée complète, les documents et les coordonnées de l'acheteur, ainsi qu'un courriel le matin même de chaque nouvel appel d'offres qui vous correspond.",
@@ -740,6 +743,7 @@ const es: typeof en = {
     moreDetails: "Agregar más detalles (opcional)",
     websiteHint: "Su ficha pública enlaza a este sitio. Opcional, pero así le encuentran los clientes.",
     moreDetailsHint: "Teléfono, correo, ciudad, una breve descripción y cómo pueden contactarle los compradores. Puede agregarlo todo después.",
+    weeklyEmailLabel: "Sí, envíenme el correo semanal gratuito de PMRFP: licitaciones abiertas, grandes proyectos y contratos adjudicados recientemente para mis oficios en mi provincia o estado. Puedo cancelar la suscripción en cualquier momento.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -779,7 +783,7 @@ const es: typeof en = {
     freeItems: [
       "Un perfil de empresa en el directorio de contratistas",
       "Una insignia para su sitio web que enlaza a su perfil",
-      "El resumen semanal de licitaciones de su oficio",
+      "Un correo semanal gratuito con las licitaciones abiertas de su oficio, si lo desea",
     ],
     upgrade:
       "Pásese a Trade Pro cuando quiera para ver el alcance completo, los documentos y el contacto del comprador, y recibir un correo electrónico la misma mañana en que se publica cada oportunidad que coincide con su perfil.",
