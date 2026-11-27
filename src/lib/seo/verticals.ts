@@ -7,7 +7,7 @@ export interface Vertical {
   headline: string;
   positioning: string;
   pains: string[];
-  valueProps: { title: string; desc: string }[];
+  valueProps: { title: string; desc: string; href?: string }[];
   features: string[];
   faqs: { q: string; a: string }[];
   cta: { label: string; href: string };
@@ -199,14 +199,16 @@ export const VERTICALS: Vertical[] = [
       { title: "Your trusted-trades page", desc: "Save the trades you trust, add a note on each, and text clients one link instead of a phone number from memory. Free for 5 trades." },
       { title: "A bench of trades, on demand", desc: "Search commercial & residential trades by category, region, and credential — free." },
       { title: "Post the work once", desc: "Pre-listing repairs, unit turnovers, or capital projects — publish an RFP and qualified trades respond." },
+      { title: "Inspection report → quotes", desc: "Upload the inspection report, review the repairs it flags by trade, and send each group to your trusted trades for quotes.", href: "/inspection-report-to-quotes" },
       { title: "Move deals faster", desc: "Stop letting a missing contractor delay a close or a re-list." },
       { title: "See credentials up front", desc: "Profiles surface insurance, licensing, and past work to lower your risk." },
       { title: "Free on the demand side", desc: "No cost for agents, brokerages, or investors to post or browse." },
     ],
-    features: ["Shareable trusted-trades page", "Directory search by trade + region", "Post RFPs", "Credential visibility"],
+    features: ["Shareable trusted-trades page", "Inspection report → quotes", "Directory search by trade + region", "Post RFPs", "Credential visibility"],
     faqs: [
       { q: "Is this for buying or selling homes?", a: "No — PMRFP isn't a real-estate listing site. It connects you with the trades who do the work on properties: repairs, turnovers, renovations, and maintenance." },
       { q: "I already have a handyman.", a: "Great — PMRFP is your backup bench for when they're booked, out of scope, or when a property is in a different city." },
+      { q: "Can PMRFP turn an inspection report into quote requests?", a: "Yes. Upload the PDF, review the repair items it lists by trade (each with the page it came from), then post a group as an RFP or send it to the trades on your trusted-trades page. It never estimates prices and it isn't a substitute for a licensed inspector." },
       { q: "What does the trusted-trades page cost?", a: "It's free for up to 5 trades. Realtor Pro is $249 CAD a year: unlimited trades, plus your phone and email on the page so every client who opens it can reach you." },
     ],
     cta: { label: "Create your trusted-trades page", href: "/sign-up?role=real_estate_agent" },
