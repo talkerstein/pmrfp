@@ -135,8 +135,8 @@ const isrPages = walk(APP).filter((f) => {
 
 describe("ISR pages never read the request while rendering", () => {
   it("finds the ISR routes", () => {
-    expect(isrPages.length).toBeGreaterThan(10);
-    expect(isrPages.map(rel)).toContain("app/[lang]/(v3)/major-projects/[slug]/page.tsx");
+    expect(isrPages.map(rel)).toContain("app/[lang]/(marketing)/resources/[slug]/page.tsx");
+    expect(isrPages.map(rel)).not.toContain("app/[lang]/(v3)/major-projects/[slug]/page.tsx");
   });
 
   for (const page of isrPages) {
