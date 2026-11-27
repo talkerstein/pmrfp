@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
-import { countActiveProjects, getProjectSessionFromRequest } from "@/lib/projects/server";
+import { countActiveProjects, getProjectSession, getProjectSessionFromRequest } from "@/lib/projects/server";
 import { canAddProject } from "@/lib/projects/limits";
 import { MAX_UPLOAD_BYTES, processPhoto, UnreadableImageError } from "@/lib/projects/image";
 import { PRIVATE_PHOTO_BUCKET, PROJECT_PHOTO_BUCKET, photoPath } from "@/lib/projects/photos";
 import { ensurePrivateBucket, SIGNED_URL_TTL, supabasePhotoStore } from "@/lib/projects/photo-storage";
+import { countVpsActiveProjects, uploadVpsProjectPhoto, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { matchesCustomerOrigin } from "@/lib/d1/staging-config";
 
 export const maxDuration = 30;
 
@@ -25,20 +27,31 @@ export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "photo-upload");
   if (limited) return rateLimitResponse(limited);
 
-  // Cookie session (web) or bearer token (mobile app).
-  const auth = await getProjectSessionFromRequest(request);
-  if (!auth) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
-  const { session, db } = auth;
-  if (!isServiceConfigured()) {
+  const native = vpsProjectUploadsEnabled();
+  if (native && !matchesCustomerOrigin(request)) {
+    return NextResponse.json({ error: "Upload from your PMRFP project page." }, { status: 403 });
+  }
+  const auth = native ? null : await getProjectSessionFromRequest(request);
+  const session = native ? await getProjectSession(request) : auth?.session;
+  if (!session) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
+  if (!native && !isServiceConfigured()) {
     return NextResponse.json({ error: "Photo uploads aren't set up here yet." }, { status: 503 });
   }
 
   // Free plan: 5 projects. Don't take photos for a second one it can't publish.
-  if (!session.hasTradeAccess && !canAddProject(false, await countActiveProjects(session.organization.id, db))) {
-    return NextResponse.json(
-      { error: "The free plan includes 5 projects. Upgrade to Trade Pro to add more.", code: "plan_limit" },
-      { status: 403 },
-    );
+  if (!session.hasTradeAccess) {
+    try {
+      const count = native ? await countVpsActiveProjects(session.organization.id)
+        : await countActiveProjects(session.organization.id, auth?.db);
+      if (!canAddProject(false, count)) {
+        return NextResponse.json(
+          { error: "The free plan includes 5 projects. Upgrade to Trade Pro to add more.", code: "plan_limit" },
+          { status: 403 },
+        );
+      }
+    } catch {
+      return NextResponse.json({ error: "Photo uploads aren't set up here yet." }, { status: 503 });
+    }
   }
 
   let file: FormDataEntryValue | null;
@@ -70,6 +83,13 @@ export async function POST(request: Request) {
     throw err;
   }
 
+  if (native) {
+    try {
+      return NextResponse.json(await uploadVpsProjectPhoto(session, processed), { headers: { "cache-control": "private, no-store" } });
+    } catch {
+      return NextResponse.json({ error: "Couldn't save that photo. Try again in a minute." }, { status: 503 });
+    }
+  }
   const path = photoPath(session.organization.id, randomUUID());
   const service = createServiceClient();
   const opts = {

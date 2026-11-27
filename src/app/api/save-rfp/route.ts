@@ -1,3 +1,4 @@
+import { usesD1CustomerAuth, isIsolatedD1Staging, matchesCustomerOrigin, stagingListingSlug } from "@/lib/d1/staging-config";
 import { NextResponse } from "next/server";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
@@ -5,6 +6,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getSession } from "@/lib/access/access";
 import { canSaveRfps, viewerOf } from "@/lib/access/free-actions";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+
+import { D1ApiError, readSaveInput } from "@/lib/d1/contracts";
+import { d1AccessToken, d1SavedRfpsClient, d1SavedRfpsEnabled } from "@/lib/d1/server";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,200}$/;
 
@@ -18,6 +22,30 @@ const SLUG = /^[a-z0-9][a-z0-9-]{0,200}$/;
 export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "save-rfp");
   if (limited) return rateLimitResponse(limited);
+
+  try {
+    if (usesD1CustomerAuth() || isIsolatedD1Staging()) {
+      if (!matchesCustomerOrigin(request)) {
+        return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
+      }
+      const input = await readSaveInput(request);
+      if (usesD1CustomerAuth()) {
+        return await (await import("@/lib/d1/customer-staging-session")).customerStagingSavedRfps(input);
+      }
+      if (input.rfpId || input.rfpSlug !== stagingListingSlug) {
+        return NextResponse.json({ error: "staging_listing_required" }, { status: 400 });
+      }
+      const { stagingSavedRfps } = await import("@/lib/d1/staging-session");
+      return await stagingSavedRfps(JSON.stringify(input));
+    }
+    if (d1SavedRfpsEnabled()) {
+      const input = await readSaveInput(request);
+      await d1SavedRfpsClient().change(await d1AccessToken(request), input);
+      return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+    }
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof D1ApiError ? error.code : "gateway_unavailable" }, { status: error instanceof D1ApiError ? error.status : 503 });
+  }
 
   let body: { rfpId?: string; rfpSlug?: string; action?: "save" | "unsave" };
   try {

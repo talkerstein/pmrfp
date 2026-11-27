@@ -8,6 +8,7 @@ import { orgLevel } from "@/lib/karma/data";
 import { LevelBadge } from "@/components/karma/level-badge";
 import type { MemberRef } from "@/lib/forum/data";
 import { publicPhotoUrl, type ForumImage } from "@/lib/forum/photos";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { getT } from "@/i18n/server";
 import { fmt } from "@/i18n/format";
 import { cn } from "@/lib/utils";
@@ -53,13 +54,14 @@ function inline(t: Inline, key: number) {
  * photo must stop being reachable the moment its post is hidden.
  */
 export function PostImages({ images, className }: { images: ForumImage[]; className?: string }) {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!images.length || !base) return null;
+  const native = isVpsLiveCustomerAuth();
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  if (!images.length || (!base && !native)) return null;
   const t = getT("forum").hub;
   return (
     <div className={cn("grid gap-2", images.length > 1 ? "grid-cols-2" : "grid-cols-1", className)}>
       {images.map((img, i) => {
-        const src = publicPhotoUrl(base, img.path);
+        const src = native ? `/api/forum/photos/${img.path}` : publicPhotoUrl(base, img.path);
         return (
           <a key={img.path} href={src} target="_blank" rel="noopener" className="block overflow-hidden rounded-xl border border-[#E3E4EE] bg-[#F5F5FA]">
             {/* eslint-disable-next-line @next/next/no-img-element */}

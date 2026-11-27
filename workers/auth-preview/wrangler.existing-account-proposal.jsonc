@@ -1,0 +1,12 @@
+// Historical approved rehearsal: Worker and database removed after native proof.
+{
+  "name": "pmrfp-existing-test-auth-preview",
+  "main": "../../scripts/d1-auth/existing-account-worker.mjs",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "compatibility_date": "2026-11-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "vars": {"MODE":"existing-test-account-only"},
+  "d1_databases": [{"binding":"AUTH_DB","database_name":"pmrfp-existing-test-auth-20261106","database_id":"9f4d876a-e30e-4c7b-b2f1-5060d3cf3297"}],
+  "observability": {"enabled":false}
+}

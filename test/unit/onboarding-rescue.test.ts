@@ -371,7 +371,7 @@ vi.mock("@/lib/data/price-benchmarks-load", () => ({
 }));
 vi.mock("@/lib/founding/server", () => ({ cachedLifetimeCount: async () => 10 }));
 const sendSpy = vi.fn(async (p: unknown) => (void p, { ok: true, id: "re_test" }));
-vi.mock("@/lib/email/send", () => ({ emailConfigured: () => true, sendLifecycleEmail: (p: unknown) => sendSpy(p) }));
+vi.mock("@/lib/email/send", () => ({ lifecycleEmailConfigured: () => true, sendLifecycleEmail: (p: unknown) => sendSpy(p) }));
 
 const signedUp = new Date(TUE_2PM.getTime() - 3 * H).toISOString();
 const profile = (p: Record<string, unknown> = {}) => ({

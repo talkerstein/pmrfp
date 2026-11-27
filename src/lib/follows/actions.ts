@@ -2,13 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/access/access";
-import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { loadBuyers } from "@/lib/buyers/load";
 import { findBuyerPage } from "@/lib/buyers/model";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { FOLLOWING_PATH, canFollowBuyers, followIntentPath, parseFollowKey } from "./rules";
-import { followBuyer, unfollowBuyer } from "./server";
+import { followBuyer, followsDb, unfollowBuyer } from "./server";
 import { EVENT, trackEvent } from "@/lib/analytics";
 
 /**
@@ -31,11 +31,11 @@ export async function confirmFollowAction(formData: FormData): Promise<void> {
   const session = await getSession();
   if (!session) redirect(localizePath(followIntentPath(key!), lang));
   if (!canFollowBuyers({ primaryRole: session.profile.primary_role, hasTradeAccess: session.hasTradeAccess })) back("role");
-  if (!isServiceConfigured()) back("unavailable");
+  if ((!isVpsLiveCustomerAuth() && !isServiceConfigured())) back("unavailable");
   const [provinceSlug, slug] = key!.split("/");
   const page = findBuyerPage((await loadBuyers()).pages, provinceSlug, slug);
   if (!page) redirect(localizePath("/buyers", lang));
-  const r = await followBuyer(createServiceClient(), { userId: session.userId, orgId: session.organization?.id ?? null, key: key!, pro: session.hasTradeAccess });
+  const r = await followBuyer(followsDb(), { userId: session.userId, orgId: session.organization?.id ?? null, key: key!, pro: session.hasTradeAccess });
   if (r.status === "limit") back("limit");
   if (r.status === "unavailable" || r.status === "error") back("unavailable");
   await trackEvent(EVENT.FOLLOW_BUYER, { buyer: key!, pro: session.hasTradeAccess }, { userId: session.userId, role: session.profile.primary_role });
@@ -48,7 +48,7 @@ export async function unfollowAction(formData: FormData): Promise<void> {
   const key = parseFollowKey(formData.get("buyer"));
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
-  if (!key || !isServiceConfigured()) redirect(localizePath(FOLLOWING_PATH, lang));
-  const r = await unfollowBuyer(createServiceClient(), { userId: session.userId, key: key!, pro: session.hasTradeAccess });
+  if (!key || (!isVpsLiveCustomerAuth() && !isServiceConfigured())) redirect(localizePath(FOLLOWING_PATH, lang));
+  const r = await unfollowBuyer(followsDb(), { userId: session.userId, key: key!, pro: session.hasTradeAccess });
   redirect(localizePath(`${FOLLOWING_PATH}?${r.status === "unfollowed" ? "removed=1" : "error=1"}`, lang));
 }

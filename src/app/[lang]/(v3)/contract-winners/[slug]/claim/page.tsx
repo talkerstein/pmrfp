@@ -46,13 +46,13 @@ export default async function ClaimWinnerPage({ params, searchParams }: { params
   const [session, live] = await Promise.all([getSession(), getWinnerClaim(slug)]);
   const own = session ? await getOwnClaim(slug) : null;
   const org = session?.organization ?? null;
-  const mine = Boolean(own?.status === "approved" && org && own.organizationId === org.id);
+  const mine = Boolean(org && ((own?.status === "approved" && own.organizationId === org.id) || live?.orgSlug === org.slug));
   const errors = t.errors as Record<string, string>;
   const error = sp.error && errors[sp.error] ? errors[sp.error] : null;
   let no = 0;
 
   let body: React.ReactNode;
-  if (sp.status === "approved" || mine) {
+  if (mine) {
     body = (
       <div style={box} data-claim="approved">
         <p><b>{sp.status === "approved" && org ? fmt(t.approvedNow, { name: winner.name, org: org.name }) : t.mine}</b></p>
@@ -84,7 +84,7 @@ export default async function ClaimWinnerPage({ params, searchParams }: { params
     );
   } else if (!canClaim(org.organization_type)) {
     body = <div style={box} data-claim="wrong-type"><p>{t.wrongType}</p></div>;
-  } else if (own?.status === "pending" || sp.status === "pending") {
+  } else if (own?.status === "pending") {
     body = <div style={box} data-claim="pending"><p>{sp.status === "pending" ? t.pendingNow : t.pending}</p></div>;
   } else {
     body = (

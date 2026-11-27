@@ -515,7 +515,7 @@ vi.mock("@/lib/data/price-benchmarks-load", () => ({
   benchmarkPath: (t: string, p: string) => `/benchmarks/${t}/${p.toLowerCase()}`,
 }));
 vi.mock("@/lib/founding/server", () => ({ cachedLifetimeCount: async () => 10 }));
-vi.mock("@/lib/email/send", () => ({ emailConfigured: () => true, sendLifecycleEmail: (p: unknown) => sendSpy(p) }));
+vi.mock("@/lib/email/send", () => ({ lifecycleEmailConfigured: () => true, sendLifecycleEmail: (p: unknown) => sendSpy(p) }));
 
 type Row = Record<string, unknown>;
 

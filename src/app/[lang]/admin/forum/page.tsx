@@ -3,6 +3,9 @@ import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../../../workers/d1-api/customer-signup";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ModButtons, ThreadForm } from "@/components/forum/forms";
 import { AppointModForm } from "@/components/forum/admin-forms";
@@ -30,6 +33,19 @@ interface QueueItem {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 async function loadQueue(): Promise<{ ready: boolean; items: QueueItem[] }> {
+  if (isVpsLiveCustomerAuth()) {
+    const db = vpsAppDatabase();
+    const rows = await db.prepare(`WITH threads AS (
+      SELECT 'thread' AS type,t.id,t.status,t.title,t.body,a.handle AS author,t.flag_count AS flags,t.created_at AS createdAt
+        FROM forum_threads t JOIN forum_profiles a ON a.user_id=t.author_id
+        WHERE (t.status<>'approved' OR t.flag_count>0) AND ${customerAppAuthority} ORDER BY t.created_at DESC LIMIT 100
+    ), posts AS (
+      SELECT 'post' AS type,p.id,p.status,t.title,p.body,a.handle AS author,p.flag_count AS flags,p.created_at AS createdAt
+        FROM forum_posts p JOIN forum_threads t ON t.id=p.thread_id JOIN forum_profiles a ON a.user_id=p.author_id
+        WHERE (p.status<>'approved' OR p.flag_count>0) AND ${customerAppAuthority} ORDER BY p.created_at DESC LIMIT 100
+    ) SELECT * FROM threads UNION ALL SELECT * FROM posts ORDER BY createdAt DESC`).all<QueueItem>();
+    return { ready: rows.success, items: rows.results };
+  }
   if (!isServiceConfigured()) return { ready: false, items: [] };
   const db = createServiceClient();
   const [threads, posts] = await Promise.all([
@@ -63,7 +79,7 @@ export default async function AdminForumPage({ params }: { params: Promise<objec
       <PageHeader title="Forum" description="Mod queue, community moderators and staff threads." />
       {isDemoMode() && <DemoBanner />}
       {!ready ? (
-        <p className="text-sm text-muted-foreground">The forum tables aren&apos;t there yet. Apply supabase/migrations/20261006000002_forum.sql.</p>
+        <p className="text-sm text-muted-foreground">The forum moderation queue is unavailable.</p>
       ) : (
         <>
           <section>

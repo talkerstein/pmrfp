@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { logNativeTownRecords, nativePostsToExport, nativeRecordBundle } from "@/lib/town-jobs/native-records";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
@@ -27,7 +29,8 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 export async function GET(request: Request) {
   const limited = await checkRateLimit(request, "default");
   if (limited) return rateLimitResponse(limited);
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return NextResponse.json({ error: "Not available" }, { status: 503 });
+  const native = isVpsLiveCustomerAuth();
+  if (!native && (!isSupabaseConfigured() || !isServiceConfigured())) return NextResponse.json({ error: "Not available" }, { status: 503 });
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   const org = session.organization;
@@ -41,18 +44,30 @@ export async function GET(request: Request) {
   const langParam = url.searchParams.get("lang");
   const m = getDictionary(isEnabledLocale(langParam) ? langParam : "en");
 
-  const db = createServiceClient();
-  const posts = await postsToExport(db, org.id, { rfpId, from, to });
+  const db = native ? null : createServiceClient();
+  const posts = db ? await postsToExport(db,org.id,{rfpId,from,to}) : await nativePostsToExport(session.userId,org.id,{rfpId,from,to});
   if (rfpId && !posts.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const bundles = [];
-  for (const p of posts) bundles.push(await recordBundle(db, p, session.userId));
-  const brand = await townBrand(db, org.id);
+  if (db) {
+    for (const post of posts as Awaited<ReturnType<typeof postsToExport>>) bundles.push(await recordBundle(db,post,session.userId));
+  } else {
+    const owned = posts as Awaited<ReturnType<typeof nativePostsToExport>>;
+    for (let i=0;i<owned.length;i+=8) {
+      const chunk = await Promise.all(owned.slice(i,i+8).map(post=>nativeRecordBundle(session.userId,org.id,post)));
+      bundles.push(...chunk.filter((row) => row!==null));
+    }
+    if (rfpId && !bundles.length) return NextResponse.json({error:"Not found"},{status:404});
+  }
+  const brand = db ? await townBrand(db,org.id) : {name:bundles[0]?.post.buyer_name ?? org.name};
   const now = new Date().toISOString();
   const range = rfpId ? (posts[0]?.slug ?? rfpId) : `${from ?? "…"} – ${to ?? "…"}`;
   const files = recordFiles(bundles, recordLabels(m), { town: brand.name ?? org.name, exportedAt: now, exportedBy: session.profile.full_name?.trim() || session.profile.email, range });
   const body = zip(files, new Date());
-  for (const p of posts) {
-    await logTownEvent(db, { rfpId: p.id, organizationId: org.id, buyerKey: p.buyer_key, actorUserId: session.userId, event: "records_exported", detail: { scope: rfpId ? "post" : "range", from, to } });
+  if (db) {
+    for (const p of posts) await logTownEvent(db,{rfpId:p.id,organizationId:org.id,buyerKey:p.buyer_key,actorUserId:session.userId,
+      event:"records_exported",detail:{scope:rfpId ? "post" : "range",from,to}});
+  } else if (bundles.length && !await logNativeTownRecords(session.userId,org.id,bundles.map((b) => b.post.id),{scope:rfpId ? "post" : "range",from,to})) {
+    return NextResponse.json({error:"Could not verify export permissions"},{status:409});
   }
   const name = rfpId ? `records-${posts[0].slug}` : `records-${from ?? "start"}-to-${to ?? now.slice(0, 10)}`;
   return new NextResponse(new Uint8Array(body), {

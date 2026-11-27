@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 import { classifyFloridaVbs, fetchFloridaVbsOpenBids, floridaVbsToRfpInsert } from "@/lib/tenders/florida-vbs";
 import { classifyDelaware, delawareToRfpInsert, fetchDelawareOpenBids } from "@/lib/tenders/delaware";
 import { classifyLaCounty, fetchLaCountyOpenBids, laCountyToRfpInsert } from "@/lib/tenders/la-county";
-import { syncPublicSources, type Candidate, type Source } from "@/lib/tenders/sync";
+import { syncPublicSources, tenderSyncDatabase, type Candidate, type Source } from "@/lib/tenders/sync";
 
 /** Each source gets its own time budget; a slow one fails alone (sync skips it). */
 const SOURCE_BUDGET_MS = 20_000;
@@ -78,9 +76,10 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const db = tenderSyncDatabase();
+  if (!db) return NextResponse.json({ skipped: "no service client" });
 
-  const { status, body } = await syncPublicSources(createServiceClient(), SOURCES, {
+  const { status, body } = await syncPublicSources(db, SOURCES, {
     today: new Date().toISOString().slice(0, 10),
     dry: new URL(request.url).searchParams.get("dry") === "1",
   });

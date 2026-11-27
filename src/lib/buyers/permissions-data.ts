@@ -6,6 +6,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { BUYER_PERMISSIONS_TAG } from "@/lib/supabase/public-cache";
 import { createSingleFlight } from "@/lib/concurrency";
 import { isMissingTableError } from "@/lib/entitlement/trial";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import {
   PERMISSION_METHODS,
   PERMISSION_STATUSES,
@@ -70,6 +73,14 @@ export function fromPermissionRow(r: PermissionRow): BuyerPermission | null {
 
 const FULL_COLUMNS = "buyer_slug,buyer_name,province_code,scope,hosts,status,method,granted_on,contact,reply_quote,notes";
 
+export async function loadD1PermissionRegistry(db: D1Binding): Promise<PermissionRegistry> {
+  const { results, success } = await db.prepare(`SELECT ${FULL_COLUMNS} FROM buyer_permissions ORDER BY buyer_slug LIMIT 2000`)
+    .all<Omit<PermissionRow, "hosts"> & { hosts: string | null }>();
+  if (!success) throw new Error("Buyer source permissions unavailable");
+  return mergePermissions(results.map(row => fromPermissionRow({ ...row, hosts: row.hosts ? JSON.parse(row.hosts) : [] }))
+    .filter((row): row is BuyerPermission => !!row));
+}
+
 /** Seed + every buyer_permissions row (service role). Never throws: on any error, the seed. */
 export async function loadPermissionRegistry(db: Pick<SupabaseClient, "from">): Promise<{ registry: PermissionRegistry; tableMissing: boolean }> {
   try {
@@ -106,14 +117,26 @@ const cachedPublicPermissions = unstable_cache(
   { tags: [BUYER_PERMISSIONS_TAG], revalidate: BUYER_PERMISSIONS_REVALIDATE },
 );
 
+const cachedNativePublicPermissions = unstable_cache(
+  async (): Promise<PermissionRow[]> => singleFlight("native-buyer-permissions", async () => {
+    const rows = await vpsAppDatabase().prepare(`SELECT buyer_slug,scope,status,method,granted_on
+      FROM buyer_permissions ORDER BY buyer_slug LIMIT 2000`).all<PermissionRow>();
+    if (!rows.success) throw new Error("Buyer source permissions unavailable");
+    return rows.results;
+  }),
+  ["native-buyer-permissions-public-v1"],
+  { tags: [BUYER_PERMISSIONS_TAG], revalidate: BUYER_PERMISSIONS_REVALIDATE },
+);
+
 /**
  * The registry for pages, once per request and from the data cache across
  * requests. The seed alone without Supabase or before the migration runs.
  */
 export const getBuyerPermissionSnapshot = cache(async (): Promise<PermissionRegistry> => {
-  if (!isSupabaseConfigured()) return seedRegistry();
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return seedRegistry();
   try {
-    const rows = await cachedPublicPermissions(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+    const rows = native ? await cachedNativePublicPermissions() : await cachedPublicPermissions(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
     return mergePermissions(rows.map(fromPermissionRow).filter((p): p is BuyerPermission => !!p));
   } catch (e) {
     console.warn("[buyer-permissions] snapshot unavailable", e instanceof Error ? e.message : e);

@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getSession, type SessionContext } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import {
+  addNativeCustomEntry, deleteNativeEntry, deleteNativeRoster, findNativeStandardEntry, ownNativeRoster,
+  readNativeEntry, revokeNativeRosterShare, saveNativeEntry, saveNativeRoster,
+} from "./native";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAccountGeo } from "@/lib/visitor-geo.server";
@@ -34,10 +39,9 @@ import {
 import { isMissingTable } from "@/lib/vendor-certs/server";
 
 /**
- * The roster's server actions. Every one checks the session again (server
- * actions are plain POST endpoints) and writes through the PM's own client,
- * so RLS keeps each company to its own buildings. Errors come back as keys
- * the editor translates (roster.editor.errors).
+ * The roster's server actions check the session before passing it to the
+ * company-scoped database operations. The editor translates the returned
+ * error keys.
  */
 
 const DASHBOARD = "/pm-dashboard/roster";
@@ -52,15 +56,15 @@ export interface FormState {
   savedAt?: number;
 }
 
-type Pm = { session: SessionContext; orgId: string; country: RosterCountry };
+type Pm = { session: SessionContext; orgId: string; userId: string; country: RosterCountry };
 
 async function pm(): Promise<Pm | { error: RosterErrorKey }> {
-  if (!isSupabaseConfigured()) return { error: "unavailable" };
+  if (!isVpsLiveCustomerAuth() && !isSupabaseConfigured()) return { error: "unavailable" };
   const session = await getSession();
   if (!session || !ROLES.includes(session.profile.primary_role)) return { error: "signIn" };
   if (!session.organization) return { error: "noOrg" };
   const geo = await getAccountGeo(session).catch(() => null);
-  return { session, orgId: session.organization.id, country: rosterCountry(geo?.country, session.organization) };
+  return { session, orgId: session.organization.id, userId: session.userId, country: rosterCountry(geo?.country, session.organization) };
 }
 
 const isUuid = (v: unknown): v is string => typeof v === "string" && z.uuid().safeParse(v).success;
@@ -85,6 +89,12 @@ export async function createRosterAction(_prev: FormState, formData: FormData): 
   if ("error" in who) return { error: who.error };
   const res = cleanRosterInput(Object.fromEntries(formData.entries()), who.country);
   if (!res.ok) return { error: res.field };
+  if (isVpsLiveCustomerAuth()) {
+    const created = await saveNativeRoster(who, res.value).catch(() => null);
+    if (!created) return { error: "unavailable" };
+    refresh();
+    redirect(localizePath(`${DASHBOARD}/${created.id}`, langOf(formData.get("lang"))));
+  }
   const db = await createClient();
   const { data, error } = await db
     .from("emergency_rosters")
@@ -107,6 +117,12 @@ export async function saveRosterAction(_prev: FormState, formData: FormData): Pr
   if ("error" in who) return { error: who.error };
   const res = cleanRosterInput(Object.fromEntries(formData.entries()), who.country);
   if (!res.ok) return { error: res.field };
+  if (isVpsLiveCustomerAuth()) {
+    const saved = await saveNativeRoster(who, res.value, id).catch(() => null);
+    if (!saved) return { error: "notFound" };
+    refresh(id);
+    return { ok: true, savedAt: Date.now() };
+  }
   const db = await createClient();
   const { data, error } = await db.from("emergency_rosters").update(res.value).eq("id", id).select("id").maybeSingle();
   if (error) return { error: isMissingTable(error) ? "unavailable" : "notFound" };
@@ -119,6 +135,11 @@ export async function deleteRosterAction(id: string): Promise<{ ok?: boolean; er
   if (!isUuid(id)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    if (!await deleteNativeRoster(who, id).catch(() => null)) return { error: "notFound" };
+    refresh();
+    return { ok: true };
+  }
   const db = await createClient();
   const { data, error } = await db.from("emergency_rosters").delete().eq("id", id).select("id").maybeSingle();
   if (error || !data) return { error: "notFound" };
@@ -148,16 +169,18 @@ export async function saveEntryAction(_prev: EntryState, formData: FormData): Pr
   if ("error" in who) return { error: who.error };
   const res = cleanEntryInput(Object.fromEntries(formData.entries()), { custom });
   if (!res.ok) return { error: res.field };
-  const db = await createClient();
+  const db = isVpsLiveCustomerAuth() ? null : await createClient();
 
   let before: EntryRow | null = null;
   if (isUuid(entryId)) {
-    const { data } = await db.from("emergency_roster_entries").select(ENTRY_COLUMNS).eq("id", entryId).eq("roster_id", rosterId).maybeSingle<EntryRow>();
-    if (!data) return { error: "notFound" };
-    before = data;
+    before = db
+      ? (await db.from("emergency_roster_entries").select(ENTRY_COLUMNS).eq("id", entryId).eq("roster_id", rosterId).maybeSingle<EntryRow>()).data
+      : await readNativeEntry(who, entryId).catch(() => null);
+    if (!before || before.roster_id !== rosterId || before.category !== category) return { error: "notFound" };
   } else if (!custom) {
-    const { data } = await db.from("emergency_roster_entries").select(ENTRY_COLUMNS).eq("roster_id", rosterId).eq("category", category).maybeSingle<EntryRow>();
-    before = data ?? null;
+    before = db
+      ? (await db.from("emergency_roster_entries").select(ENTRY_COLUMNS).eq("roster_id", rosterId).eq("category", category).maybeSingle<EntryRow>()).data
+      : await findNativeStandardEntry(who, rosterId, category).catch(() => null);
   } else {
     return { error: "notFound" };
   }
@@ -171,6 +194,12 @@ export async function saveEntryAction(_prev: EntryState, formData: FormData): Pr
     backup_org_id: keep("backup"),
   };
 
+  if (!db) {
+    const data = await saveNativeEntry(who, rosterId, category, before?.id ?? null, row).catch(() => null);
+    if (!data) return { error: "unavailable" };
+    refresh(rosterId);
+    return { ok: true, savedAt: Date.now(), entryId: data.id };
+  }
   if (before) {
     const { data, error } = await db.from("emergency_roster_entries").update(row).eq("id", before.id).select("id").maybeSingle<{ id: string }>();
     if (error) return { error: isMissingTable(error) ? "unavailable" : "notFound" };
@@ -200,8 +229,15 @@ export async function setNotNeededAction(x: { rosterId: string; category: string
   if (!custom && !isStandardCategory(x.category)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
-  const db = await createClient();
   const notNeeded = Boolean(x.notNeeded);
+  if (isVpsLiveCustomerAuth()) {
+    const entryId = isUuid(x.entryId) ? x.entryId : null;
+    const row = await saveNativeEntry(who, x.rosterId, x.category, entryId, { not_needed: notNeeded }).catch(() => null);
+    if (!row) return { error: "notFound" };
+    refresh(x.rosterId);
+    return { ok: true, entryId: row.id };
+  }
+  const db = await createClient();
   const match = isUuid(x.entryId)
     ? db.from("emergency_roster_entries").update({ not_needed: notNeeded }).eq("id", x.entryId).eq("roster_id", x.rosterId)
     : custom
@@ -241,6 +277,12 @@ export async function addCustomRowAction(_prev: EntryState, formData: FormData):
   const res = cleanEntryInput({ custom_label: formData.get("custom_label"), trade_slug: formData.get("trade_slug") }, { custom: true });
   if (!res.ok) return { error: res.field };
   if (res.value.trade_slug && !(await tradeSlugs()).has(res.value.trade_slug)) return { error: "trade" };
+  if (isVpsLiveCustomerAuth()) {
+    const row = await addNativeCustomEntry(who, rosterId, res.value.custom_label, res.value.trade_slug).catch(() => null);
+    if (!row) return { error: "unavailable" };
+    refresh(rosterId);
+    return { ok: true, savedAt: Date.now(), entryId: row.id };
+  }
   const db = await createClient();
   const { roster, error: rErr } = await ownRoster(db, rosterId);
   if (rErr && isMissingTable(rErr)) return { error: "unavailable" };
@@ -265,6 +307,12 @@ export async function deleteEntryAction(entryId: string): Promise<{ ok?: boolean
   if (!isUuid(entryId)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    const removed = await deleteNativeEntry(who, entryId).catch(() => null);
+    if (!removed) return { error: "notFound" };
+    refresh(removed.roster_id);
+    return { ok: true };
+  }
   const db = await createClient();
   const { data, error } = await db.from("emergency_roster_entries").delete().eq("id", entryId).select("roster_id").maybeSingle<{ roster_id: string }>();
   if (error || !data) return { error: "notFound" };
@@ -282,8 +330,9 @@ export async function findVendorsAction(rosterId: string, tradeSlug: string): Pr
   const who = await pm();
   if ("error" in who) return { error: who.error };
   if (!(await tradeSlugs()).has(tradeSlug)) return { error: "trade" };
-  const db = await createClient();
-  const { roster } = await ownRoster(db, rosterId);
+  const roster = isVpsLiveCustomerAuth()
+    ? await ownNativeRoster(who, rosterId).catch(() => null)
+    : (await ownRoster(await createClient(), rosterId)).roster;
   if (!roster) return { error: "notFound" };
   const found = await findDirectoryMatches({ tradeSlug, country: who.country, province: roster.province, city: roster.city }).catch(() => []);
   return { matches: found.map(({ orgId, slug, name, city, province, emergency, verified, phone }) => ({ orgId, slug, name, city, province, emergency, verified, phone })) };
@@ -296,9 +345,16 @@ export async function addDirectoryVendorAction(x: { rosterId: string; category: 
   if (!custom && !isStandardCategory(x.category)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
-  const vendor = await directoryVendor(x.orgId, who.country);
+  const vendor = await directoryVendor(x.orgId, who.country).catch(() => null);
   if (!vendor) return { error: "notFound" };
   const fill = { [`${x.slot}_name`]: vendor.name.slice(0, 160), [`${x.slot}_phone`]: vendor.phone?.slice(0, 40) ?? null, [`${x.slot}_email`]: vendor.email, [`${x.slot}_org_id`]: vendor.orgId };
+  if (isVpsLiveCustomerAuth()) {
+    const entryId = isUuid(x.entryId) ? x.entryId : null;
+    const row = await saveNativeEntry(who, x.rosterId, x.category, entryId, fill).catch(() => null);
+    if (!row) return { error: "notFound" };
+    refresh(x.rosterId);
+    return { ok: true, entryId: row.id };
+  }
   const db = await createClient();
   const match = isUuid(x.entryId)
     ? db.from("emergency_roster_entries").update(fill).eq("id", x.entryId).eq("roster_id", x.rosterId)
@@ -330,8 +386,10 @@ export async function inviteVendorAction(entryId: string, slot: Slot, lang: stri
   if (!isUuid(entryId) || (slot !== "primary" && slot !== "backup")) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
-  const db = await createClient();
-  const { data } = await db.from("emergency_roster_entries").select(`id,roster_id,${slot}_name,${slot}_email`).eq("id", entryId).maybeSingle<Record<string, string | null>>();
+  const data = isVpsLiveCustomerAuth()
+    ? await readNativeEntry(who, entryId).catch(() => null)
+    : (await (await createClient()).from("emergency_roster_entries").select(`id,roster_id,${slot}_name,${slot}_email`)
+      .eq("id", entryId).maybeSingle<Record<string, string | null>>()).data;
   if (!data) return { error: "notFound" };
   const result = await inviteVendor({
     orgId: who.orgId,
@@ -354,8 +412,9 @@ export async function createShareLinkAction(rosterId: string, label: string): Pr
   if (!isUuid(rosterId)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
-  const db = await createClient();
-  const { roster } = await ownRoster(db, rosterId);
+  const roster = isVpsLiveCustomerAuth()
+    ? await ownNativeRoster(who, rosterId).catch(() => null)
+    : (await ownRoster(await createClient(), rosterId)).roster;
   if (!roster) return { error: "notFound" };
   const clean = typeof label === "string" ? label.replace(/\s+/g, " ").trim().slice(0, 80) || null : null;
   const res = await createShareLink({ rosterId, orgId: roster.organization_id, userId: who.session.userId, label: clean });
@@ -369,6 +428,12 @@ export async function revokeShareLinkAction(linkId: string): Promise<{ ok?: bool
   if (!isUuid(linkId)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    const revoked = await revokeNativeRosterShare(who, linkId).catch(() => null);
+    if (!revoked) return { error: "notFound" };
+    refresh(revoked.roster_id);
+    return { ok: true };
+  }
   const db = await createClient();
   const { data, error } = await db
     .from("emergency_roster_links")

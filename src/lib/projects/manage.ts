@@ -5,10 +5,10 @@ import { createReadClient } from "@/lib/supabase/read";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
-import type { ProjectSession } from "./server";
+import { getProjectSession, projectsReady, type ProjectSession } from "./server";
 import { willAutoPublish } from "./publish";
 import { photoLimit } from "./limits";
-import { canonicalizePhotos, pickHero, sanitizePhotos, type ProjectPhoto } from "./photos";
+import { canonicalizePhotos, nativeStoredProjectPhotos, pickHero, sanitizePhotos, type ProjectPhoto } from "./photos";
 import { photosForViewer, syncProjectPhotos } from "./photo-storage";
 import {
   caseStudyInputSchema,
@@ -34,6 +34,11 @@ import {
 import { generateReviewToken } from "./tokens";
 import { isSchemaMissing } from "./compat";
 import { LOCALES } from "@/i18n/config";
+import { UUID, type D1Binding } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { normalizeVpsProjectEdit, vpsEditorPhotoUrl, writeVpsProjectEdit } from "@/lib/d1/vps-project-edit";
+import { vpsProjectActiveMember, vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { createVpsShareLink, revokeVpsShareLink } from "@/lib/d1/vps-project-share";
 
 /**
  * Editing an existing project: the case-study builder's save, the
@@ -51,6 +56,7 @@ const NOT_READY = "Case-study fields are switching on soon. Try again in a littl
 
 /** Has migration 20261009000002 (portfolio) been applied? */
 export async function portfolioReady(): Promise<boolean> {
+  if (vpsProjectUploadsEnabled()) return projectsReady();
   if (!isSupabaseConfigured()) return false;
   try {
     const { error } = await createReadClient().from("case_studies").select("visibility").limit(1);
@@ -105,6 +111,7 @@ interface ProjectRow {
   budget_band: string | null;
   timeline: string | null;
   published_at: string | null;
+  updated_at?: string;
   photos?: unknown;
   hero_url?: string | null;
   visibility?: string | null;
@@ -141,13 +148,36 @@ async function readProjectRow(
   return { row: error ? null : ((data as unknown as ProjectRow | null) ?? null), ready };
 }
 
+async function readVpsProjectRow(db: D1Binding, session: ProjectSession, id: string): Promise<ProjectRow | null> {
+  const org = session.organization.id;
+  const row = await db.prepare(`SELECT c.id,c.organization_id,c.slug,c.status,c.title,c.challenge,c.approach,c.outcome,
+    c.city,c.property_type,c.budget_band,c.timeline,c.published_at,c.updated_at,c.summary,c.photos,c.hero_url,
+    c.visibility,c.client_type,c.scope,c.results,c.started_on,c.completed_on,c.ai_assisted,
+    t.slug AS category_slug,r.slug AS region_slug
+    FROM case_studies c LEFT JOIN trade_categories t ON t.id=c.category_id LEFT JOIN regions r ON r.id=c.region_id
+    WHERE c.id=? AND c.organization_id=? AND ${vpsProjectAuthority} AND ${vpsProjectActiveMember}`)
+    .bind(id, org, org, session.userId).first<Omit<ProjectRow, "ai_assisted"> & {
+      photos: string; results: string; ai_assisted: number; category_slug: string | null; region_slug: string | null;
+    }>();
+  return row ? {
+    ...row, photos: JSON.parse(row.photos), results: JSON.parse(row.results), ai_assisted: row.ai_assisted === 1,
+    trade_categories: row.category_slug ? { slug: row.category_slug } : null,
+    regions: row.region_slug ? { slug: row.region_slug } : null,
+  } : null;
+}
+
 /** Row → builder data, with photos signed for this company's member. */
-async function toEditable(r: ProjectRow, orgId: string): Promise<EditableProject> {
+async function toEditable(r: ProjectRow, orgId: string, native = false): Promise<EditableProject> {
   const sb = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const band = valueBandKey(r.budget_band);
-  const stored = sanitizePhotos(r.photos, sb, orgId, { includePrivate: true });
-  const storedHero = r.hero_url && stored.some((p) => p.url === r.hero_url) ? r.hero_url : (pickHero(stored)?.url ?? null);
-  const { photos, heroUrl } = await photosForViewer(
+  const stored = native ? nativeStoredProjectPhotos(r.photos, r.id, orgId)
+    : sanitizePhotos(r.photos, sb, orgId, { includePrivate: true });
+  const storedHero = (stored.find(p => p.url === r.hero_url || (native && r.hero_url?.endsWith("/" + p.path))) ??
+    pickHero(stored))?.url ?? null;
+  const { photos, heroUrl } = native ? {
+    photos: stored.map(photo => ({ ...photo, url: vpsEditorPhotoUrl(r.id, photo.path) })),
+    heroUrl: storedHero ? vpsEditorPhotoUrl(r.id, stored.find(photo => photo.url === storedHero)!.path) : null,
+  } : await photosForViewer(
     { id: r.id, organizationId: r.organization_id, visibility: r.visibility, status: r.status },
     { kind: "member", organizationId: orgId },
     stored,
@@ -189,7 +219,11 @@ export async function loadMyProject(
   session: ProjectSession,
   id: string,
 ): Promise<{ project: EditableProject | null; ready: boolean }> {
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return { project: null, ready: true };
+  if (!UUID.test(id)) return { project: null, ready: true };
+  if (vpsProjectUploadsEnabled()) {
+    const row = await readVpsProjectRow(vpsAppDatabase(), session, id);
+    return { project: row ? await toEditable(row, session.organization.id, true) : null, ready: true };
+  }
   const { row, ready } = await readProjectRow(await createClient(), id, session.organization.id);
   return { project: row ? await toEditable(row, session.organization.id) : null, ready };
 }
@@ -201,7 +235,8 @@ export type SaveResult =
   | { ok: false; error: string };
 
 export async function saveCaseStudy(session: ProjectSession, input: unknown): Promise<SaveResult> {
-  if (!isServiceConfigured()) return { ok: false, error: "Saving isn't set up here yet." };
+  const native = vpsProjectUploadsEnabled();
+  if (!native && !isServiceConfigured()) return { ok: false, error: "Saving isn't set up here yet." };
   const parsed = caseStudyInputSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the form." };
   const d = parsed.data;
@@ -210,8 +245,10 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
 
   const org = session.organization;
   const paid = session.hasTradeAccess;
-  const db = createServiceClient();
-  const { row: prev, ready } = await readProjectRow(db, d.id, org.id);
+  const nativeDb = native ? vpsAppDatabase() : null;
+  const db = native ? null : createServiceClient();
+  const { row: prev, ready } = nativeDb ? { row: await readVpsProjectRow(nativeDb, session, d.id), ready: true }
+    : await readProjectRow(db!, d.id, org.id);
   if (!prev) return { ok: false, error: "That project isn't on your account." };
   if (!ready) return { ok: false, error: NOT_READY };
   if (!isEditableStatus(prev.status)) return { ok: false, error: "This project was removed. Add it again as a new project." };
@@ -222,10 +259,12 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
   }
 
   const sb = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const prevPhotos = sanitizePhotos(prev.photos, sb, org.id, { includePrivate: true });
+  const prevPhotos = native ? nativeStoredProjectPhotos(prev.photos, prev.id, org.id)
+    : sanitizePhotos(prev.photos, sb, org.id, { includePrivate: true });
   // The builder sends back the (signed) URLs it was shown. Identity is the
   // path; the stored URL is the canonical one we already have for it.
-  const photos = canonicalizePhotos(d.photos, sb, org.id, prevPhotos);
+  const nativePhotos = native ? normalizeVpsProjectEdit(d.photos, prevPhotos, prev.id, org.id) : null;
+  const photos = native ? nativePhotos?.photos : canonicalizePhotos(d.photos, sb, org.id, prevPhotos);
   if (!photos) {
     return { ok: false, error: "One of those photos isn't from this project. Remove it and try again." };
   }
@@ -240,15 +279,19 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
     };
   }
 
-  const [cat, region, propertyType] = await Promise.all([
+  const [cat, region, propertyType] = nativeDb ? await Promise.all([
+    nativeDb.prepare("SELECT id FROM trade_categories WHERE slug=?").bind(d.categorySlug).first().then(data => ({ data })),
+    nativeDb.prepare("SELECT id,province FROM regions WHERE slug=?").bind(d.regionSlug).first().then(data => ({ data })),
+    nativeDb.prepare("SELECT name FROM property_types WHERE slug=?").bind(d.propertyTypeSlug).first().then(data => ({ data })),
+  ]) : await Promise.all([
     d.categorySlug
-      ? db.from("trade_categories").select("id").eq("slug", d.categorySlug).maybeSingle()
+      ? db!.from("trade_categories").select("id").eq("slug", d.categorySlug).maybeSingle()
       : Promise.resolve({ data: null }),
     d.regionSlug
-      ? db.from("regions").select("id,province").eq("slug", d.regionSlug).maybeSingle()
+      ? db!.from("regions").select("id,province").eq("slug", d.regionSlug).maybeSingle()
       : Promise.resolve({ data: null }),
     d.propertyTypeSlug
-      ? db.from("property_types").select("name").eq("slug", d.propertyTypeSlug).maybeSingle()
+      ? db!.from("property_types").select("name").eq("slug", d.propertyTypeSlug).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -305,15 +348,23 @@ export async function saveCaseStudy(session: ProjectSession, input: unknown): Pr
     ai_assisted: Boolean(prev.ai_assisted) || d.aiUsed,
     status,
     published_at: status === "published" ? (prev.published_at ?? new Date().toISOString()) : null,
-    updated_at: new Date().toISOString(),
   };
 
-  const { error } = await db.from("case_studies").update(update).eq("id", prev.id).eq("organization_id", org.id);
+  if (nativeDb) {
+    try {
+      await writeVpsProjectEdit(nativeDb, session, prev.id, prev.updated_at ?? "", update, nativePhotos?.drafts ?? []);
+    } catch {
+      return { ok: false, error: "Couldn't save. Reload the project and try again." };
+    }
+    revalidateProject(prev.slug, org.slug);
+    return { ok: true, slug: prev.slug, status, visibility: d.visibility };
+  }
+  const { error } = await db!.from("case_studies").update({ ...update, updated_at: new Date().toISOString() }).eq("id", prev.id).eq("organization_id", org.id);
   if (error) {
     console.error("[projects/save]", error.message);
     return { ok: false, error: isSchemaMissing(error) ? NOT_READY : "Couldn't save. Try again in a minute." };
   }
-  const sync = await syncProjectPhotos(prev.id, { db });
+  const sync = await syncProjectPhotos(prev.id, { db: db! });
   revalidateProject(prev.slug, org.slug);
   if (!sync.ok) return { ok: false, error: PHOTOS_PENDING };
   return { ok: true, slug: prev.slug, status, visibility: d.visibility };
@@ -342,15 +393,28 @@ export async function setProjectVisibility(
   session: ProjectSession,
   input: { id: unknown; visibility: unknown },
 ): Promise<{ ok: true; visibility: Visibility } | { ok: false; error: string }> {
-  if (!isServiceConfigured()) return { ok: false, error: "Saving isn't set up here yet." };
+  const native = vpsProjectUploadsEnabled();
+  if (!native && !isServiceConfigured()) return { ok: false, error: "Saving isn't set up here yet." };
   const id = typeof input.id === "string" ? input.id : "";
   const v = input.visibility;
-  if (!/^[0-9a-f-]{36}$/i.test(id) || !(VISIBILITIES as readonly unknown[]).includes(v)) {
+  if (!UUID.test(id) || !(VISIBILITIES as readonly unknown[]).includes(v)) {
     return { ok: false, error: "Please check the form." };
   }
   const visibility = v as Visibility;
   if (!canUseVisibility(session.hasTradeAccess, visibility)) {
     return { ok: false, error: "Private projects and private links are part of Trade Pro." };
+  }
+  if (native) {
+    try {
+      const connection = vpsAppDatabase();
+      const row = await readVpsProjectRow(connection, session, id);
+      if (!row || row.status === "archived") return { ok: false, error: "That project isn't on your account." };
+      await writeVpsProjectEdit(connection, session, id, row.updated_at ?? "", { visibility }, []);
+      revalidateProject(row.slug, session.organization.slug);
+      return { ok: true, visibility };
+    } catch {
+      return { ok: false, error: "Couldn't save. Reload the project and try again." };
+    }
   }
   const db = createServiceClient();
   const org = session.organization;
@@ -391,6 +455,15 @@ export interface ShareLink {
 
 /** This company's share links (members only, by RLS). Empty before the migration. */
 export async function listShareLinks(organizationId: string, db?: SupabaseClient): Promise<ShareLink[]> {
+  if (vpsProjectUploadsEnabled()) {
+    const session = await getProjectSession();
+    if (session?.organization.id !== organizationId) return [];
+    const { results } = await vpsAppDatabase().prepare(`SELECT id,case_study_id AS caseStudyId,token,label,
+      created_at AS createdAt,revoked_at AS revokedAt,last_viewed_at AS lastViewedAt,view_count AS viewCount
+      FROM case_study_share_links WHERE organization_id=? AND ${vpsProjectAuthority} AND ${vpsProjectActiveMember}
+      ORDER BY created_at DESC LIMIT 500`).bind(organizationId, organizationId, session.userId).all<ShareLink>();
+    return results;
+  }
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = db ?? (await createClient());
@@ -434,12 +507,23 @@ export async function createShareLink(
   input: { caseStudyId: unknown; label?: unknown },
 ): Promise<ShareLinkResult> {
   if (!session.hasTradeAccess) return { ok: false, error: "Private links are part of Trade Pro.", code: "plan" };
-  if (!isServiceConfigured()) return { ok: false, error: "Private links aren't set up here yet." };
+  const native = vpsProjectUploadsEnabled();
+  if (!native && !isServiceConfigured()) return { ok: false, error: "Private links aren't set up here yet." };
   const id = typeof input.caseStudyId === "string" ? input.caseStudyId : "";
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, error: "Please check the form." };
+  if (!UUID.test(id)) return { ok: false, error: "Please check the form." };
   const label = typeof input.label === "string" ? input.label.trim().slice(0, 80) : "";
   if (await checkRateLimitByIp(`user:${session.userId}`, "default")) {
     return { ok: false, error: "That's a lot of links at once. Wait a minute and try again." };
+  }
+  if (native) {
+    try {
+      const link = await createVpsShareLink(session, id, label);
+      if (!link) return { ok: false, error: "The project must be published and have room for another live link." };
+      revalidatePath("/dashboard/projects");
+      return { ok: true, token: link.token };
+    } catch {
+      return { ok: false, error: "Couldn't create the link. Try again in a minute." };
+    }
   }
 
   const db = createServiceClient();
@@ -489,9 +573,19 @@ export async function revokeShareLink(
   session: ProjectSession,
   input: { id: unknown },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!isServiceConfigured()) return { ok: false, error: "Private links aren't set up here yet." };
+  const native = vpsProjectUploadsEnabled();
+  if (!native && !isServiceConfigured()) return { ok: false, error: "Private links aren't set up here yet." };
   const id = typeof input.id === "string" ? input.id : "";
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, error: "Please check the form." };
+  if (!UUID.test(id)) return { ok: false, error: "Please check the form." };
+  if (native) {
+    try {
+      if (!await revokeVpsShareLink(session, id)) return { ok: false, error: "That link is already off, or isn't yours." };
+      revalidatePath("/dashboard/projects");
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Couldn't turn off the link. Try again in a minute." };
+    }
+  }
   const { data, error } = await createServiceClient()
     .from("case_study_share_links")
     .update({ revoked_at: new Date().toISOString() })

@@ -1,4 +1,6 @@
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import { readVpsBillingAccount } from "@/lib/d1/vps-billing-account";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/status-badge";
@@ -51,7 +53,9 @@ export default async function BillingPage({
   const intent = parsePlanIntent(sp.plan, sp.interval);
 
   let sub: SubRow | null = null;
-  if (!isDemoMode() && session.organization) {
+  if (isVpsLiveCustomerAuth() && session.organization) {
+    sub = await readVpsBillingAccount(session, "subscription");
+  } else if (!isDemoMode() && session.organization) {
     const supabase = await createClient();
     const { data } = await supabase
       .from("subscriptions")

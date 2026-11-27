@@ -5,6 +5,8 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { isMissingTableError } from "@/lib/entitlement/trial";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { METHOD_WORDS, notifyAdminOfSourceRequest } from "@/lib/buyers/admin-notify";
+import { recordVpsBuyerSourceRequest, vpsBuyerReviewCounts } from "@/lib/d1/buyer-sources";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
 
 /**
  * "List your tenders on PMRFP, free" (POST, JSON) from /for-public-buyers.
@@ -19,8 +21,11 @@ import { METHOD_WORDS, notifyAdminOfSourceRequest } from "@/lib/buyers/admin-not
  * form shows a mailto: info@pmrfp.com link instead.
  */
 export async function POST(request: Request) {
+  const native = isVpsLiveCustomerAuth();
   const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== new URL(request.url).host) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (native ? !matchesCustomerOrigin(request) : origin && new URL(origin).host !== new URL(request.url).host) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const limited = await checkRateLimit(request, "buyer-source");
   if (limited) return rateLimitResponse(limited);
 
@@ -35,6 +40,15 @@ export async function POST(request: Request) {
 
   const parsed = buyerSourceRequestSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten() }, { status: 422 });
+  if (native) {
+    try {
+      await recordVpsBuyerSourceRequest(parsed.data, METHOD_WORDS[parsed.data.method] ?? parsed.data.method);
+    } catch {
+      return NextResponse.json({ error: "Could not save your request", fallback: "email" }, { status: 503 });
+    }
+    await notifyAdminOfSourceRequest(vpsBuyerReviewCounts, parsed.data);
+    return NextResponse.json({ ok: true });
+  }
 
   if (!isServiceConfigured()) return NextResponse.json({ error: "Not available", fallback: "email" }, { status: 503 });
   const db = createServiceClient();

@@ -2,6 +2,8 @@ import Link from "@/i18n/link";
 import { BarChart3, Camera, CircleHelp, Gavel } from "lucide-react";
 import type { SessionContext } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import {
   listActivePolls,
   listLatestPhotos,
@@ -23,6 +25,12 @@ async function viewerTrades(session: SessionContext | null): Promise<string[]> {
   const org = session?.organization;
   if (!org) return [];
   try {
+    if (isVpsLiveCustomerAuth()) {
+      const rows = await vpsAppDatabase().prepare(`SELECT c.slug FROM organization_categories m
+        JOIN trade_categories c ON c.id=m.category_id WHERE m.organization_id=? LIMIT 20`)
+        .bind(org.id).all<{ slug: string }>();
+      return rows.results.map((r) => r.slug);
+    }
     const { data } = await (await createClient()).from("organization_categories").select("trade_categories(slug)").eq("organization_id", org.id).limit(20);
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     return ((data ?? []) as any[]).map((r) => (Array.isArray(r.trade_categories) ? r.trade_categories[0] : r.trade_categories)?.slug).filter(Boolean);
@@ -41,7 +49,7 @@ export async function ThisWeek({ session, visitor, categories }: { session: Sess
   const h = t.hub;
   const country = visitor.country;
   const [followIds, trades, bids, photos, polls, top, unanswered] = await Promise.all([
-    session ? viewerFollows(await createClient(), session.userId) : Promise.resolve(new Set<string>()),
+    session ? viewerFollows(session.userId) : Promise.resolve(new Set<string>()),
     viewerTrades(session),
     listRecurringThreads("open-bids", country, 60),
     listLatestPhotos(country, 6),
@@ -97,7 +105,7 @@ export async function ThisWeek({ session, visitor, categories }: { session: Sess
                     <Link href={p.path} className="block overflow-hidden rounded-lg border border-[#E3E4EE]" title={p.threadTitle}>
                       {/* Plain <img>: a hidden post's photo must not live on in the image optimizer's cache. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={publicPhotoUrl(base, p.image.path)} alt={p.threadTitle} width={p.image.w} height={p.image.h} loading="lazy" className="aspect-square w-full object-cover" />
+                      <img src={isVpsLiveCustomerAuth() ? `/api/forum/photos/${p.image.path}` : publicPhotoUrl(base, p.image.path)} alt={p.threadTitle} width={p.image.w} height={p.image.h} loading="lazy" className="aspect-square w-full object-cover" />
                     </Link>
                     {p.author && <span className="mt-0.5 block truncate text-[11px] text-[#4B4F6B]">{fmt(h.by, { name: p.author.displayName })}</span>}
                   </li>

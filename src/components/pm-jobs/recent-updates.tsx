@@ -3,6 +3,9 @@ import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/i18n/server";
 import { formatDate } from "@/i18n/format";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 
 interface NoticeRow {
   id: string;
@@ -23,11 +26,21 @@ export async function RecentUpdates({ userId, types, limit = 6 }: { userId: stri
   const lang = getLang();
   let rows: NoticeRow[] = [];
   try {
-    const supabase = await createClient();
-    let q = supabase.from("notifications").select("id,type,message,link_url,read_at,created_at").eq("user_id", userId);
-    if (types?.length) q = q.in("type", [...types]);
-    const { data } = await q.order("created_at", { ascending: false }).limit(limit);
-    rows = (data as NoticeRow[] | null) ?? [];
+    if (isVpsLiveCustomerAuth()) {
+      const filter = JSON.stringify(types ?? []);
+      const result = await vpsAppDatabase().prepare(`SELECT n.id,n.type,n.message,n.link_url,n.read_at,n.created_at
+        FROM notifications n JOIN users_profile p ON p.id=n.user_id
+        WHERE p.id=? AND p.status='active' AND (json_array_length(?)=0 OR n.type IN (SELECT value FROM json_each(?)))
+        AND ${customerAppAuthority} ORDER BY n.created_at DESC,n.id LIMIT ?`)
+        .bind(userId, filter, filter, limit).all<NoticeRow>();
+      rows = result.results;
+    } else {
+      const supabase = await createClient();
+      let q = supabase.from("notifications").select("id,type,message,link_url,read_at,created_at").eq("user_id", userId);
+      if (types?.length) q = q.in("type", [...types]);
+      const { data } = await q.order("created_at", { ascending: false }).limit(limit);
+      rows = (data as NoticeRow[] | null) ?? [];
+    }
   } catch {
     rows = [];
   }

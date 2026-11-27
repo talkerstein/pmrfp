@@ -20,55 +20,12 @@ import { attachedProjectsFor, type AttachedProject } from "@/lib/projects/attach
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { canPickOn, isOpenResponse, pmSeesTradeContact, tradeContactCard } from "@/lib/pm-jobs/rules";
 import { formatQuote } from "@/lib/pm-jobs/email-copy";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsBidInbox, type BidInboxCompany as OrgInfo, type BidInboxInterest as InterestRow, type BidInboxJob as JobInfo } from "@/lib/d1/vps-bid-inbox";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
   return { title: getDictionary(hasLocale(lang) ? lang : "en").pm.interests.metaTitle };
-}
-
-interface InterestRow {
-  id: string;
-  status: string;
-  message: string | null;
-  relevant_experience: string | null;
-  availability: string | null;
-  created_at: string;
-  contact_revealed: boolean;
-  trade_organization_id: string;
-  submitted_by_user_id: string | null;
-  case_study_ids?: string[] | null;
-  quote_amount?: number | null;
-  quote_kind?: "estimate" | "firm" | null;
-  quote_notes?: string | null;
-  start_date?: string | null;
-  pm_contact_shared?: boolean | null;
-  decision_note?: string | null;
-}
-
-interface OrgInfo {
-  id: string;
-  name: string;
-  slug: string;
-  city: string | null;
-  province: string | null;
-  verified: boolean | null;
-  years_in_business: number | null;
-  insurance_status: string | null;
-  wsib_status: string | null;
-  short_description: string | null;
-  public_contact_visibility: string | null;
-  email: string | null;
-  phone: string | null;
-  website: string | null;
-  profile_status: string | null;
-}
-
-interface JobInfo {
-  id: string;
-  title: string;
-  slug: string;
-  status: string;
-  province: string | null;
 }
 
 const BASE_COLS = "id,status,message,relevant_experience,availability,created_at,contact_revealed,trade_organization_id,submitted_by_user_id";
@@ -96,9 +53,11 @@ export default async function RfpInterestsPage({
   let job: JobInfo | null = null;
   let flowReady = true;
   let attached = new Map<string, AttachedProject[]>();
-  const orgs = new Map<string, OrgInfo>();
-  const people = new Map<string, { full_name: string | null; email: string | null; phone: string | null }>();
-  if (!isDemoMode()) {
+  let orgs = new Map<string, OrgInfo>();
+  let people = new Map<string, { full_name: string | null; email: string | null; phone: string | null }>();
+  if (isVpsLiveCustomerAuth()) {
+    ({ job, interests, attached, orgs, people } = await readVpsBidInbox(session.userId, id));
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     // Read as the poster: row level security returns this job's responses only to its poster (and admins).
     const readInterests = (cols: string) => supabase.from("rfp_interests").select(cols).eq("rfp_id", id).order("created_at", { ascending: false });
@@ -114,7 +73,7 @@ export default async function RfpInterestsPage({
       const legacy = await readInterests(`${BASE_COLS},case_study_ids`);
       ints = (isSchemaMissing(legacy.error) ? (await readInterests(BASE_COLS)).data : legacy.data) as unknown as InterestRow[] | null;
     }
-    interests = (ints ?? []).sort((a, b) => (RANK[a.status] ?? 2) - (RANK[b.status] ?? 2));
+    interests = ints ?? [];
     // Company details and contacts for the responses this poster can read (rows above).
     if (interests.length && isServiceConfigured()) {
       const db = createServiceClient();
@@ -134,6 +93,7 @@ export default async function RfpInterestsPage({
     );
   }
 
+  interests.sort((a, b) => (RANK[a.status] ?? 2) - (RANK[b.status] ?? 2));
   const status = job?.status ?? null;
   const closed = status === "awarded" || status === "closed" || status === "expired" || status === "archived";
   const pickedRow = interests.find((i) => i.status === "picked");
@@ -180,7 +140,7 @@ export default async function RfpInterestsPage({
       {!flowReady && <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{r.schemaMissing}</p>}
       {closed && !anyPicked && status !== "awarded" && interests.length > 0 && <p className="mb-6 text-sm text-muted-foreground">{r.closed}</p>}
 
-      {!isDemoMode() && !anyPicked && (
+      {job && !isDemoMode() && !anyPicked && (
         <div className="mb-6">
           <CloseRfpButton rfpId={id} alreadyClosed={closed} />
         </div>

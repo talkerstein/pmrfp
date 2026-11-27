@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
-import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
@@ -11,7 +11,7 @@ import { loadBuyers } from "@/lib/buyers/load";
 import { BUYERS_PATH, findBuyerPage } from "@/lib/buyers/model";
 import { buyerDisplayName } from "@/lib/towns/claimable";
 import { FREE_FOLLOW_LIMIT, buyerFollowAlertsEnabled, followUsage } from "@/lib/follows/rules";
-import { myFollows, type FollowRow } from "@/lib/follows/server";
+import { followsDb, myFollows, type FollowRow } from "@/lib/follows/server";
 import { unfollowAction } from "@/lib/follows/actions";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -41,7 +41,7 @@ export default async function FollowingPage({ params, searchParams }: { params: 
 
   let rows: FollowRow[] = [];
   let missing = false;
-  if (!isDemoMode() && isServiceConfigured()) ({ rows, missing } = await myFollows(createServiceClient(), session.userId));
+  if (isVpsLiveCustomerAuth() || (!isDemoMode() && isServiceConfigured())) ({ rows, missing } = await myFollows(followsDb(), session.userId));
   const { pages } = rows.length ? await loadBuyers() : { pages: [] };
   const list = rows.map((r) => {
     const [provinceSlug, slug] = r.key.split("/");

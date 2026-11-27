@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { getProjectSessionFromRequest } from "@/lib/projects/server";
+import { matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { getProjectSession, getProjectSessionFromRequest } from "@/lib/projects/server";
 import { polishCaseStudy } from "@/lib/projects/polish";
 
 export const maxDuration = 60;
@@ -25,8 +27,10 @@ export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "project-draft");
   if (limited) return rateLimitResponse(limited);
 
-  const auth = await getProjectSessionFromRequest(request);
-  if (!auth) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
+  const native = vpsProjectUploadsEnabled();
+  if (native && !matchesCustomerOrigin(request)) return NextResponse.json({error:"Invalid origin"},{status:403});
+  const session = native ? await getProjectSession(request) : (await getProjectSessionFromRequest(request))?.session;
+  if (!session) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
 
   let body: z.infer<typeof bodySchema>;
   try {

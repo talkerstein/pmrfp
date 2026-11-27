@@ -1,12 +1,20 @@
 import "server-only";
 import { createSingleFlight } from "@/lib/concurrency";
 import { revalidateTag, unstable_cache } from "next/cache";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { FOUNDING, LIFETIME_SUB_PREFIX, isLifetimeSubscriptionId, lifetimeRow } from "./config";
 
 /** Exact number of lifetime orgs sold. Throws on a DB error so callers can fail closed. */
 export async function countLifetimeOrgs(): Promise<number> {
+  if (isVpsLiveCustomerAuth()) {
+    const row = await vpsAppDatabase().prepare("SELECT count(*) AS sold FROM subscriptions WHERE stripe_subscription_id GLOB 'lifetime_*'")
+      .first<{ sold: number }>();
+    if (!row) throw new Error("Founding availability is unavailable");
+    return row.sold;
+  }
   if (!isServiceConfigured()) return 0;
   const { count, error } = await createServiceClient()
     .from("subscriptions")
@@ -55,7 +63,13 @@ export async function cachedLifetimeCount(): Promise<number | null> {
 }
 
 export async function isOrgLifetime(organizationId: string | null | undefined): Promise<boolean> {
-  if (!organizationId || !isServiceConfigured()) return false;
+  if (!organizationId) return false;
+  if (isVpsLiveCustomerAuth()) {
+    const row = await vpsAppDatabase().prepare("SELECT stripe_subscription_id FROM subscriptions WHERE organization_id=?")
+      .bind(organizationId).first<{ stripe_subscription_id: string | null }>();
+    return isLifetimeSubscriptionId(row?.stripe_subscription_id);
+  }
+  if (!isServiceConfigured()) return false;
   const { data } = await createServiceClient()
     .from("subscriptions")
     .select("stripe_subscription_id")

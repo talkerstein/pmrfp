@@ -123,7 +123,7 @@ export interface DemoVendor {
   propertyTypes: string[];
 }
 
-export const DEMO_VENDORS: DemoVendor[] = [
+export const DEMO_VENDORS: DemoVendor[] = process.env.NEXT_PUBLIC_PMRFP_NO_DEMO_ROWS === "enabled" ? [] : [
   {
     slug: "northline-electrical", name: "Northline Electrical Ltd.", city: "Toronto", province: "Ontario",
     shortDescription: "Commercial & condominium electrical maintenance and service upgrades across the GTA.",
@@ -217,7 +217,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   },
 ];
 
-export const DEMO_SUPPLIERS: DemoVendor[] = [
+export const DEMO_SUPPLIERS: DemoVendor[] = process.env.NEXT_PUBLIC_PMRFP_NO_DEMO_ROWS === "enabled" ? [] : [
   {
     slug: "maple-building-supply", name: "Maple Building Supply Co.", city: "Vaughan", province: "Ontario",
     shortDescription: "Wholesale building products & materials for commercial trades and builders across the GTA.",
@@ -283,7 +283,7 @@ export interface DemoRfp {
   contactVisibility: "public_contact" | "pmrfp_mediated" | "anonymous_until_interest_approved";
 }
 
-export const DEMO_RFPS: DemoRfp[] = [
+export const DEMO_RFPS: DemoRfp[] = process.env.NEXT_PUBLIC_PMRFP_NO_DEMO_ROWS === "enabled" ? [] : [
   {
     slug: "condominium-electrical-maintenance-contract", title: "Condominium Electrical Maintenance Contract",
     summary: "Annual preventive electrical maintenance for a 240-unit condominium tower in downtown Toronto.",
@@ -391,7 +391,7 @@ export interface DemoResource {
   publishedAt: string;
 }
 
-export const DEMO_RESOURCES: DemoResource[] = [
+export const DEMO_RESOURCES: DemoResource[] = process.env.NEXT_PUBLIC_PMRFP_NO_DEMO_ROWS === "enabled" ? [] : [
   {
     slug: "how-commercial-property-rfps-work-in-canada",
     title: "How Commercial Property RFPs Work in Canada",

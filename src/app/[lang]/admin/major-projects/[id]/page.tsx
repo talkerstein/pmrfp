@@ -7,6 +7,10 @@ import { PageHeader } from "@/components/dashboard/stat-card";
 import { reviewMajorProjectAction, updateMajorProjectAction } from "@/lib/major-projects/actions";
 import { MAJOR_PROJECT_CATEGORIES, MAJOR_PROJECT_STATUSES } from "@/lib/major-projects/model";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { UUID } from "@/lib/d1/contracts";
 
 export const metadata: Metadata = { title: "Edit major project · Admin · PMRFP" };
 
@@ -53,13 +57,26 @@ function Field({ label, name, value, area }: { label: string; name: string; valu
 
 export default async function AdminMajorProjectEditPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
   const { id } = await params;
   const sp = await searchParams;
-  if (isDemoMode() || !/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const supabase = await createClient();
-  const { data } = await supabase.from("major_projects").select("*").eq("id", id).maybeSingle();
-  const r = data as Row | null;
+  if (isDemoMode() || !UUID.test(id)) notFound();
+  let r: Row | null = null;
+  if (isVpsLiveCustomerAuth()) {
+    if (admin.profile.status !== "active") notFound();
+    type NativeRow = Omit<Row, "approved" | "est_value_cad" | "sources" | "trades_needed"> & {
+      approved: number; est_value_cad: number | string | null; sources: string | null; trades_needed: string | null;
+    };
+    const data = await vpsAppDatabase().prepare(`SELECT id,slug,source,name,description,category,status,status_date,owner,city,
+      province,est_value_cad,size,timeline,general_contractor,bid_list_url,bid_route,trades_needed,caveats,evidence,
+      review_status,approved,sources FROM major_projects WHERE id=? AND ${activeRequestAdmin}`)
+      .bind(id, admin.userId).first<NativeRow>();
+    if (data) r = { ...data, approved: data.approved === 1, sources: data.sources ? JSON.parse(data.sources) : null,
+      trades_needed: data.trades_needed ? JSON.parse(data.trades_needed) : [],
+      est_value_cad: data.est_value_cad == null ? null : Number(data.est_value_cad) };
+  } else {
+    r = (await (await createClient()).from("major_projects").select("*").eq("id", id).maybeSingle()).data as Row | null;
+  }
   if (!r) notFound();
   const isPublic = r.review_status !== "rejected" && (r.source !== "manual" || r.approved);
 

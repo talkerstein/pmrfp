@@ -1,3 +1,5 @@
+import { listD1Comparisons, readToolRfps } from "@/lib/d1/pm-tools";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { ArrowRight, FileText } from "lucide-react";
@@ -55,10 +57,11 @@ export default async function BidComparisonsPage({ params, searchParams }: { par
     );
   }
 
-  const db = await createClient();
+  const db = isVpsLiveCustomerAuth() ? null : await createClient();
   const [{ ready, rows }, rfps, { rfp }] = await Promise.all([
-    listComparisons(db, session.organization.id),
-    myRfps(db, { userId: session.userId, orgId: session.organization.id }),
+    db ? listComparisons(db, session.organization.id) : listD1Comparisons(session),
+    db ? myRfps(db, { userId: session.userId, orgId: session.organization.id })
+      : readToolRfps({ userId:session.userId, orgId:session.organization.id }, true),
     searchParams,
   ]);
   if (!ready) {

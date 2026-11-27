@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { AdminTable } from "@/components/admin/admin-table";
@@ -60,7 +62,8 @@ export default async function BadgeInstallsPage({ params, searchParams }: { para
   await requireRole(["admin", "super_admin"]);
   const sp = await searchParams;
   const days = sp.days === "7" ? 7 : sp.days === "90" ? 90 : 30;
-  const demo = isDemoMode() || !isServiceConfigured();
+  const native = isVpsLiveCustomerAuth();
+  const demo = !native && (isDemoMode() || !isServiceConfigured());
   const since = daysAgo(days);
 
   let rows: HitRow[] = [];
@@ -68,7 +71,12 @@ export default async function BadgeInstallsPage({ params, searchParams }: { para
   let companies: CompanyBadgeRow[] = [];
   let companiesError: string | null = null;
   if (!demo) ({ rows: companies, error: companiesError } = await listCompanyBadgeStatus());
-  if (!demo) {
+  if (native) {
+    const result = await vpsAppDatabase().prepare(`SELECT day,kind,slug,referrer,hits FROM badge_hits
+      WHERE day>=? ORDER BY day DESC LIMIT 10000`).bind(since).all<HitRow>().catch(() => null);
+    missing = !result?.success;
+    rows = result?.results ?? [];
+  } else if (!demo) {
     const { data, error } = await createServiceClient()
       .from("badge_hits")
       .select("day,kind,slug,referrer,hits")

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { unsubscribeNativeRosterInvite } from "@/lib/roster/native";
 import { verifyRosterInviteUnsubscribe } from "@/lib/roster/unsubscribe";
 
 /**
@@ -12,7 +14,9 @@ import { verifyRosterInviteUnsubscribe } from "@/lib/roster/unsubscribe";
 async function unsubscribe(request: Request): Promise<boolean> {
   const url = new URL(request.url);
   const id = url.searchParams.get("i");
-  if (!verifyRosterInviteUnsubscribe(id, url.searchParams.get("t")) || !id || !isServiceConfigured()) return false;
+  if (!verifyRosterInviteUnsubscribe(id, url.searchParams.get("t")) || !id) return false;
+  if (isVpsLiveCustomerAuth()) return unsubscribeNativeRosterInvite(id).catch(() => false);
+  if (!isServiceConfigured()) return false;
   const db = createServiceClient();
   const { data } = await db.from("emergency_roster_invites").select("email_key").eq("id", id).maybeSingle<{ email_key: string }>();
   const key = data?.email_key?.trim().toLowerCase();

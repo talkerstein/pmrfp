@@ -1,0 +1,18 @@
+{
+  "audit_date": "2026-10-21",
+  "event_triggers": [
+    {"name":"issue_graphql_placeholder","event":"sql_drop","enabled":"O","function":"set_graphql_placeholder"},
+    {"name":"pgrst_ddl_watch","event":"ddl_command_end","enabled":"O","function":"pgrst_ddl_watch"},
+    {"name":"pgrst_drop_watch","event":"sql_drop","enabled":"O","function":"pgrst_drop_watch"},
+    {"name":"issue_pg_cron_access","event":"ddl_command_end","enabled":"O","function":"grant_pg_cron_access"},
+    {"name":"issue_pg_net_access","event":"ddl_command_end","enabled":"O","function":"grant_pg_net_access"},
+    {"name":"issue_pg_graphql_access","event":"ddl_command_end","enabled":"O","function":"grant_pg_graphql_access"},
+    {"name":"ensure_rls","event":"ddl_command_end","enabled":"O","function":"rls_auto_enable"},
+    {"name":"auto_enable_rls_trigger","event":"ddl_command_end","enabled":"O","function":"auto_enable_rls"}
+  ],
+  "storage_inventory": [
+    {"bucket_id":"logos","objects":39,"bytes":10117937},
+    {"bucket_id":"rfp-photos","objects":4,"bytes":35753497}
+  ],
+  "live_extensions":["plpgsql","pg_stat_statements","uuid-ossp","pgcrypto","supabase_vault","pg_trgm"]
+}

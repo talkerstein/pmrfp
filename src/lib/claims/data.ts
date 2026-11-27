@@ -1,5 +1,8 @@
 import { createReadClient } from "@/lib/supabase/read";
 import { createClient } from "@/lib/supabase/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { getSession } from "@/lib/access/access";
+import { getNativeOwnWinnerClaim, getNativeWinnerClaim } from "./native";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 /**
@@ -31,14 +34,14 @@ interface PublicRow {
 }
 
 export async function getWinnerClaim(slug: string): Promise<PublicWinnerClaim | null> {
-  if (!isSupabaseConfigured()) return null;
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return null;
   try {
-    const { data, error } = await createReadClient()
+    const data = native ? await getNativeWinnerClaim(slug) : (await createReadClient()
       .from("winner_claims_public")
       .select("winner_slug,name,org_slug,logo_url,short_description,website,phone,email,city,province,verified,claimed_at")
-      .eq("winner_slug", slug)
-      .maybeSingle<PublicRow>();
-    if (error || !data) return null;
+      .eq("winner_slug", slug).maybeSingle<PublicRow>()).data;
+    if (!data) return null;
     return {
       winnerSlug: data.winner_slug,
       name: data.name,
@@ -50,7 +53,7 @@ export async function getWinnerClaim(slug: string): Promise<PublicWinnerClaim | 
       email: data.email,
       city: data.city,
       province: data.province,
-      verified: data.verified,
+      verified: Boolean(data.verified),
       claimedAt: data.claimed_at,
     };
   } catch {
@@ -71,6 +74,10 @@ export interface OwnClaim {
 
 /** The signed-in person's latest claim on this page (RLS: own rows only). */
 export async function getOwnClaim(slug: string): Promise<OwnClaim | null> {
+  if (isVpsLiveCustomerAuth()) {
+    const session = await getSession();
+    return session ? getNativeOwnWinnerClaim(slug,session.userId).catch(() => null) : null;
+  }
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const { data, error } = await supabase

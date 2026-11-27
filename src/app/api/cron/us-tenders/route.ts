@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 import { classifySam, fetchSamOpenTenders, samToRfpInsert, usStateRegionSlug } from "@/lib/tenders/sam";
 import { classifyNyc, fetchNycSolicitations, nycToRfpInsert } from "@/lib/tenders/nyc";
-import { syncPublicSources, type Source } from "@/lib/tenders/sync";
+import { syncPublicSources, tenderSyncDatabase, type Source } from "@/lib/tenders/sync";
 
 const SOURCES: Source[] = [
   {
@@ -50,9 +48,10 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const db = tenderSyncDatabase();
+  if (!db) return NextResponse.json({ skipped: "no service client" });
 
-  const { status, body } = await syncPublicSources(createServiceClient(), SOURCES, {
+  const { status, body } = await syncPublicSources(db, SOURCES, {
     today: new Date().toISOString().slice(0, 10),
     dry: new URL(request.url).searchParams.get("dry") === "1",
   });

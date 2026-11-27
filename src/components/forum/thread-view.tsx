@@ -13,7 +13,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createReadClient } from "@/lib/supabase/read";
 import { forumReworkReady, getPoll, getThread, isCategoryMod, listPosts, listRelatedThreads, viewerPollState, viewerPostCount, viewerState, type Post, type Thread } from "@/lib/forum/data";
 import { isFrenchForum, tradeForForum } from "@/lib/forum/categories";
-import { sessionCanPost } from "@/lib/forum/eligibility";
+import { sessionCanPostInCurrentBackend } from "@/lib/forum/eligibility";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { isIndexableThread, pageCount } from "@/lib/forum/rules";
 import { orgLevel } from "@/lib/karma/data";
 import { levelSlug } from "@/lib/karma/rules";
@@ -134,13 +137,9 @@ export async function ThreadView({ category, param, page }: { category: string; 
     thread.isAuto && page === 1 ? getTenderContext(thread.id) : Promise.resolve(null),
   ]);
   const viewer = session
-    ? await viewerState(await createClient(), session.userId, thread.id, posts.map((p) => p.id))
+    ? await viewerState(session.userId, thread.id, posts.map((p) => p.id))
     : { rating: null, voted: new Set<string>() };
-  let canPost = false;
-  if (session) {
-    const { data } = await (await createClient()).auth.getUser();
-    canPost = await sessionCanPost(session, data.user);
-  }
+  const canPost = session ? await sessionCanPostInCurrentBackend(session) : false;
   // Votes, ratings, reports and replies all need a verified member.
   const actorId = canPost ? viewerId : null;
   const canAccept = actorId != null && (actorId === thread.author?.userId || isMod);
@@ -148,7 +147,9 @@ export async function ThreadView({ category, param, page }: { category: string; 
   if (page === 1) {
     after(async () => {
       try {
-        await createReadClient().rpc("forum_bump_view", { tid: thread.id });
+        if (isVpsLiveCustomerAuth()) await vpsAppDatabase().prepare(`UPDATE forum_threads SET view_count=view_count+1
+          WHERE id=? AND status='approved' AND ${customerAppAuthority}`).bind(thread.id).run();
+        else await createReadClient().rpc("forum_bump_view", { tid: thread.id });
       } catch {
         /* view counts are best effort */
       }
@@ -171,7 +172,7 @@ export async function ThreadView({ category, param, page }: { category: string; 
   const poll = rework && page === 1 ? await getPoll(thread.id) : null;
   let pollProps: Parameters<typeof PollBlock>[0] | null = null;
   if (poll) {
-    const state = session ? await viewerPollState(await createClient(), session.userId, poll.id) : { votedFor: null, counts: null };
+    const state = session ? await viewerPollState(session.userId, poll.id) : { votedFor: null, counts: null };
     const seen = state.counts && canSeeResults({ voted: state.votedFor != null, closesAt: poll.closesAt });
     const tallied = seen ? tally(poll.options, state.counts!) : null;
     pollProps = {
@@ -186,8 +187,13 @@ export async function ThreadView({ category, param, page }: { category: string; 
   }
   let replyEmails: boolean | null = null;
   if (rework && op && session) {
-    const { data: pref } = await (await createClient()).from("notification_preferences").select("forum_replies,channel_email").eq("user_id", session.userId).maybeSingle<{ forum_replies: string | null; channel_email: boolean | null }>();
-    replyEmails = pref?.channel_email !== false && (pref?.forum_replies ?? "instant") !== "off";
+    type Pref = { forum_replies: string | null; channel_email: boolean | number | null };
+    const pref = isVpsLiveCustomerAuth()
+      ? await vpsAppDatabase().prepare("SELECT forum_replies,channel_email FROM notification_preferences WHERE user_id=?")
+        .bind(session.userId).first<Pref>()
+      : (await (await createClient()).from("notification_preferences").select("forum_replies,channel_email")
+        .eq("user_id", session.userId).maybeSingle<Pref>()).data;
+    replyEmails = pref?.channel_email !== false && pref?.channel_email !== 0 && (pref?.forum_replies ?? "instant") !== "off";
   }
 
   return (

@@ -1,0 +1,79 @@
+name: pmrfp-canonical
+services:
+  pmrfp-canonical-app:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    working_dir: /app
+    entrypoint: ["node", "server.js"]
+    env_file:
+      - /opt/pmrfp/canonical/runtime.env
+      - /opt/pmrfp/stripe-api.pending.env
+      - /opt/pmrfp/stripe-production-writer/catalog.env
+      - /opt/pmrfp/stripe-production-writer/ghl.env
+      - /opt/pmrfp/smtp.env
+    environment:
+      NODE_ENV: production
+      VERCEL_ENV: production
+      PMRFP_SMTP_ENABLED: enabled
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: "0.0.0.0"
+      PORT: "4323"
+      NODE_OPTIONS: "--max-old-space-size=896"
+    volumes:
+      - /opt/pmrfp/canonical/current:/app:ro
+    tmpfs:
+      - /tmp:size=64m,uid=1000,gid=1000,mode=1770
+      - /app/.next/cache:size=128m,uid=1000,gid=1000,mode=0700
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4323/en/sign-in').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 8s
+      start_period: 25s
+      retries: 4
+    labels:
+      traefik.enable: "false"
+    networks: [pmrfp]
+    read_only: true
+    init: true
+    mem_limit: 1400m
+    pids_limit: 160
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: local
+      options: {max-size: 2m, max-file: "2"}
+  apex:
+    image: nginx@sha256:8eb04fe3b385090e9aa02961f77398ad09b6bf33ab07f6669a5bb7acce22c0d3
+    user: "1000:1000"
+    entrypoint: ["nginx", "-g", "daemon off;"]
+    volumes:
+      - /opt/pmrfp/canonical/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /opt/pmrfp/www-redirect/tls:/tls:ro
+      - /opt/pmrfp/canonical/releases/google-auth-vps.oE3jZN/.next/static:/legacy-google/_next/static:ro
+      - /opt/pmrfp/canonical/releases/20261126-public-r2/.next/static:/legacy-r2/_next/static:ro
+    tmpfs:
+      - /tmp:size=64m,uid=1000,gid=1000,mode=1770
+    networks: [pmrfp]
+    read_only: true
+    init: true
+    mem_limit: 128m
+    pids_limit: 48
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: local
+      options: {max-size: 1m, max-file: "2"}
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: pmrfp-vps
+      traefik.tcp.routers.pmrfp-apex.rule: "HostSNI(`pmrfp.com`)"
+      traefik.tcp.routers.pmrfp-apex.entrypoints: websecure
+      traefik.tcp.routers.pmrfp-apex.tls.passthrough: "true"
+      traefik.tcp.services.pmrfp-apex.loadbalancer.server.port: "8443"
+      traefik.tcp.services.pmrfp-apex.loadbalancer.proxyprotocol.version: "2"
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

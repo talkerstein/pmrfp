@@ -1,0 +1,295 @@
+{
+  "date": "2026-11-03",
+  "productionCutover": false,
+  "productionBackend": "supabase",
+  "quotaResetCanary": {
+    "syntheticOnly": true,
+    "durableMetadataWrittenAndReadBack": true,
+    "exactSchemaVerificationWithMetadata": true,
+    "applicationRecordsUnchanged": 3,
+    "metadataRemovedAndOriginalSchemaVerified": true,
+    "sourceWrites": 0
+  },
+  "bootstrapRegistration": {
+    "capturedReceipts": 11,
+    "newAcknowledgements": 0,
+    "dataset": "96913c89ae72fc68ba73cc8bad3d59727ce6480f9927f77f8a5a4ee5e5c8ce2b",
+    "nativeRecordsVerified": 79179,
+    "sourceApplicationWrites": 0,
+    "customerRowsChanged": false,
+    "durableConsumerCheckpoint": true,
+    "acknowledgedReceiptHistory": 11
+  },
+  "incrementalExtraction": {
+    "source_snapshot_sha256": "8cb7b1c5971ca79b51ef3e2f6dea6f72fc7a3fec4d43d9e4fffc1c698ac5e442",
+    "records": 87958,
+    "capturedReceipts": 36943,
+    "transferredRowRecords": 23931,
+    "incrementalTransferBytes": 16497000,
+    "fullVerificationBytes": 57070988,
+    "sameTransactionFullComparison": true,
+    "sourceWrites": 0
+  },
+  "rebuiltCandidate": {
+    "source_snapshot_sha256": "8cb7b1c5971ca79b51ef3e2f6dea6f72fc7a3fec4d43d9e4fffc1c698ac5e442",
+    "rebuilt_snapshot_sha256": "c1be288398e25d57945c736f080067ec6f1aaf2c446b0f50246942997d8daf55",
+    "tables": 109,
+    "records": 87793,
+    "scored_at": "2026-11-03T08:46:33.790138+00:00",
+    "authoritative_fields": "identical",
+    "rebuilt_fields": "approved-policy-only",
+    "cutover_ready": false
+  },
+  "liveIncrementalReplay": "two-manual-cycles-complete-and-acknowledged",
+  "sourceReaderExpiresUtc": "2026-11-05T10:00:00Z",
+  "remaining": [
+    "repeatable operational runner and monitored scheduling",
+    "native Auth replacement and account/profile/session/email flows",
+    "R2 serving gateway, access rules, upload/delete flows and URL remapping",
+    "broader application writes/jobs/billing conversion and end-to-end tests",
+    "final backup/reconciliation, rollback and approved full cutover"
+  ],
+  "schemaAudit": {
+    "date": "2026-11-03",
+    "publicTables": 108,
+    "comparisonWithNovember2AfterCapture": {
+      "columns": true,
+      "constraints": true,
+      "indexes": true,
+      "policies": true,
+      "functions": true,
+      "triggers": true,
+      "event_triggers": true,
+      "views": true,
+      "publications": true
+    },
+    "storageBucketRowsQueried": false,
+    "sourceWrites": 0
+  },
+  "localReplay": {
+    "baseline": "actual native D1 readback",
+    "changes": 23874,
+    "forwardRows": 87793,
+    "reverseRows": 79179,
+    "finalRows": 87793,
+    "expressionDepthLimit": 64,
+    "allFieldsAndFksVerified": true,
+    "nativeDataMutation": false,
+    "sourceCustomerWrites": 0
+  },
+  "nativeReplay": {
+    "forward": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "c1be288398e25d57945c736f080067ec6f1aaf2c446b0f50246942997d8daf55",
+      "tables": 109,
+      "records": 87793,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": false,
+      "changed_records": 23874,
+      "batch_statements": 272,
+      "transport": {
+        "payloads": 263,
+        "transport": "staged-private-payloads",
+        "atomicStatements": 273
+      }
+    },
+    "finalReadback": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "c1be288398e25d57945c736f080067ec6f1aaf2c446b0f50246942997d8daf55",
+      "tables": 109,
+      "records": 87793,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false
+    },
+    "beforeAndAfterBackupsRestored": true,
+    "realDataNativeReverseRepeated": false,
+    "localExactForwardReverseReapply": true,
+    "nativeSyntheticFailureRollbackAndReverse": true,
+    "sourceWrites": 0,
+    "cutoverReady": false
+  },
+  "publicApiParity": {
+    "dataset": "c1be288398e25d57945c736f080067ec6f1aaf2c446b0f50246942997d8daf55",
+    "comparisonBaseline": "captured consistent source snapshot 2026-11-03",
+    "publishedRows": 1794,
+    "boardAllFieldsIdentical": true,
+    "taxonomy": {
+      "trade_categories": {
+        "rows": 45,
+        "allFieldsIdentical": true
+      },
+      "regions": {
+        "rows": 88,
+        "allFieldsIdentical": true
+      },
+      "property_types": {
+        "rows": 21,
+        "allFieldsIdentical": true
+      }
+    },
+    "sourceWrites": 0
+  },
+  "publicPhotos": {
+    "dataset": "c1be288398e25d57945c736f080067ec6f1aaf2c446b0f50246942997d8daf55",
+    "publicRfpsCompared": 1794,
+    "photos": 3,
+    "allPublicPhotoUrlsAndOrderingIdentical": true,
+    "anonymousAuthCalls": 0,
+    "gatewayDenialVerified": true,
+    "writesDenied": true,
+    "sourceWrites": 0
+  },
+  "offlineTestsPassed": 89,
+  "firstIncrementalAcknowledgement": {
+    "capturedReceipts": 36943,
+    "newAcknowledgements": 36943,
+    "dataset": "c1be288398e25d57945c736f080067ec6f1aaf2c446b0f50246942997d8daf55",
+    "nativeRecordsVerified": 87793,
+    "sourceApplicationWrites": 0,
+    "customerRowsChanged": false,
+    "durableConsumerCheckpoint": true,
+    "acknowledgedReceiptHistory": 36954
+  },
+  "secondCycle": {
+    "extraction": {
+      "source_snapshot_sha256": "afc743f6db41844c2aea73824870470f6e327f3930593662befd16c5279fad07",
+      "records": 88031,
+      "capturedReceipts": 329,
+      "transferredRowRecords": 150,
+      "incrementalTransferBytes": 31745,
+      "fullVerificationBytes": 0,
+      "sameTransactionFullComparison": false,
+      "sourceWrites": 0
+    },
+    "rebuiltCandidate": {
+      "source_snapshot_sha256": "afc743f6db41844c2aea73824870470f6e327f3930593662befd16c5279fad07",
+      "rebuilt_snapshot_sha256": "5a87d0f440da02371f32e4974d57366270d0dbcfd3fad0d03a818441ff5e1e1e",
+      "tables": 109,
+      "records": 87866,
+      "scored_at": "2026-11-03T09:08:20.984871+00:00",
+      "authoritative_fields": "identical",
+      "rebuilt_fields": "approved-policy-only",
+      "cutover_ready": false
+    },
+    "nativeReplay": {
+      "forward": {
+        "database": "pmrfp-rebuilt-staging-20261029",
+        "source_sha256": "5a87d0f440da02371f32e4974d57366270d0dbcfd3fad0d03a818441ff5e1e1e",
+        "tables": 109,
+        "records": 87866,
+        "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+        "schema_comparison": "identical",
+        "record_comparison": "all fields identical",
+        "foreign_keys": "valid",
+        "cutover_ready": false,
+        "recovered": false,
+        "reverse": false,
+        "changed_records": 155,
+        "batch_statements": 168,
+        "transport": null
+      },
+      "finalReadback": {
+        "database": "pmrfp-rebuilt-staging-20261029",
+        "source_sha256": "5a87d0f440da02371f32e4974d57366270d0dbcfd3fad0d03a818441ff5e1e1e",
+        "tables": 109,
+        "records": 87866,
+        "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+        "schema_comparison": "identical",
+        "record_comparison": "all fields identical",
+        "foreign_keys": "valid",
+        "cutover_ready": false
+      },
+      "beforeAndAfterBackupsRestored": true,
+      "realDataNativeReverseRepeated": false,
+      "localExactForwardReverseReapply": true,
+      "nativeSyntheticFailureRollbackAndReverse": true,
+      "sourceWrites": 0,
+      "cutoverReady": false
+    },
+    "acknowledgement": {
+      "capturedReceipts": 329,
+      "newAcknowledgements": 329,
+      "dataset": "5a87d0f440da02371f32e4974d57366270d0dbcfd3fad0d03a818441ff5e1e1e",
+      "nativeRecordsVerified": 87866,
+      "sourceApplicationWrites": 0,
+      "customerRowsChanged": false,
+      "durableConsumerCheckpoint": true,
+      "acknowledgedReceiptHistory": 37283
+    },
+    "publicApiParity": {
+      "dataset": "5a87d0f440da02371f32e4974d57366270d0dbcfd3fad0d03a818441ff5e1e1e",
+      "comparisonBaseline": "captured consistent source snapshot 2026-11-03",
+      "publishedRows": 1794,
+      "boardAllFieldsIdentical": true,
+      "taxonomy": {
+        "trade_categories": {
+          "rows": 45,
+          "allFieldsIdentical": true
+        },
+        "regions": {
+          "rows": 88,
+          "allFieldsIdentical": true
+        },
+        "property_types": {
+          "rows": 21,
+          "allFieldsIdentical": true
+        }
+      },
+      "sourceWrites": 0
+    },
+    "publicPhotos": {
+      "dataset": "5a87d0f440da02371f32e4974d57366270d0dbcfd3fad0d03a818441ff5e1e1e",
+      "publicRfpsCompared": 1794,
+      "photos": 3,
+      "allPublicPhotoUrlsAndOrderingIdentical": true,
+      "anonymousAuthCalls": 0,
+      "gatewayDenialVerified": true,
+      "writesDenied": true,
+      "sourceWrites": 0
+    }
+  },
+  "fullSupabaseExitRequested": true,
+  "auth": {
+    "aggregateInventory": "d1/auth-storage-inventory-2026-11-03.json",
+    "syntheticLocalLoginTestsPassed": 5,
+    "exportViewInstalledAfterExplicitApproval": true,
+    "protectedLocalExportRecords": 69,
+    "realPasswordHashesInGit": false,
+    "realCloudflareAuthImport": false,
+    "expiryUnchanged": "2026-11-05T10:00:00Z",
+    "protectedLocalExportChecksumVerified": true
+  },
+  "r2": {
+    "bucket": "pmrfp-storage-migration-20261103",
+    "copiedObjects": 61,
+    "privateObjects": 3,
+    "verifiedBytes": 47617486,
+    "allNativeReadbackChecksumsMatch": true,
+    "managedDevelopmentUrlEnabled": false,
+    "customDomains": 0,
+    "sourceFilesChanged": 0,
+    "applicationStorageCutover": false
+  },
+  "storagePublicBackup": {
+    "publicObjectsDownloaded": 58,
+    "bytes": 46839955,
+    "privateObjectsSkipped": 3,
+    "allFilesChecksummed": true,
+    "sourceWrites": 0
+  },
+  "validation": {
+    "offlineMigrationTestsPassed": 89,
+    "workerContractTestsPassed": 149,
+    "authRehearsalTestsPassed": 5,
+    "typecheck": "passed",
+    "targetedLint": "passed"
+  }
+}

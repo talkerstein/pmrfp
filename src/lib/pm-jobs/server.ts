@@ -1,4 +1,7 @@
 import "server-only";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { inList, readD1, readD1ByIds } from "@/lib/lifecycle/d1";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isEnabledLocale } from "@/i18n/config";
 import { regionName, tradeName } from "@/i18n/terms";
@@ -29,6 +32,8 @@ import { isUsState } from "@/lib/geo";
  */
 
 type Db = SupabaseClient;
+type AlertDb = Db | D1Binding;
+const isD1 = (db: AlertDb): db is D1Binding => "prepare" in db;
 type Row = Record<string, unknown>;
 
 const PAGE = 1000;
@@ -58,10 +63,13 @@ async function inChunks<T>(ids: readonly string[], run: (chunk: string[]) => Pro
 }
 
 /** Each user's language (signup_attribution.lang), English when unknown. */
-export async function recipientLangs(db: Db, userIds: readonly string[]): Promise<Map<string, EmailLang>> {
+export async function recipientLangs(db: AlertDb, userIds: readonly string[]): Promise<Map<string, EmailLang>> {
   const out = new Map<string, EmailLang>();
   if (!userIds.length) return out;
-  const { rows } = await inChunks<{ user_id: string; lang: string | null }>(userIds, (c) => db.from("signup_attribution").select("user_id,lang").in("user_id", c));
+  type Entry = { user_id: string; lang: string | null };
+  const rows = isD1(db)
+    ? await readD1ByIds<Entry>(db, [...userIds], `SELECT user_id,lang FROM signup_attribution WHERE user_id ${inList}`)
+    : (await inChunks<Entry>(userIds, c => db.from("signup_attribution").select("user_id,lang").in("user_id", c))).rows;
   for (const r of rows) if (isEnabledLocale(r.lang)) out.set(r.user_id, r.lang);
   return out;
 }
@@ -89,8 +97,15 @@ export async function freeResponsesUsed(db: Db, orgId: string, now: Date = new D
 }
 
 /** Companies with Trade Pro now: an active/comped Pro or Featured subscription, or a running trial. */
-export async function proOrgIds(db: Db, now: Date = new Date()): Promise<Set<string>> {
+export async function proOrgIds(db: AlertDb, now: Date = new Date()): Promise<Set<string>> {
   const out = new Set<string>();
+  if (isD1(db)) {
+    const rows = await readD1<{ organization_id: string }>(db,
+      `SELECT organization_id FROM subscriptions WHERE status IN ('active','comped') AND tier IN ('pro','featured')
+      UNION SELECT organization_id FROM trade_trials WHERE julianday(started_at)<=julianday(?) AND julianday(ends_at)>julianday(?)`,
+      now.toISOString(), now.toISOString());
+    return new Set(rows.map(row => row.organization_id));
+  }
   const subs = await db.from("subscriptions").select("organization_id,status,tier").in("status", ["active", "comped"]);
   if (subs.error) {
     const legacy = await db.from("subscriptions").select("organization_id").in("status", ["active", "comped"]);
@@ -117,6 +132,7 @@ export interface JobRow {
   posted_by_user_id: string | null;
   posted_by_organization_id: string | null;
   published_at?: string | null;
+  updated_at?: string | null;
   /** Public buyers' jobs (migration 20261021000060): the town's name and the kind of post. */
   buyer_name?: string | null;
   post_kind?: string | null;
@@ -128,7 +144,17 @@ const JOB_COLS =
   "id,title,slug,summary,status,source_type,region_id,city,province,deadline,posted_by_user_id,posted_by_organization_id,published_at, rfp_categories(category_id, trade_categories(name))";
 const TOWN_COLS = "buyer_name,post_kind,official_portal";
 
-export async function loadJob(db: Db, rfpId: string): Promise<JobRow | null> {
+export async function loadJob(db: AlertDb, rfpId: string): Promise<JobRow | null> {
+  if (isD1(db)) {
+    const columns = JOB_COLS.split(", rfp_categories")[0];
+    const [job, cats] = await Promise.all([
+      db.prepare(`SELECT ${columns},${TOWN_COLS},updated_at FROM rfp_posts WHERE id=? AND is_demo=0`)
+        .bind(rfpId).first<Omit<JobRow, "rfp_categories">>(),
+      readD1<{ category_id: string; name: string | null }>(db, `SELECT r.category_id,t.name FROM rfp_categories r
+        LEFT JOIN trade_categories t ON t.id=r.category_id WHERE r.rfp_id=? ORDER BY r.category_id`, rfpId),
+    ]);
+    return job && { ...job, rfp_categories: cats.map(row => ({ category_id: row.category_id, trade_categories: row.name ? { name: row.name } : null })) };
+  }
   const first = await db.from("rfp_posts").select(`${JOB_COLS},${TOWN_COLS}`).eq("id", rfpId).maybeSingle();
   if (!first.error) return (first.data as unknown as JobRow | null) ?? null;
   // Before migration 20261021000060 (no town columns).
@@ -157,9 +183,15 @@ export interface AudienceResult {
  * matching companies, but nobody is skipped for the weekly preference or an
  * earlier job alert, and each company's people come back for the caller.
  */
-export async function loadAlertAudience(db: Db, job: JobRow, opts: { forInvites?: boolean } = {}): Promise<AudienceResult> {
+export async function loadAlertAudience(db: AlertDb, job: JobRow, opts: { forInvites?: boolean } = {}): Promise<AudienceResult> {
   const categoryIds = job.rfp_categories.map((c) => c.category_id);
-  const { data: regionData } = await db.from("regions").select("id,name,slug,parent_id,province,country");
+  const regionData = isD1(db) ? await readD1<RegionRow>(db, "SELECT id,name,slug,parent_id,province,country FROM regions")
+    : (await db.from("regions").select("id,name,slug,parent_id,province,country")).data;
+  function rowsFor<T>(ids: readonly string[], sql: string, legacy: (db: Db, chunk: string[]) =>
+    PromiseLike<{ data: unknown; error: { code?: string; message?: string } | null }>, ...params: string[]) {
+    return isD1(db) ? readD1ByIds<T>(db, [...ids], sql, ...params).then(rows => ({ rows, error: null }))
+      : inChunks<T>(ids, chunk => legacy(db, chunk));
+  }
   const regions = (regionData ?? []) as RegionRow[];
   const byRegion = regionCountryMap(regions);
   const country = listingCountry(job, byRegion);
@@ -168,12 +200,16 @@ export async function loadAlertAudience(db: Db, job: JobRow, opts: { forInvites?
   if (!categoryIds.length) return { job, country, audience: empty, logMissing: false, placeName: null };
 
   // Companies in the job's trades.
-  const { rows: catRows } = await pageAll<{ organization_id: string; category_id: string }>((a, b) =>
-    db.from("organization_categories").select("organization_id,category_id").in("category_id", categoryIds).order("organization_id").range(a, b),
-  );
+  type OrgCategory = { organization_id: string; category_id: string };
+  const catRows = isD1(db) ? await readD1ByIds<OrgCategory>(db, categoryIds,
+    `SELECT organization_id,category_id FROM organization_categories WHERE category_id ${inList}`)
+    : (await pageAll<OrgCategory>((a, b) => db.from("organization_categories").select("organization_id,category_id")
+      .in("category_id", categoryIds).order("organization_id").range(a, b))).rows;
   const candidateIds = [...new Set(catRows.map((r) => r.organization_id))];
-  const { rows: orgRows } = await inChunks<Row>(candidateIds, (c) =>
-    db
+  const { rows: orgRows } = await rowsFor<Row>(candidateIds,
+    `SELECT id,name,organization_type,status,profile_status,is_demo,city,province,country FROM organizations
+      WHERE id ${inList} AND organization_type IN ('trade_company','supplier') AND status='active'
+      AND profile_status='approved' AND is_demo=0`, (db, c) => db
       .from("organizations")
       .select("id,name,organization_type,status,profile_status,is_demo,city,province,country")
       .in("id", c)
@@ -183,9 +219,9 @@ export async function loadAlertAudience(db: Db, job: JobRow, opts: { forInvites?
   );
   const orgIds = orgRows.map((o) => String(o.id));
   const [{ rows: allCats }, { rows: regRows }, { rows: memberRows }] = await Promise.all([
-    inChunks<{ organization_id: string; category_id: string }>(orgIds, (c) => db.from("organization_categories").select("organization_id,category_id").in("organization_id", c)),
-    inChunks<{ organization_id: string; region_id: string }>(orgIds, (c) => db.from("organization_regions").select("organization_id,region_id").in("organization_id", c)),
-    inChunks<{ organization_id: string; user_id: string }>(orgIds, (c) => db.from("organization_members").select("organization_id,user_id").in("organization_id", c)),
+    rowsFor<OrgCategory>(orgIds, `SELECT organization_id,category_id FROM organization_categories WHERE organization_id ${inList}`, (db, c) => db.from("organization_categories").select("organization_id,category_id").in("organization_id", c)),
+    rowsFor<{ organization_id: string; region_id: string }>(orgIds, `SELECT organization_id,region_id FROM organization_regions WHERE organization_id ${inList}`, (db, c) => db.from("organization_regions").select("organization_id,region_id").in("organization_id", c)),
+    rowsFor<{ organization_id: string; user_id: string }>(orgIds, `SELECT organization_id,user_id FROM organization_members WHERE organization_id ${inList}`, (db, c) => db.from("organization_members").select("organization_id,user_id").in("organization_id", c)),
   ]);
   const catsByOrg = groupSet(allCats, "organization_id", "category_id");
   const regionsByOrg = new Map([...groupSet(regRows, "organization_id", "region_id")].map(([k, v]) => [k, [...v]]));
@@ -193,18 +229,21 @@ export async function loadAlertAudience(db: Db, job: JobRow, opts: { forInvites?
   const userIds = [...new Set(memberRows.map((m) => m.user_id))];
 
   const [{ rows: profiles }, { rows: prefs }, sentRes, pro] = await Promise.all([
-    inChunks<{ id: string; email: string | null; status: string | null }>(userIds, (c) => db.from("users_profile").select("id,email,status").in("id", c)),
-    inChunks<{ user_id: string; new_rfps: string | null; channel_email: boolean | null }>(userIds, (c) =>
+    rowsFor<{ id: string; email: string | null; status: string | null }>(userIds, `SELECT id,email,status FROM users_profile u
+      WHERE id ${inList} AND status='active' AND ${allowedMailbox}`, (db, c) => db.from("users_profile").select("id,email,status").in("id", c)),
+    rowsFor<{ user_id: string; new_rfps: string | null; channel_email: boolean | 0 | 1 | null }>(userIds,
+      `SELECT user_id,new_rfps,channel_email FROM notification_preferences WHERE user_id ${inList}`, (db, c) =>
       db.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", c),
     ),
     opts.forInvites
       ? Promise.resolve({ rows: [] as { user_id: string }[], error: null })
-      : inChunks<{ user_id: string }>(userIds, (c) => db.from("lead_alert_log").select("user_id").eq("lead_key", pmJobAlertKey(job.id)).in("user_id", c)),
+      : rowsFor<{ user_id: string }>(userIds, `SELECT user_id FROM lead_alert_log WHERE user_id ${inList} AND lead_key=?`,
+          (db, c) => db.from("lead_alert_log").select("user_id").eq("lead_key", pmJobAlertKey(job.id)).in("user_id", c), pmJobAlertKey(job.id)),
     proOrgIds(db),
   ]);
   const logMissing = Boolean(sentRes.error && isMissingTableError(sentRes.error));
   const users = new Map(profiles.map((p) => [p.id, { email: p.email, status: p.status }]));
-  const optedOut = optedOutUsers(prefs);
+  const optedOut = optedOutUsers(prefs.map(p => ({ ...p, channel_email: p.channel_email === 0 ? false : p.channel_email === 1 ? true : p.channel_email })));
 
   const orgs: AlertOrg[] = orgRows.map((o) => ({
     id: String(o.id),
@@ -248,6 +287,9 @@ export async function loadAlertAudience(db: Db, job: JobRow, opts: { forInvites?
   return { job, country, audience, logMissing, placeName: placeRow?.name ?? null, ...(opts.forInvites ? { people: { usersByOrg, users, optedOut } } : {}) };
 }
 
+const allowedMailbox = `NOT EXISTS (SELECT 1 FROM email_suppressions e WHERE e.email_key=lower(trim(u.email)))
+  AND NOT EXISTS (SELECT 1 FROM digest_subscribers d WHERE d.email_key=lower(trim(u.email)) AND d.status IN ('bounced','unsubscribed'))`;
+
 export type AlertRunState = "sent" | "off" | "dry" | "blocked";
 
 export interface AlertRunResult {
@@ -272,7 +314,7 @@ export interface AlertRunResult {
  * hourly catch-up (cron/pm-job-alerts) finishes the rest.
  */
 export async function runPmJobAlerts(
-  db: Db,
+  db: AlertDb,
   rfpId: string,
   opts: { dry?: boolean; budgetMs?: number; enabled?: boolean; now?: () => number } = {},
 ): Promise<AlertRunResult> {
@@ -309,20 +351,34 @@ export async function runPmJobAlerts(
   for (const r of audience.recipients) {
     if (clock() - started > budget) break;
     // Claim first: only the run that inserts the row sends.
-    const { data: claimed, error } = await db
-      .from("lead_alert_log")
-      .upsert({ user_id: r.userId, lead_key: pmJobAlertKey(job.id) }, { onConflict: "user_id,lead_key", ignoreDuplicates: true })
-      .select("user_id");
-    if (error) {
-      console.error("[pm-job-alerts] log failed", error.message);
-      break;
+    if (isD1(db)) {
+      const claim = await db.prepare(`INSERT INTO lead_alert_log(user_id,lead_key)
+        SELECT u.id,? FROM users_profile u LEFT JOIN notification_preferences p ON p.user_id=u.id
+        WHERE u.id=? AND u.email=? AND u.status='active' AND ${customerAppAuthority} AND ${allowedMailbox}
+          AND coalesce(p.channel_email,1)=1 AND coalesce(p.new_rfps,'daily') NOT IN ('off','weekly')
+          AND EXISTS (SELECT 1 FROM organization_members m JOIN organizations o ON o.id=m.organization_id
+            WHERE m.user_id=u.id AND m.organization_id=? AND o.status='active' AND o.profile_status='approved' AND o.is_demo=0)
+          AND EXISTS (SELECT 1 FROM rfp_posts j WHERE j.id=? AND j.status='published' AND j.is_demo=0
+            AND j.updated_at=?)
+        ON CONFLICT(user_id,lead_key) DO NOTHING RETURNING user_id`)
+        .bind(pmJobAlertKey(job.id), r.userId, r.email, r.orgId, job.id, job.updated_at ?? "").first();
+      if (!claim) continue;
+    } else {
+      const { data: claimed, error } = await db.from("lead_alert_log")
+        .upsert({ user_id: r.userId, lead_key: pmJobAlertKey(job.id) }, { onConflict: "user_id,lead_key", ignoreDuplicates: true })
+        .select("user_id");
+      if (error) {
+        console.error("[pm-job-alerts] log failed", error.message);
+        break;
+      }
+      if (!(claimed as unknown[] | null)?.length) continue;
     }
-    if (!(claimed as unknown[] | null)?.length) continue;
     const lang = langs.get(r.userId) ?? "en";
     const unsub = unsubscribeUrl(siteBase, r.userId)!;
     const place = [job.city, job.province ? regionName(job.province, lang) : null].filter(Boolean).join(", ") || (result.placeName ? regionName(result.placeName, lang) : null);
     await sendPmJobAlert(r.email, {
       lang,
+      smtpOnly: isD1(db),
       title: job.title,
       slug: job.slug,
       trade: tradeNames[0] ? tradeName(tradeNames[0], lang) : null,
@@ -339,13 +395,19 @@ export async function runPmJobAlerts(
         : {}),
     });
     // In-app, and the daily Pro digest skips what this already sent (same type + link).
-    await db.from("notifications").insert({
+    const notice = {
       user_id: r.userId,
       type: "rfp_alert",
       title: "New matching opportunity",
       message: job.title,
       link_url: `/rfps/${job.slug}`,
-    });
+    };
+    if (isD1(db)) {
+      await db.prepare("INSERT INTO notifications(id,user_id,type,title,message,link_url) VALUES (?,?,?,?,?,?)")
+        .bind(crypto.randomUUID(), notice.user_id, notice.type, notice.title, notice.message, notice.link_url).run();
+    } else {
+      await db.from("notifications").insert(notice);
+    }
     sent++;
   }
   return { ...base, state: "sent", sent };

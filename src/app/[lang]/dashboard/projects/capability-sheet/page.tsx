@@ -12,6 +12,8 @@ import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { regionName, tradeName } from "@/i18n/terms";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { vpsProjectActiveMember, vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -22,8 +24,19 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 /** Trades and service area for the sheet header (public rows; empty on any error). */
-async function orgCoverage(orgId: string): Promise<{ trades: string[]; regions: string[] }> {
+async function orgCoverage(orgId: string, userId: string): Promise<{ trades: string[]; regions: string[] }> {
   try {
+    if (vpsProjectUploadsEnabled()) {
+      const db = vpsAppDatabase();
+      const scope = `m.organization_id=? AND ${vpsProjectActiveMember} AND ${vpsProjectAuthority}`;
+      const [trades, regions] = await db.batch<{ name: string }>([
+        db.prepare(`SELECT t.name FROM organization_categories m JOIN trade_categories t ON t.id=m.category_id
+          WHERE ${scope} ORDER BY t.name`).bind(orgId, orgId, userId),
+        db.prepare(`SELECT r.name FROM organization_regions m JOIN regions r ON r.id=m.region_id
+          WHERE ${scope} ORDER BY r.name`).bind(orgId, orgId, userId),
+      ]);
+      return { trades: trades.results.map(row => row.name), regions: regions.results.map(row => row.name) };
+    }
     const db = await createClient();
     const [c, r] = await Promise.all([
       db.from("organization_categories").select("trade_categories(name)").eq("organization_id", orgId),
@@ -70,7 +83,7 @@ export default async function CapabilitySheetPage({
   const demo = isDemoMode();
   const [entries, choices, coverage] = demo
     ? [[], [], { trades: [], regions: [] }]
-    : await Promise.all([listReferenceSheet(org.id, picked), listSheetChoices(org.id), orgCoverage(org.id)]);
+    : await Promise.all([listReferenceSheet(org.id, picked), listSheetChoices(org.id), orgCoverage(org.id, session.userId)]);
   const shown = new Set(entries.map((e) => e.id));
   const base = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
   const host = base.replace(/^https?:\/\//, "");

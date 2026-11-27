@@ -59,9 +59,9 @@ export async function politeStream(url: string, opts: FetchOpts = {}): Promise<R
   const local = localFile(url);
   if (local) {
     const fs = await import("node:fs");
-    if (fs.existsSync(local)) {
+    if (fs.existsSync(/* turbopackIgnore: true */ local)) {
       const { Readable } = await import("node:stream");
-      return Readable.toWeb(fs.createReadStream(local)) as unknown as ReadableStream<Uint8Array>;
+      return Readable.toWeb(fs.createReadStream(/* turbopackIgnore: true */ local)) as unknown as ReadableStream<Uint8Array>;
     }
   }
   const res = await politeFetch(url, opts);
@@ -91,7 +91,9 @@ export async function politeText(url: string, opts: FetchOpts = {}): Promise<str
   const local = localFile(url);
   if (local) {
     const fs = await import("node:fs");
-    if (fs.existsSync(local)) return fs.readFileSync(local, "utf8");
+    if (fs.existsSync(/* turbopackIgnore: true */ local)) {
+      return fs.readFileSync(/* turbopackIgnore: true */ local, "utf8");
+    }
   }
   return (await politeFetch(url, opts)).text();
 }
@@ -104,7 +106,9 @@ export async function politeBytes(url: string, opts: FetchOpts = {}): Promise<Ui
   const local = localFile(url);
   if (local) {
     const fs = await import("node:fs");
-    if (fs.existsSync(local)) return new Uint8Array(fs.readFileSync(local));
+    if (fs.existsSync(/* turbopackIgnore: true */ local)) {
+      return new Uint8Array(fs.readFileSync(/* turbopackIgnore: true */ local));
+    }
   }
   return new Uint8Array(await (await politeFetch(url, opts)).arrayBuffer());
 }

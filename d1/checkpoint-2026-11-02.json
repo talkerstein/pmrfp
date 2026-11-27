@@ -1,0 +1,98 @@
+{
+  "date": "2026-11-02",
+  "productionCutover": false,
+  "productionBackend": "supabase",
+  "sourceChangeCapture": {
+    "installedAfterExplicitApproval": true,
+    "registeredTables": 108,
+    "enabledTriggers": 216,
+    "queueContainsKeysOnly": true,
+    "readerApplicationWriteGrants": 0,
+    "readerExpiry": "2026-11-05T10:00:00Z",
+    "bootstrapReceipts": 11,
+    "acknowledged": true,
+    "newAcknowledgements": 11
+  },
+  "sourceSnapshot": {
+    "records": 79341,
+    "sha256": "9f72854981db07a44bda2fd35095ddff4a1f6989eee4385e58522288cce6de76"
+  },
+  "rebuiltCandidate": {
+    "source_snapshot_sha256": "9f72854981db07a44bda2fd35095ddff4a1f6989eee4385e58522288cce6de76",
+    "rebuilt_snapshot_sha256": "96913c89ae72fc68ba73cc8bad3d59727ce6480f9927f77f8a5a4ee5e5c8ce2b",
+    "tables": 109,
+    "records": 79179,
+    "scored_at": "2026-11-02T04:20:13.889841+00:00",
+    "authoritative_fields": "identical",
+    "rebuilt_fields": "approved-policy-only",
+    "cutover_ready": false
+  },
+  "journal": {
+    "changes": 14272,
+    "nativeStatus": "forward-reverse-reapply-and-restored-backups-passed",
+    "initialBulkFailure": {
+      "httpStatus": 500,
+      "code": 7500,
+      "category": "internal-error",
+      "checkpointUnchanged": true
+    },
+    "readOnlyBeforeImageGuardsPassed": 207,
+    "atomicStatements": 413,
+    "baselineRecords": 71316,
+    "finalRecords": 79179
+  },
+  "stagedTransport": {
+    "offlineTestsPassed": 67,
+    "syntheticNativeFailureRollbackForwardReversePassed": true,
+    "metadataCleanupVerifiedByExactSchemaReadback": true
+  },
+  "remaining": [
+    "native consumer-state canary and registration after quota reset",
+    "first live incremental extraction with same-transaction full-source comparison",
+    "native incremental replay, rollback/reapply, restored backups and ACK",
+    "continuous scheduling and freshness-gated application writes",
+    "broader app conversion, Auth/Storage plan and production cutover approval"
+  ],
+  "publicApiParity": {
+    "publishedRfps": 1795,
+    "categories": 45,
+    "regions": 88,
+    "propertyTypes": 21,
+    "photos": 3,
+    "allProjectedFieldsIdentical": true
+  },
+  "privateDetailFreshness": {
+    "workerVersion": "da41cb6b-fc97-4f5f-a606-1796b34d2a48",
+    "liveSourceMetadata": "id,updated_at",
+    "currentStaleRestoredAndRevokedSessionVerified": true,
+    "testTrialExpiredAgain": true,
+    "sourceCustomerRowsChanged": 0
+  },
+  "validation": {
+    "offlineMigrationTestsPassed": 84,
+    "relevantWorkerTestsPassed": 147,
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "nativeValidationAfterTemporaryPreviewTest": "passed"
+  },
+  "incrementalConsumer": {
+    "implementation": "prepared-and-locally-tested",
+    "offlineTestsPassed": 84,
+    "workerContractTestsPassed": 147,
+    "liveReadOnlySourceGuards": "passed",
+    "durableStateRegistered": false,
+    "nativeControlCanary": "blocked-before-installation-by-daily-write-quota",
+    "liveIncrementalExportAndReplay": "not-run",
+    "productionSchedulerEnabled": false,
+    "retainedSourceAcknowledgements": 11
+  },
+  "blocker": {
+    "provider": "cloudflare-d1",
+    "category": "daily-write-quota",
+    "httpStatus": 400,
+    "code": 7500,
+    "resetUtc": "2026-11-03T00:00:00Z",
+    "resetIndia": "2026-11-03T05:30:00+05:30",
+    "lastVerifiedCopyRetained": true
+  }
+}

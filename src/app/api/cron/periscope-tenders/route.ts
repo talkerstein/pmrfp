@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 import { ENABLED_PERISCOPE_SITES } from "@/lib/tenders/periscope-sites";
 import { periscopeSource } from "@/lib/tenders/periscope-source";
-import { syncPublicSources } from "@/lib/tenders/sync";
+import { syncPublicSources, tenderSyncDatabase } from "@/lib/tenders/sync";
 
 /** The open-bid list is two requests (search page + CSV export). */
 const LIST_BUDGET_MS = 40_000;
@@ -24,14 +22,15 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const db = tenderSyncDatabase();
+  if (!db) return NextResponse.json({ skipped: "no service client" });
 
   // Sites enrich one after another: before enabling a second site, split
   // DETAIL_BUDGET_MS between them (or give it its own route) to stay under 300 s.
   const sources = ENABLED_PERISCOPE_SITES.map((site) =>
     periscopeSource(site, { listSignal: () => AbortSignal.timeout(LIST_BUDGET_MS), detailBudgetMs: DETAIL_BUDGET_MS }),
   );
-  const { status, body } = await syncPublicSources(createServiceClient(), sources, {
+  const { status, body } = await syncPublicSources(db, sources, {
     today: new Date().toISOString().slice(0, 10),
     dry: new URL(request.url).searchParams.get("dry") === "1",
   });

@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getSession, roleHome } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -22,6 +22,12 @@ import { submitBuyerClaim } from "./claims";
 import { notifyAdminOfClaim } from "@/lib/buyers/admin-notify";
 import { changedFields, managedPageSchema, ownLogoUrl, pageUpdateRow, parseBuyerKey, readManagedForm } from "./managed";
 import { BUYER_DASHBOARD_PATH, BUYER_PAGE_EDIT_PATH, PUBLIC_BUYER_ROLE, claimOnboardingHref } from "./paths";
+import { isVpsLiveCustomerAuth, isVpsNativeAccountSignup } from "@/lib/d1/staging-config";
+import { submitVpsBuyerClaim } from "@/lib/d1/vps-buyer-claims";
+import { vpsBuyerReviewCounts } from "@/lib/d1/buyer-sources";
+import { BUYER_PAGES_TAG } from "@/lib/supabase/public-cache";
+import { updateVpsBuyerPage } from "@/lib/d1/vps-buyer-pages";
+import { signUpAction } from "@/lib/auth/actions";
 
 /**
  * The public-buyer flow's server actions: sign-up (a passwordless link),
@@ -46,6 +52,7 @@ const text = (fd: FormData, k: string, max: number) => String(fd.get(k) ?? "").t
 /** Every language's copy of a buyer page (ISR): shows a verification or an edit now. */
 function revalidateBuyerPage(path: string) {
   for (const l of LOCALES) revalidatePath(`/${l}${path}`);
+  if (isVpsLiveCustomerAuth()) revalidateTag(BUYER_PAGES_TAG, { expire: 0 });
 }
 
 /** /sign-up?role=public_buyer: email a sign-in link; the claim rides in auth metadata and `next`. */
@@ -56,6 +63,13 @@ export async function publicBuyerSignUpAction(formData: FormData): Promise<void>
   const back = (q: Record<string, string>): never =>
     redirect(localizePath(`/sign-up?${new URLSearchParams({ role: PUBLIC_BUYER_ROLE, ...(claim ? { claim } : {}), ...q }).toString()}`, lang));
 
+  if (isVpsNativeAccountSignup()) {
+    formData.set("role", PUBLIC_BUYER_ROLE);
+    formData.set("method", "link");
+    formData.set("next", claimOnboardingHref(claim));
+    const response = await signUpAction({}, formData);
+    back(response.success ? { sent: "1" } : { error: "failed" });
+  }
   if (await checkRateLimitByIp(await clientIp(), "auth")) back({ error: "rate" });
   if (String(formData.get("company_website") ?? "")) back({ sent: "1" }); // honeypot: bots see success
   const email = cleanEmail(String(formData.get("email") ?? ""));
@@ -101,7 +115,8 @@ export async function claimBuyerPageAction(formData: FormData): Promise<void> {
   if (formData.get("confirm") !== "on") fail("confirm");
   const fullName = text(formData, "fullName", 120);
   if (!fullName || fullName.length < 2) fail("name");
-  if (!isServiceConfigured()) fail("failed");
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) fail("failed");
   if (await checkRateLimitByIp(await clientIp(), "contact")) fail("rate");
 
   const ctx = await claimContext();
@@ -109,16 +124,16 @@ export async function claimBuyerPageAction(formData: FormData): Promise<void> {
   if (!page) fail("pick");
   const buyer = claimableFrom(page!, ctx.trusted.get(rawKey) ?? []);
 
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user?.email) redirect(localizePath("/sign-in", lang));
+  const user = native ? { email: session.profile.email, email_confirmed_at: true }
+    : (await (await createClient()).auth.getUser()).data.user;
+  const email = user?.email;
+  if (!email) redirect(localizePath("/sign-in", lang));
 
-  const result = await submitBuyerClaim(createServiceClient(), {
+  const input = {
     who: {
       userId: session.userId,
-      email: user.email,
-      emailConfirmed: Boolean(user.email_confirmed_at),
+      email,
+      emailConfirmed: Boolean(user?.email_confirmed_at),
       fullName,
       jobTitle: text(formData, "jobTitle", 120),
       phone: text(formData, "phone", 40),
@@ -127,15 +142,18 @@ export async function claimBuyerPageAction(formData: FormData): Promise<void> {
     buyer,
     owners: ctx.owners,
     now: new Date().toISOString(),
-  });
+  };
+  const result = native
+    ? await submitVpsBuyerClaim(input).catch(() => fail("failed"))
+    : await submitBuyerClaim(createServiceClient(), input);
   if (result.status === "error") fail(result.reason);
-  await notifyAdminOfClaim(createServiceClient(), {
+  await notifyAdminOfClaim(native ? vpsBuyerReviewCounts : createServiceClient(), {
     status: result.status,
     reason: result.status === "pending" ? result.reason : null,
     buyer: { name: buyer.name, key: buyer.key, provinceCode: buyer.provinceCode },
-    who: { email: user.email, fullName, jobTitle: text(formData, "jobTitle", 120) },
+    who: { email, fullName, jobTitle: text(formData, "jobTitle", 120) },
   });
-  await logAudit({
+  if (!native) await logAudit({
     actorUserId: session.userId,
     action: `buyer_claim.${result.status}`,
     entityType: "buyer_claims",
@@ -165,15 +183,23 @@ export async function updateBuyerPageAction(formData: FormData): Promise<void> {
   const org = session.organization;
   if (!org) redirect(localizePath("/onboarding", lang));
   if (org.status !== "active" || org.organization_type !== PUBLIC_BUYER_ROLE) back("error=notVerified");
+  const parsed = managedPageSchema.safeParse(readManagedForm(formData));
+  if (!parsed.success) back(`error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "failed")}`);
+  const now = new Date().toISOString();
+  if (isVpsLiveCustomerAuth()) {
+    const logo = formData.get("logoUrl");
+    const key = await updateVpsBuyerPage(session, parsed.data!, typeof logo === "string" ? logo : null, now)
+      .catch(() => back("error=failed"));
+    if (!key) back("error=notVerified");
+    revalidateBuyerPage(`/buyers/${key}`);
+    back("saved=1");
+  }
   if (!isServiceConfigured()) back("error=failed");
 
   const db = createServiceClient();
   const { data: before } = await db.from("buyer_pages").select("*").eq("organization_id", org.id).maybeSingle<Record<string, unknown> & { buyer_key: string }>();
   if (!before) back("error=notVerified");
 
-  const parsed = managedPageSchema.safeParse(readManagedForm(formData));
-  if (!parsed.success) back(`error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "failed")}`);
-  const now = new Date().toISOString();
   const row = pageUpdateRow(parsed.data!, ownLogoUrl(String(formData.get("logoUrl") ?? ""), process.env.NEXT_PUBLIC_SUPABASE_URL), session.userId, now);
   const { error } = await db.from("buyer_pages").update(row).eq("buyer_key", before!.buyer_key).eq("organization_id", org.id);
   if (error) back("error=failed");
