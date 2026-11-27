@@ -70,7 +70,33 @@ describe("Toronto supplier sitemap = the page's existence + indexing rule", () =
 describe("Toronto supplier lookup: a failed download is an error, never a (cached) 404", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.resetModules();
+  });
+
+  it("restores named supplier pages and sitemap links from D1 when the Toronto feed drops the supplier column", async () => {
+    vi.resetModules();
+    vi.stubEnv("PMRFP_VPS_LIVE_AUTH", "enabled");
+    vi.stubEnv("PMRFP_VPS_D1_TRANSPORT_KEY", "a".repeat(64));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("Document Number,Award\nDOC1,400000"))
+      .mockResolvedValueOnce(Response.json({
+        success: true,
+        result: [{
+          success: true,
+          results: [{ source: "ca-toronto-noncompetitive", source_key: "fixture", board_ref: null,
+            winner_business_name: "Fixture Supplier Inc.", value: "400000.00", award_date: "2025-01-10",
+            title: "Fixture contract", buyer: "City of Toronto" }],
+          meta: {},
+        }],
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getTorontoIndex, getTorontoSupplier } = await import("@/lib/data/toronto-awards");
+    expect(torontoContractSlugsForSitemap(await getTorontoIndex(), 100).map(s => s.slug)).toEqual(["fixture-supplier-inc"]);
+    expect(await getTorontoSupplier("fixture-supplier-inc")).toMatchObject({
+      awards: [{ type: "Non-competitive", amount: 400000 }],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("throws while the CSV can't be fetched, then resolves once it can", async () => {

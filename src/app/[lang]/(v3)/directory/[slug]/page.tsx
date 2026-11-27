@@ -21,13 +21,13 @@ import { SITE } from "@/lib/site";
 import { websiteLink, structuredDataUrl } from "@/lib/links/policy";
 import { WebsiteAnchor } from "@/components/links/website-anchor";
 import { descriptionLength, profileIndexable } from "@/lib/links/indexing";
+import { insuranceText } from "@/lib/organizations/insurance";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
-import { insuranceText } from "@/lib/organizations/insurance";
 
 // The D1 transport and the company's current visibility need runtime data.
 export const dynamic = "force-dynamic";

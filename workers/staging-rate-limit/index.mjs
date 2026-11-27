@@ -1,18 +1,23 @@
 import { DurableObject } from "cloudflare:workers";
 import { gatewayMatches } from "../../scripts/d1-auth/private-gateway.mjs";
 
-const windowMs = 60_000;
-const limits = { "auth-ip": 10, "auth-account": 5, "api-read": 120, "api-write": 30 };
+const minute = 60_000;
+const limits = {
+  "auth-ip": [10, minute], "auth-account": [5, minute], "api-read": [120, minute], "api-write": [30, minute],
+  referral: [3, 10 * minute], "rfp-email": [3, 10 * minute], "form-recipient": [3, 1440 * minute],
+};
 const noStore = { "cache-control": "no-store" };
 
 export class StagingRateLimit extends DurableObject {
   async consume(bucket) {
+    const [limit, windowMs] = limits[bucket];
     const now = Date.now();
     const storage = this.ctx.storage;
     const recent = (storage.kv.get("attempts") ?? []).filter(time => time > now - windowMs);
-    if (recent.length >= limits[bucket]) return Math.max(1, Math.ceil((recent[0] + windowMs - now) / 1000));
+    if (recent.length >= limit) return Math.max(1, Math.ceil((recent[0] + windowMs - now) / 1000));
     recent.push(now);
     storage.kv.put("attempts", recent);
+    storage.kv.put("expires", now + windowMs);
     await storage.setAlarm(now + windowMs);
     return 0;
   }
@@ -20,7 +25,7 @@ export class StagingRateLimit extends DurableObject {
   async alarm() {
     const storage = this.ctx.storage;
     const attempts = storage.kv.get("attempts") ?? [];
-    const expires = (attempts.at(-1) ?? 0) + windowMs;
+    const expires = storage.kv.get("expires") ?? (attempts.at(-1) ?? 0) + minute;
     if (expires > Date.now()) await storage.setAlarm(expires);
     else await storage.deleteAll();
   }

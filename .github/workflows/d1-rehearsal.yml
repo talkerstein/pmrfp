@@ -62,6 +62,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm ci --prefix scripts/d1-auth --ignore-scripts
       - name: Test API authorization, synthetic writes, public projections and rebuild preservation
         run: npx vitest run test/d1-api test/unit/karma-rules.test.ts test/unit/rfp-read-optimization.test.ts
       - run: node --test workers/storage-preview/worker.test.mjs

@@ -46,6 +46,7 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
       fullDescription: org.full_description ?? undefined,
       yearsInBusiness: org.years_in_business,
       employeeCountRange: org.employee_count_range ?? undefined,
+      insuranceStatus: org.insurance_status ?? undefined,
       wsibStatus: org.wsib_status ?? undefined,
       emergencyService: org.emergency_service,
       publicContactVisibility: org.public_contact_visibility ?? undefined,
@@ -61,16 +62,14 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
     selectedRegions = selections.regions;
     selectedPropertyTypes = selections.propertyTypes;
     nativePaid = selections.paid;
+    defaults.insurancePolicyNumber = selections.insurancePolicyNumber;
   } else if (!isDemoMode() && org) {
     const supabase = await createClient();
-    const [cats, regs, props, policy] = await Promise.all([
+    const [cats, regs, props] = await Promise.all([
       supabase.from("organization_categories").select("trade_categories(slug)").eq("organization_id", org.id),
       supabase.from("organization_regions").select("regions(slug)").eq("organization_id", org.id),
       supabase.from("organization_property_types").select("property_types(slug)").eq("organization_id", org.id),
-      supabase.from("organization_insurance_policies").select("policy_number").eq("organization_id", org.id).maybeSingle(),
     ]);
-    defaults.insurancePolicyNumber = policy.data?.policy_number ?? undefined;
-    if (!policy.data && org.insurance_status) defaults.insuranceLine = org.insurance_status;
     selectedCategories = slugs(cats.data, "trade_categories");
     selectedRegions = slugs(regs.data, "regions");
     selectedPropertyTypes = slugs(props.data, "property_types");

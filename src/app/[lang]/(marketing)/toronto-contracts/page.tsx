@@ -7,15 +7,15 @@ import { JsonLd, breadcrumbSchema, itemListSchema } from "@/lib/seo/jsonld";
 import { getTorontoIndexSafe, torontoContractSlugsForSitemap } from "@/lib/data/toronto-awards";
 import { compactDollars } from "@/lib/data/fomo";
 
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 /** Suppliers listed on the hub; the rest stay reachable from the sitemap and search. */
 const LIST_LIMIT = 200;
 
 export const metadata: Metadata = {
-  title: "City of Toronto contract awards: who wins (updated daily)",
+  title: "City of Toronto contract awards: who wins",
   description:
-    "Every City of Toronto awarded contract since 2012 from TOBids open data, grouped by supplier: totals, divisions and award descriptions. See who wins Toronto's construction, goods and professional-services work.",
+    "City of Toronto contract awards grouped by supplier. Browse published amounts, award dates and descriptions from Toronto Open Data.",
   alternates: { canonical: "/toronto-contracts" },
 };
 
@@ -51,7 +51,7 @@ export default async function TorontoContractsPage() {
             Who wins City of Toronto contracts
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-indigo-100/75">
-            Every award the City has published through TOBids since 2012, grouped by supplier. Spelling variants
+            Published City of Toronto award records grouped by supplier. Coverage depends on the supplier information available in the City’s public data. Spelling variants
             (&ldquo;Ltd.&rdquo; vs &ldquo;Limited&rdquo;, capitals) are merged so each company&rsquo;s record is in one place.
           </p>
           <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-6">

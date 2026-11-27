@@ -4,6 +4,8 @@ The GitHub default branch drives the [Hostinger deployment workflow](../../.gith
 Open a pull request against that branch and merge it after review. GitHub
 Actions runs the tests, builds the Linux standalone app, and uploads the release
 to the VPS. The same workflow can be rerun from the Actions tab.
+For local development, use Node 24, run `npm ci` at the repository root, then
+run `npm ci --prefix scripts/d1-auth --ignore-scripts` for the D1 auth package.
 
 On the VPS, a dedicated SSH key can only invoke the installed deployment
 script. The script confirms that the requested revision is still the default

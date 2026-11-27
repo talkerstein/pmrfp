@@ -2,7 +2,7 @@ import { isHostingerCloudflareStaging, isVpsLiveCustomerAuth } from "./staging-c
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
 
-type Bucket = "auth-ip" | "auth-account" | "api-read" | "api-write";
+type Bucket = "auth-ip" | "auth-account" | "api-read" | "api-write" | "referral" | "rfp-email" | "form-recipient";
 type Decision = { status: 204 } | { status: 429; retry: number } | { status: 503 };
 
 export function stagingClientIp(headers: Headers, production = isVpsLiveCustomerAuth()): string | null {
@@ -29,7 +29,8 @@ export async function checkStagingRateLimit(bucket: Bucket, identity: string | n
     });
     if (response.status === 204) return { status: 204 };
     const retry = Number(response.headers.get("retry-after"));
-    if (response.status === 429 && Number.isInteger(retry) && retry >= 1 && retry <= 60) return { status: 429, retry };
+    const maxRetry = bucket === "form-recipient" ? 86_400 : bucket === "referral" || bucket === "rfp-email" ? 600 : 60;
+    if (response.status === 429 && Number.isInteger(retry) && retry >= 1 && retry <= maxRetry) return { status: 429, retry };
   } catch {
     // Staging auth and API requests are held when their shared limiter is unavailable.
   }

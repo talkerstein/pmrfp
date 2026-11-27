@@ -36,7 +36,6 @@ import type { ActionState } from "@/lib/auth/actions";
 import { getDictionary } from "@/i18n/dictionaries";
 import { logAudit } from "@/lib/audit";
 import { EVENT, trackEvent } from "@/lib/analytics";
-import { nextInsuranceStatus } from "@/lib/organizations/insurance";
 import { profileStatusPatch, reviewChanges } from "@/lib/organizations/profile-review";
 import { screenOrganization, recordOrgRisk } from "@/lib/spam/server";
 import { purgeOutCache } from "@/lib/links/data";
@@ -118,8 +117,9 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
     fullDescription: formData.get("fullDescription") ?? "",
     yearsInBusiness: formData.get("yearsInBusiness") || undefined,
     employeeCountRange: formData.get("employeeCountRange") ?? "",
-    insurancePolicyNumber: formData.get("insurancePolicyNumber") ?? "",
-    removeInsuranceLine: formData.get("removeInsuranceLine") === "on",
+    insuranceStatus: formData.get("insuranceStatus") ?? "",
+    insurancePolicyNumber: native ? formData.get("insurancePolicyNumber") ?? undefined : undefined,
+    removeInsuranceLine: native && formData.get("removeInsuranceLine") === "on",
     wsibStatus: formData.get("wsibStatus") ?? "",
     emergencyService: formData.get("emergencyService") === "on",
     publicContactVisibility: (formData.get("publicContactVisibility") as string) ?? "request_intro",
@@ -131,15 +131,10 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   const d = parsed.data;
 
   const orgId = session.organization.id;
+  const score = completion(d, categories.length, regions.length);
   if (native) {
-    // The native database has no table for the private policy number yet, so
-    // the form hides the insurance field there and a save leaves the public
-    // line exactly as it is stored.
-    const insuranceStatus = session.organization.insurance_status;
-    const score = completion({ ...d, insuranceStatus }, categories.length, regions.length);
     try {
-      const result = await updateVpsCompanyProfile(session, { ...d, insuranceStatus },
-        formData.get("logoUrl")?.toString().trim() ?? null, score);
+      const result = await updateVpsCompanyProfile(session, d, formData.get("logoUrl")?.toString().trim() ?? null, score);
       purgeOutCache();
       revalidatePath("/dashboard/company");
       if (result.rejected) {
@@ -155,33 +150,6 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
     }
   }
   const supabase = await createClient();
-
-  // The number stays private; the public profile only says "Insured". Saved
-  // first so the profile never claims a policy we failed to store.
-  const policyNumber = d.insurancePolicyNumber ?? "";
-  const { data: policy } = await supabase
-    .from("organization_insurance_policies")
-    .select("policy_number")
-    .eq("organization_id", orgId)
-    .maybeSingle();
-  if (policyNumber) {
-    // Not an upsert: members may only update policy_number, and an upsert also writes organization_id.
-    const policies = supabase.from("organization_insurance_policies");
-    const { error } = policy
-      ? await policies.update({ policy_number: policyNumber }).eq("organization_id", orgId)
-      : await policies.insert({ organization_id: orgId, policy_number: policyNumber });
-    if (error) return { error: t.saveFailed };
-  } else if (policy) {
-    const { error } = await supabase.from("organization_insurance_policies").delete().eq("organization_id", orgId);
-    if (error) return { error: t.saveFailed };
-  }
-  const insuranceStatus = nextInsuranceStatus({
-    policyNumber,
-    hadPolicy: Boolean(policy),
-    removeLine: d.removeInsuranceLine ?? false,
-    current: session.organization.insurance_status,
-  });
-  const score = completion({ ...d, insuranceStatus }, categories.length, regions.length);
 
   // Validate the logoUrl points at our own Supabase storage logos bucket. If it
   // doesn't (including empty/cleared), set logo_url to null. Prevents URL
@@ -226,7 +194,7 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
     full_description: d.fullDescription || null,
     years_in_business: d.yearsInBusiness ?? null,
     employee_count_range: d.employeeCountRange || null,
-    insurance_status: insuranceStatus,
+    insurance_status: d.insuranceStatus || null,
     wsib_status: d.wsibStatus || null,
     emergency_service: d.emergencyService ?? false,
     public_contact_visibility: d.publicContactVisibility,

@@ -3,6 +3,7 @@ import { websiteDomain } from "../dedupe/company";
 import { escapeLike } from "../dedupe/email";
 import { isUsState } from "../geo";
 import { isInternalEmail } from "../lifecycle/rescue";
+import { INSURED } from "../organizations/insurance";
 import { parseReviewChanges, profileStatusPatch, reviewChanges, type ReviewField } from "../organizations/profile-review";
 import type { CompanyProfileInput } from "../validations";
 import { loadListingRisk } from "../../../workers/d1-api/customer-onboarding";
@@ -24,30 +25,31 @@ type Identity = { userId: string; organization: { id: string } | null };
 type Company = Record<ReviewField, string | null> & {
   id: string; country: string; account_email: string; updated_at: string; profile_status: string; link_trusted: number;
   review_changes: string | null; review_flagged_at: string | null; risk_flagged: number;
+  insurance_status: string | null; has_policy: number;
 };
 
 export async function readVpsCompanySelections(session: Identity, db: D1Binding = vpsAppDatabase()) {
   const id = session.organization?.id;
-  if (!id) return { categories: [], regions: [], propertyTypes: [], paid: false };
-  const results = await db.batch<{ slug?: string; paid?: number }>([
+  if (!id) return { categories: [], regions: [], propertyTypes: [], paid: false, insurancePolicyNumber: undefined };
+  const results = await db.batch<{ slug?: string; paid?: number; policy_number?: string }>([
     ...taxonomies.map(({ table, join, column }) => db.prepare(`SELECT t.slug FROM ${join} j
       JOIN ${table} t ON t.id=j.${column} JOIN organizations o ON o.id=j.organization_id
       WHERE o.id=? AND ${eligible} AND ${customerAppAuthority}`).bind(id, session.userId)),
-    db.prepare(`SELECT EXISTS (SELECT 1 FROM subscriptions s WHERE s.organization_id=o.id AND s.status IN ('active','comped')) AS paid
+    db.prepare(`SELECT EXISTS (SELECT 1 FROM subscriptions s WHERE s.organization_id=o.id AND s.status IN ('active','comped')) AS paid,
+      (SELECT policy_number FROM _organization_insurance_policies WHERE organization_id=o.id) AS policy_number
       FROM organizations o WHERE o.id=? AND ${eligible} AND ${customerAppAuthority}`).bind(id, session.userId),
   ]);
   if (results.length !== 4 || results.some(row => !row.success) || !results[3].results[0]) {
     throw new D1ApiError(503, "company_profile_unavailable");
   }
   const slugs = (index: number) => results[index].results.flatMap(row => row.slug ? [row.slug] : []);
-  return { categories: slugs(0), regions: slugs(1), propertyTypes: slugs(2), paid: results[3].results[0].paid === 1 };
+  const company = results[3].results[0];
+  return { categories: slugs(0), regions: slugs(1), propertyTypes: slugs(2), paid: company.paid === 1,
+    insurancePolicyNumber: company.policy_number ?? undefined };
 }
 
-// insuranceStatus is the public line to store. The form no longer sends one (it
-// sends a private policy number this database cannot hold yet), so the caller passes the stored line back.
 export async function updateVpsCompanyProfile(session: Pick<SessionContext, "userId" | "organization">,
-  data: CompanyProfileInput & { insuranceStatus?: string | null }, logo: string | null, completion: number,
-  db: D1Binding = vpsAppDatabase()) {
+  data: CompanyProfileInput, logo: string | null, completion: number, db: D1Binding = vpsAppDatabase()) {
   const id = session.organization?.id;
   if (!id || data.website && !/^https?:\/\//i.test(data.website)) throw new D1ApiError(400, "invalid_company_profile");
   const selections = taxonomies.map(({ field }) => [...new Set(data[field] ?? [])]);
@@ -55,7 +57,8 @@ export async function updateVpsCompanyProfile(session: Pick<SessionContext, "use
     throw new D1ApiError(400, "invalid_company_taxonomy");
   }
   const before = await db.prepare(`SELECT o.id,o.name,o.website,o.email,o.logo_url,o.short_description,o.full_description,
-    o.country,o.updated_at,o.profile_status,o.link_trusted,o.review_changes,o.review_flagged_at,o.risk_flagged,p.email AS account_email
+    o.country,o.updated_at,o.profile_status,o.link_trusted,o.review_changes,o.review_flagged_at,o.risk_flagged,p.email AS account_email,
+    o.insurance_status,EXISTS(SELECT 1 FROM _organization_insurance_policies WHERE organization_id=o.id) AS has_policy
     FROM organizations o CROSS JOIN users_profile p WHERE o.id=? AND p.id=? AND ${eligible} AND ${customerAppAuthority}`)
     .bind(id, session.userId, session.userId).first<Company>();
   if (!before) throw new D1ApiError(403, "company_edit_unavailable");
@@ -97,6 +100,12 @@ export async function updateVpsCompanyProfile(session: Pick<SessionContext, "use
   const reviewChanged = flagged !== previousReview;
   const status = risk?.reject ? "rejected" : reviewedStatus;
   const newWebsite = websiteDomain(before.website) !== site;
+  const policyNumber = data.insurancePolicyNumber;
+  let publicInsuranceStatus = before.insurance_status;
+  if (policyNumber !== undefined) {
+    if (policyNumber) publicInsuranceStatus = INSURED;
+    else if (before.has_policy === 1 || data.removeInsuranceLine) publicInsuranceStatus = null;
+  }
 
   const writes = [
     db.prepare(`SELECT CASE WHEN ${customerAppAuthority} AND EXISTS (SELECT 1 FROM organizations o
@@ -124,11 +133,17 @@ export async function updateVpsCompanyProfile(session: Pick<SessionContext, "use
       updated_at=? WHERE id=?`).bind(patch.name, patch.website, patch.email, patch.logo_url, patch.short_description,
       patch.full_description, data.phone || null, data.addressLine1 || null, data.city || null, data.province || null,
       country, data.postalCode || null, data.yearsInBusiness ?? null, data.employeeCountRange || null,
-      data.insuranceStatus || null, data.wsibStatus || null, Number(data.emergencyService ?? false), data.publicContactVisibility,
+      publicInsuranceStatus, data.wsibStatus || null, Number(data.emergencyService ?? false), data.publicContactVisibility,
       completion, status, reviewChanged ? flagged : before.review_changes,
       before.review_flagged_at ?? (reviewChanged ? timestamp : null),
       risk ? Number(risk.hold) : before.risk_flagged, Number(newWebsite), Number(newWebsite), timestamp, id),
   ];
+  if (policyNumber) {
+    writes.push(db.prepare(`INSERT INTO _organization_insurance_policies(organization_id,policy_number) VALUES(?,?)
+      ON CONFLICT(organization_id) DO UPDATE SET policy_number=excluded.policy_number`).bind(id, policyNumber));
+  } else if (policyNumber === "" && before.has_policy === 1) {
+    writes.push(db.prepare("DELETE FROM _organization_insurance_policies WHERE organization_id=?").bind(id));
+  }
   if (risk?.hold) {
     writes.push(db.prepare(`INSERT INTO organization_risk(organization_id,score,reasons,held,blocked,source,evaluated_at)
       VALUES(?,?,?,?,?,'profile_edit',?) ON CONFLICT(organization_id) DO UPDATE SET score=excluded.score,

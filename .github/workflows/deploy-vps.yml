@@ -25,12 +25,17 @@ jobs:
         with:
           node-version: 24.22.3
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            scripts/d1-auth/package-lock.json
       - run: npm ci
+      - run: npm ci --prefix scripts/d1-auth --ignore-scripts
       - run: npm test
       - run: npm run build
         env:
           PMRFP_VPS_STANDALONE: enabled
           NEXT_PUBLIC_GA_ID: G-FEC0QRSEFE
+          NEXT_PUBLIC_CLARITY_ID: z8vkdqofaf
           NEXT_PUBLIC_SITE_URL: https://pmrfp.com
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Package the Linux standalone build

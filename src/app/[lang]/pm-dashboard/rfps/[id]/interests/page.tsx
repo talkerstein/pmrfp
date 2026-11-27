@@ -11,6 +11,7 @@ import { CloseRfpButton } from "@/components/dashboard/close-rfp-button";
 import { BidButtons } from "@/components/pm-jobs/bid-buttons";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
+import { insuranceText } from "@/lib/organizations/insurance";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { fmt, formatDate, plural } from "@/i18n/format";
@@ -20,7 +21,6 @@ import { attachedProjectsFor, type AttachedProject } from "@/lib/projects/attach
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { canPickOn, isOpenResponse, pmSeesTradeContact, tradeContactCard } from "@/lib/pm-jobs/rules";
 import { formatQuote } from "@/lib/pm-jobs/email-copy";
-import { insuranceText } from "@/lib/organizations/insurance";
 import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { readVpsBidInbox, type BidInboxCompany as OrgInfo, type BidInboxInterest as InterestRow, type BidInboxJob as JobInfo } from "@/lib/d1/vps-bid-inbox";
 

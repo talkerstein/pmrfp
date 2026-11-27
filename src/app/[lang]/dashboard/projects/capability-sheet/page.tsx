@@ -8,11 +8,11 @@ import { clientTypeKey, valueBandKey } from "@/lib/projects/case-study";
 import { PrintButton } from "@/components/projects/print-button";
 import { SITE } from "@/lib/site";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
+import { insuranceText } from "@/lib/organizations/insurance";
 import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale, localizePath } from "@/i18n/config";
 import { regionName, tradeName } from "@/i18n/terms";
-import { insuranceText } from "@/lib/organizations/insurance";
 import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { vpsProjectActiveMember, vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
 

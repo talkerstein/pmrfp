@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { LogoUploader } from "@/components/forms/logo-uploader";
 import { PortfolioUploader } from "@/components/forms/portfolio-uploader";
 import { useLang, useT } from "@/i18n/provider";
-import { fmt } from "@/i18n/format";
 import { POLICY_NUMBER_MAX } from "@/lib/organizations/insurance";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 
@@ -20,7 +19,7 @@ export interface CompanyDefaults {
   name?: string; website?: string; phone?: string; email?: string;
   addressLine1?: string; city?: string; province?: string; postalCode?: string;
   shortDescription?: string; fullDescription?: string; yearsInBusiness?: number | null;
-  employeeCountRange?: string; insurancePolicyNumber?: string; insuranceLine?: string; wsibStatus?: string;
+  employeeCountRange?: string; insuranceStatus?: string; insurancePolicyNumber?: string; wsibStatus?: string;
   emergencyService?: boolean; publicContactVisibility?: string;
   logoUrl?: string | null;
 }
@@ -103,19 +102,22 @@ export function CompanyProfileForm({
               {["1-10", "11-50", "51-200", "200+"].map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </Field>
-          {/* The native database cannot hold the private policy number yet, so the field is left out there. */}
-          {!nativeMedia && <div>
-            <Field label={t.insurance}>
-              <Input name="insurancePolicyNumber" defaultValue={defaults.insurancePolicyNumber} placeholder={t.insurancePlaceholder} maxLength={POLICY_NUMBER_MAX} autoComplete="off" />
-            </Field>
-            <p className="mt-1.5 text-xs text-muted-foreground">{t.insuranceHint}</p>
-            {defaults.insuranceLine && (
-              <label className="mt-1.5 flex items-start gap-2 text-xs text-muted-foreground">
-                <input type="checkbox" name="removeInsuranceLine" className="mt-0.5 size-3.5" />
-                {fmt(t.insuranceLine, { line: defaults.insuranceLine })}
-              </label>
-            )}
-          </div>}
+          {nativeMedia ? (
+            <div>
+              <Field label={t.insurancePolicy}>
+                <Input name="insurancePolicyNumber" defaultValue={defaults.insurancePolicyNumber} maxLength={POLICY_NUMBER_MAX} autoComplete="off" />
+              </Field>
+              <p className="mt-1.5 text-xs text-muted-foreground">{t.insurancePolicyHint}</p>
+              {defaults.insuranceStatus && !defaults.insurancePolicyNumber && (
+                <label className="mt-1.5 flex gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" name="removeInsuranceLine" />
+                  {t.removeInsuranceLine}
+                </label>
+              )}
+            </div>
+          ) : (
+            <Field label={t.insurance}><Input name="insuranceStatus" defaultValue={defaults.insuranceStatus} placeholder={t.insurancePlaceholder} /></Field>
+          )}
           <Field label={t.wsib}><Input name="wsibStatus" defaultValue={defaults.wsibStatus} placeholder={t.wsibPlaceholder} /></Field>
         </div>
         <label className="flex items-center gap-2 text-sm">

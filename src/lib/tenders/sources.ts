@@ -68,17 +68,23 @@ export interface PublicTenderSource {
 // Reference formats seen across every public_source row (2026-10-12):
 //   CanadaBuys (open/closed/awards)  cb-161-43955128 · ws5846022405-doc5846123481
 //                                    · mx-443841876264 · cw2466670 (+ legacy pw-…)
-//   Toronto (open/awards)            5830241025
-//   Yukon (open/closed)              rfb-2026-9-5555 · rso-rfb-2026-9-5560
 //   SEAO, Nova Scotia                buyer-assigned free text (ao-21243,
 //                                    us-24-e5-1125-00, vic-rfp-04-02-26)
+// Toronto and Yukon look regular but are also typed by people. Live feeds, 2026-11-03:
+//   Toronto (open/awards, 8,656)     mostly 5830241025, also notice9134187160
+//                                    · summary9117177362 · no-18404 · 3-77e-1100
+//   Yukon (open/closed, 1,369)       mostly rfb-2026-9-5555 · rso-rfb-2026-9-5560,
+//                                    also 3081-august-intake · may-3081 · acan
 // A reference only has to be strict where it can itself contain another
 // marker: an award or closed ref "cb-161-…" contains "-cb-", and a SEAO ref
 // "us-24-…" contains "-us-". So open CanadaBuys ("cb") and SAM ("us") are
 // anchored to their exact formats. The rest stay permissive on purpose: a row
 // whose ref failed a too-strict pattern would fall back to "canadabuys" and be
-// archived by the CanadaBuys run as "gone from the feed".
-const CB_REF = String.raw`(?:cb-\d+-\d+|ws\d+-doc\d+|mx-\d+|cw\d+|pw-[a-z0-9-]+)`;
+// archived by the CanadaBuys run as "gone from the feed". None of the Toronto,
+// Yukon or Nova Scotia feed refs (43,695), nor the 452 published SEAO refs,
+// holds another importer's marker, so permissive refs cost nothing today.
+// "tender" is canadabuys.ts's own last resort for a row with no reference.
+const CB_REF = String.raw`(?:cb-\d+-\d+|ws\d+-doc\d+|mx-\d+|cw\d+|pw-[a-z0-9-]+|tender)`;
 const CB_CLOSED_REF = String.raw`(?:cb-\d+-\d+|ws\d+-doc\d+|mx-\d+)`; // CLOSED_REF in canadabuys-closed.ts
 const FREE_REF = "[a-z0-9-]+";
 const suffix = (marker: string, ref: string) => new RegExp(`-${marker}-${ref}$`);
