@@ -11,8 +11,9 @@ import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
  * award rows since 2012, refreshed daily, under the Open Government Licence –
  * Toronto. Every page that shows it must carry TORONTO_ATTRIBUTION.
  *
- * The CSV is fetched and aggregated by supplier. When the feed has no supplier
- * data, production uses Toronto records previously imported into D1.
+ * The CSV is fetched and aggregated by supplier. The City's TOBids API
+ * supplies names if the CSV omits them. On production, D1 holds previously
+ * imported awards for use when neither source is available.
  * Cache the compact index and detail shards rather than the raw download.
  *
  * Buyer names, emails and phone numbers in the file are City staff contacts:
@@ -26,6 +27,8 @@ export const TORONTO_LICENCE_URL = "https://open.toronto.ca/open-data-licence/";
 export const TORONTO_ATTRIBUTION = "Contains information licensed under the Open Government Licence – Toronto.";
 const CSV_URL =
   "https://ckan0.cf.opendata.inter.prod-toronto.ca/datastore/dump/e211f003-5909-4bea-bd96-d75899d8e612";
+const TOBIDS_URL =
+  "https://secure.toronto.ca/c3api_data/v2/DataAccess.svc/pmmd_solicitations/feis_solicitation_published";
 
 /** A supplier page is indexable with 2+ awards, or one award at least this big. */
 export const INDEX_MIN_SINGLE_AWARD = 250_000;
@@ -162,6 +165,51 @@ export function rowsFromCsv(text: string): TorontoRow[] {
     });
   }
   return out;
+}
+
+interface PublicSolicitation {
+  id: string;
+  Status?: string;
+  Solicitation_Document_Number?: string;
+  Solicitation_Document_Type?: string;
+  High_Level_Category?: string;
+  Client_Division?: string[];
+  Posting_Title?: string;
+  Solicitation_Document_Description?: string;
+  Date_Awarded?: string;
+  Wards?: string[];
+  Awarded_Suppliers?: {
+    Successful_Bidder?: string;
+    Award_Amount?: string | number;
+    Date_Awarded?: string;
+    AwardedDate?: string;
+  }[];
+}
+
+export function rowsFromPublicSolicitations(solicitations: PublicSolicitation[]): TorontoRow[] {
+  const rows: TorontoRow[] = [];
+  for (const record of solicitations) {
+    const doc = record.Solicitation_Document_Number?.trim();
+    if (record.Status !== "Awarded" || !doc || !Array.isArray(record.Awarded_Suppliers)) continue;
+    for (const award of record.Awarded_Suppliers) {
+      const supplier = award.Successful_Bidder?.trim().replace(/\s+/g, " ");
+      if (!supplier || !isPublishableSupplier(supplier)) continue;
+      const date = [award.Date_Awarded, award.AwardedDate, record.Date_Awarded]
+        .find(value => typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value));
+      rows.push({
+        supplier,
+        doc,
+        type: record.Solicitation_Document_Type ?? "",
+        category: (record.High_Level_Category ?? "").replace(/&/g, "and").replace(/\s+/g, " "),
+        amount: parseAmount(award.Award_Amount == null ? undefined : String(award.Award_Amount).replace(/\s*CAD\s*$/i, "")),
+        date: date?.slice(0, 10) ?? null,
+        division: record.Client_Division?.[0] ?? "",
+        description: trim((record.Posting_Title || record.Solicitation_Document_Description || "").replace(/\s+/g, " ").trim()),
+        wards: record.Wards?.filter(ward => /ward/i.test(ward)).length ?? 0,
+      });
+    }
+  }
+  return rows;
 }
 
 /* ------------------------------------------------------------ normalisation */
@@ -305,14 +353,56 @@ export const shardOf = (slug: string) => (/^[a-z]/.test(slug) ? slug[0] : "0");
 let memo: { at: number; promise: Promise<TorontoSupplier[]> } | null = null;
 let rowsMemo: TorontoRow[] = [];
 
-async function readArchivedAwards(): Promise<TorontoRow[]> {
+async function readPublicSolicitations(): Promise<TorontoRow[]> {
+  const pageSize = 1_000;
+  const fields = [
+    "id", "Status", "Awarded_Suppliers", "Date_Awarded", "Client_Division", "High_Level_Category",
+    "Posting_Title", "Solicitation_Document_Description", "Solicitation_Document_Number", "Solicitation_Document_Type", "Wards",
+  ].join(",");
+  const signal = AbortSignal.timeout(22_000);
+  async function readPage(skip: number, count = false) {
+    const url = new URL(TOBIDS_URL);
+    url.search = new URLSearchParams({
+      $format: "application/json;odata.metadata=none", $select: fields, $orderby: "id",
+      $top: String(pageSize), $skip: String(skip), ...(count && { $count: "true" }),
+    }).toString();
+    const res = await fetch(url, { cache: "no-store", signal });
+    if (!res.ok) throw new Error(`Toronto Bids API: HTTP ${res.status}`);
+    const page = await res.json() as { value: PublicSolicitation[]; "@odata.count"?: number };
+    if (!Array.isArray(page.value)) throw new Error("Toronto Bids API: unexpected response");
+    return page;
+  }
+
+  const first = await readPage(0, true);
+  const count = first["@odata.count"];
+  if (!Number.isSafeInteger(count) || !count || count < 1 || count > 20_000) {
+    throw new Error("Toronto Bids API: invalid record count");
+  }
+  const records = [...first.value];
+  // Read in small groups to keep concurrent requests to the City's API bounded.
+  for (let skip = pageSize; skip < count; skip += 4 * pageSize) {
+    const offsets = [skip, skip + pageSize, skip + 2 * pageSize, skip + 3 * pageSize]
+      .filter(offset => offset < count);
+    const pages = await Promise.all(offsets.map(offset => readPage(offset)));
+    for (const page of pages) records.push(...page.value);
+  }
+  if (records.length !== count || records.some(record => !record.id) ||
+      new Set(records.map(record => record.id)).size !== count) {
+    throw new Error("Toronto Bids API: incomplete snapshot");
+  }
+  const rows = rowsFromPublicSolicitations(records);
+  if (!rows.length) throw new Error("Toronto Bids API: no publishable supplier records");
+  return rows;
+}
+
+async function readArchivedAwards(nonCompetitiveOnly = false): Promise<TorontoRow[]> {
   const { results } = await vpsAppDatabase().prepare(`SELECT source, source_key, board_ref,
     winner_business_name, value, award_date, title, buyer
     FROM award_history
-    WHERE source IN ('ca-toronto-awards', 'ca-toronto-noncompetitive')
+    WHERE source IN (?, 'ca-toronto-noncompetitive')
       AND winner_is_individual=0 AND winner_business_name IS NOT NULL
       AND ${customerAppAuthority}
-    ORDER BY award_date DESC, id`).all<{
+    ORDER BY award_date DESC, id`).bind(nonCompetitiveOnly ? 'ca-toronto-noncompetitive' : 'ca-toronto-awards').all<{
     source: string; source_key: string; board_ref: string | null; winner_business_name: string;
     value: string | null; award_date: string; title: string; buyer: string | null;
   }>();
@@ -350,7 +440,16 @@ async function loadAll(): Promise<{ rows: TorontoRow[]; suppliers: TorontoSuppli
         if (!rows.length) throw new Error("Toronto award feed has no named supplier records");
       } catch (error) {
         if (!isVpsLiveCustomerAuth()) throw error;
-        rows = await readArchivedAwards();
+        try {
+          rows = await readPublicSolicitations();
+          // The archive currently also powers non-competitive supplier URLs.
+          // Keep those awards without double-counting competitive records.
+          const nonCompetitive = await readArchivedAwards(true).catch(() => []);
+          rows.push(...nonCompetitive);
+        } catch (upstreamError) {
+          console.warn("[toronto-awards] City Bids API unavailable:", upstreamError);
+          rows = rowsMemo.length ? rowsMemo : await readArchivedAwards();
+        }
       }
       const suppliers = aggregateSuppliers(rows);
       if (!suppliers.length) throw new Error("no suppliers parsed (empty or changed file)");
@@ -369,19 +468,18 @@ async function loadAll(): Promise<{ rows: TorontoRow[]; suppliers: TorontoSuppli
 
 const DAY = 86_400;
 
-// v2: drops index/shard entries cached empty by the old swallow-and-return-[] loader.
 export const getTorontoIndex = unstable_cache(
   async (): Promise<TorontoIndex> => {
     const { rows, suppliers } = await loadAll();
     return buildIndex(rows, suppliers);
   },
-  ["toronto-awards-index-v3"],
+  ["toronto-awards-index-v4"],
   { revalidate: DAY, tags: ["toronto-awards"] },
 );
 
 const getShard = unstable_cache(
   async (shard: string): Promise<TorontoSupplier[]> => (await loadAll()).suppliers.filter((s) => shardOf(s.slug) === shard),
-  ["toronto-awards-shard-v3"],
+  ["toronto-awards-shard-v4"],
   { revalidate: DAY, tags: ["toronto-awards"] },
 );
 
