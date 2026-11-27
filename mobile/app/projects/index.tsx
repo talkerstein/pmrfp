@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { storedToken } from "../../src/lib/session";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -15,6 +16,15 @@ import { useAuth } from "../../src/lib/auth";
 import { ApiError, SITE_URL } from "../../src/lib/api";
 import { listProjects, statusLabel, type ProjectPlan, type ProjectRow } from "../../src/lib/projects";
 import { colors, radius, spacing, type } from "../../src/lib/theme";
+
+function ProjectThumbnail({url}:{url:string}) {
+  const [token,setToken]=useState<string|null>(null);
+  const relative=/^\/api\/projects\//.test(url);
+  const approved=relative||url.startsWith(SITE_URL+"/api/projects/");
+  useEffect(()=>{ if (approved) void storedToken().then(setToken).catch(()=>null); },[approved]);
+  return <Image source={{uri:relative ? SITE_URL+url : url,
+    ...(approved && token ? {headers:{Authorization:"Bearer "+token}} : {})}} style={styles.thumb} />;
+}
 
 export default function ProjectsScreen() {
   const { session, refreshAccess } = useAuth();
@@ -159,7 +169,7 @@ export default function ProjectsScreen() {
               }
             >
               {item.hero_url ? (
-                <Image source={{ uri: item.hero_url }} style={styles.thumb} />
+                <ProjectThumbnail url={item.hero_url} />
               ) : (
                 <View style={[styles.thumb, styles.thumbEmpty]} />
               )}

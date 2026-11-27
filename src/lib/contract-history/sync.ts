@@ -5,6 +5,8 @@
  * is how history accumulates. Bid rows are upserted on (award, bidder).
  * Sequential batches of 500, so a run never floods the database.
  */
+import { upsertD1Import } from "@/lib/d1/import-rows";
+import type { D1Binding } from "@/lib/d1/contracts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { dedupeAwards, validateAward, type AwardHistoryInput, type BidResultInput } from "./model";
 
@@ -36,16 +38,23 @@ export function dedupeBids(bids: BidResultInput[]): BidResultInput[] {
   return [...m.values()];
 }
 
-export async function applyHistory(db: SupabaseClient, awards: AwardHistoryInput[], bids: BidResultInput[]): Promise<SyncResult> {
+export async function applyHistory(db: SupabaseClient | D1Binding, awards: AwardHistoryInput[], bids: BidResultInput[]): Promise<SyncResult> {
   const { rows, invalid } = prepareAwards(awards);
   const now = new Date().toISOString();
   const ids = new Map<string, string>();
   let upserted = 0;
   for (let i = 0; i < rows.length; i += BATCH) {
     const chunk = rows.slice(i, i + BATCH).map((r) => ({ ...r, updated_at: now }));
-    const { data, error } = await db.from("award_history").upsert(chunk, { onConflict: "source,source_key" }).select("id,source,source_key");
-    if (error) throw new Error(`award_history upsert: ${error.message}`);
-    for (const d of (data ?? []) as { id: string; source: string; source_key: string }[]) ids.set(`${d.source}|${d.source_key}`, d.id);
+    type Mapping = { id: string; source: string; source_key: string };
+    let data: Mapping[];
+    if ("prepare" in db) {
+      data = await upsertD1Import<Mapping>(db, "award_history", chunk, { returnAwards: true });
+    } else {
+      const rows = await db.from("award_history").upsert(chunk, { onConflict: "source,source_key" }).select("id,source,source_key");
+      if (rows.error) throw new Error(`award_history upsert: ${rows.error.message}`);
+      data = rows.data ?? [];
+    }
+    for (const d of data) ids.set(`${d.source}|${d.source_key}`, d.id);
     upserted += chunk.length;
   }
   let bidRows = 0;
@@ -61,8 +70,11 @@ export async function applyHistory(db: SupabaseClient, awards: AwardHistoryInput
   });
   for (let i = 0; i < ready.length; i += BATCH) {
     const chunk = ready.slice(i, i + BATCH);
-    const { error } = await db.from("bid_results").upsert(chunk, { onConflict: "award_history_id,bidder_key" });
-    if (error) throw new Error(`bid_results upsert: ${error.message}`);
+    if ("prepare" in db) await upsertD1Import(db, "bid_results", chunk);
+    else {
+      const { error } = await db.from("bid_results").upsert(chunk, { onConflict: "award_history_id,bidder_key" });
+      if (error) throw new Error(`bid_results upsert: ${error.message}`);
+    }
     bidRows += chunk.length;
   }
   return { upserted, invalid, bidRows, bidsSkipped };

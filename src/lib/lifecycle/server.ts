@@ -2,7 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { chunk, selectIn, type Db } from "@/lib/supabase/select-in";
-import { detectBadgeInstall, groupBySlug, websiteDomain } from "@/lib/badge/install";
+import { detectBadgeInstall, groupBySlug, INSTALL_KINDS, websiteDomain, type BadgeHitRow } from "@/lib/badge/install";
 import { badgeRewardEnabled, isPayingSubscription, REWARD_DAYS } from "@/lib/badge/reward";
 import { loadHitRows, loadRewards } from "@/lib/badge/server";
 import { listRfps } from "@/lib/data/rfps";
@@ -19,7 +19,12 @@ import { canonicalProvince, computeBenchmark, teaserOf, type BenchmarkAward } fr
 import { cachedLifetimeCount } from "@/lib/founding/server";
 import { foundingScarcity, spotsLeft, type FoundingScarcity } from "@/lib/founding/config";
 import { isMissingTableError, trialState } from "@/lib/entitlement/trial";
-import { emailConfigured, sendLifecycleEmail } from "@/lib/email/send";
+import { lifecycleEmailConfigured, sendLifecycleEmail } from "@/lib/email/send";
+import {
+  claimD1Lifecycle, finishD1Lifecycle, inList, isD1Lifecycle, nativeLifecycleDb, readD1, readD1ByIds, readLifecycle, type LifecycleRead,
+  recordD1LifecycleSkips, requireD1LifecycleAuthority, useD1Lifecycle, type LifecycleDb,
+} from "./d1";
+import { localClock } from "./timezone";
 import { lifecycleUnsubscribeUrl } from "@/lib/email/unsubscribe";
 import { isEnabledLocale, type Locale } from "@/i18n/config";
 import { regionName, tradeName } from "@/i18n/terms";
@@ -45,6 +50,7 @@ import {
   cohortOf,
   describeDecision,
   openSteps,
+  memberTimeZone,
   plan,
   type DecideOptions,
   type Decision,
@@ -275,8 +281,21 @@ function primaryCountry(org: OrgRow, regionIds: string[], byRegion: ReadonlyMap<
   return orgCountries(org, regionIds, byRegion).has("CA") ? "CA" : "US";
 }
 
+const MEMBERSHIP_COLUMNS = "organization_id,user_id,created_at";
+const ORG_COLUMNS = "id,name,slug,city,province,country,organization_type,status,is_demo,profile_status,website,approved_at,created_at";
+
+function readByIds<T>(
+  db: LifecycleDb, ids: string[], sql: string, query: (c: string[], legacy: Db) => ReturnType<Parameters<typeof selectIn<T>>[1]>,
+) {
+  if (!isD1Lifecycle(db)) return selectIn<T>(ids, (c) => query(c, db));
+  return readD1ByIds<T>(db.app, ids, sql).then((rows) => ({ rows, error: null }),
+    (): LifecycleRead<T> => ({ rows: [], error: { message: "D1 lifecycle query unavailable" } }));
+}
+
+const disabledPreference = (v: unknown) => v === false || v === 0;
+
 async function loadMembers(
-  db: Db,
+  db: LifecycleDb,
   now: Date,
   countryByRegion: ReadonlyMap<string, CountryCode>,
   opts: { startAt: Date | null },
@@ -285,38 +304,32 @@ async function loadMembers(
   const trialEndSince = new Date(now.getTime() - 12 * DAY).toISOString();
   type Membership = { organization_id: string; user_id: string; created_at: string };
 
+  const membershipSql = `SELECT ${MEMBERSHIP_COLUMNS} FROM organization_members`;
   const [recent, trials, approvedRecent, older] = await Promise.all([
-    db
-      .from("organization_members")
-      .select("organization_id,user_id,created_at")
-      .gte("created_at", since)
-      .order("created_at", { ascending: true })
-      .limit(MAX_MEMBERS_PER_RUN),
-    db.from("trade_trials").select("organization_id").gte("ends_at", trialEndSince).limit(MAX_MEMBERS_PER_RUN),
-    // Companies approved lately, however long ago they joined: the badge email follows the approval.
-    db.from("organizations").select("id").gte("approved_at", since).limit(MAX_MEMBERS_PER_RUN),
-    // Go-live catch-up only: everyone who joined before the sequence window (one welcome-back each, once approved).
+    readLifecycle<Membership>(db, `${membershipSql} WHERE julianday(created_at)>=julianday(?) ORDER BY julianday(created_at),user_id,organization_id LIMIT ?`,
+      [since, MAX_MEMBERS_PER_RUN], (legacy) => legacy.from("organization_members").select(MEMBERSHIP_COLUMNS).gte("created_at", since).order("created_at", { ascending: true }).limit(MAX_MEMBERS_PER_RUN)),
+    readLifecycle<{ organization_id: string }>(db, "SELECT organization_id FROM trade_trials WHERE julianday(ends_at)>=julianday(?) ORDER BY ends_at,organization_id LIMIT ?",
+      [trialEndSince, MAX_MEMBERS_PER_RUN], (legacy) => legacy.from("trade_trials").select("organization_id").gte("ends_at", trialEndSince).limit(MAX_MEMBERS_PER_RUN)),
+    readLifecycle<{ id: string }>(db, "SELECT id FROM organizations WHERE julianday(approved_at)>=julianday(?) ORDER BY approved_at,id LIMIT ?",
+      [since, MAX_MEMBERS_PER_RUN], (legacy) => legacy.from("organizations").select("id").gte("approved_at", since).limit(MAX_MEMBERS_PER_RUN)),
     opts.startAt
-      ? db.from("organization_members").select("organization_id,user_id,created_at").lt("created_at", since).order("created_at", { ascending: false }).limit(MAX_MEMBERS_PER_RUN)
-      : Promise.resolve({ data: [] as Membership[], error: null }),
+      ? readLifecycle<Membership>(db, `${membershipSql} WHERE julianday(created_at)<julianday(?) ORDER BY julianday(created_at) DESC,user_id,organization_id LIMIT ?`,
+        [since, MAX_MEMBERS_PER_RUN], (legacy) => legacy.from("organization_members").select(MEMBERSHIP_COLUMNS).lt("created_at", since).order("created_at", { ascending: false }).limit(MAX_MEMBERS_PER_RUN))
+      : Promise.resolve({ rows: [] as Membership[], error: null }),
   ]);
-  if (recent.error) return { members: [], error: recent.error.message };
-  if (older.error) return { members: [], error: older.error.message };
-  const trialOrgIds = ((trials.data ?? []) as { organization_id: string }[]).map((t) => t.organization_id);
-  const approvedOrgIds = approvedRecent.error ? [] : ((approvedRecent.data ?? []) as { id: string }[]).map((o) => o.id);
-  const trialMembers = await selectIn<Membership>([...new Set([...trialOrgIds, ...approvedOrgIds])], (c) =>
-    db.from("organization_members").select("organization_id,user_id,created_at").in("organization_id", c),
-  );
-  const memberships = [...((recent.data ?? []) as Membership[]), ...trialMembers.rows, ...((older.data ?? []) as Membership[])];
+  const cohortError = recent.error ?? older.error ?? (isD1Lifecycle(db) ? trials.error ?? approvedRecent.error : null);
+  if (cohortError) return { members: [], error: cohortError.message };
+  const trialOrgIds = trials.rows.map((t) => t.organization_id);
+  const approvedOrgIds = approvedRecent.rows.map((o) => o.id);
+  const trialMembers = await readByIds<Membership>(db, [...trialOrgIds, ...approvedOrgIds], `${membershipSql} WHERE organization_id ${inList}`,
+    (c, legacy) => legacy.from("organization_members").select(MEMBERSHIP_COLUMNS).in("organization_id", c));
+  if (isD1Lifecycle(db) && trialMembers.error) return { members: [], error: trialMembers.error.message };
+  const memberships = [...recent.rows, ...trialMembers.rows, ...older.rows];
   if (!memberships.length) return { members: [], error: null };
 
   const orgIds = [...new Set(memberships.map((m) => m.organization_id))];
-  const orgRes = await selectIn<OrgRow>(orgIds, (c) =>
-    db
-      .from("organizations")
-      .select("id,name,slug,city,province,country,organization_type,status,is_demo,profile_status,website,approved_at,created_at")
-      .in("id", c),
-  );
+  const orgRes = await readByIds<OrgRow>(db, orgIds, `SELECT ${ORG_COLUMNS} FROM organizations WHERE id ${inList}`,
+    (c, legacy) => legacy.from("organizations").select(ORG_COLUMNS).in("id", c));
   if (orgRes.error) return { members: [], error: orgRes.error.message };
   const orgs = new Map(orgRes.rows.filter((o) => o.organization_type === "trade_company").map((o) => [o.id, o]));
 
@@ -325,7 +338,7 @@ async function loadMembers(
   for (const m of memberships) {
     if (!orgs.has(m.organization_id)) continue;
     const cur = byUser.get(m.user_id);
-    if (!cur || cur.created_at < m.created_at) byUser.set(m.user_id, m);
+    if (!cur || Date.parse(cur.created_at) < Date.parse(m.created_at)) byUser.set(m.user_id, m);
   }
   const userIds = [...byUser.keys()];
   if (!userIds.length) return { members: [], error: null };
@@ -333,43 +346,59 @@ async function loadMembers(
   const slugs = tradeOrgIds.map((id) => orgs.get(id)!.slug);
 
   const [profiles, prefs, sends, attrib, posts, subs, trialRows, cats, regs, studies, badges, rewards] = await Promise.all([
-    selectIn<{ id: string; email: string; full_name: string | null; status: string; primary_role: string }>(userIds, (c) =>
-      db.from("users_profile").select("id,email,full_name,status,primary_role").in("id", c),
+    readByIds<{ id: string; email: string; full_name: string | null; status: string; primary_role: string }>(db, userIds, `SELECT id,email,full_name,status,primary_role FROM users_profile WHERE id ${inList}`,
+      (c, legacy) => legacy.from("users_profile").select("id,email,full_name,status,primary_role").in("id", c),
     ),
-    selectIn<{ user_id: string; new_rfps: string | null; channel_email: boolean | null; lifecycle_emails: boolean | null }>(userIds, (c) =>
-      db.from("notification_preferences").select("user_id,new_rfps,channel_email,lifecycle_emails").in("user_id", c),
+    readByIds<{ user_id: string; new_rfps: string | null; channel_email: boolean | 0 | 1 | null; lifecycle_emails: boolean | 0 | 1 | null }>(db, userIds, `SELECT user_id,new_rfps,channel_email,lifecycle_emails FROM notification_preferences WHERE user_id ${inList}`,
+      (c, legacy) => legacy.from("notification_preferences").select("user_id,new_rfps,channel_email,lifecycle_emails").in("user_id", c),
     ),
-    selectIn<{ user_id: string; step: string; status: string; sent_at: string }>(userIds, (c) =>
-      db.from("lifecycle_sends").select("user_id,step,status,sent_at").in("user_id", c),
+    readByIds<{ user_id: string; step: string; status: string; sent_at: string }>(db, userIds, `SELECT user_id,step,status,sent_at FROM lifecycle_sends WHERE user_id ${inList}`,
+      (c, legacy) => legacy.from("lifecycle_sends").select("user_id,step,status,sent_at").in("user_id", c),
     ),
-    selectIn<{ user_id: string; lang: string | null }>(userIds, (c) => db.from("signup_attribution").select("user_id,lang").in("user_id", c)),
-    selectIn<{ author_id: string }>(userIds, (c) => db.from("forum_posts").select("author_id").in("author_id", c).limit(5000)),
-    selectIn<{ organization_id: string; status: string; tier: string | null; stripe_subscription_id: string | null }>(tradeOrgIds, (c) =>
-      db.from("subscriptions").select("organization_id,status,tier,stripe_subscription_id").in("organization_id", c),
+    readByIds<{ user_id: string; lang: string | null }>(db, userIds, `SELECT user_id,lang FROM signup_attribution WHERE user_id ${inList}`,
+      (c, legacy) => legacy.from("signup_attribution").select("user_id,lang").in("user_id", c)),
+    readByIds<{ author_id: string }>(db, userIds, `SELECT author_id FROM forum_posts WHERE author_id ${inList} ORDER BY id LIMIT 5000`,
+      (c, legacy) => legacy.from("forum_posts").select("author_id").in("author_id", c).limit(5000)),
+    readByIds<{ organization_id: string; status: string; tier: string | null; stripe_subscription_id: string | null }>(db, tradeOrgIds, `SELECT organization_id,status,tier,stripe_subscription_id FROM subscriptions WHERE organization_id ${inList}`,
+      (c, legacy) => legacy.from("subscriptions").select("organization_id,status,tier,stripe_subscription_id").in("organization_id", c),
     ),
-    selectIn<{ organization_id: string; started_at: string; ends_at: string }>(tradeOrgIds, (c) =>
-      db.from("trade_trials").select("organization_id,started_at,ends_at").in("organization_id", c),
+    readByIds<{ organization_id: string; started_at: string; ends_at: string }>(db, tradeOrgIds, `SELECT organization_id,started_at,ends_at FROM trade_trials WHERE organization_id ${inList}`,
+      (c, legacy) => legacy.from("trade_trials").select("organization_id,started_at,ends_at").in("organization_id", c),
     ),
-    selectIn<{ organization_id: string; trade_categories: { slug: string } | null }>(tradeOrgIds, (c) =>
-      db.from("organization_categories").select("organization_id, trade_categories(slug)").in("organization_id", c),
+    readByIds<{ organization_id: string; trade_categories: { slug: string } | string | null }>(db, tradeOrgIds, `SELECT oc.organization_id,json_object('slug',tc.slug) AS trade_categories FROM organization_categories oc LEFT JOIN trade_categories tc ON tc.id=oc.category_id WHERE oc.organization_id ${inList}`,
+      (c, legacy) => legacy.from("organization_categories").select("organization_id, trade_categories(slug)").in("organization_id", c),
     ),
-    selectIn<{ organization_id: string; region_id: string }>(tradeOrgIds, (c) => db.from("organization_regions").select("organization_id,region_id").in("organization_id", c)),
-    selectIn<{ organization_id: string }>(tradeOrgIds, (c) => db.from("case_studies").select("organization_id").in("organization_id", c).limit(5000)),
+    readByIds<{ organization_id: string; region_id: string }>(db, tradeOrgIds, `SELECT organization_id,region_id FROM organization_regions WHERE organization_id ${inList}`,
+      (c, legacy) => legacy.from("organization_regions").select("organization_id,region_id").in("organization_id", c)),
+    readByIds<{ organization_id: string }>(db, tradeOrgIds, `SELECT organization_id FROM case_studies WHERE organization_id ${inList} ORDER BY id LIMIT 5000`,
+      (c, legacy) => legacy.from("case_studies").select("organization_id").in("organization_id", c).limit(5000)),
     // The badge loading from the company's OWN website on 2+ different days (lib/badge/install).
-    loadHitRows(db, slugs),
-    loadRewards(db, tradeOrgIds),
+    isD1Lifecycle(db) ? readD1ByIds<BadgeHitRow>(db.app, slugs,
+      `SELECT day,kind,slug,referrer FROM badge_hits WHERE slug ${inList} AND referrer<>'' AND kind ${inList} ORDER BY day,slug LIMIT 5000`,
+      JSON.stringify(INSTALL_KINDS)).then((rows) => ({ rows, error: null }),
+        (): LifecycleRead<BadgeHitRow> => ({ rows: [], error: { message: "D1 badge history unavailable" } })) : loadHitRows(db, slugs),
+    isD1Lifecycle(db) ? readD1ByIds<{ organization_id: string; kind: string; trial_ends_after: string }>(db.app, tradeOrgIds,
+      `SELECT organization_id,kind,trial_ends_after FROM badge_rewards WHERE organization_id ${inList}`)
+      .then((rows) => new Map(rows.map((r) => [r.organization_id, { kind: r.kind, endsAt: r.trial_ends_after }]))).catch(() => null)
+      : loadRewards(db, tradeOrgIds),
   ]);
   if (sends.error) return { members: [], error: isMissingTableError(sends.error) ? "lifecycle_sends table missing (run migration 20261016000020)" : sends.error.message };
   if (prefs.error) return { members: [], error: `notification_preferences: ${prefs.error.message} (run migration 20261016000020)` };
   if (subs.error) return { members: [], error: `subscriptions: ${subs.error.message}` };
+  if (isD1Lifecycle(db) && [profiles, attrib, posts, trialRows, cats, regs, studies, badges].some((r) => r.error)) {
+    return { members: [], error: "D1 lifecycle member facts unavailable" };
+  }
+  if (rewards === null) return { members: [], error: "D1 badge rewards unavailable" };
 
   const emails = profiles.rows.map((p) => p.email.trim().toLowerCase()).filter(Boolean);
   const [suppressed, digest] = await Promise.all([
-    selectIn<{ email_key: string }>(emails, (c) => db.from("email_suppressions").select("email_key").in("email_key", c)),
-    selectIn<{ email_key: string; status: string; last_sent_at: string | null }>(emails, (c) =>
-      db.from("digest_subscribers").select("email_key,status,last_sent_at").in("email_key", c),
+    readByIds<{ email_key: string }>(db, emails, `SELECT email_key FROM email_suppressions WHERE email_key ${inList}`,
+      (c, legacy) => legacy.from("email_suppressions").select("email_key").in("email_key", c)),
+    readByIds<{ email_key: string; status: string; last_sent_at: string | null }>(db, emails, `SELECT email_key,status,last_sent_at FROM digest_subscribers WHERE email_key ${inList}`,
+      (c, legacy) => legacy.from("digest_subscribers").select("email_key,status,last_sent_at").in("email_key", c),
     ),
   ]);
+  if (isD1Lifecycle(db) && digest.error) return { members: [], error: "D1 digest history unavailable" };
   if (suppressed.error && !isMissingTableError(suppressed.error)) return { members: [], error: `email_suppressions: ${suppressed.error.message}` };
 
   const profileById = new Map(profiles.rows.map((p) => [p.id, p]));
@@ -380,7 +409,10 @@ async function loadMembers(
   const paidOrgs = new Set(subs.rows.filter(isPayingSubscription).map((s) => s.organization_id));
   const trialByOrg = new Map(trialRows.rows.map((t) => [t.organization_id, { startedAt: t.started_at, endsAt: t.ends_at }]));
   const tradesByOrg = new Map<string, string[]>();
-  for (const r of cats.rows) if (r.trade_categories?.slug) tradesByOrg.set(r.organization_id, [...(tradesByOrg.get(r.organization_id) ?? []), r.trade_categories.slug]);
+  for (const r of cats.rows) {
+    const category = typeof r.trade_categories === "string" ? JSON.parse(r.trade_categories) as { slug: string | null } : r.trade_categories;
+    if (category?.slug) tradesByOrg.set(r.organization_id, [...(tradesByOrg.get(r.organization_id) ?? []), category.slug]);
+  }
   const regionsByOrg = new Map<string, string[]>();
   for (const r of regs.rows) regionsByOrg.set(r.organization_id, [...(regionsByOrg.get(r.organization_id) ?? []), r.region_id]);
   const projectsByOrg = new Map<string, number>();
@@ -396,7 +428,7 @@ async function loadMembers(
     if (!isStepId(s.step)) continue;
     if (!recordedBy.has(s.user_id)) recordedBy.set(s.user_id, new Set());
     recordedBy.get(s.user_id)!.add(s.step);
-    if ((s.status === "sent" || s.status === "sending") && (!lastSentBy.has(s.user_id) || lastSentBy.get(s.user_id)! < s.sent_at)) lastSentBy.set(s.user_id, s.sent_at);
+    if ((s.status === "sent" || s.status === "sending") && (!lastSentBy.has(s.user_id) || Date.parse(lastSentBy.get(s.user_id)!) < Date.parse(s.sent_at))) lastSentBy.set(s.user_id, s.sent_at);
     if (s.status === "sent") sentAtBy.set(s.user_id, { ...(sentAtBy.get(s.user_id) ?? {}), [s.step]: s.sent_at });
   }
 
@@ -425,7 +457,7 @@ async function loadMembers(
         !["admin", "super_admin"].includes(profile.primary_role),
       paid: paidOrgs.has(org.id),
       trial: trialByOrg.get(org.id) ?? null,
-      optedOut: pref?.lifecycle_emails === false || pref?.channel_email === false || pref?.new_rfps === "off" || dig?.status === "unsubscribed",
+      optedOut: disabledPreference(pref?.lifecycle_emails) || disabledPreference(pref?.channel_email) || pref?.new_rfps === "off" || dig?.status === "unsubscribed",
       suppressed: suppressedSet.has(emailKey) || dig?.status === "bounced",
       recorded: recordedBy.get(userId) ?? new Set(),
       lastSentAt: lastSentBy.get(userId) ?? null,
@@ -496,7 +528,21 @@ interface AuthInfo {
 type AuthAdmin = { auth?: { admin?: { getUserById?: (id: string) => Promise<{ data: { user: unknown } | null; error: unknown }> } } };
 
 /** Email confirmation + sign-up picks from auth (service role), a few at a time. Unknown on any error (never sends then). */
-async function authInfo(db: Db, ids: string[]): Promise<Map<string, AuthInfo>> {
+async function authInfo(db: LifecycleDb, ids: string[]): Promise<Map<string, AuthInfo>> {
+  if (isD1Lifecycle(db)) {
+    const rows = await readD1ByIds<{ id: string; confirmed: string; provider: string | null; metadata: string | null }>(db.auth, ids,
+      `SELECT u.id,coalesce(json_extract(m.metadata,'$.email_confirmed_at'),u.updatedAt,u.createdAt) AS confirmed,
+          coalesce(json_extract(m.metadata,'$.raw_app_meta_data.provider'),
+            (SELECT CASE WHEN a.providerId='credential' THEN 'email' ELSE a.providerId END
+             FROM account a WHERE a.userId=u.id ORDER BY a.createdAt LIMIT 1)) AS provider,
+          json_extract(m.metadata,'$.raw_user_meta_data') AS metadata
+        FROM user u LEFT JOIN _auth_source_metadata m ON m.user_id=u.id
+        WHERE u.id ${inList} AND u.emailVerified=1
+          AND (u.banned=0 OR (u.banned=1 AND julianday(u.banExpires)<=julianday('now')))`);
+    return new Map(rows.map((r) => [r.id, {
+      confirmedAt: r.confirmed, provider: r.provider, meta: r.metadata ? JSON.parse(r.metadata) as Record<string, unknown> : {},
+    }]));
+  }
   const out = new Map<string, AuthInfo>();
   const get = (db as unknown as AuthAdmin).auth?.admin?.getUserById;
   if (typeof get !== "function") return out;
@@ -525,25 +571,28 @@ const regionIsUs = (r: { country?: string | null }) => ["usa", "us", "united sta
  * linked. Internal / test / demo addresses are left out entirely.
  */
 export async function loadStalled(
-  db: Db,
+  db: LifecycleDb,
   now: Date,
   tax: Pick<MarketData, "regions">,
   opts: { horizonMs: number; roles: readonly string[]; limit?: number },
 ): Promise<{ stalled: StalledSignup[]; error: string | null }> {
   const since = new Date(now.getTime() - opts.horizonMs).toISOString();
-  const res = await db
-    .from("users_profile")
-    .select("id,email,full_name,status,primary_role,onboarding_completed,created_at")
-    .gte("created_at", since)
-    .in("primary_role", [...opts.roles])
-    .order("created_at", { ascending: false })
-    .limit(opts.limit ?? MAX_MEMBERS_PER_RUN);
+  const columns = "id,email,full_name,status,primary_role,onboarding_completed,created_at";
+  type Profile = { id: string; email: string; full_name: string | null; status: string; primary_role: string; onboarding_completed: boolean | 0 | 1; created_at: string };
+  const limit = opts.limit ?? MAX_MEMBERS_PER_RUN;
+  const res = await readLifecycle<Profile>(db,
+    `SELECT ${columns} FROM users_profile WHERE julianday(created_at)>=julianday(?) AND primary_role ${inList}
+      ORDER BY julianday(created_at) DESC,id LIMIT ?`, [since, JSON.stringify(opts.roles), limit],
+    (legacy) => legacy.from("users_profile").select(columns).gte("created_at", since)
+      .in("primary_role", [...opts.roles]).order("created_at", { ascending: false }).limit(limit));
   if (res.error) return { stalled: [], error: `users_profile: ${res.error.message}` };
-  const rows = ((res.data ?? []) as { id: string; email: string; full_name: string | null; status: string; primary_role: string; onboarding_completed: boolean; created_at: string }[]).filter(
-    (p) => typeof p.onboarding_completed === "boolean" && opts.roles.includes(p.primary_role) && !isInternalEmail(p.email),
-  );
+  const rows = res.rows.filter((p) => p.email && (typeof p.onboarding_completed === "boolean" ||
+    (isD1Lifecycle(db) && (p.onboarding_completed === 0 || p.onboarding_completed === 1))) &&
+    opts.roles.includes(p.primary_role) && !isInternalEmail(p.email));
   if (!rows.length) return { stalled: [], error: null };
-  const memberships = await selectIn<{ user_id: string }>(rows.map((p) => p.id), (c) => db.from("organization_members").select("user_id").in("user_id", c));
+  const memberships = await readByIds<{ user_id: string }>(db, rows.map((p) => p.id),
+    `SELECT user_id FROM organization_members WHERE user_id ${inList}`,
+    (c, legacy) => legacy.from("organization_members").select("user_id").in("user_id", c));
   if (memberships.error) return { stalled: [], error: `organization_members: ${memberships.error.message}` };
   const hasCompany = new Set(memberships.rows.map((m) => m.user_id));
   const candidates = rows.filter((p) => !p.onboarding_completed || !hasCompany.has(p.id));
@@ -553,17 +602,23 @@ export async function loadStalled(
 
   const [auth, prefs, sends, attrib, steps, suppressed, digest] = await Promise.all([
     authInfo(db, ids),
-    selectIn<{ user_id: string; new_rfps: string | null; channel_email: boolean | null; lifecycle_emails: boolean | null }>(ids, (c) =>
-      db.from("notification_preferences").select("user_id,new_rfps,channel_email,lifecycle_emails").in("user_id", c),
+    readByIds<{ user_id: string; new_rfps: string | null; channel_email: boolean | 0 | 1 | null; lifecycle_emails: boolean | 0 | 1 | null }>(db, ids, `SELECT user_id,new_rfps,channel_email,lifecycle_emails FROM notification_preferences WHERE user_id ${inList}`,
+      (c, legacy) => legacy.from("notification_preferences").select("user_id,new_rfps,channel_email,lifecycle_emails").in("user_id", c),
     ),
-    selectIn<{ user_id: string; step: string; status: string; sent_at: string }>(ids, (c) => db.from("lifecycle_sends").select("user_id,step,status,sent_at").in("user_id", c)),
-    selectIn<{ user_id: string; lang: string | null; country: string | null }>(ids, (c) => db.from("signup_attribution").select("user_id,lang,country").in("user_id", c)),
-    selectIn<{ user_id: string; step: string; detail: string | null }>(ids, (c) => db.from("onboarding_steps").select("user_id,step,detail").in("user_id", c)),
-    selectIn<{ email_key: string }>(emails, (c) => db.from("email_suppressions").select("email_key").in("email_key", c)),
-    selectIn<{ email_key: string; status: string; last_sent_at: string | null }>(emails, (c) => db.from("digest_subscribers").select("email_key,status,last_sent_at").in("email_key", c)),
+    readByIds<{ user_id: string; step: string; status: string; sent_at: string }>(db, ids, `SELECT user_id,step,status,sent_at FROM lifecycle_sends WHERE user_id ${inList}`,
+      (c, legacy) => legacy.from("lifecycle_sends").select("user_id,step,status,sent_at").in("user_id", c)),
+    readByIds<{ user_id: string; lang: string | null; country: string | null }>(db, ids, `SELECT user_id,lang,country FROM signup_attribution WHERE user_id ${inList}`,
+      (c, legacy) => legacy.from("signup_attribution").select("user_id,lang,country").in("user_id", c)),
+    readByIds<{ user_id: string; step: string; detail: string | null }>(db, ids, `SELECT user_id,step,detail FROM onboarding_steps WHERE user_id ${inList}`,
+      (c, legacy) => legacy.from("onboarding_steps").select("user_id,step,detail").in("user_id", c)),
+    readByIds<{ email_key: string }>(db, emails, `SELECT email_key FROM email_suppressions WHERE email_key ${inList}`,
+      (c, legacy) => legacy.from("email_suppressions").select("email_key").in("email_key", c)),
+    readByIds<{ email_key: string; status: string; last_sent_at: string | null }>(db, emails, `SELECT email_key,status,last_sent_at FROM digest_subscribers WHERE email_key ${inList}`,
+      (c, legacy) => legacy.from("digest_subscribers").select("email_key,status,last_sent_at").in("email_key", c)),
   ]);
   if (sends.error) return { stalled: [], error: isMissingTableError(sends.error) ? "lifecycle_sends table missing (run migration 20261016000020)" : sends.error.message };
   if (prefs.error) return { stalled: [], error: `notification_preferences: ${prefs.error.message}` };
+  if (isD1Lifecycle(db) && (digest.error || attrib.error || steps.error)) return { stalled: [], error: "D1 onboarding facts unavailable" };
   if (suppressed.error && !isMissingTableError(suppressed.error)) return { stalled: [], error: `email_suppressions: ${suppressed.error.message}` };
 
   const prefBy = new Map(prefs.rows.map((p) => [p.user_id, p]));
@@ -600,10 +655,10 @@ export async function loadStalled(
     const dig = digestBy.get(emailKey);
     const userSends = sendsBy.get(p.id) ?? [];
     const recorded = new Set(userSends.map((s) => s.step));
-    const lastSent = userSends.filter((s) => s.status === "sent" || s.status === "sending").map((s) => s.sentAt).sort().at(-1) ?? null;
-    const completed = p.onboarding_completed && hasCompany.has(p.id);
+    const lastSent = userSends.filter((s) => s.status === "sent" || s.status === "sending").map((s) => s.sentAt).sort((a, b) => Date.parse(a) - Date.parse(b)).at(-1) ?? null;
+    const completed = Boolean(p.onboarding_completed) && hasCompany.has(p.id);
     const steps = stepsBy.get(p.id) ?? new Set<string>();
-    const stage = stageOf({ emailConfirmed: Boolean(a?.confirmedAt), steps, onboardingCompleted: p.onboarding_completed, hasCompany: hasCompany.has(p.id) });
+    const stage = stageOf({ emailConfirmed: Boolean(a?.confirmedAt), steps, onboardingCompleted: Boolean(p.onboarding_completed), hasCompany: hasCompany.has(p.id) });
     const rawLang = attr?.lang;
     stalled.push({
       state: {
@@ -614,7 +669,7 @@ export async function loadStalled(
         internal: false,
         emailConfirmed: Boolean(a?.confirmedAt),
         completed,
-        optedOut: pref?.lifecycle_emails === false || pref?.channel_email === false || pref?.new_rfps === "off" || dig?.status === "unsubscribed",
+        optedOut: disabledPreference(pref?.lifecycle_emails) || disabledPreference(pref?.channel_email) || pref?.new_rfps === "off" || dig?.status === "unsubscribed",
         suppressed: suppressedSet.has(emailKey) || dig?.status === "bounced",
         recorded,
         lastSentAt: lastSent,
@@ -726,8 +781,8 @@ export interface StalledRow {
  * a personal note. Read-only.
  */
 export async function listStalledSignups(now: Date = new Date()): Promise<{ rows: StalledRow[]; error: string | null }> {
-  if (!isServiceConfigured()) return { rows: [], error: "no service client" };
-  const db = createServiceClient();
+  if (!useD1Lifecycle() && !isServiceConfigured()) return { rows: [], error: "no service client" };
+  const db = useD1Lifecycle() ? nativeLifecycleDb() : createServiceClient();
   const tax = await loadTaxonomy();
   const { stalled, error } = await loadStalled(db, now, tax, { horizonMs: STALLED_LIST_DAYS * DAY, roles: ["trade", "supplier", "property_manager"], limit: 500 });
   if (error) return { rows: [], error };
@@ -757,8 +812,16 @@ export async function listStalledSignups(now: Date = new Date()): Promise<{ rows
 
 /* ------------------------------------------------------------------ trial activity (trial_day7 only) */
 
-async function trialActivity(db: Db, m: Member): Promise<{ alertsSent: number; saved: number; interests: number }> {
+async function trialActivity(db: LifecycleDb, m: Member): Promise<{ alertsSent: number; saved: number; interests: number }> {
   const since = m.state.trial?.startedAt ?? new Date(0).toISOString();
+  if (isD1Lifecycle(db)) {
+    const [counts] = await readD1<{ alertsSent: number; saved: number; interests: number }>(db.app, `SELECT
+      (SELECT count(*) FROM lead_alert_log WHERE user_id=? AND julianday(sent_at)>=julianday(?)) AS alertsSent,
+      (SELECT count(*) FROM saved_rfps WHERE user_id=? AND julianday(created_at)>=julianday(?)) AS saved,
+      (SELECT count(*) FROM rfp_interests WHERE trade_organization_id=? AND julianday(created_at)>=julianday(?)) AS interests`,
+      m.state.userId, since, m.state.userId, since, m.org.id, since);
+    return counts;
+  }
   const count = async (q: PromiseLike<{ count: number | null; error: unknown }>) => {
     const { count: n, error } = await q;
     return error ? 0 : (n ?? 0);
@@ -775,6 +838,19 @@ async function trialActivity(db: Db, m: Member): Promise<{ alertsSent: number; s
 
 const MARKET_STEPS: ReadonlySet<StepId> = new Set(["market", "trial_offer", "trial_day1", "trial_day7", "trial_winback"]);
 const BENCH_STEPS: ReadonlySet<StepId> = new Set(["market", "benchmark", "trial_offer"]);
+
+export function lifecycleLinkBase(env = process.env): string {
+  const canonical = "https://pmrfp.com";
+  if (env.PMRFP_VPS_LIVE_AUTH === "enabled") return canonical;
+  try {
+    const url = new URL(env.NEXT_PUBLIC_SITE_URL || canonical);
+    if (url.protocol === "https:" && !url.username && !url.password &&
+      url.hostname !== "example.invalid" && !url.hostname.endsWith(".invalid")) return url.origin;
+  } catch {
+    // An invalid site setting cannot be used in customer-facing links.
+  }
+  return canonical;
+}
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -795,9 +871,9 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     startAt: { kind: "off" },
     cap: null,
   };
-  if (!isServiceConfigured()) return { ...report, skipped: "no service client" };
+  if (!useD1Lifecycle() && !isServiceConfigured()) return { ...report, skipped: "no service client" };
   if (!opts.dry && !enabled) return { ...report, skipped: "LIFECYCLE_EMAILS_ENABLED is off" };
-  if (!opts.dry && !emailConfigured()) return { ...report, skipped: "RESEND_API_KEY not set" };
+  if (!opts.dry && !lifecycleEmailConfigured()) return { ...report, skipped: "lifecycle email transport not configured" };
 
   // The go-live cutoff. A value that isn't a date stops the run: guessing "off" would let old accounts catch up in a burst.
   const startSetting = lifecycleStartAt();
@@ -806,12 +882,19 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
   report.startAt = startAt ? { kind: "on", at: startAt.toISOString() } : { kind: "off" };
   const decideOpts: DecideOptions = { startAt };
 
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
+  const base = lifecycleLinkBase();
   // Every send carries a signed one-click unsubscribe link and the List-Unsubscribe headers (lib/email/send). Never send without one.
   if (!opts.dry && !lifecycleUnsubscribeUrl(base, "probe")) return { ...report, skipped: "no unsubscribe signing secret (UNSUBSCRIBE_SECRET): emails would go out without a one-click unsubscribe" };
 
-  const db = createServiceClient();
-  const probe = await db.from("lifecycle_sends").select("id").limit(1);
+  const db = useD1Lifecycle() ? nativeLifecycleDb() : createServiceClient();
+  if (!opts.dry && isD1Lifecycle(db)) {
+    if (process.env.PMRFP_SMTP_ENABLED !== "enabled" || !process.env.UNSUBSCRIBE_SECRET) {
+      return { ...report, skipped: "D1 lifecycle requires Hostinger SMTP and an unsubscribe secret" };
+    }
+    await requireD1LifecycleAuthority(db.app);
+  }
+  const probe = await readLifecycle(db, "SELECT id FROM lifecycle_sends LIMIT 1", [],
+    (legacy) => legacy.from("lifecycle_sends").select("id").limit(1));
   if (probe.error) return { ...report, skipped: isMissingTableError(probe.error) ? "lifecycle_sends table missing (run migration 20261016000020)" : probe.error.message };
 
   const tax = await loadTaxonomy();
@@ -820,12 +903,17 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
   report.considered = members.length;
   if (opts.dry) report.members = [];
 
-  // Optional ceiling on lifecycle emails in any rolling 24 hours (LIFECYCLE_MAX_PER_DAY), so a go-live wave can't outrun the Resend plan.
-  const maxPerDay = lifecycleMaxPerDay();
+  // Count attempts, including failures, against the Hostinger mailbox budget.
+  const smtp = process.env.PMRFP_SMTP_ENABLED === "enabled";
+  const maxPerDay = lifecycleMaxPerDay() ?? (smtp ? 30 : null);
   let dayBudget = Number.POSITIVE_INFINITY;
   if (maxPerDay) {
     const last24 = new Date(now.getTime() - DAY).toISOString();
-    const { count, error: capErr } = await db.from("lifecycle_sends").select("id", { count: "exact", head: true }).in("status", ["sent", "sending"]).gte("sent_at", last24);
+    const { count, error: capErr } = isD1Lifecycle(db)
+      ? { count: (await readD1<{ n: number }>(db.app, `SELECT count(*) AS n FROM lifecycle_sends
+          WHERE status IN ('sent','sending','failed') AND julianday(sent_at)>=julianday(?)`, last24))[0].n, error: null }
+      : await db.from("lifecycle_sends").select("id", { count: "exact", head: true })
+        .in("status", smtp ? ["sent", "sending", "failed"] : ["sent", "sending"]).gte("sent_at", last24);
     if (capErr) return { ...report, skipped: `could not count the last 24 hours of sends: ${capErr.message}` };
     report.cap = { max: maxPerDay, sentLast24h: count ?? 0 };
     dayBudget = Math.max(0, maxPerDay - (count ?? 0));
@@ -845,7 +933,7 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
   const maxSends = opts.maxSends ?? MAX_SENDS_PER_RUN;
   // The per-run ceiling and the rolling 24-hour ceiling, whichever is lower.
   let budget = Math.min(maxSends, dayBudget);
-  // Real sends are spaced (Resend's per-second limit) and stop before the function's time limit; the rest go out next hour.
+  // Space sends and stop before the function's time limit.
   const gapMs = opts.sendGapMs ?? SEND_GAP_MS;
   const runStart = Date.now();
   let lastSendAt = 0;
@@ -858,7 +946,10 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
 
   // 1. Onboarding rescue: trade accounts with no company yet. Time-sensitive, so first.
   const stalledRes = await loadStalled(db, now, tax, { horizonMs: RESCUE_HORIZON_MS, roles: ["trade"] });
-  if (stalledRes.error) console.error("[lifecycle] rescue load failed", stalledRes.error);
+  if (stalledRes.error) {
+    if (isD1Lifecycle(db)) return { ...report, skipped: stalledRes.error };
+    console.error("[lifecycle] rescue load failed", stalledRes.error);
+  }
   report.rescue.considered = stalledRes.stalled.length;
   for (const s of stalledRes.stalled) {
     if (budget <= 0) break;
@@ -881,7 +972,7 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
     if (opts.dry) continue;
     if (outOfTime()) break;
     await pace();
-    const res = await claimAndSend(db, { userId: s.state.userId, orgId: null, step, lang: s.lang, to: s.email, from, email, unsub });
+    const res = await claimAndSend(db, { userId: s.state.userId, orgId: null, step, lang: s.lang, to: s.email, from, email, unsub }, now, s.state.province, maxPerDay);
     if (res === "sent") report.sent++;
     else if (res === "failed") report.failed++;
   }
@@ -922,7 +1013,9 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
       skipped: skips.map((s) => s.step),
     });
     for (const s of skips) report.skips.push({ userId: m.state.userId, org: m.org.name, step: s.step, reason: s.reason });
-    if (!opts.dry && skips.length) {
+    if (!opts.dry && skips.length && isD1Lifecycle(db)) {
+      await recordD1LifecycleSkips(db.app, m.state.userId, m.org.id, m.lang, skips);
+    } else if (!opts.dry && skips.length && !isD1Lifecycle(db)) {
       const { error: skipErr } = await db.from("lifecycle_sends").upsert(
         skips.map((s) => ({ user_id: m.state.userId, organization_id: m.org.id, step: s.step, status: "skipped", detail: s.reason, lang: m.lang })),
         { onConflict: "user_id,step", ignoreDuplicates: true },
@@ -950,7 +1043,7 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
 
     if (outOfTime()) break;
     await pace();
-    const res = await claimAndSend(db, { userId: m.state.userId, orgId: m.org.id, step, lang: m.lang, to: m.email, from, email, unsub });
+    const res = await claimAndSend(db, { userId: m.state.userId, orgId: m.org.id, step, lang: m.lang, to: m.email, from, email, unsub }, now, m.state.province, maxPerDay);
     if (res === "sent") report.sent++;
     else if (res === "failed") report.failed++;
   }
@@ -962,17 +1055,44 @@ export async function runLifecycle(opts: { dry: boolean; now?: Date; maxSends?: 
  * a retry never sends the same step twice.
  */
 async function claimAndSend(
-  db: Db,
+  db: LifecycleDb,
   p: { userId: string; orgId: string | null; step: StepId; lang: Locale; to: string; from: string; email: RenderedEmail; unsub: string | null },
+  now: Date,
+  province: string | null,
+  maxPerDay: number | null,
 ): Promise<"sent" | "failed" | "claimed_elsewhere"> {
-  const { data: claimed, error: claimErr } = await db
-    .from("lifecycle_sends")
-    .upsert({ user_id: p.userId, organization_id: p.orgId, step: p.step, status: "sending", lang: p.lang }, { onConflict: "user_id,step", ignoreDuplicates: true })
-    .select("id");
-  if (claimErr || !claimed?.length) {
+  let id: string | null;
+  if (isD1Lifecycle(db)) {
+    if (!p.unsub || !maxPerDay) throw new Error("D1 lifecycle delivery is not configured");
+    const verified = await db.auth.prepare(`SELECT id FROM user WHERE id=? AND lower(trim(email))=?
+      AND emailVerified=1 AND (banned=0 OR (banned=1 AND julianday(banExpires)<=julianday('now')))`)
+      .bind(p.userId, p.to.trim().toLowerCase()).first();
+    if (!verified) return "claimed_elsewhere";
+    const actualNow = new Date();
+    const tz = memberTimeZone(province);
+    const today = localClock(now, tz).date;
+    if (localClock(actualNow, tz).date !== today) return "claimed_elsewhere";
+    // Find local midnight without assuming a UTC offset or a 24-hour calendar day.
+    let low = Math.floor(now.getTime() / 1000) - 26 * 3600;
+    let high = Math.ceil(now.getTime() / 1000);
+    while (high - low > 1) {
+      const mid = Math.floor((low + high) / 2);
+      if (localClock(new Date(mid * 1000), tz).date === today) high = mid;
+      else low = mid;
+    }
+    id = await claimD1Lifecycle(db.app, p, {
+      now: actualNow.toISOString(), todayStart: new Date(high * 1000).toISOString(),
+      last24: new Date(actualNow.getTime() - DAY).toISOString(), maxPerDay,
+    });
+  } else {
+    const { data: claimed, error: claimErr } = await db
+      .from("lifecycle_sends")
+      .upsert({ user_id: p.userId, organization_id: p.orgId, step: p.step, status: "sending", lang: p.lang }, { onConflict: "user_id,step", ignoreDuplicates: true })
+      .select("id");
     if (claimErr) console.error("[lifecycle] claim failed", claimErr.message);
-    return "claimed_elsewhere";
+    id = claimErr ? null : (claimed?.[0] as { id: string } | undefined)?.id ?? null;
   }
+  if (!id) return "claimed_elsewhere";
   const res = await sendLifecycleEmail({
     to: p.to,
     from: p.from,
@@ -983,10 +1103,25 @@ async function claimAndSend(
     unsubscribeUrl: p.unsub,
     step: p.step,
   });
-  await db
+  if (isD1Lifecycle(db)) {
+    await finishD1Lifecycle(db.app, id, p.to, res);
+    return res.ok ? "sent" : "failed";
+  }
+  if (res.invalidRecipient) {
+    const email = p.to.trim().toLowerCase();
+    const { error } = await db.from("email_suppressions")
+      .upsert({ email_key: email, reason: "bounce", detail: "Hostinger SMTP rejected the recipient address" },
+        { onConflict: "email_key", ignoreDuplicates: true });
+    if (error) throw new Error("Lifecycle bounce suppression could not be saved");
+    const { error: digestError } = await db.from("digest_subscribers")
+      .update({ status: "bounced", updated_at: new Date().toISOString() }).eq("email_key", email);
+    if (digestError) console.error("[lifecycle] digest bounce status unavailable");
+  }
+  const { error: receiptError } = await db
     .from("lifecycle_sends")
     .update({ status: res.ok ? "sent" : "failed", resend_id: res.id, detail: res.ok ? null : (res.error ?? "send failed").slice(0, 300), sent_at: new Date().toISOString() })
-    .eq("id", (claimed[0] as { id: string }).id);
+    .eq("id", id);
+  if (receiptError) throw new Error("Lifecycle delivery receipt could not be saved");
   return res.ok ? "sent" : "failed";
 }
 
@@ -1005,7 +1140,7 @@ function badgeCopyFor(m: Member): BadgeCopy {
 }
 
 async function copyDataFor(
-  db: Db,
+  db: LifecycleDb,
   m: Member,
   step: StepId,
   ctx: { mk: ReturnType<typeof marketFor> | null; bf: BenchFact | null; scarcity: FoundingScarcity; now: Date },
@@ -1062,7 +1197,7 @@ export function previewEmail(
   /** The badge emails: show the reward line (the live BADGE_REWARD_ENABLED flag by default, or the admin's toggle) and/or a company with no website. */
   opts: { reward?: boolean; website?: boolean } = {},
 ): RenderedEmail {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
+  const base = lifecycleLinkBase();
   const data = sampleCopyData(step, lang, country, persona, { reward: opts.reward ?? badgeRewardEnabled(), website: opts.website });
   return renderStep(step, data, { base, unsubscribeUrl: lifecycleUnsubscribeUrl(base, unsubscribeUserId) });
 }
@@ -1079,7 +1214,7 @@ export async function sendTestToAdmin(p: {
   website?: boolean;
 }): Promise<{ ok: boolean; error?: string }> {
   const email = previewEmail(p.step, p.lang, p.country, p.userId, p.persona, { reward: p.reward, website: p.website });
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
+  const base = lifecycleLinkBase();
   const res = await sendLifecycleEmail({
     to: p.to,
     from: lifecycleFrom(),

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { loadNativeManagedTownJob, loadNativeTownResults } from "@/lib/town-jobs/native-management";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { canManageTownJob } from "@/lib/town-jobs/rules";
@@ -16,16 +18,17 @@ import { isEnabledLocale } from "@/i18n/config";
  * after closing). Headers in the page's language.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return NextResponse.json({ error: "Not available" }, { status: 503 });
+  const native = isVpsLiveCustomerAuth();
+  if (!native && (!isSupabaseConfigured() || !isServiceConfigured())) return NextResponse.json({ error: "Not available" }, { status: 503 });
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   const { id } = await params;
-  const db = createServiceClient();
-  const job = await loadTownJob(db, id);
+  const db = native ? null : createServiceClient();
+  const job = db ? await loadTownJob(db, id) : await loadNativeManagedTownJob(session.userId,id);
   if (!job || !canManageTownJob(job, { userId: session.userId, organizationId: session.organization?.id ?? null, role: session.profile.primary_role })) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  const results = await loadResults(db, job, session.userId);
+  const results = db ? await loadResults(db, job, session.userId) : await loadNativeTownResults(session.userId,job);
   if (!results.ready || !results.summary) return NextResponse.json({ error: "Results aren't ready yet" }, { status: 409 });
   const langParam = new URL(request.url).searchParams.get("lang");
   const t = getDictionary(isEnabledLocale(langParam) ? langParam : "en").townResults;

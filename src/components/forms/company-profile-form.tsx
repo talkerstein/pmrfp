@@ -35,6 +35,7 @@ export function CompanyProfileForm({
   selectedRegions = [],
   selectedPropertyTypes = [],
   portfolioMaxPhotos = 1,
+  nativeMedia = false,
 }: {
   defaults: CompanyDefaults;
   organizationId: string | null;
@@ -46,6 +47,7 @@ export function CompanyProfileForm({
   selectedPropertyTypes?: string[];
   /** 1 on the free tier, unlimited (12 — the upload cap) on any paid tier. */
   portfolioMaxPhotos?: number;
+  nativeMedia?: boolean;
 }) {
   const [state, action, pending] = useActionState(updateCompanyProfileAction, {} as ActionState);
   const t = useT("dashClient").company;
@@ -65,11 +67,12 @@ export function CompanyProfileForm({
         <LogoUploader
           organizationId={organizationId}
           initialLogoUrl={defaults.logoUrl ?? null}
+          nativeMedia={nativeMedia}
         />
       </Section>
 
       <Section title={t.portfolio}>
-        <PortfolioUploader organizationId={organizationId} maxPhotos={portfolioMaxPhotos} />
+        <PortfolioUploader organizationId={organizationId} maxPhotos={portfolioMaxPhotos} nativeMedia={nativeMedia} />
       </Section>
 
       <Section title={t.basics}>
@@ -100,7 +103,8 @@ export function CompanyProfileForm({
               {["1-10", "11-50", "51-200", "200+"].map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </Field>
-          <div>
+          {/* The native database cannot hold the private policy number yet, so the field is left out there. */}
+          {!nativeMedia && <div>
             <Field label={t.insurance}>
               <Input name="insurancePolicyNumber" defaultValue={defaults.insurancePolicyNumber} placeholder={t.insurancePlaceholder} maxLength={POLICY_NUMBER_MAX} autoComplete="off" />
             </Field>
@@ -111,7 +115,7 @@ export function CompanyProfileForm({
                 {fmt(t.insuranceLine, { line: defaults.insuranceLine })}
               </label>
             )}
-          </div>
+          </div>}
           <Field label={t.wsib}><Input name="wsibStatus" defaultValue={defaults.wsibStatus} placeholder={t.wsibPlaceholder} /></Field>
         </div>
         <label className="flex items-center gap-2 text-sm">

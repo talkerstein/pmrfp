@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SessionContext } from "@/lib/access/access";
+import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createReadClient } from "@/lib/supabase/read";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
@@ -9,6 +14,11 @@ import { sendTownJobEmail } from "@/lib/email/send";
 import type { EmailLang } from "@/lib/pm-jobs/email-copy";
 import { certStatus, cleanEmail, isoDay } from "@/lib/vendor-certs/rules";
 import { findVendorOrg, isMissingTable, orgCertCountry } from "@/lib/vendor-certs/server";
+import {
+  ENTRY_COLUMNS, LINK_COLUMNS, ROSTER_COLUMNS, claimNativeRosterInvite, createNativeRosterShare,
+  listNativeInvitedEmails, listNativeRosterCerts, listNativeRosters, loadNativeRoster, readNativeSharedRoster,
+  type RosterScope,
+} from "./native";
 import { rosterInviteEmail } from "./email-copy";
 import { hasUnsubscribeSecret, rosterInviteUnsubscribeUrl } from "./unsubscribe";
 import {
@@ -28,23 +38,23 @@ import {
 } from "./rules";
 
 /**
- * After-Hours Vendor Roster: everything that touches the database or email.
- * The PM's reads and edits go through their signed-in client (RLS: their
- * own company's rows); share-link creation and lookup, the directory's
- * contact details and the invite go through the service role or the
- * public read client here.
+ * After-Hours Vendor Roster database reads and email delivery. Private
+ * operations use the active member's organization scope on the VPS or
+ * row-level security on the legacy backend. Public cards require a current
+ * share link and directory lookups respect supplier contact visibility.
  */
 
-type Db = SupabaseClient;
+type Db = SupabaseClient | RosterScope;
+
+export async function rosterDatabase(session: SessionContext): Promise<Db> {
+  if (isVpsLiveCustomerAuth()) return { orgId: session.organization?.id ?? "", userId: session.userId };
+  return createClient();
+}
 
 const BASE = () => (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/$/, "");
 const mailingAddress = () => process.env.BUSINESS_MAILING_ADDRESS?.trim() || null;
 
-export const ROSTER_COLUMNS =
-  "id,organization_id,building_name,address,city,province,on_call_name,on_call_phone,on_call_notes,shutoff_water,shutoff_gas,shutoff_electric,shutoff_notes,emergency_line,non_emergency_line,other_numbers,created_at,updated_at";
-export const ENTRY_COLUMNS =
-  "id,roster_id,category,custom_label,trade_slug,not_needed,primary_name,primary_phone,primary_email,primary_org_id,backup_name,backup_phone,backup_email,backup_org_id,available_24_7,notes,sort_order,created_at,updated_at";
-const LINK_COLUMNS = "id,roster_id,token,label,created_at,revoked_at,last_viewed_at,view_count";
+export { ENTRY_COLUMNS };
 
 export interface RosterRecord extends RosterInput {
   id: string;
@@ -73,6 +83,7 @@ export function rosterCountry(geoCountry: string | null | undefined, org: { prov
 
 /** Every building of the company with all their rows (the list page's readiness counts). */
 export async function loadRosters(db: Db, orgId: string): Promise<{ ready: boolean; rosters: RosterRecord[]; entries: EntryRow[] }> {
+  if ("orgId" in db) return listNativeRosters(db).catch(() => ({ ready: false, rosters: [], entries: [] }));
   const { data, error } = await db.from("emergency_rosters").select(ROSTER_COLUMNS).eq("organization_id", orgId).order("building_name").limit(500);
   if (error) {
     if (!isMissingTable(error)) console.error("[roster] load", error.message);
@@ -87,6 +98,7 @@ export async function loadRosters(db: Db, orgId: string): Promise<{ ready: boole
 
 /** One building: its rows and share links. Null roster: not found or not this company's. */
 export async function loadRoster(db: Db, id: string): Promise<{ ready: boolean; roster: RosterRecord | null; entries: EntryRow[]; links: LinkRecord[] }> {
+  if ("orgId" in db) return loadNativeRoster(db, id).catch(() => ({ ready: false, roster: null, entries: [], links: [] }));
   const { data, error } = await db.from("emergency_rosters").select(ROSTER_COLUMNS).eq("id", id).maybeSingle<RosterRecord>();
   if (error) {
     if (!isMissingTable(error)) console.error("[roster] load one", error.message);
@@ -106,11 +118,9 @@ export async function loadRoster(db: Db, id: string): Promise<{ ready: boolean; 
  * applied) or holds nothing.
  */
 export async function loadInsuranceCerts(db: Db, orgId: string, now: Date = new Date()): Promise<CertLite[]> {
-  const { data, error } = await db.from("vendor_certificates").select("vendor_name,contact_email,vendor_organization_id,expires_on").eq("organization_id", orgId).limit(1000);
-  if (error) {
-    if (!isMissingTable(error)) console.error("[roster] certs", error.message);
-    return [];
-  }
+  const data = "orgId" in db
+    ? await listNativeRosterCerts(db).catch(() => [])
+    : (await db.from("vendor_certificates").select("vendor_name,contact_email,vendor_organization_id,expires_on").eq("organization_id", orgId).limit(1000)).data;
   const today = isoDay(now);
   return ((data ?? []) as { vendor_name: string; contact_email: string | null; vendor_organization_id: string | null; expires_on: string | null }[]).map((c) => ({
     vendor_name: c.vendor_name,
@@ -125,7 +135,11 @@ export async function linkedOrgs(db: Db, ids: (string | null)[]): Promise<Map<st
   const out = new Map<string, { slug: string; name: string }>();
   const unique = [...new Set(ids.filter((x): x is string => !!x))].slice(0, 500);
   if (!unique.length) return out;
-  const { data } = await db.from("organizations").select("id,slug,name,profile_status,status").in("id", unique);
+  const data = "orgId" in db
+    ? (await vpsAppDatabase().prepare(`SELECT id,slug,name,profile_status,status FROM organizations
+      WHERE id IN (SELECT value FROM json_each(?)) AND ${customerAppAuthority}`).bind(JSON.stringify(unique))
+      .all<{ id: string; slug: string; name: string; profile_status: string; status: string }>().catch(() => null))?.results
+    : (await db.from("organizations").select("id,slug,name,profile_status,status").in("id", unique)).data;
   for (const o of (data ?? []) as { id: string; slug: string; name: string; profile_status: string; status: string }[]) {
     if (o.profile_status === "approved" && o.status === "active") out.set(o.id, { slug: o.slug, name: o.name });
   }
@@ -134,6 +148,7 @@ export async function linkedOrgs(db: Db, ids: (string | null)[]): Promise<Map<st
 
 /** Addresses this company already invited (the row shows "Invited"). */
 export async function invitedEmails(db: Db, orgId: string): Promise<Set<string>> {
+  if ("orgId" in db) return listNativeInvitedEmails(db).catch(() => new Set<string>());
   const { data, error } = await db.from("emergency_roster_invites").select("email_key").eq("organization_id", orgId).limit(5000);
   if (error) return new Set();
   return new Set(((data ?? []) as { email_key: string }[]).map((r) => r.email_key));
@@ -167,20 +182,17 @@ const contactOf = (o: OrgContactRow) => (o.public_contact_visibility === "show_c
  * to the building's province or state, emergency service first.
  */
 export async function findDirectoryMatches(x: { tradeSlug: string; country: RosterCountry; province: string | null; city: string | null }): Promise<DirectoryMatch[]> {
-  if (!isSupabaseConfigured()) return [];
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return [];
   const list = await listVendors({ category: x.tradeSlug, country: x.country });
   if (!list.length) return [];
-  const { data, error } = await createReadClient()
-    .from("organizations")
-    .select("id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility")
-    .in("slug", list.map((v) => v.slug).slice(0, 200))
-    .eq("profile_status", "approved")
-    .eq("status", "active")
-    .eq("is_demo", false);
-  if (error) {
-    console.error("[roster] directory", error.message);
-    return [];
-  }
+  const slugs = list.map((v) => v.slug).slice(0, 200);
+  const data = native
+    ? (await vpsAppDatabase().prepare(`SELECT id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility
+      FROM organizations WHERE slug IN (SELECT value FROM json_each(?)) AND profile_status='approved'
+        AND status='active' AND is_demo=0 AND ${customerAppAuthority}`).bind(JSON.stringify(slugs)).all<OrgContactRow>()).results
+    : (await createReadClient().from("organizations").select("id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility")
+      .in("slug", slugs).eq("profile_status", "approved").eq("status", "active").eq("is_demo", false)).data;
   const bySlug = new Map(((data ?? []) as OrgContactRow[]).map((o) => [o.slug, o]));
   const cands: DirectoryMatch[] = [];
   for (const v of list) {
@@ -197,16 +209,15 @@ export async function findDirectoryMatches(x: { tradeSlug: string; country: Rost
  * never one placed in the other country.
  */
 export async function directoryVendor(orgId: string, country: RosterCountry): Promise<{ orgId: string; name: string; phone: string | null; email: string | null } | null> {
-  if (!isSupabaseConfigured()) return null;
-  const { data } = await createReadClient()
-    .from("organizations")
-    .select("id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility")
-    .eq("id", orgId)
-    .in("organization_type", ["trade_company", "supplier"])
-    .eq("profile_status", "approved")
-    .eq("status", "active")
-    .eq("is_demo", false)
-    .maybeSingle<OrgContactRow>();
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return null;
+  const data = native
+    ? await vpsAppDatabase().prepare(`SELECT id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility
+      FROM organizations WHERE id=? AND organization_type IN ('trade_company','supplier')
+        AND profile_status='approved' AND status='active' AND is_demo=0 AND ${customerAppAuthority}`).bind(orgId).first<OrgContactRow>()
+    : (await createReadClient().from("organizations").select("id,slug,name,province,country,emergency_service,phone,email,public_contact_visibility")
+      .eq("id", orgId).in("organization_type", ["trade_company", "supplier"]).eq("profile_status", "approved")
+      .eq("status", "active").eq("is_demo", false).maybeSingle<OrgContactRow>()).data;
   if (!data) return null;
   const geo = accountGeo(data);
   if (geo && geo.country !== country) return null;
@@ -223,6 +234,7 @@ export type ShareCreate = { token: string } | { error: "limit" | "unavailable" }
  * client. At most MAX_ACTIVE_LINKS live links per building.
  */
 export async function createShareLink(x: { rosterId: string; orgId: string; userId: string; label: string | null }): Promise<ShareCreate> {
+  if (isVpsLiveCustomerAuth()) return createNativeRosterShare(x, x.rosterId, x.label).catch(() => ({ error: "unavailable" }));
   if (!isServiceConfigured()) return { error: "unavailable" };
   const admin = createServiceClient();
   const { count, error: cErr } = await admin.from("emergency_roster_links").select("id", { count: "exact", head: true }).eq("roster_id", x.rosterId).is("revoked_at", null);
@@ -250,7 +262,14 @@ export interface SharedRoster {
  * `countView` stamps the visit (the page does; the contacts download doesn't).
  */
 export async function getSharedRoster(token: string, opts: { countView?: boolean; now?: Date } = {}): Promise<SharedRoster | null> {
-  if (!isShareToken(token) || !isServiceConfigured()) return null;
+  if (!isShareToken(token)) return null;
+  if (isVpsLiveCustomerAuth()) {
+    const record = await readNativeSharedRoster(token, opts.countView ? opts.now ?? new Date() : undefined).catch(() => null);
+    if (!record) return null;
+    return { roster: record.roster, entries: record.entries, company: record.organization.name,
+      country: orgCertCountry(record.organization) };
+  }
+  if (!isServiceConfigured()) return null;
   try {
     const admin = createServiceClient();
     const { data: link } = await admin
@@ -297,9 +316,27 @@ export async function inviteVendor(
   x: { orgId: string; userId: string; inviter: string | null; company: string; lang: EmailLang; entryId: string; slot: Slot; vendorName: string | null; email: string | null },
   now: Date = new Date(),
 ): Promise<InviteResult> {
-  if (!isServiceConfigured() || !mailingAddress() || !hasUnsubscribeSecret()) return "unavailable";
+  const native = isVpsLiveCustomerAuth();
+  const address = mailingAddress();
+  if ((!native && !isServiceConfigured()) || !address || !hasUnsubscribeSecret()) return "unavailable";
   const inviter = x.inviter?.trim();
   if (!inviter) return "name";
+  if (native) {
+    const claim = await claimNativeRosterInvite(x, x.entryId, x.slot, x.lang, now).catch(() => ({ error: "unavailable" as const }));
+    if ("error" in claim) return claim.error;
+    const base = "https://pmrfp.com";
+    const unsub = rosterInviteUnsubscribeUrl(base, claim.id);
+    if (!unsub) return "unavailable";
+    try {
+      await sendTownJobEmail(claim.email, rosterInviteEmail(x.lang, { base, inviter, company: x.company,
+        vendor: claim.vendorName, unsubscribeUrl: unsub, mailingAddress: address }), x.lang, "roster-invite", unsub, { smtpOnly: true });
+      return "sent";
+    } catch {
+      // An SMTP error may occur after acceptance. Keep the claim so the referral can't be sent twice.
+      console.error("[roster] invitation delivery failed");
+      return "unavailable";
+    }
+  }
   const email = cleanEmail(x.email);
   if (!email) return "no_email";
   const admin = createServiceClient();
@@ -350,7 +387,7 @@ export async function inviteVendor(
   if (!unsub) return "unavailable";
   await sendTownJobEmail(
     email,
-    rosterInviteEmail(x.lang, { base, inviter, company: x.company, vendor: x.vendorName, unsubscribeUrl: unsub, mailingAddress: mailingAddress()! }),
+    rosterInviteEmail(x.lang, { base, inviter, company: x.company, vendor: x.vendorName, unsubscribeUrl: unsub, mailingAddress: address }),
     x.lang,
     "roster-invite",
     unsub,

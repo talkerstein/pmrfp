@@ -10,6 +10,8 @@ import { resolveVisitorUpgrade, VISITOR_UPGRADE_PATH, type BusinessRole } from "
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { ActionState } from "@/lib/auth/actions";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { convertVpsVisitor } from "@/lib/d1/vps-visitor-upgrade";
 
 function formLang(formData: FormData): Locale {
   const v = formData.get("lang");
@@ -30,6 +32,7 @@ async function convertVisitorAccount(o: {
   by: "self" | "staff";
   company?: string;
 }): Promise<"converted" | "already" | "error"> {
+  if (isVpsLiveCustomerAuth()) return convertVpsVisitor(o).catch(() => "error");
   if (!isServiceConfigured()) return "error";
   const admin = createServiceClient();
   const { data: rows, error } = await admin
@@ -64,7 +67,7 @@ async function convertVisitorAccount(o: {
 export async function upgradeVisitorAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = formLang(formData);
   const m = getDictionary(lang).auth.visitorUpgrade;
-  if (!isSupabaseConfigured()) return { error: getDictionary(lang).auth.actions.demo };
+  if (!isVpsLiveCustomerAuth() && !isSupabaseConfigured()) return { error: getDictionary(lang).auth.actions.demo };
   const session = await getSession();
   if (!session) redirect(localizePath(`/sign-in?next=${encodeURIComponent(VISITOR_UPGRADE_PATH)}`, lang));
 
@@ -90,7 +93,13 @@ export async function adminConvertVisitorAction(formData: FormData): Promise<voi
   const staff = await requireRole(["admin", "super_admin"]);
   const userId = String(formData.get("userId") ?? "");
   const role = formData.get("role") ?? "trade";
-  if (userId && isServiceConfigured()) {
+  if (userId && isVpsLiveCustomerAuth()) {
+    const pick = resolveVisitorUpgrade("visitor", role);
+    if (pick.ok && pick.changed) {
+      const result = await convertVisitorAccount({ userId, to: pick.to, actorUserId: staff.userId, by: "staff" });
+      if (result !== "converted") redirect("/admin/users?error=conversion");
+    }
+  } else if (userId && isServiceConfigured()) {
     const { data: row } = await createServiceClient()
       .from("users_profile")
       .select("primary_role")

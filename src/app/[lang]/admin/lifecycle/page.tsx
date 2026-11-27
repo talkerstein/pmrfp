@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -15,6 +16,8 @@ import { stallCounts, STAGE_LABEL } from "@/lib/onboarding/steps";
 import { CopyTextButton } from "@/components/admin/copy-text-button";
 import { sendLifecycleTestAction } from "@/lib/lifecycle/actions";
 import type { Persona } from "@/lib/lifecycle/persona";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { readD1, useD1Lifecycle } from "@/lib/lifecycle/d1";
 
 export const metadata: Metadata = { title: "Lifecycle emails · Admin · PMRFP" };
 export const dynamic = "force-dynamic";
@@ -26,6 +29,14 @@ interface SendRow {
   status: string;
   opened_at: string | null;
   clicked_at: string | null;
+}
+interface FunnelRow {
+  step: string;
+  sent: number;
+  skipped: number;
+  failed: number;
+  opened: number;
+  clicked: number;
 }
 
 const PERSONAS: Persona[] = ["specialty", "recurring", "subtrade"];
@@ -41,9 +52,11 @@ const age = (h: number) => (h < 48 ? `${h}h` : `${Math.round(h / 24)}d`);
  */
 export default async function LifecycleAdminPage({ params, searchParams }: { params: Promise<object>; searchParams: SP }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
   const sp = await searchParams;
-  const demo = isDemoMode() || !isServiceConfigured();
+  const native = useD1Lifecycle();
+  if (native && session.profile.status !== "active") notFound();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
   const enabled = lifecycleEnabled();
 
   const step: StepId = isStepId(sp.step) ? sp.step : "welcome";
@@ -62,8 +75,19 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
   const atWindow = sp.asof === "window";
 
   let rows: SendRow[] = [];
+  const nativeFunnel = new Map<string, FunnelRow>();
   let missing = false;
-  if (!demo) {
+  if (native) {
+    try {
+      const aggregated = await readD1<FunnelRow>(vpsAppDatabase(), `
+        SELECT step,sum(status='sent') AS sent,sum(status='skipped') AS skipped,
+          sum(status IN ('failed','sending')) AS failed,sum(status='sent' AND opened_at IS NOT NULL) AS opened,
+          sum(status='sent' AND clicked_at IS NOT NULL) AS clicked FROM lifecycle_sends GROUP BY step`);
+      for (const row of aggregated) nativeFunnel.set(row.step, row);
+    } catch {
+      missing = true;
+    }
+  } else if (!demo) {
     const { data, error } = await createServiceClient()
       .from("lifecycle_sends")
       .select("step,status,opened_at,clicked_at")
@@ -74,6 +98,8 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
     rows = data ?? [];
   }
   const funnel = STEPS.map((s) => {
+    const nativeRow = nativeFunnel.get(s);
+    if (nativeRow) return { ...nativeRow, step: s };
     const r = rows.filter((x) => x.step === s);
     const sent = r.filter((x) => x.status === "sent");
     return {
@@ -89,7 +115,8 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
 
   let stalled: StalledRow[] = [];
   let stalledError: string | null = null;
-  if (!demo) ({ rows: stalled, error: stalledError } = await listStalledSignups());
+  if (!demo) ({ rows: stalled, error: stalledError } = await listStalledSignups()
+    .catch(() => ({ rows: [], error: "Onboarding history could not be loaded. Refresh to try again." })));
   const stalls = stallCounts(stalled.map((r) => r.stage));
 
   let dry: RunReport | null = null;
@@ -107,7 +134,8 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
       <p className={`mb-4 rounded-md px-3 py-2 text-sm ${enabled ? "bg-teal-50 text-teal-900" : "bg-amber-50 text-amber-900"}`}>
         {enabled
           ? "LIFECYCLE_EMAILS_ENABLED is on: the hourly cron (/api/cron/lifecycle) sends."
-          : "LIFECYCLE_EMAILS_ENABLED is off: nothing sends. Set it to 1 in Vercel (and redeploy) to turn it on. Use the dry run below first."}
+          : native ? "Lifecycle sends are paused. Use the dry run before enabling the VPS schedule."
+            : "LIFECYCLE_EMAILS_ENABLED is off: nothing sends. Set it to 1 in Vercel (and redeploy) to turn it on. Use the dry run below first."}
       </p>
       <ul className="mb-4 space-y-1 rounded-md border border-border bg-card px-3 py-2 text-sm">
         <li>
@@ -130,7 +158,7 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
       </ul>
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The lifecycle_sends table is missing. Run supabase/migrations/20261016000020_lifecycle_emails.sql, then 20261017000060_onboarding_rescue.sql, then 20261022000200_badge_lifecycle.sql.
+          {native ? "Send history could not be loaded. Refresh to try again." : "The lifecycle_sends table is missing. Run supabase/migrations/20261016000020_lifecycle_emails.sql, then 20261017000060_onboarding_rescue.sql, then 20261022000200_badge_lifecycle.sql."}
         </p>
       )}
 
@@ -168,7 +196,7 @@ export default async function LifecycleAdminPage({ params, searchParams }: { par
 
       <h2 className="mb-2 mt-6 text-base font-semibold">Funnel</h2>
       <p className="mb-2 text-xs text-muted-foreground">
-        {tracked
+        {native ? "Historical open and click totals are shown when available. Hostinger SMTP does not report those events." : tracked
           ? "Opens and clicks come from Resend's tracking webhooks (email.opened / email.clicked)."
           : "No opens or clicks recorded: they only appear if open/click tracking is on in Resend and the webhook sends those events."}
       </p>

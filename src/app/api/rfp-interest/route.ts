@@ -1,8 +1,13 @@
+import { readVpsMobileSession } from "@/lib/d1/vps-mobile-session";
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { interestSchema } from "@/lib/validations";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getSessionFromRequest } from "@/lib/access/request-session";
+import { getSession } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { deliverVpsRfpInterestMail, submitVpsRfpInterest } from "@/lib/d1/vps-rfp-interest";
 import { EVENT, trackEvent } from "@/lib/analytics";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { karmaSyncAfter } from "@/lib/karma/sync";
@@ -13,6 +18,8 @@ import { REFUSAL_STATUS, isFreeLimitError, parseQuoteAmount, parseQuoteKind, res
 import { freeResponsesUsed } from "@/lib/pm-jobs/server";
 import { loadJobForDecision, notifyNewInterest } from "@/lib/pm-jobs/decisions";
 import { loadTownJob } from "@/lib/town-jobs/server";
+import { D1ApiError } from "@/lib/d1/contracts";
+import { loadNativeSealedPost } from "@/lib/town-jobs/native-sealed";
 import { respondSealed } from "@/lib/town-jobs/sealed-respond";
 
 /**
@@ -43,6 +50,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten() }, { status: 422 });
   }
   const data = parsed.data;
+
+  if (isVpsLiveCustomerAuth()) {
+    if (!matchesCustomerOrigin(request)) return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
+    const session = request.headers.has("authorization") ? await readVpsMobileSession(request).catch(()=>null) : await getSession();
+    if (!session) return NextResponse.json({ error: "Sign in required", reason: "signin" }, { status: 401 });
+    try {
+      const result = await submitVpsRfpInterest(session, data);
+      if (!result.ok) {
+        if (result.reason === "already") {
+          return NextResponse.json({ error: "You've already expressed interest in this opportunity.", reason: "already" }, { status: 409 });
+        }
+        return NextResponse.json({ error: refusalMessage(result.reason), reason: result.reason }, { status: REFUSAL_STATUS[result.reason] });
+      }
+      after(() => deliverVpsRfpInterestMail(result, session.profile.email, data));
+      const { allowance } = result;
+      return NextResponse.json({
+        ok: true,
+        allowance: allowance.unlimited ? { unlimited: true } : { unlimited: false, left: allowance.left, limit: allowance.limit },
+      });
+    } catch (error) {
+      if (error instanceof D1ApiError && error.code === "sealed_inbox_unavailable") {
+        const job = await loadNativeSealedPost(data.rfpId).catch(() => null);
+        if (job) {
+          const reply = await respondSealed(null, session, job, data);
+          return NextResponse.json(reply.body, { status:reply.status });
+        }
+      }
+      return NextResponse.json({ error: "Could not submit interest" }, { status: 503 });
+    }
+  }
 
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ ok: true, demo: true });
@@ -184,6 +221,8 @@ export async function POST(request: Request) {
 /** English API messages (the dialog shows its own copy per `reason`). */
 function refusalMessage(reason: string): string {
   switch (reason) {
+    case "org":
+      return "Complete your company profile first.";
     case "role":
       return "Only trade and supplier companies can respond to jobs.";
     case "suspended":

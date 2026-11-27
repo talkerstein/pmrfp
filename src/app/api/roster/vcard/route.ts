@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/access/access";
-import { createClient } from "@/lib/supabase/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAccountGeo } from "@/lib/visitor-geo.server";
-import { getSharedRoster, loadRoster, rosterCountry, type RosterRecord } from "@/lib/roster/server";
+import { getSharedRoster, loadRoster, rosterCountry, rosterDatabase, type RosterRecord } from "@/lib/roster/server";
 import { buildVcards, rosterContacts, rosterRows, vcardFileName, type EntryRow, type RosterCountry } from "@/lib/roster/rules";
 import { rowLabel } from "@/lib/roster/view";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const R = getDictionary(lang).roster;
   const id = url.searchParams.get("id");
   const token = url.searchParams.get("t");
-  if (!isSupabaseConfigured()) return new NextResponse("Not found", { status: 404 });
+  if (!isVpsLiveCustomerAuth() && !isSupabaseConfigured()) return new NextResponse("Not found", { status: 404 });
 
   let data: { roster: RosterRecord; entries: EntryRow[]; country: RosterCountry } | null = null;
   if (token) {
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   } else if (id && z.uuid().safeParse(id).success) {
     const session = await getSession().catch(() => null);
     if (session?.organization) {
-      const { roster, entries } = await loadRoster(await createClient(), id);
+      const { roster, entries } = await loadRoster(await rosterDatabase(session), id);
       if (roster) {
         const geo = await getAccountGeo(session).catch(() => null);
         data = { roster, entries, country: rosterCountry(geo?.country, session.organization) };

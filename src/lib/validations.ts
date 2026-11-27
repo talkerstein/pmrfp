@@ -15,6 +15,8 @@ export const signUpSchema = z.object({
   company_website: z.string().max(0).optional(),
 });
 export type SignUpInput = z.infer<typeof signUpSchema>;
+export const nativeSignUpSchema = signUpSchema.extend({ role: z.enum([...signUpSchema.shape.role.options, "public_buyer"]) });
+export const signupProfileSchema = signUpSchema.pick({ fullName: true, role: true }).strict();
 
 export const signInSchema = z.object({
   email: z.string().email("Enter a valid email"),

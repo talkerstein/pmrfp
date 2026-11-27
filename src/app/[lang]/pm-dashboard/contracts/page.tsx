@@ -1,3 +1,5 @@
+import { listD1Contracts, readToolRfps } from "@/lib/d1/pm-tools";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { ArrowRight, FileText } from "lucide-react";
@@ -54,12 +56,12 @@ export default async function ContractsPage({ params }: { params: Promise<object
     );
   }
 
-  const db = await createClient();
+  const db = isVpsLiveCustomerAuth() ? null : await createClient();
   const [loaded, country, categories, rfpList] = await Promise.all([
-    loadContracts(db, session.organization.id),
+    db ? loadContracts(db, session.organization.id) : listD1Contracts(session),
     pmCountry(session),
     getCategories().catch(() => []),
-    ownRfps(db, session),
+    db ? ownRfps(db, session) : readToolRfps({ userId:session.userId, orgId:session.organization.id }),
   ]);
   if (!loaded.ready) {
     return (

@@ -1,15 +1,22 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { RFPS_TAG } from "@/lib/supabase/public-cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { after } from "next/server";
+import { nativeTownPageFor, postNativeTown } from "@/lib/town-jobs/native-post";
 import { finishTownPost, townPageFor, type TownPage } from "@/lib/town-jobs/server";
 import { parseTownPostFields, townPostColumns, type TownPostFields } from "@/lib/town-jobs/post";
 import { TOWN_SOURCE } from "@/lib/town-jobs/rules";
 import { createClient } from "@/lib/supabase/server";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { postVpsRfp } from "@/lib/d1/vps-rfp-post";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { closeVpsRfp } from "@/lib/d1/vps-rfp-close";
+import { updateVpsCompanyProfile } from "@/lib/d1/vps-company-profile";
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { pendingReviewCount } from "@/lib/pm-jobs/server";
 import { getSession } from "@/lib/access/access";
@@ -88,7 +95,8 @@ function completion(fields: Record<string, unknown>, cats: number, regs: number)
 export async function updateCompanyProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = await actionLang(formData);
   const t = messagesFor(lang);
-  if (!isSupabaseConfigured()) return { error: t.demo };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: t.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
   if (!session.organization) return { error: t.noOrg };
@@ -122,8 +130,31 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
   if (!parsed.success) return { error: validationMessage(lang, parsed.error.issues[0]?.message, t.checkForm) };
   const d = parsed.data;
 
-  const supabase = await createClient();
   const orgId = session.organization.id;
+  if (native) {
+    // The native database has no table for the private policy number yet, so
+    // the form hides the insurance field there and a save leaves the public
+    // line exactly as it is stored.
+    const insuranceStatus = session.organization.insurance_status;
+    const score = completion({ ...d, insuranceStatus }, categories.length, regions.length);
+    try {
+      const result = await updateVpsCompanyProfile(session, { ...d, insuranceStatus },
+        formData.get("logoUrl")?.toString().trim() ?? null, score);
+      purgeOutCache();
+      revalidatePath("/dashboard/company");
+      if (result.rejected) {
+        const { score, reasons } = result.rejected;
+        after(async () => {
+          await sendAdminListingRejected({ name: d.name, website: d.website ?? null, email: d.email,
+            score, reasons: reasons.map(reason => reason.detail) }).catch(() => undefined);
+        });
+      }
+      return { success: result.stayedLive ? t.savedLive : t.saved };
+    } catch {
+      return { error: t.saveFailed };
+    }
+  }
+  const supabase = await createClient();
 
   // The number stays private; the public profile only says "Insured". Saved
   // first so the profile never claims a policy we failed to store.
@@ -297,7 +328,8 @@ export async function updateCompanyProfileAction(_prev: ActionState, formData: F
 export async function closeRfpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = await actionLang(formData);
   const t = messagesFor(lang);
-  if (!isSupabaseConfigured()) return { error: t.demo };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: t.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
 
@@ -307,38 +339,45 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
     return { error: t.invalidOutcome };
   }
 
-  const supabase = await createClient();
-  // RLS enforces that only the posting PM (or admin) can update — but we also
-  // double-check ownership to fail fast with a friendly error.
-  const { data: rfp } = await supabase
-    .from("rfp_posts")
-    .select("id,posted_by_user_id,status")
-    .eq("id", rfpId)
-    .maybeSingle<{ id: string; posted_by_user_id: string | null; status: string }>();
-  if (!rfp) return { error: t.rfpNotFound };
-  if (rfp.posted_by_user_id !== session.userId && session.profile.primary_role !== "admin" && session.profile.primary_role !== "super_admin") {
-    return { error: t.notOwner };
-  }
-  if (
-    rfp.status === "awarded" ||
-    rfp.status === "closed" ||
-    rfp.status === "expired" ||
-    rfp.status === "archived"
-  ) {
-    return { error: t.notActive };
-  }
+  if (native) {
+    const closed = await closeVpsRfp(session.userId, rfpId, outcome).catch(() => "failed");
+    if (closed === "not_found") return { error: t.rfpNotFound };
+    if (closed === "not_owner") return { error: t.notOwner };
+    if (closed === "closed") return { error: t.notActive };
+    if (closed !== "ok") return { error: t.closeFailed };
+  } else {
+    const supabase = await createClient();
+    // RLS enforces that only the posting PM (or admin) can update — but we also
+    // double-check ownership to fail fast with a friendly error.
+    const { data: rfp } = await supabase
+      .from("rfp_posts")
+      .select("id,posted_by_user_id,status")
+      .eq("id", rfpId)
+      .maybeSingle<{ id: string; posted_by_user_id: string | null; status: string }>();
+    if (!rfp) return { error: t.rfpNotFound };
+    if (rfp.posted_by_user_id !== session.userId && session.profile.primary_role !== "admin" && session.profile.primary_role !== "super_admin") {
+      return { error: t.notOwner };
+    }
+    if (
+      rfp.status === "awarded" ||
+      rfp.status === "closed" ||
+      rfp.status === "expired" ||
+      rfp.status === "archived"
+    ) {
+      return { error: t.notActive };
+    }
 
-  const { error } = await supabase
-    .from("rfp_posts")
-    .update({
-      status: outcome,
-      closed_at: new Date().toISOString(),
-    })
-    .eq("id", rfpId);
-  if (error) return { error: t.closeFailed };
+    const { error } = await supabase
+      .from("rfp_posts")
+      .update({
+        status: outcome,
+        closed_at: new Date().toISOString(),
+      })
+      .eq("id", rfpId);
+    if (error) return { error: t.closeFailed };
+  }
 
   revalidatePath("/rfps");
-  revalidatePath(`/rfps`);
   revalidatePath("/pm-dashboard/rfps");
   return {
     success:
@@ -356,7 +395,7 @@ export async function closeRfpAction(_prev: ActionState, formData: FormData): Pr
  * a regular RFP.
  */
 async function gcPackageFields(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof createClient>> | null,
   formData: FormData,
   categories: string[],
   t: ReturnType<typeof messagesFor>,
@@ -366,8 +405,9 @@ async function gcPackageFields(
   if (!project) return { error: t.gcProject };
   if (!categories.length) return { error: t.gcTrade };
   const relatedInput = formData.get("relatedContract")?.toString().trim() ?? "";
-  const [{ data: cat }, award] = await Promise.all([
-    supabase.from("trade_categories").select("name").eq("slug", categories[0]).maybeSingle<{ name: string }>(),
+  const [cat, award] = await Promise.all([
+    supabase ? supabase.from("trade_categories").select("name").eq("slug", categories[0]).maybeSingle<{ name: string }>().then((r) => r.data)
+      : vpsAppDatabase().prepare("SELECT name FROM trade_categories WHERE slug=?").bind(categories[0]).first<{ name:string }>(),
     getLinkableAward(parseAwardRef(relatedInput)),
   ]);
   if (!cat) return { error: t.gcTrade };
@@ -380,13 +420,18 @@ async function gcPackageFields(
 export async function createRfpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const lang = await actionLang(formData);
   const t = messagesFor(lang);
-  if (!isSupabaseConfigured()) return { error: t.demo };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: t.demo };
   const session = await getSession();
   if (!session) redirect(localizePath("/sign-in", lang));
 
   const categories = formData.getAll("categories").map(String);
-  const supabase = await createClient();
-  const gc = await gcPackageFields(supabase, formData, categories, t);
+  if (native && (formData.get("contractId") ||
+      formData.getAll("photoUrls").some(Boolean))) {
+    return { error: t.createFailed };
+  }
+  const supabase = native ? null : await createClient();
+  const gc = await gcPackageFields(supabase,formData,categories,t).catch(() => ({ error:t.createFailed }));
   if (gc && "error" in gc) return { error: gc.error };
   // A public buyer (a town) posts as its page (lib/town-jobs). A mirror of a
   // formal tender has no scope of its own: its summary stands in for it.
@@ -416,6 +461,48 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
   if (!parsed.success) return { error: validationMessage(lang, parsed.error.issues[0]?.message, t.requiredFields) };
   const d = parsed.data;
 
+  const slug = `${slugify(d.title)}-${Math.random().toString(36).slice(2, 6)}`;
+  if (native && isTown) {
+    const te = getDictionary(lang).townJobs.post.errors;
+    const org = session.organization;
+    if (!org || org.organization_type !== "public_buyer") return { error: te.noPage };
+    const page = await nativeTownPageFor(org.id,session.userId).catch(() => null);
+    if (!page) return { error: te.noPage };
+    const fields = parseTownPostFields(formData,d.deadline.toISOString().slice(0,10));
+    if (!fields.ok) return { error: te[fields.error] };
+    const done = await postNativeTown(session.userId,org.id,lang,slug,d,page,fields.fields,
+      { postedBy:org.name,schedule:task => after(() => task().catch(() => undefined)) }).catch(() => null);
+    if (!done) return { error:te.unavailable };
+    const actor = { userId:session.userId,role:session.profile.primary_role };
+    await trackEvent(EVENT.RFP_POSTED,{kind:"town",post_kind:fields.fields.postKind},actor);
+    if (fields.fields.postKind==="quote_request") {
+      await trackEvent(EVENT.QUOTE_REQUEST_POSTED,{kind:"town",sealed:fields.fields.sealed},actor);
+    }
+    revalidatePath("/buyer-dashboard");
+    revalidatePath("/buyer-dashboard/jobs");
+    revalidatePath(`/buyers/${page.buyerKey}`);
+    revalidatePath("/rfps");
+    revalidateTag(RFPS_TAG,{expire:0});
+    redirect(localizePath(`/buyer-dashboard/jobs/${done.id}?posted=${done.status === "published" ? "live" : "review"}&alerts=${done.alerts}&n=${done.wouldEmail}`,lang));
+  }
+  if (native) {
+    const db = vpsAppDatabase();
+    try {
+      await postVpsRfp(session.userId,session.organization?.id ?? null,slug,lang,d,db,gc ?? undefined);
+    } catch {
+      return { error: t.createFailed };
+    }
+    await trackEvent(EVENT.RFP_POSTED,{kind:gc ? "gc_package" : "pm",post_kind:null},
+      {userId:session.userId,role:session.profile.primary_role});
+    const pending = await db.prepare("SELECT count(*) AS count FROM rfp_posts WHERE status='pending_review'")
+      .first<{ count: number }>().catch(() => null);
+    await sendAdminNewRfp({ title: d.title, postedBy: session.organization?.name, region: d.regionSlug,
+      category: categories.join(", ") || null, kind: gc ? GC_PACKAGE : "property_manager_direct", pending: pending?.count ?? null });
+    revalidatePath("/pm-dashboard/rfps");
+    redirect(localizePath("/pm-dashboard/rfps?posted=1", lang));
+  }
+  if (!supabase) return { error: t.createFailed };
+
   // The town's page (verified: it goes live at once; claimed: PMRFP reviews it) and its extra fields.
   let town: { page: TownPage; fields: TownPostFields; organizationId: string } | null = null;
   if (isTown) {
@@ -435,7 +522,6 @@ export async function createRfpAction(_prev: ActionState, formData: FormData): P
       : Promise.resolve({ data: null }),
   ]);
 
-  const slug = `${slugify(d.title)}-${Math.random().toString(36).slice(2, 6)}`;
   const insertRow = {
       title: d.title,
       slug,

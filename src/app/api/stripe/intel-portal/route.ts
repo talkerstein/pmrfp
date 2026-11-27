@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { readVpsBillingAccount } from "@/lib/d1/vps-billing-account";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
 import { getSession } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe, SITE_URL } from "@/lib/stripe/server";
@@ -10,6 +12,8 @@ import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i1
  * intel_access as the member). Admin grants have no Stripe customer.
  */
 export async function POST(request: Request) {
+  const native = isVpsLiveCustomerAuth();
+  if (native && !matchesCustomerOrigin(request)) return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
   const form = await request.formData().catch(() => null);
   const lang: Locale = isEnabledLocale(form?.get("lang")) ? (form!.get("lang") as Locale) : DEFAULT_LOCALE;
   const back = (reason: string) => NextResponse.redirect(new URL(localizePath(`/intel?checkout=${reason}`, lang), SITE_URL), 303);
@@ -17,11 +21,10 @@ export async function POST(request: Request) {
   const session = await getSession();
   if (!session?.organization) return NextResponse.redirect(new URL(localizePath("/sign-in?next=/intel", lang), SITE_URL), 303);
 
-  const { data } = await (await createClient())
-    .from("intel_access")
-    .select("stripe_customer_id")
-    .eq("organization_id", session.organization.id)
-    .maybeSingle<{ stripe_customer_id: string | null }>();
+  const data = native
+    ? await readVpsBillingAccount(session, "intel")
+    : (await (await createClient()).from("intel_access").select("stripe_customer_id")
+        .eq("organization_id", session.organization.id).maybeSingle<{ stripe_customer_id: string | null }>()).data;
   if (!data?.stripe_customer_id) return back("portal");
   try {
     const portal = await getStripe().billingPortal.sessions.create({

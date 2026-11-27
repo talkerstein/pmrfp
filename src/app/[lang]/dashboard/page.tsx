@@ -16,6 +16,8 @@ import { ProfileCompletionCard } from "@/components/dashboard/profile-completion
 import { ReputationCard } from "@/components/karma/reputation-card";
 import { RecentUpdates, TRADE_NOTICE_TYPES } from "@/components/pm-jobs/recent-updates";
 import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -289,6 +291,13 @@ async function projectNudge(
 /** The trades this company lists under, for picking a relevant sponsor. */
 async function orgTradeSlugs(orgId: string | null, demo: boolean): Promise<string[]> {
   if (!orgId || demo) return [];
+  if (isVpsLiveCustomerAuth()) {
+    const { results } = await vpsAppDatabase().prepare(`
+      SELECT t.slug FROM organization_categories c
+      JOIN trade_categories t ON t.id=c.category_id WHERE c.organization_id=?
+    `).bind(orgId).all<{ slug: string }>();
+    return results.map(({ slug }) => slug).filter(Boolean);
+  }
   const supabase = await createClient();
   const { data } = await supabase
     .from("organization_categories")

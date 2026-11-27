@@ -1,3 +1,4 @@
+import { reserveVpsReviewInvite } from "@/lib/d1/vps-project-reviews";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -13,6 +14,8 @@ import { syncProjectPhotos } from "./photo-storage";
 import { projectSlug } from "./slug";
 import { generateReviewToken, hashReviewToken } from "./tokens";
 import { isOwnEmail } from "./reviews";
+import { vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { publishVpsProject } from "@/lib/d1/vps-project-publication";
 
 /**
  * Publish + review-request rules, shared by the web server actions
@@ -62,11 +65,30 @@ export async function publishProject(
   input: unknown,
   db?: SupabaseClient,
 ): Promise<PublishResult> {
-  if (!isServiceConfigured()) return { ok: false, error: "Publishing isn't set up here yet." };
+  const native = vpsProjectUploadsEnabled();
+  if (!native && !isServiceConfigured()) return { ok: false, error: "Publishing isn't set up here yet." };
 
   const parsed = publishSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the form." };
   const d = parsed.data;
+  if (anyPrivacyFlag(d.privacy) && !d.photosChecked) {
+    return { ok: false, error: "Tick \"I've checked the photos\" to publish." };
+  }
+  if (native) {
+    try {
+      const result = await publishVpsProject(session, d, willAutoPublish(session));
+      if ("error" in result) return { ok: false, error: result.error };
+      revalidatePath("/dashboard/projects");
+      if (result.live) {
+        revalidatePath("/projects");
+        revalidatePath(`/case-studies/${result.slug}`);
+        revalidatePath(`/directory/${session.organization.slug}`);
+      }
+      return { ok: true, ...result };
+    } catch {
+      return { ok: false, error: "Couldn't save the project. Check the photos and try again." };
+    }
+  }
   const org = session.organization;
   const paid = session.hasTradeAccess;
 
@@ -75,9 +97,6 @@ export async function publishProject(
   const photos = canonicalizePhotos(d.photos, supabaseUrl, org.id);
   if (!photos) {
     return { ok: false, error: "One of those photos isn't from this project. Remove it and try again." };
-  }
-  if (anyPrivacyFlag(d.privacy) && !d.photosChecked) {
-    return { ok: false, error: "Tick \"I've checked the photos\" to publish." };
   }
   const limit = publishLimitError({
     paid,
@@ -195,7 +214,8 @@ export type ReviewRequestResult =
  */
 export async function requestReview(session: ProjectSession, input: unknown): Promise<ReviewRequestResult> {
   if (!session.hasTradeAccess) return { ok: false, error: "Review requests are part of Trade Pro.", code: "plan" };
-  if (!isServiceConfigured()) return { ok: false, error: "Review requests aren't set up here yet." };
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if (!native && !isServiceConfigured()) return { ok: false, error: "Review requests aren't set up here yet." };
   // Keyed by user, not IP: this caps one account's sending, wherever it is.
   if (await checkRateLimitByIp(`user:${session.userId}`, "contact")) {
     return { ok: false, error: "That's a lot of requests at once. Wait a minute and try again." };
@@ -208,6 +228,18 @@ export async function requestReview(session: ProjectSession, input: unknown): Pr
 
   if (isOwnEmail(d.clientEmail, [session.profile.email, org.email])) {
     return { ok: false, error: "Send this to your client, not to your own address." };
+  }
+
+  if (native) {
+    const token=generateReviewToken();
+    try {
+      const project=await reserveVpsReviewInvite(session,d,token,MAX_INVITES_PER_PROJECT);
+      if (!project) return {ok:false,error:"This review request is unavailable or was already sent."};
+      await sendReviewRequest(d.clientEmail,{clientName:d.clientName,tradeName:org.name,
+        projectTitle:project.title,url:`https://pmrfp.com/review/${token}`},true);
+      revalidatePath("/dashboard/projects");
+      return {ok:true,message:`Sent to ${d.clientEmail}. You'll see it here once they reply.`};
+    } catch { return {ok:false,error:"Couldn't send the request. Try again in a minute."}; }
   }
 
   const db = createServiceClient();

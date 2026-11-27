@@ -7,6 +7,7 @@ import type { Locale } from "@/i18n/config";
 import type { CtaState, IntelCtx } from "@/components/intel/views";
 import { INTEL_LAUNCH_PRICING, intelPayable, intelPrice } from "./pricing";
 import { intelMoney } from "./format";
+import { usesD1CustomerAuth } from "@/lib/d1/staging-config";
 
 export interface IntelViewer {
   ctx: IntelCtx;
@@ -25,7 +26,7 @@ export interface IntelViewer {
  * ?view=signed-out, like the benchmark pages.
  */
 export async function loadIntelViewer(opts: { lang: Locale; countryParam?: string | null; view?: string | null; next: string }): Promise<IntelViewer> {
-  const configured = isSupabaseConfigured();
+  const configured = usesD1CustomerAuth() || isSupabaseConfigured();
   const session = configured ? await getSession() : null;
   const intel = configured ? Boolean(session?.hasIntelAccess) : opts.view !== "locked" && opts.view !== "signed-out";
   const signedIn = configured ? Boolean(session) : opts.view !== "signed-out";

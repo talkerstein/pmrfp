@@ -1,4 +1,5 @@
 import { FT_COOKIE, parseFirstTouch, torontoDay, type FirstTouch } from "@/lib/attribution/cookie";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { countryCode } from "./events";
 import { visitorHash } from "./hash";
 import { userIdFromAuthCookies } from "./session-cookie";
@@ -31,8 +32,8 @@ export function requestFacts(
 ): RequestFacts {
   const day = torontoDay(opts.now);
   const ftRaw = cookies.find((c) => c.name === FT_COOKIE)?.value ?? null;
-  const userId = opts.userId ?? userIdFromAuthCookies(cookies, opts.now?.getTime());
-  const country = countryCode(h.get("x-vercel-ip-country"));
+  const userId = opts.userId ?? (isVpsLiveCustomerAuth() ? null : userIdFromAuthCookies(cookies, opts.now?.getTime()));
+  const country = countryCode(h.get("x-vercel-ip-country") ?? h.get("cf-ipcountry"));
   const region = String(h.get("x-vercel-ip-country-region") ?? "").slice(0, 10);
   const hash = visitorHash(
     {

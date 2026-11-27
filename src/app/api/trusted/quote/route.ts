@@ -5,6 +5,9 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { sendTrustedQuoteRequest } from "@/lib/email/send";
 import { EVENT, trackEvent } from "@/lib/analytics";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { recordVpsTrustedQuote } from "@/lib/trusted/native";
+import { readD1Json } from "@/lib/d1/contracts";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/$/, "");
 
@@ -25,15 +28,31 @@ const schema = z.object({
  * with the other contact requests.
  */
 export async function POST(request: Request) {
+  const native = isVpsLiveCustomerAuth();
+  if (native && !matchesCustomerOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   const limited = await checkRateLimit(request, "contact");
   if (limited) return rateLimitResponse(limited);
 
-  const parsed = schema.safeParse(await request.json().catch(() => null));
+  const parsed = schema.safeParse(await (native ? readD1Json(request, 16_384) : request.json()).catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Please check the form." }, { status: 422 });
   }
   const d = parsed.data;
   if (d.company_website) return NextResponse.json({ ok: true }); // honeypot
+  if (native) {
+    try {
+      const recipient = await recordVpsTrustedQuote(d);
+      if (!recipient) return NextResponse.json({ error: "That company isn't on this page." }, { status: 404 });
+      await sendTrustedQuoteRequest({
+        ...recipient, pageUrl: `https://pmrfp.com/trusted/${encodeURIComponent(d.handle)}`,
+        requester: { name: d.name, email: d.email, phone: d.phone || null }, message: d.message, smtpOnly: true,
+      });
+      await trackEvent(EVENT.QUOTE_REQUEST_POSTED, { kind: "trusted_page" });
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json({ error: "Could not confirm delivery of your quote request." }, { status: 503 });
+    }
+  }
   if (!isServiceConfigured()) return NextResponse.json({ error: "This isn't available right now." }, { status: 503 });
 
   const admin = createServiceClient();

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/access/access";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
-import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { loadBuyers } from "@/lib/buyers/load";
 import { findBuyerPage } from "@/lib/buyers/model";
 import { canFollowBuyers, followUsage, parseFollowKey } from "@/lib/follows/rules";
-import { followBuyer, myFollows, unfollowBuyer } from "@/lib/follows/server";
+import { followBuyer, followsDb, myFollows, unfollowBuyer } from "@/lib/follows/server";
 import { EVENT, trackEvent } from "@/lib/analytics";
 
 /**
@@ -30,13 +30,13 @@ const PRIVATE = { "Cache-Control": "private, no-store" };
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: PRIVATE });
 
 export async function GET(request: Request) {
-  if (!isSupabaseConfigured()) return json({ signedIn: false, demo: true });
+  if (!isVpsLiveCustomerAuth() && !isSupabaseConfigured()) return json({ signedIn: false, demo: true });
   const session = await getSession().catch(() => null);
   if (!session) return json({ signedIn: false });
   const key = parseFollowKey(new URL(request.url).searchParams.get("buyer"));
   const canFollow = canFollowBuyers({ primaryRole: session.profile.primary_role, hasTradeAccess: session.hasTradeAccess });
-  if (!isServiceConfigured()) return json({ signedIn: true, canFollow, following: false, keys: [], usage: followUsage(0, session.hasTradeAccess) });
-  const { rows, missing } = await myFollows(createServiceClient(), session.userId);
+  if (!isVpsLiveCustomerAuth() && !isServiceConfigured()) return json({ signedIn: true, canFollow, following: false, keys: [], usage: followUsage(0, session.hasTradeAccess) });
+  const { rows, missing } = await myFollows(followsDb(), session.userId);
   const keys = rows.map((r) => r.key);
   return json({
     signedIn: true,
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== new URL(request.url).host) return json({ error: "Forbidden" }, 403);
+  if (isVpsLiveCustomerAuth() ? !matchesCustomerOrigin(request) : origin && new URL(origin).host !== new URL(request.url).host) return json({ error: "Forbidden" }, 403);
   const limited = await checkRateLimit(request, "save-rfp");
   if (limited) return rateLimitResponse(limited);
 
@@ -64,15 +64,15 @@ export async function POST(request: Request) {
   const key = parseFollowKey(body.buyer);
   const action = body.action === "unfollow" ? "unfollow" : body.action === "follow" ? "follow" : null;
   if (!key || !action) return json({ error: "Invalid request" }, 400);
-  if (!isSupabaseConfigured()) return json({ ok: true, demo: true });
+  if (!isVpsLiveCustomerAuth() && !isSupabaseConfigured()) return json({ ok: true, demo: true });
 
   const session = await getSession().catch(() => null);
   if (!session) return json({ error: "Sign in required", signUp: true }, 401);
   if (session.profile.status === "suspended") return json({ error: "Account suspended" }, 403);
   const pro = session.hasTradeAccess;
   if (!canFollowBuyers({ primaryRole: session.profile.primary_role, hasTradeAccess: pro })) return json({ error: "A trade or supplier account is required", reason: "role" }, 403);
-  if (!isServiceConfigured()) return json({ error: "Not available" }, 503);
-  const db = createServiceClient();
+  if (!isVpsLiveCustomerAuth() && !isServiceConfigured()) return json({ error: "Not available" }, 503);
+  const db = followsDb();
 
   if (action === "unfollow") {
     const r = await unfollowBuyer(db, { userId: session.userId, key, pro });

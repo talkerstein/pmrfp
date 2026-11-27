@@ -4,6 +4,9 @@ import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { RFPS_TAG } from "@/lib/supabase/public-cache";
 import { createSingleFlight } from "@/lib/concurrency";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import type { TownPostLite } from "./merge";
 
 /**
@@ -19,6 +22,12 @@ const READ_TIMEOUT_MS = 8_000;
 const singleFlight = createSingleFlight();
 
 async function fetchPosts(): Promise<TownPostLite[]> {
+  if (isVpsLiveCustomerAuth()) {
+    const result = await vpsAppDatabase().prepare(`SELECT slug,title,deadline,buyer_key,status FROM rfp_posts
+      WHERE source_type='public_buyer_direct' AND status='published' AND is_demo=0 AND ${customerAppAuthority}
+      ORDER BY published_at DESC,id LIMIT 5000`).all<TownPostLite>();
+    return result.results;
+  }
   const { data, error } = await createReadClient()
     .from("town_posts_public")
     .select("slug,title,deadline,buyer_key,status")
@@ -37,9 +46,9 @@ const cachedPosts = unstable_cache(
 
 /** Towns' live posts, once per request. */
 export const getTownPostsSnapshot = cache(async (): Promise<TownPostLite[]> => {
-  if (!isSupabaseConfigured()) return [];
+  if (!isVpsLiveCustomerAuth() && !isSupabaseConfigured()) return [];
   try {
-    return await cachedPosts(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+    return await cachedPosts(isVpsLiveCustomerAuth() ? "vps-d1" : process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
   } catch (e) {
     console.warn("[town-posts] snapshot unavailable", e instanceof Error ? e.message : e);
     return [];

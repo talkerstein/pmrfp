@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { PageHeader, DemoBanner, StatCard } from "@/components/dashboard/stat-card";
 import { AdminTable } from "@/components/admin/admin-table";
@@ -46,7 +47,7 @@ export default async function AnalyticsPage({ params, searchParams }: { params: 
   await requireRole(["admin", "super_admin"]);
   const { days: rawDays } = await searchParams;
   const days = RANGES.find((d) => String(d) === rawDays) ?? 30;
-  const demo = isDemoMode() || !isServiceConfigured();
+  const demo = isDemoMode() || (!isVpsLiveCustomerAuth() && !isServiceConfigured());
 
   let report: RawReport & { missing?: boolean } = EMPTY_REPORT;
   let failed = false;

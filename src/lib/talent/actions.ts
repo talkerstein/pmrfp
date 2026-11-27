@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { endorseVpsTalent, saveVpsTalent } from "@/lib/d1/vps-talent";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
@@ -33,7 +35,8 @@ function messages(lang: Locale) {
 export async function saveTalentProfileAction(_prev: TalentFormState, formData: FormData): Promise<TalentFormState> {
   const lang = langOf(formData.get("lang"));
   const m = messages(lang);
-  if (!isSupabaseConfigured()) return { error: m.unavailable };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: m.unavailable };
   const session = await getSession();
   if (!session) redirect(localizePath(`/sign-in?next=${encodeURIComponent("/talent/edit")}`, lang));
 
@@ -60,48 +63,53 @@ export async function saveTalentProfileAction(_prev: TalentFormState, formData: 
   const handle = normalizeTalentHandle(d.handle);
   if (!handle) return { error: m.badHandle };
 
-  const supabase = await createClient();
-  const slugs = [d.primaryTrade, ...d.otherTrades.filter((t) => t !== d.primaryTrade)];
-  const [{ data: cats }, { data: reg }] = await Promise.all([
-    supabase.from("trade_categories").select("id,slug").in("slug", slugs),
-    supabase.from("regions").select("id").eq("slug", d.region).maybeSingle<{ id: string }>(),
-  ]);
-  const catBySlug = new Map(((cats as { id: string; slug: string }[] | null) ?? []).map((c) => [c.slug, c.id]));
-  const primary = catBySlug.get(d.primaryTrade);
-  if (!primary) return { error: m.pickTrade };
-  if (!reg) return { error: m.pickRegion };
+  if (native) {
+    const saved = await saveVpsTalent(session.userId, handle, d).catch(() => "couldNotSave" as const);
+    if (saved !== "saved") return { error: m[saved] };
+  } else {
+    const supabase = await createClient();
+    const slugs = [d.primaryTrade, ...d.otherTrades.filter((t) => t !== d.primaryTrade)];
+    const [{ data: cats }, { data: reg }] = await Promise.all([
+      supabase.from("trade_categories").select("id,slug").in("slug", slugs),
+      supabase.from("regions").select("id").eq("slug", d.region).maybeSingle<{ id: string }>(),
+    ]);
+    const catBySlug = new Map(((cats as { id: string; slug: string }[] | null) ?? []).map((c) => [c.slug, c.id]));
+    const primary = catBySlug.get(d.primaryTrade);
+    if (!primary) return { error: m.pickTrade };
+    if (!reg) return { error: m.pickRegion };
 
-  const { error } = await supabase.from("talent_profiles").upsert(
-    {
-      user_id: session.userId,
-      handle,
-      display_name: d.displayName,
-      headline: d.headline || null,
-      primary_trade_id: primary,
-      other_trade_ids: d.otherTrades.map((s) => catBySlug.get(s)).filter((id): id is string => Boolean(id) && id !== primary),
-      region_id: reg.id,
-      city: d.city || null,
-      years_experience: d.yearsExperience ?? null,
-      certifications: parseTickets(d.tickets),
-      availability: d.availability,
-      employment_types: d.employmentTypes,
-      pay_expectation: d.payExpectation || null,
-      bio: d.bio || null,
-      published: d.published,
-      contact_visible: d.contactVisible,
-    },
-    { onConflict: "user_id" },
-  );
-  if (error) {
-    if (error.code === "23505") return { error: m.handleTaken };
-    if (/talent_profiles/.test(error.message) && /does not exist|schema cache/.test(error.message)) {
-      return { error: m.switchingOn };
+    const { error } = await supabase.from("talent_profiles").upsert(
+      {
+        user_id: session.userId,
+        handle,
+        display_name: d.displayName,
+        headline: d.headline || null,
+        primary_trade_id: primary,
+        other_trade_ids: d.otherTrades.map((s) => catBySlug.get(s)).filter((id): id is string => Boolean(id) && id !== primary),
+        region_id: reg.id,
+        city: d.city || null,
+        years_experience: d.yearsExperience ?? null,
+        certifications: parseTickets(d.tickets),
+        availability: d.availability,
+        employment_types: d.employmentTypes,
+        pay_expectation: d.payExpectation || null,
+        bio: d.bio || null,
+        published: d.published,
+        contact_visible: d.contactVisible,
+      },
+      { onConflict: "user_id" },
+    );
+    if (error) {
+      if (error.code === "23505") return { error: m.handleTaken };
+      if (/talent_profiles/.test(error.message) && /does not exist|schema cache/.test(error.message)) {
+        return { error: m.switchingOn };
+      }
+      return { error: m.couldNotSave };
     }
-    return { error: m.couldNotSave };
-  }
-  await supabase.from("talent_private").upsert({ user_id: session.userId, phone: d.phone || null, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-  if (!session.profile.onboarding_completed) {
-    await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
+    await supabase.from("talent_private").upsert({ user_id: session.userId, phone: d.phone || null, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (!session.profile.onboarding_completed) {
+      await supabase.from("users_profile").update({ onboarding_completed: true }).eq("id", session.userId);
+    }
   }
 
   const [firstName, ...rest] = d.displayName.split(/\s+/);
@@ -136,6 +144,12 @@ export async function endorseTalentAction(input: { handle: string; note: string;
   const org = session.organization;
   if (!org || org.profile_status !== "approved" || org.status !== "active") {
     return { error: m.onlyApproved };
+  }
+  if (isVpsLiveCustomerAuth()) {
+    const result = await endorseVpsTalent({ userId: session.userId, orgId: org.id }, parsed.data).catch(() => "couldNotEndorse" as const);
+    if (result !== "saved") return { error: m[result] };
+    revalidatePath(`/talent/${parsed.data.handle}`);
+    return {};
   }
   if (!isServiceConfigured()) return { error: m.unavailable };
   const admin = createServiceClient();

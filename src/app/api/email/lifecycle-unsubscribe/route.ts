@@ -1,9 +1,13 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { verifyLifecycleUnsubscribe } from "@/lib/email/unsubscribe";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { unsubscribeD1Lifecycle, useD1Lifecycle } from "@/lib/lifecycle/d1";
 
 export const dynamic = "force-dynamic";
+const privateHeaders = { "cache-control": "private, no-store", "referrer-policy": "no-referrer" };
 
 /**
  * One-click unsubscribe from the lifecycle emails (onboarding tips, trial
@@ -15,7 +19,19 @@ export const dynamic = "force-dynamic";
 async function unsubscribe(request: Request): Promise<boolean> {
   const url = new URL(request.url);
   const userId = url.searchParams.get("u");
-  if (!verifyLifecycleUnsubscribe(userId, url.searchParams.get("t")) || !isServiceConfigured()) return false;
+  const token = url.searchParams.get("t");
+  if (!userId || !token || !/^[a-zA-Z0-9_-]{43}$/.test(token)) return false;
+  const verified = verifyLifecycleUnsubscribe(userId, token);
+  if (useD1Lifecycle()) {
+    try {
+      const legacyDigest = verified ? undefined : createHash("sha256").update(token).digest("hex");
+      return await unsubscribeD1Lifecycle(vpsAppDatabase(), userId, legacyDigest);
+    } catch {
+      console.error("[lifecycle-unsubscribe] D1 update unavailable");
+      return false;
+    }
+  }
+  if (!verified || !isServiceConfigured()) return false;
   const { error } = await createServiceClient()
     .from("notification_preferences")
     .upsert({ user_id: userId, lifecycle_emails: false }, { onConflict: "user_id" });
@@ -32,11 +48,11 @@ export async function GET(request: Request) {
     `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>PMRFP</title>` +
       `<div style="font-family:Arial,sans-serif;max-width:520px;margin:64px auto;padding:0 16px;color:#282B59">` +
       `<h1 style="font-size:20px">PMRFP</h1><p>${msg}</p><p><a href="https://pmrfp.com" style="color:#282B59">pmrfp.com</a></p></div>`,
-    { status: ok ? 200 : 400, headers: { "content-type": "text/html; charset=utf-8" } },
+    { status: ok ? 200 : 400, headers: { ...privateHeaders, "content-type": "text/html; charset=utf-8" } },
   );
 }
 
 export async function POST(request: Request) {
   const ok = await unsubscribe(request);
-  return NextResponse.json({ ok }, { status: ok ? 200 : 400 });
+  return NextResponse.json({ ok }, { status: ok ? 200 : 400, headers: privateHeaders });
 }

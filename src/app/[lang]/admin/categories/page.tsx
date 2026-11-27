@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/data/taxonomy";
@@ -8,6 +9,10 @@ import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { dash } from "@/lib/admin/queries";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { readD1 } from "@/lib/lifecycle/d1";
 
 export const metadata: Metadata = { title: "Categories · Admin · PMRFP" };
 
@@ -19,10 +24,22 @@ interface CategoryRow {
 
 export default async function AdminCategoriesPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && admin.profile.status !== "active") notFound();
 
   let rows: CategoryRow[];
-  if (isDemoMode()) {
+  let unavailable = false;
+  if (native) {
+    try {
+      const results = await readD1<Omit<CategoryRow, "active"> & { active: number }>(vpsAppDatabase(),
+        `SELECT name,slug,active FROM trade_categories WHERE ${activeRequestAdmin} ORDER BY sort_order,slug LIMIT 1000`, admin.userId);
+      rows = results.map(row => ({ ...row, active: row.active === 1 }));
+    } catch {
+      rows = [];
+      unavailable = true;
+    }
+  } else if (isDemoMode()) {
     const cats = await getCategories();
     rows = cats.map((c) => ({ name: c.name, slug: c.slug, active: true }));
   } else {
@@ -40,7 +57,7 @@ export default async function AdminCategoriesPage({ params }: { params: Promise<
       <PageHeader title="Trade Categories" description="The taxonomy vendors and RFPs are classified by." />
       {isDemoMode() && <DemoBanner />}
 
-      {rows.length === 0 ? (
+      {unavailable ? <EmptyState title="Trade categories could not be loaded" description="Refresh to try again." /> : rows.length === 0 ? (
         <EmptyState title="No categories yet" description="Trade categories will appear here." />
       ) : (
         <AdminTable columns={["Name", "Slug", "Active"]}>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -10,6 +11,10 @@ import { HISTORY_SOURCES } from "@/lib/contract-history/registry";
 import { CANADABUYS_FILES } from "@/lib/contract-history/sources/canadabuys";
 import { AwardHistoryUpload } from "@/components/admin/award-history-upload";
 import { setLangFrom } from "@/i18n/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readD1 } from "@/lib/lifecycle/d1";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
 
 export const metadata: Metadata = { title: "Award History · Admin · PMRFP" };
 
@@ -26,12 +31,27 @@ const SCHEDULE: Record<string, string> = {
  */
 export default async function AdminAwardHistoryPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
-  const demo = isDemoMode() || !isServiceConfigured();
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && session.profile.status !== "active") notFound();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
   const counts = new Map<string, { rows: number; asOf: string | null }>();
   let bids = 0;
   const missingFlags: boolean[] = [];
-  if (!demo) {
+  if (native) {
+    try {
+      const db = vpsAppDatabase();
+      const [awards, bidCount] = await Promise.all([
+        readD1<{ source: string; rows: number; asOf: string | null }>(db,
+          `SELECT source,count(*) AS rows,max(as_of) AS asOf FROM award_history WHERE ${activeRequestAdmin} GROUP BY source`, session.userId),
+        db.prepare(`SELECT count(*) AS total FROM bid_results WHERE ${activeRequestAdmin}`).bind(session.userId).first<{ total: number }>(),
+      ]);
+      for (const row of awards) counts.set(row.source, row);
+      bids = bidCount?.total ?? 0;
+    } catch {
+      missingFlags.push(true);
+    }
+  } else if (!demo) {
     const db = createServiceClient();
     await Promise.all(
       HISTORY_SOURCES.map(async (s) => {
@@ -58,7 +78,7 @@ export default async function AdminAwardHistoryPage({ params }: { params: Promis
       {demo && <DemoBanner />}
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The award_history table is missing. Run supabase/migrations/20261017000040_award_history.sql.
+          {native ? "Award history totals could not be loaded. Refresh to try again." : "The award_history table is missing. Run supabase/migrations/20261017000040_award_history.sql."}
         </p>
       )}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">

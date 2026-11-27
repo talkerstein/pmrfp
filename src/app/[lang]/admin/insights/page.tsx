@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -50,7 +52,8 @@ export default async function InsightsAdminPage({ params, searchParams }: { para
   await setLangFrom(params);
   await requireRole(["admin", "super_admin"]);
   const sp = await searchParams;
-  const demo = isDemoMode() || !isServiceConfigured();
+  const native = isVpsLiveCustomerAuth();
+  const demo = !native && (isDemoMode() || !isServiceConfigured());
 
   const lang: Locale = isEnabledLocale(sp.lang) ? sp.lang : "en";
   const country = sp.country === "US" ? "US" : "CA";
@@ -72,7 +75,12 @@ export default async function InsightsAdminPage({ params, searchParams }: { para
 
   let rejections: RejectionRow[] = [];
   let rejectionsMissing = false;
-  if (!demo) {
+  if (native) {
+    const result = await vpsAppDatabase().prepare(`SELECT id,created_at,source,fact_id,kind,lang,reason,template,output
+      FROM insight_rejections ORDER BY created_at DESC LIMIT 50`).all<RejectionRow>().catch(() => null);
+    rejectionsMissing = !result?.success;
+    rejections = result?.results ?? [];
+  } else if (!demo) {
     const { data, error } = await createServiceClient()
       .from("insight_rejections")
       .select("id,created_at,source,fact_id,kind,lang,reason,template,output")

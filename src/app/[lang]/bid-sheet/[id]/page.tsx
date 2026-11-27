@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readD1Comparison, readD1ComparisonReferences } from "@/lib/d1/pm-tools";
 import { BoardSheet } from "@/components/bid-compare/board";
 import { bidderOrgs, loadComparison, trackerCerts } from "@/lib/bid-compare/server";
 import { buildSheet } from "@/lib/bid-compare/view";
@@ -28,10 +30,12 @@ export default async function OwnerBoardPage({ params }: { params: Promise<{ id:
   const session = await requireRole(["property_manager", "real_estate_agent"]);
   const { id } = await params;
   if (isDemoMode() || !session.organization || !/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const db = await createClient();
-  const { comparison: c, bids } = await loadComparison(db, id);
+  const db = isVpsLiveCustomerAuth() ? null : await createClient();
+  const { comparison: c, bids } = db ? await loadComparison(db, id) : await readD1Comparison(session, id);
   if (!c) notFound();
-  const [certs, orgs] = await Promise.all([trackerCerts(db, c.organization_id), bidderOrgs(db, bids.map((b) => b.bidder_organization_id))]);
+  const [certs, orgs] = db
+    ? await Promise.all([trackerCerts(db, c.organization_id), bidderOrgs(db, bids.map((b) => b.bidder_organization_id))])
+    : await readD1ComparisonReferences(session, bids);
   const view = buildSheet({ scopeItems: c.scope_items, bids, certs, orgs, shared: true });
   return <BoardSheet company={session.organization.name} comparison={c} view={view} country={c.country} lang={lang} m={m} backHref={`/pm-dashboard/bid-comparisons/${c.id}`} />;
 }

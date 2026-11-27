@@ -1,9 +1,12 @@
+import { authTurnstileSiteKey, isIsolatedD1Staging, isVpsLiveCustomerAuth, isVpsNativeAccountRecovery } from "@/lib/d1/staging-config";
+import { customerTurnstileAction } from "@/lib/d1/staging-turnstile";
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
-import { SignInForm } from "@/components/forms/auth-forms";
+import { FinishSignInLinkForm, SignInForm } from "@/components/forms/auth-forms";
 import { ContinueWithGoogle } from "@/components/forms/google-button";
 import { DemoNotice } from "@/components/forms/demo-notice";
 import { safeNextPath } from "@/lib/auth/next";
+import { nativeGoogleConfigured } from "@/lib/auth/vps-google";
 import { isGoogleAuthEnabled } from "@/lib/auth/google";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -18,15 +21,18 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function SignInPage({
   searchParams, params }: {
-  searchParams: Promise<{ next?: string; error?: string; notice?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; notice?: string; link?: string }>;
 } & { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("auth").signIn;
   const td = getT("dedupeClient").signIn;
-  const { next: rawNext, error, notice } = await searchParams;
+  const { next: rawNext, error, notice, link } = await searchParams;
   const next = safeNextPath(rawNext);
   const signUpHref = next ? `/sign-up?next=${encodeURIComponent(next)}` : "/sign-up";
-  const google = await isGoogleAuthEnabled();
+  const staging = isIsolatedD1Staging();
+  const liveAuth = isVpsLiveCustomerAuth();
+  const vpsGoogle = nativeGoogleConfigured();
+  const google = !staging && (vpsGoogle || (!liveAuth && await isGoogleAuthEnabled()));
 
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
@@ -53,18 +59,23 @@ export default async function SignInPage({
       <div className="mt-6">
         {google && (
           <div className="mb-4">
-            <ContinueWithGoogle next={next} />
+            <ContinueWithGoogle next={next} native={vpsGoogle} />
           </div>
         )}
-        <SignInForm next={next} startWithLink={error === "link"} />
+        {liveAuth && link === "complete" ? <FinishSignInLinkForm next={next} /> : (
+          <SignInForm next={next} startWithLink={error === "link"} passwordOnly={staging}
+          nativeRecovery={isVpsNativeAccountRecovery()}
+          turnstileAction={liveAuth ? customerTurnstileAction : undefined}
+          turnstileSiteKey={staging || liveAuth ? authTurnstileSiteKey() : undefined} />
+        )}
       </div>
-      <DemoNotice />
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      {!staging && <DemoNotice />}
+      {!staging && <p className="mt-6 text-center text-sm text-muted-foreground">
         {t.newTo}{" "}
         <Link href={signUpHref} className="font-medium text-teal-700 hover:underline">
           {t.createAccount}
         </Link>
-      </p>
+      </p>}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { getVisitorListCounts } from "@/lib/data/list-counts";
 import { getCategories, getRegions } from "@/lib/data/taxonomy";
 import { checkoutPath } from "@/lib/billing/checkout-flow";
 import { CheckEmailActions } from "@/components/auth/check-email-actions";
+import { authTurnstileSiteKey, isVpsNativeAccountSignup } from "@/lib/d1/staging-config";
 import { mailProviderFor } from "@/lib/auth/mail-provider";
 import { safeNextPath } from "@/lib/auth/next";
 import { getT, setLangFrom } from "@/i18n/server";
@@ -103,6 +104,7 @@ export default async function CheckEmailPage({
               lang={lang}
               provider={provider ? { name: provider.name, href: provider.href } : null}
               startOverHref={L(startOver)}
+              turnstileSiteKey={isVpsNativeAccountSignup() ? authTurnstileSiteKey() : undefined}
               t={{ openMail: t.openMail, resend: t.resend, resendIn: t.resendIn, resending: t.resending, resent: t.resent, resendLimit: t.resendLimit, wrongEmail: t.wrongEmail, startOver: t.startOver, sameBrowser: t.sameBrowser }}
             />
           )}

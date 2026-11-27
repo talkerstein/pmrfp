@@ -4,6 +4,10 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { verifyDigestUnsubscribe } from "@/lib/email/unsubscribe";
 import { localizePath, hasLocale } from "@/i18n/config";
 
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { UUID } from "@/lib/d1/contracts";
+import { customerAppAuthority } from "../../../../../workers/d1-api/customer-signup";
+
 export const dynamic = "force-dynamic";
 
 /**
@@ -16,8 +20,16 @@ export const dynamic = "force-dynamic";
 async function unsubscribe(request: Request): Promise<{ ok: boolean; lang: string }> {
   const url = new URL(request.url);
   const id = url.searchParams.get("s");
-  if (!verifyDigestUnsubscribe(id, url.searchParams.get("t")) || !isServiceConfigured()) return { ok: false, lang: "en" };
+  if (!id || !UUID.test(id) || !verifyDigestUnsubscribe(id, url.searchParams.get("t"))) return { ok: false, lang: "en" };
   const now = new Date().toISOString();
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1") {
+    const result = await vpsAppDatabase().prepare(`UPDATE digest_subscribers
+      SET status=CASE WHEN status='bounced' THEN status ELSE 'unsubscribed' END,
+          unsubscribed_at=CASE WHEN status='bounced' THEN unsubscribed_at ELSE coalesce(unsubscribed_at,?) END,
+          updated_at=? WHERE id=? AND ${customerAppAuthority} RETURNING lang`).bind(now,now,id).first<{lang:string}>();
+    return { ok: Boolean(result), lang: result?.lang ?? "en" };
+  }
+  if (!isServiceConfigured()) return { ok: false, lang: "en" };
   const { data, error } = await createServiceClient()
     .from("digest_subscribers")
     .update({ status: "unsubscribed", unsubscribed_at: now, updated_at: now })

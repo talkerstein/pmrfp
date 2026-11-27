@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
@@ -9,6 +10,10 @@ import { fmtDate } from "@/lib/admin/queries";
 import { addBlockedDomainAction, removeBlockedDomainAction } from "@/lib/admin/org-actions";
 import { SEED_BLOCKED_DOMAINS } from "@/lib/spam/server";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { readD1 } from "@/lib/lifecycle/d1";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
 
 export const metadata: Metadata = { title: "Blocked domains · Admin · PMRFP" };
 
@@ -22,12 +27,21 @@ type Search = { added?: string; error?: string };
 
 export default async function BlockedDomainsPage({ params, searchParams }: { params: Promise<object>; searchParams?: Promise<Search> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && admin.profile.status !== "active") notFound();
   const sp = (await searchParams) ?? {};
 
   let rows: Row[] = [];
   let ready = true;
-  if (isDemoMode()) {
+  if (native) {
+    try {
+      rows = await readD1<Row>(vpsAppDatabase(),
+        `SELECT domain,reason,created_at FROM blocked_domains WHERE ${activeRequestAdmin} ORDER BY created_at DESC,domain LIMIT 5000`, admin.userId);
+    } catch {
+      ready = false;
+    }
+  } else if (isDemoMode()) {
     rows = SEED_BLOCKED_DOMAINS.map((domain) => ({ domain, reason: "Demo", created_at: "2026-10-24" }));
   } else {
     const { data, error } = await (await createClient()).from("blocked_domains").select("domain,reason,created_at").order("created_at", { ascending: false }).returns<Row[]>();
@@ -47,7 +61,8 @@ export default async function BlockedDomainsPage({ params, searchParams }: { par
       {sp.error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">{sp.error === "domain" ? "That doesn't look like a domain (try example.com)." : "Could not save. Try again."}</p>}
 
       {!ready ? (
-        <EmptyState title="Blocked domains start after the database update" description="Run migration 20261024000100_earned_links.sql. Until then the two seed domains are still checked." />
+        <EmptyState title={native ? "Blocked domains could not be loaded" : "Blocked domains start after the database update"}
+          description={native ? "Refresh to try again." : "Run migration 20261024000100_earned_links.sql. Until then the two seed domains are still checked."} />
       ) : (
         <>
           {!isDemoMode() && (

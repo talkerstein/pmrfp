@@ -2,6 +2,9 @@ import type { User } from "@supabase/supabase-js";
 import { isAdminRole, type SessionContext } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase, vpsDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { createClient } from "@/lib/supabase/server";
 import { canPost } from "./rules";
 
 export function isGoogleUser(user: Pick<User, "app_metadata" | "identities"> | null | undefined): boolean {
@@ -12,9 +15,24 @@ export function isGoogleUser(user: Pick<User, "app_metadata" | "identities"> | n
 
 /** Is this user a moderator of any forum category? */
 export async function isAnyMod(userId: string): Promise<boolean> {
+  if (isVpsLiveCustomerAuth()) return Boolean(await vpsAppDatabase()
+    .prepare("SELECT 1 FROM forum_category_mods WHERE user_id=? LIMIT 1").bind(userId).first());
   if (!isServiceConfigured()) return false;
   const { data } = await createServiceClient().from("forum_category_mods").select("user_id").eq("user_id", userId).limit(1);
   return Boolean(data?.length);
+}
+
+export async function sessionCanPostInCurrentBackend(session: SessionContext): Promise<boolean> {
+  if (!isVpsLiveCustomerAuth()) return sessionCanPost(session, (await (await createClient()).auth.getUser()).data.user);
+  if (session.profile.status !== "active") return false;
+  const u = await vpsDatabase("auth").prepare(`SELECT emailVerified, EXISTS(
+    SELECT 1 FROM account a WHERE a.userId=u.id AND a.providerId='google') AS google FROM user u WHERE u.id=?`)
+    .bind(session.userId).first<{ emailVerified: number; google: number }>();
+  if (!u?.emailVerified) return false;
+  const base = { isAdmin: isAdminRole(session.profile.primary_role),
+    orgProfileStatus: session.organization?.status === "active" ? session.organization.profile_status : null,
+    google: Boolean(u.google), emailVerified: true, onboarded: Boolean(session.profile.onboarding_completed) };
+  return canPost({ ...base, isMod: false }) || canPost({ ...base, isMod: await isAnyMod(session.userId) });
 }
 
 /** The single posting gate, from the session + auth user. */

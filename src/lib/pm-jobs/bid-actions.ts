@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getSession, isAdminRole } from "@/lib/access/access";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { decideVpsBid } from "@/lib/d1/vps-bid-decisions";
 import { declineResponse, loadJobForDecision, ownsJob, pickResponse, shareContactWith, toggleShortlist, type DecisionError } from "./decisions";
 
 /**
@@ -21,36 +23,46 @@ export interface BidActionState {
 type Kind = NonNullable<BidActionState["done"]>;
 
 async function run(kind: Kind, formData: FormData): Promise<BidActionState> {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return { error: "demo" };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && (!isSupabaseConfigured() || !isServiceConfigured())) return { error: "demo" };
   const session = await getSession();
   if (!session) return { error: "not_owner" };
   const rfpId = String(formData.get("rfpId") ?? "");
   const interestId = String(formData.get("interestId") ?? "");
   if (!rfpId || !interestId) return { error: "not_found" };
 
-  const db = createServiceClient();
-  const job = await loadJobForDecision(db, rfpId);
-  if (!job) return { error: "not_found" };
-  if (!ownsJob(job, { userId: session.userId, organizationId: session.organization?.id ?? null, admin: isAdminRole(session.profile.primary_role) })) {
-    return { error: "not_owner" };
+  const note = String(formData.get("note") ?? "") || null;
+  let job;
+  if (native) {
+    try {
+      const result = await decideVpsBid(kind, session.userId, rfpId, interestId, note);
+      if (!result.ok) return { error: result.error };
+      job = result.job;
+    } catch {
+      return { error: "failed" };
+    }
+  } else {
+    const db = createServiceClient();
+    job = await loadJobForDecision(db, rfpId);
+    if (!job) return { error: "not_found" };
+    if (!ownsJob(job, { userId: session.userId, organizationId: session.organization?.id ?? null, admin: isAdminRole(session.profile.primary_role) })) {
+      return { error: "not_owner" };
+    }
+    const result = kind === "shortlist" ? await toggleShortlist(db, job, interestId)
+      : kind === "decline" ? await declineResponse(db, job, interestId, note)
+      : kind === "pick" ? await pickResponse(db, job, interestId)
+      : await shareContactWith(db, job, interestId);
+    if (!result.ok) return { error: result.error };
   }
-
-  const result =
-    kind === "shortlist"
-      ? await toggleShortlist(db, job, interestId)
-      : kind === "decline"
-        ? await declineResponse(db, job, interestId, String(formData.get("note") ?? "") || null)
-        : kind === "pick"
-          ? await pickResponse(db, job, interestId)
-          : await shareContactWith(db, job, interestId);
-  if (!result.ok) return { error: result.error };
 
   revalidatePath(`/pm-dashboard/rfps/${rfpId}/interests`);
   revalidatePath("/pm-dashboard/rfps");
+  revalidatePath("/pm-dashboard");
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/interests");
-  if (kind === "pick" && job.slug) revalidatePath(`/rfps/${job.slug}`);
+  if (kind === "pick" && job?.slug) revalidatePath(`/rfps/${job.slug}`);
   // A town's job is handled from its own dashboard (lib/town-jobs).
-  if (job.source_type === "public_buyer_direct") {
+  if (job?.source_type === "public_buyer_direct") {
     revalidatePath(`/buyer-dashboard/jobs/${rfpId}/responses`);
     revalidatePath(`/buyer-dashboard/jobs/${rfpId}`);
     revalidatePath("/buyer-dashboard/jobs");

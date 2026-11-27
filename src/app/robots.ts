@@ -1,8 +1,10 @@
+import { isIsolatedD1Staging } from "@/lib/d1/staging-config";
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/site";
 import { BLOCKED_BOTS } from "@/lib/bot-guard";
 
 export default function robots(): MetadataRoute.Robots {
+  if (isIsolatedD1Staging()) return { rules: { userAgent: "*", disallow: "/" } };
   const base = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
   return {
     rules: [

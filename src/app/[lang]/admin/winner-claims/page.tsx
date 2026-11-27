@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { listNativeWinnerClaims, type AdminWinnerClaim } from "@/lib/claims/native";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
@@ -15,22 +17,6 @@ export const metadata: Metadata = { title: "Winner claims · Admin · PMRFP" };
 
 type SP = Promise<Record<string, string | undefined>>;
 
-interface Row {
-  id: string;
-  winner_slug: string;
-  winner_name: string;
-  organization_id: string;
-  email: string;
-  website: string | null;
-  method: "email_domain" | "admin_review";
-  status: "pending" | "approved" | "rejected" | "revoked";
-  note: string | null;
-  admin_note: string | null;
-  created_at: string;
-  reviewed_at: string | null;
-  organizations: { name: string; slug: string; organization_type: string; website: string | null } | null;
-}
-
 const input = "rounded-md border border-border bg-background px-2 py-1 text-xs";
 const btn = "rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90";
 const btnLine = "rounded-full border border-border px-3 py-1 text-xs font-semibold hover:bg-secondary";
@@ -44,19 +30,24 @@ const btnLine = "rounded-full border border-border px-3 py-1 text-xs font-semibo
  */
 export default async function WinnerClaimsPage({ params, searchParams }: { params: Promise<object>; searchParams: SP }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
   const sp = await searchParams;
-  const demo = isDemoMode() || !isServiceConfigured();
+  const native = isVpsLiveCustomerAuth();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
 
-  let rows: Row[] = [];
+  let rows: AdminWinnerClaim[] = [];
   let missing = false;
-  if (!demo) {
+  if (native) {
+    const claims = await listNativeWinnerClaims(session.userId).catch(() => null);
+    rows = claims ?? [];
+    missing = claims === null;
+  } else if (!demo) {
     const { data, error } = await createServiceClient()
       .from("winner_claims")
       .select("id,winner_slug,winner_name,organization_id,email,website,method,status,note,admin_note,created_at,reviewed_at,organizations(name,slug,organization_type,website)")
       .order("created_at", { ascending: false })
       .limit(300)
-      .returns<Row[]>();
+      .returns<AdminWinnerClaim[]>();
     missing = Boolean(error);
     rows = data ?? [];
   }
@@ -75,7 +66,7 @@ export default async function WinnerClaimsPage({ params, searchParams }: { param
       {sp.error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-900">{sp.error}</p>}
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The winner_claims table is missing. Run supabase/migrations/20261013000010_growth_pack.sql.
+          Winner claims could not be loaded. Try again in a moment.
         </p>
       )}
       {rows.length === 0 ? (

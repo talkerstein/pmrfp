@@ -1,3 +1,7 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { readD1 } from "@/lib/lifecycle/d1";
 import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
@@ -26,10 +30,14 @@ const DEMO_REQUESTS: RequestRow[] = [
 
 export default async function AdminContactRequestsPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
 
   let rows = DEMO_REQUESTS;
-  if (!isDemoMode()) {
+  if (native) {
+    rows = await readD1<RequestRow>(vpsAppDatabase(), `SELECT id,request_type,requester_name,requester_email,status,created_at
+      FROM contact_requests WHERE ${activeRequestAdmin} ORDER BY created_at DESC,id`, session.userId);
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     const { data } = await supabase
       .from("contact_requests")
@@ -42,7 +50,7 @@ export default async function AdminContactRequestsPage({ params }: { params: Pro
   return (
     <>
       <PageHeader title="Contact Requests" description="Inbound intros and help requests from the public site." />
-      {isDemoMode() && <DemoBanner />}
+      {!native && isDemoMode() && <DemoBanner />}
 
       {rows.length === 0 ? (
         <EmptyState title="No contact requests yet" description="Inbound messages will appear here." />

@@ -1,4 +1,7 @@
 import "server-only";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { applyD1KarmaPlan, linkD1ForumProfiles, loadD1Karma, storeD1KarmaScores } from "./d1";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -180,16 +183,18 @@ export async function syncKarma(opts: SyncOptions = {}): Promise<SyncReport> {
     ready: false, dryRun, scoped: false, orgsConsidered: 0, inserted: 0, reversed: 0, restored: 0, updated: 0,
     byKind: {}, levels: emptyLevels(), forumProfilesLinked: 0, warnings,
   };
-  if (!isServiceConfigured()) {
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) {
     warnings.push("Supabase service role not configured");
     return report;
   }
-  const db = createServiceClient();
-  const existing = await loadLedger(db, warnings);
+  const d1 = native ? vpsAppDatabase() : null;
+  const db = native ? null : createServiceClient();
+  const loaded = d1 ? await loadD1Karma(d1) : null;
+  const existing = loaded?.ledger ?? await loadLedger(db!, warnings);
   if (!existing) return report;
   report.ready = true;
-
-  const snap = await loadSnapshot(db, warnings);
+  const snap = loaded?.snapshot ?? await loadSnapshot(db!, warnings);
   const scopeIds = new Set<string>([...(opts.orgIds ?? []), ...orgsForUsers(snap, opts.userIds ?? [])]);
   const scoped = Boolean(opts.orgIds?.length || opts.userIds?.length);
   report.scoped = scoped;
@@ -218,7 +223,11 @@ export async function syncKarma(opts: SyncOptions = {}): Promise<SyncReport> {
   const touched = scope ?? new Set<string>([...after.map((e) => e.orgId), ...snap.orgs.filter(isEligibleOrg).map((o) => o.id)]);
   report.orgsConsidered = touched.size;
 
-  if (!dryRun) {
+  if (!dryRun && d1) {
+    await applyD1KarmaPlan(d1,plan,nowIso);
+    if (!scope) report.forumProfilesLinked = await linkD1ForumProfiles(d1,snap);
+  }
+  if (!dryRun && db) {
     for (const batch of chunks(plan.insert, 500)) {
       const { error } = await db.from("karma_events").upsert(
         batch.map((d) => ({
@@ -254,7 +263,8 @@ export async function syncKarma(opts: SyncOptions = {}): Promise<SyncReport> {
     return { org_id: orgId, raw_points: s.raw, score: s.score, level: s.level, decay: s.decay, last_earned_at: s.lastEarnedAt, updated_at: nowIso };
   });
   for (const r of rows) if (isEligibleOrg(orgById.get(r.org_id))) report.levels[r.level as LevelNumber]++;
-  if (!dryRun) {
+  if (!dryRun && d1) await storeD1KarmaScores(d1,rows.filter(row=>orgById.has(row.org_id)));
+  if (!dryRun && db) {
     for (const batch of chunks(rows.filter((r) => orgById.has(r.org_id)), 500)) {
       const { error } = await db.from("org_karma").upsert(batch, { onConflict: "org_id" });
       if (error) warnings.push(`org_karma: ${error.message}`);

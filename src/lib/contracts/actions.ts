@@ -1,5 +1,8 @@
 "use server";
 
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { saveD1Tool, ownToolRfp, deleteD1Tool, renewD1Contract, insertD1Tools, listD1Contracts } from "@/lib/d1/pm-tools";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSession, type SessionContext } from "@/lib/access/access";
@@ -47,7 +50,7 @@ export interface SaveState {
 type Pm = { session: SessionContext; orgId: string; country: ContractCountry };
 
 async function pm(): Promise<Pm | { error: ContractErrorKey }> {
-  if (!isSupabaseConfigured()) return { error: "unavailable" };
+  if (!isSupabaseConfigured() && !isVpsLiveCustomerAuth()) return { error: "unavailable" };
   const session = await getSession();
   if (!session || !ROLES.includes(session.profile.primary_role)) return { error: "signIn" };
   if (!session.organization) return { error: "noOrg" };
@@ -69,8 +72,17 @@ export async function saveContractAction(_prev: SaveState, formData: FormData): 
   if (!res.ok) return { error: res.field };
   const row = { ...res.value, currency: currencyFor(who.country) };
   const source = uuid(raw.source_rfp_id);
-  const db = await createClient();
   const id = uuid(raw.id);
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const source_rfp_id = await ownToolRfp(who.session, source);
+      if (source && !source_rfp_id) return { error: "notFound" };
+      if (!await saveD1Tool("service_contracts", who.session, id, { ...row, source_rfp_id })) return { error: "notFound" };
+      revalidatePath(DASHBOARD);
+      return { ok:true, savedAt:Date.now() };
+    } catch { return { error: "unavailable" }; }
+  }
+  const db = await createClient();
   if (id) {
     const { data: before } = await db.from("service_contracts").select("vendor_email,source_rfp_id").eq("id", id).maybeSingle<{ vendor_email: string | null; source_rfp_id: string | null }>();
     const { data, error } = await db.from("service_contracts").update(row).eq("id", id).select("id").maybeSingle();
@@ -99,6 +111,11 @@ export async function deleteContractAction(id: string): Promise<{ ok?: boolean; 
   if (!uuid(id)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    if (!await deleteD1Tool("service_contracts", who.session, id).catch(() => null)) return { error: "notFound" };
+    revalidatePath(DASHBOARD);
+    return { ok:true };
+  }
   const db = await createClient();
   const { data, error } = await db.from("service_contracts").delete().eq("id", id).select("file_path").maybeSingle<{ file_path: string | null }>();
   if (error || !data) return { error: "notFound" };
@@ -117,6 +134,14 @@ export async function renewContractAction(id: string): Promise<{ ok?: boolean; e
   if (!uuid(id)) return { error: "notFound" };
   const who = await pm();
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const result = await renewD1Contract(who.session,id);
+      if (result !== "renewed") return {error:result};
+      revalidatePath(DASHBOARD);
+      return {ok:true};
+    } catch { return {error:"unavailable"}; }
+  }
   const db = await createClient();
   const { data: c } = await db
     .from("service_contracts")
@@ -145,6 +170,20 @@ export async function addStartersAction(keys: string[], lang: string): Promise<{
   if ("error" in who) return { error: who.error };
   const wanted = new Set(keys.filter(isStarterKey));
   if (!wanted.size) return { added: 0 };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const [trades, existing] = await Promise.all([getCategories(),listD1Contracts(who.session)]);
+      const items = getDictionary(hasLocale(lang) ? lang : "en").contractsClient.starters.items;
+      const open = new Set(availableStarters(trades,existing.rows.map(row => row.starter_key)).map(row => row.key));
+      const rows = STARTERS.filter(row => open.has(row.key) && wanted.has(row.key)).map(row => ({
+        starter_key:row.key,trade_slug:row.trade,service_detail:items[row.key].detail,
+        notice_days:row.noticeDays,currency:currencyFor(who.country),
+      }));
+      const added = await insertD1Tools("service_contracts",who.session,rows);
+      revalidatePath(DASHBOARD);
+      return {added};
+    } catch { return {error:"unavailable"}; }
+  }
   const db = await createClient();
   const { data: existing, error: readErr } = await db.from("service_contracts").select("starter_key").eq("organization_id", who.orgId).not("starter_key", "is", null);
   if (readErr) return { error: isMissingTable(readErr) ? "unavailable" : "notFound" };
@@ -187,6 +226,13 @@ export async function importContractsAction(_prev: ImportState, formData: FormDa
   if (file instanceof File && file.size > 0 && file.size <= 1024 * 1024) csv = await file.text();
   const parsed = importContracts(csv.slice(0, 1024 * 1024), await getCategories().catch(() => []));
   if (!parsed.rows.length) return { error: "empty", skipped: parsed.skipped };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const added = await insertD1Tools("service_contracts",who.session,parsed.rows.map(row => ({...row,currency:currencyFor(who.country)})));
+      revalidatePath(DASHBOARD);
+      return {ok:true,added,skipped:parsed.skipped,truncated:parsed.truncated};
+    } catch { return {error:"unavailable"}; }
+  }
   const db = await createClient();
   const currency = currencyFor(who.country);
   const { data, error } = await db

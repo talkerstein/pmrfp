@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -7,7 +8,12 @@ import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { isMissingTableError } from "@/lib/entitlement/trial";
 import { BuyerSourceDecide } from "@/components/admin/buyer-source-decide";
-import { loadPermissionRegistry } from "@/lib/buyers/permissions-data";
+import { loadD1PermissionRegistry, loadPermissionRegistry } from "@/lib/buyers/permissions-data";
+import { listVpsBuyerSourceRequests, type BuyerSourceReviewRow } from "@/lib/d1/buyer-sources";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import type { D1Binding } from "@/lib/d1/contracts";
 import { METHOD_LABEL, PERMISSION_METHODS, STATUS_LABEL, seedRefused, seedRegistry, type PermissionMethod } from "@/lib/buyers/permissions";
 import { emailMatchesSite } from "@/lib/buyers/source-links";
 import { CITY_SOURCES } from "@/lib/tenders/city-sources";
@@ -60,23 +66,6 @@ const REASON_LABEL = CLAIM_REASON_LABEL;
 
 export const metadata: Metadata = { title: "Buyer sources · Admin · PMRFP" };
 
-interface Row {
-  id: string;
-  organization: string;
-  contact_name: string;
-  work_email: string;
-  tenders_url: string;
-  method: string;
-  feed_url: string | null;
-  province_code: string;
-  buyer_slug: string | null;
-  lang: string;
-  status: string;
-  admin_notes: string | null;
-  decided_at: string | null;
-  created_at: string;
-}
-
 const MIGRATION = "supabase/migrations/20261021000010_buyer_sources.sql";
 const isMethod = (m: string): m is PermissionMethod => (PERMISSION_METHODS as readonly string[]).includes(m);
 
@@ -92,16 +81,49 @@ const isMethod = (m: string): m is PermissionMethod => (PERMISSION_METHODS as re
  */
 export default async function AdminBuyerSourcesPage({ params, searchParams }: { params: Promise<object>; searchParams: Promise<{ all?: string }> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
   const showAll = (await searchParams).all === "1";
-  const demo = isDemoMode() || !isServiceConfigured();
-  let rows: Row[] = [];
+  const native = isVpsLiveCustomerAuth();
+  if (native && session.profile.status !== "active") notFound();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
+  let rows: BuyerSourceReviewRow[] = [];
   let missing = false;
   let registry = seedRegistry();
   let claims: ClaimRow[] = [];
   let managed: ManagedRow[] = [];
   let pagesMissing = false;
-  if (!demo) {
+  const nativeDb = native ? vpsAppDatabase() : null;
+  if (nativeDb) {
+    try {
+      const db = nativeDb;
+      [rows, registry] = await Promise.all([
+        listVpsBuyerSourceRequests(session.userId, showAll, db),
+        loadD1PermissionRegistry(db),
+      ]);
+    } catch {
+      missing = true;
+    }
+    try {
+      const results = await nativeDb.batch([
+        nativeDb.prepare(`SELECT id,buyer_key,buyer_name,province_code,email,email_domain,full_name,job_title,phone,note,
+          status,reason,method,admin_notes,created_at,decided_at FROM buyer_claims WHERE ${activeRequestAdmin}
+          AND (?=1 OR status='pending') ORDER BY created_at DESC,id LIMIT 300`).bind(session.userId, Number(showAll)),
+        nativeDb.prepare(`SELECT p.buyer_key,p.buyer_name,p.verified_method,p.verified_domain,p.verified_at,p.updated_at,
+          o.name AS organization_name,o.status AS organization_status FROM buyer_pages p JOIN organizations o ON o.id=p.organization_id
+          WHERE ${activeRequestAdmin} ORDER BY p.verified_at DESC,p.buyer_key LIMIT 500`).bind(session.userId),
+      ]);
+      if (results.some(row => !row.success)) throw new Error("Buyer claims unavailable");
+      claims = results[0].results as unknown as ClaimRow[];
+      const pages = results[1].results as unknown as (Omit<ManagedRow, "organizations"> & {
+        organization_name: string; organization_status: string;
+      })[];
+      managed = pages.map(({ organization_name, organization_status, ...page }) => ({
+        ...page, organizations: { name: organization_name, status: organization_status },
+      }));
+    } catch {
+      pagesMissing = true;
+    }
+  } else if (!demo) {
     const db = createServiceClient();
     let q = db
       .from("buyer_source_requests")
@@ -116,7 +138,7 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
       .limit(300);
     if (!showAll) cq = cq.eq("status", "pending");
     const [{ data, error }, loaded, c, m] = await Promise.all([
-      q.returns<Row[]>(),
+      q.returns<BuyerSourceReviewRow[]>(),
       loadPermissionRegistry(db),
       cq.returns<ClaimRow[]>(),
       db.from("buyer_pages").select("buyer_key,buyer_name,verified_method,verified_domain,verified_at,updated_at,organizations(name,status)").order("verified_at", { ascending: false }).limit(500),
@@ -143,7 +165,7 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
   const cities = CITY_SOURCES.map((c) => ({ c, gate: citySourceGate(c, registry) }));
   // Follows (PMRFP for Towns, Part B1): counts, the most-followed pages, and
   // what the same-day follow emails would send right now (a dry run: nothing is sent).
-  const follows = demo ? null : await followStats(createServiceClient());
+  const follows = nativeDb ? await followStats(nativeDb).catch(() => null) : demo ? null : await followStats(createServiceClient());
 
   return (
     <>
@@ -154,7 +176,7 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
       {demo && <DemoBanner />}
       {missing && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          The buyer_source_requests / buyer_permissions tables are missing. Run {MIGRATION}. Until then the registry is the code seed (src/lib/buyers/permissions.ts) and the public form shows an email link instead.
+          {native ? "Buyer source requests or permissions could not be loaded. Please refresh to try again." : <>The buyer_source_requests / buyer_permissions tables are missing. Run {MIGRATION}. Until then the registry is the code seed (src/lib/buyers/permissions.ts) and the public form shows an email link instead.</>}
         </p>
       )}
       <div className="mb-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -217,7 +239,9 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
         organization&apos;s staff page, a reply from the purchasing inbox). If someone already manages the page, verifying sends a join request to them instead.
       </p>
       {pagesMissing && (
-        <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">The buyer_claims / buyer_pages tables are missing. Run {PAGES_MIGRATION}. Until then nobody can claim a page.</p>
+        <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {native ? "Page claims could not be loaded. Please refresh to try again." : <>The buyer_claims / buyer_pages tables are missing. Run {PAGES_MIGRATION}. Until then nobody can claim a page.</>}
+        </p>
       )}
       <AdminTable columns={["Received", "Page", "Claimant", "Email check", "Decision"]}>
         {claims.map((c) => (
@@ -362,7 +386,17 @@ export default async function AdminBuyerSourcesPage({ params, searchParams }: { 
 }
 
 /** Follow counts, the 20 most-followed pages and a dry run of the same-day follow emails. Never throws. */
-async function followStats(db: ReturnType<typeof createServiceClient>): Promise<{ missing: boolean; total: number; pages: number; top: { key: string; followers: number }[]; run: FollowAlertRun | null }> {
+async function followStats(db: D1Binding | ReturnType<typeof createServiceClient>): Promise<{ missing: boolean; total: number; pages: number; top: { key: string; followers: number }[]; run: FollowAlertRun | null }> {
+  if ("prepare" in db) {
+    const [counts, top, run] = await Promise.all([
+      db.prepare("SELECT count(*) AS total,count(DISTINCT buyer_slug) AS pages FROM buyer_follows")
+        .first<{ total: number; pages: number }>(),
+      db.prepare("SELECT buyer_slug AS key,count(*) AS followers FROM buyer_follows GROUP BY buyer_slug ORDER BY followers DESC,buyer_slug LIMIT 20")
+        .all<{ key: string; followers: number }>(),
+      runBuyerFollowAlerts(db, { dry: true }).catch(() => null),
+    ]);
+    return { missing: false, total: counts?.total ?? 0, pages: counts?.pages ?? 0, top: top.results, run };
+  }
   const [{ count, error }, top] = await Promise.all([
     db.from("buyer_follows").select("user_id", { count: "exact", head: true }),
     db.from("buyer_follow_counts").select("buyer_slug,followers").order("followers", { ascending: false }).limit(2000),

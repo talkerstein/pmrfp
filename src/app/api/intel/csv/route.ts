@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/access/access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { usesD1CustomerAuth } from "@/lib/d1/staging-config";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
 import { provinceFromSlug } from "@/lib/data/price-benchmarks";
 import { SITE } from "@/lib/site";
@@ -30,8 +31,9 @@ const clean = (s: string) => s.replace(/[^a-z0-9-]/gi, "").slice(0, 80);
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = (k: string) => url.searchParams.get(k) ?? "";
-  const session = isSupabaseConfigured() ? await getSession() : null;
-  if (isSupabaseConfigured() && !session?.hasIntelAccess) return text("Award Intelligence subscription required\n", 403);
+  const configured = usesD1CustomerAuth() || isSupabaseConfigured();
+  const session = configured ? await getSession() : null;
+  if (configured && !session?.hasIntelAccess) return text("Award Intelligence subscription required\n", 403);
 
   const { awards, refs, today } = await loadIntel();
   const { country } = await getVisitorCountry({ param: q("country"), session });

@@ -1,3 +1,8 @@
+import { usesD1CustomerAuth, isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readD1Directory } from "@/lib/d1/directory-server";
+import { publicAssetId } from "@/lib/d1/public-asset-preview";
+import { listCompanyPortfolio } from "@/lib/d1/vps-company-media";
+import { UUID } from "@/lib/d1/contracts";
 import { createReadClient } from "@/lib/supabase/read";
 import { getPortfolioPhotos } from "@/lib/data/portfolio-photos";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -85,6 +90,10 @@ interface OrgRow {
   website: string | null;
   email: string | null;
   phone: string | null;
+  platinum?: boolean;
+  google_rating?: number | null;
+  google_review_count?: number | null;
+  email_domain_verified?: boolean;
   organization_categories: { trade_categories: { name: string; slug: string } | null }[];
   organization_regions: { regions: { name: string; slug: string; country?: string | null } | null }[];
   organization_property_types: { property_types: { name: string; slug: string } | null }[];
@@ -120,7 +129,27 @@ function tierRank(v: { platinum?: boolean; featured: boolean; verified: boolean 
   return (v.platinum ? 4 : 0) + (v.featured ? 2 : 0) + (v.verified ? 1 : 0);
 }
 
+
+function cloudflareLogo(source: string | null) {
+  if (source?.startsWith("/api/company-media/") && UUID.test(source.slice("/api/company-media/".length))) return source;
+  const id = source ? publicAssetId(source) : null;
+  return id ? `/api/migration/public-asset/${id}` : null;
+}
+async function cloudflareVendors(filters: VendorFilters = {}, ids?: string[]): Promise<VendorListItem[]> {
+  const rows = await readD1Directory({type:filters.orgType ?? 'trade_company'}) as unknown as OrgRow[];
+  const platinum = new Set(rows.filter(r=>r.platinum).map(r=>r.slug));
+  const out = rows.filter(r => (!ids || ids.includes(r.id)) &&
+    (!filters.verified || r.verified) && (!filters.q || r.name.toLowerCase().includes(filters.q.toLowerCase())) &&
+    (!filters.category || r.organization_categories.some(c=>c.trade_categories?.slug===filters.category)) &&
+    (!filters.region || r.organization_regions.some(c=>c.regions?.slug===filters.region)) &&
+    (!filters.propertyType || r.organization_property_types.some(c=>c.property_types?.slug===filters.propertyType)) &&
+    (!filters.country || vendorCountries(r,r.organization_regions.flatMap(c=>c.regions?[c.regions]:[])).includes(filters.country)))
+    .map(r=>toListItem({...r,logo_url:cloudflareLogo(r.logo_url)},platinum));
+  return filters.sort==='alpha' ? out.sort((a,b)=>a.name.localeCompare(b.name)) : out.sort((a,b)=>tierRank(b)-tierRank(a));
+}
+
 export async function listVendors(filters: VendorFilters = {}): Promise<VendorListItem[]> {
+  if (usesD1CustomerAuth()) return cloudflareVendors(filters);
   const orgType = filters.orgType ?? "trade_company";
   if (!isSupabaseConfigured()) {
     const source = orgType === "supplier" ? DEMO_SUPPLIERS : DEMO_VENDORS;
@@ -179,6 +208,11 @@ function toListItem(r: OrgRow, platinum: Set<string>, levels?: Map<string, numbe
 /** Live, approved trades by organization id, keyed by id (trusted-trades pages). */
 export async function listVendorsByIds(ids: string[]): Promise<Map<string, VendorListItem>> {
   const out = new Map<string, VendorListItem>();
+  if (usesD1CustomerAuth()) {
+    const rows=await readD1Directory() as unknown as OrgRow[];
+    for(const row of rows.filter(r=>ids.includes(r.id))) out.set(row.id,toListItem({...row,logo_url:cloudflareLogo(row.logo_url)},new Set(rows.filter(r=>r.platinum).map(r=>r.slug))));
+    return out;
+  }
   if (!ids.length || !isSupabaseConfigured()) return out;
   const supabase = createReadClient();
   const [{ data }, platinum] = await Promise.all([
@@ -202,6 +236,7 @@ export async function listVendorsByIds(ids: string[]): Promise<Map<string, Vendo
  * page: its trade's page, else the directory.
  */
 export async function retiredVendorRedirect(slug: string): Promise<string | null> {
+  if (usesD1CustomerAuth()) return null;
   if (!isSupabaseConfigured()) return null;
   const supabase = createReadClient();
   const { data } = await supabase
@@ -229,6 +264,7 @@ export type VendorCard = Omit<VendorListItem, "featured" | "platinum" | "level">
  * else, under the same visibility rules as getVendor.
  */
 export async function getVendorCard(slug: string): Promise<VendorCard | null> {
+  if (usesD1CustomerAuth()) { const r=(await readD1Directory({slug}))[0] as unknown as OrgRow | undefined; return r ? {...toListItem({...r,logo_url:cloudflareLogo(r.logo_url)},new Set()),id:r.id} : null; }
   if (!isSupabaseConfigured()) {
     const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);
     return v ? { ...demoToListItem(v), id: v.slug } : null;
@@ -245,6 +281,19 @@ export async function getVendorCard(slug: string): Promise<VendorCard | null> {
 }
 
 export async function getVendor(slug: string): Promise<VendorDetail | null> {
+  if (usesD1CustomerAuth()) {
+    const r=(await readD1Directory({slug}))[0] as unknown as OrgRow | undefined;
+    if(!r) return null;
+    const native = isVpsLiveCustomerAuth();
+    const portfolioPhotos = native ? (await listCompanyPortfolio(r.id, null)).map(({ url }) => url) : [];
+    const link = native ? linkOrgFromRow(r as unknown as LinkRow) : { slug: r.slug, website: r.website };
+    return {...toListItem({...r,logo_url:cloudflareLogo(r.logo_url)},new Set(r.platinum?[r.slug]:[])),id:r.id,
+      isSupplier:r.organization_type==='supplier',fullDescription:r.full_description,yearsInBusiness:r.years_in_business,
+      employeeCountRange:r.employee_count_range,insuranceStatus:r.insurance_status,wsibStatus:r.wsib_status,
+      emergencyService:r.emergency_service,propertyTypes:r.organization_property_types.flatMap(c=>c.property_types?[c.property_types.name]:[]),
+      googleRating:r.google_rating ?? null,googleReviewCount:r.google_review_count ?? null,contactVisibility:r.public_contact_visibility,
+      website:r.website,email:r.email,phone:r.phone,portfolioPhotos,link,emailDomainVerified:!!r.email_domain_verified};
+  }
   if (!isSupabaseConfigured()) {
     const v = [...DEMO_VENDORS, ...DEMO_SUPPLIERS].find((x) => x.slug === slug);
     if (!v) return null;

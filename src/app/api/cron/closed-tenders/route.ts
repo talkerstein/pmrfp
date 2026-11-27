@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 import { fetchClosedTenderData } from "@/lib/tenders/canadabuys-closed";
 import { CANADABUYS_OFF_NOTE, allowedSources, canadabuysFetchAllowed } from "@/lib/tenders/canadabuys-access";
 import { closedTendersSource } from "@/lib/tenders/canadabuys-feeds";
 import { classifyYukonClosed, fetchYukonClosedTenders, yukonClosedToRfpInsert } from "@/lib/tenders/yukon-closed";
-import { syncPublicSources, type Source } from "@/lib/tenders/sync";
+import { syncPublicSources, tenderSyncDatabase, type Source } from "@/lib/tenders/sync";
 
 const SOURCES: Source[] = [
   // ~700 real federal building-trade tenders that closed in the last 18
@@ -42,10 +40,11 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const db = tenderSyncDatabase();
+  if (!db) return NextResponse.json({ skipped: "no service client" });
 
   const dry = new URL(request.url).searchParams.get("dry") === "1";
-  const { status, body } = await syncPublicSources(createServiceClient(), allowedSources(SOURCES), {
+  const { status, body } = await syncPublicSources(db, allowedSources(SOURCES), {
     today: new Date().toISOString().slice(0, 10),
     dry,
   });
