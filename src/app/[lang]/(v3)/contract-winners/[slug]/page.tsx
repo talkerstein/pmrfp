@@ -36,11 +36,8 @@ import { getRegions } from "@/lib/data/taxonomy";
 import { mostCommonArea } from "@/lib/data/related-listings";
 import { bidAlertPlace } from "@/lib/digest/config";
 
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return []; // rendered on first visit, then cached (ISR)
-}
+// Live D1 board queries require request-time rendering.
+export const dynamic = "force-dynamic";
 
 const day = (d: string | null, lang: Locale) => (d ? formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang) : "—");
 
@@ -73,7 +70,7 @@ function lowerTrades(names: string[], lang: Locale): string {
 /**
  * Every company with at least one published award has a profile (one-award ones
  * noindexed, isWinnerIndexable). A failed board read throws rather than
- * resolving to "no such winner": notFound() would be cached by ISR as a 404.
+ * returning a misleading 404 that would tell crawlers to drop the profile.
  */
 const load = cache(async (slug: string) => {
   const rfps = await listRfps();

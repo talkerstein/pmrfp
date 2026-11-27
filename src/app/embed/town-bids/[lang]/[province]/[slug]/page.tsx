@@ -13,11 +13,8 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { localizePath } from "@/i18n/config";
 import { fmt, formatDate } from "@/i18n/format";
 
-// Every buyer × language is its own cached page, built on first view (same cache as the other widgets).
-export const revalidate = 1800;
-export async function generateStaticParams() {
-  return [];
-}
+// The widget reads live data at request time.
+export const dynamic = "force-dynamic";
 
 /**
  * "Town bids": a public buyer's current listings on PMRFP (imported with its

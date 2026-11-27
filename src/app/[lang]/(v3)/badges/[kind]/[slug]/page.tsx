@@ -16,13 +16,9 @@ import { fmt } from "@/i18n/format";
  * One company's badge kit: preview + copy-paste code for each badge it has
  * earned. /badges/company/<directory slug> (directory + reputation badges),
  * /badges/winner/<contract-winner slug> (public contract winner badge).
- * Utility page: not indexed. Rendered on first visit, then cached.
+ * Utility page, excluded from search indexing.
  */
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return [];
-}
+export const dynamic = "force-dynamic";
 
 type Params = Promise<{ lang: string; kind: string; slug: string }>;
 

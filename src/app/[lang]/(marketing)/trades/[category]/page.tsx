@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { prebuildSlice } from "@/lib/build/prebuild";
 import Image from "next/image";
 import Link from "@/i18n/link";
 import { notFound } from "next/navigation";
@@ -46,16 +45,8 @@ import { photoAlt } from "@/lib/seo/photos.fr";
 import { ByMarket } from "@/components/geo/by-market";
 import { inCountry, type CountryCode } from "@/lib/visitor-geo";
 
-export const revalidate = 3600;
-
-export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // A few pages are prebuilt (lib/build/prebuild); the rest render
-  // on first visit, then cache (ISR), so deploys do not stampede the database.
-  // (An empty list for any language switches prebuilding off for the whole route.)
-  const cats = await getCategories();
-  const all = cats.map((c) => ({ category: c.slug }));
-  return prebuildSlice(all, params.lang);
-}
+// Live D1 board queries require request-time rendering.
+export const dynamic = "force-dynamic";
 
 async function getCategory(slug: string) {
   const cats = await getCategories();

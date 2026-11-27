@@ -5,10 +5,8 @@ import { isValidBidsKey } from "@/lib/embed/keys";
 import { MAX_ITEMS, outLink } from "@/lib/embed/widgets";
 import { SITE } from "@/lib/site";
 
-export const revalidate = 900;
-export async function generateStaticParams() {
-  return [];
-}
+// The widget reads live data at request time.
+export const dynamic = "force-dynamic";
 
 /** A property manager's open bids, for the "Work with us" page on its own site. */
 export default async function BidsWidget({ params }: { params: Promise<{ org: string; key: string }> }) {

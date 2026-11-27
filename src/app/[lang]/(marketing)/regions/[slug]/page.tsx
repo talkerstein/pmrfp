@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { prebuildSlice } from "@/lib/build/prebuild";
 import Link from "@/i18n/link";
 import { notFound } from "next/navigation";
 import { Container, Eyebrow } from "@/components/container";
@@ -31,16 +30,8 @@ import { regionName, tradeName } from "@/i18n/terms";
 import { frIn, frPlace, frTradeOf } from "@/lib/seo/phrases.fr";
 import { esIn, esPlace, esTradeOf } from "@/lib/seo/phrases.es";
 
-export const revalidate = 3600;
-
-export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // A few pages are prebuilt (lib/build/prebuild); the rest render
-  // on first visit, then cache (ISR), so deploys do not stampede the database.
-  // (An empty list for any language switches prebuilding off for the whole route.)
-  const regions = await getRegions();
-  const all = regions.map((r) => ({ slug: r.slug }));
-  return prebuildSlice(all, params.lang);
-}
+// Live D1 board queries require request-time rendering.
+export const dynamic = "force-dynamic";
 
 async function getRegion(slug: string) {
   const regions = await getRegions();

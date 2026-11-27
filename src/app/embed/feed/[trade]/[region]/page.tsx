@@ -7,11 +7,8 @@ import { tradeWords } from "@/lib/gc/packages";
 import { SITE } from "@/lib/site";
 import { embedFeedCountry } from "@/lib/embed/widgets";
 
-// Every trade × region combination is its own cached page, built on first view.
-export const revalidate = 1800;
-export async function generateStaticParams() {
-  return [];
-}
+// The widget reads live data at request time.
+export const dynamic = "force-dynamic";
 
 /**
  * Live open tenders for a trade and/or region. "all" is the trade wildcard.

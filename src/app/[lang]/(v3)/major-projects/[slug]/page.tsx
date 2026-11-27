@@ -18,11 +18,8 @@ import { SH2, SimplePage } from "@/components/v3/simple";
 import { SponsorSlot } from "@/components/sponsors/sponsor-slot";
 import { FreeGate } from "@/components/growth/free-gate";
 
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return []; // rendered on first visit, then cached — no build-time prebuild (DB-load incident 2026-10-09)
-}
+// Live D1 board queries require request-time rendering.
+export const dynamic = "force-dynamic";
 
 const day = (d: string | null, lang: Locale) => (d ? formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang) : "—");
 
@@ -58,9 +55,7 @@ export default async function MajorProjectPage({ params }: { params: Promise<{ s
   const p = await getMajorProject(slug);
   if (!p) notFound();
 
-  // ISR page: nothing here may read the visitor (cookies()/headers()/session), or the route
-  // throws DYNAMIC_SERVER_USAGE and returns 500. The server HTML is the signed-out version;
-  // the viewer islands (components/major-projects/viewer) fill in member and Pro parts in the browser.
+  // The viewer components fill in member and Pro content in the browser.
   const allProjects = await getMajorProjects();
   const returnPath = `/major-projects/${p.slug}`;
   const signUpTrial = trialSignUpHref("projects", returnPath);

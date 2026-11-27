@@ -35,13 +35,8 @@ import { fmt, formatDate, formatNumber } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
 
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  // Rendered on first visit, then cached (ISR): no build-time prebuild of the
-  // ~3,800 buyer and town pages (DB-load incident 2026-10-09, build budget).
-  return [];
-}
+// Live D1 board queries require request-time rendering.
+export const dynamic = "force-dynamic";
 
 type Params = Promise<{ lang: string; province: string; slug: string }>;
 

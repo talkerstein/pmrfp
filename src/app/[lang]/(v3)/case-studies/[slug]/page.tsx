@@ -1,12 +1,11 @@
 import "@/components/v3-pages/portfolio.css";
-import { prebuildSlice } from "@/lib/build/prebuild";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isOptimizablePhoto } from "@/lib/projects/photos";
 import { SimplePage } from "@/components/v3/simple";
 import { CaseStudyBody } from "@/components/projects/case-study-view";
 import { JsonLd, breadcrumbSchema } from "@/lib/seo/jsonld";
-import { getCaseStudy, listCaseStudies } from "@/lib/data/case-studies";
+import { getCaseStudy } from "@/lib/data/case-studies";
 import { getQualifyingCombo } from "@/lib/data/trade-city";
 import { getProjectExtras, listPublishedReviews } from "@/lib/data/projects";
 import { isIndexable } from "@/lib/projects/visibility";
@@ -18,18 +17,9 @@ import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
 
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || SITE.url).replace(/\/$/, "");
-
-export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // A few pages are prebuilt (lib/build/prebuild); the rest render
-  // on first visit, then cache (ISR). Only PUBLIC studies are prebuilt; an
-  // unlisted one renders on first visit (noindexed).
-  const studies = await listCaseStudies();
-  const all = studies.map((s) => ({ slug: s.slug }));
-  return prebuildSlice(all, params.lang);
-}
 
 export async function generateMetadata({
   params,

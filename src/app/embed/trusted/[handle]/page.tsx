@@ -3,10 +3,8 @@ import { getPublicTrustedList } from "@/lib/trusted/data";
 import { outLink } from "@/lib/embed/widgets";
 import { SITE } from "@/lib/site";
 
-export const revalidate = 900;
-export async function generateStaticParams() {
-  return [];
-}
+// The widget reads live data at request time.
+export const dynamic = "force-dynamic";
 
 /** A realtor's (or PM's) published trusted-trades list, for their own website. */
 export default async function TrustedWidget({ params }: { params: Promise<{ handle: string }> }) {

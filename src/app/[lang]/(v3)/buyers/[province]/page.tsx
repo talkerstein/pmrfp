@@ -20,12 +20,8 @@ import { fmt, formatNumber } from "@/i18n/format";
 import { regionName } from "@/i18n/terms";
 import { SH2, SimplePage } from "@/components/v3/simple";
 
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  // Rendered on first visit, then cached (ISR), like the buyer pages under it.
-  return [];
-}
+// Live D1 board queries require request-time rendering.
+export const dynamic = "force-dynamic";
 
 type Params = Promise<{ lang: string; province: string }>;
 

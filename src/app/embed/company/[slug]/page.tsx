@@ -5,10 +5,8 @@ import { getRecommendedBy } from "@/lib/trusted/data";
 import { outLink } from "@/lib/embed/widgets";
 import { SITE } from "@/lib/site";
 
-export const revalidate = 3600;
-export async function generateStaticParams() {
-  return [];
-}
+// The widget reads live data at request time.
+export const dynamic = "force-dynamic";
 
 function more(items: string[], n: number): string {
   return items.length > n ? `${items.slice(0, n).join(", ")} +${items.length - n}` : items.join(", ");
