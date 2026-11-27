@@ -1,6 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { isPublishableWinner, winnerKey } from "@/lib/data/winners";
 import { slugify } from "@/lib/tenders/shared";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 
 /**
  * City of Toronto awarded contracts (TOBids), from Toronto Open Data:
@@ -8,11 +11,9 @@ import { slugify } from "@/lib/tenders/shared";
  * award rows since 2012, refreshed daily, under the Open Government Licence –
  * Toronto. Every page that shows it must carry TORONTO_ATTRIBUTION.
  *
- * No database: the CSV is fetched and aggregated by supplier, then cached for a
- * day. The raw file is ~2 MB (over the data-cache item limit), so the cache
- * holds a compact supplier index plus ~27 detail shards (by slug initial).
- * If the fetch fails, list sections degrade to empty (getTorontoIndexSafe) and
- * supplier pages throw, so ISR keeps their last good copy — never a cached 404.
+ * The CSV is fetched and aggregated by supplier. When the feed has no supplier
+ * data, production uses Toronto records previously imported into D1.
+ * Cache the compact index and detail shards rather than the raw download.
  *
  * Buyer names, emails and phone numbers in the file are City staff contacts:
  * deliberately dropped. Supplier names that look like a private individual are
@@ -20,6 +21,7 @@ import { slugify } from "@/lib/tenders/shared";
  */
 
 export const TORONTO_DATASET_URL = "https://open.toronto.ca/dataset/tobids-awarded-contracts/";
+export const TORONTO_NONCOMPETITIVE_DATASET_URL = "https://open.toronto.ca/dataset/tobids-non-competitive-contracts/";
 export const TORONTO_LICENCE_URL = "https://open.toronto.ca/open-data-licence/";
 export const TORONTO_ATTRIBUTION = "Contains information licensed under the Open Government Licence – Toronto.";
 const CSV_URL =
@@ -303,6 +305,30 @@ export const shardOf = (slug: string) => (/^[a-z]/.test(slug) ? slug[0] : "0");
 let memo: { at: number; promise: Promise<TorontoSupplier[]> } | null = null;
 let rowsMemo: TorontoRow[] = [];
 
+async function readArchivedAwards(): Promise<TorontoRow[]> {
+  const { results } = await vpsAppDatabase().prepare(`SELECT source, source_key, board_ref,
+    winner_business_name, value, award_date, title, buyer
+    FROM award_history
+    WHERE source IN ('ca-toronto-awards', 'ca-toronto-noncompetitive')
+      AND winner_is_individual=0 AND winner_business_name IS NOT NULL
+      AND ${customerAppAuthority}
+    ORDER BY award_date DESC, id`).all<{
+    source: string; source_key: string; board_ref: string | null; winner_business_name: string;
+    value: string | null; award_date: string; title: string; buyer: string | null;
+  }>();
+  return results.map(row => ({
+    supplier: row.winner_business_name,
+    doc: row.board_ref ?? (row.source === "ca-toronto-awards" ? row.source_key.split("|")[0] : ""),
+    type: row.source === "ca-toronto-noncompetitive" ? "Non-competitive" : "Competitive",
+    category: "",
+    amount: parseAmount(row.value ?? undefined),
+    date: row.award_date,
+    division: row.buyer ?? "City of Toronto",
+    description: row.title,
+    wards: 0,
+  }));
+}
+
 /**
  * One download serves every shard/index miss within ten minutes.
  *
@@ -316,9 +342,16 @@ let rowsMemo: TorontoRow[] = [];
 async function loadAll(): Promise<{ rows: TorontoRow[]; suppliers: TorontoSupplier[] }> {
   if (!memo || Date.now() - memo.at > 10 * 60_000) {
     const promise = (async () => {
-      const res = await fetch(CSV_URL, { cache: "no-store", signal: AbortSignal.timeout(20_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const rows = rowsFromCsv(await res.text());
+      let rows: TorontoRow[];
+      try {
+        const res = await fetch(CSV_URL, { cache: "no-store", signal: AbortSignal.timeout(12_000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        rows = rowsFromCsv(await res.text());
+        if (!rows.length) throw new Error("Toronto award feed has no named supplier records");
+      } catch (error) {
+        if (!isVpsLiveCustomerAuth()) throw error;
+        rows = await readArchivedAwards();
+      }
       const suppliers = aggregateSuppliers(rows);
       if (!suppliers.length) throw new Error("no suppliers parsed (empty or changed file)");
       rowsMemo = rows;
@@ -342,13 +375,13 @@ export const getTorontoIndex = unstable_cache(
     const { rows, suppliers } = await loadAll();
     return buildIndex(rows, suppliers);
   },
-  ["toronto-awards-index-v2"],
+  ["toronto-awards-index-v3"],
   { revalidate: DAY, tags: ["toronto-awards"] },
 );
 
 const getShard = unstable_cache(
   async (shard: string): Promise<TorontoSupplier[]> => (await loadAll()).suppliers.filter((s) => shardOf(s.slug) === shard),
-  ["toronto-awards-shard-v2"],
+  ["toronto-awards-shard-v3"],
   { revalidate: DAY, tags: ["toronto-awards"] },
 );
 

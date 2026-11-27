@@ -35,6 +35,7 @@ jobs:
         env:
           PMRFP_VPS_STANDALONE: enabled
           NEXT_PUBLIC_GA_ID: G-FEC0QRSEFE
+          NEXT_PUBLIC_CLARITY_ID: z8vkdqofaf
           NEXT_PUBLIC_SITE_URL: https://pmrfp.com
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Package the Linux standalone build
