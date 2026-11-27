@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth, matchesCustomerOrigin } from "@/lib/d1/staging-config";
+import { resolveCorrectionRequest } from "@/lib/d1/customer-requests";
 import { NextResponse } from "next/server";
 import { getSession, isAdminRole } from "@/lib/access/access";
 import { isServiceConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
@@ -11,19 +13,26 @@ import { FINAL_STATUSES, resolutionSchema } from "@/lib/corrections/rules";
  * resolved_by. Admins only, same-origin only.
  */
 export async function POST(request: Request) {
-  if (!isSupabaseConfigured() || !isServiceConfigured()) return NextResponse.json({ error: "Not available" }, { status: 503 });
+  const native = isVpsLiveCustomerAuth();
+  if (!native && (!isSupabaseConfigured() || !isServiceConfigured())) return NextResponse.json({ error: "Not available" }, { status: 503 });
   const session = await getSession().catch(() => null);
   if (!session || !isAdminRole(session.profile.primary_role) || session.profile.status === "suspended") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== new URL(request.url).host) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (native ? !matchesCustomerOrigin(request) : origin && new URL(origin).host !== new URL(request.url).host) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const parsed = resolutionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 422 });
   const { id, status, resolution } = parsed.data;
   const final = FINAL_STATUSES.includes(status);
   const now = new Date().toISOString();
+  if (native) {
+    try {
+      const changed = await resolveCorrectionRequest({id,status,resolution:resolution || null,final,actor:session.userId,now});
+      return changed ? NextResponse.json({ok:true}) : NextResponse.json({error:"Request unavailable"},{status:404});
+    } catch { return NextResponse.json({error:"Could not save the correction"},{status:503}); }
+  }
   const { error } = await createServiceClient()
     .from("correction_requests")
     .update({

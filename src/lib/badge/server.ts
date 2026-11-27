@@ -4,6 +4,10 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { selectIn, type Db, type SelectError } from "@/lib/supabase/select-in";
 import { isMissingTableError } from "@/lib/entitlement/trial";
 import { isInternalEmail } from "@/lib/lifecycle/rescue";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { inList, readD1, readD1ByIds, useD1Lifecycle } from "@/lib/lifecycle/d1";
+import { applyNativeBadgeReward, readNativeBadgeHits, type BadgeMember } from "./d1";
 import { BADGE_STEPS, type BadgeStep } from "@/lib/lifecycle/config";
 import { INSTALL_KINDS, detectBadgeInstall, groupBySlug, type BadgeHitRow, type BadgeInstall } from "./install";
 import { REWARD_DAYS, REWARD_SOURCE, badgeRewardEnabled, isPayingSubscription, planTrialChange, rewardRefusal, trialAfter, type RewardRefusal, type TrialChange, type TrialRowLite } from "./reward";
@@ -63,11 +67,27 @@ interface OrgRow {
 }
 const orgCols = "id,name,slug,website,organization_type,status,is_demo,profile_status";
 
+type Subscription = { organization_id: string; status: string; tier: string | null; stripe_subscription_id: string | null };
+
 interface RewardRow {
   organization_id: string;
   granted_at: string;
   kind: "start" | "extend" | "reopen";
   trial_ends_after: string;
+}
+
+function badgeRows<T>(
+  db: Db | null, app: D1Binding | null, ids: string[], sql: string,
+  legacy: (db: Db, c: string[]) => ReturnType<Parameters<typeof selectIn<T>>[1]>,
+  ...params: string[]
+) {
+  if (app) return readD1ByIds<T>(app, ids, sql, ...params).then((rows) => ({ rows, error: null }));
+  return selectIn<T>(ids, (c) => legacy(db!, c));
+}
+
+async function badgeHistory(db: Db | null) {
+  if (db) return loadAllHitRows(db);
+  return { rows: await readNativeBadgeHits(), error: null };
 }
 
 /* ------------------------------------------------------------------ one company (its own dashboard) */
@@ -79,8 +99,15 @@ export interface OrgBadgeStatus {
 
 /** The company's own badge status. The caller has already checked the session owns this company. Null when the data isn't available. */
 export async function getOrgBadgeStatus(org: { id: string; slug: string; website: string | null }): Promise<OrgBadgeStatus | null> {
-  if (!isServiceConfigured() || !org.slug) return null;
+  if (!org.slug || (!useD1Lifecycle() && !isServiceConfigured())) return null;
   try {
+    if (useD1Lifecycle()) {
+      const [hits, reward] = await Promise.all([
+        readNativeBadgeHits([org.slug]),
+        vpsAppDatabase().prepare("SELECT kind,trial_ends_after FROM badge_rewards WHERE organization_id=?").bind(org.id).first<RewardRow>(),
+      ]);
+      return { install: detectBadgeInstall(org.website, hits, org.slug), reward: reward ? { kind: reward.kind, endsAt: reward.trial_ends_after } : null };
+    }
     const db = createServiceClient();
     const [hits, reward] = await Promise.all([
       loadHitRows(db, [org.slug]),
@@ -122,29 +149,34 @@ export function companyBadgeState(o: { profileApproved: boolean; install: BadgeI
 
 /** Every live trade company with its badge status, lifecycle sends and reward. Read-only. */
 export async function listCompanyBadgeStatus(): Promise<{ rows: CompanyBadgeRow[]; error: string | null }> {
-  if (!isServiceConfigured()) return { rows: [], error: "no service client" };
-  const db = createServiceClient();
-  const orgRes = await db
-    .from("organizations")
-    .select(orgCols)
-    .eq("organization_type", "trade_company")
-    .eq("is_demo", false)
-    .eq("status", "active")
-    .order("name", { ascending: true })
-    .limit(5000)
-    .returns<OrgRow[]>();
+  if (!useD1Lifecycle() && !isServiceConfigured()) return { rows: [], error: "no service client" };
+  try {
+    const app = useD1Lifecycle() ? vpsAppDatabase() : null;
+    return await readCompanyBadgeStatus(app, app ? null : createServiceClient());
+  } catch {
+    return { rows: [], error: "Badge data unavailable" };
+  }
+}
+
+async function readCompanyBadgeStatus(app: D1Binding | null, db: Db | null): Promise<{ rows: CompanyBadgeRow[]; error: string | null }> {
+  const orgRes = app
+    ? { data: await readD1<OrgRow>(app, `SELECT ${orgCols} FROM organizations WHERE organization_type='trade_company'
+        AND is_demo=0 AND status='active' ORDER BY name LIMIT 5000`), error: null }
+    : await db!.from("organizations").select(orgCols).eq("organization_type", "trade_company")
+      .eq("is_demo", false).eq("status", "active").order("name", { ascending: true }).limit(5000).returns<OrgRow[]>();
   if (orgRes.error) return { rows: [], error: `organizations: ${orgRes.error.message}` };
   const orgs = orgRes.data ?? [];
   const ids = orgs.map((o) => o.id);
   const [hits, sends, rewards, subs] = await Promise.all([
-    loadAllHitRows(db),
-    selectIn<{ organization_id: string; step: string; status: string; sent_at: string }>(ids, (c) =>
-      db.from("lifecycle_sends").select("organization_id,step,status,sent_at").in("step", [...BADGE_STEPS]).in("organization_id", c),
-    ),
-    selectIn<RewardRow>(ids, (c) => db.from("badge_rewards").select("organization_id,granted_at,kind,trial_ends_after").in("organization_id", c)),
-    selectIn<{ organization_id: string; status: string; tier: string | null; stripe_subscription_id: string | null }>(ids, (c) =>
-      db.from("subscriptions").select("organization_id,status,tier,stripe_subscription_id").in("organization_id", c),
-    ),
+    badgeHistory(db),
+    badgeRows<{ organization_id: string; step: string; status: string; sent_at: string }>(db, app, ids,
+      `SELECT organization_id,step,status,sent_at FROM lifecycle_sends WHERE organization_id ${inList} AND step ${inList}`,
+      (legacy, c) => legacy.from("lifecycle_sends").select("organization_id,step,status,sent_at").in("step", [...BADGE_STEPS]).in("organization_id", c),
+      JSON.stringify(BADGE_STEPS)),
+    badgeRows<RewardRow>(db, app, ids, `SELECT organization_id,granted_at,kind,trial_ends_after FROM badge_rewards WHERE organization_id ${inList}`,
+      (legacy, c) => legacy.from("badge_rewards").select("organization_id,granted_at,kind,trial_ends_after").in("organization_id", c)),
+    badgeRows<Subscription>(db, app, ids, `SELECT organization_id,status,tier,stripe_subscription_id FROM subscriptions WHERE organization_id ${inList}`,
+      (legacy, c) => legacy.from("subscriptions").select("organization_id,status,tier,stripe_subscription_id").in("organization_id", c)),
   ]);
   if (hits.error) return { rows: [], error: `badge_hits: ${hits.error.message}` };
   // The lifecycle and rewards tables may not exist yet (migration 20261022000200): show what we can.
@@ -218,19 +250,21 @@ export async function runBadgeRewards(opts: { dry: boolean; now?: Date } = { dry
   const enabled = badgeRewardEnabled();
   const report: RewardReport = { enabled, dry: opts.dry, considered: 0, granted: [], refused: {} };
   if (!opts.dry && !enabled) return { ...report, skipped: "BADGE_REWARD_ENABLED is off" };
-  if (!isServiceConfigured()) return { ...report, skipped: "no service client" };
+  if (!useD1Lifecycle() && !isServiceConfigured()) return { ...report, skipped: "no service client" };
   const refuse = (why: keyof RewardReport["refused"]) => {
     report.refused[why] = (report.refused[why] ?? 0) + 1;
   };
 
   try {
-    const db = createServiceClient();
-    const hits = await loadAllHitRows(db);
+    const app = useD1Lifecycle() ? vpsAppDatabase() : null;
+    const db = app ? null : createServiceClient();
+    const hits = await badgeHistory(db);
     if (hits.error) return { ...report, skipped: isMissingTableError(hits.error) ? "badge_hits table missing" : `badge_hits: ${hits.error.message}` };
     const bySlug = groupBySlug(hits.rows);
     if (!bySlug.size) return report;
 
-    const orgRes = await selectIn<OrgRow>([...bySlug.keys()], (c) => db.from("organizations").select(orgCols).in("slug", c));
+    const orgRes = await badgeRows<OrgRow>(db, app, [...bySlug.keys()], `SELECT ${orgCols} FROM organizations WHERE slug ${inList}`,
+      (legacy, c) => legacy.from("organizations").select(orgCols).in("slug", c));
     if (orgRes.error) return { ...report, skipped: `organizations: ${orgRes.error.message}` };
     const detected = orgRes.rows
       .map((o) => ({ o, install: detectBadgeInstall(o.website, bySlug.get(o.slug) ?? [], o.slug) }))
@@ -240,14 +274,15 @@ export async function runBadgeRewards(opts: { dry: boolean; now?: Date } = { dry
 
     const ids = detected.map((x) => x.o.id);
     const [rewards, subs, trials, members] = await Promise.all([
-      selectIn<{ organization_id: string }>(ids, (c) => db.from("badge_rewards").select("organization_id").in("organization_id", c)),
-      selectIn<{ organization_id: string; status: string; tier: string | null; stripe_subscription_id: string | null }>(ids, (c) =>
-        db.from("subscriptions").select("organization_id,status,tier,stripe_subscription_id").in("organization_id", c),
-      ),
-      selectIn<{ organization_id: string; started_at: string; ends_at: string }>(ids, (c) =>
-        db.from("trade_trials").select("organization_id,started_at,ends_at").in("organization_id", c),
-      ),
-      selectIn<{ organization_id: string; user_id: string }>(ids, (c) => db.from("organization_members").select("organization_id,user_id").in("organization_id", c)),
+      badgeRows<{ organization_id: string }>(db, app, ids, `SELECT organization_id FROM badge_rewards WHERE organization_id ${inList}`,
+        (legacy, c) => legacy.from("badge_rewards").select("organization_id").in("organization_id", c)),
+      badgeRows<Subscription>(db, app, ids, `SELECT organization_id,status,tier,stripe_subscription_id FROM subscriptions WHERE organization_id ${inList}`,
+        (legacy, c) => legacy.from("subscriptions").select("organization_id,status,tier,stripe_subscription_id").in("organization_id", c)),
+      badgeRows<{ organization_id: string; started_at: string; ends_at: string }>(db, app, ids,
+        `SELECT organization_id,started_at,ends_at FROM trade_trials WHERE organization_id ${inList}`,
+        (legacy, c) => legacy.from("trade_trials").select("organization_id,started_at,ends_at").in("organization_id", c)),
+      badgeRows<{ organization_id: string; user_id: string }>(db, app, ids, `SELECT organization_id,user_id FROM organization_members WHERE organization_id ${inList}`,
+        (legacy, c) => legacy.from("organization_members").select("organization_id,user_id").in("organization_id", c)),
     ]);
     if (rewards.error) {
       return { ...report, skipped: isMissingTableError(rewards.error) ? "badge_rewards table missing (run migration 20261022000200)" : `badge_rewards: ${rewards.error.message}` };
@@ -255,16 +290,17 @@ export async function runBadgeRewards(opts: { dry: boolean; now?: Date } = { dry
     if (subs.error) return { ...report, skipped: `subscriptions: ${subs.error.message}` };
     if (trials.error && !isMissingTableError(trials.error)) return { ...report, skipped: `trade_trials: ${trials.error.message}` };
 
-    const users = await selectIn<{ id: string; email: string; primary_role: string }>(
-      members.rows.map((m) => m.user_id),
-      (c) => db.from("users_profile").select("id,email,primary_role").in("id", c),
-    );
+    const users = await badgeRows<Omit<BadgeMember, "organization_id">>(db, app, members.rows.map((m) => m.user_id),
+      `SELECT id,email,primary_role FROM users_profile WHERE id ${inList}`,
+      (legacy, c) => legacy.from("users_profile").select("id,email,primary_role").in("id", c));
     if (users.error) return { ...report, skipped: `users_profile: ${users.error.message}` };
     const userById = new Map(users.rows.map((u) => [u.id, u]));
     const internalOrgs = new Set<string>();
+    const membersByOrg = new Map<string, BadgeMember[]>();
     for (const m of members.rows) {
       const u = userById.get(m.user_id);
-      if (u && (isInternalEmail(u.email) || ["admin", "super_admin"].includes(u.primary_role))) internalOrgs.add(m.organization_id);
+      if (!u || isInternalEmail(u.email) || ["admin", "super_admin"].includes(u.primary_role)) internalOrgs.add(m.organization_id);
+      if (u) membersByOrg.set(m.organization_id, [...(membersByOrg.get(m.organization_id) ?? []), { ...u, organization_id: m.organization_id }]);
     }
     const rewarded = new Set(rewards.rows.map((r) => r.organization_id));
     const paid = new Set(subs.rows.filter(isPayingSubscription).map((s) => s.organization_id));
@@ -301,7 +337,9 @@ export async function runBadgeRewards(opts: { dry: boolean; now?: Date } = { dry
         report.granted.push(grant);
         continue;
       }
-      const ok = await applyReward(db, o.id, install, change, existing, after, now);
+      const ok = app
+        ? await applyNativeBadgeReward(o, install, change, existing, after, now, membersByOrg.get(o.id) ?? []).catch(() => false)
+        : await applyReward(db!, o.id, install, change, existing, after, now);
       if (ok) report.granted.push(grant);
       else refuse("failed");
     }

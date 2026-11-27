@@ -1,18 +1,6 @@
 "use client";
 
-/**
- * Trade portfolio uploader. Multi-image, uploads directly to the existing
- * `logos` public bucket under a convention-based path:
- *
- *   logos/{orgId}/portfolio-{uuid}.{ext}
- *
- * No DB migration needed — we list objects by prefix at read time on the
- * vendor profile. If the program proves out, a future migration introduces
- * `organization_photos` with proper ordering + captions.
- *
- * Behavior mirrors RfpPhotoUploader (multi-pick, thumbnails, delete) so the
- * patterns are consistent across the platform.
- */
+/** Company portfolio photos use the site's media API on the VPS. */
 import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { ImagePlus, X, Loader2, AlertTriangle } from "lucide-react";
@@ -26,6 +14,7 @@ const UPLOAD_CAP = 12;
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const legacyMediaConfigured = Boolean(SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 interface PortfolioPhoto {
   url: string;
@@ -37,13 +26,16 @@ export function PortfolioUploader({
   label,
   helpText,
   maxPhotos = 1,
+  nativeMedia = false,
 }: {
   organizationId: string | null;
   label?: string;
   helpText?: string;
   /** 1 on the free tier, 12 (the upload cap) on any paid tier. */
   maxPhotos?: number;
+  nativeMedia?: boolean;
 }) {
+  const useCompanyMedia = nativeMedia || !legacyMediaConfigured;
   const t = useT("dashClient").portfolio;
   const limit = Math.min(maxPhotos, UPLOAD_CAP);
   const resolvedHelpText = helpText ?? (limit <= 1 ? t.helpFree : fmt(t.helpPaid, { limit }));
@@ -62,6 +54,13 @@ export function PortfolioUploader({
     let cancelled = false;
     (async () => {
       try {
+        if (useCompanyMedia) {
+          const response = await fetch("/api/company-media", { cache: "no-store" });
+          if (!response.ok) throw new Error(t.loadFailedGeneric);
+          const items = await response.json() as PortfolioPhoto[];
+          if (!cancelled) setPhotos(items);
+          return;
+        }
         const supabase = createBrowserClient();
         const { data, error: listErr } = await supabase.storage
           .from("logos")
@@ -86,8 +85,8 @@ export function PortfolioUploader({
             };
           });
         setPhotos(items);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : t.loadFailedGeneric);
+      } catch {
+        if (!cancelled) setError(t.loadFailedGeneric);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -95,7 +94,7 @@ export function PortfolioUploader({
     return () => {
       cancelled = true;
     };
-  }, [organizationId, t.loadFailed, t.loadFailedGeneric]);
+  }, [organizationId, useCompanyMedia, t.loadFailed, t.loadFailedGeneric]);
 
   function pick() {
     setError(null);
@@ -126,6 +125,27 @@ export function PortfolioUploader({
     }
 
     startUpload(async () => {
+      if (useCompanyMedia) {
+        for (const file of files) {
+          try {
+            const form = new FormData();
+            form.set("file", file);
+            form.set("kind", "portfolio");
+            const response = await fetch("/api/company-media", { method: "POST", body: form });
+            if (response.status === 409) {
+              setError(limit <= 1 ? t.freeLimit : fmt(t.max, { limit }));
+              break;
+            }
+            if (!response.ok) throw new Error(t.loadFailedGeneric);
+            const photo = await response.json() as PortfolioPhoto;
+            setPhotos(previous => [...previous, photo]);
+          } catch {
+            setError(t.loadFailedGeneric);
+            break;
+          }
+        }
+        return;
+      }
       const supabase = createBrowserClient();
       const uploaded: PortfolioPhoto[] = [];
       for (const f of files) {
@@ -149,12 +169,24 @@ export function PortfolioUploader({
   }
 
   async function remove(idx: number) {
-    const t = photos[idx];
-    if (!t) return;
+    if (useCompanyMedia) {
+      const photo = photos[idx];
+      if (!photo) return;
+      try {
+        const response = await fetch(`/api/company-media/${encodeURIComponent(photo.path)}`, { method: "DELETE" });
+        if (!response.ok) throw new Error(t.loadFailedGeneric);
+        setPhotos(previous => previous.filter(item => item.path !== photo.path));
+      } catch {
+        setError(t.loadFailedGeneric);
+      }
+      return;
+    }
+    const photo = photos[idx];
+    if (!photo) return;
     setPhotos((prev) => prev.filter((_, i) => i !== idx));
     try {
       const supabase = createBrowserClient();
-      await supabase.storage.from("logos").remove([t.path]);
+      await supabase.storage.from("logos").remove([photo.path]);
     } catch {
       // Best-effort; orphans are cleaned up admin-side later.
     }
@@ -199,6 +231,7 @@ export function PortfolioUploader({
                 alt=""
                 fill
                 sizes="200px"
+                unoptimized={useCompanyMedia}
                 className="object-cover"
               />
               <button

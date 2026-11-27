@@ -1,26 +1,19 @@
 import type { Metadata } from "next";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsAdminInterests, type AdminInterestRow } from "@/lib/d1/vps-bid-inbox";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/public/empty-state";
 import { AdminTable } from "@/components/admin/admin-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { fmtDate, dash } from "@/lib/admin/queries";
-import type { InterestStatus } from "@/types/db";
 import { setLangFrom } from "@/i18n/server";
 
 export const metadata: Metadata = { title: "Interests · Admin · PMRFP" };
 
-interface InterestRow {
-  id: string;
-  status: InterestStatus;
-  created_at: string;
-  organizations: { name: string | null } | null;
-  rfp_posts: { title: string | null } | null;
-}
-
-const DEMO_INTERESTS: InterestRow[] = [
+const DEMO_INTERESTS: AdminInterestRow[] = [
   { id: "1", status: "submitted", created_at: "2026-05-24", organizations: { name: "Northline Electrical Ltd." }, rfp_posts: { title: "Condominium Electrical Maintenance Contract" } },
   { id: "2", status: "shortlisted", created_at: "2026-05-22", organizations: { name: "Summit Mechanical (HVAC)" }, rfp_posts: { title: "Apartment Building HVAC Preventive Maintenance" } },
   { id: "3", status: "contact_revealed", created_at: "2026-05-20", organizations: { name: "GTA SnowPro" }, rfp_posts: { title: "Commercial Plaza Snow Removal Services" } },
@@ -29,16 +22,18 @@ const DEMO_INTERESTS: InterestRow[] = [
 
 export default async function AdminInterestsPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
 
   let rows = DEMO_INTERESTS;
-  if (!isDemoMode()) {
+  if (isVpsLiveCustomerAuth()) {
+    rows = await readVpsAdminInterests(session.userId);
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     const { data } = await supabase
       .from("rfp_interests")
       .select("id, status, created_at, organizations(name), rfp_posts(title)")
       .order("created_at", { ascending: false })
-      .returns<InterestRow[]>();
+      .returns<AdminInterestRow[]>();
     rows = data ?? [];
   }
 

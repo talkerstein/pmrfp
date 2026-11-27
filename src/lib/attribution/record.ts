@@ -5,6 +5,9 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { optedOut } from "@/lib/tracking/privacy";
 import { FT_COOKIE, parseFirstTouch } from "./cookie";
 import { legacyAttributionRow, signupAttributionRow, type SignupMethod } from "./signup";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { customerAppAuthority } from "@/lib/d1/contracts";
 
 /**
  * Saves where a new account came from (signup_attribution), once per user,
@@ -47,7 +50,8 @@ function isLegacySchemaError(error: { code?: string; message?: string } | null):
 }
 
 export async function recordSignupAttribution(i: RecordInput): Promise<void> {
-  if (!i.userId || !isServiceConfigured()) return;
+  const native = isVpsLiveCustomerAuth();
+  if (!i.userId || (!native && !isServiceConfigured())) return;
   try {
     const [jar, h] = await Promise.all([cookies(), headers()]);
     const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "").split(":")[0];
@@ -58,10 +62,24 @@ export async function recordSignupAttribution(i: RecordInput): Promise<void> {
       method: i.method ?? null,
       role: i.role ?? null,
       optedOut: optedOut(h),
-      fallback: { lang: i.lang ?? null, country: h.get("x-vercel-ip-country")?.toUpperCase() ?? null },
+      fallback: { lang: i.lang ?? null, country: (h.get("cf-ipcountry") ?? h.get("x-vercel-ip-country"))?.toUpperCase() ?? null },
       ownHosts: host ? [host] : [],
       signedUpAt: i.signedUpAt ?? null,
     });
+    if (native) {
+      await vpsAppDatabase().prepare(`INSERT INTO signup_attribution
+        (user_id,org_id,channel,landing_path,referrer_host,utm_source,utm_medium,utm_campaign,utm_content,
+         last_utm_source,last_utm_medium,last_utm_campaign,last_utm_content,last_touch_at,first_seen,signed_up_at,lang,country,method,role,opted_out)
+        SELECT u.id,(SELECT organization_id FROM organization_members WHERE organization_id=? AND user_id=u.id),
+          ?,?,?,?,?,?,?,?,?,?,?,?,?,coalesce(?,u.created_at),?,?,?,?,?
+        FROM users_profile u WHERE u.id=? AND ${customerAppAuthority}
+        ON CONFLICT(user_id) DO UPDATE SET org_id=coalesce(signup_attribution.org_id,excluded.org_id),
+          role=coalesce(signup_attribution.role,excluded.role)`)
+        .bind(row.org_id,row.channel,row.landing_path,row.referrer_host,row.utm_source,row.utm_medium,row.utm_campaign,row.utm_content,
+          row.last_utm_source,row.last_utm_medium,row.last_utm_campaign,row.last_utm_content,row.last_touch_at,row.first_seen,
+          i.signedUpAt ? row.signed_up_at : null,row.lang,row.country,row.method,row.role,Number(row.opted_out),row.user_id).run();
+      return;
+    }
     const admin = createServiceClient();
     let legacy = false;
     let { error } = await admin.from("signup_attribution").upsert(row, { onConflict: "user_id", ignoreDuplicates: true });
@@ -96,8 +114,18 @@ export const FRESH_SIGNUP_MS = 15 * 60_000;
  * account that merely asked for a link is never re-attributed), and record.
  */
 export async function recordSignupAttributionForEmail(i: Omit<RecordInput, "userId"> & { email: string }): Promise<void> {
-  if (!i.email || !isServiceConfigured()) return;
+  const native = isVpsLiveCustomerAuth();
+  if (!i.email || (!native && !isServiceConfigured())) return;
   try {
+    if (native) {
+      const data = await vpsAppDatabase().prepare(`SELECT id,created_at FROM users_profile WHERE lower(email)=?
+        AND ${customerAppAuthority} ORDER BY created_at DESC LIMIT 1`).bind(i.email.trim().toLowerCase())
+        .first<{ id: string; created_at: string }>();
+      if (data && Date.now() - Date.parse(data.created_at) <= FRESH_SIGNUP_MS) {
+        await recordSignupAttribution({ ...i, userId: data.id, signedUpAt: data.created_at });
+      }
+      return;
+    }
     const { data, error } = await createServiceClient()
       .from("users_profile")
       .select("id,created_at")

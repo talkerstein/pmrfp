@@ -1,7 +1,10 @@
 import { requireRole, isDemoMode, hasAnyPaidTier } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsCompanySelections } from "@/lib/d1/vps-company-profile";
 import { getCategories, getRegions, getPropertyTypes } from "@/lib/data/taxonomy";
 import { PageHeader } from "@/components/dashboard/stat-card";
+import { ListingStatusBanner } from "@/components/dashboard/listing-status-banner";
 import { CompanyProfileForm, type CompanyDefaults } from "@/components/forms/company-profile-form";
 import { getT, setLangFrom } from "@/i18n/server";
 import type { Metadata } from "next";
@@ -16,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function CompanyProfilePage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("dash").company;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   const [categories, regions, propertyTypes] = await Promise.all([
     getCategories(),
     getRegions(),
@@ -51,7 +54,16 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
     };
   }
 
-  if (!isDemoMode() && org) {
+  const native = isVpsLiveCustomerAuth();
+  let nativePaid = false;
+  if (native && org) {
+    const selections = await readVpsCompanySelections(session);
+    selectedCategories = selections.categories;
+    selectedRegions = selections.regions;
+    selectedPropertyTypes = selections.propertyTypes;
+    nativePaid = selections.paid;
+    defaults.insurancePolicyNumber = selections.insurancePolicyNumber;
+  } else if (!isDemoMode() && org) {
     const supabase = await createClient();
     const [cats, regs, props] = await Promise.all([
       supabase.from("organization_categories").select("trade_categories(slug)").eq("organization_id", org.id),
@@ -65,7 +77,7 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
 
   // Portfolio gallery: 1 photo free, up to PROFILE_PHOTOS.paid (12) on any
   // paid tier (pro/featured, and grandfathered SEO Listing subscribers).
-  const isPaid = await hasAnyPaidTier(org?.id ?? null);
+  const isPaid = native ? nativePaid : await hasAnyPaidTier(org?.id ?? null);
 
   return (
     <div>
@@ -73,6 +85,7 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
         title={t.title}
         description={t.description}
       />
+      {!isDemoMode() && <ListingStatusBanner status={session.organization?.profile_status} name={session.organization?.name} slug={session.organization?.slug} />}
       <CompanyProfileForm
         defaults={defaults}
         organizationId={session.organization?.id ?? null}
@@ -83,6 +96,7 @@ export default async function CompanyProfilePage({ params }: { params: Promise<o
         selectedRegions={selectedRegions}
         selectedPropertyTypes={selectedPropertyTypes}
         portfolioMaxPhotos={isPaid ? 12 : 1}
+        nativeMedia={native}
       />
     </div>
   );

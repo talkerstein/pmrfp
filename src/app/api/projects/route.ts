@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { countActiveProjects, getProjectSessionFromRequest, listMyProjects, projectsReady } from "@/lib/projects/server";
+import { countActiveProjects, getProjectSession, getProjectSessionFromRequest, listMyProjects, projectsReady } from "@/lib/projects/server";
 import { canAddProject, photoLimit } from "@/lib/projects/limits";
 import { publishProject, willAutoPublish } from "@/lib/projects/publish";
+import { countVpsActiveProjects, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
 
 /**
  * JSON API for the mobile app's Projects screens. The web dashboard uses
@@ -22,15 +23,17 @@ export async function GET(request: Request) {
   const limited = await checkRateLimit(request, "default");
   if (limited) return rateLimitResponse(limited);
 
-  const auth = await getProjectSessionFromRequest(request);
-  if (!auth) return NextResponse.json({ error: SIGN_IN }, { status: 401 });
-  const { session, db } = auth;
+  const native = vpsProjectUploadsEnabled();
+  const auth = native ? null : await getProjectSessionFromRequest(request);
+  const session = native ? await getProjectSession(request) : auth?.session;
+  if (!session) return NextResponse.json({ error: SIGN_IN }, { status: 401 });
+  const db = auth?.db;
   const orgId = session.organization.id;
   const paid = session.hasTradeAccess;
 
   const [projects, existing, ready] = await Promise.all([
     listMyProjects(orgId, db),
-    countActiveProjects(orgId, db),
+    native ? countVpsActiveProjects(orgId) : countActiveProjects(orgId, db),
     projectsReady(),
   ]);
 
@@ -69,8 +72,10 @@ export async function POST(request: Request) {
   const limited = await checkRateLimit(request, "project-publish");
   if (limited) return rateLimitResponse(limited);
 
-  const auth = await getProjectSessionFromRequest(request);
-  if (!auth) return NextResponse.json({ error: SIGN_IN }, { status: 401 });
+  const native = vpsProjectUploadsEnabled();
+  const auth = native ? null : await getProjectSessionFromRequest(request);
+  const session = native ? await getProjectSession(request) : auth?.session;
+  if (!session) return NextResponse.json({ error: SIGN_IN }, { status: 401 });
   if (!isJson(request)) return NextResponse.json({ error: "Send JSON." }, { status: 415 });
 
   let body: unknown;
@@ -80,7 +85,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const res = await publishProject(auth.session, body, auth.db);
+  const res = await publishProject(session, body, auth?.db);
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
   return NextResponse.json({ id: res.id, slug: res.slug, live: res.live }, { status: 201 });
 }

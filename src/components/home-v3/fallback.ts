@@ -27,7 +27,6 @@ export const V3_FALLBACK: V3Data = {
     { name: "HVAC", n: null, img: "/images/home/trade-hvac.webp", href: "/trades" },
     { name: "Electrical", n: null, img: "/images/home/trade-electrical.webp", href: "/trades" },
   ],
-  chips: [],
   tradeOptions: ["Roofing", "Snow Removal", "HVAC", "Electrical", "Cleaning / Janitorial"].map((label) => ({ value: "", label })),
   areaOptions: [
     { label: "Ontario", region: "ontario" },
@@ -38,7 +37,6 @@ export const V3_FALLBACK: V3Data = {
   ],
   closingCa: [],
   closingUs: [],
-  ticker: [],
   toast: [],
   alertTrade: "",
   alerts: [],
@@ -50,5 +48,4 @@ export const V3_FALLBACK: V3Data = {
     most: { name: "", n: 0 },
   },
   browse: { combos: [], newest: [] },
-  awards: [],
 };

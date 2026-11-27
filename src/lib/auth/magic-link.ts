@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n/config";
 import { oauthCallbackPath } from "@/lib/auth/oauth";
 import { safeNextPath } from "@/lib/auth/next";
 
@@ -18,9 +19,9 @@ export function parseSignupMethod(v: unknown): SignupMethod {
 }
 
 /** Where the emailed link sends someone: our callback, then `next` (default /onboarding). */
-export function magicLinkRedirect(siteUrl: string, next: string | null | undefined): string {
+export function magicLinkRedirect(siteUrl: string, next: string | null | undefined, lang?: Locale): string {
   const base = siteUrl.replace(/\/$/, "");
-  const path = oauthCallbackPath(safeNextPath(next) ?? "/onboarding");
+  const path = oauthCallbackPath(safeNextPath(next) ?? "/onboarding", lang);
   return `${base}${path}${path.includes("?") ? "&" : "?"}m=link`;
 }
 

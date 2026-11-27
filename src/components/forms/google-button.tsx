@@ -4,24 +4,32 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 import { oauthCallbackPath } from "@/lib/auth/oauth";
 import { Button } from "@/components/ui/button";
-import { useT } from "@/i18n/provider";
+import { useLang, useT } from "@/i18n/provider";
 
 /**
  * "Continue with Google", then an "or" divider above the email form. Only
  * rendered when Google is switched on in Supabase (see isGoogleAuthEnabled).
  * `next` is where to go after Google; it's re-checked on the way back.
  */
-export function ContinueWithGoogle({ next }: { next?: string | null }) {
+export function ContinueWithGoogle({ next, native = false, signup = false }: { next?: string | null; native?: boolean; signup?: boolean }) {
   const t = useT("auth").google;
+  const lang = useLang();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function start() {
     setPending(true);
     setError(null);
+    if (native) {
+      const query = new URLSearchParams({ l: lang });
+      if (next) query.set("next", next);
+      if (signup) query.set("intent", "signup");
+      window.location.assign("/api/auth/google?" + query);
+      return;
+    }
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${oauthCallbackPath(next)}` },
+      options: { redirectTo: `${window.location.origin}${oauthCallbackPath(next, lang)}` },
     });
     // On success the browser is already on its way to Google.
     if (error) {

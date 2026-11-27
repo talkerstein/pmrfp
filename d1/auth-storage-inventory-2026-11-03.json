@@ -1,0 +1,151 @@
+{
+  "date": "2026-11-03",
+  "aggregateOnly": true,
+  "sourceWrites": 0,
+  "users": {
+    "sso": 0,
+    "total": 69,
+    "anonymous": 0,
+    "soft_deleted": 0,
+    "with_password": 69,
+    "email_confirmed": 61,
+    "phone_confirmed": 0,
+    "bcrypt_passwords": 69,
+    "currently_banned": 3
+  },
+  "auth_features": {
+    "passkeys": 0,
+    "mfa_factors": 0,
+    "oauth_clients": 0,
+    "oauth_consents": 0,
+    "saml_providers": 0,
+    "verified_mfa_factors": 0
+  },
+  "auth_relations": [
+    "audit_log_entries",
+    "custom_oauth_providers",
+    "flow_state",
+    "identities",
+    "instances",
+    "mfa_amr_claims",
+    "mfa_challenges",
+    "mfa_factors",
+    "mfa_recovery_code_sets",
+    "mfa_recovery_codes",
+    "oauth_authorizations",
+    "oauth_client_states",
+    "oauth_clients",
+    "oauth_consents",
+    "one_time_tokens",
+    "refresh_tokens",
+    "saml_providers",
+    "saml_relay_states",
+    "schema_migrations",
+    "scim_tokens",
+    "scim_users",
+    "sessions",
+    "sso_domains",
+    "sso_providers",
+    "users",
+    "webauthn_challenges",
+    "webauthn_credentials"
+  ],
+  "storage_buckets": [
+    {
+      "id": "capability-statements",
+      "name": "capability-statements",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "forum-photos",
+      "name": "forum-photos",
+      "public": true,
+      "file_size_limit": 5242880,
+      "allowed_mime_types": [
+        "image/jpeg"
+      ]
+    },
+    {
+      "id": "forum-photos-private",
+      "name": "forum-photos-private",
+      "public": false,
+      "file_size_limit": 5242880,
+      "allowed_mime_types": [
+        "image/jpeg"
+      ]
+    },
+    {
+      "id": "logos",
+      "name": "logos",
+      "public": true,
+      "file_size_limit": 2097152,
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/svg+xml"
+      ]
+    },
+    {
+      "id": "project-photos",
+      "name": "project-photos",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "project-photos-private",
+      "name": "project-photos-private",
+      "public": false,
+      "file_size_limit": 10485760,
+      "allowed_mime_types": [
+        "image/jpeg"
+      ]
+    },
+    {
+      "id": "rfp-documents",
+      "name": "rfp-documents",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "rfp-photos",
+      "name": "rfp-photos",
+      "public": true,
+      "file_size_limit": 10485760,
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "image/heif"
+      ]
+    }
+  ],
+  "storage_objects": [
+    {
+      "objects": 54,
+      "bucket_id": "logos",
+      "recorded_bytes": 11086458
+    },
+    {
+      "objects": 3,
+      "bucket_id": "project-photos-private",
+      "recorded_bytes": 777531
+    },
+    {
+      "objects": 4,
+      "bucket_id": "rfp-photos",
+      "recorded_bytes": 35753497
+    }
+  ],
+  "identity_providers": [
+    {
+      "provider": "email",
+      "identities": 69
+    }
+  ]
+}

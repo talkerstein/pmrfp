@@ -5,6 +5,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SPONSORS_TAG } from "@/lib/supabase/public-cache";
 import { createSingleFlight } from "@/lib/concurrency";
 import { isSponsorStatus, normalizeRegion, tradeSlug, type PaidSponsor } from "./model";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { readD1 } from "@/lib/lifecycle/d1";
 import { isSponsorTier } from "./pricing";
 
 /**
@@ -79,8 +81,18 @@ async function fetchSponsors(): Promise<PaidSponsor[]> {
   return ((data ?? []) as SponsorViewRow[]).map(fromSponsorRow).filter((s): s is PaidSponsor => !!s);
 }
 
+async function fetchD1Sponsors(): Promise<PaidSponsor[]> {
+  const fields = "name,logo_url,url,headline,message,cta,headline_fr,message_fr,cta_fr".split(",");
+  const creative = fields.map(field => `CASE WHEN status='approved' THEN ${field} END AS ${field}`).join(",");
+  const rows = await readD1<Omit<SponsorViewRow, "trades" | "regions"> & { trades: string | null; regions: string | null }>(vpsAppDatabase(),
+    `SELECT id,slug,tier,country,trades,regions,start_date,end_date,status,${creative} FROM sponsors
+     WHERE status IN ('pending','approved','paused') AND (end_date IS NULL OR end_date>=date('now','-1 day')) ORDER BY id LIMIT 1000`);
+  return rows.map(row => fromSponsorRow({ ...row, trades: row.trades ? JSON.parse(row.trades) : [],
+    regions: row.regions ? JSON.parse(row.regions) : [] })).filter((s): s is PaidSponsor => Boolean(s));
+}
+
 const cachedSponsors = unstable_cache(
-  async (_projectUrl: string): Promise<PaidSponsor[]> => singleFlight("sponsors", fetchSponsors),
+  async (_projectUrl: string): Promise<PaidSponsor[]> => singleFlight("sponsors:" + _projectUrl, _projectUrl === "d1" ? fetchD1Sponsors : fetchSponsors),
   ["sponsors-public-v1"],
   { tags: [SPONSORS_TAG], revalidate: SPONSORS_REVALIDATE },
 );
@@ -91,9 +103,10 @@ const cachedSponsors = unstable_cache(
  * migration runs: pages then fall back to the house sponsors.
  */
 export const getSponsorSnapshot = cache(async (): Promise<PaidSponsor[]> => {
-  if (!isSupabaseConfigured()) return [];
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if (!native && !isSupabaseConfigured()) return [];
   try {
-    return await cachedSponsors(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+    return await cachedSponsors(native ? "d1" : process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
   } catch (e) {
     console.warn("[sponsors] snapshot unavailable", e instanceof Error ? e.message : e);
     return [];

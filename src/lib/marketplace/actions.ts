@@ -11,6 +11,10 @@ import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { sendAdminMarketplaceReport, sendMarketplaceContact } from "@/lib/email/send";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { countActiveListings, sellerEmail } from "./data";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { deleteVpsListing, moderateVpsListing, publicVpsListing, recordVpsMarketplaceContact, saveVpsListing, setVpsListingStatus } from "./native";
 import {
   canAddListing,
   contactSchema,
@@ -51,7 +55,8 @@ function parsePhotos(raw: FormDataEntryValue | null): unknown[] {
 /** Create or edit a listing (owner). Free accounts: FREE_LISTING_LIMIT active at once. */
 export async function saveListingAction(_prev: MarketFormState, formData: FormData): Promise<MarketFormState> {
   const lang = langOf(formData.get("lang"));
-  if (!isSupabaseConfigured()) return { error: "unavailable" };
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return { error: "unavailable" };
   const session = await getSession();
   if (!session) redirect(localizePath(`/sign-in?next=${encodeURIComponent("/marketplace/new")}`, lang));
 
@@ -71,11 +76,18 @@ export async function saveListingAction(_prev: MarketFormState, formData: FormDa
   });
   if (!parsed.success) return { error: firstErrorCode(parsed.error.issues) };
   const d = parsed.data;
+  const id = String(formData.get("id") ?? "").trim();
+  if (native) {
+    const result = await saveVpsListing(session, id, d).catch(() => ({ error: "save" as const }));
+    if (result.error) return { error: result.error };
+    revalidatePath("/marketplace");
+    revalidatePath(`/marketplace/${result.slug}`);
+    redirect(localizePath(`/marketplace/${result.slug}?saved=1`, lang));
+  }
   // Only photos our upload route stored in this user's folder.
   const photos = sanitizeListingPhotos(d.photos, process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", session.userId);
 
   const supabase = await createClient();
-  const id = String(formData.get("id") ?? "").trim();
   let existing: { id: string; slug: string; status: string } | null = null;
   if (id) {
     const { data, error } = await supabase
@@ -138,7 +150,8 @@ export async function setListingStatusAction(formData: FormData): Promise<void> 
   const lang = langOf(formData.get("lang"));
   const back = localizePath("/dashboard/listings", lang);
   const session = await getSession();
-  if (!session || !isSupabaseConfigured()) redirect(localizePath("/sign-in", lang));
+  const native = isVpsLiveCustomerAuth();
+  if (!session || (!native && !isSupabaseConfigured())) redirect(localizePath("/sign-in", lang));
   const id = String(formData.get("id") ?? "");
   const next = String(formData.get("status") ?? "");
   if (!id || !["sold", "active", "draft"].includes(next)) redirect(back);
@@ -146,6 +159,12 @@ export async function setListingStatusAction(formData: FormData): Promise<void> 
   if (next === "active") {
     const active = await countActiveListings(session.userId, id);
     if (!canAddListing(session.hasTradeAccess, active)) redirect(`${back}?error=limit`);
+  }
+  if (native) {
+    await setVpsListingStatus(session, id, next);
+    revalidatePath("/marketplace");
+    revalidatePath("/dashboard/listings");
+    redirect(back);
   }
   const supabase = await createClient();
   await supabase
@@ -161,11 +180,15 @@ export async function setListingStatusAction(formData: FormData): Promise<void> 
 export async function deleteListingAction(formData: FormData): Promise<void> {
   const lang = langOf(formData.get("lang"));
   const session = await getSession();
-  if (!session || !isSupabaseConfigured()) redirect(localizePath("/sign-in", lang));
+  const native = isVpsLiveCustomerAuth();
+  if (!session || (!native && !isSupabaseConfigured())) redirect(localizePath("/sign-in", lang));
   const id = String(formData.get("id") ?? "");
   if (id) {
-    const supabase = await createClient();
-    await supabase.from("marketplace_listings").delete().eq("id", id).eq("user_id", session.userId);
+    if (native) await deleteVpsListing(session.userId, id);
+    else {
+      const supabase = await createClient();
+      await supabase.from("marketplace_listings").delete().eq("id", id).eq("user_id", session.userId);
+    }
     revalidatePath("/marketplace");
   }
   redirect(localizePath("/dashboard/listings", lang));
@@ -178,8 +201,11 @@ export async function adminSetListingStatusAction(formData: FormData): Promise<v
   const id = String(formData.get("id") ?? "");
   const next = String(formData.get("status") ?? "");
   if (id && ["removed", "active"].includes(next)) {
-    const supabase = await createClient();
-    await supabase.from("marketplace_listings").update({ status: next }).eq("id", id);
+    if (isVpsLiveCustomerAuth()) await moderateVpsListing(session.userId, id, next);
+    else {
+      const supabase = await createClient();
+      await supabase.from("marketplace_listings").update({ status: next }).eq("id", id);
+    }
     revalidatePath("/marketplace");
   }
   redirect("/admin/marketplace");
@@ -201,6 +227,23 @@ export async function contactSellerAction(_prev: MarketFormState, formData: Form
   if (String(formData.get("website") ?? "") !== "") return { ok: true };
   if (!parsed.success) return { error: firstErrorCode(parsed.error.issues) };
   if (await checkRateLimitByIp(await clientIp(), "contact")) return { error: "rateLimited" };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const target = await recordVpsMarketplaceContact(parsed.data);
+      if (!target) return { error: "notFound" };
+      await sendMarketplaceContact({
+        to: target.email,
+        listingTitle: target.title,
+        listingUrl: `https://pmrfp.com/marketplace/${encodeURIComponent(parsed.data.slug)}`,
+        buyer: { name: parsed.data.name, email: parsed.data.email },
+        message: parsed.data.message,
+        smtpOnly: true,
+      });
+      return { ok: true };
+    } catch {
+      return { error: "send" };
+    }
+  }
   if (!isServiceConfigured()) return { error: "unavailable" };
 
   const admin = createServiceClient();
@@ -243,7 +286,18 @@ export async function reportListingAction(_prev: MarketFormState, formData: Form
   if (await checkRateLimitByIp(await clientIp(), "contact")) return { error: "rateLimited" };
 
   let title = parsed.data.slug;
-  if (isServiceConfigured()) {
+  const native = isVpsLiveCustomerAuth();
+  if (native) {
+    try {
+      const listing = await vpsAppDatabase().prepare(`SELECT title FROM marketplace_listings l
+        WHERE slug=? AND ${publicVpsListing} AND ${customerAppAuthority}`)
+        .bind(parsed.data.slug, new Date().toISOString()).first<{ title: string }>();
+      if (!listing) return { error: "notFound" };
+      title = listing.title;
+    } catch {
+      return { error: "unavailable" };
+    }
+  } else if (isServiceConfigured()) {
     const { data } = await createServiceClient()
       .from("marketplace_listings")
       .select("title")
@@ -251,11 +305,16 @@ export async function reportListingAction(_prev: MarketFormState, formData: Form
       .maybeSingle<{ title: string }>();
     if (data?.title) title = data.title;
   }
-  await sendAdminMarketplaceReport({
-    listingTitle: title,
-    listingUrl: `${BASE}/marketplace/${parsed.data.slug}`,
-    reason: parsed.data.reason,
-    reporterEmail: parsed.data.email ?? null,
-  });
-  return { ok: true };
+  try {
+    await sendAdminMarketplaceReport({
+      listingTitle: title,
+      listingUrl: `${native ? "https://pmrfp.com" : BASE}/marketplace/${encodeURIComponent(parsed.data.slug)}`,
+      reason: parsed.data.reason,
+      reporterEmail: parsed.data.email ?? null,
+      smtpOnly: native,
+    });
+    return { ok: true };
+  } catch {
+    return { error: "send" };
+  }
 }

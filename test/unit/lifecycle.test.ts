@@ -250,7 +250,7 @@ describe("lifecycle copy", () => {
   it("writes in the member's language", () => {
     expect(renderStep("welcome", sampleCopyData("welcome", "fr"), CTX).text).toContain("Bonjour Sam,");
     expect(renderStep("welcome", sampleCopyData("welcome", "es"), CTX).text).toContain("Hola, Sam:");
-    expect(renderStep("welcome", sampleCopyData("welcome", "fr"), CTX).text).toContain("https://pmrfp.com/fr/dashboard/company");
+    expect(renderStep("welcome", sampleCopyData("welcome", "fr"), CTX).text).toContain("https://pmrfp.com/fr/dashboard/company/finish");
     expect(renderStep("founding", sampleCopyData("founding", "es"), CTX).subject).toContain("Fundadores 500");
   });
 
@@ -359,7 +359,7 @@ vi.mock("@/lib/data/price-benchmarks-load", () => ({
 }));
 vi.mock("@/lib/founding/server", () => ({ cachedLifetimeCount: async () => 10 }));
 const sendSpy = vi.fn(async () => ({ ok: true, id: "re_test" }));
-vi.mock("@/lib/email/send", () => ({ emailConfigured: () => true, sendLifecycleEmail: (...a: unknown[]) => sendSpy(...(a as [])) }));
+vi.mock("@/lib/email/send", () => ({ lifecycleEmailConfigured: () => true, sendLifecycleEmail: (...a: unknown[]) => sendSpy(...(a as [])) }));
 
 describe("lifecycle engine", () => {
   beforeEach(() => {

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function RfpFeedPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("dash").rfps;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   const demo = isDemoMode();
   // Country-first: the company's country only, its own province/state first.
   const { country, province } = await getVisitorCountry({ session });

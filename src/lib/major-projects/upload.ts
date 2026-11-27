@@ -12,6 +12,30 @@ export const MAX_UPLOAD_BYTES = 4_400_000;
 /** Decompressed file limit. */
 export const MAX_FILE_BYTES = 40_000_000;
 
+/** Read at most the upload limit even if Content-Length is absent or inaccurate. */
+export async function readUploadBody(request: Request): Promise<Uint8Array | null> {
+  if (Number(request.headers.get("content-length")) > MAX_UPLOAD_BYTES) return null;
+  const reader = request.body?.getReader();
+  if (!reader) return new Uint8Array();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    for (;;) {
+      const next = await reader.read();
+      if (next.done) break;
+      length += next.value.byteLength;
+      if (length > MAX_UPLOAD_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        return null;
+      }
+      chunks.push(next.value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return Buffer.concat(chunks, length);
+}
+
 /** UTF-8 when the bytes are valid UTF-8, else Windows-1252 (Infrastructure Canada ships Latin-1). */
 export function decodeText(bytes: Uint8Array): string {
   try {

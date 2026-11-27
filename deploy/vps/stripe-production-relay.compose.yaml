@@ -1,0 +1,37 @@
+name: pmrfp-stripe-production-relay
+services:
+  webhook:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    entrypoint: ["node", "/app/stripe-production-relay.mjs"]
+    env_file:
+      - /opt/pmrfp/stripe-api.pending.env
+      - /opt/pmrfp/stripe-production-relay/verify.env
+      - /opt/pmrfp/stripe-production-relay/receiver.env
+    volumes:
+      - /opt/pmrfp/stripe-production-relay/stripe-production-relay.mjs:/app/stripe-production-relay.mjs:ro
+    read_only: true
+    init: true
+    mem_limit: 128m
+    pids_limit: 64
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4321/api/stripe/live-health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    networks: [pmrfp]
+    labels:
+      traefik.enable: "false"
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

@@ -21,6 +21,8 @@ import { hasLocale } from "@/i18n/config";
 import { alternatesFor } from "@/i18n/metadata";
 import { fmt } from "@/i18n/format";
 import { regionName, tradeName } from "@/i18n/terms";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsBuyerDashboard } from "@/lib/d1/vps-buyer-pages";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -42,6 +44,7 @@ export default async function WidgetsPage({
   const [session, sp, categories, regions] = await Promise.all([getSession(), searchParams, getCategories(), getRegions()]);
   const org = session?.organization ?? null;
   const role = session?.profile.primary_role ?? null;
+  const native = isVpsLiveCustomerAuth();
 
   // ?company=<slug>: the link in badge emails, so a listed company can grab its
   // card without an account (same rule as /badge: approved listings only).
@@ -51,8 +54,10 @@ export default async function WidgetsPage({
   const bidsKey = org && POSTERS.has(org.organization_type) ? bidsWidgetKey(org.id) : null;
   // Town bids: a verified public buyer's own page, else the page a town page linked from (?town=<province>/<slug>; the data is public).
   let townBids: { province: string; slug: string } | null = null;
-  if (org?.organization_type === "public_buyer" && isServiceConfigured()) {
-    const { data } = await createServiceClient().from("buyer_pages").select("buyer_key").eq("organization_id", org.id).maybeSingle<{ buyer_key: string }>();
+  if (session && org?.organization_type === "public_buyer" && (native || isServiceConfigured())) {
+    const data = native ? (await readVpsBuyerDashboard(session)).own
+      : (await createServiceClient().from("buyer_pages").select("buyer_key").eq("organization_id", org.id)
+        .maybeSingle<{ buyer_key: string }>()).data;
     const k = parseBuyerKey(data?.buyer_key);
     if (k) townBids = { province: k.provinceSlug, slug: k.slug };
   }
@@ -86,7 +91,7 @@ export default async function WidgetsPage({
   const h = await headers();
   const host = h.get("host") ?? "pmrfp.com";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const base = process.env.VERCEL_ENV === "production" ? SITE.url : `${proto}://${host}`;
+  const base = native || process.env.VERCEL_ENV === "production" ? SITE.url : `${proto}://${host}`;
 
   return (
     <>

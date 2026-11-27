@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { runD1ContractReminders } from "@/lib/contracts/d1-reminders";
+import { useD1Lifecycle } from "@/lib/lifecycle/d1";
 import { runContractReminders } from "@/lib/contracts/server";
 
 export const maxDuration = 300;
@@ -15,9 +17,20 @@ export const maxDuration = 300;
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  const native = useD1Lifecycle();
+  if ((native && !secret) || (secret && request.headers.get("authorization") !== `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (native) {
+    try {
+      const dry = new URL(request.url).searchParams.get("dry") === "1";
+      const report = await runD1ContractReminders({ dry });
+      return NextResponse.json(report, { status: report.failed ? 503 : 200 });
+    } catch {
+      return NextResponse.json({ ready: false }, { status: 503 });
+    }
+  }
+  if (new URL(request.url).searchParams.get("dry") === "1") return NextResponse.json({ ready: false, dry: true }, { status: 503 });
   if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
   return NextResponse.json(await runContractReminders(createServiceClient()));
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
@@ -9,13 +10,17 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { fmtDate, fmtMoney, dash } from "@/lib/admin/queries";
 import type { Subscription } from "@/types/db";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { readD1 } from "@/lib/lifecycle/d1";
 
 export const metadata: Metadata = { title: "Subscriptions · Admin · PMRFP" };
 
 type SubRow = Pick<
   Subscription,
   "id" | "organization_id" | "status" | "amount" | "currency" | "current_period_end" | "cancel_at_period_end"
->;
+> & { organization_name?: string | null };
 
 const DEMO_SUBS: SubRow[] = [
   { id: "1", organization_id: "Northline Electrical Ltd.", status: "active", amount: 249, currency: "CAD", current_period_end: "2027-05-18", cancel_at_period_end: false },
@@ -26,10 +31,25 @@ const DEMO_SUBS: SubRow[] = [
 
 export default async function AdminSubscriptionsPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && admin.profile.status !== "active") notFound();
 
   let rows = DEMO_SUBS;
-  if (!isDemoMode()) {
+  let unavailable = false;
+  if (native) {
+    try {
+      type Row = Omit<SubRow, "cancel_at_period_end" | "amount"> & { cancel_at_period_end: number; amount: string | number | null };
+      const nativeRows = await readD1<Row>(vpsAppDatabase(), `SELECT s.id,s.organization_id,s.status,s.amount,s.currency,
+        s.current_period_end,s.cancel_at_period_end,o.name AS organization_name FROM subscriptions s
+        LEFT JOIN organizations o ON o.id=s.organization_id
+        WHERE ${activeRequestAdmin} ORDER BY s.created_at DESC,s.id LIMIT 1000`, admin.userId);
+      rows = nativeRows.map((r) => ({ ...r, amount: r.amount == null ? null : Number(r.amount), cancel_at_period_end: r.cancel_at_period_end === 1 }));
+    } catch {
+      rows = [];
+      unavailable = true;
+    }
+  } else if (!isDemoMode()) {
     const supabase = await createClient();
     const { data } = await supabase
       .from("subscriptions")
@@ -44,13 +64,13 @@ export default async function AdminSubscriptionsPage({ params }: { params: Promi
       <PageHeader title="Subscriptions" description="Trade access billing across all organizations." />
       {isDemoMode() && <DemoBanner />}
 
-      {rows.length === 0 ? (
+      {unavailable ? <EmptyState title="Subscriptions could not be loaded" description="Refresh to try again." /> : rows.length === 0 ? (
         <EmptyState title="No subscriptions yet" description="Paid and comped accounts will appear here." />
       ) : (
         <AdminTable columns={["Organization", "Status", "Amount", "Renews", "Cancels at period end"]}>
           {rows.map((s) => (
             <TableRow key={s.id}>
-              <TableCell className="font-medium">{dash(s.organization_id)}</TableCell>
+              <TableCell className="font-medium">{dash(s.organization_name ?? s.organization_id)}</TableCell>
               <TableCell><StatusBadge status={s.status} /></TableCell>
               <TableCell>{fmtMoney(s.amount, s.currency)}</TableCell>
               <TableCell className="text-muted-foreground">{fmtDate(s.current_period_end)}</TableCell>

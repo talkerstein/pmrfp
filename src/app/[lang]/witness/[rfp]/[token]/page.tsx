@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Lock } from "lucide-react";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { loadNativeSealedPost } from "@/lib/town-jobs/native-sealed";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { WitnessConfirmForm } from "@/components/towns/jobs/sealed-forms";
@@ -11,6 +13,8 @@ import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
 import { hasLocale } from "@/i18n/config";
 import { fmt, plural } from "@/i18n/format";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -30,9 +34,10 @@ export default async function WitnessPage({ params }: { params: Promise<{ rfp: s
   const t = getT("townResults").witness;
   const { rfp, token } = await params;
   const valid = /^[0-9a-f-]{36}$/i.test(rfp) && /^[A-Za-z0-9_-]{16,100}$/.test(token);
-  const db = valid && isServiceConfigured() ? createServiceClient() : null;
-  const info = db ? await witnessInfo(db, rfp, token) : ({ ok: false, error: "bad_link" } as const);
-  const job = db && info.ok ? await loadTownJob(db, rfp) : null;
+  const native = isVpsLiveCustomerAuth();
+  const db = valid && !native && isServiceConfigured() ? createServiceClient() : null;
+  const info = valid && (db || native) ? await witnessInfo(db, rfp, token) : ({ ok: false, error: "bad_link" } as const);
+  const job = info.ok ? (db ? await loadTownJob(db, rfp) : await loadNativeSealedPost(rfp).catch(() => null)) : null;
   const tz = townTimeZone(job?.buyer_key);
 
   return (

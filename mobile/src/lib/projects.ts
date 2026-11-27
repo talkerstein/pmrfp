@@ -2,7 +2,7 @@ import { Alert, Linking } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { apiFetch, type UploadedPhoto } from "./api";
-import { supabase } from "./supabase";
+import { SITE_URL as API_ORIGIN } from "./session";
 
 /**
  * Projects ("snap a job"): before / during / after photos, a line about the
@@ -134,20 +134,14 @@ export interface ProjectOptions {
 
 /** Trade / property type / region pickers. Empty lists on error: they're optional fields. */
 export async function loadOptions(): Promise<ProjectOptions> {
-  const [cats, types, regions] = await Promise.all([
-    supabase.from("trade_categories").select("slug,name").eq("active", true).order("sort_order"),
-    supabase.from("property_types").select("slug,name").eq("active", true).order("name"),
-    supabase.from("regions").select("slug,name,country").eq("active", true).order("sort_order"),
-  ]);
-  return {
-    categories: (cats.data as Option[] | null) ?? [],
-    propertyTypes: (types.data as Option[] | null) ?? [],
-    regions: ((regions.data as { slug: string; name: string; country: string | null }[] | null) ?? []).map((r) => ({
-      slug: r.slug,
-      name: r.name,
-      group: r.country ?? undefined,
-    })),
+  const response=await fetch(API_ORIGIN+"/api/mobile/taxonomy").catch(()=>null);
+  if (!response?.ok) return {categories:[],propertyTypes:[],regions:[]};
+  const data=await response.json() as {
+    categories:Option[];propertyTypes:Option[];regions:{slug:string;name:string;country?:string|null}[];
   };
+  return {categories:data.categories,propertyTypes:data.propertyTypes,
+    regions:data.regions.map(row=>({slug:row.slug,name:row.name,group:row.country ?? undefined}))};
+
 }
 
 // ── Camera / library ─────────────────────────────────────────────────

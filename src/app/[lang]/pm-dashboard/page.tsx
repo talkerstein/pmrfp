@@ -1,8 +1,11 @@
+import { redirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { FileText, ArrowRight, Users } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { JoinRequestsCard } from "@/components/dashboard/join-requests-card";
 import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { buttonVariants } from "@/components/ui/button";
 import { gcFormPath } from "@/lib/gc/packages";
@@ -10,9 +13,9 @@ import { getMyTrustedList } from "@/lib/trusted/data";
 import { ReputationCard } from "@/components/karma/reputation-card";
 import { POSTER_NOTICE_TYPES, RecentUpdates } from "@/components/pm-jobs/recent-updates";
 import type { Metadata } from "next";
-import { getT, setLangFrom } from "@/i18n/server";
+import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
-import { hasLocale } from "@/i18n/config";
+import { hasLocale, localizePath } from "@/i18n/config";
 import { plural } from "@/i18n/format";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -25,12 +28,16 @@ export default async function PmDashboardHome({
   searchParams,
 }: {
   params: Promise<object>;
-  searchParams?: Promise<{ join?: string }>;
+  searchParams?: Promise<{ join?: string; welcome?: string }>;
 }) {
   await setLangFrom(params);
   const t = getT("pm").home;
   const session = await requireRole(["property_manager", "real_estate_agent"]);
   const demo = isDemoMode();
+  // Signed in before finishing sign-up: finish it, don't show an empty dashboard.
+  if (!demo && !session.profile.onboarding_completed && !session.organization) redirect(localizePath("/onboarding", getLang()));
+  const sp = await searchParams;
+  const nav = getT("dash").shell.nav;
   // General contractors share this dashboard; they post sub-trade packages.
   const gc = session.organization?.organization_type === "builder";
   const realtor = session.profile.primary_role === "real_estate_agent";
@@ -40,7 +47,18 @@ export default async function PmDashboardHome({
   let pendingReview = 0;
   let interestedVendors = 0;
 
-  if (!isDemoMode()) {
+  if (isVpsLiveCustomerAuth()) {
+    const counts = await vpsAppDatabase().prepare(`
+      SELECT
+        (SELECT count(*) FROM rfp_posts WHERE posted_by_user_id=?1 AND status='published') AS active,
+        (SELECT count(*) FROM rfp_posts WHERE posted_by_user_id=?1 AND status='pending_review') AS pending,
+        (SELECT count(*) FROM rfp_interests i INNER JOIN rfp_posts p ON p.id=i.rfp_id
+          WHERE p.posted_by_user_id=?1) AS interested
+    `).bind(session.userId).first<{ active: number; pending: number; interested: number }>();
+    activeRfps = counts?.active ?? 0;
+    pendingReview = counts?.pending ?? 0;
+    interestedVendors = counts?.interested ?? 0;
+  } else if (!demo) {
     const supabase = await createClient();
     const { data: posts } = await supabase
       .from("rfp_posts")
@@ -70,7 +88,14 @@ export default async function PmDashboardHome({
         description={gc ? t.descriptionGc : t.description}
       />
 
-      {!demo && <JoinRequestsCard session={session} back="/pm-dashboard" flash={(await searchParams)?.join} />}
+      {!demo && sp?.welcome === "1" && (
+        <div role="status" className="mb-4 rounded-md bg-teal-50 px-4 py-3 text-sm text-teal-900">
+          <p className="font-semibold">{t.welcome.title}</p>
+          <p className="mt-1">{gc ? t.welcome.bodyGc : realtor && trusted?.ready ? t.welcome.bodyRealtor : t.welcome.body}</p>
+        </div>
+      )}
+
+      {!demo && <JoinRequestsCard session={session} back="/pm-dashboard" flash={sp?.join} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t.stats.active} value={activeRfps} href="/pm-dashboard/rfps" />
@@ -122,6 +147,19 @@ export default async function PmDashboardHome({
           {gc ? t.post.ctaGc : t.post.cta} <ArrowRight className="size-4" />
         </Link>
       </div>
+
+      {!gc && (
+        <section className="mt-6 rounded-lg border border-border bg-card p-6">
+          <h2 className="text-base font-semibold">{t.tools.title}</h2>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">{t.tools.body}</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <Link href="/pm-dashboard/vendor-insurance" className="text-sm font-medium text-teal-700 hover:underline">{nav.pmCerts} →</Link>
+            <Link href="/pm-dashboard/bid-comparisons" className="text-sm font-medium text-teal-700 hover:underline">{nav.pmBids} →</Link>
+            <Link href="/pm-dashboard/contracts" className="text-sm font-medium text-teal-700 hover:underline">{nav.pmContracts} →</Link>
+            <Link href="/pm-dashboard/roster" className="text-sm font-medium text-teal-700 hover:underline">{nav.pmRoster} →</Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

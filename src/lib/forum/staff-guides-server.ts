@@ -1,5 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
+import { canonicalRoom } from "./categories";
 import { autoThreadsReady } from "./auto-threads-server";
 import { GUIDE_KEY_PREFIX, TEAM_BIO, TEAM_DISPLAY_NAME, TEAM_HANDLE, guideThreadRow, planStaffGuides, type StaffGuide } from "./staff-guides";
 import { STAFF_GUIDES } from "./staff-guides-content";
@@ -72,11 +76,56 @@ async function importedKeys(db: SupabaseClient): Promise<Set<string>> {
 
 /** Preview (dry) or import every guide not imported yet. */
 export async function runStaffGuideImport(
-  db: SupabaseClient,
+  db: SupabaseClient | D1Binding,
   opts: { dry: boolean; guides?: readonly StaffGuide[] },
 ): Promise<GuideImportResult> {
   const guides = opts.guides ?? STAFF_GUIDES;
   const base: GuideImportResult = { ready: false, dry: opts.dry, total: guides.length, alreadyImported: 0, planned: 0, created: 0, failed: 0, items: [] };
+  if ("prepare" in db) {
+    const [author, existing, categories] = await Promise.all([
+      db.prepare(`SELECT user_id FROM forum_profiles WHERE handle=? AND is_staff=1 AND ${customerAppAuthority}`)
+        .bind(TEAM_HANDLE).first<{ user_id: string }>(),
+      db.prepare(`SELECT auto_source_key FROM forum_threads WHERE auto_source_key LIKE 'guide:%' LIMIT 1000`)
+        .all<{ auto_source_key: string }>(),
+      db.prepare("SELECT id,slug FROM forum_categories WHERE is_public=1 ORDER BY sort").all<{ id: string; slug: string }>(),
+    ]);
+    if (!author) return { ...base, reason: "The existing PMRFP Team profile is unavailable." };
+    const keys = new Set(existing.results.map((r) => r.auto_source_key));
+    const rooms = new Map<string, string>();
+    for (const room of categories.results) {
+      const key = canonicalRoom(room.slug);
+      if (key && (!rooms.has(key) || room.slug === key)) rooms.set(key, room.id);
+    }
+    const drafts = planStaffGuides(guides, keys).filter((d) => rooms.has(d.category));
+    const result: GuideImportResult = { ...base, ready: true,
+      alreadyImported: guides.filter((g) => keys.has(GUIDE_KEY_PREFIX + g.key)).length,
+      planned: drafts.length, items: drafts.map((d) => ({ title: d.title, category: d.category, pinned: d.pinned })) };
+    if (opts.dry) return result;
+    for (const d of drafts) {
+      const id = randomUUID();
+      const room = rooms.get(d.category)!;
+      const row = guideThreadRow(d, room, author.user_id);
+      try {
+        const [inserted] = await db.batch([
+          db.prepare(`INSERT INTO forum_threads (id,short_id,category_id,author_id,type,title,slug,body,body_words,
+            words_total,status,is_staff,is_pinned,auto_source_key,last_post_user_id)
+            SELECT ?,?,?,?,'discussion',?,?,?,?,?,'approved',1,?,?,? WHERE ${customerAppAuthority}
+            AND EXISTS(SELECT 1 FROM forum_profiles WHERE user_id=? AND is_staff=1)
+            ON CONFLICT(auto_source_key) WHERE auto_source_key IS NOT NULL DO NOTHING`)
+            .bind(id, row.short_id, room, author.user_id, row.title, row.slug, row.body, row.body_words, row.body_words,
+              Number(row.is_pinned), row.auto_source_key, author.user_id, author.user_id),
+          db.prepare(`UPDATE forum_categories SET thread_count=thread_count+1,post_count=post_count+1,
+            last_thread_id=?,last_post_at=(SELECT created_at FROM forum_threads WHERE id=?) WHERE id=? AND changes()=1`)
+            .bind(id, id, room),
+          db.prepare("UPDATE forum_profiles SET post_count=post_count+1 WHERE user_id=? AND changes()=1").bind(author.user_id),
+        ]);
+        if (inserted.meta.changes === 1) result.created++;
+      } catch {
+        result.failed++;
+      }
+    }
+    return result;
+  }
   if (!(await autoThreadsReady(db))) return { ...base, reason: "Apply supabase/migrations/20261008000001_forum_auto_threads.sql first (or run briefs/ops/2026-10-09-forum-staff-guides.sql)." };
 
   const [existing, { data: cats }] = await Promise.all([importedKeys(db), db.from("forum_categories").select("id,slug")]);

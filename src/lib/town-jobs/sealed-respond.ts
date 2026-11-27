@@ -42,11 +42,11 @@ function precheck(session: SessionContext, job: TownJob): SealedReply | null {
 const fromDb = (e: SealedError, closesAt?: string | null): SealedReply => ({ status: sealedHttpStatus(e), body: { ok: false, error: e, reason: e === "not_member" ? "org" : e, closesAt: closesAt ?? null } });
 
 /** Send (or replace) the company's sealed quote. */
-export async function respondSealed(db: SupabaseClient, session: SessionContext, job: TownJob, data: InterestInput): Promise<SealedReply> {
+export async function respondSealed(db: SupabaseClient | null, session: SessionContext, job: TownJob, data: InterestInput): Promise<SealedReply> {
   const early = precheck(session, job);
   if (early) return early;
   const org = session.organization!;
-  const caseStudyIds = data.caseStudyIds?.length ? await validAttachments({ organizationId: org.id, userId: session.userId, ids: data.caseStudyIds, label: `Sealed quote: ${job.title}` }) : [];
+  const caseStudyIds = !db ? (data.caseStudyIds ?? []) : data.caseStudyIds?.length ? await validAttachments({ organizationId: org.id, userId: session.userId, ids: data.caseStudyIds, label: `Sealed quote: ${job.title}` }) : [];
   const amount = parseQuoteAmount(data.quoteAmount);
   const res = await submitSealedQuote(
     db,
@@ -69,7 +69,7 @@ export async function respondSealed(db: SupabaseClient, session: SessionContext,
 }
 
 /** Withdraw the company's sealed quote before closing (erased unopened). */
-export async function withdrawSealed(db: SupabaseClient, session: SessionContext, job: TownJob, lang: unknown): Promise<SealedReply> {
+export async function withdrawSealed(db: SupabaseClient | null, session: SessionContext, job: TownJob, lang: unknown): Promise<SealedReply> {
   const org = session.organization;
   if (!org) return refused("org", 400);
   const res = await withdrawSealedQuote(db, job, { userId: session.userId, orgId: org.id, email: session.profile.email || null }, emailLang(isEnabledLocale(lang) ? lang : "en"));

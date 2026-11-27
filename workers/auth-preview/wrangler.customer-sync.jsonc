@@ -1,0 +1,25 @@
+{
+  "name": "pmrfp-customer-staging-sync",
+  "main": "../../scripts/d1-auth/customer-sync-worker.mjs",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "compatibility_date": "2026-11-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": { "AUTH_SOURCE_ROLE": "d1_customer_auth_sync_20261109" },
+  "triggers": { "crons": [] },
+  "durable_objects": {
+    "bindings": [{ "name": "CUSTOMER_SYNC", "class_name": "CustomerSync" }]
+  },
+  "migrations": [{ "tag": "customer-sync-v1", "new_sqlite_classes": ["CustomerSync"] }],
+  "hyperdrive": [{
+    "binding": "AUTH_SOURCE",
+    "id": "9bbb7e6d975947f0be5810f90de5bf92"
+  }],
+  "d1_databases": [{
+    "binding": "AUTH_DB",
+    "database_name": "pmrfp-customer-staging-auth",
+    "database_id": "3a716914-6cd3-4672-a1c4-1a4dc5fd9247"
+  }],
+  "observability": { "enabled": false }
+}

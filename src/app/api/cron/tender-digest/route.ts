@@ -21,6 +21,10 @@ import { weeklyFollowSection } from "@/lib/follows/alerts";
 import { weeklyFollowSectionHtml } from "@/lib/follows/email-copy";
 import { buyerFollowAlertsEnabled } from "@/lib/follows/rules";
 
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { inList, readD1, readD1ByIds, requireD1LifecycleAuthority } from "@/lib/lifecycle/d1";
+import { customerAppAuthority } from "../../../../../workers/d1-api/customer-signup";
+
 export const maxDuration = 60;
 
 /**
@@ -52,48 +56,71 @@ const MAX_RECIPIENTS = 300;
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if ((native && !secret) || (secret && request.headers.get("authorization") !== `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  if (!native && !isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
 
   const dry = new URL(request.url).searchParams.get("dry") === "1";
   const mailingAddress = process.env.BUSINESS_MAILING_ADDRESS?.trim();
   if (!dry && !mailingAddress) {
-    return NextResponse.json({ skipped: "BUSINESS_MAILING_ADDRESS not set (required by CASL)" });
+    return NextResponse.json({ skipped: "BUSINESS_MAILING_ADDRESS not set (required by CASL)" }, { status: native ? 503 : 200 });
   }
 
-  const supabase = createServiceClient();
+  const d1 = native ? vpsAppDatabase() : null;
+  const supabase = d1 ? null : createServiceClient();
+  if (d1) await requireD1LifecycleAuthority(d1);
+  async function read<T>(sql: string, params: string[], legacy: (client: ReturnType<typeof createServiceClient>) => PromiseLike<{ data: unknown }>) {
+    return d1 ? await readD1<T>(d1, sql, ...params) : ((await legacy(supabase!)).data ?? []) as T[];
+  }
+  async function withIds<T>(ids: string[], sql: string, legacy: (client: ReturnType<typeof createServiceClient>, ids: string[]) => PromiseLike<{ data: unknown }>, ...params: string[]) {
+    if (!ids.length) return [];
+    return d1 ? await readD1ByIds<T>(d1, ids, sql, ...params) : ((await legacy(supabase!, ids)).data ?? []) as T[];
+  }
   const now = Date.now();
   const today = new Date(now).toISOString().slice(0, 10);
   const weekAgo = new Date(now - 7 * 86_400_000).toISOString();
   const sixDaysAgo = new Date(now - 6 * 86_400_000).toISOString();
   const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/$/, "");
 
-  const [{ data: rfps }, { data: orgs }, { data: subs }, { data: regions }] = await Promise.all([
-    supabase
+  type Org = { id: string; name: string; province: string | null; country: string | null };
+  type Region = { id: string; slug: string; parent_id: string | null; country: string | null };
+  const [rawRfps, orgs, subs, regions] = await Promise.all([
+    read<RfpRow | (Omit<RfpRow, "rfp_categories"> & { rfp_categories: string })>(
+      `SELECT r.id,r.title,r.slug,r.deadline,r.region_id,r.province,r.published_at,r.source_type,
+        (SELECT json_group_array(json_object('category_id',c.category_id,'trade_categories',
+          CASE WHEN t.id IS NULL THEN NULL ELSE json_object('name',t.name) END))
+         FROM rfp_categories c LEFT JOIN trade_categories t ON t.id=c.category_id WHERE c.rfp_id=r.id) AS rfp_categories
+        FROM rfp_posts r WHERE r.status='published' AND r.is_demo=0 AND julianday(r.published_at)>=julianday(?)
+        ORDER BY r.deadline IS NULL,r.deadline,r.id LIMIT 500`, [weekAgo], supabase => supabase
       .from("rfp_posts")
       .select("id,title,slug,deadline,region_id,province,published_at,source_type, rfp_categories(category_id, trade_categories(name))")
       .eq("status", "published")
       .eq("is_demo", false)
       .gte("published_at", weekAgo)
       .order("deadline", { ascending: true, nullsFirst: false })
-      .limit(500),
-    supabase
+      .limit(500)),
+    read<Org>(`SELECT id,name,province,country FROM organizations WHERE organization_type IN ('trade_company','supplier')
+      AND is_demo=0 AND status='active' AND profile_status='approved' ORDER BY id`, [], supabase => supabase
       .from("organizations")
       .select("id,name,province,country")
       .in("organization_type", ["trade_company", "supplier"])
       .eq("is_demo", false)
-      .eq("status", "active"),
-    supabase.from("subscriptions").select("organization_id,status"),
-    supabase.from("regions").select("id,slug,parent_id,country"),
+      .eq("status", "active")
+      .eq("profile_status", "approved")),
+    read<{ organization_id: string; status: string }>("SELECT organization_id,status FROM subscriptions WHERE status IN ('active','comped')",
+      [], supabase => supabase.from("subscriptions").select("organization_id,status")),
+    read<Region>("SELECT id,slug,parent_id,country FROM regions", [], supabase => supabase.from("regions").select("id,slug,parent_id,country")),
   ]);
 
+  const rfps: RfpRow[] = rawRfps.map(row => ({ ...row, rfp_categories:
+    typeof row.rfp_categories === "string" ? JSON.parse(row.rfp_categories) : row.rfp_categories }));
   const weekAhead = new Date(now + 7 * 86_400_000).toISOString().slice(0, 10);
   const openRfps = ((rfps ?? []) as unknown as RfpRow[])
     .filter((r) => !r.deadline || r.deadline >= today)
     .map((r) => ({ ...r, title: displayTitle(r.title, r.source_type).title }));
-  if (!openRfps.length) return NextResponse.json({ sent: 0, reason: "no new open tenders this week" });
+  if (!openRfps.length) return NextResponse.json({ dry, sent: 0, reason: "no new open tenders this week" });
 
   const paid = new Set(
     ((subs ?? []) as { organization_id: string; status: string }[])
@@ -101,19 +128,27 @@ export async function GET(request: Request) {
       .map((s) => s.organization_id),
   );
   // Companies on a running 14-day trial get the Trade Pro alerts instead.
-  for (const id of await activeTrialOrgIds(supabase)) paid.add(id);
+  const trials = d1
+    ? (await readD1<{ organization_id: string }>(d1, `SELECT organization_id FROM trade_trials
+       WHERE julianday(started_at)<=julianday(?) AND julianday(ends_at)>julianday(?)`, new Date(now).toISOString(), new Date(now).toISOString()))
+      .map(trial => trial.organization_id)
+    : await activeTrialOrgIds(supabase!);
+  for (const id of trials) paid.add(id);
   const freeOrgs = ((orgs ?? []) as { id: string; name: string; province: string | null; country: string | null }[]).filter((o) => !paid.has(o.id));
   const orgIds = freeOrgs.map((o) => o.id);
-  if (!orgIds.length) return NextResponse.json({ sent: 0, reason: "no free trades" });
+  if (!orgIds.length) return NextResponse.json({ dry, sent: 0, reason: "no free trades" });
   const regionRows = (regions ?? []) as { id: string; slug: string; country: string | null }[];
   // Listings filed under a whole country reach every company in that country (the country check below keeps them there).
   const nationalIds = new Set(regionRows.filter((r) => r.slug === "canada" || r.slug === "united-states").map((r) => r.id));
   const countryByRegion = regionCountryMap(regionRows);
 
-  const [{ data: orgCats }, { data: orgRegs }, { data: members }] = await Promise.all([
-    supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", orgIds),
-    supabase.from("organization_regions").select("organization_id,region_id").in("organization_id", orgIds),
-    supabase.from("organization_members").select("organization_id,user_id").in("organization_id", orgIds),
+  const [orgCats, orgRegs, members] = await Promise.all([
+    withIds<Pair>(orgIds, `SELECT organization_id,category_id FROM organization_categories WHERE organization_id ${inList}`,
+      (supabase, ids) => supabase.from("organization_categories").select("organization_id,category_id").in("organization_id", ids)),
+    withIds<Pair>(orgIds, `SELECT organization_id,region_id FROM organization_regions WHERE organization_id ${inList}`,
+      (supabase, ids) => supabase.from("organization_regions").select("organization_id,region_id").in("organization_id", ids)),
+    withIds<Pair>(orgIds, `SELECT organization_id,user_id FROM organization_members WHERE organization_id ${inList}`,
+      (supabase, ids) => supabase.from("organization_members").select("organization_id,user_id").in("organization_id", ids)),
   ]);
   const catsByOrg = group((orgCats ?? []) as Pair[], "organization_id", "category_id");
   // Serving a region means serving everything under it (Ontario → Toronto).
@@ -125,15 +160,17 @@ export async function GET(request: Request) {
   const ownRegsByOrg = group((orgRegs ?? []) as Pair[], "organization_id", "region_id");
 
   const userIds = [...new Set(((members ?? []) as Pair[]).map((m) => m.user_id as string))];
-  const [{ data: profiles }, { data: prefs }, { data: recent }] = await Promise.all([
-    supabase.from("users_profile").select("id,email,status").in("id", userIds.length ? userIds : ["__"]),
-    supabase.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", userIds.length ? userIds : ["__"]),
-    supabase
-      .from("notifications")
-      .select("user_id")
-      .eq("type", "tender_digest")
-      .gte("created_at", sixDaysAgo)
-      .in("user_id", userIds.length ? userIds : ["__"]),
+  const [profiles, prefs, recent] = await Promise.all([
+    withIds<{ id: string; email: string; status: string }>(userIds, `SELECT id,email,status FROM users_profile u WHERE id ${inList}
+      AND status='active' AND ${allowedMailbox}`,
+      (supabase, ids) => supabase.from("users_profile").select("id,email,status").in("id", ids)),
+    withIds<{ user_id: string; new_rfps: string; channel_email: boolean | 0 | 1 }>(userIds,
+      `SELECT user_id,new_rfps,channel_email FROM notification_preferences WHERE user_id ${inList}`,
+      (supabase, ids) => supabase.from("notification_preferences").select("user_id,new_rfps,channel_email").in("user_id", ids)),
+    withIds<{ user_id: string }>(userIds,
+      `SELECT DISTINCT user_id FROM notifications WHERE user_id ${inList} AND type='tender_digest' AND julianday(created_at)>=julianday(?)`,
+      (supabase, ids) => supabase.from("notifications").select("user_id").eq("type", "tender_digest").gte("created_at", sixDaysAgo).in("user_id", ids),
+      sixDaysAgo),
   ]);
   const emailById = new Map(
     ((profiles ?? []) as { id: string; email: string; status: string }[])
@@ -141,8 +178,8 @@ export async function GET(request: Request) {
       .map((p) => [p.id, p.email]),
   );
   const optedOut = new Set(
-    ((prefs ?? []) as { user_id: string; new_rfps: string; channel_email: boolean }[])
-      .filter((p) => p.new_rfps === "off" || p.channel_email === false)
+    ((prefs ?? []) as { user_id: string; new_rfps: string; channel_email: boolean | 0 | 1 }[])
+      .filter((p) => p.new_rfps === "off" || p.channel_email === false || p.channel_email === 0)
       .map((p) => p.user_id),
   );
   const alreadySent = new Set(((recent ?? []) as { user_id: string }[]).map((r) => r.user_id));
@@ -150,17 +187,19 @@ export async function GET(request: Request) {
   const pmJobKeys = openRfps.filter((r) => isPmJobSource(r.source_type)).map((r) => pmJobAlertKey(r.id));
   const sentPmJobs = new Set<string>();
   if (pmJobKeys.length) {
-    const { data: logRows } = await supabase.from("lead_alert_log").select("user_id,lead_key").in("lead_key", pmJobKeys).limit(20_000);
+    const logRows = await withIds<{ user_id: string; lead_key: string }>(pmJobKeys,
+      `SELECT user_id,lead_key FROM lead_alert_log WHERE lead_key ${inList} LIMIT 20000`,
+      (supabase, ids) => supabase.from("lead_alert_log").select("user_id,lead_key").in("lead_key", ids).limit(20_000));
     for (const l of (logRows ?? []) as { user_id: string; lead_key: string }[]) sentPmJobs.add(`${l.user_id}|${l.lead_key.slice("pmjob:".length)}`);
   }
 
   // Free members' followed buyers: their listings this week (nobody follows anything: nothing more is read).
-  const followed = await weeklyFollowItems(supabase, { userIds, since: weekAgo, today });
+  const followed = await weeklyFollowItems(d1 ?? supabase!, { userIds, since: weekAgo, today });
   const sameDay = buyerFollowAlertsEnabled();
   // "Bids you may have missed": one compact section in this same email, off unless MISSED_BIDS_BLOCK_ENABLED.
   // Counted from this week's published bids (open and closed) with the same match as the list below.
   const missedOn = missedBidsEmailEnabled();
-  const langs = missedOn ? await recipientLangs(supabase, userIds) : new Map();
+  const langs = missedOn ? await recipientLangs(d1 ?? supabase!, userIds) : new Map();
   const weekRfps: MissedRfp[] = missedOn
     ? ((rfps ?? []) as unknown as RfpRow[]).map((r) => ({ id: r.id, title: r.title, slug: r.slug, deadline: r.deadline, region_id: r.region_id, province: r.province, rfp_categories: r.rfp_categories }))
     : [];
@@ -209,16 +248,33 @@ export async function GET(request: Request) {
         continue;
       }
       // Record first — a slow/failed send must never cause a resend loop.
-      const { error } = await supabase.from("notifications").insert({
+      const notice = {
         user_id: userId,
         type: "tender_digest",
         title: matches.length ? `${matches.length} new ${trade} tender${matches.length === 1 ? "" : "s"} this week` : "New bids from buyers you follow",
         message: [...shown.map((m) => m.title), ...fromFollows.map((f) => f.listing.title)].slice(0, 3).join(" · "),
         link_url: matches.length ? "/rfps" : "/dashboard/following",
-      });
-      if (error) continue;
+      };
+      if (d1) {
+        const persisted = await d1.prepare(`INSERT INTO notifications (id,user_id,type,title,message,link_url)
+          SELECT ?,u.id,'tender_digest',?,?,? FROM users_profile u LEFT JOIN notification_preferences pref ON pref.user_id=u.id
+          WHERE u.id=? AND u.email=? AND u.status='active' AND ${customerAppAuthority} AND ${allowedMailbox}
+            AND coalesce(pref.channel_email,1)=1 AND coalesce(pref.new_rfps,'daily')<>'off'
+            AND EXISTS (SELECT 1 FROM organization_members m JOIN organizations o ON o.id=m.organization_id
+              WHERE m.user_id=u.id AND m.organization_id=? AND o.status='active' AND o.profile_status='approved' AND o.is_demo=0
+              AND NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.organization_id=o.id AND s.status IN ('active','comped'))
+              AND NOT EXISTS (SELECT 1 FROM trade_trials t WHERE t.organization_id=o.id AND julianday(t.started_at)<=julianday('now') AND julianday(t.ends_at)>julianday('now')))
+            AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id=u.id AND n.type='tender_digest' AND julianday(n.created_at)>=julianday(?))
+          RETURNING id`).bind(crypto.randomUUID(), notice.title, notice.message, notice.link_url, userId, email, org.id, sixDaysAgo).first();
+        if (!persisted) continue;
+      } else {
+        const { error } = await supabase!.from("notifications").insert(notice);
+        if (error) continue;
+      }
+
       alreadySent.add(userId);
       await sendTenderDigest(email, {
+        smtpOnly: native,
         count: matches.length,
         tradeLabel: trade,
         items: shown.map((m) => ({ title: m.title, slug: m.slug, deadline: m.deadline })),
@@ -248,6 +304,9 @@ export async function GET(request: Request) {
   if (!dry) await flushImpressions(true);
   return NextResponse.json(dry ? { dry: true, wouldSend: sent, withFollows, orgs: preview } : { sent, withFollows, orgs: preview.length });
 }
+
+const allowedMailbox = `NOT EXISTS (SELECT 1 FROM email_suppressions e WHERE e.email_key=lower(trim(u.email)))
+  AND NOT EXISTS (SELECT 1 FROM digest_subscribers d WHERE d.email_key=lower(trim(u.email)) AND d.status IN ('unsubscribed','bounced'))`;
 
 type Pair = Record<string, string>;
 interface RfpRow {

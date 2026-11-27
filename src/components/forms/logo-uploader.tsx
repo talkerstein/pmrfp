@@ -75,14 +75,17 @@ export function LogoUploader({
   initialLogoUrl,
   label,
   helpText,
+  nativeMedia = false,
 }: {
   organizationId: string | null;
   initialLogoUrl?: string | null;
   label?: string;
   helpText?: string;
+  nativeMedia?: boolean;
 }) {
   const t = useT("dashClient").logo;
   const [logoUrl, setLogoUrl] = useState<string | null>(initialLogoUrl ?? null);
+  const [logoChanged, setLogoChanged] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +113,16 @@ export function LogoUploader({
 
     startTransition(async () => {
       try {
+        if (nativeMedia) {
+          const form = new FormData();
+          form.set("file", f);
+          form.set("kind", "logo");
+          const response = await fetch("/api/company-media", { method: "POST", body: form });
+          if (!response.ok) throw new Error(t.processFailed);
+          setLogoUrl((await response.json() as { url: string }).url);
+          setLogoChanged(true);
+          return;
+        }
         const { blob, ext, contentType } = await normalizeLogo(f, t.unreadable);
         const supabase = createBrowserClient();
         const id = crypto.randomUUID();
@@ -133,6 +146,7 @@ export function LogoUploader({
 
   function removeLogo() {
     setLogoUrl(null);
+    setLogoChanged(true);
     // Don't delete from storage yet — admin cleanup handles orphans. If the
     // user accidentally hits Remove, hitting Save without re-uploading just
     // clears the DB pointer.
@@ -143,7 +157,7 @@ export function LogoUploader({
       <Label className="mb-1.5 block">{label ?? t.label}</Label>
       <p className="mb-3 text-xs text-muted-foreground">{helpText ?? t.help}</p>
 
-      <input type="hidden" name="logoUrl" value={logoUrl ?? ""} />
+      {(!nativeMedia || logoChanged) && <input type="hidden" name="logoUrl" value={logoUrl ?? ""} />}
       <input
         ref={fileInputRef}
         type="file"
@@ -168,7 +182,7 @@ export function LogoUploader({
               fill
               sizes="128px"
               className="object-contain p-2"
-              unoptimized={logoUrl.endsWith(".svg")}
+              unoptimized={nativeMedia || logoUrl.endsWith(".svg")}
             />
           ) : (
             <div className="flex size-full items-center justify-center text-xs text-muted-foreground">

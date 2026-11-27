@@ -90,6 +90,7 @@ const en = {
     submitting: "Importing…",
     done: { one: "Added 1 vendor.", other: "Added {n} vendors." },
     skipped: "Lines skipped (no vendor name, or a bad email or date): {lines}.",
+    draftKept: "We kept the list you pasted. Check it, then press Import.",
     truncated: "Only the first 200 rows were imported.",
   },
   empty: {
@@ -209,6 +210,7 @@ const fr: typeof en = {
     submitting: "Importation…",
     done: { one: "1 fournisseur ajouté.", other: "{n} fournisseurs ajoutés." },
     skipped: "Lignes ignorées (sans nom de fournisseur, ou courriel ou date invalide) : {lines}.",
+    draftKept: "Nous avons gardé la liste que vous avez collée. Vérifiez-la, puis importez-la.",
     truncated: "Seules les 200 premières lignes ont été importées.",
   },
   empty: {
@@ -328,6 +330,7 @@ const es: typeof en = {
     submitting: "Importando…",
     done: { one: "Se agregó 1 proveedor.", other: "Se agregaron {n} proveedores." },
     skipped: "Filas omitidas (sin nombre de proveedor, o con correo o fecha no válidos): {lines}.",
+    draftKept: "Guardamos la lista que pegó. Revísela y luego impórtela.",
     truncated: "Solo se importaron las primeras 200 filas.",
   },
   empty: {

@@ -32,6 +32,16 @@ const en = {
       cta: "Post an RFP",
       ctaGc: "Post a package",
     },
+    welcome: {
+      title: "You're in. Your account is ready.",
+      body: "Post your first job below, or start with one of the free tools.",
+      bodyGc: "Post your first sub-trade package below.",
+      bodyRealtor: "Start by saving the trades you trust, then send clients one link.",
+    },
+    tools: {
+      title: "Free tools in your account",
+      body: "No posting needed. Use them for the vendors and contracts you already have.",
+    },
   },
   rfps: {
     metaTitle: "My RFPs",
@@ -139,6 +149,16 @@ const fr: typeof en = {
       bodyGc: "Un lot par corps de métier. Les gens de métier de ce corps de métier et de cette région vous envoient leurs prix. Gratuit.",
       cta: "Publier un appel d'offres",
       ctaGc: "Publier un lot",
+    },
+    welcome: {
+      title: "C'est fait. Votre compte est prêt.",
+      body: "Publiez votre premier travail ci-dessous, ou commencez par un des outils gratuits.",
+      bodyGc: "Publiez votre premier lot de sous-traitance ci-dessous.",
+      bodyRealtor: "Commencez par sauvegarder les entrepreneurs de confiance, puis envoyez un seul lien à vos clients.",
+    },
+    tools: {
+      title: "Outils gratuits dans votre compte",
+      body: "Rien à publier. Servez-vous-en pour les fournisseurs et les contrats que vous avez déjà.",
     },
   },
   rfps: {
@@ -248,6 +268,16 @@ const es: typeof en = {
       bodyGc: "Un paquete por oficio. Los contratistas locales de ese oficio y esa región le envían cotizaciones. Gratis.",
       cta: "Publicar una RFP",
       ctaGc: "Publicar un paquete",
+    },
+    welcome: {
+      title: "Listo. Su cuenta está preparada.",
+      body: "Publique su primer trabajo abajo, o empiece con una de las herramientas gratuitas.",
+      bodyGc: "Publique su primer paquete de subcontratación abajo.",
+      bodyRealtor: "Empiece por guardar los contratistas de confianza y luego envíe un solo enlace a sus clientes.",
+    },
+    tools: {
+      title: "Herramientas gratuitas en su cuenta",
+      body: "No hace falta publicar nada. Úselas con los proveedores y contratos que ya tiene.",
     },
   },
   rfps: {

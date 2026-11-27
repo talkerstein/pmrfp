@@ -1,10 +1,12 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { flushNativeTracking } from "./native";
 import { isServiceConfigured } from "@/lib/supabase/config";
 
 /**
  * Per-instance write buffer for first-party tracking. Nothing is written to
  * the database on the request path: the beacon and the server helper add
- * rows here, and ONE batched RPC (record_site_beacon) writes them a few
+ * rows here, and the database writes them in batches a few
  * seconds later from after(). Page views and referrers are summed per day,
  * path and country; a visitor is kept once per day; a listing view is kept
  * once per listing per visitor per day (the database's unique index makes
@@ -148,8 +150,13 @@ function takeBatch(): Batch | null {
 /** Writes everything waiting in one RPC. Never throws. */
 export async function flushNow(): Promise<void> {
   const batch = takeBatch();
-  if (!batch || !isServiceConfigured()) return;
+  if (!batch) return;
   try {
+    if (isVpsLiveCustomerAuth()) {
+      await flushNativeTracking(batch);
+      return;
+    }
+    if (!isServiceConfigured()) return;
     const { error } = await createServiceClient().rpc("record_site_beacon", { p: batch });
     if (error) console.warn("[tracking] flush failed:", error.message);
   } catch (e) {

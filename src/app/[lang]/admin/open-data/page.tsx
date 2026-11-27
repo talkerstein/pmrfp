@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -8,6 +9,8 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { OPEN_DATA_SOURCES, allEstimates, type OpenDataSource } from "@/lib/open-data/sources";
 import { DB_BUDGET_BYTES, ROW_BYTES, estimateBytes, megabytes, totalEstimateBytes } from "@/lib/open-data/size-budget";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 
 export const metadata: Metadata = { title: "Open Data · Admin · PMRFP" };
 
@@ -51,13 +54,34 @@ async function rowsFor(s: OpenDataSource, fp: Footprint | null): Promise<number 
  */
 export default async function AdminOpenDataPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
-  const demo = isDemoMode() || !isServiceConfigured();
+  const session = await requireRole(["admin", "super_admin"]);
+  const native = isVpsLiveCustomerAuth();
+  if (native && session.profile.status !== "active") notFound();
+  const demo = isDemoMode() || (!native && !isServiceConfigured());
   const runs = new Map<string, RunRow>();
   const counts = new Map<string, number | null>();
   let fp: Footprint | null = null;
   let missing = false;
-  if (!demo) {
+  if (native) {
+    try {
+      const db = vpsAppDatabase();
+      const tables = ["award_history", "permit_leads", "contractor_activity", "planned_procurements"] as const;
+      const [runRows, ...tableRows] = await db.batch([
+        db.prepare("SELECT source,last_run_at,last_status,rows_read,rows_kept,rows_written,note FROM open_data_runs"),
+        ...tables.map(table => db.prepare(`SELECT source,count(*) AS rows FROM ${table} GROUP BY source`)),
+      ]);
+      if (!runRows?.success || tableRows.some(result => !result.success)) throw new Error("Open-data reports unavailable");
+      for (const row of runRows.results as unknown as RunRow[]) runs.set(row.source, row);
+      for (const source of OPEN_DATA_SOURCES) {
+        const index = tables.findIndex(table => table === source.estimates[0].table);
+        if (index < 0) continue;
+        const row = tableRows[index].results.find(value => value.source === source.key);
+        counts.set(source.key, Number(row?.rows ?? 0));
+      }
+    } catch {
+      missing = true;
+    }
+  } else if (!demo) {
     const db = createServiceClient();
     const [{ data: runData, error: runError }, { data: fpData, error: fpError }] = await Promise.all([
       db.from("open_data_runs").select("source,last_run_at,last_status,rows_read,rows_kept,rows_written,note").returns<RunRow[]>(),
@@ -81,11 +105,15 @@ export default async function AdminOpenDataPage({ params }: { params: Promise<ob
         description="City, provincial and federal open-data imports (batch 1): permits, awards, a planning pipeline. Every source is filtered before it is stored; business names only; each carries its licence credit."
       />
       {demo && <DemoBanner />}
-      {missing && <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">Run supabase/migrations/20261023000100_open_data_batch1.sql first.</p>}
+      {missing && <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        {native ? "Open-data results could not be loaded. Refresh to try again." : "Run supabase/migrations/20261023000100_open_data_batch1.sql first."}
+      </p>}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Estimated size of the whole batch" value={`${megabytes(estimated)} MB`} />
         <StatCard label="Budget" value={`${megabytes(DB_BUDGET_BYTES)} MB`} />
-        <StatCard label="Measured so far (heap)" value={measuredAdded === null ? "–" : `${megabytes(measuredAdded)} MB`} />
+        {native
+          ? <StatCard label="Rows held" value={missing ? "–" : [...counts.values()].reduce<number>((total, count) => total + (count ?? 0), 0)} />
+          : <StatCard label="Measured so far (heap)" value={measuredAdded === null ? "–" : `${megabytes(measuredAdded)} MB`} />}
       </div>
       <AdminTable columns={["Source", "Licence", "Refresh", "How", "Last run", "Rows held", "Est. MB (rows × bytes)"]}>
         {OPEN_DATA_SOURCES.map((s) => {
@@ -117,7 +145,7 @@ export default async function AdminOpenDataPage({ params }: { params: Promise<ob
       <h2 className="mb-2 mt-8 text-lg font-semibold">Loading the local sources</h2>
       <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
         <li>Every command is a dry run until you add --apply. The first thing a run prints is what it kept and the estimated database size.</li>
-        <li>node scripts/run-open-data.mjs footprint measures the real size of everything this batch added.</li>
+        {!native && <li>node scripts/run-open-data.mjs footprint measures the real size of everything this batch added.</li>}
         <li>Cron dry runs: /api/cron/open-data/weekly?dry=1 and /api/cron/open-data/monthly?dry=1 (as an admin).</li>
       </ul>
     </>

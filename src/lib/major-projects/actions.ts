@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requireRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -10,6 +10,11 @@ import { logAudit } from "@/lib/audit";
 import { MAJOR_PROJECT_CATEGORIES, MAJOR_PROJECT_STATUSES, parseMoney, provinceName, safeUrl } from "./model";
 import { MANUAL_SOURCE, defaultCategoryForFile, parseResearchCsv } from "./research-csv";
 import { applySync, loadExisting, loadRegionLookup, planSummary, planSync } from "./sync";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { customerAppAuthority, type D1Binding, type D1Statement } from "@/lib/d1/contracts";
+import { MAJOR_PROJECTS_TAG } from "@/lib/supabase/public-cache";
 
 /**
  * Admin review queue for major projects (/admin/major-projects). Every write
@@ -23,17 +28,43 @@ const MAX_CSV_BYTES = 2_000_000;
 
 async function admin() {
   const session = await requireRole(["admin", "super_admin"]);
+  if (isVpsLiveCustomerAuth()) {
+    if (session.profile.status !== "active") redirect(`${ADMIN}?error=save`);
+    return { session, db: vpsAppDatabase() };
+  }
   if (!isServiceConfigured()) redirect(`${ADMIN}?error=service`);
-  return { session, supabase: createServiceClient() };
+  return { session, db: createServiceClient() };
 }
 
 const idSchema = z.string().uuid();
+const scope = `${customerAppAuthority} AND ${activeRequestAdmin}`;
+
+async function auditedNativeWrite(db: D1Binding, change: D1Statement, userId: string, event: string, id: string, meta = {}) {
+  const results = await db.batch([
+    change,
+    db.prepare(`INSERT INTO audit_logs(id,actor_user_id,action,entity_type,entity_id,metadata)
+      SELECT ?,?,?,'major_project',?,? WHERE changes()=1`).bind(crypto.randomUUID(), userId, event, id, JSON.stringify(meta)),
+  ]);
+  return results.length === 2 && results.every(row => row.success) && results[0].meta.changes === 1;
+}
 
 export async function reviewMajorProjectAction(formData: FormData): Promise<void> {
-  const { session, supabase } = await admin();
+  const { session, db } = await admin();
   const id = idSchema.safeParse(String(formData.get("id") ?? ""));
   const decision = String(formData.get("decision") ?? "");
   if (!id.success || !["approve", "reject", "requeue"].includes(decision)) redirect(ADMIN);
+  if ("prepare" in db) {
+    const now = new Date().toISOString();
+    const command = db.prepare(`UPDATE major_projects SET approved=CASE WHEN ?='approve' OR (?='requeue' AND source<>?) THEN 1 ELSE 0 END,
+      review_status=CASE WHEN ?='reject' THEN 'rejected' WHEN ?='requeue' AND source=? THEN 'pending' ELSE 'approved' END,
+      reviewed_by=?,reviewed_at=?,updated_at=? WHERE id=? AND ${scope}`)
+      .bind(decision, decision, MANUAL_SOURCE, decision, decision, MANUAL_SOURCE, session.userId, now, now, id.data, session.userId);
+    const done = await auditedNativeWrite(db, command, session.userId, `major_project.${decision}`, id.data).catch(() => false);
+    if (done) revalidateTag(MAJOR_PROJECTS_TAG, { expire: 0 });
+    revalidatePath(ADMIN);
+    redirect(`${ADMIN}${done ? "" : "?error=save"}`);
+  }
+  const supabase = db;
   // "requeue" un-hides: a research row goes back to the queue (still
   // private), an open-data row is simply public again.
   let requeueTo = { approved: false, review_status: "pending" };
@@ -79,7 +110,7 @@ const editSchema = z.object({
 const orNull = (s: string) => (s ? s : null);
 
 export async function updateMajorProjectAction(formData: FormData): Promise<void> {
-  const { session, supabase } = await admin();
+  const { session, db } = await admin();
   const f = (k: string) => String(formData.get(k) ?? "");
   const parsed = editSchema.safeParse({
     id: f("id"), name: f("name"), description: f("description"), category: f("category"), status: f("status"),
@@ -91,12 +122,13 @@ export async function updateMajorProjectAction(formData: FormData): Promise<void
   const v = parsed.data;
   const province = provinceName(v.province);
   if (v.province && !province) redirect(`${ADMIN}/${v.id}?error=province`);
-  const { data: old } = await supabase.from("major_projects").select("status").eq("id", v.id).maybeSingle<{ status: string }>();
+  const old = "prepare" in db
+    ? await db.prepare(`SELECT status FROM major_projects WHERE id=? AND ${scope}`).bind(v.id, session.userId)
+      .first<{ status: string }>().catch(() => null)
+    : (await db.from("major_projects").select("status").eq("id", v.id).maybeSingle<{ status: string }>()).data;
   if (!old) redirect(ADMIN);
   const statusChanged = old.status !== v.status;
-  const { error } = await supabase
-    .from("major_projects")
-    .update({
+  const patch = {
       name: v.name,
       description: orNull(v.description),
       category: v.category,
@@ -114,8 +146,19 @@ export async function updateMajorProjectAction(formData: FormData): Promise<void
       trades_needed: v.trades.split(/[,\s]+/).map((s) => s.trim().toLowerCase()).filter((s) => /^[a-z0-9-]{2,60}$/.test(s)).slice(0, 12),
       caveats: orNull(v.caveats),
       ...(statusChanged ? { previous_status: old.status, status_changed_at: new Date().toISOString() } : {}),
-    })
-    .eq("id", v.id);
+  };
+  if ("prepare" in db) {
+    const fields = Object.entries({ ...patch, updated_at: new Date().toISOString() });
+    const command = db.prepare(`UPDATE major_projects SET ${fields.map(([name]) => `${name}=?`).join(",")}
+      WHERE id=? AND status=? AND ${scope}`).bind(
+      ...fields.map(([, value]) => Array.isArray(value) ? JSON.stringify(value) : value),
+      v.id, old.status, session.userId);
+    const done = await auditedNativeWrite(db, command, session.userId, "major_project.edit", v.id, { statusChanged }).catch(() => false);
+    if (done) revalidateTag(MAJOR_PROJECTS_TAG, { expire: 0 });
+    revalidatePath(ADMIN);
+    redirect(`${ADMIN}/${v.id}?${done ? "saved=1" : "error=save"}`);
+  }
+  const { error } = await db.from("major_projects").update(patch).eq("id", v.id);
   await logAudit({ actorUserId: session.userId, action: "major_project.edit", entityType: "major_project", entityId: v.id, metadata: error ? { error: error.message } : { statusChanged } });
   revalidatePath(ADMIN);
   redirect(`${ADMIN}/${v.id}?${error ? "error=save" : "saved=1"}`);
@@ -126,7 +169,7 @@ export async function updateMajorProjectAction(formData: FormData): Promise<void
  * Every row is queued as pending; nothing goes public until approved.
  */
 export async function uploadResearchCsvAction(formData: FormData): Promise<void> {
-  const { session, supabase } = await admin();
+  const { session, db } = await admin();
   const file = formData.get("file");
   if (!(file instanceof File) || !file.size) redirect(`${ADMIN}?error=nofile`);
   if (file.size > MAX_CSV_BYTES) redirect(`${ADMIN}?error=toobig`);
@@ -138,7 +181,8 @@ export async function uploadResearchCsvAction(formData: FormData): Promise<void>
   const { rows, skipped } = parseResearchCsv(text, { defaultCategory });
   if (!rows.length) redirect(`${ADMIN}?error=empty`);
   const today = new Date().toISOString().slice(0, 10);
-  const [existing, regions] = await Promise.all([loadExisting(supabase, MANUAL_SOURCE), loadRegionLookup(supabase)]);
+  const [existing, regions] = await Promise.all([loadExisting(db, MANUAL_SOURCE), loadRegionLookup(db)])
+    .catch(() => redirect(`${ADMIN}?error=save`));
   const plan = planSync({
     source: MANUAL_SOURCE,
     incoming: rows,
@@ -150,7 +194,7 @@ export async function uploadResearchCsvAction(formData: FormData): Promise<void>
   });
   let failed = false;
   try {
-    await applySync(supabase, plan, today);
+    await applySync(db, plan, today);
   } catch (e) {
     failed = true;
     console.error("[major-projects] research upload failed", e);
@@ -163,6 +207,7 @@ export async function uploadResearchCsvAction(formData: FormData): Promise<void>
     metadata: { file: file.name.slice(0, 120), ...summary, skipped: skipped.length, failed },
   });
   revalidatePath(ADMIN);
+  if ("prepare" in db && !failed) revalidateTag(MAJOR_PROJECTS_TAG, { expire: 0 });
   const q = new URLSearchParams({
     uploaded: String(summary.inserts),
     updated: String(summary.updates),

@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { NextResponse } from "next/server";
 import { getSession, isAdminRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -42,7 +44,8 @@ export async function runAwardHistory(request: Request, group: HistoryGroup): Pr
   const q = new URL(request.url).searchParams;
   const dry = q.get("dry") === "1";
   const service = isServiceConfigured();
-  if (!service && !dry) return NextResponse.json({ skipped: "no service client" });
+  const d1 = isVpsLiveCustomerAuth();
+  if (!service && !d1 && !dry) return NextResponse.json({ skipped: "no service client" });
 
   const today = new Date().toISOString().slice(0, 10);
   const params: RunParams = {
@@ -57,7 +60,7 @@ export async function runAwardHistory(request: Request, group: HistoryGroup): Pr
     limit: Number(q.get("limit")) || undefined,
   };
   const sources = historySourcesFor(group, q.get("source"));
-  const db = service && !dry ? createServiceClient() : null;
+  const db = dry ? null : d1 ? vpsAppDatabase() : createServiceClient();
   const report: Record<string, unknown>[] = [];
   let failed = 0;
 

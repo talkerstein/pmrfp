@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { Camera, FileText } from "lucide-react";
 import { requireRole, isDemoMode } from "@/lib/access/access";
@@ -10,14 +11,19 @@ import { HUB_DAYS, filterWins, hubWins } from "@/lib/gc/hub";
 import { torontoToday } from "@/lib/data/monthly-winners-load";
 import { StatCard, PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { ActivateButton } from "@/components/dashboard/billing-actions";
+import { ListingStatusBanner } from "@/components/dashboard/listing-status-banner";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
 import { ReputationCard } from "@/components/karma/reputation-card";
 import { RecentUpdates, TRADE_NOTICE_TYPES } from "@/components/pm-jobs/recent-updates";
 import { createClient } from "@/lib/supabase/server";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { loadSavedRfpTitles } from "@/lib/d1/saved-page";
+import { countVpsTradeInterests } from "@/lib/d1/vps-rfp-interest";
 import type { Metadata } from "next";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
-import { hasLocale } from "@/i18n/config";
+import { hasLocale, localizePath } from "@/i18n/config";
 import { fmt, formatNumber, plural } from "@/i18n/format";
 import { tradeName } from "@/i18n/terms";
 import { getVisitorCountry } from "@/lib/visitor-geo.server";
@@ -48,14 +54,16 @@ export default async function TradeDashboardHome({
   searchParams,
 }: {
   params: Promise<object>;
-  searchParams?: Promise<{ trial?: string; join?: string }>;
+  searchParams?: Promise<{ trial?: string; join?: string; welcome?: string }>;
 }) {
   await setLangFrom(params);
   const t = getT("dash").home;
   const tl = getT("leads").trial;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   const demo = isDemoMode();
   const org = session.organization;
+  // Signed in before finishing sign-up: finish it, don't show an empty dashboard.
+  if (!demo && !session.profile.onboarding_completed && !org) redirect(localizePath("/onboarding", getLang()));
   const sp = await searchParams;
   const flash = sp?.trial;
   // Country-first: the company's own country (its profile, else the CA|US switch / IP).
@@ -78,6 +86,10 @@ export default async function TradeDashboardHome({
   const ledgerSince = ledgerStart(session.trial?.status === "active" ? session.trial.startedAt : null);
   const ledger = !demo && session.hasTradeAccess ? await loadTrialUsage(session.userId, org?.id ?? null, ledgerSince) : null;
   const matchingRfps = rfps.filter((r) => r.status === "open").length;
+  const activity = demo ? { saved: 0, interests: 0 } : isVpsLiveCustomerAuth() ? await Promise.all([
+    loadSavedRfpTitles(session.userId).then(rows => rows.length).catch(() => null),
+    countVpsTradeInterests(session).catch(() => null),
+  ]).then(([saved, interests]) => ({ saved, interests })) : await activityCounts(session.userId, org?.id ?? null);
   const recentWins = await gcWinsForTrades(rfps, tradeSlugs);
   // Price benchmarks for this company's trades, in its own country and province first.
   const benches = tradeSlugs.length ? await benchmarksForTrades(tradeSlugs, country, province).catch(() => []) : [];
@@ -101,6 +113,7 @@ export default async function TradeDashboardHome({
         description={t.description}
       />
 
+      {!demo && <ListingStatusBanner status={org?.profile_status} name={org?.name} slug={org?.slug} welcome={sp?.welcome === "1"} />}
       {!demo && <JoinRequestsCard session={session} back="/dashboard" flash={sp?.join} />}
       <TrialFlash value={flash} />
       <TrialStatus trial={session.trial} paid={session.paid} country={country} />
@@ -118,7 +131,7 @@ export default async function TradeDashboardHome({
       {/* Prominent profile-completion meter — single source of truth for "what
           to do next." Replaces the previous trio (stat / checklist / recommended-
           action) which were spread across the page and visually inconsistent. */}
-      <ProfileCompletionCard org={org} hasActiveSub={session.hasTradeAccess} />
+      <ProfileCompletionCard org={org} />
 
       {!demo && <RecentUpdates userId={session.userId} types={TRADE_NOTICE_TYPES} />}
 
@@ -132,9 +145,11 @@ export default async function TradeDashboardHome({
           href="/dashboard/billing"
         />
         <StatCard label={t.matching} value={matchingRfps} hint={t.openOpps} href="/dashboard/rfps" />
-        <StatCard label={t.saved} value={0} href="/dashboard/saved-rfps" />
-        <StatCard label={t.interests} value={0} href="/dashboard/interests" />
-        <StatCard label={t.views} value={demo ? 42 : 0} hint={t.last30} />
+        {/* Real counts or no card: a number that never moves teaches people to stop looking. */}
+        {activity.saved != null && <StatCard label={t.saved} value={activity.saved} href="/dashboard/saved-rfps" />}
+        {activity.interests != null && <StatCard label={t.interests} value={activity.interests} href="/dashboard/interests" />}
+        {/* Profile views are not counted anywhere yet, so the card only exists in the demo. */}
+        {demo && <StatCard label={t.views} value={42} hint={t.last30} />}
       </div>
 
       {recentWins.n > 0 && (
@@ -281,9 +296,40 @@ async function projectNudge(
   return live.some((p) => p.status === "published") ? { kind: "sheet" } : null;
 }
 
+/**
+ * How many RFPs this person saved and how many interests their company sent:
+ * the same rows /dashboard/saved-rfps and /dashboard/interests list. A count
+ * that can't be read is null, and its card is left out rather than shown as 0.
+ */
+async function activityCounts(userId: string, orgId: string | null): Promise<{ saved: number | null; interests: number | null }> {
+  try {
+    const supabase = await createClient();
+    const [savedRows, interests] = await Promise.all([
+      supabase.from("saved_rfps").select("rfp_id").eq("user_id", userId).limit(500),
+      orgId ? supabase.from("rfp_interests").select("id", { count: "exact", head: true }).eq("trade_organization_id", orgId) : null,
+    ]);
+    // The saved page only lists RFPs still on the public board, so count those.
+    const ids = ((savedRows.data as { rfp_id: string }[] | null) ?? []).map((r) => r.rfp_id);
+    const visible = ids.length ? await supabase.from("rfp_public").select("id", { count: "exact", head: true }).in("id", ids) : null;
+    return {
+      saved: savedRows.error || visible?.error ? null : visible ? visible.count ?? 0 : 0,
+      interests: !interests || interests.error ? null : interests.count ?? 0,
+    };
+  } catch {
+    return { saved: null, interests: null };
+  }
+}
+
 /** The trades this company lists under, for picking a relevant sponsor. */
 async function orgTradeSlugs(orgId: string | null, demo: boolean): Promise<string[]> {
   if (!orgId || demo) return [];
+  if (isVpsLiveCustomerAuth()) {
+    const { results } = await vpsAppDatabase().prepare(`
+      SELECT t.slug FROM organization_categories c
+      JOIN trade_categories t ON t.id=c.category_id WHERE c.organization_id=?
+    `).bind(orgId).all<{ slug: string }>();
+    return results.map(({ slug }) => slug).filter(Boolean);
+  }
   const supabase = await createClient();
   const { data } = await supabase
     .from("organization_categories")

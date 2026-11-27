@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { requireRole } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { karmaSyncAfter } from "@/lib/karma/sync";
@@ -9,10 +10,31 @@ import { logAudit } from "@/lib/audit";
 import { purgeOutCache } from "@/lib/links/data";
 import { normalizeBlockedDomain } from "@/lib/spam/blocked";
 import { rescreenExistingOrganizations } from "@/lib/spam/server";
+import { notifyListingApproved } from "@/lib/admin/listing-approved";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { changeVpsBlockedDomain, changeVpsOrganization } from "@/lib/d1/vps-admin-organizations";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { rescreenVpsOrganizations } from "@/lib/d1/vps-organization-screening";
 
 const ORGS = "/admin/organizations";
 const EDITED = `${ORGS}?view=edited`;
 const SUSPENDED = `${ORGS}?view=suspended`;
+
+async function completeNativeChange(
+  actor: string, id: string, action: Parameters<typeof changeVpsOrganization>[2], back: string,
+): Promise<never> {
+  const result = await changeVpsOrganization(actor, id, action).catch(() => ({ state: "unavailable" } as const));
+  const separator = back.includes("?") ? "&" : "?";
+  if (result.state === "stale") redirect(`${back}${separator}stale=1`);
+  if (result.state !== "changed") redirect(`${back}${separator}error=save`);
+  if (result.approved) after(() => notifyListingApproved(vpsAppDatabase(), id));
+  if (action.kind !== "clear" && action.kind !== "trust") await karmaSyncAfter({ orgIds: [id] });
+  purgeOutCache();
+  revalidatePath(ORGS);
+  revalidatePath("/directory");
+  revalidatePath(`/directory/${result.slug}`);
+  redirect(back);
+}
 
 /**
  * Admin: approve or reject a company waiting in pending_review. Only moves
@@ -25,6 +47,8 @@ export async function reviewOrganizationAction(formData: FormData): Promise<void
   const id = String(formData.get("id") ?? "");
   const decision = String(formData.get("decision") ?? "");
   if (!id || !["approved", "rejected"].includes(decision)) redirect(ORGS);
+  if (isVpsLiveCustomerAuth()) return completeNativeChange(admin.userId, id,
+    { kind: "review", decision: decision === "approved" ? "approved" : "rejected" }, ORGS);
 
   const db = createServiceClient();
   const { data } = await db
@@ -38,6 +62,7 @@ export async function reviewOrganizationAction(formData: FormData): Promise<void
     // If the spam check had held it, the admin's call is recorded there too
     // (separate writes: the columns arrive with migration 20261024000100).
     if (decision === "approved") await db.from("organizations").update({ risk_flagged: false }).eq("id", id).eq("risk_flagged", true);
+    if (decision === "approved") await notifyListingApproved(db, id);
     await db
       .from("organization_risk")
       .update({ decision, decided_by: admin.userId, decided_at: new Date().toISOString(), held: false })
@@ -62,6 +87,7 @@ export async function clearProfileReviewAction(formData: FormData): Promise<void
   const id = String(formData.get("id") ?? "");
   const seen = String(formData.get("seen") ?? "");
   if (!id) redirect(EDITED);
+  if (isVpsLiveCustomerAuth()) return completeNativeChange(admin.userId, id, { kind: "clear", seen }, EDITED);
 
   const db = createServiceClient();
   const { data: org } = await db
@@ -102,6 +128,7 @@ export async function suspendOrganizationAction(formData: FormData): Promise<voi
   const admin = await requireRole(["admin", "super_admin"]);
   const id = String(formData.get("id") ?? "");
   if (!id) redirect(EDITED);
+  if (isVpsLiveCustomerAuth()) return completeNativeChange(admin.userId, id, { kind: "suspend" }, EDITED);
 
   const db = createServiceClient();
   const { data: org } = await db
@@ -140,6 +167,7 @@ export async function reinstateOrganizationAction(formData: FormData): Promise<v
   const admin = await requireRole(["admin", "super_admin"]);
   const id = String(formData.get("id") ?? "");
   if (!id) redirect(SUSPENDED);
+  if (isVpsLiveCustomerAuth()) return completeNativeChange(admin.userId, id, { kind: "reinstate" }, SUSPENDED);
 
   const { data } = await createServiceClient()
     .from("organizations")
@@ -174,12 +202,17 @@ export async function resolveHeldOrganizationAction(formData: FormData): Promise
   const id = String(formData.get("id") ?? "");
   const decision = String(formData.get("decision") ?? "");
   if (!id || !["approved", "rejected", "suspended"].includes(decision)) redirect(HELD);
+  if (isVpsLiveCustomerAuth()) return completeNativeChange(admin.userId, id,
+    { kind: "held", decision: decision === "approved" || decision === "suspended" ? decision : "rejected" }, HELD);
 
   const db = createServiceClient();
+  // A live listing flagged after an edit can land here too: only a listing going live hears about it.
+  const { data: before } = await db.from("organizations").select("profile_status").eq("id", id).maybeSingle<{ profile_status: string }>();
   const patch: Record<string, unknown> = { profile_status: decision };
   if (decision === "approved") patch.risk_flagged = false;
   const { data } = await db.from("organizations").update(patch).eq("id", id).neq("status", "deleted").select("id");
   if (data?.length) {
+    if (decision === "approved" && before?.profile_status !== "approved") await notifyListingApproved(db, id);
     await db
       .from("organization_risk")
       .update({ decision, decided_by: admin.userId, decided_at: new Date().toISOString(), held: false })
@@ -201,6 +234,14 @@ export async function resolveHeldOrganizationAction(formData: FormData): Promise
  */
 export async function screenExistingOrganizationsAction(): Promise<void> {
   const admin = await requireRole(["admin", "super_admin"]);
+  if (isVpsLiveCustomerAuth()) {
+    const result = await rescreenVpsOrganizations(admin.userId).catch(() => null);
+    if (!result) redirect(`${HELD}&error=save`);
+    purgeOutCache();
+    revalidatePath(ORGS);
+    revalidatePath("/directory");
+    redirect(`${HELD}&screened=${result.checked}&flagged=${result.flagged}`);
+  }
   const r = await rescreenExistingOrganizations(createServiceClient());
   await logAudit({ actorUserId: admin.userId, action: "organization.spam_screen_existing", metadata: r });
   revalidatePath(ORGS);
@@ -214,6 +255,7 @@ export async function setLinkTrustedAction(formData: FormData): Promise<void> {
   const trusted = String(formData.get("trusted") ?? "") === "1";
   const back = String(formData.get("back") ?? "") === "held" ? HELD : ORGS;
   if (!id) redirect(back);
+  if (isVpsLiveCustomerAuth()) return completeNativeChange(admin.userId, id, { kind: "trust", trusted }, back);
 
   const { data } = await createServiceClient()
     .from("organizations")
@@ -236,6 +278,12 @@ export async function addBlockedDomainAction(formData: FormData): Promise<void> 
   const domain = normalizeBlockedDomain(String(formData.get("domain") ?? ""));
   if (!domain) redirect(`${BLOCKED}?error=domain`);
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 300) || null;
+  if (isVpsLiveCustomerAuth()) {
+    const saved = await changeVpsBlockedDomain(admin.userId, domain, { reason }).catch(() => false);
+    if (!saved) redirect(`${BLOCKED}?error=save`);
+    revalidatePath(BLOCKED);
+    redirect(`${BLOCKED}?added=${encodeURIComponent(domain)}`);
+  }
 
   const { error } = await createServiceClient()
     .from("blocked_domains")
@@ -251,6 +299,12 @@ export async function removeBlockedDomainAction(formData: FormData): Promise<voi
   const admin = await requireRole(["admin", "super_admin"]);
   const domain = normalizeBlockedDomain(String(formData.get("domain") ?? ""));
   if (!domain) redirect(BLOCKED);
+  if (isVpsLiveCustomerAuth()) {
+    const removed = await changeVpsBlockedDomain(admin.userId, domain, "remove").catch(() => false);
+    if (!removed) redirect(`${BLOCKED}?error=save`);
+    revalidatePath(BLOCKED);
+    redirect(BLOCKED);
+  }
   const { error } = await createServiceClient().from("blocked_domains").delete().eq("domain", domain);
   if (!error) await logAudit({ actorUserId: admin.userId, action: "blocked_domain.removed", entityType: "blocked_domain", metadata: { domain } });
   revalidatePath(BLOCKED);

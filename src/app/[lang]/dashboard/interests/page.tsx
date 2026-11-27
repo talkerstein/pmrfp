@@ -26,6 +26,8 @@ import { responseAllowance, tradeSeesPmContact, type ContactCard } from "@/lib/p
 import { formatQuote } from "@/lib/pm-jobs/email-copy";
 import { freeResponsesUsed } from "@/lib/pm-jobs/server";
 import { JOB_DECISION_COLS, posterContact, type JobForDecision } from "@/lib/pm-jobs/decisions";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsInterestHistory } from "@/lib/d1/vps-rfp-interest";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -36,7 +38,6 @@ interface InterestRow {
   id: string;
   rfp_id: string;
   status: string;
-  message: string | null;
   created_at: string;
   quote_amount?: number | null;
   quote_kind?: string | null;
@@ -52,27 +53,36 @@ export default async function InterestsPage({ params }: { params: Promise<object
   const session = await requireRole(["trade", "supplier"]);
 
   let interests: InterestRow[] = [];
-  const jobs = new Map<string, JobForDecision>();
+  let jobs = new Map<string, Pick<JobForDecision, "slug" | "title" | "province">>();
   const contacts = new Map<string, ContactCard>();
   let used: number | null = null;
-  if (!isDemoMode() && session.organization) {
+  if (isVpsLiveCustomerAuth() && session.organization) {
+    const history = await readVpsInterestHistory(session);
+    interests = history.interests;
+    used = history.used;
+    for (const interest of history.interests) {
+      jobs.set(interest.rfp_id, interest.job);
+      if (interest.contact) contacts.set(interest.id, interest.contact);
+    }
+  } else if (!isDemoMode() && session.organization) {
     const supabase = await createClient();
     // Read as the member: row level security returns this company's own responses only.
     const read = (cols: string) =>
       supabase.from("rfp_interests").select(cols).eq("trade_organization_id", session.organization!.id).order("created_at", { ascending: false });
-    const first = await read("id,rfp_id,status,message,created_at,quote_amount,quote_kind,pm_contact_shared,decision_note");
-    const data = isSchemaMissing(first.error) ? (await read("id,rfp_id,status,message,created_at")).data : first.data;
+    const first = await read("id,rfp_id,status,created_at,quote_amount,pm_contact_shared,decision_note");
+    const data = isSchemaMissing(first.error) ? (await read("id,rfp_id,status,created_at")).data : first.data;
     interests = (data as unknown as InterestRow[] | null) ?? [];
     if (isServiceConfigured()) {
       const db = createServiceClient();
       // A free account can't read full listings, so titles (and, once the poster chose this company, their contact) come server-side.
       if (interests.length) {
         const { data: rows } = await db.from("rfp_posts").select(JOB_DECISION_COLS).in("id", [...new Set(interests.map((i) => i.rfp_id))]);
-        for (const j of (rows ?? []) as JobForDecision[]) jobs.set(j.id, j);
+        const decisionJobs = new Map(((rows ?? []) as JobForDecision[]).map((row) => [row.id, row]));
+        jobs = decisionJobs;
         await Promise.all(
           interests
-            .filter((i) => tradeSeesPmContact({ status: i.status, pmContactShared: i.pm_contact_shared }) && jobs.has(i.rfp_id))
-            .map(async (i) => contacts.set(i.id, await posterContact(db, jobs.get(i.rfp_id)!))),
+            .filter((i) => tradeSeesPmContact({ status: i.status, pmContactShared: i.pm_contact_shared }) && decisionJobs.has(i.rfp_id))
+            .map(async (i) => contacts.set(i.id, await posterContact(db, decisionJobs.get(i.rfp_id)!))),
         );
       }
       if (!session.hasTradeAccess) used = await freeResponsesUsed(db, session.organization.id);

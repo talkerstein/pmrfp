@@ -1,3 +1,5 @@
+import { readD1Comparison, readD1ComparisonReferences } from "@/lib/d1/pm-tools";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
@@ -59,8 +61,8 @@ export default async function BidComparisonPage({ params }: { params: Promise<{ 
   }
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
-  const db = await createClient();
-  const { ready, comparison: c, bids } = await loadComparison(db, id);
+  const db = isVpsLiveCustomerAuth() ? null : await createClient();
+  const { ready, comparison: c, bids } = db ? await loadComparison(db, id) : await readD1Comparison(session, id);
   if (!ready) {
     return (
       <div>
@@ -71,13 +73,13 @@ export default async function BidComparisonPage({ params }: { params: Promise<{ 
   }
   if (!c) notFound();
 
-  const [certs, orgs, rfps] = await Promise.all([
+  const [certs, orgs, rfps] = db ? await Promise.all([
     trackerCerts(db, c.organization_id),
     bidderOrgs(db, bids.map((b) => b.bidder_organization_id)),
     myRfps(db, { userId: session.userId, orgId: session.organization.id }),
-  ]);
+  ]) : await readD1ComparisonReferences(session, bids);
   let rfpTitle = c.rfp_id ? (rfps.find((r) => r.id === c.rfp_id)?.title ?? null) : null;
-  if (c.rfp_id && !rfpTitle) {
+  if (db && c.rfp_id && !rfpTitle) {
     const { data } = await db.from("rfp_posts").select("title").eq("id", c.rfp_id).maybeSingle<{ title: string }>();
     rfpTitle = data?.title ?? null;
   }

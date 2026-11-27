@@ -21,7 +21,7 @@ const NOTIFICATIONS = [
 export default async function SettingsPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
   const t = getT("dash").settings;
-  const session = await requireRole(["trade"]);
+  const session = await requireRole(["trade", "supplier"]);
   const { profile } = session;
 
   return (

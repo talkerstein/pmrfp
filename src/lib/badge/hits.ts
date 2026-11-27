@@ -2,6 +2,8 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { torontoDay } from "@/lib/sponsors/model";
+import { useD1Lifecycle } from "@/lib/lifecycle/d1";
+import { writeNativeBadgeHits } from "./d1";
 import type { BadgeKind } from "./snippet";
 
 /**
@@ -47,9 +49,17 @@ export async function flushBadgeHits(force = false): Promise<void> {
   const rows = bufferedBadgeHits();
   buffer.clear();
   since = 0;
-  if (!isServiceConfigured()) return;
+  const native = useD1Lifecycle();
+  if (!native && !isServiceConfigured()) return;
   flushing = (async () => {
     try {
+      if (native) {
+        // Keep each JSON payload within the D1 transport and SQLite limits.
+        for (let offset = 0; offset < rows.length; offset += 200) {
+          await writeNativeBadgeHits(rows.slice(offset, offset + 200));
+        }
+        return;
+      }
       const { error } = await createServiceClient().rpc("record_badge_hits", { p_rows: rows });
       if (error) console.warn("[badge] hits flush failed:", error.message);
     } catch (e) {

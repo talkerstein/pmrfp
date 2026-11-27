@@ -147,6 +147,7 @@ const en = {
       gc: "Tell us about your company",
       landlord: "Tell us about your buildings",
       pm: "Tell us about your organization",
+      realtor: "Tell us about your brokerage",
       done: "You're all set",
     },
     intros: {
@@ -154,6 +155,7 @@ const en = {
       gc: "Just the basics — you can post your first sub-trade package right after.",
       landlord: "Just the basics — you can post your first repair or maintenance job right after.",
       buyer: "Just the basics — you can post an RFP right after.",
+      realtor: "Just the basics — you can build your trusted-trades page right after.",
     },
     browseReady: "You're all set to browse the vendor directory and RFP opportunities.",
     startBrowsing: "Start browsing",
@@ -186,6 +188,8 @@ const en = {
     moreDetails: "Add more details (optional)",
     websiteHint: "Your public listing links to this site. Optional, but it is how customers find you.",
     moreDetailsHint: "Phone, email, city, a short description and how buyers contact you. You can add all of this later.",
+    /** The weekly email tick box. Changing a word: bump MEMBER_CONSENT_VERSION in lib/digest/config.ts. */
+    weeklyEmailLabel: "Yes, send me the free weekly PMRFP email: open bids, major projects and recent awards for my trades in my province or state. I can unsubscribe at any time.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -227,7 +231,7 @@ const en = {
     freeItems: [
       "A company profile in the trade directory",
       "A website badge that links to your profile",
-      "The weekly tender digest for your trade",
+      "A free weekly email of open bids in your trade, if you want it",
     ],
     upgrade:
       "Upgrade to Trade Pro any time for the full scope, documents and buyer contact, and an email the morning every match posts.",
@@ -422,6 +426,7 @@ const fr: typeof en = {
       gc: "Parlez-nous de votre entreprise",
       landlord: "Parlez-nous de vos immeubles",
       pm: "Parlez-nous de votre organisation",
+      realtor: "Parlez-nous de votre agence immobilière",
       done: "Tout est prêt",
     },
     intros: {
@@ -429,6 +434,7 @@ const fr: typeof en = {
       gc: "L'essentiel seulement — vous pourrez publier votre premier lot de sous-traitance tout de suite après.",
       landlord: "Seulement l'essentiel — vous pourrez publier votre premier travail de réparation ou d'entretien tout de suite après.",
       buyer: "L'essentiel seulement — vous pourrez publier un appel d'offres tout de suite après.",
+      realtor: "L'essentiel seulement — vous pourrez créer votre page d'entrepreneurs de confiance tout de suite après.",
     },
     browseReady: "Tout est prêt pour parcourir le répertoire des entrepreneurs et les appels d'offres.",
     startBrowsing: "Commencer à explorer",
@@ -461,6 +467,7 @@ const fr: typeof en = {
     moreDetails: "Ajouter plus de détails (facultatif)",
     websiteHint: "Votre fiche publique renvoie vers ce site. Facultatif, mais c'est ainsi que les clients vous trouvent.",
     moreDetailsHint: "Téléphone, courriel, ville, courte description et façon dont les acheteurs vous joignent. Vous pourrez tout ajouter plus tard.",
+    weeklyEmailLabel: "Oui, envoyez-moi le courriel hebdomadaire gratuit de PMRFP : appels d'offres ouverts, grands projets et contrats octroyés récemment pour mes métiers dans ma province ou mon État. Je peux me désabonner en tout temps.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -500,7 +507,7 @@ const fr: typeof en = {
     freeItems: [
       "Un profil d'entreprise dans le répertoire des entrepreneurs",
       "Un badge pour votre site web qui renvoie à votre profil",
-      "Le résumé hebdomadaire des appels d'offres de votre corps de métier",
+      "Un courriel hebdomadaire gratuit des appels d'offres ouverts de votre corps de métier, si vous le voulez",
     ],
     upgrade:
       "Passez à Trade Pro en tout temps pour obtenir la portée complète, les documents et les coordonnées de l'acheteur, ainsi qu'un courriel le matin même de chaque nouvel appel d'offres qui vous correspond.",
@@ -695,6 +702,7 @@ const es: typeof en = {
       gc: "Cuéntenos sobre su empresa",
       landlord: "Cuéntenos sobre sus edificios",
       pm: "Cuéntenos sobre su organización",
+      realtor: "Cuéntenos sobre su agencia inmobiliaria",
       done: "Todo listo",
     },
     intros: {
@@ -702,6 +710,7 @@ const es: typeof en = {
       gc: "Solo lo básico; podrá publicar su primer paquete de subcontratación justo después.",
       landlord: "Solo lo básico — puede publicar su primer trabajo de reparación o mantenimiento justo después.",
       buyer: "Solo lo básico; podrá publicar una RFP justo después.",
+      realtor: "Solo lo básico; podrá crear su página de contratistas de confianza justo después.",
     },
     browseReady: "Todo está listo para que explore el directorio de proveedores y las oportunidades de RFP.",
     startBrowsing: "Empezar a explorar",
@@ -734,6 +743,7 @@ const es: typeof en = {
     moreDetails: "Agregar más detalles (opcional)",
     websiteHint: "Su ficha pública enlaza a este sitio. Opcional, pero así le encuentran los clientes.",
     moreDetailsHint: "Teléfono, correo, ciudad, una breve descripción y cómo pueden contactarle los compradores. Puede agregarlo todo después.",
+    weeklyEmailLabel: "Sí, envíenme el correo semanal gratuito de PMRFP: licitaciones abiertas, grandes proyectos y contratos adjudicados recientemente para mis oficios en mi provincia o estado. Puedo cancelar la suscripción en cualquier momento.",
   },
   /** The plain email notice (sign-up and onboarding) and the optional marketing box. Changing a word: bump the version in lib/consent/email.ts. */
   emailConsent: {
@@ -773,7 +783,7 @@ const es: typeof en = {
     freeItems: [
       "Un perfil de empresa en el directorio de contratistas",
       "Una insignia para su sitio web que enlaza a su perfil",
-      "El resumen semanal de licitaciones de su oficio",
+      "Un correo semanal gratuito con las licitaciones abiertas de su oficio, si lo desea",
     ],
     upgrade:
       "Pásese a Trade Pro cuando quiera para ver el alcance completo, los documentos y el contacto del comprador, y recibir un correo electrónico la misma mañana en que se publica cada oportunidad que coincide con su perfil.",

@@ -10,6 +10,8 @@ import { SIGNUP_INTENT_COOKIE, intentCookieAttributes, intentFromParams, seriali
 import { track } from "@/lib/tracking/client";
 import { PRICING } from "@/lib/site";
 import { ContinueWithGoogle } from "@/components/forms/google-button";
+import { StagingTurnstile } from "@/components/forms/staging-turnstile";
+import { accountSignupTurnstileAction } from "@/lib/d1/staging-turnstile";
 import { localizePath, type Locale } from "@/i18n/config";
 import { fmt, formatNumber } from "@/i18n/format";
 import type { Messages } from "@/i18n/dictionaries";
@@ -38,8 +40,17 @@ export interface SignupProps {
   /** Arrived from a paid-plan button: the role (trade/supplier) and plan are decided. */
   intent: { plan: PlanId; interval: PlanInterval; name: string } | null;
   next: string | null;
+  /**
+   * What "Trade Pro" picked on this page asks checkout for: monthly when a
+   * monthly Stripe price exists, else yearly (lib/billing upgradeInterval,
+   * the same rule every other upgrade link follows). The plan card leads
+   * with the same price, so nobody meets a bigger number at checkout.
+   */
+  proInterval: PlanInterval;
   award: string | null;
   google: boolean;
+  nativeSignup?: boolean;
+  turnstileSiteKey?: string;
   signInHref: string;
   stats: { open: number | null; closing7: number | null; trades: number; regions: number };
   trades: { slug: string; name: string; n: number }[];
@@ -56,6 +67,7 @@ export function SignUpFlow(p: SignupProps) {
   const num = (n: number) => formatNumber(n, lang);
   const m = useV3Money(lang);
   const [state, action, pending] = useActionState(signUpAction, {} as ActionState);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const locked = !!p.intent;
   // A plan or a role named by the link is already decided: start on the details.
   const skipWho = locked || (!!p.roleFromLink && !!p.initialRole);
@@ -101,7 +113,8 @@ export function SignUpFlow(p: SignupProps) {
   const isLandlord = role === "landlord";
   const formRole = isGc || isLandlord ? "property_manager" : role || "trade";
   // Picked Trade Pro here (no plan in the URL): checkout comes after the account.
-  const nextPath = p.next ?? (pro && !p.intent ? checkoutPath("pro", "annual") : null);
+  const nextPath = p.next ?? (pro && !p.intent ? checkoutPath("pro", p.proInterval) : null);
+  const proMonthly = p.proInterval === "monthly";
 
   // Which step of the wizard people reach (once each per visit): where the sign-up leaks is measured, not guessed.
   const seenSteps = useRef(new Set<number>());
@@ -252,7 +265,7 @@ export function SignUpFlow(p: SignupProps) {
             {p.google && role !== "talent" && (
               <div className="v3-su-google v3-bb">
                 {/* The role rides to onboarding, where it's asked again (pre-selected) before anything is saved. */}
-                <ContinueWithGoogle next={onboardingPath({ role: parseRoleChoice(role || "trade"), award: p.award, next: nextPath })} />
+                <ContinueWithGoogle native={p.nativeSignup} signup next={onboardingPath({ role: parseRoleChoice(role || "trade"), award: p.award, next: nextPath })} />
               </div>
             )}
             {/* The email is the one thing the account needs: it comes first, so on a phone it isn't five screens below the trade and region pickers. */}
@@ -272,10 +285,10 @@ export function SignUpFlow(p: SignupProps) {
                   <label className="v3-su-fld"><span>{t.password}</span><input ref={passRef} name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
                 )}
               </div>
-              <div role="group" aria-label={t.methodLabel} className="v3-su-chips" style={{ marginTop: 10 }}>
+              {!p.nativeSignup && <div role="group" aria-label={t.methodLabel} className="v3-su-chips" style={{ marginTop: 10 }}>
                 <button type="button" className="v3-su-chip" aria-pressed={method === "link"} onClick={() => setMethod("link")}>{t.methodLink}</button>
                 <button type="button" className="v3-su-chip" aria-pressed={method === "password"} onClick={() => setMethod("password")}>{t.methodPassword}</button>
-              </div>
+              </div>}
               <div className="v3-su-note">{t.emailNote} {method === "link" ? t.methodLinkNote : t.passwordHint}</div>
               {detailsError && <div className="v3-su-note" role="alert" style={{ color: "#9B1C1C", fontWeight: 700 }}>{askName ? t.fillInName : t.fillIn}</div>}
             </div>
@@ -327,8 +340,8 @@ export function SignUpFlow(p: SignupProps) {
                   </button>
                   <button type="button" role="radio" aria-checked={pro} className="v3-su-plan pro" onClick={() => setPlan("pro")}>
                     <span className="hd"><span className="nm">{t.pro}<span className="pp">{t.popular}</span></span><span className="tk"><SmallTick stroke={pro ? "#1B1D3A" : "#282B59"} /></span></span>
-                    <span className="pr">{m.known ? m.money(PRICING.proAnnual) : <V3Skeleton w="4ch" />}</span>
-                    <span className="per">{m.known ? fmt(t.proPer, { currency: m.currency, price: m.money(PRICING.proMonthly) }) : <V3Skeleton w="12em" />}</span>
+                    <span className="pr">{m.known ? m.money(proMonthly ? PRICING.proMonthly : PRICING.proAnnual) : <V3Skeleton w="4ch" />}</span>
+                    <span className="per">{m.known ? fmt(proMonthly ? t.proPerMonthly : t.proPer, { currency: m.currency, price: m.money(proMonthly ? PRICING.proAnnual : PRICING.proMonthly) }) : <V3Skeleton w="12em" />}</span>
                     <ul>{t.proPoints.map((x) => <li key={x}><BigTick stroke="#91F2CF" />{x}</li>)}</ul>
                   </button>
                 </div>
@@ -369,6 +382,13 @@ export function SignUpFlow(p: SignupProps) {
           </div>
 
           <div className="v3-su-foot">
+            {p.nativeSignup && p.turnstileSiteKey && step === 2 && (
+              <>
+                <StagingTurnstile siteKey={p.turnstileSiteKey} attempt={state} onToken={setTurnstileToken}
+                  action={accountSignupTurnstileAction} />
+                <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
+              </>
+            )}
             <div className="row">
               <button type="button" className="v3-su-back" hidden={step === (locked ? 1 : 0)} onClick={back}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282B59" strokeWidth="2.5" aria-hidden><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
@@ -379,7 +399,7 @@ export function SignUpFlow(p: SignupProps) {
                 {step < 2 ? (
                   <button type="button" className="v3-su-go" aria-disabled={!canGo} onClick={next}>{contLabel}</button>
                 ) : (
-                  <button type="submit" className="v3-su-go" disabled={pending}>{pending ? t.creating : contLabel}</button>
+                  <button type="submit" className="v3-su-go" disabled={pending || (p.nativeSignup && !turnstileToken)}>{pending ? t.creating : contLabel}</button>
                 )}
               </div>
             </div>

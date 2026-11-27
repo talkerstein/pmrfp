@@ -1,0 +1,289 @@
+{
+  "master": "da918b5",
+  "production_snapshot_date": "2026-10-21",
+  "repo_tables": 98,
+  "production_tables": 59,
+  "repo_only_tables": [
+    "award_history",
+    "badge_hits",
+    "bid_results",
+    "buyer_claims",
+    "buyer_domains",
+    "buyer_follows",
+    "buyer_pages",
+    "buyer_permissions",
+    "buyer_source_requests",
+    "correction_requests",
+    "digest_subscribers",
+    "duplicate_reviews",
+    "email_suppressions",
+    "forum_category_redirects",
+    "forum_poll_options",
+    "forum_poll_votes",
+    "forum_polls",
+    "forum_reply_notifications",
+    "forum_room_follows",
+    "insight_brief_log",
+    "insight_rejections",
+    "intel_access",
+    "landing_counts",
+    "lead_alert_log",
+    "lifecycle_sends",
+    "onboarding_steps",
+    "organization_join_requests",
+    "signup_attribution",
+    "site_events",
+    "site_page_views",
+    "site_referrers",
+    "site_visitors",
+    "town_invites",
+    "town_job_addenda",
+    "town_job_log",
+    "town_job_questions",
+    "town_job_results",
+    "trade_trials",
+    "winner_claims"
+  ],
+  "production_only_tables": [],
+  "repo_only_columns": [
+    [
+      "forum_posts",
+      "images"
+    ],
+    [
+      "forum_threads",
+      "country"
+    ],
+    [
+      "forum_threads",
+      "images"
+    ],
+    [
+      "notification_preferences",
+      "forum_replies"
+    ],
+    [
+      "notification_preferences",
+      "lifecycle_emails"
+    ],
+    [
+      "organizations",
+      "approved_at"
+    ],
+    [
+      "organizations",
+      "merged_into"
+    ],
+    [
+      "organizations",
+      "review_changes"
+    ],
+    [
+      "organizations",
+      "review_flagged_at"
+    ],
+    [
+      "rfp_interests",
+      "decided_at"
+    ],
+    [
+      "rfp_interests",
+      "decision_note"
+    ],
+    [
+      "rfp_interests",
+      "lang"
+    ],
+    [
+      "rfp_interests",
+      "outcome_notified_at"
+    ],
+    [
+      "rfp_interests",
+      "pm_contact_shared"
+    ],
+    [
+      "rfp_interests",
+      "quote_amount"
+    ],
+    [
+      "rfp_interests",
+      "quote_kind"
+    ],
+    [
+      "rfp_interests",
+      "quote_notes"
+    ],
+    [
+      "rfp_interests",
+      "start_date"
+    ],
+    [
+      "rfp_interests",
+      "used_free_allowance"
+    ],
+    [
+      "rfp_posts",
+      "buyer_key"
+    ],
+    [
+      "rfp_posts",
+      "buyer_name"
+    ],
+    [
+      "rfp_posts",
+      "official_portal"
+    ],
+    [
+      "rfp_posts",
+      "official_url"
+    ],
+    [
+      "rfp_posts",
+      "post_kind"
+    ],
+    [
+      "rfp_posts",
+      "poster_lang"
+    ],
+    [
+      "rfp_posts",
+      "question_deadline"
+    ],
+    [
+      "rfp_posts",
+      "review_note"
+    ],
+    [
+      "rfp_posts",
+      "sealed"
+    ],
+    [
+      "rfp_views",
+      "country"
+    ],
+    [
+      "rfp_views",
+      "lang"
+    ],
+    [
+      "rfp_views",
+      "view_day"
+    ],
+    [
+      "rfp_views",
+      "visitor_hash"
+    ]
+  ],
+  "production_only_columns": [],
+  "changed_columns": [],
+  "functions": {
+    "repo_only": [
+      "award_history_intel_slice",
+      "enforce_free_response_allowance",
+      "enforce_town_invite_cap",
+      "follow_buyer",
+      "forum_poll_results",
+      "guard_rfp_post_status",
+      "guard_sealed_interest",
+      "guard_sealed_post",
+      "guard_town_answer",
+      "guard_town_interest",
+      "guard_town_job_results",
+      "guard_town_post",
+      "has_intel_access",
+      "normalize_email",
+      "purge_site_tracking",
+      "record_badge_hits",
+      "record_landings",
+      "record_site_beacon",
+      "sealed_box_state",
+      "sealed_break_glass",
+      "sealed_counts",
+      "sealed_open_cancel",
+      "sealed_open_confirm",
+      "sealed_open_request",
+      "sealed_open_witness",
+      "sealed_open_witness_relink",
+      "sealed_quote_own",
+      "sealed_quote_submit",
+      "sealed_quote_withdraw",
+      "sealed_responder_ids",
+      "sealed_witness_info",
+      "site_analytics_report",
+      "town_closes_at",
+      "town_job_addenda_no_edit",
+      "town_job_log_append_only",
+      "town_time_zone",
+      "track_profile_review"
+    ],
+    "production_only": [
+      "rls_auto_enable"
+    ]
+  },
+  "views": {
+    "repo_only": [
+      "buyer_follow_counts",
+      "buyer_pages_public",
+      "buyer_permissions_public",
+      "town_awards_public",
+      "town_job_addenda_public",
+      "town_job_qa_public",
+      "town_posts_public",
+      "town_sealed_public",
+      "winner_claims_public"
+    ],
+    "production_only": []
+  },
+  "policies": {
+    "repo_only": [
+      "award history intel read",
+      "badge hits admin read",
+      "bid results intel read",
+      "buyer claims own or admin read",
+      "buyer domains admin read",
+      "buyer follows own read",
+      "buyer pages member or admin read",
+      "buyer permissions admin insert",
+      "buyer permissions admin read",
+      "buyer permissions admin update",
+      "buyer source requests admin read",
+      "buyer source requests admin update",
+      "corrections admin read",
+      "corrections admin update",
+      "digest subscribers admin read",
+      "duplicate reviews admin read",
+      "email suppressions admin read",
+      "forum category redirects read",
+      "forum follows own read",
+      "forum poll options read",
+      "forum poll votes own read",
+      "forum polls read",
+      "intel access member read",
+      "join requests read",
+      "landing counts admin read",
+      "lifecycle sends admin read",
+      "onboarding steps admin read",
+      "rfp-photos public read",
+      "saved insert own",
+      "signup attribution admin read",
+      "site events admin read",
+      "site page views admin read",
+      "site referrers admin read",
+      "site visitors admin read",
+      "town addenda poster admin read",
+      "town invites member admin read",
+      "town log member admin read",
+      "town questions asker poster admin read",
+      "town results member admin read",
+      "trade trials member read",
+      "winner claims own or admin read"
+    ],
+    "production_only": [
+      "interest insert paid member",
+      "interest update owner/admin",
+      "rfp_views insert any",
+      "saved insert paid"
+    ]
+  }
+}

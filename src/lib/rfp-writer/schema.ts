@@ -46,6 +46,20 @@ export const rfpDraftSchema = z.object({
 });
 export type RfpDraft = z.infer<typeof rfpDraftSchema>;
 
+/**
+ * What "Email me this RFP" accepts. Anyone can post there and drafts are edited
+ * by hand, so these limits sit well above a real RFP.
+ */
+export const rfpEmailDraftSchema = z.object({
+  title: z.string().max(300),
+  summary: z.string().max(5000),
+  scope: z.string().max(20000),
+  requirements: z.string().max(20000),
+  submissionInstructions: z.string().max(10000),
+  evaluationCriteria: z.array(z.string().max(1000)).max(50),
+  questionsForBidders: z.array(z.string().max(1000)).max(50),
+});
+
 export const TIMING_LABEL: Record<(typeof TIMING)[number], string> = {
   asap: "as soon as possible",
   "1-month": "within the next month",

@@ -6,6 +6,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSession, type SessionContext } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { isVpsTrustedTradeSaved, toggleVpsTrustedTrade, updateVpsTrustedNote, updateVpsTrustedPage } from "./native";
 import { isRealtorPro } from "./data";
 import { FREE_LIMIT, TRUSTED_ROLES, canAddTrade, handleFromName, normalizeHandle } from "./rules";
 
@@ -22,7 +24,7 @@ export interface PageFormState {
   success?: string;
 }
 
-type Owner = { session: SessionContext; admin: SupabaseClient } | { error: string };
+type Owner = { session: SessionContext; admin: SupabaseClient | null } | { error: string };
 
 /** A signed-in realtor or property manager, plus the service client for writes. */
 async function owner(): Promise<Owner> {
@@ -31,12 +33,14 @@ async function owner(): Promise<Owner> {
   if (!(TRUSTED_ROLES as readonly string[]).includes(session.profile.primary_role)) {
     return { error: "Trusted-trades pages are for realtors and property managers." };
   }
+  if (isVpsLiveCustomerAuth()) return { session, admin: null };
   if (!isServiceConfigured()) return { error: "This isn't available right now." };
   return { session, admin: createServiceClient() };
 }
 
 function refresh(handle: string) {
   revalidatePath(`/trusted/${handle}`);
+  revalidatePath(`/embed/trusted/${handle}`);
   revalidatePath("/pm-dashboard/saved-vendors");
 }
 
@@ -73,6 +77,16 @@ export async function toggleTrustedTradeAction(organizationId: string): Promise<
   const o = await owner();
   if ("error" in o) return { error: o.error };
   const { session, admin } = o;
+  if (!admin) {
+    try {
+      const { slug, ...result } = await toggleVpsTrustedTrade(session, organizationId);
+      if (slug) revalidatePath(`/directory/${slug}`);
+      if (result.handle) refresh(result.handle);
+      return result;
+    } catch {
+      return { error: "Could not save that company. Please try again." };
+    }
+  }
   const list = await ensureList(admin, session);
   if ("error" in list) return { error: list.error };
 
@@ -125,6 +139,16 @@ export async function updateTrustedNoteAction(organizationId: string, note: stri
   const o = await owner();
   if ("error" in o) return { error: o.error };
   const clean = note.trim().slice(0, 280);
+  if (!o.admin) {
+    try {
+      const handle = await updateVpsTrustedNote(o.session.userId, organizationId, clean);
+      if (!handle) return { error: "Save this trade first." };
+      refresh(handle);
+      return {};
+    } catch {
+      return { error: "Could not save the note." };
+    }
+  }
   const { data: list } = await o.admin
     .from("trusted_lists")
     .select("handle")
@@ -167,6 +191,17 @@ export async function updateTrustedPageAction(_prev: PageFormState, formData: Fo
   const handle = normalizeHandle(parsed.data.handle);
   if (!handle) return { error: "Use 3 to 40 letters, numbers or dashes for your link." };
 
+  if (!admin) {
+    try {
+      const result = await updateVpsTrustedPage(session, { ...parsed.data, handle, published: formData.get("published") === "on" });
+      if (result.error) return { error: result.error };
+      if (result.previousHandle && handle !== result.previousHandle) refresh(result.previousHandle);
+      refresh(handle);
+      return { success: "Saved." };
+    } catch {
+      return { error: "Could not save your page." };
+    }
+  }
   const list = await ensureList(admin, session);
   if ("error" in list) return { error: list.error };
   const pro = await isRealtorPro(session.organization?.id ?? null);
@@ -202,7 +237,11 @@ export async function trustedStateAction(
   const session = await getSession();
   if (!session) return { viewer: "anon", saved: false };
   if (!(TRUSTED_ROLES as readonly string[]).includes(session.profile.primary_role)) return { viewer: "other", saved: false };
-  if (!z.uuid().safeParse(organizationId).success || !isServiceConfigured()) return { viewer: "owner", saved: false };
+  if (!z.uuid().safeParse(organizationId).success) return { viewer: "owner", saved: false };
+  if (isVpsLiveCustomerAuth()) {
+    return { viewer: "owner", saved: await isVpsTrustedTradeSaved(session.userId, organizationId).catch(() => false) };
+  }
+  if (!isServiceConfigured()) return { viewer: "owner", saved: false };
   const { data } = await createServiceClient()
     .from("trusted_list_items")
     .select("organization_id")

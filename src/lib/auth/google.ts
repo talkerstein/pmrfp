@@ -2,6 +2,7 @@ import type { SessionContext } from "@/lib/access/access";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DEFAULT_SIGNUP_ROLE, type RolePickState } from "@/lib/auth/oauth";
+import { isVpsNativeAccountSignup } from "@/lib/d1/staging-config";
 
 /**
  * Is Google switched on in Supabase (Authentication → Providers → Google)?
@@ -27,6 +28,9 @@ export async function isGoogleAuthEnabled(): Promise<boolean> {
 
 /** primary_role in the signed-in user's auth metadata (fresh from Supabase Auth), or null. */
 export async function getMetadataRole(): Promise<unknown> {
+  if (isVpsNativeAccountSignup()) {
+    return (await (await import("@/lib/d1/customer-staging-session")).customerStagingSignupPreferences()).primary_role ?? null;
+  }
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();

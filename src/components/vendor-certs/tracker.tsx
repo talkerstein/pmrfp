@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, FileUp, Mail, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +16,8 @@ import {
   type ImportState,
   type SaveState,
 } from "@/lib/vendor-certs/actions";
-import type { CertCountry, CertStatus, CertType } from "@/lib/vendor-certs/rules";
+import { VENDOR_LIST_DRAFT_KEY, type CertCountry, type CertStatus, type CertType } from "@/lib/vendor-certs/rules";
+import { CERT_CHIP } from "./chip";
 import { useLang, useT } from "@/i18n/provider";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 
@@ -41,13 +42,6 @@ export interface TrackerRow {
   /** The vendor's own PMRFP company, and what its profile says about cover. */
   linked: { name: string; slug: string | null; profileStatus: string | null } | null;
 }
-
-const CHIP: Record<CertStatus, string> = {
-  valid: "bg-teal-50 text-teal-800 border-teal-200",
-  expiring: "bg-amber-50 text-amber-800 border-amber-200",
-  expired: "bg-red-50 text-red-700 border-red-200",
-  missing: "bg-slate-100 text-slate-700 border-slate-200",
-};
 
 const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm";
 
@@ -194,7 +188,7 @@ function TrackerRowView({ row, country, onEdit }: { row: TrackerRow; country: Ce
         {daysText && <div className="text-xs text-muted-foreground">{daysText}</div>}
       </td>
       <td className="px-4 py-3">
-        <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${CHIP[row.status]}`}>{t.status[row.status]}</span>
+        <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${CERT_CHIP[row.status]}`}>{t.status[row.status]}</span>
         {row.hasFile && row.uploadedBy === "vendor" && <div className="mt-1 text-xs text-muted-foreground">{t.actions.byVendor}</div>}
         {row.requestSentAt && <div className="mt-1 text-xs text-muted-foreground">{fmt(t.actions.requestedOn, { date: formatDate(row.requestSentAt, lang, { month: "short", day: "numeric" }) })}</div>}
       </td>
@@ -298,12 +292,32 @@ function Field({ label, hint, className, children }: { label: string; hint?: str
   );
 }
 
+const noSubscribe = () => () => {};
+/** A list pasted into the landing page's try-it box before this PM signed up. */
+function readListDraft(): string {
+  try {
+    return window.localStorage.getItem(VENDOR_LIST_DRAFT_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function ImportPanel() {
   const t = useT("certsClient").import;
   const errors = useT("certsClient").errors;
   const [state, action, pending] = useActionState<ImportState, FormData>(importCertificatesAction, {});
+  const stored = useSyncExternalStore(noSubscribe, readListDraft, () => "");
+  const draft = state.ok ? "" : stored;
+  useEffect(() => {
+    if (!state.ok) return;
+    try {
+      window.localStorage.removeItem(VENDOR_LIST_DRAFT_KEY);
+    } catch {
+      // Nothing to clear.
+    }
+  }, [state.ok]);
   return (
-    <details className="rounded-lg border border-border bg-card p-5" open={Boolean(state.error)}>
+    <details className="rounded-lg border border-border bg-card p-5" open={Boolean(state.error) || Boolean(draft)}>
       <summary className="flex cursor-pointer list-none items-center gap-2 font-medium">
         <FileUp className="size-4 text-teal-700" /> {t.title}
       </summary>
@@ -315,7 +329,8 @@ function ImportPanel() {
         </div>
         <div className="space-y-1.5">
           <Label><span className="text-sm font-medium">{t.paste}</span></Label>
-          <Textarea name="csv" rows={4} placeholder={"Vendor,Email,Trade,Type,Insurer,Policy,Coverage,Expiry\nAcme HVAC,office@acmehvac.ca,HVAC,CGL,Intact,P-123,2000000,2027-03-31"} />
+          {draft && <p className="text-sm font-medium text-teal-800">{t.draftKept}</p>}
+          <Textarea key={draft ? "draft" : "empty"} defaultValue={draft} name="csv" rows={4} placeholder={"Vendor,Email,Trade,Type,Insurer,Policy,Coverage,Expiry\nAcme HVAC,office@acmehvac.ca,HVAC,CGL,Intact,P-123,2000000,2027-03-31"} />
         </div>
         <Button type="submit" disabled={pending}>{pending ? t.submitting : t.submit}</Button>
         {state.ok && <p className="text-sm font-medium text-teal-800">{plural(state.added ?? 0, t.done)}</p>}

@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { uploadPrivateAttachment } from "@/lib/d1/private-attachment-routes";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
@@ -17,6 +19,7 @@ export const maxDuration = 30;
  * PDF, JPEG, PNG or WebP up to 10 MB, checked by content.
  */
 export async function POST(request: Request) {
+  if (isVpsLiveCustomerAuth()) return uploadPrivateAttachment(request, "certificate");
   const limited = await checkRateLimit(request, "cert-upload");
   if (limited) return rateLimitResponse(limited);
   const session = await getSession();

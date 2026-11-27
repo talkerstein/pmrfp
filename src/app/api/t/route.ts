@@ -1,4 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { nativePreviewTokenPattern } from "@/lib/d1/native-auth-preview";
+import { scheduleFlush } from "@/lib/tracking/buffer";
 import { checkBeaconLimit, rateLimitResponse, requestIp } from "@/lib/rate-limit";
 import { checkBeaconRequest, parseBeacon } from "@/lib/tracking/beacon";
 import { ingestBeacon } from "@/lib/tracking/ingest";
@@ -37,9 +40,18 @@ export async function POST(request: NextRequest) {
   if (!parsed.ok) return empty(parsed.status);
 
   if (parsed.items.length) {
-    const facts = requestFacts(request.headers, request.cookies.getAll());
-    ingestBeacon(parsed.items, facts);
-    flushAfterResponse();
+    const token = isVpsLiveCustomerAuth() ? request.cookies.get("__Host-pmrfp-customer")?.value : undefined;
+    if (token && nativePreviewTokenPattern.test(token)) {
+      after(async () => {
+        const { resolveVpsCustomerSession } = await import("@/lib/d1/customer-staging-session");
+        const session = await resolveVpsCustomerSession(token).catch(() => null);
+        ingestBeacon(parsed.items,requestFacts(request.headers,request.cookies.getAll(),{userId:session?.userId}));
+        await scheduleFlush();
+      });
+    } else {
+      ingestBeacon(parsed.items,requestFacts(request.headers,request.cookies.getAll()));
+      flushAfterResponse();
+    }
   }
   return empty(204);
 }
