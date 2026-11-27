@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CITY_SOURCES, NANAIMO, methodFor, type CitySourceConfig } from "@/lib/tenders/city-sources";
+import { CITY_SOURCES, MUSKOKA, NANAIMO, methodFor, type CitySourceConfig } from "@/lib/tenders/city-sources";
 import {
   cityHosts,
   cityRowToRfpInsert,
@@ -85,7 +85,10 @@ describe("Nanaimo (page saved 2026-10-21)", () => {
     const fetcher = vi.fn();
     const plan = citySyncSources(seedRegistry(), CITY_SOURCES, fetcher);
     expect(plan.sources).toEqual([]);
-    expect(plan.skipped).toEqual([{ key: "nanaimo", reason: expect.stringMatching(/link only/) }]);
+    expect(plan.skipped).toEqual([
+      { key: "nanaimo", reason: expect.stringMatching(/link only/) },
+      { key: "muskoka", reason: expect.stringMatching(/link only/) },
+    ]);
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -98,6 +101,19 @@ describe("Nanaimo (page saved 2026-10-21)", () => {
     // Its credit has French and Spanish versions (lib/data-credits).
     expect(creditFor(src.attribution)?.fr).toMatch(/autorisation de la Ville de Nanaimo/);
     expect(creditFor(src.attribution)?.es).toMatch(/permiso de la Ciudad de Nanaimo/);
+  });
+
+  it("a Muskoka row credits the District and links back to its bids&tenders page", () => {
+    expect(MUSKOKA.list).toMatchObject({ kind: "platform", platform: "bids-and-tenders" });
+    expect(methodFor(MUSKOKA.list)).toBeNull();
+    const src = publicTenderSource("facility-cleaning-mskk-0123456789ab");
+    expect(src.key).toBe("muskoka");
+    expect(src.permission).toMatchObject({ buyerSlug: "district-municipality-of-muskoka", contactEmail: null });
+    expect(src.attribution).toMatch(/^Listed with permission from the District Municipality of Muskoka\./);
+    expect(creditFor(src.attribution)?.fr).toMatch(/autorisation de la municipalité de district de Muskoka/);
+    expect(creditFor(src.attribution)?.es).toMatch(/permiso del municipio de distrito de Muskoka/);
+    const row = (DIRECTORY as { slug: string; tendersUrl: string | null; provinceCode: string; name: string; ownSiteList: boolean }[]).find((b) => b.slug === MUSKOKA.buyerSlug);
+    expect(row).toMatchObject({ tendersUrl: MUSKOKA.officialUrl, provinceCode: "ON", name: MUSKOKA.buyer, ownSiteList: false });
   });
 
   it("follows the rightmost-marker rule", () => {
@@ -257,6 +273,9 @@ describe("permission gating", () => {
     // Yes to being listed; no method yet (no list on its own page), so nothing can import.
     expect(by.get("city-of-nanaimo")).toMatchObject({ status: "yes", method: null, grantedOn: "2026-10-20", provinceCode: "BC", scope: "buyer" });
     for (const m of ["read_public_page", "email_notices", "feed"] as const) expect(importAllowed(seedRegistry(), "city-of-nanaimo", m)).toBe(false);
+    // Same for Muskoka: yes, but its bids live on Biddingo and bids&tenders.
+    expect(by.get("district-municipality-of-muskoka")).toMatchObject({ status: "yes", method: null, grantedOn: "2026-11-05", provinceCode: "ON", scope: "buyer" });
+    for (const m of ["read_public_page", "email_notices", "feed"] as const) expect(importAllowed(seedRegistry(), "district-municipality-of-muskoka", m)).toBe(false);
     expect(by.get("nbon")).toMatchObject({ status: "link_only", scope: "platform" });
     for (const slug of ["town-of-cochrane", "bc-bid", "city-of-kawartha-lakes", "town-of-newmarket", "edmonton-public-schools"]) {
       expect(by.get(slug)?.status, slug).toBe("no");
@@ -269,7 +288,11 @@ describe("permission gating", () => {
   });
 
   it("the migration seeds the same rows", () => {
-    const sql = readFileSync(join(process.cwd(), "supabase/migrations/20261021000010_buyer_sources.sql"), "utf8");
+    const dir = join(process.cwd(), "supabase/migrations");
+    const sql = readdirSync(dir)
+      .map((f) => readFileSync(join(dir, f), "utf8"))
+      .filter((s) => s.includes("insert into public.buyer_permissions"))
+      .join("\n");
     for (const p of PERMISSION_SEED) expect(sql, p.buyerSlug).toMatch(new RegExp(`\\('${p.buyerSlug}',[^\\n]*'${p.status}'`));
   });
 
