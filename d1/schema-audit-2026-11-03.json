@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-03",
+  "publicTables": 108,
+  "comparisonWithNovember2AfterCapture": {
+    "columns": true,
+    "constraints": true,
+    "indexes": true,
+    "policies": true,
+    "functions": true,
+    "triggers": true,
+    "event_triggers": true,
+    "views": true,
+    "publications": true
+  },
+  "storageBucketRowsQueried": false,
+  "sourceWrites": 0
+}

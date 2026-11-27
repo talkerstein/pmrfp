@@ -1,5 +1,9 @@
 "use server";
 
+import { awardVpsBidComparison, importVpsBidResponses, inviteVpsBidders, searchVpsBidders, setVpsBidShare, validateVpsBidder } from "@/lib/d1/vps-bid-comparisons";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { saveD1Tool, ownToolRfp, deleteD1Tool, readD1Comparison, saveD1ToolBid } from "@/lib/d1/pm-tools";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSession, isAdminRole, type SessionContext } from "@/lib/access/access";
@@ -60,8 +64,8 @@ export type BidErrorKey =
 
 type Pm = { session: SessionContext; orgId: string; country: BidCountry };
 
-async function pm(): Promise<Pm | { error: BidErrorKey }> {
-  if (!isSupabaseConfigured()) return { error: "unavailable" };
+async function pm(nativeSupported = false): Promise<Pm | { error: BidErrorKey }> {
+  if (!isSupabaseConfigured() && !(nativeSupported && isVpsLiveCustomerAuth())) return { error: "unavailable" };
   const session = await getSession();
   if (!session || !ROLES.includes(session.profile.primary_role)) return { error: "signIn" };
   if (!session.organization) return { error: "noOrg" };
@@ -89,12 +93,22 @@ export interface CreateState {
 
 /** New comparison (title, building, trade, optional own RFP). Redirect is the client's (it has the language). */
 export async function createComparisonAction(_prev: CreateState, formData: FormData): Promise<CreateState> {
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
   const raw = Object.fromEntries(formData.entries());
   const res = cleanComparisonInput(raw);
   if (!res.ok) return { error: res.field };
   const rfpId = uuid(raw.rfp_id) ? raw.rfp_id : null;
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const rfp_id = await ownToolRfp(who.session, rfpId);
+      if (rfpId && !rfp_id) return { error: "rfp" };
+      const id = await saveD1Tool("bid_comparisons",who.session,null,{ ...res.value, country:who.country, rfp_id });
+      if (!id) return { error: "unavailable" };
+      touch(id);
+      return { id };
+    } catch { return { error: "unavailable" }; }
+  }
   const db = await createClient();
   const { data, error } = await db
     .from("bid_comparisons")
@@ -121,12 +135,22 @@ export interface SaveState {
 
 /** Edit the title, building, trade or linked RFP. */
 export async function saveComparisonAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
   const raw = Object.fromEntries(formData.entries());
   if (!uuid(raw.id)) return { error: "notFound" };
   const res = cleanComparisonInput(raw);
   if (!res.ok) return { error: res.field };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const source = uuid(raw.rfp_id) ? raw.rfp_id : null;
+      const rfp_id = await ownToolRfp(who.session, source);
+      if (source && !rfp_id) return { error: "rfp" };
+      if (!await saveD1Tool("bid_comparisons",who.session,raw.id,{ ...res.value, rfp_id })) return { error: "notFound" };
+      touch(raw.id);
+      return { ok:true,savedAt:Date.now() };
+    } catch { return { error: "unavailable" }; }
+  }
   const db = await createClient();
   const { data, error } = await db
     .from("bid_comparisons")
@@ -142,8 +166,13 @@ export async function saveComparisonAction(_prev: SaveState, formData: FormData)
 
 export async function deleteComparisonAction(id: string): Promise<{ ok?: boolean; error?: BidErrorKey }> {
   if (!uuid(id)) return { error: "notFound" };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    if (!await deleteD1Tool("bid_comparisons",who.session,id).catch(() => null)) return { error: "notFound" };
+    touch(id);
+    return { ok:true };
+  }
   const db = await createClient();
   const { data: files } = await db.from("bid_comparison_bids").select("file_path").eq("comparison_id", id);
   const { data, error } = await db.from("bid_comparisons").delete().eq("id", id).select("id").maybeSingle();
@@ -158,9 +187,14 @@ export async function deleteComparisonAction(id: string): Promise<{ ok?: boolean
 /** Save the scope items (ids kept, so bids keep their line prices when a label changes). */
 export async function saveScopeItemsAction(id: string, rows: { id?: string; label?: string }[]): Promise<{ ok?: boolean; error?: BidErrorKey }> {
   if (!uuid(id) || !Array.isArray(rows)) return { error: "notFound" };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
   const items = cleanScopeItems(rows.slice(0, 60));
+  if (isVpsLiveCustomerAuth()) {
+    if (!await saveD1Tool("bid_comparisons",who.session,id,{scope_items:JSON.stringify(items)}).catch(() => null)) return {error:"notFound"};
+    touch(id);
+    return {ok:true};
+  }
   const db = await createClient();
   const { data, error } = await db.from("bid_comparisons").update({ scope_items: items }).eq("id", id).select("id").maybeSingle();
   if (error || !data) return { error: error && isMissingTable(error) ? "unavailable" : "notFound" };
@@ -170,11 +204,21 @@ export async function saveScopeItemsAction(id: string, rows: { id?: string; labe
 
 /** The PM's pick and why (shown on the board sheet). */
 export async function saveRecommendationAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
   const id = formData.get("id");
   if (!uuid(id)) return { error: "notFound" };
   const pick = formData.get("recommended_bid_id");
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const {comparison,bids} = await readD1Comparison(who.session,id);
+      if (!comparison || (uuid(pick) && !bids.some(b=>b.id===pick))) return {error:"notFound"};
+      if (!await saveD1Tool("bid_comparisons",who.session,id,{recommended_bid_id:uuid(pick)?pick:null,
+        recommendation:cleanRecommendation(formData.get("recommendation"))})) return {error:"notFound"};
+      touch(id);
+      return {ok:true,savedAt:Date.now()};
+    } catch { return {error:"unavailable"}; }
+  }
   const db = await createClient();
   let recommended: string | null = null;
   if (uuid(pick)) {
@@ -197,11 +241,28 @@ export async function saveRecommendationAction(_prev: SaveState, formData: FormD
 
 /** Add a bid (no bid id) or edit one (bid id). Line items come in as line_<scope item id>. */
 export async function saveBidAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
   const raw = Object.fromEntries(formData.entries());
   const comparisonId = raw.comparison_id;
   if (!uuid(comparisonId)) return { error: "notFound" };
+  if (isVpsLiveCustomerAuth()) {
+    try {
+      const { comparison, bids } = await readD1Comparison(who.session, comparisonId);
+      if (!comparison) return { error: "notFound" };
+      const bid = cleanBidInput(raw, readScopeItems(comparison.scope_items));
+      if (!bid.ok) return { error: bid.field };
+      const id = uuid(raw.id) ? raw.id : null;
+      const existing = bids.find(b=>b.id===id);
+      const picked = raw.bidder_organization_id;
+      const bidder = uuid(picked) && await validateVpsBidder(picked,comparison.country) ? picked : null;
+      const fields = { ...bid.value, line_prices:JSON.stringify(bid.value.line_prices),
+        bidder_organization_id:existing?.rfp_interest_id ? existing.bidder_organization_id : bidder ?? existing?.bidder_organization_id ?? null };
+      if (!await saveD1ToolBid(who.session, comparisonId, id, fields)) return { error: id ? "notFound" : "max" };
+      touch(comparisonId);
+      return { ok:true,savedAt:Date.now() };
+    } catch { return { error: "unavailable" }; }
+  }
   const db = await createClient();
   const { data: cmp } = await db.from("bid_comparisons").select("id,organization_id,scope_items,country").eq("id", comparisonId).maybeSingle<{
     id: string;
@@ -256,8 +317,13 @@ export async function saveBidAction(_prev: SaveState, formData: FormData): Promi
 
 export async function deleteBidAction(comparisonId: string, bidId: string): Promise<{ ok?: boolean; error?: BidErrorKey }> {
   if (!uuid(comparisonId) || !uuid(bidId)) return { error: "notFound" };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
+  if (isVpsLiveCustomerAuth()) {
+    if (!await deleteD1Tool("bid_comparison_bids",who.session,bidId,comparisonId).catch(() => null)) return { error: "notFound" };
+    touch(comparisonId);
+    return { ok:true };
+  }
   const db = await createClient();
   const { data, error } = await db.from("bid_comparison_bids").delete().eq("id", bidId).eq("comparison_id", comparisonId).select("file_path").maybeSingle<{ file_path: string | null }>();
   if (error || !data) return { error: "notFound" };
@@ -269,17 +335,17 @@ export async function deleteBidAction(comparisonId: string, bidId: string): Prom
 /** Approved PMRFP bidder companies by name, in the PM's country. */
 export async function searchBidderOrgsAction(q: string): Promise<{ hits: OrgHit[] }> {
   if (typeof q !== "string") return { hits: [] };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { hits: [] };
-  return { hits: await searchBidderOrgs(await createClient(), q, who.country).catch(() => []) };
+  return { hits: await (isVpsLiveCustomerAuth() ? searchVpsBidders(q,who.country) : searchBidderOrgs(await createClient(),q,who.country)).catch(() => []) };
 }
 
 /** Pull in the trades that responded to the linked RFP. */
 export async function importResponsesAction(comparisonId: string): Promise<{ added?: number; full?: boolean; error?: BidErrorKey }> {
   if (!uuid(comparisonId)) return { error: "notFound" };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
-  const res = await importRfpResponses(comparisonId, { userId: who.session.userId, organizationId: who.orgId, admin: isAdminRole(who.session.profile.primary_role) });
+  const res = isVpsLiveCustomerAuth() ? await importVpsBidResponses(who.session,comparisonId).catch(() => ({ok:false,error:"unavailable"} as const)) : await importRfpResponses(comparisonId, { userId: who.session.userId, organizationId: who.orgId, admin: isAdminRole(who.session.profile.primary_role) });
   if (!res.ok) return { error: res.error };
   touch(comparisonId);
   return { added: res.added, full: res.full };
@@ -290,9 +356,9 @@ export async function importResponsesAction(comparisonId: string): Promise<{ add
 /** Create or replace (on) or turn off (off) the read-only board link. The raw token comes back once. */
 export async function shareLinkAction(comparisonId: string, on: boolean): Promise<{ token?: string | null; error?: BidErrorKey }> {
   if (!uuid(comparisonId)) return { error: "notFound" };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
-  const res = await setShareLink(comparisonId, who.orgId, Boolean(on));
+  const res = isVpsLiveCustomerAuth() ? await setVpsBidShare(who.session,comparisonId,Boolean(on)).catch(() => ({ok:false,error:"unavailable"} as const)) : await setShareLink(comparisonId, who.orgId, Boolean(on));
   if (!res.ok) return { error: res.error };
   touch(comparisonId);
   return { token: res.token };
@@ -309,10 +375,10 @@ export interface AwardActionResult {
 /** "Award to this bidder" (through the RFP's own pick flow when the bid came from it). */
 export async function awardBidAction(comparisonId: string, bidId: string, notify: boolean, lang: string): Promise<AwardActionResult> {
   if (!uuid(comparisonId) || !uuid(bidId)) return { error: "notFound" };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
   const org = who.session.organization!;
-  const res = await awardBid(
+  const res = isVpsLiveCustomerAuth() ? await awardVpsBidComparison(who.session,comparisonId,bidId,Boolean(notify),emailLang(lang)).catch(() => ({ok:false,error:"unavailable"} as const)) : await awardBid(
     { comparisonId, bidId, notify: Boolean(notify) },
     {
       userId: who.session.userId,
@@ -335,9 +401,9 @@ export async function awardBidAction(comparisonId: string, bidId: string, notify
 /** "Invite these bidders to PMRFP". */
 export async function inviteBiddersAction(comparisonId: string, lang: string): Promise<{ result?: Extract<InviteResult, { ok: true }>; error?: BidErrorKey }> {
   if (!uuid(comparisonId)) return { error: "notFound" };
-  const who = await pm();
+  const who = await pm(true);
   if ("error" in who) return { error: who.error };
-  const res = await inviteBidders({ comparisonId, orgId: who.orgId, company: who.session.organization!.name, lang: emailLang(lang) });
+  const res = isVpsLiveCustomerAuth() ? await inviteVpsBidders(who.session,comparisonId,emailLang(lang)).catch(() => ({ok:false,error:"unavailable"} as const)) : await inviteBidders({ comparisonId, orgId: who.orgId, company: who.session.organization!.name, lang: emailLang(lang) });
   if (!res.ok) return { error: res.error };
   touch(comparisonId);
   return { result: res };

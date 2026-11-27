@@ -1,0 +1,54 @@
+name: pmrfp-stripe-production-writer
+services:
+  pmrfp-stripe-writer:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    working_dir: /app
+    entrypoint: ["node", "server.js"]
+    env_file:
+      - /opt/pmrfp/stripe-api.pending.env
+      - /opt/pmrfp/stripe-production-writer/catalog.env
+      - /opt/pmrfp/stripe-production-relay/verify.env
+      - /opt/pmrfp/stripe-production-writer/billing.env
+      - /opt/pmrfp/stripe-production-writer/ghl.env
+      - /opt/pmrfp/smtp.env
+    environment:
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+      PORT: "4322"
+      PMRFP_VPS_BILLING_RECEIVER: enabled
+      PMRFP_BILLING_BACKEND: ""
+      PMRFP_SMTP_ENABLED: enabled
+      NEXT_PUBLIC_SITE_URL: https://pmrfp.com
+      NEXT_TELEMETRY_DISABLED: "1"
+      NODE_OPTIONS: "--max-old-space-size=384"
+    volumes:
+      - /opt/pmrfp/stripe-production-writer/release:/app:ro
+    tmpfs:
+      - /tmp:size=16m,uid=1000,gid=1000,mode=1770
+      - /app/.next/cache:size=32m,uid=1000,gid=1000,mode=0700
+    labels:
+      traefik.enable: "false"
+    read_only: true
+    init: true
+    mem_limit: 512m
+    pids_limit: 64
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4322/api/stripe/webhook').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    networks: [pmrfp]
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

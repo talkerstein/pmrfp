@@ -4,6 +4,8 @@ import { isServiceConfigured } from "@/lib/supabase/config";
 import { buyerFollowAlertsEnabled } from "@/lib/follows/rules";
 import { runBuyerFollowAlerts } from "@/lib/follows/alerts-server";
 
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+
 export const maxDuration = 60;
 
 /**
@@ -22,13 +24,14 @@ export const maxDuration = 60;
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  const native = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1";
+  if ((native && !secret) || (secret && request.headers.get("authorization") !== `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  if (!native && !isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
   const dry = new URL(request.url).searchParams.get("dry") === "1";
   const enabled = buyerFollowAlertsEnabled();
   if (!dry && !enabled) return NextResponse.json({ skipped: "BUYER_FOLLOW_ALERTS_ENABLED is off", enabled });
-  const result = await runBuyerFollowAlerts(createServiceClient(), { dry, enabled, budgetMs: 45_000 });
-  return NextResponse.json({ dry, ...result });
+  const result = await runBuyerFollowAlerts(native ? vpsAppDatabase() : createServiceClient(), { dry, enabled, budgetMs: 45_000 });
+  return NextResponse.json({ dry, ...result }, { status: native && result.state === "blocked" ? 503 : 200 });
 }

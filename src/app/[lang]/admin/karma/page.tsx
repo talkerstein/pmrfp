@@ -3,6 +3,8 @@ import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { PageHeader, DemoBanner } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { AdminTable } from "@/components/admin/admin-table";
@@ -42,11 +44,19 @@ export default async function AdminKarmaPage({ params, searchParams }: { params:
   await setLangFrom(params);
   await requireRole(["admin", "super_admin"]);
   const sp = await searchParams;
-  const demo = isDemoMode() || !isServiceConfigured();
+  const native = isVpsLiveCustomerAuth();
+  const demo = !native && (isDemoMode() || !isServiceConfigured());
 
   let rows: Row[] = [];
   let missing = false;
-  if (!demo) {
+  if (native) {
+    const result = await vpsAppDatabase().prepare(`SELECT k.*,CASE WHEN o.id IS NOT NULL THEN
+      json_object('name',o.name,'organization_type',o.organization_type,'profile_status',o.profile_status,'is_demo',o.is_demo)
+      END AS company FROM org_karma k LEFT JOIN organizations o ON o.id=k.org_id
+      ORDER BY k.score DESC LIMIT 300`).all<Omit<Row, "organizations"> & { company: string | null }>().catch(() => null);
+    missing = !result?.success;
+    rows = result?.results.map((row) => ({ ...row, organizations: row.company ? JSON.parse(row.company) : null })) ?? [];
+  } else if (!demo) {
     const { data, error } = await createServiceClient()
       .from("org_karma")
       .select("org_id,raw_points,score,level,decay,last_earned_at,updated_at,organizations(name,organization_type,profile_status,is_demo)")

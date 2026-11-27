@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runLifecycle } from "@/lib/lifecycle/server";
 import { runBadgeRewards } from "@/lib/badge/server";
+import { useD1Lifecycle } from "@/lib/lifecycle/d1";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
  * the hourly runs spread the day's sends across the time zones.
  *
  * Guard rails (lib/lifecycle):
- *  - Sends NOTHING unless LIFECYCLE_EMAILS_ENABLED is on (and Resend is
+ *  - Sends NOTHING unless LIFECYCLE_EMAILS_ENABLED is on (and mail is
  *    configured). `?dry=1` reports who would get what, without sending or
  *    writing anything, flag or not. The report has no email addresses
  *    (those are on /admin/lifecycle's dry run, admins only).
@@ -25,8 +26,7 @@ export const dynamic = "force-dynamic";
  *    the moment onboarding completes and the normal welcome takes over.
  *  - LIFECYCLE_START_AT (go-live cutoff, unset = off): companies older than it
  *    get one welcome-back email and nothing else of the old steps.
- *    LIFECYCLE_MAX_PER_DAY (unset = no ceiling): at most this many lifecycle
- *    emails in any rolling 24 hours.
+ *    LIFECYCLE_MAX_PER_DAY: rolling 24-hour ceiling. Hostinger defaults to 30 attempts.
  *
  * Before the emails, the badge reward pass (lib/badge/server): a company
  * whose badge is detected on its own website gets a one-time +14 days of
@@ -36,7 +36,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if ((useD1Lifecycle() && !secret) || (secret && request.headers.get("authorization") !== `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const dry = new URL(request.url).searchParams.get("dry") === "1";

@@ -1,0 +1,26 @@
+{
+  "name": "pmrfp-customer-staging-gateway",
+  "main": "customer-auth.ts",
+  "account_id": "f4e9b098134981b108024243b2a72ed4",
+  "compatibility_date": "2026-11-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": {
+    "MODE": "customer-staging",
+    "AUTH_ORIGIN": "https://pmrfp-customer-staging-gateway.pmrfp.workers.dev"
+  },
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "pmrfp-customer-staging-auth",
+      "database_id": "3a716914-6cd3-4672-a1c4-1a4dc5fd9247"
+    },
+    {
+      "binding": "APP_DB",
+      "database_name": "pmrfp-rebuilt-staging-20261106",
+      "database_id": "e91843d9-227b-4fe8-b0ad-f8b648e059ff"
+    }
+  ],
+  "observability": { "enabled": false }
+}

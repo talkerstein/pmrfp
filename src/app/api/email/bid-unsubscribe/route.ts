@@ -1,3 +1,7 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { UUID } from "@/lib/d1/contracts";
+import { customerAppAuthority } from "../../../../../workers/d1-api/customer-signup";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
@@ -13,7 +17,17 @@ import { verifyBidUnsubscribe } from "@/lib/bid-compare/unsubscribe";
 async function unsubscribe(request: Request): Promise<boolean> {
   const url = new URL(request.url);
   const id = url.searchParams.get("i");
-  if (!verifyBidUnsubscribe(id, url.searchParams.get("t")) || !id || !isServiceConfigured()) return false;
+  if (!verifyBidUnsubscribe(id, url.searchParams.get("t")) || !id) return false;
+  if (isVpsLiveCustomerAuth()) {
+    if (!UUID.test(id)) return false;
+    const db = vpsAppDatabase();
+    const result = await db.prepare(`INSERT INTO email_suppressions(email_key,reason,detail)
+      SELECT lower(trim(contact_email)),'unsubscribe','bid comparison' FROM bid_comparison_bids
+      WHERE id=? AND contact_email IS NOT NULL AND ${customerAppAuthority}
+      ON CONFLICT(email_key) DO UPDATE SET email_key=excluded.email_key RETURNING email_key`).bind(id).first().catch(() => null);
+    return Boolean(result);
+  }
+  if (!isServiceConfigured()) return false;
   const db = createServiceClient();
   const { data } = await db.from("bid_comparison_bids").select("contact_email").eq("id", id).maybeSingle<{ contact_email: string | null }>();
   const key = data?.contact_email?.trim().toLowerCase();

@@ -1,7 +1,7 @@
 import "@/components/v3-pages/directory.css";
-import { prebuildSlice } from "@/lib/build/prebuild";
 import type { Metadata } from "next";
 import Image from "next/image";
+import { publicImageSource } from "@/lib/d1/public-asset-preview";
 import { notFound, permanentRedirect } from "next/navigation";
 import { RequestIntroForm } from "@/components/public/request-intro-form";
 import { SaveTradeButton } from "@/components/trusted/save-trade-button";
@@ -11,7 +11,7 @@ import { monogram } from "@/components/home-v3/directory-list";
 import { LevelBadge } from "@/components/karma/level-badge";
 import { getRecommendedBy } from "@/lib/trusted/data";
 import { JsonLd, breadcrumbSchema, localBusinessSchema } from "@/lib/seo/jsonld";
-import { getVendor, listVendors, retiredVendorRedirect } from "@/lib/data/directory";
+import { getVendor, retiredVendorRedirect } from "@/lib/data/directory";
 import { getCategories, getPropertyTypes, getRegions } from "@/lib/data/taxonomy";
 import { isOrgLifetime } from "@/lib/founding/server";
 import { listOrgProjects, listPublishedReviews } from "@/lib/data/projects";
@@ -28,16 +28,8 @@ import { alternatesFor } from "@/i18n/metadata";
 import { fmt, formatDate, formatNumber, plural } from "@/i18n/format";
 import { propertyTypeName, regionName, tradeName } from "@/i18n/terms";
 
-export const revalidate = 86400;
-
-export async function generateStaticParams({ params }: { params: { lang: string } }) {
-  // A few pages are prebuilt (lib/build/prebuild); the rest render
-  // on first visit, then cache (ISR), so deploys do not stampede the database.
-  // (An empty list for any language switches prebuilding off for the whole route.)
-  const [trades, suppliers] = await Promise.all([listVendors(), listVendors({ orgType: "supplier" })]);
-  const all = [...trades, ...suppliers].map((v) => ({ slug: v.slug }));
-  return prebuildSlice(all, params.lang);
-}
+// The D1 transport and the company's current visibility need runtime data.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }): Promise<Metadata> {
   const { lang, slug } = await params;
@@ -157,6 +149,7 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
   const deck = projects.slice(0, 4).map((p) => ({ href: L(`/case-studies/${p.slug}`), title: p.title, sub: projSub(p), img: p.heroUrl }));
   const more = projects.slice(4);
   const credsOnFile = [v.insuranceStatus, v.wsibStatus].some(Boolean);
+  const logo = v.logoUrl ? publicImageSource(v.logoUrl) : null;
   const fmtMonth = (d: string) => formatDate(d, lang, { month: "long", year: "numeric" });
 
   return (
@@ -197,7 +190,7 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
 
             <div className="v3-cp-head fadeup">
               <div className="v3-cp-logo">
-                {v.logoUrl ? <Image src={v.logoUrl} alt={v.name} fill sizes="148px" unoptimized={v.logoUrl.endsWith(".svg")} /> : monogram(v.name)}
+                {logo ? <Image src={logo.src} alt={v.name} fill sizes="148px" unoptimized={logo.unoptimized || logo.src.endsWith(".svg")} /> : monogram(v.name)}
               </div>
               <div style={{ minWidth: 0 }}>
                 {badges.length > 0 && (
@@ -392,7 +385,7 @@ export default async function VendorProfilePage({ params }: { params: Promise<{ 
               <div className="v3-cp-photos">
                 {v.portfolioPhotos.map((url, i) => (
                   <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="zoom">
-                    <Image src={url} alt={fmt(tp.portfolioAlt, { name: v.name, n: i + 1 })} fill sizes="(min-width: 1024px) 260px, 50vw" className="v3-img" />
+                    <Image src={url} alt={fmt(tp.portfolioAlt, { name: v.name, n: i + 1 })} fill sizes="(min-width: 1024px) 260px, 50vw" className="v3-img" unoptimized={url.startsWith("/api/company-media/")} />
                   </a>
                 ))}
               </div>

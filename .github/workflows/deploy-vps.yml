@@ -1,0 +1,64 @@
+name: Deploy PMRFP to Hostinger
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pmrfp-production-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref_type == 'branch' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.22.3
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            scripts/d1-auth/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix scripts/d1-auth --ignore-scripts
+      - run: npm test
+      - run: npm run build
+        env:
+          PMRFP_VPS_STANDALONE: enabled
+          NEXT_PUBLIC_GA_ID: G-FEC0QRSEFE
+          NEXT_PUBLIC_SITE_URL: https://pmrfp.com
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Package the Linux standalone build
+        run: |
+          release=.next/standalone
+          mkdir -p "$release/.next/static" "$release/public" "$release/node_modules/@img"
+          cp -a .next/static/. "$release/.next/static/"
+          cp -a public/. "$release/public/"
+          cp -a node_modules/@img/sharp-linux-x64 node_modules/@img/sharp-libvips-linux-x64 "$release/node_modules/@img/"
+          tar --exclude='.env*' --exclude='./.next/cache' -C "$release" -czf "$RUNNER_TEMP/pmrfp-release.tar.gz" .
+      - name: Deploy the validated release over SSH
+        env:
+          SSH_KEY: ${{ secrets.PMRFP_VPS_DEPLOY_KEY }}
+          SSH_HOST: ${{ secrets.PMRFP_VPS_HOST }}
+          SSH_HOST_KEY: ${{ secrets.PMRFP_VPS_HOST_KEY }}
+        run: |
+          set -eu
+          : "${SSH_KEY:?Missing VPS deployment key}" "${SSH_HOST:?Missing VPS host}" "${SSH_HOST_KEY:?Missing VPS host key}"
+          ssh_state=$(mktemp -d)
+          trap 'rm -rf "$ssh_state"' EXIT
+          chmod 700 "$ssh_state"
+          printf '%s\n' "$SSH_KEY" > "$ssh_state/key"
+          printf '%s\n' "$SSH_HOST_KEY" > "$ssh_state/known_hosts"
+          chmod 600 "$ssh_state/key" "$ssh_state/known_hosts"
+          ssh -T -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 -o ServerAliveInterval=15 -o UserKnownHostsFile="$ssh_state/known_hosts" \
+            -i "$ssh_state/key" "root@$SSH_HOST" "deploy $GITHUB_REF_NAME $GITHUB_SHA" < "$RUNNER_TEMP/pmrfp-release.tar.gz"

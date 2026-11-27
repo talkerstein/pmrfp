@@ -1,5 +1,6 @@
 import Link from "@/i18n/link";
 import Image from "next/image";
+import { publicImageSource } from "@/lib/d1/public-asset-preview";
 import { BadgeCheck } from "lucide-react";
 import type { VendorListItem } from "@/lib/data/types";
 import { getLang, getT } from "@/i18n/server";
@@ -28,6 +29,7 @@ export function monogram(name: string): string {
 }
 
 export function FeaturedVendorCard({ vendor }: { vendor: VendorListItem }) {
+  const logo = vendor.logoUrl ? publicImageSource(vendor.logoUrl) : null;
   const t = getT("directory");
   const lang = getLang();
   return (
@@ -38,15 +40,15 @@ export function FeaturedVendorCard({ vendor }: { vendor: VendorListItem }) {
         style={{ background: "radial-gradient(circle, rgba(145,242,207,.18), transparent 64%)" }}
       />
       <div className="relative flex items-center justify-between gap-2.5">
-        {vendor.logoUrl ? (
+        {logo ? (
           <span className="relative flex size-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
             <Image
-              src={vendor.logoUrl}
+              src={logo.src}
               alt={vendor.name}
               fill
               sizes="46px"
               className="object-contain p-1"
-              unoptimized={vendor.logoUrl.endsWith(".svg")}
+              unoptimized={logo.unoptimized || logo.src.endsWith(".svg")}
             />
           </span>
         ) : (

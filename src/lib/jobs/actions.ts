@@ -6,6 +6,8 @@ import { z } from "zod";
 import { getSession, type SessionContext } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { createVpsJob, updateVpsJob } from "@/lib/d1/vps-jobs";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { upsertGhlContact } from "@/lib/ghl/client";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -40,7 +42,7 @@ async function employer(lang: Locale): Promise<Employer> {
   if (org.profile_status !== "approved" || org.status !== "active") {
     return { error: m.needsApproval };
   }
-  if (!isServiceConfigured()) return { error: m.unavailable };
+  if (!isVpsLiveCustomerAuth() && !isServiceConfigured()) return { error: m.unavailable };
   return { session, orgId: org.id };
 }
 
@@ -71,9 +73,37 @@ export async function createJobAction(_prev: JobFormState, formData: FormData): 
   });
   if (!parsed.success) return { error: localMessage(parsed.error.issues[0]?.message, lang, JOB_MESSAGES, m, m.checkForm) };
   const d = parsed.data;
-
-  const admin = createServiceClient();
+  const slug = jobSlug(d.title, d.city);
   const today = new Date().toISOString().slice(0, 10);
+  if (isVpsLiveCustomerAuth()) {
+    const result = await createVpsJob({ orgId: e.orgId, userId: e.session.userId, pro: e.session.hasTradeAccess },
+      d, slug, today, addDays(JOB_DAYS)).catch(() => "couldNotPost" as const);
+    if (result !== "posted") return { error: m[result] };
+  } else {
+    const error = await createLegacyJob(e, d, slug, today, m);
+    if (error) return { error };
+  }
+
+  // CRM: employers hiring, by trade. Never blocks the post.
+  const [firstName, ...rest] = (e.session.profile.full_name ?? "").trim().split(/\s+/);
+  await Promise.allSettled([
+    upsertGhlContact({
+      email: e.session.profile.email,
+      firstName: firstName || undefined,
+      lastName: rest.join(" ") || undefined,
+      tags: ["pmrfp-employer", `pmrfp-hiring-${d.category}`],
+      customFields: { pmrfp_org_id: e.orgId, pmrfp_org_name: e.session.organization?.name ?? "" },
+    }),
+  ]);
+  revalidatePath("/jobs");
+  revalidatePath("/jobs/manage");
+  redirect(localizePath(`/jobs/manage?posted=${slug}`, lang));
+}
+
+async function createLegacyJob(
+  e: Extract<Employer, { orgId: string }>, d: z.infer<typeof jobSchema>, slug: string, today: string, m: ReturnType<typeof messages>,
+) {
+  const admin = createServiceClient();
   const [{ count }, { data: cat }, { data: reg }] = await Promise.all([
     admin
       .from("job_posts")
@@ -85,12 +115,11 @@ export async function createJobAction(_prev: JobFormState, formData: FormData): 
     admin.from("regions").select("id").eq("slug", d.region).maybeSingle<{ id: string }>(),
   ]);
   if (!canPostJob(count ?? 0, e.session.hasTradeAccess)) {
-    return { error: m.freeLimitPost };
+    return m.freeLimitPost;
   }
-  if (!cat) return { error: m.pickTrade };
-  if (!reg) return { error: m.pickRegion };
+  if (!cat) return m.pickTrade;
+  if (!reg) return m.pickRegion;
 
-  const slug = jobSlug(d.title, d.city);
   const { error } = await admin.from("job_posts").insert({
     slug,
     organization_id: e.orgId,
@@ -108,22 +137,8 @@ export async function createJobAction(_prev: JobFormState, formData: FormData): 
     expires_at: addDays(JOB_DAYS),
   });
   if (error) {
-    return { error: /job_posts/.test(error.message) ? m.switchingOn : m.couldNotPost };
+    return /job_posts/.test(error.message) ? m.switchingOn : m.couldNotPost;
   }
-  // CRM: employers hiring, by trade. Never blocks the post.
-  const [firstName, ...rest] = (e.session.profile.full_name ?? "").trim().split(/\s+/);
-  await Promise.allSettled([
-    upsertGhlContact({
-      email: e.session.profile.email,
-      firstName: firstName || undefined,
-      lastName: rest.join(" ") || undefined,
-      tags: ["pmrfp-employer", `pmrfp-hiring-${d.category}`],
-      customFields: { pmrfp_org_id: e.orgId, pmrfp_org_name: e.session.organization?.name ?? "" },
-    }),
-  ]);
-  revalidatePath("/jobs");
-  revalidatePath("/jobs/manage");
-  redirect(localizePath(`/jobs/manage?posted=${slug}`, lang));
 }
 
 /** Close a job (stop applications) or renew it for another 30 days. `lang`: the caller's, for the messages. */
@@ -131,8 +146,17 @@ export async function setJobStatusAction(jobId: string, action: "close" | "renew
   const l = langOf(lang);
   const m = messages(l);
   if (!z.uuid().safeParse(jobId).success) return { error: m.unknownJob };
+  if (action !== "close" && action !== "renew") return { error: m.couldNotUpdate };
   const e = await employer(l);
   if ("error" in e) return { error: e.error };
+  if (isVpsLiveCustomerAuth()) {
+    const result = await updateVpsJob({ orgId: e.orgId, userId: e.session.userId, pro: e.session.hasTradeAccess },
+      jobId, action, new Date().toISOString().slice(0, 10), addDays(JOB_DAYS))
+      .catch(() => ({ error: "couldNotUpdate" as const }));
+    if (result.error) return { error: m[result.error] };
+    refreshJob(result.slug);
+    return {};
+  }
   const admin = createServiceClient();
   const { data: job } = await admin
     .from("job_posts")
@@ -159,8 +183,12 @@ export async function setJobStatusAction(jobId: string, action: "close" | "renew
     .update(action === "close" ? { status: "closed" } : { status: "open", expires_at: addDays(JOB_DAYS) })
     .eq("id", jobId);
   if (error) return { error: m.couldNotUpdate };
-  revalidatePath("/jobs");
-  revalidatePath(`/jobs/${job.slug}`);
-  revalidatePath("/jobs/manage");
+  refreshJob(job.slug);
   return {};
+}
+
+function refreshJob(slug: string) {
+  revalidatePath("/jobs");
+  revalidatePath(`/jobs/${slug}`);
+  revalidatePath("/jobs/manage");
 }

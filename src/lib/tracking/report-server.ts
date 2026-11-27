@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { fetchD1SiteReport } from "./d1-report";
 import { torontoDay } from "@/lib/attribution/cookie";
 import { EMPTY_REPORT, normalizeReport, type RawReport } from "./report";
 
@@ -14,7 +16,8 @@ import { EMPTY_REPORT, normalizeReport, type RawReport } from "./report";
 export const SITE_ANALYTICS_TAG = "site-analytics";
 export const SITE_ANALYTICS_REVALIDATE = 300;
 
-async function fetchReport(from: string, to: string): Promise<RawReport & { missing?: boolean }> {
+async function fetchReport(from: string, to: string, native: boolean): Promise<RawReport & { missing?: boolean }> {
+  if (native) return fetchD1SiteReport(from,to);
   const { data, error } = await createServiceClient().rpc("site_analytics_report", { p_from: from, p_to: to });
   if (error) {
     // Before migration 20261021000200 the function doesn't exist: say so instead of failing.
@@ -37,16 +40,18 @@ export function rangeEnding(to: string, days: number): { from: string; to: strin
 }
 
 export async function loadSiteReport(days: number, now = new Date()): Promise<(RawReport & { missing?: boolean }) | null> {
-  if (!isServiceConfigured()) return null;
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) return null;
   const { from, to } = rangeEnding(torontoDay(now), days);
-  return cachedReport(from, to);
+  return cachedReport(from, to, native);
 }
 
 /** Uncached, for the weekly cron (runs once). */
 export async function fetchSiteReport(from: string, to: string): Promise<RawReport | null> {
-  if (!isServiceConfigured()) return null;
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isServiceConfigured()) return null;
   try {
-    const r = await fetchReport(from, to);
+    const r = await fetchReport(from, to, native);
     return r.missing ? null : r;
   } catch (e) {
     console.warn("[site-analytics] report failed:", e instanceof Error ? e.message : e);

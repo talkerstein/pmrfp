@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { downloadPrivateAttachment } from "@/lib/d1/private-attachment-routes";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/access/access";
@@ -12,6 +14,7 @@ import { signContractFile } from "@/lib/contracts/server";
  * company that owns the contract get the 2-minute signed link.
  */
 export async function GET(request: Request) {
+  if (isVpsLiveCustomerAuth()) return downloadPrivateAttachment(request, "contract");
   const id = new URL(request.url).searchParams.get("id") ?? "";
   if (!z.uuid().safeParse(id).success) return NextResponse.json({ error: "notFound" }, { status: 404 });
   const session = await getSession();

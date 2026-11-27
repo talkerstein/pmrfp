@@ -81,6 +81,26 @@ describe("shared board snapshot", () => {
     expect(db.count("rfp_documents")).toBe(0);
   });
 
+  it("keeps the source result and query count when the Cloudflare board cannot match", async () => {
+    const expected = await listRfps();
+    const sourceReads = db.requests.length;
+    seed(small);
+    const replicaFetch = vi.fn(async () => new Response(JSON.stringify({
+      items: [{ id: "fixture-unpublished" }], next: null,
+    })));
+    vi.stubGlobal("fetch", replicaFetch);
+    vi.stubEnv("PMRFP_PUBLIC_BOARD_PHASE", "matched");
+    vi.stubEnv("PMRFP_PUBLIC_TAXONOMY_GATEWAY", "synthetic-phase-key-at-least-32-chars");
+    try {
+      expect(await listRfps()).toEqual(expected);
+      expect(db.requests).toHaveLength(sourceReads);
+      expect(replicaFetch).toHaveBeenCalledTimes(SNAPSHOT_SHARDS);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("loads the whole board in ~2 reads per shard (was ~1 per 250 rows + 2 per 150 rows)", async () => {
     const n = 5000;
     const many = Array.from({ length: n }, (_, i) => ({ ...base, id: uuidFor(i), slug: `s${i}`, title: i % 3 ? "Roof" : "Electrical", summary: null, region_id: "region-a", deadline: "2026-12-01" }));

@@ -1,3 +1,5 @@
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { uploadPrivateAttachment } from "@/lib/d1/private-attachment-routes";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
@@ -18,6 +20,7 @@ export const maxDuration = 30;
  * tracker's upload rate limit.
  */
 export async function POST(request: Request) {
+  if (isVpsLiveCustomerAuth()) return uploadPrivateAttachment(request, "contract");
   const limited = await checkRateLimit(request, "cert-upload");
   if (limited) return rateLimitResponse(limited);
   const session = await getSession();

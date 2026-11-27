@@ -1,6 +1,9 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { createReadClient } from "@/lib/supabase/read";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
 import { normalizeWebsiteUrl, type LinkOrg } from "./policy";
 
 /**
@@ -44,8 +47,15 @@ export function linkOrgFromRow(r: Partial<LinkRow> | null | undefined): LinkOrg 
  * page knows the company only by slug). Null on any failure.
  */
 export async function getOrgLinkOrg(slug: string | null | undefined): Promise<LinkOrg | null> {
-  if (!slug || !isSupabaseConfigured()) return null;
+  const native = isVpsLiveCustomerAuth();
+  if (!slug || (!native && !isSupabaseConfigured())) return null;
   try {
+    if (native) {
+      const row = await vpsAppDatabase().prepare(`SELECT ${LINK_COLUMNS} FROM organizations
+        WHERE slug=? AND profile_status='approved' AND status='active' AND is_demo=0 AND ${customerAppAuthority}`)
+        .bind(slug).first<LinkRow>();
+      return row ? linkOrgFromRow(row) : null;
+    }
     const { data, error } = await createReadClient()
       .from("organizations")
       .select(LINK_COLUMNS)
@@ -65,8 +75,14 @@ export async function getOrgLinkOrg(slug: string | null | undefined): Promise<Li
  * column isn't there yet or the read fails (everything stays listed, as before).
  */
 export async function getNoindexSlugs(): Promise<Set<string>> {
-  if (!isSupabaseConfigured()) return new Set();
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return new Set();
   try {
+    if (native) {
+      const rows = await vpsAppDatabase().prepare(`SELECT slug FROM organizations WHERE profile_indexable=0 AND ${customerAppAuthority}
+        ORDER BY slug LIMIT 5000`).all<{ slug: string }>();
+      return new Set(rows.results.map((row) => row.slug));
+    }
     const { data, error } = await createReadClient().from("organizations").select("slug").eq("profile_indexable", false).limit(5000);
     if (error || !data) return new Set();
     return new Set((data as { slug: string }[]).map((r) => r.slug));
@@ -103,8 +119,14 @@ let cachedTarget: ((slug: string) => Promise<string | null>) | null = null;
 
 /** The stored website for a slug, or null (unknown, not live, or no website). Never throws. */
 export async function getOutTarget(slug: string): Promise<string | null> {
-  if (!/^[a-z0-9][a-z0-9-]{0,159}$/i.test(slug) || !isSupabaseConfigured()) return null;
+  const native = isVpsLiveCustomerAuth();
+  if (!/^[a-z0-9][a-z0-9-]{0,159}$/i.test(slug) || (!native && !isSupabaseConfigured())) return null;
   try {
+    if (native) {
+      const row = await vpsAppDatabase().prepare(`SELECT website FROM organizations WHERE slug=? AND profile_status='approved'
+        AND status='active' AND is_demo=0 AND ${customerAppAuthority}`).bind(slug.toLowerCase()).first<{ website: string | null }>();
+      return normalizeWebsiteUrl(row?.website);
+    }
     cachedTarget ??= unstable_cache(lookupTarget, ["org-out-target"], { revalidate: OUT_TTL_SECONDS, tags: [OUT_TAG] });
     return await cachedTarget(slug.toLowerCase());
   } catch {

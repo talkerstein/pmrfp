@@ -3,11 +3,16 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSession, requireRole } from "@/lib/access/access";
 import { countActiveProjects } from "@/lib/projects/server";
-import { canAddProject } from "@/lib/projects/limits";
+import { canAddProject, FREE_PROJECT_LIMIT } from "@/lib/projects/limits";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { vpsProjectAuthority, vpsProjectUploadsEnabled } from "@/lib/d1/vps-project-uploads";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { UUID } from "@/lib/d1/contracts";
 
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "project";
@@ -31,7 +36,8 @@ const caseStudySchema = z.object({
 });
 
 export async function submitCaseStudyAction(formData: FormData): Promise<void> {
-  if (!isSupabaseConfigured()) redirect("/dashboard?cs=demo");
+  const native = vpsProjectUploadsEnabled();
+  if (!native && !isSupabaseConfigured()) redirect("/dashboard?cs=demo");
   const session = await getSession();
   if (!session) redirect("/sign-in");
   if (!session.organization) redirect("/onboarding");
@@ -55,6 +61,33 @@ export async function submitCaseStudyAction(formData: FormData): Promise<void> {
   }
   const d = parsed.data;
 
+  if (native) {
+    const orgId = session.organization.id;
+    const id = randomUUID();
+    const slug = `${slugify(d.title)}-${id.replace(/-/g, "").slice(0, 12)}`;
+    let row: { id: string } | null;
+    try {
+      row = await vpsAppDatabase().prepare(`INSERT INTO case_studies(id,organization_id,submitted_by_user_id,title,slug,
+        category_id,region_id,property_type,city,province,challenge,approach,outcome,timeline,budget_band,status)
+        SELECT ?,?,?,?,?,(SELECT id FROM trade_categories WHERE slug=?),(SELECT id FROM regions WHERE slug=?),
+          ?,?,?,?,?,?,?,?,'pending_review' WHERE ${vpsProjectAuthority}
+        AND EXISTS(SELECT 1 FROM organization_members m JOIN users_profile u ON u.id=m.user_id
+          JOIN organizations o ON o.id=m.organization_id
+          WHERE m.organization_id=? AND m.user_id=? AND u.status='active' AND o.status<>'suspended' AND o.is_demo=0)
+        AND (?=1 OR (SELECT count(*) FROM case_studies c WHERE c.organization_id=? AND c.status NOT IN ('rejected','archived'))<?)
+        RETURNING id`).bind(id, orgId, session.userId, d.title, slug, d.categorySlug ?? null, d.regionSlug ?? null,
+        d.propertyType ?? null, d.city ?? null, d.province ?? null, d.challenge, d.approach, d.outcome,
+        d.timeline ?? null, d.budgetBand ?? null, orgId, session.userId, Number(session.hasTradeAccess), orgId, FREE_PROJECT_LIMIT)
+        .first<{ id: string }>();
+    } catch {
+      redirect(`/dashboard/case-studies/new?error=${encodeURIComponent("Could not save — please try again.")}`);
+    }
+    if (!row) redirect(`/dashboard/case-studies/new?error=${encodeURIComponent(
+      "The project could not be saved. Check your company access and project limit.",
+    )}`);
+    revalidatePath("/dashboard/projects");
+    redirect("/dashboard?cs=submitted");
+  }
   // Same plan limit as photo projects: the typed form used to skip it.
   if (!canAddProject(session.hasTradeAccess, await countActiveProjects(session.organization.id))) {
     redirect(
@@ -95,10 +128,26 @@ export async function submitCaseStudyAction(formData: FormData): Promise<void> {
 
 /** Admin: publish or reject a pending study. */
 export async function reviewCaseStudyAction(formData: FormData): Promise<void> {
-  await requireRole(["admin", "super_admin"]);
+  const session = await requireRole(["admin", "super_admin"]);
   const id = String(formData.get("id") ?? "");
   const decision = String(formData.get("decision") ?? "");
   if (!id || !["published", "rejected"].includes(decision)) redirect("/admin/case-studies");
+
+  if (vpsProjectUploadsEnabled()) {
+    if (!UUID.test(id)) redirect("/admin/case-studies");
+    const now = new Date().toISOString();
+    const row = await vpsAppDatabase().prepare(`UPDATE case_studies SET status=?,published_at=?,updated_at=?
+      WHERE id=? AND status='pending_review' AND ${vpsProjectAuthority} AND ${activeRequestAdmin}
+      RETURNING slug,(SELECT slug FROM organizations WHERE id=organization_id) AS orgSlug`)
+      .bind(decision, decision === "published" ? now : null, now, id, session.userId).first<{ slug: string; orgSlug: string | null }>();
+    if (row) {
+      revalidatePath("/projects");
+      revalidatePath(`/case-studies/${row.slug}`);
+      if (row.orgSlug) revalidatePath(`/directory/${row.orgSlug}`);
+    }
+    revalidatePath("/admin/case-studies");
+    redirect("/admin/case-studies");
+  }
 
   const supabase = await createClient();
   await supabase

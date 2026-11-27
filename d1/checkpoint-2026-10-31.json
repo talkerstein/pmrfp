@@ -1,0 +1,444 @@
+{
+  "date": "2026-10-31",
+  "repositoryBase": "29b376e",
+  "priorPendingDelta": {
+    "generation": "rebuilt-20261029",
+    "copiedPreviewOnly": true,
+    "localPreviewPausedDuringMutation": true,
+    "sourceCustomerWrites": 0,
+    "forward": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+      "tables": 109,
+      "records": 55529,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": false,
+      "changed_records": 311,
+      "batch_statements": 341
+    },
+    "reverse": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "3182d4a3eff4ac51183e44db06a02ee4b8c09a486bbf1ff9fa86a16984e1098c",
+      "tables": 109,
+      "records": 55322,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": true,
+      "changed_records": 311,
+      "batch_statements": 362
+    },
+    "final": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+      "tables": 109,
+      "records": 55529,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": false,
+      "changed_records": 311,
+      "batch_statements": 341
+    },
+    "finalReadback": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+      "tables": 109,
+      "records": 55529,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false
+    },
+    "beforeBackupRestoredAndVerified": true,
+    "finalBackupRestoredAndVerified": true,
+    "cutoverReady": false,
+    "continuousCdcImplemented": false
+  },
+  "cutoverReady": false,
+  "schemaAudit": {
+    "date": "2026-10-31",
+    "publicTables": 108,
+    "comparisonWithOctober29": {
+      "columns": true,
+      "constraints": true,
+      "indexes": true,
+      "policies": true,
+      "functions": true,
+      "triggers": true,
+      "event_triggers": false,
+      "views": true,
+      "publications": true
+    },
+    "storageBucketRowsQueried": false,
+    "sourceWrites": 0,
+    "eventTriggerComparison": {
+      "equalAfterRemovingExtensionsQualification": true,
+      "rawDifference": "Six extension function names are schema-qualified under the reader search path; names, events and enabled states match."
+    }
+  },
+  "freshSnapshot": {
+    "records": 71467,
+    "sha256": "7319341e844a38de11c893d94916e61e0566b6d8eca452c0fbf0293a802d6666",
+    "exportedTables": 109
+  },
+  "rebuiltSnapshot": {
+    "source_snapshot_sha256": "7319341e844a38de11c893d94916e61e0566b6d8eca452c0fbf0293a802d6666",
+    "rebuilt_snapshot_sha256": "284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941",
+    "tables": 109,
+    "records": 71316,
+    "scored_at": "2026-10-31T07:49:34.584620+00:00",
+    "authoritative_fields": "identical",
+    "rebuilt_fields": "approved-policy-only",
+    "cutover_ready": false
+  },
+  "freshDeltaPlan": {
+    "changes": 16057,
+    "tables": {
+      "_auth_users": {
+        "inserted": 2
+      },
+      "audit_logs": {
+        "inserted": 1
+      },
+      "badge_hits": {
+        "inserted": 18,
+        "updated": 3
+      },
+      "email_consents": {
+        "inserted": 3
+      },
+      "forum_categories": {
+        "updated": 1
+      },
+      "forum_profiles": {
+        "updated": 1
+      },
+      "forum_threads": {
+        "updated": 89,
+        "inserted": 1
+      },
+      "karma_events": {
+        "inserted": 1
+      },
+      "landing_counts": {
+        "inserted": 12938,
+        "updated": 11
+      },
+      "lifecycle_sends": {
+        "inserted": 8
+      },
+      "onboarding_steps": {
+        "inserted": 1
+      },
+      "org_karma": {
+        "updated": 69,
+        "inserted": 2
+      },
+      "org_link_clicks": {
+        "inserted": 4
+      },
+      "organization_categories": {
+        "inserted": 2
+      },
+      "organization_members": {
+        "inserted": 1
+      },
+      "organization_property_types": {
+        "inserted": 2
+      },
+      "organization_regions": {
+        "inserted": 8
+      },
+      "organizations": {
+        "inserted": 2
+      },
+      "rfp_bid_checks": {
+        "inserted": 92
+      },
+      "rfp_categories": {
+        "inserted": 57
+      },
+      "rfp_changes": {
+        "inserted": 65
+      },
+      "rfp_posts": {
+        "inserted": 53,
+        "updated": 65
+      },
+      "rfp_views": {
+        "inserted": 377
+      },
+      "signup_attribution": {
+        "inserted": 2
+      },
+      "site_events": {
+        "inserted": 464
+      },
+      "site_page_views": {
+        "inserted": 861,
+        "updated": 25
+      },
+      "site_referrers": {
+        "inserted": 12,
+        "updated": 2
+      },
+      "site_visitors": {
+        "inserted": 742
+      },
+      "sponsor_clicks": {
+        "inserted": 43
+      },
+      "sponsor_impressions": {
+        "inserted": 23,
+        "updated": 4
+      },
+      "users_profile": {
+        "inserted": 2
+      }
+    },
+    "before": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+    "after": "284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941"
+  },
+  "freshDeltaLocalRehearsal": {
+    "baseline": "actual native D1 readback",
+    "changes": 16057,
+    "forwardRows": 71316,
+    "reverseRows": 55529,
+    "finalRows": 71316,
+    "expressionDepthLimit": 64,
+    "allFieldsAndFksVerified": true,
+    "nativeDataMutation": false,
+    "sourceCustomerWrites": 0
+  },
+  "packedNativeCanary": {
+    "syntheticOnly": true,
+    "failureRollback": true,
+    "forward": {
+      "database": "pmrfp-journal-canary-20261023",
+      "source_sha256": "42a85a8ddc22fd0c32f0c01570f490fdab3c9ec35e3ddd585eec67ab13796f5f",
+      "tables": 102,
+      "records": 653,
+      "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": false,
+      "changed_records": 653,
+      "batch_statements": 21
+    },
+    "reverse": {
+      "database": "pmrfp-journal-canary-20261023",
+      "source_sha256": "a9b7e61b7fe5c3e320d4ad52a0803d7202fc04ab62b7bdae62d7fd0c69f0f8e5",
+      "tables": 102,
+      "records": 3,
+      "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": true,
+      "changed_records": 653,
+      "batch_statements": 21
+    },
+    "sourceWrites": 0
+  },
+  "validation": {
+    "offlineTestsPassed": 59,
+    "applicationCodeChanged": true,
+    "grantCheck": "passed",
+    "applicationTestsPassed": 2794,
+    "applicationTestsSkipped": 3,
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "productionBuild": "passed after preserving Next framework control flow",
+    "staticPages": 785
+  },
+  "nativeFreshReplay": "forward, reverse, final reapply, complete readback and restored baseline/final backups passed",
+  "freshDeltaNativeReplay": {
+    "forward": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941",
+      "tables": 109,
+      "records": 71316,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": false,
+      "changed_records": 16057,
+      "batch_statements": 381
+    },
+    "reverse": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+      "tables": 109,
+      "records": 55529,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": true,
+      "changed_records": 16057,
+      "batch_statements": 381
+    },
+    "final": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941",
+      "tables": 109,
+      "records": 71316,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": false,
+      "changed_records": 16057,
+      "batch_statements": 381
+    },
+    "finalReadback": {
+      "database": "pmrfp-rebuilt-staging-20261029",
+      "source_sha256": "284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941",
+      "tables": 109,
+      "records": 71316,
+      "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false
+    },
+    "beforeAndAfterBackupsRestored": true,
+    "sourceWrites": 0,
+    "cutoverReady": false
+  },
+  "packedNativeCanaryIndexedDeletes": {
+    "syntheticOnly": true,
+    "failureRollback": true,
+    "forward": {
+      "database": "pmrfp-journal-canary-20261023",
+      "source_sha256": "94b43825c0cda2b74635dccc58dab18b18a70989fe7c949661303073751c6221",
+      "tables": 102,
+      "records": 653,
+      "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": false,
+      "changed_records": 653,
+      "batch_statements": 21
+    },
+    "reverse": {
+      "database": "pmrfp-journal-canary-20261023",
+      "source_sha256": "a9b7e61b7fe5c3e320d4ad52a0803d7202fc04ab62b7bdae62d7fd0c69f0f8e5",
+      "tables": 102,
+      "records": 3,
+      "schema_sha256": "7dcd16ebeb41c4e7bf7cfbd4a93cbe53c6c1b4971a85a0acf4868374e780e893",
+      "schema_comparison": "identical",
+      "record_comparison": "all fields identical",
+      "foreign_keys": "valid",
+      "cutover_ready": false,
+      "recovered": false,
+      "reverse": true,
+      "changed_records": 653,
+      "batch_statements": 21
+    },
+    "sourceWrites": 0
+  },
+  "localIndexedReverse": {
+    "database": "pmrfp-rebuilt-staging-20261029",
+    "source_sha256": "c41fbea976c6a1b3e45cf30caf97ac5428096f8b69bdf923e0a979ba36a70562",
+    "tables": 109,
+    "records": 55529,
+    "schema_sha256": "5b7c185dcc798f1589208c5a6ed06e9b9f5094d6e77b6791541bc7427e793306",
+    "schema_comparison": "identical",
+    "record_comparison": "all fields identical",
+    "foreign_keys": "valid",
+    "cutover_ready": false,
+    "recovered": false,
+    "reverse": true,
+    "changed_records": 16057,
+    "batch_statements": 381
+  },
+  "publicParity": {
+    "dataset": "284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941",
+    "comparisonBaseline": "captured consistent source snapshot 2026-10-31",
+    "publishedRows": 1802,
+    "boardAllFieldsIdentical": true,
+    "taxonomy": {
+      "trade_categories": {
+        "rows": 45,
+        "allFieldsIdentical": true
+      },
+      "regions": {
+        "rows": 88,
+        "allFieldsIdentical": true
+      },
+      "property_types": {
+        "rows": 21,
+        "allFieldsIdentical": true
+      }
+    },
+    "sourceWrites": 0
+  },
+  "publicPhotos": {
+    "dataset": "284d7fd4f74516a2dc238cb69abc945b448d38cdfcd1f25de0a3255869bc3941",
+    "publicRfpsCompared": 1802,
+    "photos": 3,
+    "allPublicPhotoUrlsAndOrderingIdentical": true,
+    "anonymousAuthCalls": 0,
+    "gatewayDenialVerified": true,
+    "writesDenied": true,
+    "sourceWrites": 0,
+    "workerVersion": "9c41f94a-154f-4b6f-ab6c-1433162c2cc8",
+    "browserImageLoaded": true,
+    "browserImageNaturalSize": [
+      800,
+      452
+    ],
+    "privateOwnerPhotoReadsRemainSource": true,
+    "imageObjectsRemainSourceStorage": true
+  },
+  "sourceChangeCapture": {
+    "status": "review-only; explicit approval required; not installed",
+    "tables": 108,
+    "triggersProposed": 216,
+    "privateSchema": "d1_migration",
+    "readerExpiryUnchanged": "2026-11-05T10:00:00Z",
+    "sourceCustomerWriteGrantsAdded": false,
+    "newReaderPermission": "SELECT private queue/registry and bounded private queue acknowledgement only",
+    "continuousIncrementalConsumerImplemented": false,
+    "fixture": {
+      "fixtureOnly": true,
+      "sourceRowsInserted": 500,
+      "events": 500,
+      "metadataBytes": 55997,
+      "fixtureInsertMs": 236,
+      "customerRowsRetained": true,
+      "sourceRlsPreserved": true,
+      "detachPreservesQueue": true,
+      "productionApplied": false
+    }
+  }
+}

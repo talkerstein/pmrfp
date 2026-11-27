@@ -1,3 +1,5 @@
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { AlertTriangle } from "lucide-react";
@@ -40,10 +42,22 @@ const PROJECT_COLS = "reviewer_email,verified_via,show_building,reference_ok,cas
  */
 export default async function AdminReviewsPage({ params }: { params: Promise<object> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const session=await requireRole(["admin","super_admin"]);
+  const native=process.env.PMRFP_VPS_CUSTOMER_ENGINE==="d1";
 
   let rows: Row[] = [];
-  if (!isDemoMode()) {
+  if (native) {
+    type Raw=Omit<Row,"organizations"|"case_studies"> & {organization_json:string|null;project_json:string|null};
+    const result=await vpsAppDatabase().prepare(`SELECT r.id,r.status,r.rating,r.body,r.reviewer_name,r.reviewer_company,
+      r.reviewer_email,r.verified_via,r.show_building,r.reference_ok,r.project_context,r.created_at,
+      CASE WHEN o.id IS NOT NULL THEN json_object('name',o.name,'slug',o.slug,'email',o.email,'website',o.website) END AS organization_json,
+      CASE WHEN c.id IS NOT NULL THEN json_object('title',c.title,'slug',c.slug) END AS project_json
+      FROM vendor_reviews r LEFT JOIN organizations o ON o.id=r.organization_id LEFT JOIN case_studies c ON c.id=r.case_study_id
+      WHERE ${activeRequestAdmin} ORDER BY r.created_at DESC,r.id LIMIT 200`).bind(session.userId).all<Raw>();
+    rows=result.results.map(({organization_json,project_json,...row})=>({...row,
+      organizations:organization_json?JSON.parse(organization_json):null,
+      case_studies:project_json?JSON.parse(project_json):null,show_building:Boolean(row.show_building),reference_ok:Boolean(row.reference_ok)}));
+  } else if (!isDemoMode()) {
     const supabase = createServiceClient();
     const run = (cols: string) =>
       supabase.from("vendor_reviews").select(cols).order("created_at", { ascending: false }).limit(200);
@@ -58,7 +72,7 @@ export default async function AdminReviewsPage({ params }: { params: Promise<obj
 
   return (
     <>
-      {isDemoMode() && <DemoBanner />}
+      {!native && isDemoMode() && <DemoBanner />}
       <PageHeader
         title="Reviews"
         description="Client reviews of trades. Published reviews show on the company profile and the project page, and count toward its star rating."

@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 import { fetchOpenTenders } from "@/lib/tenders/canadabuys";
 import { CANADABUYS_OFF_NOTE, allowedSources, canadabuysFetchAllowed } from "@/lib/tenders/canadabuys-access";
 import { openTendersSource, pastAwardsSource } from "@/lib/tenders/canadabuys-feeds";
@@ -14,7 +12,7 @@ import {
 } from "@/lib/tenders/toronto";
 import { classifyNsAward, fetchNsAwards, nsAwardToRfpInsert } from "@/lib/tenders/nova-scotia";
 import { classifyYukon, fetchYukonOpenTenders, yukonToRfpInsert } from "@/lib/tenders/yukon";
-import { syncPublicSources, type Source } from "@/lib/tenders/sync";
+import { syncPublicSources, tenderSyncDatabase, type Source } from "@/lib/tenders/sync";
 import { CRON_CAP, CRON_DAYS, autoThreadsEnabled } from "@/lib/forum/auto-threads";
 import { runAutoThreads } from "@/lib/forum/auto-threads-server";
 import { fetchAwards } from "@/lib/tenders/awards";
@@ -116,10 +114,10 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const db = tenderSyncDatabase();
+  if (!db) return NextResponse.json({ skipped: "no service client" });
 
   const dry = new URL(request.url).searchParams.get("dry") === "1";
-  const db = createServiceClient();
   const { status, body } = await syncPublicSources(db, allowedSources(SOURCES), {
     today: new Date().toISOString().slice(0, 10),
     dry,
@@ -136,5 +134,7 @@ export async function GET(request: Request) {
       });
   }
   const canadabuys = canadabuysFetchAllowed() ? "on" : CANADABUYS_OFF_NOTE;
-  return NextResponse.json({ ...body, forum, canadabuys }, { status });
+  const forumFailed = "prepare" in db && autoThreadsEnabled() && status === 200 &&
+    (forum === "error" || (typeof forum === "object" && forum !== null && "ready" in forum && !forum.ready));
+  return NextResponse.json({ ...body, forum, canadabuys }, { status: forumFailed ? 503 : status });
 }

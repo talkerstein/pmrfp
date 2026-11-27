@@ -1,15 +1,6 @@
 import { Platform } from "react-native";
-import { supabase } from "./supabase";
-
-/**
- * The pmrfp.com API, for the few things the app can't do with supabase-js
- * directly: photo processing (EXIF/GPS strip), the AI draft, and publishing
- * a project (service-role insert). Every call sends the Supabase access
- * token as a bearer token; the server verifies it with Supabase Auth.
- *
- * Point at a preview deploy with EXPO_PUBLIC_SITE_URL.
- */
-export const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/+$/, "");
+import { SITE_URL, storedToken } from "./session";
+export { SITE_URL } from "./session";
 
 export class ApiError extends Error {
   constructor(
@@ -24,11 +15,9 @@ export class ApiError extends Error {
 
 const OFFLINE = "No connection. Check your signal and try again.";
 
-/** Current access token. getSession() refreshes an expired one first. */
 async function accessToken(): Promise<string> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new ApiError("Sign in first.", 401);
+  const token = await storedToken();
+  if (!token) throw new ApiError("Sign in first.",401);
   return token;
 }
 
@@ -49,6 +38,7 @@ export async function apiFetch<T>(path: string, init: { method?: "GET" | "POST";
       method: init.method ?? "GET",
       headers: {
         Accept: "application/json",
+        Origin: SITE_URL,
         Authorization: `Bearer ${token}`,
         ...(hasBody ? { "Content-Type": "application/json" } : {}),
       },
@@ -88,6 +78,7 @@ export async function uploadPhoto(uri: string, onProgress: (fraction: number) =>
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${SITE_URL}/api/projects/photos`);
+    xhr.setRequestHeader("Origin",SITE_URL);
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.setRequestHeader("Accept", "application/json");
     xhr.timeout = 90_000;

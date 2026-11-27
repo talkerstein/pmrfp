@@ -29,8 +29,11 @@ import { pendingJoinRequestFor } from "@/lib/dedupe/join";
 import { cancelJoinRequestAction } from "@/lib/dedupe/actions";
 import { fmt } from "@/i18n/format";
 import { createClient } from "@/lib/supabase/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { readVpsPendingJoin } from "@/lib/d1/vps-join-requests";
 import { BuyerClaimStep } from "@/components/towns/claim-step";
 import { BUYER_DASHBOARD_PATH } from "@/lib/towns/paths";
+import { parseBuyerKey } from "@/lib/towns/managed";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -70,9 +73,11 @@ export default async function OnboardingPage({
   // Asked to join an existing company (lib/dedupe/join): wait for approval,
   // or withdraw and create their own listing.
   const td = getT("dedupeClient");
-  const pendingJoin = !session.profile.onboarding_completed && isServiceConfigured()
-    ? await pendingJoinRequestFor(createServiceClient(), session.userId)
-    : null;
+  let pendingJoin = null;
+  if (!session.profile.onboarding_completed) {
+    if (isVpsLiveCustomerAuth()) pendingJoin = await readVpsPendingJoin(session.userId);
+    else if (isServiceConfigured()) pendingJoin = await pendingJoinRequestFor(createServiceClient(), session.userId);
+  }
   if (pendingJoin) {
     return (
       <Shell lang={lang} heading={td.pending.heading} intro={fmt(td.pending.body, { company: pendingJoin.companyName })}>
@@ -92,15 +97,17 @@ export default async function OnboardingPage({
     const tc = getT("towns").claim;
     const user = isSupabaseConfigured() ? (await (await createClient()).auth.getUser()).data.user : null;
     const metaClaim = typeof user?.user_metadata?.claim_buyer === "string" ? (user.user_metadata.claim_buyer as string) : null;
+    const target = next ? new URL(next, "https://pmrfp.com") : null;
+    const nextClaim = target?.pathname === "/onboarding" ? target.searchParams.get("claim") : null;
     return (
       <Shell lang={lang} heading={tc.heading} intro={tc.intro}>
         <BuyerClaimStep
           lang={lang}
-          claimKey={claim ?? (q ? null : metaClaim)}
+          claimKey={claim ?? (q ? null : parseBuyerKey(nextClaim) ? nextClaim : metaClaim)}
           q={q?.slice(0, 80) ?? null}
           error={claimError ?? null}
           email={user?.email ?? session.profile.email}
-          emailConfirmed={Boolean(user?.email_confirmed_at)}
+          emailConfirmed={isVpsLiveCustomerAuth() || Boolean(user?.email_confirmed_at)}
         />
       </Shell>
     );

@@ -9,6 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { findAccountDuplicates, type AccountFacts, type AccountPair } from "./people";
 import { findCompanyDuplicates, type CompanyCandidate, type CompanyPair } from "./company";
 import { isMissingRelation, pairKey, type ReviewRow } from "./review";
+import { customerAppAuthority, type D1Binding } from "@/lib/d1/contracts";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
 
 function logUnexpected(label: string, error: { code?: string; message: string } | null) {
   if (error && !isMissingRelation(error)) console.error(`[dedupe:admin] ${label}`, error.message);
@@ -46,8 +48,28 @@ interface MemberRow {
   role: string;
 }
 
-export async function loadDuplicates(db: SupabaseClient): Promise<DuplicatesData> {
-  const [users, members, orgs, reviews, joins] = await Promise.all([
+async function nativeDuplicateRows(db: D1Binding, actor: string) {
+  const guard = `${customerAppAuthority} AND ${activeRequestAdmin}`;
+  const [users, members, orgs, reviews, joins] = await db.batch([
+    db.prepare(`SELECT id,email,full_name,phone,created_at,status FROM users_profile
+      WHERE ${guard} ORDER BY created_at DESC,id LIMIT 5000`).bind(actor),
+    db.prepare(`SELECT user_id,organization_id,role FROM organization_members WHERE ${guard} ORDER BY id LIMIT 20000`).bind(actor),
+    db.prepare(`SELECT id,slug,name,website,phone,email,city,province,organization_type,profile_status,status,created_at,is_demo
+      FROM organizations WHERE status<>'deleted' AND is_demo=0 AND ${guard} ORDER BY id LIMIT 10000`).bind(actor),
+    db.prepare(`SELECT kind,a_id,b_id,status,source,reasons,note,created_at FROM duplicate_reviews WHERE ${guard}
+      ORDER BY created_at DESC,id LIMIT 5000`).bind(actor),
+    db.prepare(`SELECT id,created_at,organization_id,user_id FROM organization_join_requests
+      WHERE status='pending' AND ${guard} ORDER BY created_at,id LIMIT 200`).bind(actor),
+  ]);
+  if (![users, members, orgs, reviews, joins].every(result => result?.success)) throw new Error("Duplicate review unavailable");
+  const wrap = (data: unknown[]) => ({ data, error: null });
+  return [wrap(users.results), wrap(members.results), wrap(orgs.results), wrap(reviews.results.map((row) => ({
+    ...row, reasons: typeof row.reasons === "string" ? JSON.parse(row.reasons) : [],
+  }))), wrap(joins.results)] as const;
+}
+
+export async function loadDuplicates(db: SupabaseClient | D1Binding, actor?: string): Promise<DuplicatesData> {
+  const [users, members, orgs, reviews, joins] = "prepare" in db ? await nativeDuplicateRows(db, actor ?? "") : await Promise.all([
     db.from("users_profile").select("id,email,full_name,phone,created_at,status").order("created_at", { ascending: false }).limit(5000),
     db.from("organization_members").select("user_id,organization_id,role").limit(20000),
     db

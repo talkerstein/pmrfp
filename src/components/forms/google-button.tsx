@@ -11,7 +11,7 @@ import { useLang, useT } from "@/i18n/provider";
  * rendered when Google is switched on in Supabase (see isGoogleAuthEnabled).
  * `next` is where to go after Google; it's re-checked on the way back.
  */
-export function ContinueWithGoogle({ next }: { next?: string | null }) {
+export function ContinueWithGoogle({ next, native = false, signup = false }: { next?: string | null; native?: boolean; signup?: boolean }) {
   const t = useT("auth").google;
   const lang = useLang();
   const [pending, setPending] = useState(false);
@@ -20,6 +20,13 @@ export function ContinueWithGoogle({ next }: { next?: string | null }) {
   async function start() {
     setPending(true);
     setError(null);
+    if (native) {
+      const query = new URLSearchParams({ l: lang });
+      if (next) query.set("next", next);
+      if (signup) query.set("intent", "signup");
+      window.location.assign("/api/auth/google?" + query);
+      return;
+    }
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}${oauthCallbackPath(next, lang)}` },

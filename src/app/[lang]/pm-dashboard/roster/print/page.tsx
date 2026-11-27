@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "@/i18n/link";
 import { ArrowLeft } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { PrintButton } from "@/components/roster/print-button";
 import { RosterPrintSheet } from "@/components/roster/print-sheet";
 import { rosterBlocked, rosterPm } from "@/components/roster/gate";
-import { loadRosters } from "@/lib/roster/server";
+import { loadRosters, rosterDatabase } from "@/lib/roster/server";
 import { rosterRows } from "@/lib/roster/rules";
 import { getT, setLangFrom } from "@/i18n/server";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -26,7 +25,7 @@ export default async function RosterPrintAllPage({ params }: { params: Promise<o
   const header = <PageHeader title={R.print.title} />;
   const blocked = rosterBlocked({ session, header, t: R.dash });
   if (blocked || !session.organization) return blocked;
-  const { ready, rosters, entries } = await loadRosters(await createClient(), session.organization.id);
+  const { ready, rosters, entries } = await loadRosters(await rosterDatabase(session), session.organization.id);
   const notReady = rosterBlocked({ session, header, t: R.dash, ready });
   if (notReady) return notReady;
   const now = new Date();

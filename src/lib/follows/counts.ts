@@ -1,3 +1,6 @@
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { readD1 } from "@/lib/lifecycle/d1";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createReadClient } from "@/lib/supabase/read";
@@ -39,16 +42,19 @@ async function fetchCounts(): Promise<CountRow[]> {
 
 const cachedCounts = unstable_cache(
   // The project URL keys the cache (a preview and production never share counts).
-  async (projectUrl: string): Promise<CountRow[]> => singleFlight(`buyer-follow-counts:${projectUrl}`, fetchCounts),
+  async (projectUrl: string): Promise<CountRow[]> => singleFlight(`buyer-follow-counts:${projectUrl}`, () =>
+    projectUrl === "d1" ? readD1<CountRow>(vpsAppDatabase(),
+      "SELECT buyer_slug,count(*) AS followers FROM buyer_follows GROUP BY buyer_slug ORDER BY buyer_slug LIMIT 20000") : fetchCounts()),
   ["buyer-follow-counts-v1"],
   { tags: [BUYER_FOLLOWS_TAG], revalidate: FOLLOW_COUNTS_REVALIDATE },
 );
 
 /** Followers by page key ("ontario/town-of-cobourg"), once per request. */
 export const getFollowerCountsSnapshot = cache(async (): Promise<ReadonlyMap<string, number>> => {
-  if (!isSupabaseConfigured()) return new Map();
+  const native = isVpsLiveCustomerAuth();
+  if (!native && !isSupabaseConfigured()) return new Map();
   try {
-    const rows = await cachedCounts(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+    const rows = await cachedCounts(native ? "d1" : process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
     return new Map(rows.map((r) => [r.buyer_slug, Number(r.followers) || 0] as const));
   } catch (e) {
     console.warn("[buyer-follows] counts unavailable", e instanceof Error ? e.message : e);

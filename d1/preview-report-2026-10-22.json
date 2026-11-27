@@ -1,0 +1,195 @@
+{
+  "date": "2026-10-22",
+  "repository_master": "da918b5e13897401cc36d8b52f1fa89b23a8b1d4",
+  "catalog_sha256": "3620dfb93ece2e4bd662f748714cd7239b14b7476f6e8f637a5a22a0d8ed667f",
+  "schema_sha256": "5ba1e06bd350b1f96be42bce313b2d0e2cfa255d08d3abadd134725985f7d795",
+  "public_tables": 98,
+  "sandbox_database": "pmrfp-api-sandbox-20261022",
+  "sandbox_database_id": "89721b4c-4fd7-46a2-809e-6a2299d915a3",
+  "remote_schema_applied": true,
+  "synthetic_seed_applied": true,
+  "remote_foreign_key_violations": 0,
+  "remote_quick_check": "ok",
+  "production_cutover": false,
+  "production_snapshot_refreshed": true,
+  "worker_deployed": true,
+  "worker_deployment_blocker": null,
+  "preview_tests_passed": 26,
+  "existing_karma_tests_passed": 22,
+  "offline_migration_tests_passed": 21,
+  "full_suite_node24": {
+    "passed": 2070,
+    "skipped": 2,
+    "note": "Includes all preview, redirect, reader-access and existing application tests."
+  },
+  "production_build_node24": "passed",
+  "synthetic_worker_url": "https://pmrfp-d1-saved-rfps-preview.pmrfp.workers.dev",
+  "copied_read_worker_url": "https://pmrfp-d1-copied-read-preview.pmrfp.workers.dev",
+  "test_account_created_with_user_authorization": true,
+  "real_session_save_list_unsave": {
+    "app_save_status": 200,
+    "app_unsave_status": 200,
+    "worker_list_status": 200,
+    "browser_saved_item_rendered": true,
+    "browser_empty_state_after_unsave": true,
+    "source_saved_rows": 0
+  },
+  "reader_access": "applied with user authorization; TLS and live denied-write checks passed",
+  "fresh_source": {
+    "catalog": "production-catalog-2026-10-22.json",
+    "public_tables": 98,
+    "policies": 163,
+    "functions": 63,
+    "triggers": 37,
+    "views": 20,
+    "shared_column_drift": [],
+    "public_records": 10791,
+    "auth_id_references": 51,
+    "records": 10842,
+    "snapshot_sha256": "f83ec499eda126150176a7c3ba03e29cd6ec28bb6b1395a8c65b24b3cfd4920f",
+    "note": "Point-in-time export predates the later isolated test account; ongoing sync is not running."
+  },
+  "full_copy": {
+    "database": "pmrfp-migration-staging-v3-20261022",
+    "source_sha256": "f83ec499eda126150176a7c3ba03e29cd6ec28bb6b1395a8c65b24b3cfd4920f",
+    "tables": 99,
+    "records": 10842,
+    "schema_sha256": "5ba1e06bd350b1f96be42bce313b2d0e2cfa255d08d3abadd134725985f7d795",
+    "schema_comparison": "identical",
+    "record_comparison": "all fields identical",
+    "foreign_keys": "valid",
+    "cutover_ready": false,
+    "readback_restored_and_validated": true
+  },
+  "rebuilt_copy": {
+    "database": "pmrfp-rebuilt-staging-20261022",
+    "source_sha256": "d28b379c38ab1d186189253bd8655175f71c767cf7a0a29b24fe99571b5190cd",
+    "tables": 99,
+    "records": 10726,
+    "schema_sha256": "5ba1e06bd350b1f96be42bce313b2d0e2cfa255d08d3abadd134725985f7d795",
+    "schema_comparison": "identical",
+    "record_comparison": "all fields identical",
+    "foreign_keys": "valid",
+    "cutover_ready": false,
+    "readback_restored_and_validated": true,
+    "authoritative_fields": "identical to source",
+    "reset_rate_limit_hits": 129,
+    "additional_zero_score_karma_cache_rows": 13
+  },
+  "reader_proposal": {
+    "status": "applied; managed Auth schema handled by reader-only ID view",
+    "public_table_select_grants": 98,
+    "auth_columns": [
+      "id"
+    ],
+    "expires_utc": "2026-10-29T10:00:00Z",
+    "public_definer_functions_audited": 23,
+    "public_execute_grants_to_narrow": 19,
+    "application_execute_roles_preserved": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ],
+    "auth_id_view": "public.d1_migration_auth_ids_20261022"
+  },
+  "latest_reader_snapshot": {
+    "public_records": 10840,
+    "auth_id_references": 53,
+    "records": 10893,
+    "snapshot_sha256": "e01c42109f04631beb7a1cb14adb95a351237b6c136663c9fb70ec037ae21a48",
+    "local_reconciliation": "all fields identical",
+    "changed_tables": {
+      "audit_logs": {
+        "inserted": 1,
+        "deleted": 0,
+        "updated": 0
+      },
+      "forum_threads": {
+        "inserted": 0,
+        "deleted": 0,
+        "updated": 5
+      },
+      "landing_counts": {
+        "inserted": 21,
+        "deleted": 0,
+        "updated": 1
+      },
+      "onboarding_steps": {
+        "inserted": 1,
+        "deleted": 0,
+        "updated": 0
+      },
+      "organization_categories": {
+        "inserted": 2,
+        "deleted": 0,
+        "updated": 0
+      },
+      "organization_members": {
+        "inserted": 1,
+        "deleted": 0,
+        "updated": 0
+      },
+      "organization_regions": {
+        "inserted": 3,
+        "deleted": 0,
+        "updated": 0
+      },
+      "organizations": {
+        "inserted": 1,
+        "deleted": 0,
+        "updated": 0
+      },
+      "rate_limit_hits": {
+        "inserted": 2,
+        "deleted": 0,
+        "updated": 0
+      },
+      "signup_attribution": {
+        "inserted": 1,
+        "deleted": 0,
+        "updated": 0
+      },
+      "site_events": {
+        "inserted": 3,
+        "deleted": 0,
+        "updated": 0
+      },
+      "site_page_views": {
+        "inserted": 8,
+        "deleted": 0,
+        "updated": 0
+      },
+      "site_visitors": {
+        "inserted": 3,
+        "deleted": 0,
+        "updated": 0
+      },
+      "users_profile": {
+        "inserted": 2,
+        "deleted": 0,
+        "updated": 0
+      },
+      "_auth_users": {
+        "inserted": 2,
+        "deleted": 0,
+        "updated": 0
+      }
+    },
+    "prior_checkpoint_backup_restored_and_validated": true
+  },
+  "latest_reader_rebuild": {
+    "source_snapshot_sha256": "e01c42109f04631beb7a1cb14adb95a351237b6c136663c9fb70ec037ae21a48",
+    "rebuilt_snapshot_sha256": "b7061ad3a1779e3e76b2f7fb44bc9e01e28efe4a8c7d3b7629c5a97e84fdae60",
+    "tables": 99,
+    "records": 10776,
+    "scored_at": "2026-10-22T10:07:50.770065+00:00",
+    "authoritative_fields": "identical",
+    "rebuilt_fields": "approved-policy-only",
+    "cutover_ready": false,
+    "remote_uploaded": false,
+    "remote_database": "pmrfp-rebuilt-reader-staging-20261022",
+    "remote_database_id": "08ef9af3-a400-4a73-92d3-702b6ff39662",
+    "blocker": "Cloudflare D1 daily free row-write quota exhausted (7500)",
+    "quota_reset_utc": "2026-10-23T00:00:00Z"
+  }
+}

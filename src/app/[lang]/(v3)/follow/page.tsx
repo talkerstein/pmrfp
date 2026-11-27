@@ -5,11 +5,11 @@ import { getSession } from "@/lib/access/access";
 import { onboardingPath } from "@/lib/auth/oauth";
 import { loadBuyers } from "@/lib/buyers/load";
 import { BUYERS_PATH, findBuyerPage } from "@/lib/buyers/model";
-import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { confirmFollowAction } from "@/lib/follows/actions";
 import { FOLLOWING_PATH, FREE_FOLLOW_LIMIT, canFollowBuyers, followIntentPath, followLanding, parseFollowKey } from "@/lib/follows/rules";
-import { followBuyer } from "@/lib/follows/server";
+import { followBuyer, followsDb } from "@/lib/follows/server";
 import { followSignUpFor } from "@/components/follows/blocks";
 import { buyerDisplayName } from "@/lib/towns/claimable";
 import { inSentence } from "@/lib/towns/names";
@@ -87,8 +87,8 @@ export default async function FollowLandingPage({ params, searchParams }: { para
   if (landing === "not-allowed" || state === "role") {
     return shell(t.notAllowedTitle, <><p data-state="not-allowed">{t.notAllowedBody}</p>{backLink}</>);
   }
-  if (landing === "follow" && session && isServiceConfigured()) {
-    const r = await followBuyer(createServiceClient(), { userId: session.userId, orgId: session.organization?.id ?? null, key, pro: session.hasTradeAccess });
+  if (landing === "follow" && session && (isVpsLiveCustomerAuth() || isServiceConfigured())) {
+    const r = await followBuyer(followsDb(), { userId: session.userId, orgId: session.organization?.id ?? null, key, pro: session.hasTradeAccess });
     if (r.status === "followed" || r.status === "already") redirect(L(`${page.path}?follow=done#follow`));
     if (r.status === "limit") return limitView();
     return shell(fmt(t.title, { name }), <><p>{t.unavailable}</p>{backLink}</>);

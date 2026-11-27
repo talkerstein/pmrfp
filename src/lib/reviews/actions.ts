@@ -1,5 +1,10 @@
 "use server";
 
+import { UUID } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
+import { submitVpsProjectReview } from "@/lib/d1/vps-project-reviews";
+
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -49,7 +54,8 @@ export async function submitReviewAction(
   if (await checkRateLimitByIp(await ip(), "review")) {
     return { error: "Too many tries. Wait a few minutes and try again." };
   }
-  if (!isWellFormedToken(token) || !isServiceConfigured()) return { expired: true };
+  const native=process.env.PMRFP_VPS_CUSTOMER_ENGINE==="d1";
+  if (!isWellFormedToken(token) || (!native && !isServiceConfigured())) return { expired: true };
 
   const parsed = reviewSchema.safeParse({
     rating: formData.get("rating") ?? 0,
@@ -61,6 +67,15 @@ export async function submitReviewAction(
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please check the form." };
   const d = parsed.data;
+
+  if (native) {
+    try {
+      const row=await submitVpsProjectReview(token,d);
+      if (!row) return {expired:true};
+      await sendAdminNewReview({tradeName:row.company,projectTitle:row.project_context,rating:d.rating});
+      return {done:true};
+    } catch { return {error:"Couldn't save your review. Please try again."}; }
+  }
 
   const db = createServiceClient();
   const { data: claimed, error: claimErr } = await db
@@ -109,10 +124,24 @@ export async function submitReviewAction(
 
 /** Admin: publish or reject a pending review. */
 export async function moderateReviewAction(formData: FormData): Promise<void> {
-  await requireRole(["admin", "super_admin"]);
+  const session=await requireRole(["admin", "super_admin"]);
   const id = String(formData.get("id") ?? "");
   const decision = String(formData.get("decision") ?? "");
-  if (!id || !["published", "rejected"].includes(decision)) redirect("/admin/reviews");
+  if (!UUID.test(id) || !["published", "rejected"].includes(decision)) redirect("/admin/reviews");
+
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE==="d1") {
+    const row=await vpsAppDatabase().prepare(`UPDATE vendor_reviews SET status=? WHERE id=? AND ${activeRequestAdmin}
+      RETURNING organization_id,(SELECT slug FROM organizations WHERE id=organization_id) AS organization_slug,
+      (SELECT slug FROM case_studies WHERE id=case_study_id) AS project_slug`).bind(decision,id,session.userId)
+      .first<{organization_id:string;organization_slug:string|null;project_slug:string|null}>();
+    if (row) {
+      await karmaSyncAfter({orgIds:[row.organization_id]});
+      if (row.organization_slug) revalidatePath(`/directory/${row.organization_slug}`);
+      if (row.project_slug) revalidatePath(`/case-studies/${row.project_slug}`);
+    }
+    revalidatePath("/admin/reviews");
+    redirect("/admin/reviews");
+  }
 
   const supabase = await createClient();
   const { data } = await supabase

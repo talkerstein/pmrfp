@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
-import { supabase } from "./supabase";
+import { apiFetch } from "./api";
 
 /**
  * Push registration for the "a matching RFP was just posted" alert — the one
@@ -83,18 +83,10 @@ export async function registerForPush(): Promise<
  * someone from using the app.
  */
 export async function savePushToken(token: string): Promise<{ error: string | null }> {
-  const { data: userRes } = await supabase.auth.getUser();
-  const userId = userRes.user?.id;
-  if (!userId) return { error: "Not signed in." };
-
-  const { error } = await supabase.from("device_push_tokens").upsert(
-    {
-      user_id: userId,
-      token,
-      platform: Platform.OS,
-      last_seen_at: new Date().toISOString(),
-    },
-    { onConflict: "token" },
-  );
-  return { error: error?.message ?? null };
+  try {
+    await apiFetch("/api/mobile/push",{method:"POST",body:{token,platform:Platform.OS}});
+    return {error:null};
+  } catch (error) {
+    return {error:error instanceof Error?error.message:"Could not save the push token."};
+  }
 }

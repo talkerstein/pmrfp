@@ -1,0 +1,34 @@
+{
+  "public_table_write_grants": [],
+  "public_definer_execute": [
+    {
+      "schema": "public",
+      "name": "has_active_trade_access",
+      "arguments": "uid uuid",
+      "signature": "public.has_active_trade_access(uuid)",
+      "returns": "boolean"
+    },
+    {
+      "schema": "public",
+      "name": "has_intel_access",
+      "arguments": "uid uuid",
+      "signature": "public.has_intel_access(uuid)",
+      "returns": "boolean"
+    },
+    {
+      "schema": "public",
+      "name": "is_admin",
+      "arguments": "uid uuid",
+      "signature": "public.is_admin(uuid)",
+      "returns": "boolean"
+    },
+    {
+      "schema": "public",
+      "name": "is_org_member",
+      "arguments": "uid uuid, org uuid",
+      "signature": "public.is_org_member(uuid, uuid)",
+      "returns": "boolean"
+    }
+  ],
+  "public_schema_create": []
+}

@@ -4,12 +4,9 @@ import { Container } from "@/components/container";
 import { ForumHero, OpeningSoon, VerifyPanel } from "@/components/forum/parts";
 import { ThreadForm } from "@/components/forum/forms";
 import { getSession } from "@/lib/access/access";
-import { forumReworkReady, getCategoryRow } from "@/lib/forum/data";
-import { sessionCanPost } from "@/lib/forum/eligibility";
-import { createClient } from "@/lib/supabase/server";
+import { forumReworkReady, getCategoryRow, viewerPostCount } from "@/lib/forum/data";
+import { sessionCanPostInCurrentBackend } from "@/lib/forum/eligibility";
 import { FORUM_CATEGORY_SLUGS, isForumCategory, redirectRoom } from "@/lib/forum/categories";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
 import { localizePath } from "@/i18n/config";
 import { V3Body } from "@/components/v3/body";
@@ -39,17 +36,13 @@ export default async function NewThreadPage({
   const row = await getCategoryRow(category);
   if (!row.ready) return <OpeningSoon />;
 
-  let firstPost = true;
-  if (isServiceConfigured()) {
-    const { data } = await createServiceClient().from("forum_profiles").select("post_count").eq("user_id", session.userId).maybeSingle<{ post_count: number }>();
-    firstPost = !data || data.post_count === 0;
-  }
+  const firstPost = (await viewerPostCount(session.userId)) === 0;
 
   return (
     <V3Body>
       <ForumHero eyebrow={t.forum} title={t.meta.newTitle} crumbs={[{ label: t.forum, href: "/forum" }, { label: t.categories[category].name, href: `/forum/${category}` }, { label: t.meta.newTitle }]} />
       <Container className="max-w-2xl f-page">
-        {!(await sessionCanPost(session, (await (await createClient()).auth.getUser()).data.user)) ? (
+        {!(await sessionCanPostInCurrentBackend(session)) ? (
           <VerifyPanel signedIn next={self} />
         ) : (
         <ThreadForm

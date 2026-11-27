@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { verifyForumUnsubscribe } from "@/lib/forum/notify-rules";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { customerAppAuthority } from "../../../../../workers/d1-api/customer-signup";
 
 /**
  * One-click unsubscribe from forum reply emails only (GET = the link in the
@@ -11,7 +14,14 @@ import { verifyForumUnsubscribe } from "@/lib/forum/notify-rules";
 async function unsubscribe(request: Request): Promise<boolean> {
   const url = new URL(request.url);
   const userId = url.searchParams.get("u");
-  if (!verifyForumUnsubscribe(userId, url.searchParams.get("t")) || !isServiceConfigured()) return false;
+  if (!userId || !verifyForumUnsubscribe(userId, url.searchParams.get("t"))) return false;
+  if (isVpsLiveCustomerAuth()) {
+    const result = await vpsAppDatabase().prepare(`INSERT INTO notification_preferences(user_id,forum_replies)
+      SELECT id,'off' FROM users_profile WHERE id=? AND ${customerAppAuthority}
+      ON CONFLICT(user_id) DO UPDATE SET forum_replies='off'`).bind(userId).run().catch(() => null);
+    return result?.meta.changes === 1;
+  }
+  if (!isServiceConfigured()) return false;
   const { error } = await createServiceClient().from("notification_preferences").upsert({ user_id: userId, forum_replies: "off" }, { onConflict: "user_id" });
   if (error) console.error("[forum/unsubscribe] failed:", error.message);
   return !error;

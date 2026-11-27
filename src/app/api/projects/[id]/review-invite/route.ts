@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { getProjectSessionFromRequest } from "@/lib/projects/server";
+import { getProjectSession, getProjectSessionFromRequest } from "@/lib/projects/server";
 import { requestReview } from "@/lib/projects/publish";
 
 /**
@@ -13,8 +13,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const limited = await checkRateLimit(request, "default");
   if (limited) return rateLimitResponse(limited);
 
-  const auth = await getProjectSessionFromRequest(request);
-  if (!auth) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
+  const session = process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1" ? await getProjectSession(request) : (await getProjectSessionFromRequest(request))?.session;
+  if (!session) return NextResponse.json({ error: "Sign in to your company account first." }, { status: 401 });
   if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
     return NextResponse.json({ error: "Send JSON." }, { status: 415 });
   }
@@ -27,7 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const res = await requestReview(auth.session, {
+  const res = await requestReview(session, {
     caseStudyId: id,
     clientName: body.clientName,
     clientEmail: body.clientEmail,

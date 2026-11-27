@@ -1,6 +1,13 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import {
+  adjustNativeSealedOpening, breakNativeSealedGlass, confirmNativeSealedOpening, confirmNativeWitness,
+  loadNativeSealedPost, nativeSealedTownMembers, notifyNativeOpened, readNativeOwnQuote,
+  readNativeSealedState, readNativeWitness, requestNativeSealedOpening, submitNativeSealedQuote,
+  withdrawNativeSealedQuote, writeNativeTownNotifications,
+} from "./native-sealed";
 import { sendTownJobEmail } from "@/lib/email/send";
 import { emailLang, type EmailLang } from "@/lib/pm-jobs/email-copy";
 import { langOf, recipientLangs } from "@/lib/pm-jobs/server";
@@ -9,23 +16,20 @@ import { cleanWitnessName, sealedAnswer, townSealedEmailsEnabled, townTimeZone, 
 import type { TownJob } from "./server";
 
 /**
- * The sealed quote box, server side (service role; server only). Every
- * read and write goes through the database functions of migration
- * 20261021000120, which re-check who is asking (p_actor, after the
- * caller's own session check) and whether the box is open: this file can't
- * read a sealed quote for the town or an admin even if it tried. Emails go
- * out only behind TOWN_SEALED_EMAILS_ENABLED (default off); in-app notices
- * always. Tested in test/db/towns-part-c.test.ts (the database) and
- * test/unit/towns-part-c.test.ts.
+ * Sealed quote workflows shared by the VPS and the legacy backend. The
+ * database rechecks the actor and opening state for each protected operation.
+ * Only the bidder's own quote or an explicitly audited admin request can
+ * reveal quote contents before opening. In-app notices follow successful
+ * changes, and email delivery respects TOWN_SEALED_EMAILS_ENABLED.
  */
 
-type Db = SupabaseClient;
+type Db = SupabaseClient | null;
 
 const BASE = () => (process.env.NEXT_PUBLIC_SITE_URL || "https://pmrfp.com").replace(/\/$/, "");
 
 type Answer<T extends object = Record<string, unknown>> = ({ ok: true } & T) | { ok: false; error: SealedError };
 
-async function rpc<T extends object>(db: Db, fn: string, args: Record<string, unknown>): Promise<Answer<T>> {
+async function rpc<T extends object>(db: SupabaseClient, fn: string, args: Record<string, unknown>): Promise<Answer<T>> {
   try {
     const { data, error } = await db.rpc(fn, args);
     if (error) console.error(`[sealed] ${fn} failed`, error.message);
@@ -40,6 +44,7 @@ async function rpc<T extends object>(db: Db, fn: string, args: Record<string, un
 
 /** The town's (or an admin's) view of a sealed post: counts and the opening, never a quote. Null when not sealed or not theirs. */
 export async function sealedStateFor(db: Db, rfpId: string, actorId: string): Promise<SealedState | null> {
+  if (!db) return readNativeSealedState(rfpId, actorId).catch(() => null);
   const { data, error } = await db.rpc("sealed_box_state", { p_rfp: rfpId, p_actor: actorId });
   if (error || !data) return null;
   return data as SealedState;
@@ -48,7 +53,7 @@ export async function sealedStateFor(db: Db, rfpId: string, actorId: string): Pr
 /** Quotes in the box per post (counts only), and whether each box is open. */
 export async function sealedCounts(db: Db, rfpIds: readonly string[]): Promise<Map<string, { received: number; opened: boolean }>> {
   const out = new Map<string, { received: number; opened: boolean }>();
-  if (!rfpIds.length) return out;
+  if (!db || !rfpIds.length) return out;
   const { data, error } = await db.rpc("sealed_counts", { p_rfps: [...new Set(rfpIds)] });
   if (error || !Array.isArray(data)) return out;
   for (const r of data as { rfp_id: string; received: number; opened: boolean }[]) out.set(r.rfp_id, { received: Number(r.received) || 0, opened: Boolean(r.opened) });
@@ -57,6 +62,7 @@ export async function sealedCounts(db: Db, rfpIds: readonly string[]): Promise<M
 
 /** A trade's own quote on a sealed post (its company's), or null. */
 export async function ownSealedQuote(db: Db, rfpId: string, actorId: string, orgId: string): Promise<OwnSealedQuote | null> {
+  if (!db) return readNativeOwnQuote(rfpId, actorId, orgId).catch(() => null);
   const { data, error } = await db.rpc("sealed_quote_own", { p_rfp: rfpId, p_actor: actorId, p_org: orgId });
   if (error || !data) return null;
   return data as OwnSealedQuote;
@@ -64,6 +70,11 @@ export async function ownSealedQuote(db: Db, rfpId: string, actorId: string, org
 
 /** The people to tell about an answer or addendum while the box is sealed (ids only, never shown). */
 export async function sealedResponderIds(db: Db, rfpId: string): Promise<string[]> {
+  if (!db) {
+    const rows = await vpsAppDatabase().prepare(`SELECT DISTINCT submitted_by_user_id FROM _town_sealed_quotes
+      WHERE rfp_id=? AND status='active' AND submitted_by_user_id IS NOT NULL`).bind(rfpId).all<{ submitted_by_user_id: string }>();
+    return rows.results.map((row) => row.submitted_by_user_id);
+  }
   const { data, error } = await db.rpc("sealed_responder_ids", { p_rfp: rfpId });
   return error || !Array.isArray(data) ? [] : (data as string[]);
 }
@@ -90,7 +101,9 @@ interface Who {
 
 /** Send or replace a sealed quote (until closing). The town hears "a quote arrived", never from whom. */
 export async function submitSealedQuote(db: Db, job: TownJob, who: Who, q: SealedQuoteInput): Promise<Answer<{ id: string; action: "received" | "replaced"; version: number; closes_at: string }>> {
-  const res = await rpc<{ id: string; action: "received" | "replaced"; version: number; closes_at: string }>(db, "sealed_quote_submit", {
+  const res = !db
+    ? await submitNativeSealedQuote(job, who.userId, who.orgId, q).catch(() => ({ ok:false, error:"failed" } as const))
+    : await rpc<{ id: string; action: "received" | "replaced"; version: number; closes_at: string }>(db, "sealed_quote_submit", {
     p_rfp: job.id,
     p_actor: who.userId,
     p_org: who.orgId,
@@ -111,33 +124,32 @@ export async function submitSealedQuote(db: Db, job: TownJob, who: Who, q: Seale
 
 /** Withdraw a sealed quote before closing: its contents are erased (returned unopened). */
 export async function withdrawSealedQuote(db: Db, job: TownJob, who: Who, lang: EmailLang): Promise<Answer<{ id: string }>> {
-  const res = await rpc<{ id: string }>(db, "sealed_quote_withdraw", { p_rfp: job.id, p_actor: who.userId, p_org: who.orgId });
+  const res = !db
+    ? await withdrawNativeSealedQuote(job, who.userId, who.orgId).catch(() => ({ ok:false, error:"failed" } as const))
+    : await rpc<{ id: string }>(db, "sealed_quote_withdraw", { p_rfp: job.id, p_actor: who.userId, p_org: who.orgId });
   if (res.ok) await afterQuoteChange(db, job, who, "withdrawn", lang, null);
   return res;
 }
 
 async function afterQuoteChange(db: Db, job: TownJob, who: Who, kind: "received" | "replaced" | "withdrawn", lang: EmailLang, closesAt: string | null): Promise<void> {
-  const tasks: PromiseLike<unknown>[] = [
-    db.from("notifications").insert({
-      user_id: who.userId,
-      type: `sealed_quote_${kind}`,
-      title: kind === "received" ? "Your sealed quote is in" : kind === "replaced" ? "Your sealed quote was replaced" : "Your sealed quote was withdrawn",
-      message: job.title,
-      link_url: `/rfps/${job.slug}#sealed-quote`,
-    }),
-  ];
-  // The town: a count went up or down. No company, no price.
+  const rows = [{
+    user_id: who.userId,
+    type: `sealed_quote_${kind}`,
+    title: kind === "received" ? "Your sealed quote is in" : kind === "replaced" ? "Your sealed quote was replaced" : "Your sealed quote was withdrawn",
+    message: job.title,
+    link_url: `/rfps/${job.slug}#sealed-quote`,
+  }];
+  // The town sees an updated count and no bidder identity or price.
   if (job.posted_by_user_id && kind !== "replaced") {
-    tasks.push(
-      db.from("notifications").insert({
-        user_id: job.posted_by_user_id,
-        type: kind === "received" ? "sealed_quote_in" : "sealed_quote_out",
-        title: kind === "received" ? "A sealed quote arrived" : "A sealed quote was withdrawn",
-        message: job.title,
-        link_url: `/buyer-dashboard/jobs/${job.id}#sealed`,
-      }),
-    );
+    rows.push({
+      user_id: job.posted_by_user_id,
+      type: kind === "received" ? "sealed_quote_in" : "sealed_quote_out",
+      title: kind === "received" ? "A sealed quote arrived" : "A sealed quote was withdrawn",
+      message: job.title,
+      link_url: `/buyer-dashboard/jobs/${job.id}#sealed`,
+    });
   }
+  const tasks: PromiseLike<unknown>[] = [db ? db.from("notifications").insert(rows) : writeNativeTownNotifications(rows)];
   if (townSealedEmailsEnabled() && who.email) {
     const tz = townTimeZone(job.buyer_key);
     tasks.push(
@@ -164,7 +176,7 @@ export interface OpeningRequestResult {
   notified: number;
 }
 
-async function townMembers(db: Db, orgId: string | null): Promise<{ id: string; email: string | null; full_name: string | null; status: string | null }[]> {
+async function townMembers(db: SupabaseClient, orgId: string | null): Promise<{ id: string; email: string | null; full_name: string | null; status: string | null }[]> {
   if (!orgId) return [];
   const { data } = await db.from("organization_members").select("user_id").eq("organization_id", orgId);
   const ids = ((data ?? []) as { user_id: string }[]).map((r) => r.user_id);
@@ -186,7 +198,9 @@ export async function requestOpening(
   const name = witnessGiven ? cleanWitnessName(p.witnessName) : null;
   if (witnessGiven && !name) return { ok: false, error: "witness_name" };
   const link = witnessGiven ? newWitnessToken() : null;
-  const res = await rpc<{ expires_at: string; witness: boolean; members: number }>(db, "sealed_open_request", {
+  const res = !db
+    ? await requestNativeSealedOpening(p.job, p.actorId, { name, email:p.witnessEmail, hash: link?.hash ?? null }).catch(() => ({ok:false,error:"failed"} as const))
+    : await rpc<{ expires_at: string; witness: boolean; members: number }>(db, "sealed_open_request", {
     p_rfp: p.job.id,
     p_actor: p.actorId,
     p_witness_name: name,
@@ -200,19 +214,19 @@ export async function requestOpening(
     if (emailsOn) await emailWitness(db, p.job, { token: link.token, actorName: p.actorName, lang: p.lang, expiresAt: res.expires_at, to: String(p.witnessEmail ?? "").trim().toLowerCase() });
     return { ok: true, mode: "witness", expiresAt: res.expires_at, emailsOn, notified: 0 };
   }
-  const others = (await townMembers(db, p.job.posted_by_organization_id)).filter((m) => m.id !== p.actorId);
+  const others = (db ? await townMembers(db, p.job.posted_by_organization_id) : await nativeSealedTownMembers(p.job.id)).filter((m) => m.id !== p.actorId);
   if (others.length) {
-    await db.from("notifications").insert(
-      others.map((m) => ({
-        user_id: m.id,
-        type: "sealed_open_requested",
-        title: `${p.actorName} asked to open the sealed quotes`.slice(0, 200),
-        message: p.job.title,
-        link_url: `/buyer-dashboard/jobs/${p.job.id}#sealed`,
-      })),
-    );
+    const rows = others.map((m) => ({
+      user_id: m.id,
+      type: "sealed_open_requested",
+      title: `${p.actorName} asked to open the sealed quotes`.slice(0, 200),
+      message: p.job.title,
+      link_url: `/buyer-dashboard/jobs/${p.job.id}#sealed`,
+    }));
+    if (db) await db.from("notifications").insert(rows);
+    else await writeNativeTownNotifications(rows);
     if (emailsOn) {
-      const langs = await recipientLangs(db, others.map((m) => m.id));
+      const langs = await recipientLangs(db ?? vpsAppDatabase(), others.map((m) => m.id));
       for (const m of others) {
         if (!m.email) continue;
         const lang = langs.get(m.id) ?? p.lang;
@@ -225,7 +239,7 @@ export async function requestOpening(
 
 async function emailWitness(db: Db, job: TownJob, x: { token: string; actorName: string; lang: EmailLang; expiresAt: string; to: string }): Promise<void> {
   if (!x.to) return;
-  const info = await rpc<{ received: number; closes_at: string | null; witness_name: string | null }>(db, "sealed_witness_info", { p_rfp: job.id, p_token: x.token });
+  const info = await witnessInfo(db, job.id, x.token);
   await sendTownJobEmail(
     x.to,
     witnessEmail(x.lang, {
@@ -248,7 +262,9 @@ async function emailWitness(db: Db, job: TownJob, x: { token: string; actorName:
 /** A fresh one-time link for the same witness (the old one stops working). Email behind the flag. */
 export async function resendWitnessLink(db: Db, p: { job: TownJob; actorId: string; actorName: string; lang: EmailLang }): Promise<Answer<{ emailsOn: boolean }>> {
   const link = newWitnessToken();
-  const res = await rpc<{ witness_email: string; witness_name: string; expires_at: string }>(db, "sealed_open_witness_relink", { p_rfp: p.job.id, p_actor: p.actorId, p_token_hash: link.hash });
+  const res = !db
+    ? await adjustNativeSealedOpening(p.job.id, p.actorId, link.hash).catch(() => ({ok:false,error:"failed"} as const))
+    : await rpc<{ witness_email: string; witness_name: string; expires_at: string }>(db, "sealed_open_witness_relink", { p_rfp: p.job.id, p_actor: p.actorId, p_token_hash: link.hash });
   if (!res.ok) return res;
   const emailsOn = townSealedEmailsEnabled();
   if (emailsOn) await emailWitness(db, p.job, { token: link.token, actorName: p.actorName, lang: p.lang, expiresAt: res.expires_at, to: res.witness_email });
@@ -257,25 +273,38 @@ export async function resendWitnessLink(db: Db, p: { job: TownJob; actorId: stri
 
 /** Step 2: a different member of the town confirms, and the box opens. */
 export async function confirmOpening(db: Db, p: { job: TownJob; actorId: string }): Promise<Answer<{ opened: number }>> {
-  const res = await rpc<{ opened: number }>(db, "sealed_open_confirm", { p_rfp: p.job.id, p_actor: p.actorId });
-  if (res.ok) await afterOpening(db, p.job);
+  const res = !db
+    ? await confirmNativeSealedOpening(p.job.id, p.actorId).catch(() => ({ok:false,error:"failed"} as const))
+    : await rpc<{ opened: number }>(db, "sealed_open_confirm", { p_rfp: p.job.id, p_actor: p.actorId });
+  if (res.ok && db) await afterOpening(db, p.job);
+  else if (res.ok) await notifyNativeOpened(p.job).catch(() => undefined);
   return res;
 }
 
 /** Any member cancels a pending request. */
 export async function cancelOpening(db: Db, p: { job: TownJob; actorId: string }): Promise<Answer> {
+  if (!db) return adjustNativeSealedOpening(p.job.id, p.actorId, null).catch(() => ({ok:false,error:"failed"} as const));
   return rpc(db, "sealed_open_cancel", { p_rfp: p.job.id, p_actor: p.actorId });
 }
 
 /** The witness page: what they're confirming (counts only), when the link is good. */
 export async function witnessInfo(db: Db, rfpId: string, token: string): Promise<Answer<{ title: string; buyer_name: string | null; closes_at: string | null; received: number; requested_by_name: string | null; requested_at: string; expires_at: string; witness_name: string | null }>> {
+  if (!db) return readNativeWitness(rfpId, token).catch(() => ({ok:false,error:"failed"} as const));
   return rpc(db, "sealed_witness_info", { p_rfp: rfpId, p_token: token });
 }
 
 /** The witness confirms (single use), and the box opens. */
-export async function witnessConfirm(db: Db, rfpId: string, token: string, name: unknown, loadJob: (db: Db, id: string) => Promise<TownJob | null>): Promise<Answer<{ opened: number }>> {
+export async function witnessConfirm(db: Db, rfpId: string, token: string, name: unknown, loadJob: (db: SupabaseClient, id: string) => Promise<TownJob | null>): Promise<Answer<{ opened: number }>> {
   const typed = cleanWitnessName(name);
   if (!typed) return { ok: false, error: "witness_name" };
+  if (!db) {
+    const res = await confirmNativeWitness(rfpId, token, typed).catch(() => ({ok:false,error:"failed"} as const));
+    if (res.ok) {
+      const job = await loadNativeSealedPost(rfpId).catch(() => null);
+      if (job) await notifyNativeOpened(job).catch(() => undefined);
+    }
+    return res;
+  }
   const res = await rpc<{ opened: number }>(db, "sealed_open_witness", { p_rfp: rfpId, p_token: token, p_name: typed });
   if (res.ok) {
     const job = await loadJob(db, rfpId);
@@ -285,7 +314,7 @@ export async function witnessConfirm(db: Db, rfpId: string, token: string, name:
 }
 
 /** After opening: the town and every trade that quoted are told (in-app). */
-async function afterOpening(db: Db, job: TownJob): Promise<void> {
+async function afterOpening(db: SupabaseClient, job: TownJob): Promise<void> {
   const [members, { data: interests }] = await Promise.all([townMembers(db, job.posted_by_organization_id), db.from("rfp_interests").select("submitted_by_user_id").eq("rfp_id", job.id)]);
   const traders = [...new Set(((interests ?? []) as { submitted_by_user_id: string | null }[]).map((r) => r.submitted_by_user_id).filter((x): x is string => Boolean(x)))];
   const rows = [
@@ -313,10 +342,12 @@ export interface BreakGlassQuote {
 
 /** Break-glass: an admin looks inside before opening, with a reason. Logged in the town's record; the town is told. */
 export async function breakGlass(db: Db, rfpId: string, adminId: string, reason: unknown): Promise<Answer<{ quotes: BreakGlassQuote[]; count: number }>> {
+  if (!db) return breakNativeSealedGlass(rfpId, adminId, reason).catch(() => ({ok:false,error:"failed"} as const));
   return rpc(db, "sealed_break_glass", { p_rfp: rfpId, p_actor: adminId, p_reason: typeof reason === "string" ? reason : "" });
 }
 
 /** The language for a town actor's emails. */
 export async function sealedActorLang(db: Db, userId: string, preferred?: string | null): Promise<EmailLang> {
+  if (!db) return preferred ? emailLang(preferred) : (await recipientLangs(vpsAppDatabase(), [userId])).get(userId) ?? "en";
   return emailLang(await langOf(db, userId, preferred));
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "@/i18n/link";
 import { requireRole, isDemoMode } from "@/lib/access/access";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -21,6 +22,10 @@ import {
 import { REVIEW_FIELD_LABELS, clipValue, parseReviewChanges } from "@/lib/organizations/profile-review";
 import { isSchemaMissing } from "@/lib/projects/compat";
 import { setLangFrom } from "@/i18n/server";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
+import { readD1 } from "@/lib/lifecycle/d1";
+import { activeRequestAdmin } from "@/lib/d1/customer-requests";
 
 export const metadata: Metadata = { title: "Organizations · Admin · PMRFP" };
 
@@ -58,7 +63,7 @@ const DEMO_ORGS: OrgRow[] = [
 
 const VIEWS = ["all", "waiting", "held", "edited", "suspended"] as const;
 type View = (typeof VIEWS)[number];
-type Search = { view?: string; stale?: string; screened?: string; flagged?: string };
+type Search = { view?: string; stale?: string; screened?: string; flagged?: string; error?: string };
 
 const isEdited = (o: OrgRow) => o.profile_status === "approved" && Boolean(o.review_flagged_at);
 /** The spam check flagged it (new listing held or rejected, or a live one flagged after an edit). */
@@ -78,8 +83,27 @@ const VIEW_LABEL: Record<View, string> = {
   suspended: "Suspended",
 };
 
-async function loadOrgs(): Promise<{ rows: OrgRow[]; reviewReady: boolean; risk: Map<string, RiskRow> }> {
+async function loadOrgs(adminId: string): Promise<{ rows: OrgRow[]; reviewReady: boolean; risk: Map<string, RiskRow> }> {
   if (isDemoMode()) return { rows: DEMO_ORGS, reviewReady: true, risk: new Map() };
+  if (isVpsLiveCustomerAuth()) {
+    type NativeOrg = Omit<OrgRow, "verified" | "link_trusted" | "risk_flagged" | "review_changes"> & {
+      verified: number; link_trusted: number; risk_flagged: number; review_changes: string | null;
+    };
+    const db = vpsAppDatabase();
+    const [rows, riskRows] = await Promise.all([
+      readD1<NativeOrg>(db, `SELECT ${LINK_COLUMNS} FROM organizations WHERE is_demo=0 AND ${activeRequestAdmin} ORDER BY created_at DESC,id LIMIT 1000`, adminId),
+      readD1<Omit<RiskRow, "reasons" | "held" | "blocked"> & { reasons: string; held: number; blocked: number }>(db,
+        `SELECT r.organization_id,r.score,r.reasons,r.held,r.blocked,r.decision,r.source,r.evaluated_at
+         FROM organization_risk r JOIN organizations o ON o.id=r.organization_id
+         WHERE o.risk_flagged=1 AND o.is_demo=0 AND ${activeRequestAdmin} ORDER BY r.evaluated_at DESC LIMIT 1000`, adminId),
+    ]);
+    return {
+      rows: rows.map((row) => ({ ...row, verified: row.verified === 1, link_trusted: row.link_trusted === 1, risk_flagged: row.risk_flagged === 1,
+        review_changes: row.review_changes ? JSON.parse(row.review_changes) : null })),
+      reviewReady: true,
+      risk: new Map(riskRows.map((row) => [row.organization_id, { ...row, reasons: JSON.parse(row.reasons), held: row.held === 1, blocked: row.blocked === 1 }])),
+    };
+  }
   const supabase = createServiceClient();
   const list = (columns: string) =>
     supabase.from("organizations").select(columns).order("created_at", { ascending: false }).returns<OrgRow[]>();
@@ -107,11 +131,13 @@ async function loadOrgs(): Promise<{ rows: OrgRow[]; reviewReady: boolean; risk:
 
 export default async function AdminOrganizationsPage({ params, searchParams }: { params: Promise<object>; searchParams?: Promise<Search> }) {
   await setLangFrom(params);
-  await requireRole(["admin", "super_admin"]);
+  const admin = await requireRole(["admin", "super_admin"]);
+  if (isVpsLiveCustomerAuth() && admin.profile.status !== "active") notFound();
   const sp = (await searchParams) ?? {};
   const view: View = (VIEWS as readonly string[]).includes(sp.view ?? "") ? (sp.view as View) : "all";
 
-  const { rows: all, reviewReady, risk } = await loadOrgs();
+  const data = await loadOrgs(admin.userId).catch(() => null);
+  const { rows: all, reviewReady, risk } = data ?? { rows: [], reviewReady: false, risk: new Map<string, RiskRow>() };
   const counts = Object.fromEntries(VIEWS.map((v) => [v, all.filter(FILTER[v]).length])) as Record<View, number>;
   // Waiting companies first: they're invisible in the directory until approved.
   const rows = all
@@ -125,6 +151,8 @@ export default async function AdminOrganizationsPage({ params, searchParams }: {
         description="Trade companies and property managers. Approve, check edits, and suspend profiles here."
       />
       {isDemoMode() && <DemoBanner />}
+      {sp.error && <p role="alert" className="mb-4 text-sm text-red-900">Could not save the change. Refresh to check the current organization status.</p>}
+      {!data && <p role="alert" className="mb-4 text-sm text-red-900">Organizations could not be loaded. Refresh to try again.</p>}
 
       <nav className="mb-4 flex flex-wrap gap-2" aria-label="Filter organizations">
         {VIEWS.map((v) => (

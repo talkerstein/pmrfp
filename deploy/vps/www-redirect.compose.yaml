@@ -1,0 +1,33 @@
+name: pmrfp-www-redirect
+services:
+  www-redirect:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: "1000:1000"
+    entrypoint: ["node", "/opt/www-redirect.mjs"]
+    volumes:
+      - /opt/pmrfp/www-redirect/www-redirect.mjs:/opt/www-redirect.mjs:ro
+      - /opt/pmrfp/www-redirect/tls:/tls:ro
+    read_only: true
+    init: true
+    mem_limit: 96m
+    pids_limit: 32
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "2"
+    networks: [pmrfp]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: pmrfp-vps
+      traefik.tcp.routers.pmrfp-www.rule: "HostSNI(`www.pmrfp.com`)"
+      traefik.tcp.routers.pmrfp-www.entrypoints: websecure
+      traefik.tcp.routers.pmrfp-www.tls.passthrough: "true"
+      traefik.tcp.services.pmrfp-www.loadbalancer.server.port: "8443"
+networks:
+  pmrfp:
+    name: pmrfp-vps
+    external: true

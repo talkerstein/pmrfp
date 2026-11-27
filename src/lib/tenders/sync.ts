@@ -13,9 +13,13 @@
  * Never touches PM-posted RFPs — every query is scoped to public_source.
  */
 import { createServiceClient } from "@/lib/supabase/service";
+import { isServiceConfigured } from "@/lib/supabase/config";
+import type { D1Binding } from "@/lib/d1/contracts";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { publicTenderSource } from "./sources";
 import type { TenderInsert } from "./canadabuys";
 import { diffListing, recordRfpChanges, withoutTitleFlood, type PendingChange } from "@/lib/rfp-detail/changes";
+import { readD1TenderSync, writeD1TenderSync, type TenderUpdate } from "./d1-sync";
 
 export interface Candidate {
   insert: TenderInsert;
@@ -51,7 +55,21 @@ export interface Source {
 
 type Service = ReturnType<typeof createServiceClient>;
 
-export async function syncPublicSources(supabase: Service, sources: Source[], opts: { today: string; dry: boolean }) {
+export function tenderSyncDatabase(): Service | D1Binding | null {
+  if (process.env.PMRFP_VPS_CUSTOMER_ENGINE === "d1") return vpsAppDatabase();
+  return isServiceConfigured() ? createServiceClient() : null;
+}
+
+async function readSupabaseTenderSync(db: Service) {
+  const [{ data: cats }, { data: regions }, existing] = await Promise.all([
+    db.from("trade_categories").select("id,slug"),
+    db.from("regions").select("id,slug"),
+    allExistingPublic(db),
+  ]);
+  return [cats ?? [], regions ?? [], existing] as const;
+}
+
+export async function syncPublicSources(db: Service | D1Binding, sources: Source[], opts: { today: string; dry: boolean }) {
   const { today, dry } = opts;
 
   // Fetch every source; a failed one is skipped (and its tenders untouched).
@@ -67,13 +85,10 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
   );
   if (results.every((r) => !r.ok)) return { status: 502, body: { error: "all sources failed" } };
 
-  const [{ data: cats }, { data: regions }, existing] = await Promise.all([
-    supabase.from("trade_categories").select("id,slug"),
-    supabase.from("regions").select("id,slug"),
-    allExistingPublic(supabase),
-  ]);
-  const catId = new Map((cats ?? []).map((c: { id: string; slug: string }) => [c.slug, c.id]));
-  const regionId = new Map((regions ?? []).map((r: { id: string; slug: string }) => [r.slug, r.id]));
+  const native = "prepare" in db;
+  const [cats, regions, existing] = native ? await readD1TenderSync(db) : await readSupabaseTenderSync(db);
+  const catId = new Map(cats.map((c: { id: string; slug: string }) => [c.slug, c.id]));
+  const regionId = new Map(regions.map((r: { id: string; slug: string }) => [r.slug, r.id]));
   // Unknown slug (e.g. a region not created yet) → the source's country, not blank.
   const resolveRegion = (slug: string, fallback = "canada"): string | null =>
     regionId.get(slug) ?? regionId.get(fallback) ?? null;
@@ -89,7 +104,7 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
   const openSources = new Set<string>();
   // Per history source: the URLs it still lists (its own archive scope).
   const historySeen = new Map<string, Set<string>>();
-  const updates: { id: string; patch: Record<string, unknown>; changes: PendingChange[] }[] = [];
+  const updates: TenderUpdate[] = [];
   const matchedBySource = new Map<string, number>();
 
   for (const { src, candidates, ok } of results) {
@@ -127,7 +142,7 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
               { title: ins.title, deadline: ins.deadline ?? null },
             ).map((d) => ({ ...d, rfpId: prior.id, slug: prior.slug, sourceKey }));
             updates.push({
-              id: prior.id,
+              prior,
               changes,
               patch: {
                 title: ins.title,
@@ -200,14 +215,20 @@ export async function syncPublicSources(supabase: Service, sources: Source[], op
     };
   }
 
+  if (native) {
+    const applied = await writeD1TenderSync(db, updates, toInsert, archiveRows, categoriesBySource,
+      withoutTitleFlood(updates.flatMap(update => update.changes)));
+    return { status: 200, body: { matched, failed, ...applied } };
+  }
+  const supabase = db;
   let refreshed = 0;
   // Changes of rows whose update went through (a failed update changed nothing, so nothing to log).
   const updated: PendingChange[] = [];
   for (let i = 0; i < updates.length; i += 25) {
     const batch = updates.slice(i, i + 25);
     const res = await Promise.all(
-      batch.map(({ id, patch }) =>
-        supabase.from("rfp_posts").update(patch).eq("id", id).eq("source_type", "public_source"),
+      batch.map(({ prior, patch }) =>
+        supabase.from("rfp_posts").update(patch).eq("id", prior.id).eq("source_type", "public_source"),
       ),
     );
     res.forEach((r, k) => {
@@ -290,6 +311,7 @@ export interface ExistingRow {
   source_url: string | null;
   status: string;
   deadline: string | null;
+  updated_at?: string;
 }
 
 /**

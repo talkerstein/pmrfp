@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -8,6 +9,8 @@ import { getSession, isAdminRole, type SessionContext } from "@/lib/access/acces
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isServiceConfigured } from "@/lib/supabase/config";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
+import { vpsAppDatabase } from "@/lib/d1/http-binding";
 import { checkRateLimitByIp } from "@/lib/rate-limit";
 import { sendAdminForumQueue } from "@/lib/email/send";
 import { DEFAULT_LOCALE, isEnabledLocale, localizePath } from "@/i18n/config";
@@ -17,12 +20,16 @@ import { forumV2Ready } from "./schema-v2";
 import { parseImagesField } from "./photos";
 import { placePhotos, syncPhotosForStatus } from "./photos-server";
 import { checkVote, parsePoll } from "./polls";
-import { notifyThreadAuthor } from "./notify";
+import { notifyThreadAuthor, notifyVpsThreadAuthor } from "./notify";
 import { checkPost, shouldAutoHide } from "./rules";
 import { karmaSyncAfter } from "@/lib/karma/sync";
 import { handleFrom, normalizeBody, normalizeTitle, shortId, slugify, wordCount } from "./text";
 import { turnstileEnabled, verifyTurnstile } from "./turnstile";
-import { sessionCanPost } from "./eligibility";
+import { sessionCanPostInCurrentBackend, sessionCanPost } from "./eligibility";
+import { acceptVpsForumAnswer, moderateVpsForumTarget, rateVpsForumThread, reportVpsForumTarget, storeVpsForumReply,
+  storeVpsForumThread, voteVpsForumPoll, voteVpsForumPost, vpsForumActivity, vpsForumActor, vpsForumRoom, vpsForumTarget, type ForumActor } from "./vps";
+import { customerAppAuthority } from "../../../workers/d1-api/customer-signup";
+import { approvedForumImages } from "./vps-media";
 
 /** Error codes; the forms translate them (forumClient.errors). */
 export type ForumError =
@@ -156,26 +163,37 @@ async function activity(a: Actor, body: string) {
   };
 }
 
-async function spamGate(a: Actor, kind: "thread" | "post", body: string, formData: FormData, trusted: boolean): Promise<{ error: ForumError } | { hold: boolean }> {
+async function spamGate(a: Actor | ForumActor, kind: "thread" | "post", body: string, formData: FormData, trusted: boolean): Promise<{ error: ForumError } | { hold: boolean }> {
   const ip = await clientIp();
   if (await checkRateLimitByIp(ip, "forum-post")) return { error: "rate" };
-  const act = await activity(a, body);
+  const act = await ("admin" in a ? activity(a, body) : vpsForumActivity(a.userId, body));
+  const profile = "profile" in a ? a.profile : a;
   const res = checkPost({
     kind,
     body,
     honeypot: formData.get("website")?.toString(),
-    banned: a.profile.banned,
-    postCount: a.profile.post_count,
-    joinedAt: a.profile.created_at,
+    banned: Boolean(profile.banned),
+    postCount: profile.post_count,
+    joinedAt: profile.created_at,
     trusted,
     ...act,
   });
   if (!res.ok) return { error: res.reason };
-  if (turnstileEnabled() && a.profile.post_count === 0) {
+  if (turnstileEnabled() && profile.post_count === 0) {
     const ok = await verifyTurnstile(formData.get("cf-turnstile-response")?.toString(), ip);
     if (!ok) return { error: "captcha" };
   }
   return { hold: res.hold };
+}
+
+async function getNativeActor(): Promise<{ actor: ForumActor; admin: boolean } | { error: ForumError }> {
+  const session = await getSession();
+  if (!session) return { error: "signin" };
+  if (!await sessionCanPostInCurrentBackend(session)) return { error: "unverified" };
+  const actor = await vpsForumActor(session);
+  if (!actor) return { error: "unavailable" };
+  if (actor.banned) return { error: "banned" };
+  return { actor, admin: isAdminRole(session.profile.primary_role) };
 }
 
 /** A room's category row: its own slug, or its old slug before the rework migration. */
@@ -192,6 +210,7 @@ function langPath(formData: FormData, path: string): string {
 
 // ── Threads ─────────────────────────────────────────────────────────
 export async function createThreadAction(_prev: ForumFormState, formData: FormData): Promise<ForumFormState> {
+  if (isVpsLiveCustomerAuth()) return createNativeThread(formData);
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -266,7 +285,41 @@ export async function createThreadAction(_prev: ForumFormState, formData: FormDa
   redirect(langPath(formData, threadPath(category, slug, sid)));
 }
 
+async function createNativeThread(formData: FormData): Promise<ForumFormState> {
+  const got = await getNativeActor().catch(() => ({ error: "unavailable" as const }));
+  if ("error" in got) return { error: got.error };
+  const category = formData.get("category")?.toString();
+  if (!isForumCategory(category)) return { error: "category" };
+  const title = normalizeTitle(formData.get("title")?.toString() ?? "");
+  const body = normalizeBody(formData.get("body")?.toString() ?? "");
+  if (title.length < 8) return { error: "title" };
+  if (body.length < 20) return { error: "body" };
+  const submitted = parseImagesField(formData.get("images"), got.actor.userId);
+  if (submitted === "invalid") return { error: "photos" };
+  const images = await approvedForumImages(got.actor.userId, submitted);
+  if (images.length !== submitted.length) return { error: "photos" };
+  const poll = parsePoll({ question: formData.get("pollQuestion"), options: formData.getAll("pollOption") });
+  if (poll === "invalid") return { error: "poll" };
+  const gate = await spamGate(got.actor, "thread", body, formData, got.admin);
+  if ("error" in gate) return gate;
+  const cat = await vpsForumRoom(category);
+  if (!cat) return { error: "unavailable" };
+  const slug = slugify(title);
+  const stored = await storeVpsForumThread(got.actor, { categoryId: cat.id,
+    type: formData.get("type") === "question" ? "question" : "discussion", title, slug, body, hold: gate.hold,
+    staff: got.admin && formData.get("staff") === "1", trusted: got.admin,
+    region: formData.get("region")?.toString().trim().slice(0, 40) || null, country: roomCountry(category), poll, images })
+    .catch(() => null);
+  if (!stored) return { error: "failed" };
+  if (gate.hold) {
+    await sendAdminForumQueue({ reason: "held", title, author: got.actor.handle }).catch(() => undefined);
+    return { ok: true, held: true };
+  }
+  redirect(langPath(formData, threadPath(category, slug, stored.sid)));
+}
+
 export async function createReplyAction(_prev: ForumFormState, formData: FormData): Promise<ForumFormState> {
+  if (isVpsLiveCustomerAuth()) return createNativeReply(formData);
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -317,9 +370,40 @@ export async function createReplyAction(_prev: ForumFormState, formData: FormDat
   return { ok: true };
 }
 
+async function createNativeReply(formData: FormData): Promise<ForumFormState> {
+  const got = await getNativeActor().catch(() => ({ error: "unavailable" as const }));
+  if ("error" in got) return { error: got.error };
+  const threadId = formData.get("threadId")?.toString() ?? "";
+  const body = normalizeBody(formData.get("body")?.toString() ?? "");
+  if (body.length < 2) return { error: "body" };
+  const submitted = parseImagesField(formData.get("images"), got.actor.userId);
+  if (submitted === "invalid") return { error: "photos" };
+  const images = await approvedForumImages(got.actor.userId, submitted);
+  if (images.length !== submitted.length) return { error: "photos" };
+  const thread = await vpsAppDatabase().prepare(`SELECT t.title,t.is_locked,EXISTS(SELECT 1 FROM forum_category_mods
+    WHERE category_id=t.category_id AND user_id=?) AS moderator FROM forum_threads t JOIN forum_categories c ON c.id=t.category_id
+    WHERE t.id=? AND t.status='approved' AND c.is_public=1`).bind(got.actor.userId, threadId)
+    .first<{ title: string; is_locked: number; moderator: number }>();
+  if (!thread) return { error: "notfound" };
+  const trusted = got.admin || Boolean(thread.moderator);
+  if (thread.is_locked && !trusted) return { error: "locked" };
+  const gate = await spamGate(got.actor, "post", body, formData, trusted);
+  if ("error" in gate) return gate;
+  const stored = await storeVpsForumReply(got.actor, { threadId, body, hold: gate.hold, trusted,
+    staff: got.admin && Boolean(got.actor.is_staff), images }).catch(() => false);
+  if (!stored) return { error: "failed" };
+  if (gate.hold) {
+    await sendAdminForumQueue({ reason: "held", title: thread.title, author: got.actor.handle }).catch(() => undefined);
+    return { ok: true, held: true };
+  }
+  after(() => notifyVpsThreadAuthor({ threadId, replierId: got.actor.userId, replyBody: body }));
+  return { ok: true };
+}
+
 // ── Rating, votes, accepted answer ──────────────────────────────────
 export async function rateThreadAction(threadId: string, score: number): Promise<ForumFormState> {
   if (!Number.isInteger(score) || score < 1 || score > 5) return { error: "failed" };
+  if (isVpsLiveCustomerAuth()) return nativeFeedback("thread", threadId, score);
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -334,6 +418,7 @@ export async function rateThreadAction(threadId: string, score: number): Promise
 }
 
 export async function upvotePostAction(postId: string): Promise<ForumFormState> {
+  if (isVpsLiveCustomerAuth()) return nativeFeedback("post", postId, 1);
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -352,7 +437,30 @@ export async function upvotePostAction(postId: string): Promise<ForumFormState> 
   return { ok: true };
 }
 
+async function nativeFeedback(type: Target, id: string, score: number): Promise<ForumFormState> {
+  const got = await getNativeActor();
+  if ("error" in got) return { error: got.error };
+  if (await checkRateLimitByIp(await clientIp(), "forum-vote")) return { error: "rate" };
+  const item = await vpsForumTarget(type, id);
+  if (!item || item.status !== "approved" || item.thread_status !== "approved") return { error: "notfound" };
+  if (item.author_id === got.actor.userId) return { error: "own" };
+  const changed = await (type === "thread" ? rateVpsForumThread(got.actor, id, score) : voteVpsForumPost(got.actor, id)).catch(() => false);
+  if (!changed) return { error: "failed" };
+  await rescore(item.author_id);
+  return { ok: true };
+}
+
 export async function acceptAnswerAction(postId: string): Promise<ForumFormState> {
+  if (isVpsLiveCustomerAuth()) {
+    const got = await getNativeActor();
+    if ("error" in got) return { error: got.error };
+    const item = await vpsForumTarget("post", postId);
+    if (!item || item.status !== "approved" || item.thread_status !== "approved" || item.type !== "question") return { error: "notfound" };
+    const changed = await acceptVpsForumAnswer(got.actor, postId, item.thread_id);
+    if (!changed) return { error: "forbidden" };
+    await rescore(item.author_id, changed.previousAuthor);
+    return { ok: true };
+  }
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -399,6 +507,16 @@ async function loadTarget(admin: SupabaseClient, type: Target, id: string) {
 }
 
 export async function reportAction(type: Target, id: string, reason?: string): Promise<ForumFormState> {
+  if (type !== "thread" && type !== "post") return { error: "failed" };
+  if (isVpsLiveCustomerAuth()) {
+    const got = await getNativeActor();
+    if ("error" in got) return { error: got.error };
+    if (await checkRateLimitByIp(await clientIp(), "forum-vote")) return { error: "rate" };
+    const report = await reportVpsForumTarget(got.actor, type, id, reason);
+    if (report.error) return { error: report.error };
+    if (report.hidden) await sendAdminForumQueue({ reason: "reported", title: report.target.title, author: report.target.author_id }).catch(() => undefined);
+    return { ok: true };
+  }
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -425,6 +543,20 @@ export async function reportAction(type: Target, id: string, reason?: string): P
 export type ModOp = "hide" | "unhide" | "approve" | "lock" | "unlock" | "pin" | "unpin";
 
 export async function modAction(type: Target, id: string, op: ModOp, reason?: string): Promise<ForumFormState> {
+  if (type !== "thread" && type !== "post") return { error: "failed" };
+  if (isVpsLiveCustomerAuth()) {
+    const got = await getNativeActor();
+    if ("error" in got) return { error: got.error };
+    const moderated = await moderateVpsForumTarget(got.actor, type, id, op, reason);
+    if (moderated.error) return { error: moderated.error };
+    if (["hide", "unhide", "approve"].includes(op)) await rescore(moderated.target.author_id);
+    if (op === "approve" && type === "post" && moderated.target.status === "held") {
+      const post = await vpsAppDatabase().prepare("SELECT body FROM forum_posts WHERE id=? AND status='approved'")
+        .bind(id).first<{ body: string }>();
+      if (post) after(() => notifyVpsThreadAuthor({ threadId: moderated.target.thread_id, replierId: moderated.target.author_id, replyBody: post.body }));
+    }
+    return { ok: true };
+  }
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -475,6 +607,13 @@ export async function modAction(type: Target, id: string, op: ModOp, reason?: st
 // ── Polls, following rooms, reply emails (rework) ───────────────────
 /** One vote per verified member; no changing it afterwards. */
 export async function votePollAction(pollId: string, optionId: string): Promise<ForumFormState> {
+  if (isVpsLiveCustomerAuth()) {
+    const got = await getNativeActor();
+    if ("error" in got) return { error: got.error };
+    if (await checkRateLimitByIp(await clientIp(), "forum-vote")) return { error: "rate" };
+    const changed = await voteVpsForumPoll(got.actor, pollId, optionId);
+    return changed ? { ok: true } : { error: "closed" };
+  }
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;
@@ -506,6 +645,19 @@ export async function votePollAction(pollId: string, optionId: string): Promise<
 /** Follow (or unfollow) a room: followed rooms lead "This week" on the forum home. */
 export async function followRoomAction(slug: string, follow: boolean): Promise<ForumFormState> {
   if (!isForumCategory(slug)) return { error: "category" };
+  if (isVpsLiveCustomerAuth()) {
+    const session = await getSession();
+    if (!session || session.profile.status !== "active") return { error: "signin" };
+    const cat = await vpsForumRoom(slug);
+    if (!cat) return { error: "unavailable" };
+    const db = vpsAppDatabase();
+    const result = await (follow ? db.prepare(`INSERT INTO forum_room_follows(user_id,category_id)
+      SELECT id,? FROM users_profile WHERE id=? AND status='active' AND ${customerAppAuthority}
+      ON CONFLICT(user_id,category_id) DO NOTHING`).bind(cat.id, session.userId)
+      : db.prepare(`DELETE FROM forum_room_follows WHERE category_id=? AND user_id=? AND ${customerAppAuthority}`)
+        .bind(cat.id, session.userId)).run();
+    return result.success ? { ok: true } : { error: "failed" };
+  }
   if (!isServiceConfigured()) return { error: "unavailable" };
   const session = await getSession();
   if (!session) return { error: "signin" };
@@ -521,6 +673,15 @@ export async function followRoomAction(slug: string, follow: boolean): Promise<F
 
 /** Turn "email me when someone replies to my thread" on or off (notification_preferences.forum_replies). */
 export async function setReplyEmailsAction(on: boolean): Promise<ForumFormState> {
+  if (isVpsLiveCustomerAuth()) {
+    const session = await getSession();
+    if (!session || session.profile.status !== "active") return { error: "signin" };
+    const result = await vpsAppDatabase().prepare(`INSERT INTO notification_preferences(user_id,forum_replies)
+      SELECT id,? FROM users_profile WHERE id=? AND status='active' AND ${customerAppAuthority}
+      ON CONFLICT(user_id) DO UPDATE SET forum_replies=excluded.forum_replies`)
+      .bind(on ? "instant" : "off", session.userId).run();
+    return result.meta.changes === 1 ? { ok: true } : { error: "failed" };
+  }
   if (!isServiceConfigured()) return { error: "unavailable" };
   const session = await getSession();
   if (!session) return { error: "signin" };
@@ -532,6 +693,33 @@ export async function setReplyEmailsAction(on: boolean): Promise<ForumFormState>
 
 /** Staff-only: appoint (or remove) a community moderator by handle. */
 export async function appointModAction(_prev: ForumFormState, formData: FormData): Promise<ForumFormState> {
+  if (isVpsLiveCustomerAuth()) {
+    const got = await getNativeActor();
+    if ("error" in got) return { error: got.error };
+    if (!got.admin) return { error: "forbidden" };
+    const category = formData.get("category")?.toString();
+    if (!isForumCategory(category)) return { error: "category" };
+    const handle = formData.get("handle")?.toString().trim().replace(/^@/, "").toLowerCase() ?? "";
+    const db = vpsAppDatabase();
+    const [user, room] = await Promise.all([
+      db.prepare("SELECT user_id FROM forum_profiles WHERE handle=? AND banned=0").bind(handle).first<{ user_id: string }>(),
+      vpsForumRoom(category),
+    ]);
+    if (!user || !room) return { error: "notfound" };
+    const remove = formData.get("remove") === "1";
+    const scoped = `${customerAppAuthority} AND EXISTS(SELECT 1 FROM users_profile WHERE id=? AND status='active'
+      AND primary_role IN ('admin','super_admin'))`;
+    await db.batch([
+      remove ? db.prepare(`DELETE FROM forum_category_mods WHERE category_id=? AND user_id=? AND ${scoped}`)
+        .bind(room.id, user.user_id, got.actor.userId)
+        : db.prepare(`INSERT INTO forum_category_mods(category_id,user_id) SELECT ?,? WHERE ${scoped}
+          ON CONFLICT(category_id,user_id) DO NOTHING`).bind(room.id, user.user_id, got.actor.userId),
+      db.prepare(`INSERT INTO forum_mod_log(id,mod_id,action,target_type,target_id,reason)
+        SELECT ?,?,?,'profile',?,? WHERE changes()=1`).bind(randomUUID(), got.actor.userId,
+        remove ? "remove-mod" : "appoint-mod", user.user_id, category),
+    ]);
+    return { ok: true };
+  }
   const got = await getActor();
   if ("error" in got) return { error: got.error };
   const a = got.actor;

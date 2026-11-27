@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "@/i18n/link";
 import { ArrowLeft } from "lucide-react";
 import { getSession, isDemoMode } from "@/lib/access/access";
+import { isVpsLiveCustomerAuth } from "@/lib/d1/staging-config";
 import { isServiceConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { PrintButton } from "@/components/towns/jobs/sealed-forms";
@@ -10,6 +11,7 @@ import { money } from "@/components/towns/jobs/part-c-cards";
 import { canManageTownJob, todayToronto } from "@/lib/town-jobs/rules";
 import { loadTownJob } from "@/lib/town-jobs/server";
 import { loadResults, townBrand } from "@/lib/town-jobs/results-server";
+import { loadNativeManagedTownJob, loadNativeTownBrand, loadNativeTownResults } from "@/lib/town-jobs/native-management";
 import { closingLabel, momentLabel } from "@/lib/town-jobs/sealed-email-copy";
 import { townTimeZone } from "@/lib/town-jobs/sealed";
 import { getLang, getT, setLangFrom } from "@/i18n/server";
@@ -21,6 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang } = await params;
   return { title: getDictionary(hasLocale(lang) ? lang : "en").townResults.summary.title, robots: { index: false, follow: false } };
 }
+
+export const dynamic = "force-dynamic";
 
 /**
  * The council summary (PMRFP for Towns, Part C): one clean page for the
@@ -36,13 +40,16 @@ export default async function CouncilSummaryPage({ params }: { params: Promise<{
   const s = t.summary;
   const r = t.results;
   const { id } = await params;
-  if (isDemoMode() || !isServiceConfigured()) notFound();
+  const native = isVpsLiveCustomerAuth();
+  if (isDemoMode() || (!native && !isServiceConfigured())) notFound();
   const session = await getSession();
   if (!session) redirect(localizePath(`/sign-in?next=${encodeURIComponent(localizePath(`/council-summary/${id}`, lang))}`, lang));
-  const db = createServiceClient();
-  const job = await loadTownJob(db, id);
+  const db = native ? null : createServiceClient();
+  const job = db ? await loadTownJob(db,id) : await loadNativeManagedTownJob(session.userId,id);
   if (!job || !canManageTownJob(job, { userId: session.userId, organizationId: session.organization?.id ?? null, role: session.profile.primary_role })) notFound();
-  const [results, brand] = await Promise.all([loadResults(db, job, session.userId), townBrand(db, job.posted_by_organization_id)]);
+  const [results, brand] = await Promise.all(db
+    ? [loadResults(db,job,session.userId),townBrand(db,job.posted_by_organization_id)]
+    : [loadNativeTownResults(session.userId,job),loadNativeTownBrand(session.userId,job.id)]);
   const tz = townTimeZone(job.buyer_key);
   const day = (d: string | null | undefined) => (d ? formatDate(`${d.slice(0, 10)}T12:00:00Z`, lang, { month: "long", day: "numeric", year: "numeric" }) : "—");
   const sum = results.summary;

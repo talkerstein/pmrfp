@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-import { isServiceConfigured } from "@/lib/supabase/config";
 import { classifyOntn, fetchOntnNotices, ontnToRfpInsert } from "@/lib/tenders/ontario-northland";
 import { FVRD, SAANICH, bcTableToRfpInsert, classifyBcTableRow, fetchBcTenderTable, type BcTableSite } from "@/lib/tenders/bc-tenders-table";
 import { classifySk, fetchSkOpen, skToRfpInsert } from "@/lib/tenders/sasktenders";
 import { classifyPlap, fetchPlapTenders, plapToRfpInsert } from "@/lib/tenders/portage-la-prairie";
 import { classifyGete, fetchGeteBids, geteToRfpInsert } from "@/lib/tenders/guelph-eramosa";
-import { syncPublicSources, type Candidate, type Source } from "@/lib/tenders/sync";
+import { syncPublicSources, tenderSyncDatabase, type Candidate, type Source } from "@/lib/tenders/sync";
 import { citySyncSources } from "@/lib/tenders/city-run";
-import { loadPermissionRegistry } from "@/lib/buyers/permissions-data";
+import { loadD1PermissionRegistry, loadPermissionRegistry } from "@/lib/buyers/permissions-data";
 
 /** Each source gets its own time budget; a slow one fails alone (sync skips it). */
 const SOURCE_BUDGET_MS = 30_000;
@@ -122,12 +120,12 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!isServiceConfigured()) return NextResponse.json({ skipped: "no service client" });
+  const db = tenderSyncDatabase();
+  if (!db) return NextResponse.json({ skipped: "no service client" });
 
-  const supabase = createServiceClient();
-  const { registry } = await loadPermissionRegistry(supabase);
+  const registry = "prepare" in db ? await loadD1PermissionRegistry(db) : (await loadPermissionRegistry(db)).registry;
   const city = citySyncSources(registry);
-  const { status, body } = await syncPublicSources(supabase, [...activeSources(), ...city.sources], {
+  const { status, body } = await syncPublicSources(db, [...activeSources(), ...city.sources], {
     today: new Date().toISOString().slice(0, 10),
     dry: new URL(request.url).searchParams.get("dry") === "1",
   });
